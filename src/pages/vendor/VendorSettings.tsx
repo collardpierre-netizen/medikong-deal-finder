@@ -18,6 +18,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
+import { useVendorActiveMarginRule } from "@/hooks/useVendorActiveMarginRule";
 
 export default function VendorSettings() {
   const [activeTab, setActiveTab] = useState("profile");
@@ -26,6 +27,7 @@ export default function VendorSettings() {
   const qc = useQueryClient();
   const vendorId = vendor?.id;
   const shippingMode = (vendor as any)?.vendor_shipping_mode ?? "no_shipping";
+  const { data: activeMarginRule } = useVendorActiveMarginRule(vendorId);
 
   // Profile form
   const [form, setForm] = useState({
@@ -106,7 +108,9 @@ export default function VendorSettings() {
     ["Ville", form.city || "—"],
     ["Code postal", form.postal_code || "—"],
     ["Pays", countryLabels[form.country_code] || form.country_code],
-    ["Commission", `${vendor.commission_rate}%`],
+    ["Commission en vigueur", activeMarginRule
+      ? `${Number(activeMarginRule.margin_percentage).toFixed(2)}% — ${activeMarginRule.name}`
+      : "Règle globale (aucune règle vendeur dédiée)"],
     ["Statut", vendor.is_active ? "Actif" : "En attente"],
     ["Membre depuis", new Date(vendor.created_at).toLocaleDateString("fr-BE", { month: "long", year: "numeric" })],
   ];

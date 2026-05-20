@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { EntityDelegatesSection } from "@/components/admin/EntityDelegatesSection";
 import { ContractHistoryTable } from "@/components/vendor/ContractHistoryTable";
 import { VendorMarketIntelAdminCard } from "@/components/admin/VendorMarketIntelAdminCard";
+import { useVendorActiveMarginRule } from "@/hooks/useVendorActiveMarginRule";
 
 type VendorValidationStatus = "pending_review" | "under_review" | "accepted" | "approved" | "rejected";
 
@@ -53,6 +54,10 @@ const AdminVendeurDetail = () => {
     },
     enabled: !!id,
   });
+
+  const { data: activeMarginRule } = useVendorActiveMarginRule(vendor?.id ?? null);
+
+
 
   const { data: vendorBrands = [] } = useQuery({
     queryKey: ["vendor-brands", id],
@@ -300,13 +305,12 @@ const AdminVendeurDetail = () => {
       {activeTab === "resume" && (
         <div className="space-y-4">
           <div className="grid grid-cols-3 gap-3">
-            <KpiCard icon={DollarSign} label="Commission" value={
-              (vendor as any).commission_model === 'margin_split'
-                ? `Partage ${(vendor as any).margin_split_pct || 50}/${100 - ((vendor as any).margin_split_pct || 50)}`
-                : (vendor as any).commission_model === 'fixed_amount'
-                ? `€${(vendor as any).fixed_commission_amount || 0}/unité`
-                : `${vendor.commission_rate}%`
+            <KpiCard icon={DollarSign} label="Commission active" value={
+              activeMarginRule
+                ? `${Number(activeMarginRule.margin_percentage).toFixed(2)}%`
+                : "Règle globale"
             } />
+
             <KpiCard icon={Package} label="Type" value={vendor.type} iconColor="#7C3AED" iconBg="#F5F3FF" />
             <KpiCard icon={Package} label="Ventes totales" value={String(vendor.total_sales)} iconColor="#059669" iconBg="#F0FDF4" />
           </div>
@@ -322,13 +326,29 @@ const AdminVendeurDetail = () => {
               <InfoRow label="Langue" value={(vendor as any).preferred_language?.toUpperCase() || "FR"} />
               <InfoRow label="Vérifié" value={vendor.is_verified ? "Oui" : "Non"} />
               <InfoRow label="Compte accès" value={vendor.auth_user_id ? "✅ Oui" : "❌ Non"} />
-              <InfoRow label="Modèle commission" value={
-                (vendor as any).commission_model === 'margin_split'
-                  ? `Partage de marge (${(vendor as any).margin_split_pct || 50}% vendeur / ${100 - ((vendor as any).margin_split_pct || 50)}% MediKong)`
-                  : (vendor as any).commission_model === 'fixed_amount'
-                  ? `Montant fixe : €${(vendor as any).fixed_commission_amount || 0}/unité`
-                  : `Pourcentage fixe : ${vendor.commission_rate}%`
-              } />
+              <div className="flex justify-between items-start py-1.5 text-[12px] gap-3">
+                <span style={{ color: "#8B95A5" }}>Commission en vigueur</span>
+                <span className="text-right" style={{ color: "#1D2530", fontWeight: 600 }}>
+                  {activeMarginRule ? (
+                    <>
+                      {Number(activeMarginRule.margin_percentage).toFixed(2)}%
+                      <span className="block text-[11px] font-normal" style={{ color: "#8B95A5" }}>
+                        {activeMarginRule.name}
+                      </span>
+                    </>
+                  ) : (
+                    <span style={{ color: "#8B95A5", fontWeight: 400 }}>Aucune règle spécifique — règle globale appliquée</span>
+                  )}
+                  <a
+                    href="/admin/commissions"
+                    className="block text-[11px] mt-0.5"
+                    style={{ color: "#1B5BDA" }}
+                  >
+                    Gérer dans /admin/commissions →
+                  </a>
+                </span>
+              </div>
+
             </div>
             <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
               <h3 className="text-[14px] font-bold mb-3 flex items-center gap-2" style={{ color: "#1D2530" }}><Mail size={16} /> Contact</h3>

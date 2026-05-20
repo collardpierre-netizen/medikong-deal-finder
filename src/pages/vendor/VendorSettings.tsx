@@ -122,7 +122,7 @@ export default function VendorSettings() {
                 <VBtn small icon="Pencil" onClick={() => setEditing(true)}>Modifier</VBtn>
               ) : (
                 <div className="flex gap-2">
-                  <VBtn small onClick={() => { setEditing(false); if (vendor) setForm({ company_name: vendor.company_name || "", name: vendor.name || "", email: vendor.email || "", phone: vendor.phone || "", vat_number: vendor.vat_number || "", address_line1: vendor.address_line1 || "", city: vendor.city || "", postal_code: vendor.postal_code || "", country_code: vendor.country_code || "BE", description: vendor.description || "" }); }}>Annuler</VBtn>
+                  <VBtn small onClick={() => { setEditing(false); if (vendor) setForm({ company_name: vendor.company_name || "", name: vendor.name || "", email: vendor.email || "", phone: vendor.phone || "", vat_number: vendor.vat_number || "", bce_number: (vendor as any).bce_number || "", address_line1: vendor.address_line1 || "", city: vendor.city || "", postal_code: vendor.postal_code || "", country_code: vendor.country_code || "BE", description: vendor.description || "", representative_name: (vendor as any).representative_name || "", representative_role: (vendor as any).representative_role || "" }); }}>Annuler</VBtn>
                   <VBtn small primary icon="Save" onClick={() => updateVendor.mutate(form)}>{updateVendor.isPending ? "..." : "Sauvegarder"}</VBtn>
                 </div>
               )}

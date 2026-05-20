@@ -22,6 +22,7 @@ export default function VendorContractPage() {
   const [searchParams] = useSearchParams();
   const { data: vendor, isLoading } = useCurrentVendor();
 
+  const queryClient = useQueryClient();
   const requestedScreen = searchParams.get("screen");
   const initialScreen =
     requestedScreen === "sign" || requestedScreen === "read" ? requestedScreen : undefined;

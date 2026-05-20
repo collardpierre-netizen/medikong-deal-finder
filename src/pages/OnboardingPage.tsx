@@ -895,7 +895,15 @@ export default function OnboardingPage() {
             postal_code: "0000",
             is_verified: false,
           });
-          if (customerError) console.warn("Customer insert warning:", customerError.message);
+          if (customerError) {
+            console.error("Customer insert error:", customerError);
+            toast.error("Création du compte acheteur impossible", {
+              description: customerError.message || "Veuillez réessayer ou contacter le support.",
+              duration: 12000,
+            });
+            setSubmitting(false);
+            return;
+          }
 
           // Notify admins of new buyer registration
           supabase.functions.invoke("send-transactional-email", {

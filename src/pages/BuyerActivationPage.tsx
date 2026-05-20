@@ -43,6 +43,15 @@ export default function BuyerActivationPage() {
   const [restockOptIn, setRestockOptIn] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  // Address override (when vendor address is incomplete)
+  const [addressDraft, setAddressDraft] = useState({
+    address_line1: "",
+    postal_code: "",
+    city: "",
+    country_code: "BE",
+  });
+  const [addressDraftInitialized, setAddressDraftInitialized] = useState(false);
+
   // Redirect when activation is no longer relevant
   useEffect(() => {
     if (verificationLoading) return;
@@ -79,6 +88,37 @@ export default function BuyerActivationPage() {
     };
   }, [user]);
 
+  // Pre-fill address draft from vendor row (once)
+  useEffect(() => {
+    if (!vendor || addressDraftInitialized) return;
+    setAddressDraft({
+      address_line1: (vendor.address_line1 || "").trim(),
+      postal_code: (vendor.postal_code || "").trim(),
+      city: (vendor.city || "").trim(),
+      country_code: (vendor.country_code || "BE").trim(),
+    });
+    setAddressDraftInitialized(true);
+  }, [vendor, addressDraftInitialized]);
+
+  // True when the vendor row is missing one of the 3 mandatory address fields
+  const addressIncomplete = useMemo(() => {
+    if (!vendor) return false;
+    return !vendor.address_line1?.trim() || !vendor.city?.trim() || !vendor.postal_code?.trim();
+  }, [vendor]);
+
+  // Validate the draft (used both for the "complete address" form and the final submit)
+  const draftValid = useMemo(() => {
+    const line1 = addressDraft.address_line1.trim();
+    const pc = addressDraft.postal_code.trim();
+    const city = addressDraft.city.trim();
+    if (line1.length < 2 || line1.length > 200) return false;
+    if (city.length < 1 || city.length > 100) return false;
+    // BE/FR/LU: 4 to 10 alphanumeric chars (covers BE 4 digits, FR 5 digits, NL 6 chars)
+    if (!/^[A-Za-z0-9 \-]{3,10}$/.test(pc)) return false;
+    if (!/^[A-Z]{2}$/.test(addressDraft.country_code)) return false;
+    return true;
+  }, [addressDraft]);
+
   const prefill = useMemo(() => {
     if (!vendor) return null;
     return {
@@ -86,12 +126,14 @@ export default function BuyerActivationPage() {
       email: vendor.email || user?.email || "",
       phone: vendor.phone || "",
       vat_number: vendor.vat_number || "",
-      address_line1: vendor.address_line1 || "—",
-      city: vendor.city || "—",
-      postal_code: vendor.postal_code || "0000",
-      country_code: vendor.country_code || "BE",
+      address_line1: addressDraft.address_line1.trim(),
+      city: addressDraft.city.trim(),
+      postal_code: addressDraft.postal_code.trim(),
+      country_code: addressDraft.country_code.trim() || "BE",
     };
-  }, [vendor, user?.email]);
+  }, [vendor, user?.email, addressDraft]);
+
+
 
   const handleActivate = async () => {
     if (!user || !prefill) return;

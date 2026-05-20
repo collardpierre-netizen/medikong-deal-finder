@@ -243,7 +243,7 @@ function VendorMovCard({ group, displayName }: { group: VendorGroup; displayName
 }
 
 export default function BonnesAffairesPage() {
-  const { user, isVerifiedBuyer, verificationLoading } = useAuth();
+  const { user, isVerifiedBuyer, verificationLoading, buyerStatus, hasVendorAccount } = useAuth();
   const { currentCountry } = useCountry();
 
   const [reference, setReference] = useState<DiscountReference>("pvp");
@@ -416,6 +416,32 @@ export default function BonnesAffairesPage() {
   }
 
   if (!user || !isVerifiedBuyer) {
+    // Trois cas distincts pour éviter le CTA "Compléter ma vérification" trompeur
+    // (notamment quand le user n'a aucun profil acheteur — typique d'un vendeur
+    // qui n'a jamais activé son compte buyer côté plateforme).
+    let title = "Bonnes affaires — réservé aux acheteurs vérifiés";
+    let description = "Cet outil permet de scanner tout le catalogue MediKong pour identifier les produits offrant au moins X% de remise vs PVP ou prix marché.";
+    let primaryCta: { label: string; href: string } | null = null;
+    let secondaryCta: { label: string; href: string } | null = { label: "Retour au catalogue", href: "/catalogue" };
+
+    if (!user) {
+      primaryCta = { label: "Se connecter", href: "/connexion" };
+    } else if (buyerStatus === "missing" && hasVendorAccount) {
+      // Vendeur sans profil acheteur → proposer l'activation
+      title = "Activez aussi votre compte acheteur";
+      description = "Votre compte vendeur est actif, mais vous n'avez pas encore de profil acheteur sur MediKong. Activez-le en quelques clics pour accéder aux Bonnes affaires, comparer les prix et passer commande auprès des autres vendeurs.";
+      primaryCta = { label: "Activer mon compte acheteur", href: "/onboarding?role=buyer" };
+      secondaryCta = { label: "Retour au portail vendeur", href: "/vendor" };
+    } else if (buyerStatus === "missing") {
+      title = "Créer un profil acheteur";
+      description = "Pour accéder aux Bonnes affaires, créez votre profil acheteur professionnel. La validation est généralement effectuée sous 24h ouvrées.";
+      primaryCta = { label: "Créer mon profil acheteur", href: "/onboarding?role=buyer" };
+    } else if (buyerStatus === "pending") {
+      title = "Compte en attente de validation";
+      description = "Votre profil acheteur a bien été créé, mais il est en attente de validation par notre équipe (généralement sous 24h ouvrées). Vous recevrez un email dès l'activation.";
+      primaryCta = { label: "Voir l'état de mon compte", href: "/compte" };
+    }
+
     return (
       <Layout>
         <div className="container max-w-2xl py-16">
@@ -424,18 +450,18 @@ export default function BonnesAffairesPage() {
               <div className="flex items-center gap-3">
                 <div className="rounded-full bg-primary/10 p-3"><ShieldCheck className="text-primary" /></div>
                 <div>
-                  <CardTitle>Bonnes affaires — réservé aux acheteurs vérifiés</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">Cet outil permet de scanner tout le catalogue MediKong pour identifier les produits offrant au moins X% de remise vs PVP ou prix marché.</p>
+                  <CardTitle>{title}</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">{description}</p>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="flex gap-2">
-              {!user ? (
-                <Button asChild><Link to="/connexion">Se connecter</Link></Button>
-              ) : (
-                <Button asChild><Link to="/compte">Compléter ma vérification</Link></Button>
+            <CardContent className="flex flex-wrap gap-2">
+              {primaryCta && (
+                <Button asChild><Link to={primaryCta.href}>{primaryCta.label}</Link></Button>
               )}
-              <Button variant="outline" asChild><Link to="/catalogue">Retour au catalogue</Link></Button>
+              {secondaryCta && (
+                <Button variant="outline" asChild><Link to={secondaryCta.href}>{secondaryCta.label}</Link></Button>
+              )}
             </CardContent>
           </Card>
         </div>

@@ -42,6 +42,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'vendor-approved': vendorApproved,
   'vendor-rejected': vendorRejected,
   'buyer-registration': buyerRegistration,
+  'buyer-verified': buyerVerified,
   'vendor-contract-signed': vendorContractSigned,
   'admin-contract-notification': adminContractNotification,
   'vendor-contract-submitted': vendorContractSubmitted,

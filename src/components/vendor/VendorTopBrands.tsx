@@ -78,11 +78,7 @@ export function VendorTopBrands({
                 />
               ))
             : data!.map((b) => {
-                const href = vendorSlug && b.brand_slug
-                  ? `/vendeurs/${vendorSlug}?brand=${b.brand_slug}`
-                  : b.brand_slug
-                  ? `/marques/${b.brand_slug}`
-                  : "#";
+                const href = b.brand_slug ? `/marques/${b.brand_slug}` : "#";
                 return (
                   <Link
                     key={b.brand_id}

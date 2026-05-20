@@ -55,6 +55,10 @@ const AdminVendeurDetail = () => {
     enabled: !!id,
   });
 
+  const { data: activeMarginRule } = useVendorActiveMarginRule(vendor?.id ?? null);
+
+
+
   const { data: vendorBrands = [] } = useQuery({
     queryKey: ["vendor-brands", id],
     queryFn: async () => {

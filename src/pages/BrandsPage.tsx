@@ -153,29 +153,35 @@ export default function BrandsPage() {
             )}
           </div>
 
-          {/* Letter anchors — hidden when searching */}
+          {/* Letter anchors — hidden when searching, disabled while loading/searching */}
           {!search && (
-            <div className="flex gap-1.5 mb-8 flex-wrap">
+            <div
+              className="flex gap-1.5 mb-8 flex-wrap"
+              aria-busy={isLoading || isSearching}
+            >
               {LETTERS.map(l => {
                 const available = availableLetters.has(l);
                 const isActive = l === activeLetter;
+                const lockedByLoading = isLoading || isSearching;
+                const isDisabled = !available || lockedByLoading;
                 return (
                   <button
                     key={l}
                     onClick={() => {
-                      if (available) {
+                      if (available && !lockedByLoading) {
                         setActiveLetter(l);
                         listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
                       }
                     }}
-                    disabled={!available}
+                    disabled={isDisabled}
+                    aria-disabled={isDisabled}
                     className={`w-8 h-8 rounded-full text-sm font-medium flex items-center justify-center transition-colors ${
                       isActive
                         ? "bg-foreground text-background"
                         : available
                           ? "border border-border text-muted-foreground hover:border-foreground hover:text-foreground"
                           : "text-muted-foreground/30 cursor-default"
-                    }`}
+                    } ${lockedByLoading ? "opacity-50 cursor-wait pointer-events-none" : ""}`}
                   >
                     {l}
                   </button>
@@ -183,6 +189,7 @@ export default function BrandsPage() {
               })}
             </div>
           )}
+
 
           {/* Brand list */}
           <div ref={listRef}>
@@ -198,8 +205,19 @@ export default function BrandsPage() {
                 ))}
               </div>
             ) : searchResults !== null ? (
-              // Search mode: show grouped results
-              searchResults.length === 0 ? (
+              // Search mode: skeletons while pending, then grouped results
+              isSearching ? (
+                <div className="space-y-4" aria-busy="true" aria-live="polite">
+                  {[1, 2, 3].map(i => (
+                    <div key={i}>
+                      <Skeleton className="h-7 w-12 mb-3" />
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        {[1, 2, 3, 4, 5, 6].map(j => <Skeleton key={j} className="h-5 w-36" />)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : searchResults.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Search className="w-10 h-10 mx-auto mb-2 opacity-40" />
                   <p className="text-sm">Aucune marque trouvée pour « {search} »</p>
@@ -218,6 +236,7 @@ export default function BrandsPage() {
                   </div>
                 ))
               )
+
             ) : (
               // Letter mode: show only selected letter
               <div>

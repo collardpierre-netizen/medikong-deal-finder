@@ -976,7 +976,6 @@ function exportOffers(
   commissionConfig?: import("@/lib/vendorMargin").VendorCommissionConfig | null,
 ) {
   if (offers.length === 0) { toast.error("Aucune offre à exporter"); return; }
-  const { computeMargin } = require("@/lib/vendorMargin") as typeof import("@/lib/vendorMargin");
   const cfg = commissionConfig ?? { commission_model: "flat_percentage" as const, commission_rate: 0 };
   const rows: any[] = [];
   const tiersRows: any[] = [];

@@ -322,8 +322,61 @@ export default function BrandDetailPage() {
       )}
 
       <div id="brand-products" className="mk-container py-6 md:py-8">
-        {/* 🔒 Vendor block intentionally hidden on brand page (anonymisation marque).
-            Le lien vendeur ne doit pas être exposé via la page marque. */}
+        {/* Vendeurs proposant cette marque — libellé public anonymisé via getVendorPublicName */}
+        {brandSellers.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-bold text-mk-navy flex items-center gap-2">
+                <Store size={18} /> Vendeurs proposant {brand.name}
+                <span className="text-sm font-normal text-mk-sec">({brandSellers.length})</span>
+              </h2>
+              {brandSellers.length > 6 && (
+                <button
+                  onClick={() => setShowAllSellers((v) => !v)}
+                  className="text-sm text-mk-blue hover:underline"
+                >
+                  {showAllSellers ? "Voir moins" : "Voir tous"}
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {(showAllSellers ? brandSellers : brandSellers.slice(0, 6)).map((s) => (
+                <Link
+                  key={s.id}
+                  to={s.slug ? `/vendeur/${s.slug}` : "#"}
+                  className="border border-mk-line rounded-lg p-3 hover:border-mk-blue hover:shadow-sm transition-all flex items-center gap-3"
+                >
+                  <div className="w-10 h-10 rounded bg-mk-alt flex items-center justify-center shrink-0">
+                    <Store size={16} className="text-mk-sec" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-sm font-semibold text-mk-navy truncate">{s.name}</span>
+                      {s.verified && (
+                        <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50 text-[10px] px-1.5 py-0">
+                          Vérifié
+                        </Badge>
+                      )}
+                      {s.topRated && (
+                        <Badge className="bg-amber-50 text-amber-700 hover:bg-amber-50 text-[10px] px-1.5 py-0 inline-flex items-center gap-0.5">
+                          <Star size={9} /> Top
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-xs text-mk-sec flex items-center gap-2 mt-0.5">
+                      <span className="flex items-center gap-0.5"><MapPin size={10} />{s.location}</span>
+                      <span>·</span>
+                      <span>{s.offerCount} offre{s.offerCount > 1 ? "s" : ""}</span>
+                    </div>
+                  </div>
+                  <ChevronRight size={14} className="text-mk-ter shrink-0" />
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+
 
 
         {/* Sibling brands from same manufacturer */}

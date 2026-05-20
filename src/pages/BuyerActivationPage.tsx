@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Stethoscope, Pill, Building2, Layers, Store, ArrowRight, CheckCircle2, AlertTriangle, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,6 +43,15 @@ export default function BuyerActivationPage() {
   const [profile, setProfile] = useState<string>("");
   const [restockOptIn, setRestockOptIn] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Address override (when vendor address is incomplete)
+  const [addressDraft, setAddressDraft] = useState({
+    address_line1: "",
+    postal_code: "",
+    city: "",
+    country_code: "BE",
+  });
+  const [addressDraftInitialized, setAddressDraftInitialized] = useState(false);
 
   // Redirect when activation is no longer relevant
   useEffect(() => {
@@ -79,6 +89,37 @@ export default function BuyerActivationPage() {
     };
   }, [user]);
 
+  // Pre-fill address draft from vendor row (once)
+  useEffect(() => {
+    if (!vendor || addressDraftInitialized) return;
+    setAddressDraft({
+      address_line1: (vendor.address_line1 || "").trim(),
+      postal_code: (vendor.postal_code || "").trim(),
+      city: (vendor.city || "").trim(),
+      country_code: (vendor.country_code || "BE").trim(),
+    });
+    setAddressDraftInitialized(true);
+  }, [vendor, addressDraftInitialized]);
+
+  // True when the vendor row is missing one of the 3 mandatory address fields
+  const addressIncomplete = useMemo(() => {
+    if (!vendor) return false;
+    return !vendor.address_line1?.trim() || !vendor.city?.trim() || !vendor.postal_code?.trim();
+  }, [vendor]);
+
+  // Validate the draft (used both for the "complete address" form and the final submit)
+  const draftValid = useMemo(() => {
+    const line1 = addressDraft.address_line1.trim();
+    const pc = addressDraft.postal_code.trim();
+    const city = addressDraft.city.trim();
+    if (line1.length < 2 || line1.length > 200) return false;
+    if (city.length < 1 || city.length > 100) return false;
+    // BE/FR/LU: 4 to 10 alphanumeric chars (covers BE 4 digits, FR 5 digits, NL 6 chars)
+    if (!/^[A-Za-z0-9 \-]{3,10}$/.test(pc)) return false;
+    if (!/^[A-Z]{2}$/.test(addressDraft.country_code)) return false;
+    return true;
+  }, [addressDraft]);
+
   const prefill = useMemo(() => {
     if (!vendor) return null;
     return {
@@ -86,17 +127,25 @@ export default function BuyerActivationPage() {
       email: vendor.email || user?.email || "",
       phone: vendor.phone || "",
       vat_number: vendor.vat_number || "",
-      address_line1: vendor.address_line1 || "—",
-      city: vendor.city || "—",
-      postal_code: vendor.postal_code || "0000",
-      country_code: vendor.country_code || "BE",
+      address_line1: addressDraft.address_line1.trim(),
+      city: addressDraft.city.trim(),
+      postal_code: addressDraft.postal_code.trim(),
+      country_code: addressDraft.country_code.trim() || "BE",
     };
-  }, [vendor, user?.email]);
+  }, [vendor, user?.email, addressDraft]);
+
+
 
   const handleActivate = async () => {
     if (!user || !prefill) return;
     if (!profile) {
       toast.error("Sélectionnez votre profil acheteur");
+      return;
+    }
+    if (!draftValid) {
+      toast.error("Complétez votre adresse", {
+        description: "Rue, code postal et ville sont obligatoires (le « 0000 » par défaut n'est plus accepté).",
+      });
       return;
     }
     setSubmitting(true);
@@ -265,13 +314,86 @@ export default function BuyerActivationPage() {
                 <div className="sm:col-span-2">
                   <dt className="text-muted-foreground">Adresse</dt>
                   <dd className="font-medium">
-                    {prefill.address_line1}, {prefill.postal_code} {prefill.city} ({prefill.country_code})
+                    {draftValid
+                      ? `${prefill.address_line1}, ${prefill.postal_code} ${prefill.city} (${prefill.country_code})`
+                      : "À compléter ci-dessous"}
                   </dd>
                 </div>
               </dl>
             </CardContent>
           </Card>
         )}
+
+        <Card className={addressIncomplete ? "border-amber-300 bg-amber-50/40" : undefined}>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              Adresse de facturation
+              {addressIncomplete && (
+                <Badge variant="outline" className="border-amber-300 bg-amber-100 text-amber-800">
+                  À compléter
+                </Badge>
+              )}
+            </CardTitle>
+            <CardDescription>
+              {addressIncomplete
+                ? "Votre compte vendeur n'a pas d'adresse postale complète. Renseignez-la ici avant d'activer (les valeurs « 0000 » par défaut ne sont plus acceptées)."
+                : "Vérifiez ou corrigez l'adresse reprise de votre compte vendeur."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-6 gap-3">
+              <div className="sm:col-span-6">
+                <Label htmlFor="addr-line1" className="text-xs">Rue et numéro</Label>
+                <Input
+                  id="addr-line1"
+                  maxLength={200}
+                  placeholder="Rue de la Procession 23"
+                  value={addressDraft.address_line1}
+                  onChange={(e) => setAddressDraft((d) => ({ ...d, address_line1: e.target.value }))}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Label htmlFor="addr-pc" className="text-xs">Code postal</Label>
+                <Input
+                  id="addr-pc"
+                  maxLength={10}
+                  placeholder="7822"
+                  value={addressDraft.postal_code}
+                  onChange={(e) => setAddressDraft((d) => ({ ...d, postal_code: e.target.value }))}
+                />
+              </div>
+              <div className="sm:col-span-3">
+                <Label htmlFor="addr-city" className="text-xs">Ville</Label>
+                <Input
+                  id="addr-city"
+                  maxLength={100}
+                  placeholder="Ath"
+                  value={addressDraft.city}
+                  onChange={(e) => setAddressDraft((d) => ({ ...d, city: e.target.value }))}
+                />
+              </div>
+              <div className="sm:col-span-1">
+                <Label htmlFor="addr-cc" className="text-xs">Pays</Label>
+                <Input
+                  id="addr-cc"
+                  maxLength={2}
+                  placeholder="BE"
+                  value={addressDraft.country_code}
+                  onChange={(e) =>
+                    setAddressDraft((d) => ({ ...d, country_code: e.target.value.toUpperCase().slice(0, 2) }))
+                  }
+                />
+              </div>
+            </div>
+            {!draftValid && (
+              <p className="text-xs text-amber-700 mt-3">
+                Renseignez une rue, un code postal (3 à 10 caractères) et une ville valides pour activer votre compte acheteur.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+
 
         <Card>
           <CardHeader>
@@ -325,7 +447,7 @@ export default function BuyerActivationPage() {
           <Button variant="outline" asChild>
             <Link to="/compte/statut">Annuler</Link>
           </Button>
-          <Button onClick={handleActivate} disabled={submitting || !profile}>
+          <Button onClick={handleActivate} disabled={submitting || !profile || !draftValid}>
             {submitting ? "Activation…" : "Activer mon compte acheteur"}
             <ArrowRight className="ml-1.5 h-4 w-4" />
           </Button>

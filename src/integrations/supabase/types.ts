@@ -16004,6 +16004,7 @@ export type Database = {
           address_line1: string | null
           auth_user_id: string | null
           auto_forward_to_qogita: boolean
+          bce_number: string | null
           business_type: string | null
           can_manage_offers: boolean
           city: string | null
@@ -16039,6 +16040,8 @@ export type Database = {
           preferred_language: string | null
           qogita_seller_alias: string | null
           rating: number | null
+          representative_name: string | null
+          representative_role: string | null
           sendcloud_brand_id: string | null
           sendcloud_sender_address_id: string | null
           shipping_address_line1: string | null
@@ -16083,6 +16086,7 @@ export type Database = {
           address_line1?: string | null
           auth_user_id?: string | null
           auto_forward_to_qogita?: boolean
+          bce_number?: string | null
           business_type?: string | null
           can_manage_offers?: boolean
           city?: string | null
@@ -16118,6 +16122,8 @@ export type Database = {
           preferred_language?: string | null
           qogita_seller_alias?: string | null
           rating?: number | null
+          representative_name?: string | null
+          representative_role?: string | null
           sendcloud_brand_id?: string | null
           sendcloud_sender_address_id?: string | null
           shipping_address_line1?: string | null
@@ -16162,6 +16168,7 @@ export type Database = {
           address_line1?: string | null
           auth_user_id?: string | null
           auto_forward_to_qogita?: boolean
+          bce_number?: string | null
           business_type?: string | null
           can_manage_offers?: boolean
           city?: string | null
@@ -16197,6 +16204,8 @@ export type Database = {
           preferred_language?: string | null
           qogita_seller_alias?: string | null
           rating?: number | null
+          representative_name?: string | null
+          representative_role?: string | null
           sendcloud_brand_id?: string | null
           sendcloud_sender_address_id?: string | null
           shipping_address_line1?: string | null

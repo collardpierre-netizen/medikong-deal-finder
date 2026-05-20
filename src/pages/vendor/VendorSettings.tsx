@@ -30,8 +30,10 @@ export default function VendorSettings() {
   // Profile form
   const [form, setForm] = useState({
     company_name: "", name: "", email: "", phone: "",
-    vat_number: "", address_line1: "", city: "", postal_code: "",
+    vat_number: "", bce_number: "",
+    address_line1: "", city: "", postal_code: "",
     country_code: "BE", description: "",
+    representative_name: "", representative_role: "",
   });
 
   useEffect(() => {
@@ -42,11 +44,14 @@ export default function VendorSettings() {
         email: vendor.email || "",
         phone: vendor.phone || "",
         vat_number: vendor.vat_number || "",
+        bce_number: (vendor as any).bce_number || "",
         address_line1: vendor.address_line1 || "",
         city: vendor.city || "",
         postal_code: vendor.postal_code || "",
         country_code: vendor.country_code || "BE",
         description: vendor.description || "",
+        representative_name: (vendor as any).representative_name || "",
+        representative_role: (vendor as any).representative_role || "",
       });
     }
   }, [vendor]);
@@ -94,6 +99,9 @@ export default function VendorSettings() {
     ["Email", form.email || "—"],
     ["Téléphone", form.phone || "—"],
     ["N° TVA", form.vat_number || "—"],
+    ["N° BCE", form.bce_number || "—"],
+    ["Représentant légal", form.representative_name || "—"],
+    ["Fonction du représentant", form.representative_role || "—"],
     ["Adresse", form.address_line1 || "—"],
     ["Ville", form.city || "—"],
     ["Code postal", form.postal_code || "—"],
@@ -117,7 +125,7 @@ export default function VendorSettings() {
                 <VBtn small icon="Pencil" onClick={() => setEditing(true)}>Modifier</VBtn>
               ) : (
                 <div className="flex gap-2">
-                  <VBtn small onClick={() => { setEditing(false); if (vendor) setForm({ company_name: vendor.company_name || "", name: vendor.name || "", email: vendor.email || "", phone: vendor.phone || "", vat_number: vendor.vat_number || "", address_line1: vendor.address_line1 || "", city: vendor.city || "", postal_code: vendor.postal_code || "", country_code: vendor.country_code || "BE", description: vendor.description || "" }); }}>Annuler</VBtn>
+                  <VBtn small onClick={() => { setEditing(false); if (vendor) setForm({ company_name: vendor.company_name || "", name: vendor.name || "", email: vendor.email || "", phone: vendor.phone || "", vat_number: vendor.vat_number || "", bce_number: (vendor as any).bce_number || "", address_line1: vendor.address_line1 || "", city: vendor.city || "", postal_code: vendor.postal_code || "", country_code: vendor.country_code || "BE", description: vendor.description || "", representative_name: (vendor as any).representative_name || "", representative_role: (vendor as any).representative_role || "" }); }}>Annuler</VBtn>
                   <VBtn small primary icon="Save" onClick={() => updateVendor.mutate(form)}>{updateVendor.isPending ? "..." : "Sauvegarder"}</VBtn>
                 </div>
               )}
@@ -136,6 +144,9 @@ export default function VendorSettings() {
                   { label: "Email", key: "email" },
                   { label: "Téléphone", key: "phone" },
                   { label: "N° TVA", key: "vat_number" },
+                  { label: "N° BCE (sans préfixe BE)", key: "bce_number" },
+                  { label: "Représentant légal (nom complet)", key: "representative_name" },
+                  { label: "Fonction du représentant (ex: Gérant)", key: "representative_role" },
                   { label: "Adresse", key: "address_line1" },
                   { label: "Ville", key: "city" },
                   { label: "Code postal", key: "postal_code" },

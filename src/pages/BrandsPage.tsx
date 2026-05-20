@@ -153,29 +153,35 @@ export default function BrandsPage() {
             )}
           </div>
 
-          {/* Letter anchors — hidden when searching */}
+          {/* Letter anchors — hidden when searching, disabled while loading/searching */}
           {!search && (
-            <div className="flex gap-1.5 mb-8 flex-wrap">
+            <div
+              className="flex gap-1.5 mb-8 flex-wrap"
+              aria-busy={isLoading || isSearching}
+            >
               {LETTERS.map(l => {
                 const available = availableLetters.has(l);
                 const isActive = l === activeLetter;
+                const lockedByLoading = isLoading || isSearching;
+                const isDisabled = !available || lockedByLoading;
                 return (
                   <button
                     key={l}
                     onClick={() => {
-                      if (available) {
+                      if (available && !lockedByLoading) {
                         setActiveLetter(l);
                         listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
                       }
                     }}
-                    disabled={!available}
+                    disabled={isDisabled}
+                    aria-disabled={isDisabled}
                     className={`w-8 h-8 rounded-full text-sm font-medium flex items-center justify-center transition-colors ${
                       isActive
                         ? "bg-foreground text-background"
                         : available
                           ? "border border-border text-muted-foreground hover:border-foreground hover:text-foreground"
                           : "text-muted-foreground/30 cursor-default"
-                    }`}
+                    } ${lockedByLoading ? "opacity-50 cursor-wait pointer-events-none" : ""}`}
                   >
                     {l}
                   </button>
@@ -183,6 +189,7 @@ export default function BrandsPage() {
               })}
             </div>
           )}
+
 
           {/* Brand list */}
           <div ref={listRef}>

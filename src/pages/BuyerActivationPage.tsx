@@ -182,11 +182,16 @@ export default function BuyerActivationPage() {
         .updateUser({ data: { onboarding_buyer_profile: profile, has_buyer_account: true } })
         .catch(() => {});
 
-      // ReStock opt-in (non-blocking)
+      // ReStock opt-in (blocking, idempotent — aligned with OnboardingPage)
       if (restockOptIn) {
-        await supabase
+        const { data: existingRestockBuyer } = await supabase
           .from("restock_buyers")
-          .insert({
+          .select("id")
+          .eq("auth_user_id", user.id)
+          .maybeSingle();
+
+        if (!existingRestockBuyer) {
+          const { error: restockError } = await supabase.from("restock_buyers").insert({
             auth_user_id: user.id,
             pharmacy_name: prefill.company_name || user.email || "Compte acheteur",
             email: prefill.email,
@@ -194,10 +199,17 @@ export default function BuyerActivationPage() {
             city: prefill.city || null,
             verified_status: "pending",
             interests: [],
-          })
-          .then(({ error }) => {
-            if (error) console.warn("ReStock opt-in skipped:", error.message);
           });
+          if (restockError) {
+            console.error("ReStock buyer insert error:", restockError);
+            toast.error("Inscription ReStock impossible", {
+              description: restockError.message || "Veuillez réessayer ou contacter le support.",
+              duration: 12000,
+            });
+            setSubmitting(false);
+            return;
+          }
+        }
       }
 
       // Notify admins (best-effort)

@@ -942,7 +942,15 @@ export default function OnboardingPage() {
             verified_status: "pending",
             interests: role === "buyer" ? interests : sellerCats,
           });
-          if (restockError) console.warn("ReStock buyer insert warning:", restockError.message);
+          if (restockError) {
+            console.error("ReStock buyer insert error:", restockError);
+            toast.error("Inscription ReStock impossible", {
+              description: restockError.message || "Veuillez réessayer ou contacter le support.",
+              duration: 12000,
+            });
+            setSubmitting(false);
+            return;
+          }
         }
       }
 

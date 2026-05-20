@@ -27,6 +27,7 @@ export default function VendorSettings() {
   const qc = useQueryClient();
   const vendorId = vendor?.id;
   const shippingMode = (vendor as any)?.vendor_shipping_mode ?? "no_shipping";
+  const { data: activeMarginRule } = useVendorActiveMarginRule(vendorId);
 
   // Profile form
   const [form, setForm] = useState({

@@ -191,6 +191,8 @@ export const template = {
     reminderLevel: 2,
     contractVersion: 'v1.0',
     contractUrl: 'https://medikong.pro/vendor/contract',
+    vendorSettingsUrl: 'https://medikong.pro/vendor/settings',
+    buyerActivationUrl: 'https://medikong.pro/compte/activer-acheteur',
   },
 } satisfies TemplateEntry
 

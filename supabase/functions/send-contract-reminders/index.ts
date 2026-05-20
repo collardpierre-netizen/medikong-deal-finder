@@ -118,6 +118,8 @@ Deno.serve(async (req: Request) => {
               reminderLevel: plan.level,
               contractVersion: 'v1.0',
               contractUrl: CONTRACT_URL,
+              vendorSettingsUrl: VENDOR_SETTINGS_URL,
+              buyerActivationUrl: BUYER_ACTIVATION_URL,
             },
           },
         },

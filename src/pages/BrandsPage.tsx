@@ -143,7 +143,13 @@ export default function BrandsPage() {
               </button>
             )}
             {search && (
-              <p className="text-xs text-muted-foreground mt-1.5">{searchResults?.length || 0} résultat{(searchResults?.length || 0) !== 1 ? "s" : ""}</p>
+              <p className="text-xs text-muted-foreground mt-1.5">
+                {!searchActive
+                  ? "Tapez au moins 2 caractères…"
+                  : isSearching
+                    ? "Recherche…"
+                    : `${searchResults?.length || 0} résultat${(searchResults?.length || 0) !== 1 ? "s" : ""}`}
+              </p>
             )}
           </div>
 

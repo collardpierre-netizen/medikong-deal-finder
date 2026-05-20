@@ -30,8 +30,10 @@ export default function VendorSettings() {
   // Profile form
   const [form, setForm] = useState({
     company_name: "", name: "", email: "", phone: "",
-    vat_number: "", address_line1: "", city: "", postal_code: "",
+    vat_number: "", bce_number: "",
+    address_line1: "", city: "", postal_code: "",
     country_code: "BE", description: "",
+    representative_name: "", representative_role: "",
   });
 
   useEffect(() => {

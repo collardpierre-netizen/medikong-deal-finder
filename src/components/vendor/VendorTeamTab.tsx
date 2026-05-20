@@ -148,7 +148,18 @@ export default function VendorTeamTab({ vendor }: Props) {
           throw new Error("Lien d'agenda invalide. Utilise une URL complète (https://…)");
         }
       }
-      const payload = { ...form, booking_url: bookingUrl || null, vendor_id: vendor.id };
+      // Normalise LinkedIn (optionnel)
+      let linkedinUrl = (form.linkedin_url || "").trim();
+      if (linkedinUrl) {
+        if (!/^https?:\/\//i.test(linkedinUrl)) linkedinUrl = "https://" + linkedinUrl;
+        try {
+          const u = new URL(linkedinUrl);
+          if (!/^https?:$/.test(u.protocol)) throw new Error("invalid");
+        } catch {
+          throw new Error("Lien LinkedIn invalide. Utilise une URL complète (https://www.linkedin.com/in/…)");
+        }
+      }
+      const payload = { ...form, booking_url: bookingUrl || null, linkedin_url: linkedinUrl || null, vendor_id: vendor.id };
       if (editing) {
         const { error } = await supabase.from("vendor_delegates" as any).update(payload as any).eq("id", editing.id);
         if (error) throw error;

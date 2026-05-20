@@ -937,30 +937,79 @@ const EditMappingDialog = ({
 const ResolveManufacturersButton = ({ onDone }: { onDone: () => void }) => {
   const [open, setOpen] = useState(false);
   const [dryRun, setDryRun] = useState<any>(null);
+  const [jobLogId, setJobLogId] = useState<string | null>(null);
+  const [progress, setProgress] = useState<{ current: number; total: number; message: string } | null>(null);
+  const [finalResult, setFinalResult] = useState<any>(null);
 
-  const run = useMutation({
-    mutationFn: async (dry: boolean) => {
+  // Dry-run: cheap, runs directly via RPC (LIMIT null → returns counts but rolls back).
+  const dryRunMutation = useMutation({
+    mutationFn: async () => {
       const { data, error } = await supabase.rpc("resolve_product_manufacturers", {
-        _dry_run: dry,
+        _dry_run: true,
         _limit: null,
       });
       if (error) throw error;
       return data as any;
     },
-    onSuccess: (data, dry) => {
-      if (dry) {
-        setDryRun(data);
-      } else {
-        toast.success(
-          `Fabricants résolus : ${data?.resolved_total ?? 0} (brand→mfr ${data?.via_brand_manufacturer ?? 0}, supplier ${data?.via_supplier_name ?? 0}, dict ${data?.via_brand_dictionary ?? 0})`
-        );
-        setOpen(false);
-        setDryRun(null);
-        onDone();
-      }
+    onSuccess: (data) => setDryRun(data),
+    onError: (e: any) => toast.error(e.message || "Erreur"),
+  });
+
+  // Real run: delegated to the edge function (batches of 2000, max 50 iterations).
+  const runJob = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("resolve-manufacturers-batch", {
+        body: {},
+      });
+      if (error) throw error;
+      return data as any;
+    },
+    onSuccess: (data) => {
+      setFinalResult(data);
+      toast.success(
+        `Fabricants résolus : ${data?.resolved_total ?? 0} en ${data?.iterations ?? 0} itération(s) (brand→mfr ${data?.via_brand_manufacturer ?? 0}, supplier ${data?.via_supplier_name ?? 0}, dict ${data?.via_brand_dictionary ?? 0})`
+      );
+      onDone();
     },
     onError: (e: any) => toast.error(e.message || "Erreur"),
   });
+
+  // Poll sync_logs for progress while the edge function runs.
+  useEffect(() => {
+    if (!runJob.isPending) return;
+    const interval = setInterval(async () => {
+      const { data } = await supabase
+        .from("sync_logs")
+        .select("id, progress_current, progress_total, progress_message, status")
+        .eq("sync_type", "manual")
+        .order("started_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        setJobLogId(data.id);
+        setProgress({
+          current: data.progress_current ?? 0,
+          total: data.progress_total ?? 0,
+          message: data.progress_message ?? "",
+        });
+      }
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [runJob.isPending]);
+
+  const close = () => {
+    if (runJob.isPending) return;
+    setOpen(false);
+    setDryRun(null);
+    setProgress(null);
+    setFinalResult(null);
+    setJobLogId(null);
+  };
+
+  const pct =
+    progress && progress.total > 0
+      ? Math.min(100, Math.round((progress.current / progress.total) * 100))
+      : null;
 
   return (
     <>
@@ -970,30 +1019,35 @@ const ResolveManufacturersButton = ({ onDone }: { onDone: () => void }) => {
         onClick={() => {
           setOpen(true);
           setDryRun(null);
-          run.mutate(true);
+          setFinalResult(null);
+          setProgress(null);
+          dryRunMutation.mutate();
         }}
         className="bg-mk-blue hover:bg-mk-blue/90"
       >
         🏭 Résoudre fabricants
       </Button>
-      <Dialog open={open} onOpenChange={(o) => !o && !run.isPending && setOpen(false)}>
+      <Dialog open={open} onOpenChange={(o) => !o && close()}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Résoudre les fabricants manquants</DialogTitle>
             <DialogDescription className="text-xs">
               Complète <code>manufacturer_id</code> via 3 sources : (1) marque
               déjà associée à un fabricant, (2) fournisseur APB/Febelco du
-              market_prices, (3) dictionnaire marque→fabricant. Les produits
-              validés manuellement sont ignorés.
+              market_prices, (3) dictionnaire marque→fabricant. Job batché côté
+              serveur (2 000 produits/itération, max 50 itérations par run).
+              Les produits validés manuellement sont ignorés.
             </DialogDescription>
           </DialogHeader>
-          {run.isPending && !dryRun && (
+
+          {dryRunMutation.isPending && !dryRun && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="w-4 h-4 animate-spin" />
               Simulation en cours…
             </div>
           )}
-          {dryRun && (
+
+          {dryRun && !runJob.isPending && !finalResult && (
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>Produits sans fabricant (avant)</span>
@@ -1023,17 +1077,72 @@ const ResolveManufacturersButton = ({ onDone }: { onDone: () => void }) => {
               </div>
             </div>
           )}
+
+          {runJob.isPending && (
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Job en cours…
+              </div>
+              {progress && (
+                <>
+                  <div className="text-xs text-muted-foreground">{progress.message}</div>
+                  {pct !== null && (
+                    <div className="w-full h-2 rounded-full bg-secondary overflow-hidden">
+                      <div
+                        className="h-full bg-primary transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  )}
+                  <div className="flex justify-between text-xs">
+                    <span>Résolus cumul</span>
+                    <strong>{progress.current.toLocaleString("fr-BE")}</strong>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {finalResult && (
+            <div className="space-y-2 text-sm">
+              <div className="text-xs text-muted-foreground">
+                Terminé ({finalResult.stopped_reason}) en {finalResult.iterations} itération(s)
+              </div>
+              <div className="flex justify-between border-t pt-2">
+                <span>Total résolu</span>
+                <Badge variant="default">
+                  {(finalResult.resolved_total ?? 0).toLocaleString("fr-BE")}
+                </Badge>
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>via marque → fabricant</span>
+                <span>{finalResult.via_brand_manufacturer ?? 0}</span>
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>via supplier_name</span>
+                <span>{finalResult.via_supplier_name ?? 0}</span>
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>via dictionnaire</span>
+                <span>{finalResult.via_brand_dictionary ?? 0}</span>
+              </div>
+            </div>
+          )}
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={run.isPending}>
-              Annuler
+            <Button variant="outline" onClick={close} disabled={runJob.isPending}>
+              {finalResult ? "Fermer" : "Annuler"}
             </Button>
-            <Button
-              disabled={!dryRun || run.isPending}
-              onClick={() => run.mutate(false)}
-            >
-              {run.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Lancer le job
-            </Button>
+            {!finalResult && (
+              <Button
+                disabled={!dryRun || runJob.isPending || dryRunMutation.isPending}
+                onClick={() => runJob.mutate()}
+              >
+                {runJob.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Lancer le job (batch)
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

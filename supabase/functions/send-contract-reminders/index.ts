@@ -13,6 +13,8 @@ const corsHeaders = {
 
 const SITE_URL = 'https://medikong.pro'
 const CONTRACT_URL = `${SITE_URL}/vendor/contract`
+const VENDOR_SETTINGS_URL = `${SITE_URL}/vendor/settings`
+const BUYER_ACTIVATION_URL = `${SITE_URL}/compte/activer-acheteur`
 
 interface VendorRow {
   id: string

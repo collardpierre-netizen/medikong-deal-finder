@@ -141,6 +141,12 @@ export default function BuyerActivationPage() {
       toast.error("Sélectionnez votre profil acheteur");
       return;
     }
+    if (!draftValid) {
+      toast.error("Complétez votre adresse", {
+        description: "Rue, code postal et ville sont obligatoires (le « 0000 » par défaut n'est plus accepté).",
+      });
+      return;
+    }
     setSubmitting(true);
     try {
       // Map professional profile → customer_type enum (pharmacy|hospital|clinic|lab|other).

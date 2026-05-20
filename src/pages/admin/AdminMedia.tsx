@@ -467,6 +467,9 @@ function AssetRow({ asset, onChanged }: { asset: any; onChanged: () => void }) {
   const [active, setActive] = useState<boolean>(asset.is_active);
   const [thumbUrl, setThumbUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [replacingThumb, setReplacingThumb] = useState(false);
+  const replaceThumbRef = useRef<HTMLInputElement>(null);
+
 
   useEffect(() => {
     let cancelled = false;

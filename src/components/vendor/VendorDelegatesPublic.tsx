@@ -244,7 +244,7 @@ export default function VendorDelegatesPublic({ vendorId }: Props) {
   );
 
   return (
-    <div className="bg-card border border-border rounded-2xl shadow-sm p-5">
+    <div className="bg-card border border-border rounded-2xl shadow-sm p-4 sm:p-5 overflow-hidden">
       <div className="flex items-center justify-between gap-2 mb-4">
         <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
           {top.length > 1 ? "Vos délégués" : "Votre délégué"}

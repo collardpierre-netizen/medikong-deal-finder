@@ -4,6 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCountry } from "@/contexts/CountryContext";
 import { Mail, Phone, CalendarDays, MapPin, User as UserIcon, Lock, Star } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 interface Props {
   vendorId: string;

@@ -218,10 +218,24 @@ export default function BrandsPage() {
                   ))}
                 </div>
               ) : searchResults.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Search className="w-10 h-10 mx-auto mb-2 opacity-40" />
-                  <p className="text-sm">Aucune marque trouvée pour « {search} »</p>
+                <div className="text-center py-12 text-muted-foreground flex flex-col items-center">
+                  <Search className="w-10 h-10 mb-3 opacity-40" />
+                  <p className="text-base font-medium text-foreground mb-1">
+                    Aucune marque trouvée
+                  </p>
+                  <p className="text-sm mb-4">
+                    Aucun résultat pour «&nbsp;{search}&nbsp;». Vérifiez l'orthographe ou essayez un autre mot-clé.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg border border-border bg-background text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                  >
+                    <X size={14} />
+                    Effacer la recherche
+                  </button>
                 </div>
+
               ) : (
                 Object.entries(searchGrouped || {}).sort().map(([letter, list]) => (
                   <div key={letter} className="mb-6">

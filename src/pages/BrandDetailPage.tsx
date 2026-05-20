@@ -158,6 +158,27 @@ export default function BrandDetailPage() {
     },
   });
 
+  // Fallback : marques de la même catégorie principale, pour suggérer un rebond
+  // quand la page marque n'a aucun produit (ou aucun produit pour le filtre actif).
+  const { data: categoryBrands = [] } = useQuery({
+    queryKey: ["brand-category-suggestions", brandData?.main_category, brandData?.slug],
+    enabled: !!brandData?.main_category && !!brandData?.slug,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("brands")
+        .select("name, slug, product_count, logo_url")
+        .eq("is_active", true)
+        .eq("main_category", brandData!.main_category as string)
+        .neq("slug", brandData!.slug)
+        .gt("product_count", 0)
+        .order("product_count", { ascending: false })
+        .limit(8);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+
   const { data: catChips = [] } = useQuery({
     queryKey: ["brand-category-chips", brandData?.id],
     enabled: !!brandData?.id,
@@ -381,6 +402,9 @@ export default function BrandDetailPage() {
           <div className="flex-1 min-w-0 overflow-hidden">
             {(() => {
               const filtered = products;
+              const suggestions = [...siblingBrands, ...categoryBrands]
+                .filter((b, i, arr) => arr.findIndex(x => x.slug === b.slug) === i)
+                .slice(0, 6);
               return (
                 <>
                   <div className="flex items-center justify-between mb-5 gap-3">
@@ -390,7 +414,60 @@ export default function BrandDetailPage() {
                       <CatalogViewToggle view={view} setView={setView} />
                     </div>
                   </div>
-                  {view === "trivago" ? (
+                  {filtered.length === 0 ? (
+                    <div
+                      role="status"
+                      aria-live="polite"
+                      className="border border-dashed border-mk-line rounded-xl p-6 md:p-10 text-center bg-white"
+                    >
+                      <div className="mx-auto w-12 h-12 rounded-full bg-mk-alt flex items-center justify-center mb-3">
+                        <Store size={20} className="text-mk-sec" aria-hidden="true" />
+                      </div>
+                      <h3 className="text-base md:text-lg font-semibold text-mk-navy mb-1">
+                        Aucun produit {brand.name} disponible{activeCat ? ` dans « ${activeCat} »` : ""} pour le moment
+                      </h3>
+                      <p className="text-sm text-mk-sec mb-5 max-w-md mx-auto">
+                        {activeCat
+                          ? "Essayez de retirer le filtre catégorie, ou explorez des marques similaires ci-dessous."
+                          : "Cette marque n'a pas encore de référence active dans votre pays. Voici des marques similaires qui pourraient vous intéresser."}
+                      </p>
+                      <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
+                        {activeCat && (
+                          <button
+                            onClick={() => setActiveCat(null)}
+                            className="text-sm border border-mk-line rounded-full px-4 py-1.5 text-mk-sec hover:border-mk-blue hover:text-mk-blue transition-colors"
+                          >
+                            Retirer le filtre catégorie
+                          </button>
+                        )}
+                        <Link
+                          to="/catalogue"
+                          className="text-sm bg-mk-navy text-white rounded-full px-4 py-1.5 hover:bg-mk-blue transition-colors"
+                        >
+                          Parcourir tout le catalogue
+                        </Link>
+                      </div>
+                      {suggestions.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-mk-line">
+                          <p className="text-xs uppercase tracking-wide text-mk-ter mb-3">Marques similaires</p>
+                          <div className="flex flex-wrap items-center justify-center gap-2">
+                            {suggestions.map(b => (
+                              <Link
+                                key={b.slug}
+                                to={`/marques/${b.slug}`}
+                                className="border border-mk-line rounded-full px-4 py-1.5 text-sm text-mk-sec hover:border-mk-blue hover:text-mk-blue transition-colors"
+                              >
+                                {b.name}
+                                {typeof b.product_count === "number" && b.product_count > 0 && (
+                                  <span className="text-mk-ter ml-1">({b.product_count})</span>
+                                )}
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : view === "trivago" ? (
                     <div className="space-y-3">
                       {filtered.map((p) => (
                         <SearchTrivagoCard key={p.id} product={p} />
@@ -405,6 +482,7 @@ export default function BrandDetailPage() {
               );
             })()}
           </div>
+
         </div>
       </div>
     </Layout>

@@ -345,10 +345,11 @@ function UploadCard({
           </div>
           <div>
             <Label>Saison</Label>
-            <Select value={season} onValueChange={setSeason}>
+            <Select value={season || "_none_"} onValueChange={(v) => setSeason(v === "_none_" ? "" : v)}>
               <SelectTrigger><SelectValue placeholder="Aucune" /></SelectTrigger>
               <SelectContent>
-                {SEASONS.map((s) => <SelectItem key={s.value || "none"} value={s.value || "none"}>{s.label}</SelectItem>)}
+                <SelectItem value="_none_">Aucune</SelectItem>
+                {SEASONS.filter((s) => s.value).map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

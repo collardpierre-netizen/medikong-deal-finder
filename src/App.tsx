@@ -477,6 +477,7 @@ const App = () => (
               <Route path="cms/home/marques" element={<LP><AdminCmsHomeBrands /></LP>} />
               <Route path="cms/home/produits" element={<LP><AdminCmsHomeProducts /></LP>} />
               <Route path="cms/home/comparaison" element={<LP><AdminCmsHomeShowcase /></LP>} />
+              <Route path="media" element={<LP><AdminMedia /></LP>} />
               <Route path="cms/partenaires-invest" element={<LP><AdminCmsPartnerLogos /></LP>} />
               <Route path="categories/non-mappees" element={<LP><AdminUnmappedCategories /></LP>} />
               <Route path="sourcing/pipeline" element={<LP><AdminSourcingPipeline /></LP>} />

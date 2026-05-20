@@ -45,16 +45,49 @@ export default function VendorContractPage() {
   const contractVendorData = useMemo<ContractVendorData | null>(() => {
     if (!vendor) return null;
     const v = vendor as Record<string, unknown>;
+
+    // En Belgique, le numéro d'entreprise (BCE) correspond aux chiffres du
+    // numéro de TVA (format `BExxxx.xxx.xxx`). On dérive donc le BCE depuis
+    // `vat_number` quand un champ `bce_number` dédié n'existe pas en DB.
+    // Cela évite que Zod côté serveur reçoive `bce: null` et renvoie un 400.
+    const rawVat = (v.vat_number as string | null) || null;
+    const rawBce = (v.bce_number as string | null) || null;
+    const derivedBce =
+      rawBce ||
+      (rawVat
+        ? rawVat
+            .replace(/^BE\s*/i, "")
+            .replace(/\s+/g, "")
+            .trim() || null
+        : null);
+
+    // Adresse postale : les colonnes DB sont `address_line1` / `address_line2`
+    // (sans underscore avant le chiffre). Le code précédent lisait
+    // `address_line_1`, toujours `undefined`, ce qui produisait `address: null`.
+    const addressParts = [
+      v.address_line1 ?? v.address_line_1,
+      v.address_line2 ?? v.address_line_2,
+      v.postal_code,
+      v.city,
+    ].filter((p) => typeof p === "string" && p.trim().length > 0);
+    const address = addressParts.length > 0 ? addressParts.join(", ") : null;
+
+    // Représentant légal : aucune colonne dédiée en DB → on retombe sur
+    // `contact_name` puis `contact_person` puis le nom commercial du vendor.
+    const representativeName =
+      (v.representative_name as string) ||
+      (v.contact_name as string) ||
+      (v.contact_person as string) ||
+      (v.name as string) ||
+      "";
+
     return {
       company_name: (v.company_name as string) || (v.name as string) || "",
       legal_form: (v.legal_form as string) || null,
-      address: [v.address_line_1, v.postal_code, v.city]
-        .filter(Boolean)
-        .join(", ") || null,
-      bce: (v.bce_number as string) || null,
-      vat: (v.vat_number as string) || null,
-      representative_name:
-        (v.representative_name as string) || (v.name as string) || "",
+      address,
+      bce: derivedBce,
+      vat: rawVat,
+      representative_name: representativeName,
       representative_role: (v.representative_role as string) || null,
       signature_location: (v.city as string) || null,
     };

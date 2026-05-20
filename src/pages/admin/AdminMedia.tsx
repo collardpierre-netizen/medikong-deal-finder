@@ -599,8 +599,24 @@ function AssetRow({ asset, onChanged }: { asset: any; onChanged: () => void }) {
       <TableCell><Switch checked={active} onCheckedChange={setActive} /></TableCell>
       <TableCell>
         <div className="flex gap-1">
+          <input
+            ref={replaceThumbRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={onPickReplacementThumb}
+          />
           <Button size="sm" variant="ghost" onClick={openSigned} title="Ouvrir">
             <ExternalLink className="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => replaceThumbRef.current?.click()}
+            disabled={replacingThumb}
+            title="Remplacer le thumbnail"
+          >
+            {replacingThumb ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
           </Button>
           <Button size="sm" variant="ghost" onClick={save} disabled={!dirty || saving} title="Enregistrer">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
@@ -609,6 +625,7 @@ function AssetRow({ asset, onChanged }: { asset: any; onChanged: () => void }) {
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
         </div>
+
       </TableCell>
     </TableRow>
   );

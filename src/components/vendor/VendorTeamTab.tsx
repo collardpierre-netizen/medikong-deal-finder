@@ -490,6 +490,11 @@ export default function VendorTeamTab({ vendor }: Props) {
                         <CalendarDays size={11} />Prendre rendez-vous
                       </a>
                     )}
+                    {d.linkedin_url && (
+                      <a href={d.linkedin_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[#1B5BDA] hover:underline truncate">
+                        <Linkedin size={11} />LinkedIn
+                      </a>
+                    )}
                   </div>
 
                   {(d.country_codes.length > 0 || d.regions.length > 0) && (

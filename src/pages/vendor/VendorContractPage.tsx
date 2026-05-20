@@ -1,11 +1,12 @@
 import { useMemo } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, BookOpen, PenLine, CheckCircle2, RefreshCw } from "lucide-react";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { MandatFacturationFlow } from "@/components/vendor/contract/MandatFacturationFlow";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { CONTRACT_VERSION, type ContractVendorData } from "@/lib/contract/mandat-facturation-template";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 /**
  * Standalone screen mounting the Convention de mandat de facturation flow.
@@ -128,6 +129,52 @@ export default function VendorContractPage() {
           Document légal obligatoire — article 53 §2 du Code TVA belge.
         </p>
       </div>
+
+      {!isSignedCurrent && (
+        <Card className="border-sky-200 bg-sky-50/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-sky-700" />
+              Mini guide — 3 étapes pour signer
+            </CardTitle>
+            <CardDescription>Comptez environ 5 minutes. Vos informations légales sont pré-remplies.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <ol className="space-y-3 text-sm">
+              <li className="flex items-start gap-3">
+                <div className="rounded-full bg-sky-100 text-sky-800 w-6 h-6 flex items-center justify-center text-xs font-semibold shrink-0">1</div>
+                <div>
+                  <p className="font-medium flex items-center gap-1.5"><BookOpen className="w-3.5 h-3.5" /> Lecture du mandat</p>
+                  <p className="text-muted-foreground">Parcourez les clauses (article 53 §2 du Code TVA belge). Vérifiez que vos coordonnées légales et celles du représentant sont exactes.</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="rounded-full bg-sky-100 text-sky-800 w-6 h-6 flex items-center justify-center text-xs font-semibold shrink-0">2</div>
+                <div>
+                  <p className="font-medium flex items-center gap-1.5"><PenLine className="w-3.5 h-3.5" /> Signature électronique</p>
+                  <p className="text-muted-foreground">Cochez les cases d'acceptation, saisissez votre nom et rôle, puis cliquez sur « Signer ». Le PDF est généré et horodaté côté serveur.</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="rounded-full bg-sky-100 text-sky-800 w-6 h-6 flex items-center justify-center text-xs font-semibold shrink-0">3</div>
+                <div>
+                  <p className="font-medium flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" /> Confirmation &amp; archivage</p>
+                  <p className="text-muted-foreground">Vous recevez le PDF signé par email. Il reste consultable à tout moment dans l'onglet « Contrat » de vos paramètres vendeur.</p>
+                </div>
+              </li>
+            </ol>
+
+            <div className="flex items-start gap-2 rounded-md border border-sky-200 bg-white/70 p-3 text-xs text-sky-900">
+              <RefreshCw className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+              <p>
+                <span className="font-medium">Astuce :</span> si la page ne reflète pas votre statut juste après la signature, rafraîchissez-la simplement
+                (<kbd className="px-1 py-0.5 rounded bg-sky-100 border border-sky-300 text-[10px]">Ctrl/Cmd + Shift + R</kbd>).
+                Inutile de vider le cache du navigateur.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <MandatFacturationFlow
         vendorId={vendorId}

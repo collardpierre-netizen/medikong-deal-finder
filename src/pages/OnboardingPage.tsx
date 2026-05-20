@@ -832,36 +832,50 @@ export default function OnboardingPage() {
 
       const cc = countryToCode(country);
 
-      // 4. If seller, create vendor record (upsert to prevent duplicates)
+      // 4. If seller, create vendor record via secure edge function (service_role).
+      //    Bloquant : si ça échoue, on n'affiche PAS "Inscription réussie".
       if (role === "seller") {
-        const slug = (companyName || `${firstName}-${lastName}`)
-          .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-          .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-
-        // Check if vendor already exists for this user
         const { data: existingVendor } = await supabase
           .from("vendors").select("id").eq("auth_user_id", userId).maybeSingle();
 
         if (!existingVendor) {
-          const { error: vendorError } = await supabase.from("vendors").insert({
-            auth_user_id: userId,
-            name: companyName || `${firstName} ${lastName}`,
-            slug,
-            company_name: companyName || null,
-            email,
-            phone: phone || null,
-            vat_number: vatNumber || null,
-            country_code: cc,
-            city: city || null,
-            description: `${businessType ? `Type: ${businessType}. ` : ""}${sellerCats.length > 0 ? `Catégories: ${sellerCats.join(", ")}. ` : ""}${fulfillment ? `Logistique: ${fulfillment}. ` : ""}${leadTime ? `Délai: ${leadTime}.` : ""}`,
-            type: "real",
-            is_active: false,
-            can_manage_offers: true,
-            preferred_language: preferredLang,
-          });
-          if (vendorError) console.warn("Vendor insert warning:", vendorError.message);
+          const { data: srvData, error: srvError } = await supabase.functions.invoke(
+            "self-register-vendor",
+            {
+              body: {
+                company_name: companyName || `${firstName} ${lastName}`,
+                first_name: firstName,
+                last_name: lastName,
+                email,
+                phone: phone || null,
+                vat_number: vatNumber || null,
+                country_code: cc,
+                city: city || null,
+                description: `${businessType ? `Type: ${businessType}. ` : ""}${sellerCats.length > 0 ? `Catégories: ${sellerCats.join(", ")}. ` : ""}${fulfillment ? `Logistique: ${fulfillment}. ` : ""}${leadTime ? `Délai: ${leadTime}.` : ""}`,
+                preferred_language: preferredLang,
+              },
+            },
+          );
+
+          const okPayload = srvData && (srvData as any).ok === true;
+          if (srvError || !okPayload) {
+            const code = (srvData as any)?.code;
+            const msg =
+              (srvData as any)?.error ||
+              srvError?.message ||
+              "Création de votre fiche vendeur impossible.";
+            console.error("self-register-vendor failed:", { code, msg, srvData, srvError });
+            toast.error("Création du compte vendeur impossible", {
+              description: `${msg}${code ? ` (code: ${code})` : ""} — votre compte a bien été créé, contactez le support pour finaliser.`,
+              duration: 12000,
+            });
+            // Stop net : on ne passe pas à l'écran de succès.
+            setSubmitting(false);
+            return;
+          }
         }
       }
+
 
       // 5. If buyer, create customer record (prevent duplicates)
       if (role === "buyer") {

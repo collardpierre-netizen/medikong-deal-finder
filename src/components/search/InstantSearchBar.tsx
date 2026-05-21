@@ -348,8 +348,53 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
 
           {/* No results */}
           {!hasResults && query.trim() && !isLoading && (
-            <div className="px-4 py-6 text-center text-sm text-muted-foreground">
-              Aucun résultat pour « {query} »
+            <div>
+              <div className="px-4 py-4 text-center text-sm text-muted-foreground">
+                Aucun résultat pour « {query} »
+              </div>
+              {suggestions.length > 0 && (
+                <div className="border-t border-border">
+                  <div className="px-4 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider bg-muted/30 flex items-center gap-1.5">
+                    <Sparkles size={12} className="text-primary" />
+                    Vouliez-vous dire ?
+                  </div>
+                  {suggestions.map((b) => (
+                    <button
+                      key={b.id}
+                      onClick={() => {
+                        pushRecentTaxon({ type: "brand", slug: b.slug, name: b.name });
+                        void logSearch({
+                          query: query.trim(),
+                          resultsCount: 0,
+                          clickedType: "brand",
+                          clickedId: b.id,
+                          clickedSlug: b.slug,
+                          source: `${variant}-fuzzy-suggestion`,
+                        });
+                        navigate(`/marques/${b.slug}`);
+                        setIsOpen(false);
+                        setQuery("");
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-accent/50 transition-colors"
+                    >
+                      {b.logo_url ? (
+                        <img src={b.logo_url} alt="" className="w-8 h-8 rounded object-contain bg-muted/20 shrink-0" />
+                      ) : (
+                        <div className="w-8 h-8 rounded bg-muted/20 flex items-center justify-center shrink-0">
+                          <Tag size={14} className="text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium text-foreground truncate">{b.name}</div>
+                        <div className="text-[11px] text-muted-foreground flex items-center gap-2">
+                          {b.product_count > 0 && <span>{b.product_count} produits</span>}
+                          <span className="text-amber-600">~{Math.round((b.similarity ?? 0) * 100)}% similaire</span>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

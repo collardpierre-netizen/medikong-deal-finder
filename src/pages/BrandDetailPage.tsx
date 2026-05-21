@@ -15,6 +15,7 @@ import { BrandFactSheet } from "@/components/brand/BrandFactSheet";
 import { Badge } from "@/components/ui/badge";
 import { useCountry } from "@/contexts/CountryContext";
 import { SocialLinksDisplay } from "@/components/shared/SocialLinks";
+import { MediaGallery } from "@/components/shared/MediaGallery";
 
 
 export default function BrandDetailPage() {

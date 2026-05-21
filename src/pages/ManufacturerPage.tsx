@@ -193,6 +193,9 @@ export default function ManufacturerPage() {
       </div>
 
       <div className="mk-container py-6 md:py-8">
+        {manufacturer?.id && (
+          <MediaGallery owner={{ manufacturerId: manufacturer.id as string }} title={`Médias officiels — ${manufacturer.name}`} />
+        )}
         {/* Vendeurs liés au fabricant — au-dessus de la liste produits */}
         {sellers.length > 0 && (
           <div className="mb-8">

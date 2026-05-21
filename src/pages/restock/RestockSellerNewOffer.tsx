@@ -709,17 +709,25 @@ export default function RestockSellerNewOffer() {
 
   const removeRow = (idx: number) => setRows((prev) => prev.filter((_, i) => i !== idx));
 
-  const uploadPhotos = async (offerId: string, row: OfferRow) => {
-    if (!row.photo_files || row.photo_files.length === 0) return;
+  const uploadPhotos = async (offerId: string, row: OfferRow): Promise<string[]> => {
+    if (!row.photo_files || row.photo_files.length === 0) return [];
+    const urls: string[] = [];
     for (let i = 0; i < row.photo_files.length; i++) {
       const file = row.photo_files[i];
-      const ext = file.name.split(".").pop() || "jpg";
-      const filePath = `${offerId}/${i}.${ext}`;
-      await supabase.storage.from("restock-photos").upload(filePath, file, {
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const filePath = `${offerId}/${Date.now()}-${i}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("restock-photos").upload(filePath, file, {
         contentType: file.type,
         upsert: true,
       });
+      if (upErr) {
+        console.error("[restock] upload photo failed", upErr);
+        continue;
+      }
+      const { data: pub } = supabase.storage.from("restock-photos").getPublicUrl(filePath);
+      if (pub?.publicUrl) urls.push(pub.publicUrl);
     }
+    return urls;
   };
 
   const publishOffers = async () => {

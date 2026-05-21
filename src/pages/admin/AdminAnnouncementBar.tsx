@@ -7,7 +7,9 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Megaphone, Save, Eye, EyeOff, Coins } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Loader2, Megaphone, Save, Eye, EyeOff, Coins, ImageIcon, ChevronRight } from "lucide-react";
+
 
 export default function AdminAnnouncementBar() {
   const { toast } = useToast();
@@ -19,13 +21,20 @@ export default function AdminAnnouncementBar() {
   const [textNl, setTextNl] = useState("");
   const [textEn, setTextEn] = useState("");
   const [textDe, setTextDe] = useState("");
+  // Bandeau partenaire sous galerie médias
+  const [mbEnabled, setMbEnabled] = useState(true);
+  const [mbTitle, setMbTitle] = useState("");
+  const [mbSubtitle, setMbSubtitle] = useState("");
+  const [mbCtaLabel, setMbCtaLabel] = useState("");
+  const [mbCtaUrl, setMbCtaUrl] = useState("");
+
 
   async function load() {
     setLoading(true);
     const { data, error } = await supabase
       .from("site_config")
       .select(
-        "investment_banner_enabled, investment_banner_text, investment_banner_text_nl, investment_banner_text_en, investment_banner_text_de, crowdfunding_enabled"
+        "investment_banner_enabled, investment_banner_text, investment_banner_text_nl, investment_banner_text_en, investment_banner_text_de, crowdfunding_enabled, media_banner_enabled, media_banner_title, media_banner_subtitle, media_banner_cta_label, media_banner_cta_url"
       )
       .eq("id", 1)
       .maybeSingle();
@@ -38,9 +47,15 @@ export default function AdminAnnouncementBar() {
       setTextNl((data as any).investment_banner_text_nl ?? "");
       setTextEn((data as any).investment_banner_text_en ?? "");
       setTextDe((data as any).investment_banner_text_de ?? "");
+      setMbEnabled((data as any).media_banner_enabled ?? true);
+      setMbTitle((data as any).media_banner_title ?? "");
+      setMbSubtitle((data as any).media_banner_subtitle ?? "");
+      setMbCtaLabel((data as any).media_banner_cta_label ?? "");
+      setMbCtaUrl((data as any).media_banner_cta_url ?? "");
     }
     setLoading(false);
   }
+
 
   useEffect(() => {
     load();
@@ -57,7 +72,13 @@ export default function AdminAnnouncementBar() {
         investment_banner_text_en: textEn.trim() || null,
         investment_banner_text_de: textDe.trim() || null,
         crowdfunding_enabled: crowdfundingEnabled,
+        media_banner_enabled: mbEnabled,
+        media_banner_title: mbTitle.trim() || null,
+        media_banner_subtitle: mbSubtitle.trim() || null,
+        media_banner_cta_label: mbCtaLabel.trim() || null,
+        media_banner_cta_url: mbCtaUrl.trim() || null,
       } as any)
+
       .eq("id", 1);
     setSaving(false);
     if (error) {
@@ -180,6 +201,67 @@ export default function AdminAnnouncementBar() {
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ImageIcon className={`h-5 w-5 ${mbEnabled ? "text-green-600" : "text-muted-foreground"}`} />
+            Bandeau partenaire sous la galerie médias
+          </CardTitle>
+          <CardDescription>
+            Affiché sous les médias officiels des fiches marque (<code className="px-1 rounded bg-muted">/marques/:slug</code>) et fabricant (<code className="px-1 rounded bg-muted">/fabricant/:slug</code>). Idéal pour pousser un partenaire sourceur (Balooh, etc.).
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div>
+              <Label htmlFor="mb-enabled" className="text-base font-medium cursor-pointer">Afficher le bandeau</Label>
+              <p className="text-sm text-muted-foreground mt-1">
+                Statut : {mbEnabled ? <span className="text-green-600 font-medium">Visible</span> : <span className="text-muted-foreground font-medium">Masqué</span>}
+              </p>
+            </div>
+            <Switch id="mb-enabled" checked={mbEnabled} onCheckedChange={setMbEnabled} />
+          </div>
+
+          <div className="grid gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Titre</Label>
+              <Input value={mbTitle} onChange={(e) => setMbTitle(e.target.value)} placeholder="Vous cherchez une marque absente du catalogue ?" maxLength={140} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Sous-titre</Label>
+              <Textarea value={mbSubtitle} onChange={(e) => setMbSubtitle(e.target.value)} rows={2} placeholder="Notre partenaire Balooh source pour vous toutes les marques pharma & parapharma — devis sous 24h." maxLength={220} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="space-y-1.5 md:col-span-1">
+                <Label className="text-sm font-medium">Libellé CTA</Label>
+                <Input value={mbCtaLabel} onChange={(e) => setMbCtaLabel(e.target.value)} placeholder="Découvrir Balooh" maxLength={40} />
+              </div>
+              <div className="space-y-1.5 md:col-span-2">
+                <Label className="text-sm font-medium">URL du CTA</Label>
+                <Input value={mbCtaUrl} onChange={(e) => setMbCtaUrl(e.target.value)} placeholder="https://balooh.com/" type="url" />
+              </div>
+            </div>
+          </div>
+
+          {mbEnabled && (mbCtaUrl || mbTitle) && (
+            <div className="rounded-xl border border-mk-line bg-gradient-to-r from-mk-navy via-mk-navy to-mk-blue p-5 text-white">
+              <p className="text-xs text-white/60 uppercase tracking-wide mb-2">Aperçu</p>
+              <div className="flex flex-col md:flex-row md:items-center gap-3">
+                <div className="flex-1">
+                  {mbTitle && <div className="font-bold text-base">{mbTitle}</div>}
+                  {mbSubtitle && <div className="text-sm text-white/80 mt-0.5">{mbSubtitle}</div>}
+                </div>
+                <span className="inline-flex items-center gap-1.5 bg-white text-mk-navy text-sm font-semibold px-4 py-2 rounded-lg shrink-0">
+                  {mbCtaLabel || "En savoir plus"} <ChevronRight size={14} />
+                </span>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+
 
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={load} disabled={saving}>

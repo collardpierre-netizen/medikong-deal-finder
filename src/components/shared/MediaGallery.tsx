@@ -112,6 +112,8 @@ export function MediaGallery({ owner, title = "Médias officiels" }: { owner: Me
         ))}
       </div>
 
+      <MediaPartnerBanner />
+
       <MediaLightbox
         items={data}
         index={openIndex}
@@ -121,6 +123,55 @@ export function MediaGallery({ owner, title = "Médias officiels" }: { owner: Me
     </section>
   );
 }
+
+function MediaPartnerBanner() {
+  const { data } = useQuery({
+    queryKey: ["site-config", "media-banner"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("site_config")
+        .select("media_banner_enabled, media_banner_title, media_banner_subtitle, media_banner_cta_label, media_banner_cta_url")
+        .eq("id", 1)
+        .maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+    staleTime: 5 * 60_000,
+  });
+
+  if (!data || !data.media_banner_enabled || !data.media_banner_cta_url) return null;
+
+  return (
+    <a
+      href={data.media_banner_cta_url}
+      target="_blank"
+      rel="noopener noreferrer sponsored"
+      className="group mt-5 block relative overflow-hidden rounded-xl border border-mk-line bg-gradient-to-r from-mk-navy via-mk-navy to-mk-blue p-5 md:p-6 hover:shadow-lg transition-all"
+    >
+      <div className="absolute inset-0 opacity-10 pointer-events-none" aria-hidden>
+        <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white blur-3xl" />
+        <div className="absolute -left-6 -bottom-12 w-40 h-40 rounded-full bg-mk-blue blur-3xl" />
+      </div>
+      <div className="relative flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+        <div className="flex-1 min-w-0">
+          {data.media_banner_title && (
+            <h3 className="text-white font-bold text-base md:text-lg leading-snug">
+              {data.media_banner_title}
+            </h3>
+          )}
+          {data.media_banner_subtitle && (
+            <p className="text-white/80 text-sm mt-1">{data.media_banner_subtitle}</p>
+          )}
+        </div>
+        <span className="inline-flex items-center gap-2 bg-white text-mk-navy font-semibold text-sm px-4 py-2.5 rounded-lg shrink-0 group-hover:bg-white/95 group-hover:translate-x-0.5 transition-all">
+          {data.media_banner_cta_label || "En savoir plus"}
+          <ChevronRight size={16} />
+        </span>
+      </div>
+    </a>
+  );
+}
+
 
 function MediaCard({ item, onOpen }: { item: MediaItem; onOpen: () => void }) {
   const Icon = TYPE_ICON[item.asset_type];

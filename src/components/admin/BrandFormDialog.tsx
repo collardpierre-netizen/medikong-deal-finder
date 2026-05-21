@@ -225,6 +225,7 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
             {form.logo_url && <img src={form.logo_url} alt="Logo" referrerPolicy="no-referrer" className="mt-2 w-12 h-12 rounded object-contain border border-border bg-white p-1" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
           </div>
           <div><Label className="text-xs">Site web</Label><Input value={form.website} onChange={e => setForm({ ...form, website: e.target.value })} placeholder="https://" /></div>
+          <SocialLinksEditor value={form.social_links} onChange={(next) => setForm({ ...form, social_links: next })} />
           <div><Label className="text-xs">Description (originale)</Label><Textarea rows={2} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
 
           {/* Translation fields */}

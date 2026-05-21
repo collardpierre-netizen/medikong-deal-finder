@@ -99,6 +99,7 @@ export default function AdminFabricants() {
         year_founded: form.year_founded ? parseInt(form.year_founded) : null,
         certifications: form.certifications ? form.certifications.split(",").map((s: string) => s.trim()).filter(Boolean) : [],
         specialties: form.specialties ? form.specialties.split(",").map((s: string) => s.trim()).filter(Boolean) : [],
+        social_links: normalizeSocialLinks(form.social_links),
         is_active: true,
       };
       if (form.id) {

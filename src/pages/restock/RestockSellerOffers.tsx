@@ -28,6 +28,8 @@ interface CompetitorInfo {
 
 export default function RestockSellerOffers() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [editing, setEditing] = useState<any | null>(null);
   const demoOn = isRestockDemoActive();
 
   const { data: offersRaw = [], isLoading } = useQuery({

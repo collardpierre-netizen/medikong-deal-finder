@@ -397,7 +397,7 @@ function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart
 
       {tinderCart.length > 0 && !allSwiped && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2 flex items-center justify-between">
-          <span className="text-xs text-emerald-700"><b>{tinderCart.length}</b> produit{tinderCart.length > 1 ? "s" : ""} · <b>{formatPrice(cartTotal)}</b> HT</span>
+          <span className="text-xs text-emerald-700"><b>{tinderCart.length}</b> produit{tinderCart.length > 1 ? "s" : ""} · <b>{formatPrice(cartTotal)}</b> HT <span className="text-emerald-600/80">(comm. {commissionPct}% incl.)</span></span>
         </div>
       )}
 

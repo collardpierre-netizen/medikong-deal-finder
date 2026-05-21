@@ -1082,7 +1082,18 @@ export default function RestockOpportunities() {
                   ) : (
                     <p className="text-sm text-muted-foreground">{maxQty} × {formatPrice(confirmTarget.price_ht || 0)} HT</p>
                   )}
-                  <p className="text-sm font-bold text-primary">Total : {formatPrice((confirmTarget.price_ht || 0) * buyQuantity)} HT</p>
+                  {(() => {
+                    const qtyForTotal = isPartial ? buyQuantity : maxQty;
+                    const subtotal = (confirmTarget.price_ht || 0) * qtyForTotal;
+                    const commission = subtotal * (commissionPct / 100);
+                    return (
+                      <div className="border-t border-border pt-2 mt-1 space-y-0.5">
+                        <div className="flex justify-between text-xs text-muted-foreground"><span>Sous-total HT</span><span>{formatPrice(subtotal)}</span></div>
+                        <div className="flex justify-between text-xs text-muted-foreground"><span>+ Commission MediKong ({commissionPct}%)</span><span>{formatPrice(commission)}</span></div>
+                        <div className="flex justify-between text-sm font-bold text-primary pt-1 border-t border-border"><span>Total à payer HT</span><span>{formatPrice(subtotal + commission)}</span></div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             );

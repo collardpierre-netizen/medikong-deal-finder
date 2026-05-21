@@ -18944,6 +18944,23 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_search_brands_fuzzy: {
+        Args: { _limit?: number; _q: string }
+        Returns: {
+          country_of_origin: string
+          description: string
+          id: string
+          is_active: boolean
+          is_featured: boolean
+          logo_url: string
+          match_type: string
+          name: string
+          product_count: number
+          similarity: number
+          slug: string
+          website_url: string
+        }[]
+      }
       admin_search_kpis: { Args: { _days?: number }; Returns: Json }
       admin_search_top_queries: {
         Args: { _days?: number; _limit?: number }
@@ -19211,6 +19228,7 @@ export type Database = {
         Args: { _name: string }
         Returns: number
       }
+      f_unaccent: { Args: { "": string }; Returns: string }
       fanout_order_to_vendors: {
         Args: { _order_id: string }
         Returns: {

@@ -100,54 +100,91 @@ const AdminMarques = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {brandsData.filter(b => !search || b.name.toLowerCase().includes(search.toLowerCase())).map((b) => (
-                <TableRow key={b.id} className="cursor-pointer hover:bg-blue-50/50"
-                  onClick={() => setSelectedBrand(b)}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {b.logo_url ? <img src={b.logo_url} alt="" referrerPolicy="no-referrer" className="w-7 h-7 rounded border object-contain bg-white p-0.5" style={{ borderColor: "#E2E8F0" }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <Tag size={14} className="text-muted-foreground" />}
-                      <span className="text-[12px] font-semibold" style={{ color: "#1D2530" }}>{b.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-[11px] text-right" style={{ color: "#616B7C" }}>{b.product_count || 0}</TableCell>
-                  <TableCell>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); toggleFeatured(b); }}
-                      className="inline-flex items-center gap-1 text-[10px] font-bold rounded px-1.5 py-0.5 hover:bg-amber-50 transition-colors"
-                      title={b.is_featured ? "Retirer du carrousel home" : "Épingler dans le carrousel home"}
-                    >
-                      <Star size={12} className={b.is_featured ? "fill-amber-500 text-amber-500" : "text-muted-foreground"} />
-                      <span className={b.is_featured ? "text-amber-700" : "text-muted-foreground"}>
-                        {b.is_featured ? "Featured" : "Standard"}
-                      </span>
-                    </button>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="text-[10px] font-bold" style={{
-                      backgroundColor: b.is_active ? "#ECFDF5" : "#FEF2F2",
-                      color: b.is_active ? "#059669" : "#EF4444",
-                      borderColor: "transparent",
-                    }}>
-                      {b.is_active ? "Actif" : "Inactif"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="sm" className="text-[11px] h-7" onClick={(e) => { e.stopPropagation(); setEditBrand(b); setBrandDialogOpen(true); }}>Éditer</Button>
-                      <Button variant="ghost" size="sm" className="text-[11px] h-7 px-1.5" asChild title="Transparence">
-                        <Link to={`/admin/marques/${b.slug}/edit`} onClick={(e) => e.stopPropagation()}>
-                          <Shield size={12} className="text-emerald-600" />
-                        </Link>
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-[11px] h-7 px-1.5" onClick={(e) => { e.stopPropagation(); window.open(`/marques/${b.slug}`, '_blank'); }} title="Page publique">
-                        <ExternalLink size={12} />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {(() => {
+                const rows: any[] = brandsData as any[];
+                const hasSearch = !!search.trim();
+                const exactOrSub = hasSearch
+                  ? rows.filter((b) => b.match_type === "exact" || b.match_type === "substring")
+                  : rows;
+                const fuzzyOnly = hasSearch ? rows.filter((b) => b.match_type === "fuzzy") : [];
+
+                const renderRow = (b: any, suggestion = false) => (
+                  <TableRow key={b.id} className="cursor-pointer hover:bg-blue-50/50" onClick={() => setSelectedBrand(b)}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {b.logo_url ? <img src={b.logo_url} alt="" referrerPolicy="no-referrer" className="w-7 h-7 rounded border object-contain bg-white p-0.5" style={{ borderColor: "#E2E8F0" }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <Tag size={14} className="text-muted-foreground" />}
+                        <span className="text-[12px] font-semibold" style={{ color: "#1D2530" }}>{b.name}</span>
+                        {suggestion && typeof b.similarity === "number" && (
+                          <span className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
+                            ~{Math.round(b.similarity * 100)}%
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-[11px] text-right" style={{ color: "#616B7C" }}>{b.product_count || 0}</TableCell>
+                    <TableCell>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); toggleFeatured(b); }}
+                        className="inline-flex items-center gap-1 text-[10px] font-bold rounded px-1.5 py-0.5 hover:bg-amber-50 transition-colors"
+                        title={b.is_featured ? "Retirer du carrousel home" : "Épingler dans le carrousel home"}
+                      >
+                        <Star size={12} className={b.is_featured ? "fill-amber-500 text-amber-500" : "text-muted-foreground"} />
+                        <span className={b.is_featured ? "text-amber-700" : "text-muted-foreground"}>
+                          {b.is_featured ? "Featured" : "Standard"}
+                        </span>
+                      </button>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-[10px] font-bold" style={{
+                        backgroundColor: b.is_active ? "#ECFDF5" : "#FEF2F2",
+                        color: b.is_active ? "#059669" : "#EF4444",
+                        borderColor: "transparent",
+                      }}>
+                        {b.is_active ? "Actif" : "Inactif"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="sm" className="text-[11px] h-7" onClick={(e) => { e.stopPropagation(); setEditBrand(b); setBrandDialogOpen(true); }}>Éditer</Button>
+                        <Button variant="ghost" size="sm" className="text-[11px] h-7 px-1.5" asChild title="Transparence">
+                          <Link to={`/admin/marques/${b.slug}/edit`} onClick={(e) => e.stopPropagation()}>
+                            <Shield size={12} className="text-emerald-600" />
+                          </Link>
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-[11px] h-7 px-1.5" onClick={(e) => { e.stopPropagation(); window.open(`/marques/${b.slug}`, '_blank'); }} title="Page publique">
+                          <ExternalLink size={12} />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+
+                return (
+                  <>
+                    {exactOrSub.map((b) => renderRow(b))}
+                    {hasSearch && exactOrSub.length === 0 && fuzzyOnly.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-[12px] text-muted-foreground py-8">
+                          Aucune marque trouvée pour « {search} ». Essayez de la créer via « + Marque ».
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {hasSearch && fuzzyOnly.length > 0 && (
+                      <>
+                        <TableRow>
+                          <TableCell colSpan={5} className="bg-amber-50/60 text-[11px] font-semibold text-amber-800 py-2">
+                            Suggestions proches ({fuzzyOnly.length}) — aucune correspondance exacte pour « {search} »
+                          </TableCell>
+                        </TableRow>
+                        {fuzzyOnly.map((b) => renderRow(b, true))}
+                      </>
+                    )}
+                  </>
+                );
+              })()}
             </TableBody>
+
           </Table>
         )}
       </div>

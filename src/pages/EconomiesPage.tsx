@@ -1,9 +1,10 @@
 import { Layout } from "@/components/layout/Layout";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, ShieldCheck, Sparkles, Mail } from "lucide-react";
+import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, ShieldCheck, Sparkles, Mail, UserCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Supplier = "febelco" | "cerp" | "pharma_belgium" | "other";
 type Status = "processing" | "done" | "failed" | "no_match";
@@ -57,11 +58,14 @@ const fmtMoneyStatic = (n: number | null | undefined, locale?: string) =>
 
 export default function EconomiesPage() {
   const { locale } = useMoneyFormat();
+  const { user } = useAuth();
   const fmtMoney = (n: number | null | undefined) => fmtMoneyStatic(n, locale);
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [supplier, setSupplier] = useState<Supplier>("febelco");
   const [file, setFile] = useState<File | null>(null);
   const [identity, setIdentity] = useState({ email: "", pharmacy_name: "", city: "", vat_number: "" });
+  const [identityPrefilled, setIdentityPrefilled] = useState(false);
+  const [editIdentity, setEditIdentity] = useState(false);
   const [consent, setConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [simId, setSimId] = useState<string | null>(null);
@@ -69,6 +73,25 @@ export default function EconomiesPage() {
   const [lines, setLines] = useState<SimulationLine[] | null>(null);
   const [showAllLines, setShowAllLines] = useState(false);
   const pollRef = useRef<number | null>(null);
+
+  // Préremplir l'identité depuis le compte si l'utilisateur est loggé
+  useEffect(() => {
+    if (!user || identityPrefilled) return;
+    (async () => {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("company_name, vat_number")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setIdentity((prev) => ({
+        email: prev.email || user.email || "",
+        pharmacy_name: prev.pharmacy_name || profile?.company_name || "",
+        city: prev.city,
+        vat_number: prev.vat_number || profile?.vat_number || "",
+      }));
+      setIdentityPrefilled(true);
+    })();
+  }, [user, identityPrefilled]);
 
   // Polling
   useEffect(() => {
@@ -256,20 +279,45 @@ export default function EconomiesPage() {
                       <button type="button" onClick={() => { setFile(null); setStep(2); }} className="text-xs text-mk-blue hover:underline">changer</button>
                     </div>
                   )}
-                  <div className="grid md:grid-cols-2 gap-3">
-                    <input required type="email" placeholder="Email professionnel *"
-                      value={identity.email} onChange={(e) => setIdentity({ ...identity, email: e.target.value })}
-                      className="border border-mk-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-mk-blue" />
-                    <input type="text" placeholder="Nom de la pharmacie"
-                      value={identity.pharmacy_name} onChange={(e) => setIdentity({ ...identity, pharmacy_name: e.target.value })}
-                      className="border border-mk-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-mk-blue" />
-                    <input type="text" placeholder="Ville"
-                      value={identity.city} onChange={(e) => setIdentity({ ...identity, city: e.target.value })}
-                      className="border border-mk-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-mk-blue" />
-                    <input type="text" placeholder="N° TVA (BE...)"
-                      value={identity.vat_number} onChange={(e) => setIdentity({ ...identity, vat_number: e.target.value })}
-                      className="border border-mk-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-mk-blue" />
-                  </div>
+                  {user && !editIdentity ? (
+                    <div className="flex items-start gap-3 bg-mk-alt/30 border border-mk-border rounded-lg p-3">
+                      <UserCircle2 size={18} className="text-mk-blue mt-0.5 shrink-0" />
+                      <div className="flex-1 min-w-0 text-sm">
+                        <div className="font-medium text-mk-navy truncate">
+                          {identity.pharmacy_name || "Votre pharmacie"}
+                        </div>
+                        <div className="text-xs text-mk-text/70 truncate">
+                          {identity.email}
+                          {identity.vat_number ? ` · TVA ${identity.vat_number}` : ""}
+                        </div>
+                        <div className="text-[11px] text-mk-text/50 mt-0.5">
+                          Le rapport sera envoyé à cette adresse.
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setEditIdentity(true)}
+                        className="text-xs text-mk-blue hover:underline shrink-0"
+                      >
+                        modifier
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid md:grid-cols-2 gap-3">
+                      <input required type="email" placeholder="Email professionnel *"
+                        value={identity.email} onChange={(e) => setIdentity({ ...identity, email: e.target.value })}
+                        className="border border-mk-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-mk-blue" />
+                      <input type="text" placeholder="Nom de la pharmacie"
+                        value={identity.pharmacy_name} onChange={(e) => setIdentity({ ...identity, pharmacy_name: e.target.value })}
+                        className="border border-mk-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-mk-blue" />
+                      <input type="text" placeholder="Ville"
+                        value={identity.city} onChange={(e) => setIdentity({ ...identity, city: e.target.value })}
+                        className="border border-mk-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-mk-blue" />
+                      <input type="text" placeholder="N° TVA (BE...)"
+                        value={identity.vat_number} onChange={(e) => setIdentity({ ...identity, vat_number: e.target.value })}
+                        className="border border-mk-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-mk-blue" />
+                    </div>
+                  )}
                   <label className="flex items-start gap-2 text-xs text-mk-text/70 cursor-pointer">
                     <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5" />
                     <span>

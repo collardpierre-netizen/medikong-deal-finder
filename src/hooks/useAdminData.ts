@@ -97,16 +97,25 @@ export const useBrands = (search?: string) =>
     queryKey: ["admin-brands", search?.trim() || ""],
     queryFn: async () => {
       const q = (search || "").trim();
-      let query = supabase.from("brands").select("*");
       if (q) {
-        const esc = q.replace(/[%,]/g, " ");
-        query = query.or(`name.ilike.%${esc}%,slug.ilike.%${esc}%`);
+        // Recherche floue (trigram + unaccent) via RPC admin
+        const { data, error } = await supabase.rpc("admin_search_brands_fuzzy", {
+          _q: q,
+          _limit: 50,
+        });
+        if (error) throw error;
+        return data ?? [];
       }
-      const { data, error } = await query.order("product_count", { ascending: false }).limit(500);
+      const { data, error } = await supabase
+        .from("brands")
+        .select("*")
+        .order("product_count", { ascending: false })
+        .limit(500);
       if (error) throw error;
       return data;
     },
   });
+
 
 export const useAuditLogs = () =>
   useQuery({

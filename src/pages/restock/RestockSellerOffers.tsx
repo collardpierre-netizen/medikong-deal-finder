@@ -216,8 +216,14 @@ export default function RestockSellerOffers() {
                         <Badge className="text-[10px]" style={{ backgroundColor: st.bg, color: st.color }}>{st.label}</Badge>
                       </td>
                       <td className="px-4 py-3">
-                        <Button variant="ghost" size="sm" className="text-[#1C58D9] text-xs gap-1 h-7">
-                          <Eye size={13} /> Voir
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-[#1C58D9] text-xs gap-1 h-7"
+                          onClick={() => setEditing(o)}
+                          disabled={demoOn}
+                        >
+                          <Pencil size={13} /> Éditer
                         </Button>
                       </td>
                     </tr>
@@ -228,6 +234,15 @@ export default function RestockSellerOffers() {
           </div>
         )}
       </div>
+
+      <EditRestockOfferDialog
+        offer={editing}
+        open={!!editing}
+        onOpenChange={(o) => { if (!o) setEditing(null); }}
+        onSaved={() => {
+          queryClient.invalidateQueries({ queryKey: ["restock-seller-offers", user?.id] });
+        }}
+      />
     </div>
   );
 }

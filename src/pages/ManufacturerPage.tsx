@@ -10,6 +10,7 @@ import { CatalogViewToggle } from "@/components/catalog/CatalogViewToggle";
 import type { CatalogView } from "@/hooks/useCatalogViewMode";
 import SearchTrivagoCard from "@/components/search/SearchTrivagoCard";
 import { ProductCard } from "@/components/shared/ProductCard";
+import { mapDbProduct } from "@/hooks/useProducts";
 import { getVendorPublicName } from "@/lib/vendor-display";
 
 const FLAG: Record<string, string> = { BE: "🇧🇪", FR: "🇫🇷", DE: "🇩🇪", NL: "🇳🇱", SE: "🇸🇪", DK: "🇩🇰", GB: "🇬🇧", US: "🇺🇸", CH: "🇨🇭", JP: "🇯🇵" };

@@ -19564,6 +19564,17 @@ export type Database = {
         Args: { _country_code?: string }
         Returns: number
       }
+      public_search_brands_fuzzy: {
+        Args: { _limit?: number; _q: string }
+        Returns: {
+          id: string
+          logo_url: string
+          name: string
+          product_count: number
+          similarity: number
+          slug: string
+        }[]
+      }
       public_verified_vendors_count: { Args: never; Returns: number }
       purge_bulk_deactivation_events: { Args: never; Returns: number }
       read_email_batch: {

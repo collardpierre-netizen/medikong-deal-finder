@@ -216,12 +216,14 @@ function TinderDetailSheet({ offer, onClose, onAddToCart, onCounterOffer }: {
   );
 }
 /* ── Tinder View (inline) ── */
-function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart, tinderDetail, setTinderDetail, tinderCounter, setTinderCounter, tinderCounterPrice, setTinderCounterPrice, tinderCounterQty, setTinderCounterQty, buyer, formatPrice }: any) {
+function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart, tinderDetail, setTinderDetail, tinderCounter, setTinderCounter, tinderCounterPrice, setTinderCounterPrice, tinderCounterQty, setTinderCounterQty, buyer, formatPrice, commissionPct = 5 }: any) {
   const remaining = offers.slice(tinderIdx);
   const currentOffer = remaining[0];
   const allSwiped = tinderIdx >= offers.length;
   const progress = offers.length > 0 ? Math.round((tinderIdx / offers.length) * 100) : 0;
-  const cartTotal = tinderCart.reduce((sum: number, c: any) => sum + (c.price_ht || 0) * (c.qty || c.quantity || 1), 0);
+  const cartSubtotal = tinderCart.reduce((sum: number, c: any) => sum + (c.price_ht || 0) * (c.qty || c.quantity || 1), 0);
+  const cartCommission = cartSubtotal * (commissionPct / 100);
+  const cartTotal = cartSubtotal + cartCommission;
 
   // Full-screen flash feedback
   const [flash, setFlash] = useState<"accept" | "reject" | null>(null);

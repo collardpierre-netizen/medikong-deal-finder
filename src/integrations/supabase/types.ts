@@ -546,6 +546,7 @@ export type Database = {
           proposed_by_vendor_id: string | null
           qogita_qid: string | null
           slug: string
+          social_links: Json
           sources_last_updated: string | null
           subcategories: string[] | null
           submission_approved_at: string | null
@@ -590,6 +591,7 @@ export type Database = {
           proposed_by_vendor_id?: string | null
           qogita_qid?: string | null
           slug: string
+          social_links?: Json
           sources_last_updated?: string | null
           subcategories?: string[] | null
           submission_approved_at?: string | null
@@ -634,6 +636,7 @@ export type Database = {
           proposed_by_vendor_id?: string | null
           qogita_qid?: string | null
           slug?: string
+          social_links?: Json
           sources_last_updated?: string | null
           subcategories?: string[] | null
           submission_approved_at?: string | null
@@ -3812,6 +3815,7 @@ export type Database = {
           proposed_by_vendor_id: string | null
           qogita_qid: string | null
           slug: string
+          social_links: Json
           specialties: string[] | null
           submission_approved_at: string | null
           submission_approved_by: string | null
@@ -3842,6 +3846,7 @@ export type Database = {
           proposed_by_vendor_id?: string | null
           qogita_qid?: string | null
           slug: string
+          social_links?: Json
           specialties?: string[] | null
           submission_approved_at?: string | null
           submission_approved_by?: string | null
@@ -3872,6 +3877,7 @@ export type Database = {
           proposed_by_vendor_id?: string | null
           qogita_qid?: string | null
           slug?: string
+          social_links?: Json
           specialties?: string[] | null
           submission_approved_at?: string | null
           submission_approved_by?: string | null

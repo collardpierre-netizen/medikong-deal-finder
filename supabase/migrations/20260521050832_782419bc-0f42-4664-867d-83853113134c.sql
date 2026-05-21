@@ -1,0 +1,2 @@
+ALTER TABLE public.brands ADD COLUMN IF NOT EXISTS social_links jsonb NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE public.manufacturers ADD COLUMN IF NOT EXISTS social_links jsonb NOT NULL DEFAULT '{}'::jsonb;

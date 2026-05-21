@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MEDIKONG_PLACEHOLDER, isValidProductImage } from "@/lib/image-utils";
+import { formatSellerLocation } from "@/lib/be-postal";
 
 const gradeConfig: Record<string, { label: string; desc: string; color: string; bg: string }> = {
   A: { label: "A — Neuf", desc: "Emballage intact, DLU longue", color: "#00B85C", bg: "#EEFBF4" },
@@ -127,7 +128,7 @@ function SwipeCard({
           <div className="grid grid-cols-2 gap-2 text-[12px] text-muted-foreground">
             <div className="flex items-center gap-1.5"><Box size={13} /><b className="text-foreground">{offer.quantity}</b> unités</div>
             <div className="flex items-center gap-1.5"><Clock size={13} />DLU {offer.dlu ? new Date(offer.dlu).toLocaleDateString("fr-BE", { day: "2-digit", month: "short", year: "numeric" }) : "—"}</div>
-            <div className="flex items-center gap-1.5"><MapPin size={13} />{offer.seller_city || "Belgique"}</div>
+            <div className="flex items-center gap-1.5"><MapPin size={13} />{formatSellerLocation({ city: offer.seller_city, postal_code: offer.seller_postal_code, province: offer.seller_province })}</div>
             <div className="flex items-center gap-1.5">{offer.delivery_condition === "pickup" ? <MapPin size={13} /> : <Truck size={13} />}{offer.delivery_condition === "pickup" ? "Enlèvement" : offer.delivery_condition === "shipping" ? "Livraison" : "Les deux"}</div>
           </div>
         </div>
@@ -186,7 +187,7 @@ function TinderDetailSheet({ offer, onClose, onAddToCart, onCounterOffer }: {
             {[
               { icon: Box, label: "Quantité", value: `${offer.quantity} unités` },
               { icon: Clock, label: "DLU", value: offer.dlu ? new Date(offer.dlu).toLocaleDateString("fr-BE", { day: "2-digit", month: "short", year: "numeric" }) : "—" },
-              { icon: MapPin, label: "Localisation", value: offer.seller_city || "Belgique" },
+              { icon: MapPin, label: "Localisation", value: formatSellerLocation({ city: offer.seller_city, postal_code: offer.seller_postal_code, province: offer.seller_province }) },
               { icon: Truck, label: "Livraison", value: offer.delivery_condition === "pickup" ? "Enlèvement" : offer.delivery_condition === "shipping" ? "Livraison" : "Les deux" },
             ].map((item, i) => (
               <div key={i} className="bg-muted/40 rounded-xl p-3">
@@ -716,7 +717,7 @@ export default function RestockOpportunities() {
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: gc.bg, color: gc.color }} title={gc.desc}>{gc.label}</span>
               <span className="text-xs text-muted-foreground"><b>{offer.quantity}</b> u</span>
               <span className="text-xs text-muted-foreground">DLU {formatDate(offer.dlu)}</span>
-              <span className="text-xs text-muted-foreground flex items-center gap-1"><MapPin size={10} />{offer.seller_city || "BE"}</span>
+              <span className="text-xs text-muted-foreground flex items-center gap-1"><MapPin size={10} />{formatSellerLocation({ city: offer.seller_city, postal_code: offer.seller_postal_code, province: offer.seller_province })}</span>
             </div>
           </div>
           {/* Price + actions */}
@@ -785,7 +786,7 @@ export default function RestockOpportunities() {
           <div className="grid grid-cols-2 gap-1.5 text-xs text-muted-foreground">
             <span className="flex items-center gap-1"><Box size={12} /><b>{offer.quantity}</b> u</span>
             <span className="flex items-center gap-1"><Clock size={12} />DLU {formatDate(offer.dlu)}</span>
-            <span className="flex items-center gap-1"><MapPin size={12} />{offer.seller_city || "BE"}</span>
+            <span className="flex items-center gap-1"><MapPin size={12} />{formatSellerLocation({ city: offer.seller_city, postal_code: offer.seller_postal_code, province: offer.seller_province })}</span>
             <span className="flex items-center gap-1"><DeliveryIcon size={12} />{delivery.label}</span>
           </div>
 

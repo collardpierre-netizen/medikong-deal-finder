@@ -634,9 +634,15 @@ function SellerRegistrationGate({ onRegistered }: { onRegistered: () => void }) 
                 <label className="text-xs font-medium text-[#1E252F] mb-1 block">Pharmacie / Établissement</label>
                 <Input value={pharmacy} onChange={(e) => setPharmacy(e.target.value)} placeholder="Pharmacie du Centre" required className="border-[#D0D5DC]" />
               </div>
-              <div>
-                <label className="text-xs font-medium text-[#1E252F] mb-1 block">Ville</label>
-                <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Bruxelles" required className="border-[#D0D5DC]" />
+              <div className="grid grid-cols-3 gap-2">
+                <div className="col-span-2">
+                  <label className="text-xs font-medium text-[#1E252F] mb-1 block">Ville</label>
+                  <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Bruxelles" required className="border-[#D0D5DC]" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-[#1E252F] mb-1 block">Code postal</label>
+                  <Input value={postalCode} onChange={(e) => setPostalCode(e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="1000" inputMode="numeric" pattern="\d{4}" required className="border-[#D0D5DC]" />
+                </div>
               </div>
             </>
           )}

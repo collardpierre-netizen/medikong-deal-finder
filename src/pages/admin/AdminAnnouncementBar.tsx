@@ -21,6 +21,13 @@ export default function AdminAnnouncementBar() {
   const [textNl, setTextNl] = useState("");
   const [textEn, setTextEn] = useState("");
   const [textDe, setTextDe] = useState("");
+  // Bandeau partenaire sous galerie médias
+  const [mbEnabled, setMbEnabled] = useState(true);
+  const [mbTitle, setMbTitle] = useState("");
+  const [mbSubtitle, setMbSubtitle] = useState("");
+  const [mbCtaLabel, setMbCtaLabel] = useState("");
+  const [mbCtaUrl, setMbCtaUrl] = useState("");
+
 
   async function load() {
     setLoading(true);

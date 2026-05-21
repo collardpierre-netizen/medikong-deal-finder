@@ -774,9 +774,16 @@ export default function RestockSellerNewOffer() {
         toast.error(`Erreur pour ${r.designation}`);
         continue;
       }
-      // Upload photos
+      // Upload photos puis enregistre les URLs publiques sur l'offre
       if (data?.id && r.photo_files && r.photo_files.length > 0) {
-        await uploadPhotos(data.id, r);
+        const urls = await uploadPhotos(data.id, r);
+        if (urls.length > 0) {
+          const { error: photoErr } = await supabase
+            .from("restock_offers")
+            .update({ photos: urls })
+            .eq("id", data.id);
+          if (photoErr) console.error("[restock] save photos urls failed", photoErr);
+        }
       }
     }
 

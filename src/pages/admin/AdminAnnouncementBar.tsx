@@ -72,7 +72,13 @@ export default function AdminAnnouncementBar() {
         investment_banner_text_en: textEn.trim() || null,
         investment_banner_text_de: textDe.trim() || null,
         crowdfunding_enabled: crowdfundingEnabled,
+        media_banner_enabled: mbEnabled,
+        media_banner_title: mbTitle.trim() || null,
+        media_banner_subtitle: mbSubtitle.trim() || null,
+        media_banner_cta_label: mbCtaLabel.trim() || null,
+        media_banner_cta_url: mbCtaUrl.trim() || null,
       } as any)
+
       .eq("id", 1);
     setSaving(false);
     if (error) {

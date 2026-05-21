@@ -34,7 +34,7 @@ export default function AdminAnnouncementBar() {
     const { data, error } = await supabase
       .from("site_config")
       .select(
-        "investment_banner_enabled, investment_banner_text, investment_banner_text_nl, investment_banner_text_en, investment_banner_text_de, crowdfunding_enabled"
+        "investment_banner_enabled, investment_banner_text, investment_banner_text_nl, investment_banner_text_en, investment_banner_text_de, crowdfunding_enabled, media_banner_enabled, media_banner_title, media_banner_subtitle, media_banner_cta_label, media_banner_cta_url"
       )
       .eq("id", 1)
       .maybeSingle();
@@ -47,9 +47,15 @@ export default function AdminAnnouncementBar() {
       setTextNl((data as any).investment_banner_text_nl ?? "");
       setTextEn((data as any).investment_banner_text_en ?? "");
       setTextDe((data as any).investment_banner_text_de ?? "");
+      setMbEnabled((data as any).media_banner_enabled ?? true);
+      setMbTitle((data as any).media_banner_title ?? "");
+      setMbSubtitle((data as any).media_banner_subtitle ?? "");
+      setMbCtaLabel((data as any).media_banner_cta_label ?? "");
+      setMbCtaUrl((data as any).media_banner_cta_url ?? "");
     }
     setLoading(false);
   }
+
 
   useEffect(() => {
     load();

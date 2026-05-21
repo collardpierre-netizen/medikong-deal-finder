@@ -32,9 +32,12 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [suggestions, setSuggestions] = useState<BrandSuggestion[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+
 
   const search = useCallback(async (q: string) => {
     if (!q.trim()) {

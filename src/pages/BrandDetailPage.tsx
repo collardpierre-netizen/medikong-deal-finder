@@ -307,6 +307,7 @@ export default function BrandDetailPage() {
                   <Download size={13} /> Voir les produits
                 </button>
                 <button className="border border-mk-line text-sm px-3 md:px-4 py-2 rounded-md flex items-center gap-1.5 text-mk-sec"><Heart size={13} /> Suivre</button>
+                <SocialLinksDisplay links={(brandData as any)?.social_links} />
               </div>
             </div>
           </div>

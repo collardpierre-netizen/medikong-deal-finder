@@ -43,7 +43,7 @@ function slugify(text: string): string {
   return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
-function mapDbProduct(row: any, offersData?: any[]): Product {
+export function mapDbProduct(row: any, offersData?: any[]): Product {
   const productOffers = offersData?.filter((o: any) => o.product_id === row.id) || [];
   const validImageUrls = getPreferredProductImageUrls([
     ...(Array.isArray(row.image_urls) ? row.image_urls : []),

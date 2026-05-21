@@ -14,6 +14,7 @@ import { getVendorPublicName } from "@/lib/vendor-display";
 import { BrandFactSheet } from "@/components/brand/BrandFactSheet";
 import { Badge } from "@/components/ui/badge";
 import { useCountry } from "@/contexts/CountryContext";
+import { SocialLinksDisplay } from "@/components/shared/SocialLinks";
 
 
 export default function BrandDetailPage() {

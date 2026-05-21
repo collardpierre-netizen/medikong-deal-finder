@@ -725,7 +725,12 @@ export default function RestockSellerNewOffer() {
     if (!user) return;
     setPublishing(true);
     const validRows = rows.filter((r) => r.valid);
-    
+
+    const meta = (user.user_metadata || {}) as any;
+    const sellerCity = meta.city || null;
+    const sellerPostalCode = meta.postal_code || null;
+    const sellerProvince = deriveBeProvince(sellerPostalCode);
+
     for (const r of validRows) {
       const insert: Record<string, any> = {
         seller_id: user.id,
@@ -742,7 +747,11 @@ export default function RestockSellerNewOffer() {
         moq: r.moq,
         lot_size: r.lot_size,
         status: "published",
+        seller_city: sellerCity,
+        seller_postal_code: sellerPostalCode,
+        seller_province: sellerProvince,
       };
+
 
       // Add packaging if provided
       if (r.pieces_per_pack) insert.pieces_per_pack = r.pieces_per_pack;

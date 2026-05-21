@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Film, ImageIcon, Download, Loader2, BookOpen, Megaphone } from "lucide-react";
-import { useState } from "react";
+import { FileText, Film, ImageIcon, Download, Loader2, BookOpen, Megaphone, Share2, X, Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { toast } from "@/hooks/use-toast";
 
 export type MediaOwner = { brandId: string } | { manufacturerId: string };
 
@@ -46,6 +48,16 @@ function formatSize(bytes: number | null): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
 }
 
+function isImageMime(mime: string | null | undefined) {
+  return !!mime && mime.startsWith("image/");
+}
+function isVideoMime(mime: string | null | undefined) {
+  return !!mime && mime.startsWith("video/");
+}
+function isPdfMime(mime: string | null | undefined) {
+  return !!mime && mime.includes("pdf");
+}
+
 export function MediaGallery({ owner, title = "Médias officiels" }: { owner: MediaOwner; title?: string }) {
   const ownerKey = "brandId" in owner ? `brand:${owner.brandId}` : `manufacturer:${owner.manufacturerId}`;
 
@@ -74,6 +86,8 @@ export function MediaGallery({ owner, title = "Médias officiels" }: { owner: Me
     },
   });
 
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
   if (isLoading) {
     return (
       <div className="flex items-center gap-2 text-sm text-mk-sec">
@@ -93,18 +107,24 @@ export function MediaGallery({ owner, title = "Médias officiels" }: { owner: Me
         <span className="text-sm font-normal text-mk-sec">({data.length})</span>
       </h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        {data.map((item) => (
-          <MediaCard key={item.id} item={item} />
+        {data.map((item, i) => (
+          <MediaCard key={item.id} item={item} onOpen={() => setOpenIndex(i)} />
         ))}
       </div>
+
+      <MediaLightbox
+        items={data}
+        index={openIndex}
+        onClose={() => setOpenIndex(null)}
+        onNav={(d) => setOpenIndex((idx) => (idx == null ? idx : (idx + d + data.length) % data.length))}
+      />
     </section>
   );
 }
 
-function MediaCard({ item }: { item: MediaItem }) {
-  const [opening, setOpening] = useState(false);
+function MediaCard({ item, onOpen }: { item: MediaItem; onOpen: () => void }) {
   const Icon = TYPE_ICON[item.asset_type];
-  const isVideo = item.asset_type === "video" || item.mime_type?.startsWith("video/");
+  const isVideo = item.asset_type === "video" || isVideoMime(item.mime_type);
 
   const { data: thumbUrl } = useQuery({
     queryKey: ["media-thumb", item.id],
@@ -120,29 +140,14 @@ function MediaCard({ item }: { item: MediaItem }) {
     staleTime: 45_000,
   });
 
-  async function open() {
-    setOpening(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("get-media-signed-url", {
-        body: { asset_id: item.id },
-      });
-      if (error) throw error;
-      const url = (data as any)?.url;
-      if (url) window.open(url, "_blank", "noopener,noreferrer");
-    } finally {
-      setOpening(false);
-    }
-  }
-
   return (
     <button
-      onClick={open}
-      disabled={opening}
+      onClick={onOpen}
       className="group text-left border border-mk-line rounded-lg overflow-hidden bg-white hover:border-mk-blue hover:shadow-sm transition-all flex flex-col"
     >
       <div className="aspect-[4/3] bg-mk-alt flex items-center justify-center relative overflow-hidden">
         {thumbUrl ? (
-          <img src={thumbUrl} alt={item.title} className="w-full h-full object-cover" loading="lazy" />
+          <img src={thumbUrl} alt={item.title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform" loading="lazy" />
         ) : (
           <Icon size={32} className="text-mk-ter" />
         )}
@@ -161,11 +166,174 @@ function MediaCard({ item }: { item: MediaItem }) {
           <span className="uppercase">{item.language}</span>
           {item.page_count ? <span>· {item.page_count} p.</span> : null}
           {item.file_size_bytes ? <span>· {formatSize(item.file_size_bytes)}</span> : null}
-          <span className="ml-auto inline-flex items-center gap-1 text-mk-blue group-hover:underline">
-            {opening ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />}
-          </span>
         </div>
       </div>
     </button>
+  );
+}
+
+function MediaLightbox({
+  items,
+  index,
+  onClose,
+  onNav,
+}: {
+  items: MediaItem[];
+  index: number | null;
+  onClose: () => void;
+  onNav: (delta: number) => void;
+}) {
+  const open = index !== null;
+  const item = index !== null ? items[index] : null;
+
+  const { data: signed, isLoading } = useQuery({
+    queryKey: ["media-signed", item?.id],
+    enabled: !!item,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("get-media-signed-url", {
+        body: { asset_id: item!.id },
+      });
+      if (error) throw error;
+      return data as { url: string; thumbnail_url?: string | null };
+    },
+    staleTime: 45_000,
+  });
+
+  const url = signed?.url ?? null;
+  const mime = item?.mime_type ?? null;
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") onNav(1);
+      else if (e.key === "ArrowLeft") onNav(-1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onNav]);
+
+  const [copied, setCopied] = useState(false);
+
+  async function handleDownload() {
+    if (!url || !item) return;
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      const objectUrl = URL.createObjectURL(blob);
+      a.href = objectUrl;
+      const ext = (item.file_path.split(".").pop() || "bin").toLowerCase();
+      a.download = `${item.title.replace(/[^\w\-]+/g, "_")}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch {
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+  }
+
+  async function handleShare() {
+    if (!url || !item) return;
+    const shareData = { title: item.title, text: item.description || item.title, url };
+    try {
+      if (typeof navigator !== "undefined" && (navigator as any).share) {
+        await (navigator as any).share(shareData);
+        return;
+      }
+    } catch {/* fallback */}
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      toast({ title: "Lien copié", description: "Le lien de partage a été copié dans le presse-papier." });
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      toast({ title: "Partage indisponible", description: "Impossible de copier le lien." });
+    }
+  }
+
+  const content = useMemo(() => {
+    if (!item) return null;
+    if (isLoading || !url) {
+      return (
+        <div className="flex items-center justify-center h-[60vh] text-white/80">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
+      );
+    }
+    if (isImageMime(mime)) {
+      return <img src={url} alt={item.title} className="max-h-[80vh] max-w-full object-contain mx-auto" />;
+    }
+    if (isVideoMime(mime)) {
+      return <video src={url} controls className="max-h-[80vh] max-w-full mx-auto bg-black" />;
+    }
+    if (isPdfMime(mime)) {
+      return <iframe src={url} title={item.title} className="w-full h-[80vh] bg-white rounded" />;
+    }
+    return (
+      <div className="flex flex-col items-center justify-center h-[40vh] gap-3 text-white">
+        <FileText size={48} className="opacity-70" />
+        <p className="text-sm opacity-80">Aperçu non disponible pour ce format.</p>
+        <button onClick={handleDownload} className="px-4 py-2 rounded bg-white text-mk-navy text-sm font-medium inline-flex items-center gap-2">
+          <Download size={14} /> Télécharger
+        </button>
+      </div>
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item, url, isLoading, mime]);
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-5xl p-0 bg-mk-navy border-none overflow-hidden">
+        {item && (
+          <div className="flex flex-col">
+            <div className="flex items-start justify-between gap-3 p-4 text-white">
+              <div className="min-w-0">
+                <div className="text-xs uppercase tracking-wide opacity-70">{TYPE_LABEL[item.asset_type]} · {item.language}</div>
+                <h3 className="text-base md:text-lg font-bold truncate">{item.title}</h3>
+                {item.description && <p className="text-xs opacity-80 mt-0.5 line-clamp-2">{item.description}</p>}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button onClick={handleShare} className="inline-flex items-center gap-1.5 text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-md">
+                  {copied ? <Check size={13} /> : <Share2 size={13} />} {copied ? "Copié" : "Partager"}
+                </button>
+                <button onClick={handleDownload} className="inline-flex items-center gap-1.5 text-xs bg-white text-mk-navy px-3 py-1.5 rounded-md font-medium hover:bg-white/90">
+                  <Download size={13} /> Télécharger
+                </button>
+                <button onClick={onClose} className="p-1.5 rounded-md hover:bg-white/10" aria-label="Fermer">
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+            <div className="relative bg-black/60 px-2 pb-3">
+              {items.length > 1 && (
+                <>
+                  <button
+                    onClick={() => onNav(-1)}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white"
+                    aria-label="Précédent"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <button
+                    onClick={() => onNav(1)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white"
+                    aria-label="Suivant"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </>
+              )}
+              <div className="min-h-[40vh] flex items-center justify-center">{content}</div>
+              {items.length > 1 && (
+                <div className="text-center text-[11px] text-white/60 mt-2">
+                  {(index ?? 0) + 1} / {items.length}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

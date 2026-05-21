@@ -1,12 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { isRestockDemoActive, demoOffers } from "@/data/restock-demo-mock";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Package, MessageSquare, CheckCircle, DollarSign, Eye, HelpCircle, AlertTriangle, TrendingDown, TrendingUp, Calendar } from "lucide-react";
+import { Package, MessageSquare, CheckCircle, DollarSign, Pencil, HelpCircle, AlertTriangle, TrendingDown, TrendingUp, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { EditRestockOfferDialog } from "@/components/restock/EditRestockOfferDialog";
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
   published: { label: "Publiée", color: "#00B85C", bg: "#EEFBF4" },

@@ -9586,6 +9586,8 @@ export type Database = {
           rejection_reason: string | null
           seller_city: string | null
           seller_id: string
+          seller_postal_code: string | null
+          seller_province: string | null
           status: string
           unit_weight_g: number | null
           updated_at: string
@@ -9623,6 +9625,8 @@ export type Database = {
           rejection_reason?: string | null
           seller_city?: string | null
           seller_id: string
+          seller_postal_code?: string | null
+          seller_province?: string | null
           status?: string
           unit_weight_g?: number | null
           updated_at?: string
@@ -9660,6 +9664,8 @@ export type Database = {
           rejection_reason?: string | null
           seller_city?: string | null
           seller_id?: string
+          seller_postal_code?: string | null
+          seller_province?: string | null
           status?: string
           unit_weight_g?: number | null
           updated_at?: string

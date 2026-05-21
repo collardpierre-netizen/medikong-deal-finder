@@ -556,6 +556,7 @@ function SellerRegistrationGate({ onRegistered }: { onRegistered: () => void }) 
   const [fullName, setFullName] = useState("");
   const [pharmacy, setPharmacy] = useState("");
   const [city, setCity] = useState("");
+  const [postalCode, setPostalCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(false);
 
@@ -569,8 +570,13 @@ function SellerRegistrationGate({ onRegistered }: { onRegistered: () => void }) 
         if (error) throw error;
         toast.success("Connecté !");
       } else {
-        if (!fullName || !pharmacy || !city) {
+        if (!fullName || !pharmacy || !city || !postalCode) {
           toast.error("Veuillez remplir tous les champs");
+          setLoading(false);
+          return;
+        }
+        if (!/^\d{4}$/.test(postalCode.trim())) {
+          toast.error("Code postal belge invalide (4 chiffres)");
           setLoading(false);
           return;
         }
@@ -582,6 +588,7 @@ function SellerRegistrationGate({ onRegistered }: { onRegistered: () => void }) 
               full_name: fullName,
               pharmacy_name: pharmacy,
               city: city,
+              postal_code: postalCode.trim(),
               role: "restock_seller",
             },
             emailRedirectTo: window.location.origin + "/restock/seller/new",
@@ -597,6 +604,7 @@ function SellerRegistrationGate({ onRegistered }: { onRegistered: () => void }) 
       setLoading(false);
     }
   };
+
 
   return (
     <div className="max-w-md mx-auto mt-8" style={{ fontFamily: "'DM Sans', sans-serif" }}>

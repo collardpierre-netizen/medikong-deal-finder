@@ -92,14 +92,17 @@ export const useOrders = () =>
     },
   });
 
-export const useBrands = () =>
+export const useBrands = (search?: string) =>
   useQuery({
-    queryKey: ["admin-brands"],
+    queryKey: ["admin-brands", search?.trim() || ""],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("brands")
-        .select("*")
-        .order("product_count", { ascending: false });
+      const q = (search || "").trim();
+      let query = supabase.from("brands").select("*");
+      if (q) {
+        const esc = q.replace(/[%,]/g, " ");
+        query = query.or(`name.ilike.%${esc}%,slug.ilike.%${esc}%`);
+      }
+      const { data, error } = await query.order("product_count", { ascending: false }).limit(500);
       if (error) throw error;
       return data;
     },

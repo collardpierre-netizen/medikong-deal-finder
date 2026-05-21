@@ -279,20 +279,45 @@ export default function EconomiesPage() {
                       <button type="button" onClick={() => { setFile(null); setStep(2); }} className="text-xs text-mk-blue hover:underline">changer</button>
                     </div>
                   )}
-                  <div className="grid md:grid-cols-2 gap-3">
-                    <input required type="email" placeholder="Email professionnel *"
-                      value={identity.email} onChange={(e) => setIdentity({ ...identity, email: e.target.value })}
-                      className="border border-mk-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-mk-blue" />
-                    <input type="text" placeholder="Nom de la pharmacie"
-                      value={identity.pharmacy_name} onChange={(e) => setIdentity({ ...identity, pharmacy_name: e.target.value })}
-                      className="border border-mk-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-mk-blue" />
-                    <input type="text" placeholder="Ville"
-                      value={identity.city} onChange={(e) => setIdentity({ ...identity, city: e.target.value })}
-                      className="border border-mk-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-mk-blue" />
-                    <input type="text" placeholder="N° TVA (BE...)"
-                      value={identity.vat_number} onChange={(e) => setIdentity({ ...identity, vat_number: e.target.value })}
-                      className="border border-mk-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-mk-blue" />
-                  </div>
+                  {user && !editIdentity ? (
+                    <div className="flex items-start gap-3 bg-mk-alt/30 border border-mk-border rounded-lg p-3">
+                      <UserCircle2 size={18} className="text-mk-blue mt-0.5 shrink-0" />
+                      <div className="flex-1 min-w-0 text-sm">
+                        <div className="font-medium text-mk-navy truncate">
+                          {identity.pharmacy_name || "Votre pharmacie"}
+                        </div>
+                        <div className="text-xs text-mk-text/70 truncate">
+                          {identity.email}
+                          {identity.vat_number ? ` · TVA ${identity.vat_number}` : ""}
+                        </div>
+                        <div className="text-[11px] text-mk-text/50 mt-0.5">
+                          Le rapport sera envoyé à cette adresse.
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setEditIdentity(true)}
+                        className="text-xs text-mk-blue hover:underline shrink-0"
+                      >
+                        modifier
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid md:grid-cols-2 gap-3">
+                      <input required type="email" placeholder="Email professionnel *"
+                        value={identity.email} onChange={(e) => setIdentity({ ...identity, email: e.target.value })}
+                        className="border border-mk-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-mk-blue" />
+                      <input type="text" placeholder="Nom de la pharmacie"
+                        value={identity.pharmacy_name} onChange={(e) => setIdentity({ ...identity, pharmacy_name: e.target.value })}
+                        className="border border-mk-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-mk-blue" />
+                      <input type="text" placeholder="Ville"
+                        value={identity.city} onChange={(e) => setIdentity({ ...identity, city: e.target.value })}
+                        className="border border-mk-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-mk-blue" />
+                      <input type="text" placeholder="N° TVA (BE...)"
+                        value={identity.vat_number} onChange={(e) => setIdentity({ ...identity, vat_number: e.target.value })}
+                        className="border border-mk-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-mk-blue" />
+                    </div>
+                  )}
                   <label className="flex items-start gap-2 text-xs text-mk-text/70 cursor-pointer">
                     <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5" />
                     <span>

@@ -786,7 +786,7 @@ export default function RestockOpportunities() {
           <div className="grid grid-cols-2 gap-1.5 text-xs text-muted-foreground">
             <span className="flex items-center gap-1"><Box size={12} /><b>{offer.quantity}</b> u</span>
             <span className="flex items-center gap-1"><Clock size={12} />DLU {formatDate(offer.dlu)}</span>
-            <span className="flex items-center gap-1"><MapPin size={12} />{offer.seller_city || "BE"}</span>
+            <span className="flex items-center gap-1"><MapPin size={12} />{formatSellerLocation({ city: offer.seller_city, postal_code: offer.seller_postal_code, province: offer.seller_province })}</span>
             <span className="flex items-center gap-1"><DeliveryIcon size={12} />{delivery.label}</span>
           </div>
 

@@ -9575,6 +9575,7 @@ export type Database = {
           packaging_photos: string[] | null
           packs_per_box: number | null
           photo_url: string | null
+          photos: string[]
           pieces_per_pack: number | null
           price_ht: number
           price_ttc: number | null
@@ -9614,6 +9615,7 @@ export type Database = {
           packaging_photos?: string[] | null
           packs_per_box?: number | null
           photo_url?: string | null
+          photos?: string[]
           pieces_per_pack?: number | null
           price_ht: number
           price_ttc?: number | null
@@ -9653,6 +9655,7 @@ export type Database = {
           packaging_photos?: string[] | null
           packs_per_box?: number | null
           photo_url?: string | null
+          photos?: string[]
           pieces_per_pack?: number | null
           price_ht?: number
           price_ttc?: number | null

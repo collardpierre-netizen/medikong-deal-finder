@@ -411,6 +411,7 @@ function ManufacturerFormDialog({ open, onOpenChange, item, onSave, saving }: { 
           <div><Label className="text-xs">Description</Label><Textarea rows={3} value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
           <div><Label className="text-xs">Certifications (virgules)</Label><Input value={form.certifications || ""} onChange={e => setForm({ ...form, certifications: e.target.value })} placeholder="ISO 13485, CE, FDA" /></div>
           <div><Label className="text-xs">Spécialités (virgules)</Label><Input value={form.specialties || ""} onChange={e => setForm({ ...form, specialties: e.target.value })} placeholder="Wound care, Incontinence" /></div>
+          <SocialLinksEditor value={form.social_links || {}} onChange={(next) => setForm({ ...form, social_links: next })} />
         </div>
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>

@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MEDIKONG_PLACEHOLDER, isValidProductImage } from "@/lib/image-utils";
+import { formatSellerLocation } from "@/lib/be-postal";
 
 const gradeConfig: Record<string, { label: string; desc: string; color: string; bg: string }> = {
   A: { label: "A — Neuf", desc: "Emballage intact, DLU longue", color: "#00B85C", bg: "#EEFBF4" },

@@ -7,7 +7,9 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Megaphone, Save, Eye, EyeOff, Coins } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Loader2, Megaphone, Save, Eye, EyeOff, Coins, ImageIcon, ChevronRight } from "lucide-react";
+
 
 export default function AdminAnnouncementBar() {
   const { toast } = useToast();

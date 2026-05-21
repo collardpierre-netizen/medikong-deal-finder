@@ -187,7 +187,7 @@ function TinderDetailSheet({ offer, onClose, onAddToCart, onCounterOffer }: {
             {[
               { icon: Box, label: "Quantité", value: `${offer.quantity} unités` },
               { icon: Clock, label: "DLU", value: offer.dlu ? new Date(offer.dlu).toLocaleDateString("fr-BE", { day: "2-digit", month: "short", year: "numeric" }) : "—" },
-              { icon: MapPin, label: "Localisation", value: offer.seller_city || "Belgique" },
+              { icon: MapPin, label: "Localisation", value: formatSellerLocation({ city: offer.seller_city, postal_code: offer.seller_postal_code, province: offer.seller_province }) },
               { icon: Truck, label: "Livraison", value: offer.delivery_condition === "pickup" ? "Enlèvement" : offer.delivery_condition === "shipping" ? "Livraison" : "Les deux" },
             ].map((item, i) => (
               <div key={i} className="bg-muted/40 rounded-xl p-3">

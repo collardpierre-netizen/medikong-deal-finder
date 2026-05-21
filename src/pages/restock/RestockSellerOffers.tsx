@@ -1,12 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { isRestockDemoActive, demoOffers } from "@/data/restock-demo-mock";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Package, MessageSquare, CheckCircle, DollarSign, Eye, HelpCircle, AlertTriangle, TrendingDown, TrendingUp, Calendar } from "lucide-react";
+import { Package, MessageSquare, CheckCircle, DollarSign, Pencil, HelpCircle, AlertTriangle, TrendingDown, TrendingUp, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { EditRestockOfferDialog } from "@/components/restock/EditRestockOfferDialog";
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
   published: { label: "Publiée", color: "#00B85C", bg: "#EEFBF4" },
@@ -27,6 +28,8 @@ interface CompetitorInfo {
 
 export default function RestockSellerOffers() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [editing, setEditing] = useState<any | null>(null);
   const demoOn = isRestockDemoActive();
 
   const { data: offersRaw = [], isLoading } = useQuery({
@@ -213,8 +216,14 @@ export default function RestockSellerOffers() {
                         <Badge className="text-[10px]" style={{ backgroundColor: st.bg, color: st.color }}>{st.label}</Badge>
                       </td>
                       <td className="px-4 py-3">
-                        <Button variant="ghost" size="sm" className="text-[#1C58D9] text-xs gap-1 h-7">
-                          <Eye size={13} /> Voir
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-[#1C58D9] text-xs gap-1 h-7"
+                          onClick={() => setEditing(o)}
+                          disabled={demoOn}
+                        >
+                          <Pencil size={13} /> Éditer
                         </Button>
                       </td>
                     </tr>
@@ -225,6 +234,15 @@ export default function RestockSellerOffers() {
           </div>
         )}
       </div>
+
+      <EditRestockOfferDialog
+        offer={editing}
+        open={!!editing}
+        onOpenChange={(o) => { if (!o) setEditing(null); }}
+        onSaved={() => {
+          queryClient.invalidateQueries({ queryKey: ["restock-seller-offers", user?.id] });
+        }}
+      />
     </div>
   );
 }

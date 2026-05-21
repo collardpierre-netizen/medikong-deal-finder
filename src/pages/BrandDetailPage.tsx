@@ -323,6 +323,12 @@ export default function BrandDetailPage() {
         </div>
       )}
 
+      {brandData?.id && (
+        <div className="mk-container pt-6 md:pt-8">
+          <MediaGallery owner={{ brandId: brandData.id as string }} title={`Médias officiels — ${brand.name}`} />
+        </div>
+      )}
+
       <div id="brand-products" className="mk-container py-6 md:py-8">
         {/* Vendeurs proposant cette marque — libellé public anonymisé via getVendorPublicName */}
         {brandSellers.length > 0 && (

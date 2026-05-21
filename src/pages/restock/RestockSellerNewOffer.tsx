@@ -222,6 +222,7 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
     let query = supabase
       .from("market_prices")
       .select("ean, cnk, product_name_source, prix_pharmacien, source:market_price_sources(name)")
+      .order("prix_pharmacien", { ascending: false, nullsFirst: false })
       .limit(1);
 
     if (isCnk) {

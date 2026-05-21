@@ -225,12 +225,12 @@ export default function AdminAnnouncementBar() {
 
           <div className="grid gap-3">
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium">Titre</Label>
-              <Input value={mbTitle} onChange={(e) => setMbTitle(e.target.value)} placeholder="Vous cherchez une marque absente du catalogue ?" maxLength={140} />
+              <Label className="text-sm font-medium">Titre (H2)</Label>
+              <Input value={mbTitle} onChange={(e) => setMbTitle(e.target.value)} placeholder="Vendez mieux vos produits grâce aux supports de nos laboratoires et marques partenaires !" maxLength={180} />
             </div>
             <div className="space-y-1.5">
               <Label className="text-sm font-medium">Sous-titre</Label>
-              <Textarea value={mbSubtitle} onChange={(e) => setMbSubtitle(e.target.value)} rows={2} placeholder="Notre partenaire Balooh source pour vous toutes les marques pharma & parapharma — devis sous 24h." maxLength={220} />
+              <Textarea value={mbSubtitle} onChange={(e) => setMbSubtitle(e.target.value)} rows={2} placeholder="Diffusez simplement et rapidement tous vos supports médias grâce à notre partenaire Balooh." maxLength={240} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="space-y-1.5 md:col-span-1">

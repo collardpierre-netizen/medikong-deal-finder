@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Film, ImageIcon, Download, Loader2, BookOpen, Megaphone, Share2, X, Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { FileText, Film, ImageIcon, Download, Loader2, BookOpen, Megaphone, Share2, X, Check, ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+import balaoohLogo from "@/assets/logo-balooh.png";
 
 export type MediaOwner = { brandId: string } | { manufacturerId: string };
 
@@ -146,26 +147,46 @@ function MediaPartnerBanner() {
       href={data.media_banner_cta_url}
       target="_blank"
       rel="noopener noreferrer sponsored"
-      className="group mt-5 block relative overflow-hidden rounded-xl border border-mk-line bg-gradient-to-r from-mk-navy via-mk-navy to-mk-blue p-5 md:p-6 hover:shadow-lg transition-all"
+      className="group mt-5 block relative overflow-hidden rounded-2xl border border-mk-line bg-gradient-to-br from-mk-navy via-mk-navy to-[#0b1e4a] p-5 md:p-7 hover:shadow-xl transition-all"
     >
-      <div className="absolute inset-0 opacity-10 pointer-events-none" aria-hidden>
-        <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white blur-3xl" />
-        <div className="absolute -left-6 -bottom-12 w-40 h-40 rounded-full bg-mk-blue blur-3xl" />
+      {/* Glow décoratif rappel logo Balooh */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden>
+        <div className="absolute -right-16 -top-20 w-72 h-72 rounded-full bg-gradient-to-br from-pink-400/30 via-fuchsia-400/20 to-indigo-400/20 blur-3xl" />
+        <div className="absolute -left-10 -bottom-24 w-72 h-72 rounded-full bg-gradient-to-tr from-amber-300/20 via-rose-300/20 to-violet-400/20 blur-3xl" />
       </div>
-      <div className="relative flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+
+      <div className="relative flex flex-col md:flex-row md:items-center gap-5 md:gap-7">
+        {/* Logo Balooh */}
+        <div className="shrink-0 flex md:block items-center">
+          <img
+            src={balaoohLogo}
+            alt="Balooh"
+            className="h-14 md:h-16 w-auto object-contain drop-shadow-[0_4px_20px_rgba(236,72,153,0.35)]"
+            loading="lazy"
+          />
+        </div>
+
+        {/* Texte */}
         <div className="flex-1 min-w-0">
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/60 mb-1.5">
+            <span className="h-1 w-1 rounded-full bg-fuchsia-400" /> Partenaire officiel · Sponsorisé
+          </span>
           {data.media_banner_title && (
-            <h3 className="text-white font-bold text-base md:text-lg leading-snug">
+            <h3 className="text-white font-bold text-base md:text-xl leading-snug font-display">
               {data.media_banner_title}
             </h3>
           )}
           {data.media_banner_subtitle && (
-            <p className="text-white/80 text-sm mt-1">{data.media_banner_subtitle}</p>
+            <p className="text-white/75 text-sm md:text-[15px] mt-1.5 leading-relaxed">
+              {data.media_banner_subtitle}
+            </p>
           )}
         </div>
-        <span className="inline-flex items-center gap-2 bg-white text-mk-navy font-semibold text-sm px-4 py-2.5 rounded-lg shrink-0 group-hover:bg-white/95 group-hover:translate-x-0.5 transition-all">
-          {data.media_banner_cta_label || "En savoir plus"}
-          <ChevronRight size={16} />
+
+        {/* CTA */}
+        <span className="inline-flex items-center gap-2 bg-white text-mk-navy font-semibold text-sm px-5 py-3 rounded-xl shrink-0 shadow-md group-hover:shadow-lg group-hover:translate-x-0.5 transition-all">
+          {data.media_banner_cta_label || "Découvrir Balooh"}
+          <ArrowUpRight size={16} />
         </span>
       </div>
     </a>

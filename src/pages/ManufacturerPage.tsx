@@ -13,6 +13,7 @@ import { ProductCard } from "@/components/shared/ProductCard";
 import { mapDbProduct } from "@/hooks/useProducts";
 import { getVendorPublicName } from "@/lib/vendor-display";
 import { SocialLinksDisplay } from "@/components/shared/SocialLinks";
+import { MediaGallery } from "@/components/shared/MediaGallery";
 
 const FLAG: Record<string, string> = { BE: "🇧🇪", FR: "🇫🇷", DE: "🇩🇪", NL: "🇳🇱", SE: "🇸🇪", DK: "🇩🇰", GB: "🇬🇧", US: "🇺🇸", CH: "🇨🇭", JP: "🇯🇵" };
 

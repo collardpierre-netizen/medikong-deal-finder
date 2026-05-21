@@ -20,13 +20,13 @@ const fmt = (n: number) => n.toLocaleString("fr-BE");
 const AdminMarques = () => {
   const qc = useQueryClient();
   const [selectedBrand, setSelectedBrand] = useState<any>(null);
-  const { data: brandsData = [], isLoading: loadingBrands, error: brandsError } = useBrands();
+  const [search, setSearch] = useState("");
+  const { data: brandsData = [], isLoading: loadingBrands, error: brandsError } = useBrands(search);
   const { data: manufacturersData = [] } = useManufacturers();
   const { data: totalBrandCount = 0, error: brandCountError } = useBrandCount();
 
   const [brandDialogOpen, setBrandDialogOpen] = useState(false);
   const [editBrand, setEditBrand] = useState<any>(null);
-  const [search, setSearch] = useState("");
 
   const brandFileRef = useRef<HTMLInputElement>(null);
 

@@ -717,7 +717,7 @@ export default function RestockOpportunities() {
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: gc.bg, color: gc.color }} title={gc.desc}>{gc.label}</span>
               <span className="text-xs text-muted-foreground"><b>{offer.quantity}</b> u</span>
               <span className="text-xs text-muted-foreground">DLU {formatDate(offer.dlu)}</span>
-              <span className="text-xs text-muted-foreground flex items-center gap-1"><MapPin size={10} />{offer.seller_city || "BE"}</span>
+              <span className="text-xs text-muted-foreground flex items-center gap-1"><MapPin size={10} />{formatSellerLocation({ city: offer.seller_city, postal_code: offer.seller_postal_code, province: offer.seller_province })}</span>
             </div>
           </div>
           {/* Price + actions */}

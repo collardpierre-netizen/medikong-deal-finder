@@ -36,6 +36,7 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
     manufacturer_id: "", is_featured: false, logo_url: "",
     name_fr: "", name_nl: "", name_de: "",
     desc_fr: "", desc_nl: "", desc_de: "",
+    social_links: {} as SocialLinks,
   });
   const [translating, setTranslating] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);

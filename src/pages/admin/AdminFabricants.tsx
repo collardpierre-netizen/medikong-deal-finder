@@ -15,6 +15,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Factory, Package, Tag, Plus, Search, Globe, Award, Merge, X, ExternalLink, Download, Upload, FileDown } from "lucide-react";
 import { exportManufacturers, importManufacturers, downloadManufacturerTemplate } from "@/lib/xlsx-utils";
+import { SocialLinksEditor, normalizeSocialLinks } from "@/components/shared/SocialLinks";
 
 const COUNTRIES = [
   { code: "BE", label: "🇧🇪 Belgique" }, { code: "FR", label: "🇫🇷 France" },
@@ -98,6 +99,7 @@ export default function AdminFabricants() {
         year_founded: form.year_founded ? parseInt(form.year_founded) : null,
         certifications: form.certifications ? form.certifications.split(",").map((s: string) => s.trim()).filter(Boolean) : [],
         specialties: form.specialties ? form.specialties.split(",").map((s: string) => s.trim()).filter(Boolean) : [],
+        social_links: normalizeSocialLinks(form.social_links),
         is_active: true,
       };
       if (form.id) {
@@ -365,9 +367,10 @@ function ManufacturerFormDialog({ open, onOpenChange, item, onSave, saving }: { 
         year_founded: item.year_founded?.toString() || "",
         certifications: (item.certifications || []).join(", "),
         specialties: (item.specialties || []).join(", "),
+        social_links: normalizeSocialLinks(item.social_links),
       });
     } else {
-      setForm({ name: "", slug: "", legal_name: "", logo_url: "", website_url: "", description: "", country_of_origin: "", year_founded: "", certifications: "", specialties: "" });
+      setForm({ name: "", slug: "", legal_name: "", logo_url: "", website_url: "", description: "", country_of_origin: "", year_founded: "", certifications: "", specialties: "", social_links: {} });
     }
   };
 
@@ -408,6 +411,7 @@ function ManufacturerFormDialog({ open, onOpenChange, item, onSave, saving }: { 
           <div><Label className="text-xs">Description</Label><Textarea rows={3} value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
           <div><Label className="text-xs">Certifications (virgules)</Label><Input value={form.certifications || ""} onChange={e => setForm({ ...form, certifications: e.target.value })} placeholder="ISO 13485, CE, FDA" /></div>
           <div><Label className="text-xs">Spécialités (virgules)</Label><Input value={form.specialties || ""} onChange={e => setForm({ ...form, specialties: e.target.value })} placeholder="Wound care, Incontinence" /></div>
+          <SocialLinksEditor value={form.social_links || {}} onChange={(next) => setForm({ ...form, social_links: next })} />
         </div>
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>

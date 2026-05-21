@@ -14,6 +14,7 @@ import { getVendorPublicName } from "@/lib/vendor-display";
 import { BrandFactSheet } from "@/components/brand/BrandFactSheet";
 import { Badge } from "@/components/ui/badge";
 import { useCountry } from "@/contexts/CountryContext";
+import { SocialLinksDisplay } from "@/components/shared/SocialLinks";
 
 
 export default function BrandDetailPage() {
@@ -31,7 +32,7 @@ export default function BrandDetailPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("brands")
-        .select("id, name, slug, description, logo_url, website_url, product_count, manufacturer_id, parent_company, country_hq, main_category, subcategories, year_entered_be_market, afmps_status, ce_marking, certifications, manufacturing_countries, inami_reimbursement_pct, inami_categories, google_trends_12m, google_trends_trend_pct, officinal_coverage_pct, press_mentions_12m, distribution_type, is_top20, sources_last_updated, manufacturers(name, slug)")
+        .select("id, name, slug, description, logo_url, website_url, social_links, product_count, manufacturer_id, parent_company, country_hq, main_category, subcategories, year_entered_be_market, afmps_status, ce_marking, certifications, manufacturing_countries, inami_reimbursement_pct, inami_categories, google_trends_12m, google_trends_trend_pct, officinal_coverage_pct, press_mentions_12m, distribution_type, is_top20, sources_last_updated, manufacturers(name, slug)")
         .eq("slug", slug!)
         .maybeSingle();
       if (error) throw error;
@@ -306,6 +307,7 @@ export default function BrandDetailPage() {
                   <Download size={13} /> Voir les produits
                 </button>
                 <button className="border border-mk-line text-sm px-3 md:px-4 py-2 rounded-md flex items-center gap-1.5 text-mk-sec"><Heart size={13} /> Suivre</button>
+                <SocialLinksDisplay links={(brandData as any)?.social_links} />
               </div>
             </div>
           </div>

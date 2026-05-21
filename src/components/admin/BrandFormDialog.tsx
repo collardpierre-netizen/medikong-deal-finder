@@ -13,6 +13,7 @@ import { useEntityItemTranslations, useBatchSaveTranslations } from "@/hooks/use
 import { toast } from "sonner";
 import { Languages, ChevronsUpDown, Check, Wand2, Upload, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SocialLinksEditor, normalizeSocialLinks, type SocialLinks } from "@/components/shared/SocialLinks";
 
 interface BrandFormDialogProps {
   open: boolean;
@@ -35,6 +36,7 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
     manufacturer_id: "", is_featured: false, logo_url: "",
     name_fr: "", name_nl: "", name_de: "",
     desc_fr: "", desc_nl: "", desc_de: "",
+    social_links: {} as SocialLinks,
   });
   const [translating, setTranslating] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -73,9 +75,10 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
         is_featured: brand.is_featured || false,
         name_fr: getTr("fr", "name"), name_nl: getTr("nl", "name"), name_de: getTr("de", "name"),
         desc_fr: getTr("fr", "description"), desc_nl: getTr("nl", "description"), desc_de: getTr("de", "description"),
+        social_links: normalizeSocialLinks(brand.social_links),
       });
     } else {
-      setForm({ name: "", slug: "", country: "BE", website: "", description: "", manufacturer_id: "", is_featured: false, logo_url: "", name_fr: "", name_nl: "", name_de: "", desc_fr: "", desc_nl: "", desc_de: "" });
+      setForm({ name: "", slug: "", country: "BE", website: "", description: "", manufacturer_id: "", is_featured: false, logo_url: "", name_fr: "", name_nl: "", name_de: "", desc_fr: "", desc_nl: "", desc_de: "", social_links: {} });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, brand?.id]);
@@ -122,6 +125,7 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
       logo_url: form.logo_url || null,
       manufacturer_id: form.manufacturer_id && form.manufacturer_id !== "none" ? form.manufacturer_id : null,
       is_featured: form.is_featured,
+      social_links: normalizeSocialLinks(form.social_links),
     };
     try {
       let brandId = brand?.id;
@@ -221,6 +225,7 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
             {form.logo_url && <img src={form.logo_url} alt="Logo" referrerPolicy="no-referrer" className="mt-2 w-12 h-12 rounded object-contain border border-border bg-white p-1" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
           </div>
           <div><Label className="text-xs">Site web</Label><Input value={form.website} onChange={e => setForm({ ...form, website: e.target.value })} placeholder="https://" /></div>
+          <SocialLinksEditor value={form.social_links} onChange={(next) => setForm({ ...form, social_links: next })} />
           <div><Label className="text-xs">Description (originale)</Label><Textarea rows={2} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
 
           {/* Translation fields */}

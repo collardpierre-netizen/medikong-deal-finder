@@ -58,11 +58,14 @@ const fmtMoneyStatic = (n: number | null | undefined, locale?: string) =>
 
 export default function EconomiesPage() {
   const { locale } = useMoneyFormat();
+  const { user } = useAuth();
   const fmtMoney = (n: number | null | undefined) => fmtMoneyStatic(n, locale);
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [supplier, setSupplier] = useState<Supplier>("febelco");
   const [file, setFile] = useState<File | null>(null);
   const [identity, setIdentity] = useState({ email: "", pharmacy_name: "", city: "", vat_number: "" });
+  const [identityPrefilled, setIdentityPrefilled] = useState(false);
+  const [editIdentity, setEditIdentity] = useState(false);
   const [consent, setConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [simId, setSimId] = useState<string | null>(null);
@@ -70,6 +73,25 @@ export default function EconomiesPage() {
   const [lines, setLines] = useState<SimulationLine[] | null>(null);
   const [showAllLines, setShowAllLines] = useState(false);
   const pollRef = useRef<number | null>(null);
+
+  // Préremplir l'identité depuis le compte si l'utilisateur est loggé
+  useEffect(() => {
+    if (!user || identityPrefilled) return;
+    (async () => {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("company_name, vat_number")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setIdentity((prev) => ({
+        email: prev.email || user.email || "",
+        pharmacy_name: prev.pharmacy_name || profile?.company_name || "",
+        city: prev.city,
+        vat_number: prev.vat_number || profile?.vat_number || "",
+      }));
+      setIdentityPrefilled(true);
+    })();
+  }, [user, identityPrefilled]);
 
   // Polling
   useEffect(() => {

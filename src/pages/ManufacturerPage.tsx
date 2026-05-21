@@ -163,12 +163,13 @@ export default function ManufacturerPage() {
                 {manufacturer.legal_name && <> · {manufacturer.legal_name}</>}
               </p>
               {manufacturer.description && <p className="text-sm text-mk-sec max-w-[600px] mb-4">{manufacturer.description}</p>}
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-2 flex-wrap items-center">
                 {manufacturer.website_url && (
                   <a href={manufacturer.website_url} target="_blank" rel="noopener noreferrer" className="border border-mk-line text-sm px-4 py-2 rounded-md flex items-center gap-1.5 text-mk-sec hover:border-mk-blue transition-colors">
                     <ExternalLink size={13} /> Site officiel
                   </a>
                 )}
+                <SocialLinksDisplay links={(manufacturer as any)?.social_links} />
               </div>
             </div>
           </div>

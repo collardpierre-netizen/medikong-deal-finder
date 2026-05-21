@@ -1,9 +1,10 @@
 import { Layout } from "@/components/layout/Layout";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, ShieldCheck, Sparkles, Mail } from "lucide-react";
+import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, ShieldCheck, Sparkles, Mail, UserCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Supplier = "febelco" | "cerp" | "pharma_belgium" | "other";
 type Status = "processing" | "done" | "failed" | "no_match";

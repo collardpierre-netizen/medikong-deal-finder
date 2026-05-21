@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Search, X, Package, Tag, FolderOpen, Loader2 } from "lucide-react";
+import { Search, X, Package, Tag, FolderOpen, Loader2, Sparkles } from "lucide-react";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder, isValidProductImage } from "@/lib/image-utils";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -7,6 +7,16 @@ import { federatedSearch } from "@/lib/supabase-search";
 import type { FederatedResults } from "@/lib/supabase-search";
 import { pushRecentTerm, pushRecentProduct, pushRecentTaxon } from "@/hooks/useRecentSearches";
 import { logSearch } from "@/lib/search-logging";
+import { supabase } from "@/integrations/supabase/client";
+
+type BrandSuggestion = {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url: string | null;
+  product_count: number;
+  similarity: number;
+};
 
 interface InstantSearchBarProps {
   className?: string;

@@ -42,6 +42,7 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
   const search = useCallback(async (q: string) => {
     if (!q.trim()) {
       setResults({ products: [], brands: [], categories: [] });
+      setSuggestions([]);
       setIsOpen(false);
       return;
     }
@@ -51,12 +52,27 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
       setResults(res);
       const hasAny = res.products.length > 0 || res.brands.length > 0 || res.categories.length > 0;
       setIsOpen(hasAny || q.trim().length > 0);
+      // Si aucun résultat, on tente une recherche floue de marques similaires
+      if (!hasAny && q.trim().length >= 2) {
+        const { data, error } = await supabase.rpc("public_search_brands_fuzzy", {
+          _q: q.trim(),
+          _limit: 8,
+        });
+        if (!error && Array.isArray(data)) {
+          setSuggestions(data as BrandSuggestion[]);
+        } else {
+          setSuggestions([]);
+        }
+      } else {
+        setSuggestions([]);
+      }
     } catch (err) {
       console.error("Search error:", err);
     } finally {
       setIsLoading(false);
     }
   }, []);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;

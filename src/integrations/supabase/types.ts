@@ -12106,6 +12106,11 @@ export type Database = {
           investment_banner_text_de: string | null
           investment_banner_text_en: string | null
           investment_banner_text_nl: string | null
+          media_banner_cta_label: string | null
+          media_banner_cta_url: string | null
+          media_banner_enabled: boolean
+          media_banner_subtitle: string | null
+          media_banner_title: string | null
           reduced_vat_rate: number
           restock_enabled: boolean
           site_name: string
@@ -12123,6 +12128,11 @@ export type Database = {
           investment_banner_text_de?: string | null
           investment_banner_text_en?: string | null
           investment_banner_text_nl?: string | null
+          media_banner_cta_label?: string | null
+          media_banner_cta_url?: string | null
+          media_banner_enabled?: boolean
+          media_banner_subtitle?: string | null
+          media_banner_title?: string | null
           reduced_vat_rate?: number
           restock_enabled?: boolean
           site_name?: string
@@ -12140,6 +12150,11 @@ export type Database = {
           investment_banner_text_de?: string | null
           investment_banner_text_en?: string | null
           investment_banner_text_nl?: string | null
+          media_banner_cta_label?: string | null
+          media_banner_cta_url?: string | null
+          media_banner_enabled?: boolean
+          media_banner_subtitle?: string | null
+          media_banner_title?: string | null
           reduced_vat_rate?: number
           restock_enabled?: boolean
           site_name?: string

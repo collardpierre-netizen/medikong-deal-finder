@@ -54,7 +54,7 @@ const useManufacturerProducts = (id: string | null) =>
         .limit(200);
       if (error) throw error;
       return (data || []).map((row: any) => ({
-        ...row,
+        ...mapDbProduct(row),
         brandSlug: row.brands?.slug,
       }));
     },

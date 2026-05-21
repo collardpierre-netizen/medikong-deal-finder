@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
+import { deriveBeProvince } from "@/lib/be-postal";
 
 interface OfferRow {
   ean: string;

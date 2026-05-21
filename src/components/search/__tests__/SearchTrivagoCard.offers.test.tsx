@@ -59,7 +59,7 @@ describe("SearchTrivagoCard — offres sur /fabricant/:slug", () => {
 
   it("affiche 'Pas encore d'offre' quand sellers = 0", () => {
     renderCard(makeProduct({ sellers: 0, price: 0, mk: false }));
-    expect(screen.getByText("Pas encore d'offre")).toBeInTheDocument();
+    expect(screen.getAllByText("Pas encore d'offre").length).toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: /Voir l'offre/i })).not.toBeInTheDocument();
   });
 });

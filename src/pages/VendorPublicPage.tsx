@@ -276,6 +276,22 @@ export default function VendorPublicPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // N'affiche le bouton "Voir délégué" que si le vendeur a au moins un
+  // délégué actif. Inutile d'ouvrir un dialog vide.
+  const { data: hasActiveDelegate = false } = useQuery({
+    queryKey: ["vendor-has-active-delegate", vendor?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("vendor_delegates" as any)
+        .select("id", { count: "exact", head: true })
+        .eq("vendor_id", vendor!.id)
+        .eq("is_active", true);
+      return (count || 0) > 0;
+    },
+    enabled: !!vendor?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const brandFilterReady = !!serverBrandSlug && !!serverBrandId;
 
   // Recherche serveur : debounce 300 ms sur `filters.search`, poussée en
@@ -553,15 +569,17 @@ export default function VendorPublicPage() {
           <aside className="hidden lg:block w-[240px] shrink-0 space-y-5">
             {/* Délégué commercial (acheteurs vérifiés) */}
             <VendorDelegatesPublic vendorId={vendor.id} />
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full h-8 text-xs"
-              onClick={() => setDelegateDialogOpen(true)}
-            >
-              <Eye size={12} className="mr-1.5" />
-              Voir délégué
-            </Button>
+            {hasActiveDelegate && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full h-8 text-xs"
+                onClick={() => setDelegateDialogOpen(true)}
+              >
+                <Eye size={12} className="mr-1.5" />
+                Voir délégué
+              </Button>
+            )}
 
             {/* Delivery */}
             <div>

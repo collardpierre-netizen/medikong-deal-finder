@@ -367,9 +367,10 @@ function ManufacturerFormDialog({ open, onOpenChange, item, onSave, saving }: { 
         year_founded: item.year_founded?.toString() || "",
         certifications: (item.certifications || []).join(", "),
         specialties: (item.specialties || []).join(", "),
+        social_links: normalizeSocialLinks(item.social_links),
       });
     } else {
-      setForm({ name: "", slug: "", legal_name: "", logo_url: "", website_url: "", description: "", country_of_origin: "", year_founded: "", certifications: "", specialties: "" });
+      setForm({ name: "", slug: "", legal_name: "", logo_url: "", website_url: "", description: "", country_of_origin: "", year_founded: "", certifications: "", specialties: "", social_links: {} });
     }
   };
 

@@ -120,7 +120,7 @@ export function EditRestockOfferDialog({ offer, open, onOpenChange, onSaved }: E
       status: form.status,
       photos: form.photos,
     };
-    const { error } = await supabase.from("restock_offers").update(payload).eq("id", offer.id);
+    const { error } = await supabase.from("restock_offers").update(payload as any).eq("id", offer.id);
     setSaving(false);
     if (error) {
       console.error(error);

@@ -216,12 +216,14 @@ function TinderDetailSheet({ offer, onClose, onAddToCart, onCounterOffer }: {
   );
 }
 /* ── Tinder View (inline) ── */
-function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart, tinderDetail, setTinderDetail, tinderCounter, setTinderCounter, tinderCounterPrice, setTinderCounterPrice, tinderCounterQty, setTinderCounterQty, buyer, formatPrice }: any) {
+function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart, tinderDetail, setTinderDetail, tinderCounter, setTinderCounter, tinderCounterPrice, setTinderCounterPrice, tinderCounterQty, setTinderCounterQty, buyer, formatPrice, commissionPct = 5 }: any) {
   const remaining = offers.slice(tinderIdx);
   const currentOffer = remaining[0];
   const allSwiped = tinderIdx >= offers.length;
   const progress = offers.length > 0 ? Math.round((tinderIdx / offers.length) * 100) : 0;
-  const cartTotal = tinderCart.reduce((sum: number, c: any) => sum + (c.price_ht || 0) * (c.qty || c.quantity || 1), 0);
+  const cartSubtotal = tinderCart.reduce((sum: number, c: any) => sum + (c.price_ht || 0) * (c.qty || c.quantity || 1), 0);
+  const cartCommission = cartSubtotal * (commissionPct / 100);
+  const cartTotal = cartSubtotal + cartCommission;
 
   // Full-screen flash feedback
   const [flash, setFlash] = useState<"accept" | "reject" | null>(null);
@@ -362,8 +364,10 @@ function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart
                   </div>
                 ))}
                 {tinderCart.length > 5 && <p className="text-[10px] text-emerald-600">+{tinderCart.length - 5} autres…</p>}
-                <div className="border-t border-emerald-200 pt-2 flex justify-between text-sm font-bold text-emerald-800">
-                  <span>Total HT</span><span>{formatPrice(cartTotal)}</span>
+                <div className="border-t border-emerald-200 pt-2 space-y-0.5">
+                  <div className="flex justify-between text-[11px] text-emerald-700"><span>Sous-total HT</span><span>{formatPrice(cartSubtotal)}</span></div>
+                  <div className="flex justify-between text-[11px] text-emerald-700"><span>+ Commission MediKong ({commissionPct}%)</span><span>{formatPrice(cartCommission)}</span></div>
+                  <div className="flex justify-between text-sm font-bold text-emerald-800 pt-1 border-t border-emerald-200"><span>Total à payer HT</span><span>{formatPrice(cartTotal)}</span></div>
                 </div>
               </div>
               <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl py-5 text-base font-bold shadow-lg shadow-emerald-500/30">Finaliser ma commande →</Button>
@@ -393,7 +397,7 @@ function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart
 
       {tinderCart.length > 0 && !allSwiped && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2 flex items-center justify-between">
-          <span className="text-xs text-emerald-700"><b>{tinderCart.length}</b> produit{tinderCart.length > 1 ? "s" : ""} · <b>{formatPrice(cartTotal)}</b> HT</span>
+          <span className="text-xs text-emerald-700"><b>{tinderCart.length}</b> produit{tinderCart.length > 1 ? "s" : ""} · <b>{formatPrice(cartTotal)}</b> HT <span className="text-emerald-600/80">(comm. {commissionPct}% incl.)</span></span>
         </div>
       )}
 
@@ -521,10 +525,20 @@ export default function RestockOpportunities() {
     },
   });
 
+  const { data: commissionPct = 5 } = useQuery({
+    queryKey: ["restock-commission-buyer-pct"],
+    queryFn: async () => {
+      const { data } = await supabase.from("restock_settings").select("value").eq("key", "commission_buyer_pct").maybeSingle();
+      const v = parseFloat(String(data?.value ?? 5));
+      return isNaN(v) ? 5 : v;
+    },
+  });
+
   const shippingFee = useMemo(() => {
     const rule = rules.find((r: any) => r.rule_type === "shipping_flat_fee");
     return rule ? parseFloat(String(rule.value)) : 9.90;
   }, [rules]);
+
 
   // Extract facets
   const facets = useMemo(() => {
@@ -995,6 +1009,7 @@ export default function RestockOpportunities() {
                 setTinderCounterQty={setTinderCounterQty}
                 buyer={buyer}
                 formatPrice={formatPrice}
+                commissionPct={commissionPct}
               />
             ) : viewMode === "grid" ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -1067,7 +1082,18 @@ export default function RestockOpportunities() {
                   ) : (
                     <p className="text-sm text-muted-foreground">{maxQty} × {formatPrice(confirmTarget.price_ht || 0)} HT</p>
                   )}
-                  <p className="text-sm font-bold text-primary">Total : {formatPrice((confirmTarget.price_ht || 0) * buyQuantity)} HT</p>
+                  {(() => {
+                    const qtyForTotal = isPartial ? buyQuantity : maxQty;
+                    const subtotal = (confirmTarget.price_ht || 0) * qtyForTotal;
+                    const commission = subtotal * (commissionPct / 100);
+                    return (
+                      <div className="border-t border-border pt-2 mt-1 space-y-0.5">
+                        <div className="flex justify-between text-xs text-muted-foreground"><span>Sous-total HT</span><span>{formatPrice(subtotal)}</span></div>
+                        <div className="flex justify-between text-xs text-muted-foreground"><span>+ Commission MediKong ({commissionPct}%)</span><span>{formatPrice(commission)}</span></div>
+                        <div className="flex justify-between text-sm font-bold text-primary pt-1 border-t border-border"><span>Total à payer HT</span><span>{formatPrice(subtotal + commission)}</span></div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             );

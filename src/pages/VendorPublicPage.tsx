@@ -276,6 +276,22 @@ export default function VendorPublicPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // N'affiche le bouton "Voir délégué" que si le vendeur a au moins un
+  // délégué actif. Inutile d'ouvrir un dialog vide.
+  const { data: hasActiveDelegate = false } = useQuery({
+    queryKey: ["vendor-has-active-delegate", vendor?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("vendor_delegates" as any)
+        .select("id", { count: "exact", head: true })
+        .eq("vendor_id", vendor!.id)
+        .eq("is_active", true);
+      return (count || 0) > 0;
+    },
+    enabled: !!vendor?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const brandFilterReady = !!serverBrandSlug && !!serverBrandId;
 
   // Recherche serveur : debounce 300 ms sur `filters.search`, poussée en

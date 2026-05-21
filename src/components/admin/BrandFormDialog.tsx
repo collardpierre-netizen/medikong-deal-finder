@@ -125,6 +125,7 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
       logo_url: form.logo_url || null,
       manufacturer_id: form.manufacturer_id && form.manufacturer_id !== "none" ? form.manufacturer_id : null,
       is_featured: form.is_featured,
+      social_links: normalizeSocialLinks(form.social_links),
     };
     try {
       let brandId = brand?.id;

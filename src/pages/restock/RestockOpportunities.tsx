@@ -364,8 +364,10 @@ function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart
                   </div>
                 ))}
                 {tinderCart.length > 5 && <p className="text-[10px] text-emerald-600">+{tinderCart.length - 5} autres…</p>}
-                <div className="border-t border-emerald-200 pt-2 flex justify-between text-sm font-bold text-emerald-800">
-                  <span>Total HT</span><span>{formatPrice(cartTotal)}</span>
+                <div className="border-t border-emerald-200 pt-2 space-y-0.5">
+                  <div className="flex justify-between text-[11px] text-emerald-700"><span>Sous-total HT</span><span>{formatPrice(cartSubtotal)}</span></div>
+                  <div className="flex justify-between text-[11px] text-emerald-700"><span>+ Commission MediKong ({commissionPct}%)</span><span>{formatPrice(cartCommission)}</span></div>
+                  <div className="flex justify-between text-sm font-bold text-emerald-800 pt-1 border-t border-emerald-200"><span>Total à payer HT</span><span>{formatPrice(cartTotal)}</span></div>
                 </div>
               </div>
               <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl py-5 text-base font-bold shadow-lg shadow-emerald-500/30">Finaliser ma commande →</Button>

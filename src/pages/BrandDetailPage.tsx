@@ -15,6 +15,7 @@ import { BrandFactSheet } from "@/components/brand/BrandFactSheet";
 import { Badge } from "@/components/ui/badge";
 import { useCountry } from "@/contexts/CountryContext";
 import { SocialLinksDisplay } from "@/components/shared/SocialLinks";
+import { MediaGallery } from "@/components/shared/MediaGallery";
 
 
 export default function BrandDetailPage() {
@@ -320,6 +321,12 @@ export default function BrandDetailPage() {
           <div className="mk-container">
             <BrandFactSheet brand={brandData as any} />
           </div>
+        </div>
+      )}
+
+      {brandData?.id && (
+        <div className="mk-container pt-6 md:pt-8">
+          <MediaGallery owner={{ brandId: brandData.id as string }} title={`Médias officiels — ${brand.name}`} />
         </div>
       )}
 

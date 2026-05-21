@@ -13,6 +13,7 @@ import { ProductCard } from "@/components/shared/ProductCard";
 import { mapDbProduct } from "@/hooks/useProducts";
 import { getVendorPublicName } from "@/lib/vendor-display";
 import { SocialLinksDisplay } from "@/components/shared/SocialLinks";
+import { MediaGallery } from "@/components/shared/MediaGallery";
 
 const FLAG: Record<string, string> = { BE: "🇧🇪", FR: "🇫🇷", DE: "🇩🇪", NL: "🇳🇱", SE: "🇸🇪", DK: "🇩🇰", GB: "🇬🇧", US: "🇺🇸", CH: "🇨🇭", JP: "🇯🇵" };
 
@@ -192,6 +193,9 @@ export default function ManufacturerPage() {
       </div>
 
       <div className="mk-container py-6 md:py-8">
+        {manufacturer?.id && (
+          <MediaGallery owner={{ manufacturerId: manufacturer.id as string }} title={`Médias officiels — ${manufacturer.name}`} />
+        )}
         {/* Vendeurs liés au fabricant — au-dessus de la liste produits */}
         {sellers.length > 0 && (
           <div className="mb-8">

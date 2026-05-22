@@ -126,6 +126,12 @@ export default function VendorOnboardingWizard() {
   const [testResult, setTestResult] = useState<"idle" | "success" | "fail">("idle");
   const [testing, setTesting] = useState(false);
 
+  // Step 4 — Garantie
+  const guaranteeQuery = useCurrentGuarantee();
+  const guarantee = guaranteeQuery.data;
+  const [guaranteeAccepted, setGuaranteeAccepted] = useState(false);
+
+
   // Submit
   const submitMutation = useMutation({
     mutationFn: async () => {

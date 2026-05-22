@@ -59,6 +59,7 @@ export function EditRestockOfferDialog({ offer, open, onOpenChange, onSaved }: E
       allow_partial: !!offer.allow_partial,
       moq: offer.moq ?? 1,
       lot_size: offer.lot_size ?? 1,
+      publish_start: toDatetimeLocal(offer.publish_start),
       publish_end: toDatetimeLocal(offer.publish_end),
       status: offer.status ?? "published",
       photos: Array.isArray(offer.photos) ? [...offer.photos] : [],

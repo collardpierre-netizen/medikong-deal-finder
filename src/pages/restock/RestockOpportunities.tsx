@@ -257,14 +257,19 @@ function TinderDetailSheet({ offer, onClose, onAddToCart, onCounterOffer, commis
   );
 }
 /* ── Tinder View (inline) ── */
-function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart, tinderDetail, setTinderDetail, tinderCounter, setTinderCounter, tinderCounterPrice, setTinderCounterPrice, tinderCounterQty, setTinderCounterQty, buyer, formatPrice, commissionPct = 5 }: any) {
+function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart, tinderDetail, setTinderDetail, tinderCounter, setTinderCounter, tinderCounterPrice, setTinderCounterPrice, tinderCounterQty, setTinderCounterQty, buyer, formatPrice, commissionPct = 5, shippingFee = 0 }: any) {
   const remaining = offers.slice(tinderIdx);
   const currentOffer = remaining[0];
   const allSwiped = tinderIdx >= offers.length;
   const progress = offers.length > 0 ? Math.round((tinderIdx / offers.length) * 100) : 0;
-  const cartSubtotal = tinderCart.reduce((sum: number, c: any) => sum + (c.price_ht || 0) * (c.qty || c.quantity || 1), 0);
-  const cartCommission = cartSubtotal * (commissionPct / 100);
-  const cartTotal = cartSubtotal + cartCommission;
+  // Prix final = prix vendeur HT + commission MediKong déjà majorée. Livraison à part.
+  const cartProductsTotal = tinderCart.reduce(
+    (sum: number, c: any) => sum + finalBuyerPrice(c.price_ht || 0, commissionPct) * (c.qty || c.quantity || 1),
+    0,
+  );
+  const cartShipping = tinderCart.some((c: any) => (c.delivery_condition || "both") !== "pickup") ? shippingFee : 0;
+  const cartTotal = cartProductsTotal + cartShipping;
+
 
   // Full-screen flash feedback
   const [flash, setFlash] = useState<"accept" | "reject" | null>(null);

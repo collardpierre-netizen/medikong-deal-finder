@@ -775,15 +775,22 @@ export default function RestockOpportunities() {
           {/* Price + actions */}
           <div className="shrink-0 flex flex-col items-end justify-between">
             <div className="text-right">
-              <span className="text-lg font-bold text-primary">{formatPrice(offer.price_ht || 0)}</span>
-              <span className="text-[10px] text-muted-foreground ml-1">HT/u</span>
-              {discount > 0 && <span className="ml-2 text-xs font-bold text-emerald-600">-{discount}%</span>}
+              <div className="flex items-baseline justify-end gap-1.5">
+                <span className="text-lg font-bold text-primary">{formatPrice(finalPrice)}</span>
+                <span className="text-[10px] text-muted-foreground">HT/u</span>
+                {discount > 0 && <span className="ml-1 text-xs font-bold text-emerald-600">-{discount}%</span>}
+              </div>
+              <div className="text-[10px] text-muted-foreground mt-0.5 flex flex-col items-end gap-0.5">
+                {canPickup && <span className="flex items-center gap-1"><MapPin size={9} /> Enlèvement inclus</span>}
+                {canShip && <span className="flex items-center gap-1"><Truck size={9} /> + {formatPrice(shippingFee)} livraison</span>}
+              </div>
               {offer.medikong_product && (
-                <a href={`/produit/${offer.medikong_product.slug || offer.medikong_product.id}`} className="ml-2 text-[10px] text-emerald-600 hover:underline" onClick={e => e.stopPropagation()}>
+                <a href={`/produit/${offer.medikong_product.slug || offer.medikong_product.id}`} className="text-[10px] text-emerald-600 hover:underline" onClick={e => e.stopPropagation()}>
                   Voir neuf →
                 </a>
               )}
             </div>
+
             <div className="flex gap-2 mt-2">
               <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => { setCounterOfferTarget(offer); setCounterForm({ price: "", quantity: String(offer.allow_partial ? offer.moq : offer.quantity) }); }}>
                 <MessageSquare size={12} /> Contre-offre

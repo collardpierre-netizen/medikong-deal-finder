@@ -104,6 +104,48 @@ export default function RestockAdminRules() {
           })
         )}
       </div>
+
+      <DemoModeAdminToggle />
+    </div>
+  );
+}
+
+function DemoModeAdminToggle() {
+  const [active, setActive] = useState(false);
+  useEffect(() => {
+    setActive(isRestockDemoActive());
+    const sync = () => setActive(isRestockDemoActive());
+    window.addEventListener("restock-demo-changed", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("restock-demo-changed", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+
+  const toggle = (on: boolean) => {
+    setRestockDemo(on);
+    setActive(on);
+    toast.success(on ? "Mode démo activé sur ce navigateur" : "Mode démo désactivé");
+  };
+
+  return (
+    <div className="bg-white rounded-xl border border-[#D0D5DC] p-5 shadow-[0_1px_3px_rgba(0,0,0,.06)]">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="p-2 rounded-lg bg-[#EEFBF4]">
+            <Sparkles size={18} className="text-[#00B85C]" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-[#1E252F]">Mode démo ReStock</h3>
+            <p className="text-sm text-[#5C6470]">
+              Active des données fictives sur les pages ReStock (acheteur & vendeur) — réservé aux super-admins, persisté
+              uniquement sur ce navigateur.
+            </p>
+          </div>
+        </div>
+        <Switch checked={active} onCheckedChange={toggle} />
+      </div>
     </div>
   );
 }

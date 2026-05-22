@@ -1,106 +1,82 @@
-# Multi-users par compte (acheteur / vendeur) + switch d'espace
+# Garantie Satisfaction & Remboursement — acceptation vendeur obligatoire
 
 ## Objectif
-Permettre à plusieurs utilisateurs auth de partager le même compte acheteur et/ou le même compte vendeur, avec 2 rôles (admin / member), invitation par email **ou** code, et switch d'espace pour un user lié aux deux côtés. Plus migration ciblée Pacheco ↔ PACHECO SA.
+Garantir contractuellement que tous les vendeurs MediKong adhèrent à la "Garantie satisfaction et remboursement" affichée côté acheteur (produits 100% authentiques, remboursement intégral, retour 14j, SAV). Acceptation versionnée, capturée au moment de l'onboarding/contrat. Vendeurs existants : considérés comme déjà acceptants (backfill silencieux, pas de re-prompt forcé maintenant).
 
-## Modèle de données (migration)
+## Modèle de données
 
-### 1. Table `account_memberships` (lien N-N entre user et compte)
-- `user_id uuid` → auth.users
-- `account_kind text check ('buyer','vendor')`
-- `account_id uuid` → soit `profiles.id` (kind=buyer) soit `vendors.id` (kind=vendor)
-- `role text check ('admin','member')` default 'member'
-- `status text check ('active','invited','revoked')` default 'active'
-- `invited_email text` (nullable)
-- `invited_by uuid`, `accepted_at timestamptz`
-- UNIQUE (user_id, account_kind, account_id)
-- INDEX (account_kind, account_id) ; (user_id)
+### `marketplace_guarantee_versions`
+Texte légal de la garantie, versionné, géré par admin.
+- `version` (int unique, auto-incrémenté logiquement)
+- `title`, `body_md` (markdown), `bullet_points` (text[]) — sourcés depuis le bloc déjà affiché en fiche produit
+- `published_at` (NULL = brouillon)
+- `is_current` (bool, unique partial index sur true)
+- RLS : SELECT public sur versions `published_at IS NOT NULL`, ALL admin
 
-### 2. Table `account_invitations`
-- `id`, `account_kind`, `account_id`, `email`, `role`, `token_hash` (sha256 du magic-link), `join_code` (6 chars, unique partiel), `expires_at` (default now()+14j), `created_by`, `accepted_by`, `accepted_at`, `revoked_at`
-- INDEX (token_hash) ; INDEX (join_code where revoked_at is null and accepted_at is null)
+### `vendor_guarantee_acceptances`
+Trace immuable d'acceptation par vendeur × version.
+- `vendor_id` (FK vendors)
+- `guarantee_version_id` (FK marketplace_guarantee_versions)
+- `accepted_at`, `accepted_by_user_id`, `ip`, `user_agent`
+- `source` enum : `onboarding` / `backfill` / `admin_override`
+- UNIQUE(vendor_id, guarantee_version_id)
+- RLS : SELECT propre vendeur + admin ; INSERT via RPC dédiée
 
-### 3. Backfill historique
-- Pour chaque `profiles.user_id IS NOT NULL` : INSERT membership(buyer, profile.id, role=admin)
-- Pour chaque `vendors.auth_user_id IS NOT NULL` : INSERT membership(vendor, vendor.id, role=admin)
-- Garantit qu'aucun compte existant ne perd l'accès.
+### Helpers SQL
+- `current_guarantee_version_id()` — retourne l'id de la version `is_current`
+- `vendor_has_accepted_current_guarantee(vendor_id)` — bool
+- RPC `vendor_accept_guarantee(_version_id)` — insère acceptance avec auth.uid() comme `accepted_by_user_id`, ip/UA via headers, source='onboarding'
 
-### 4. Helpers SECURITY DEFINER (anti-récursion RLS)
-- `current_user_buyer_ids() returns setof uuid` → tous les profiles dont l'user est membre actif
-- `current_user_vendor_ids() returns setof uuid` → idem côté vendors
-- `is_account_admin(_kind, _account_id) returns boolean`
-- `current_vendor_id()` (déjà existant via vendors.auth_user_id) → on étend pour fallback sur membership active la plus récente / espace actif (cf. §6).
+### Backfill
+INSERT idempotent : pour chaque vendor existant (`accepted_at = vendor.created_at`, source='backfill') sur la v1.
 
-### 5. Mise à jour RLS (sans toucher aux helpers eux-mêmes)
-On remplace les filtres `auth.uid() = user_id` (côté profiles) et `vendors.auth_user_id = auth.uid()` par `EXISTS (membership active)` pour tables liées :
-- `profiles` (SELECT/UPDATE pour membres ; DELETE réservé admin)
-- `vendors` (idem)
-- Toutes les tables filtrant via `current_vendor_id()` héritent automatiquement (offers, vendor_notifications, vendor_catalog_interests, etc.)
-- Tables acheteur sensibles : `orders`, `cart_items`, `rfqs`, `rfq_buyer_balances`, `rfq_credit_ledger`, `price_alerts`, `watch_list`, `buyer_comparator_sourcing_items` → SELECT/INSERT/UPDATE accessibles à tout membre actif du compte ; DELETE réservé admin pour les objets critiques (balances, sourcing).
+## Frontend
 
-NOTE: changement RLS strictement aligné sur la nouvelle notion de "compte" — pas de fix opportuniste ailleurs.
+### 1. Ajout étape "Garantie" dans `VendorOnboardingWizard.tsx`
+Wizard passe de 4 → 5 étapes. Nouvelle **étape 4** (avant la confirmation finale, l'ancienne étape 4 devient étape 5) :
+- Affiche le bloc complet (titre + bullets + body_md) lu depuis `marketplace_guarantee_versions` via hook `useCurrentGuarantee`
+- Checkbox "J'ai lu et j'accepte la Garantie satisfaction et remboursement de MediKong"
+- Bouton "Suivant" désactivé tant que la case n'est pas cochée
+- Au passage à l'étape 5 : appel RPC `vendor_accept_guarantee(version_id)`
 
-## Flux d'invitation
+### 2. Page admin `/admin/guarantee`
+- Liste des versions (current, brouillons, archivées)
+- Éditeur (titre + bullets + body_md) avec preview live identique au bloc fiche produit
+- Bouton "Publier comme version courante" (transactionnel : flip `is_current`)
+- Onglet "Adhésions vendeurs" : liste vendor × version × date × source, filtre par version
+- Export CSV des acceptations
 
-### Côté admin (page `/compte/equipe` pour acheteur, `/vendor/settings/equipe` pour vendeur)
-- Liste des membres + statut + rôle (changement admin↔member par admin uniquement, jamais retirer le dernier admin).
-- Bouton "Inviter par email" → RPC `account_invite_by_email(_kind, _account_id, _email, _role)` qui crée invitation + envoie email transactionnel (template `account-invitation`) avec lien `/rejoindre?token=...`.
-- Bouton "Générer un code de jonction" → RPC `account_create_join_code(...)` retourne code 6 chars affiché à l'admin.
-- Action "Révoquer" sur invitation ou membre.
+### 3. Hook `useVendorGuaranteeStatus(vendorId)`
+Retourne `{ hasAcceptedCurrent, currentVersion, lastAcceptance }`. Utilisé par le wizard et le bandeau optionnel (futur).
 
-### Côté invité
-- Page publique `/rejoindre` accepte `?token=` (email) **ou** champ code manuel.
-- Si non connecté : signup/login standard puis redirection sur le même `/rejoindre` (token persisté en sessionStorage).
-- RPC `account_accept_invitation(_token, _join_code)` :
-  - valide expiry/revoked, vérifie email si token (email match obligatoire),
-  - crée membership active,
-  - marque invitation accepted_by/accepted_at.
-- Toast + redirection vers l'espace du compte (acheteur ou vendeur).
+## Hors scope explicite (à valider plus tard si besoin)
+- Pas de garde-fou DB sur `offers.is_active = true` (choix utilisateur : blocage en amont seulement à l'onboarding)
+- Pas de bandeau bloquant pour les vendeurs déjà actifs (backfill = acceptée)
+- Pas de re-prompt automatique sur publication d'une nouvelle version → la mécanique de "re-acceptation obligatoire" sera ajoutée dans un prompt séparé (l'infra versionnée est en place, il suffira d'activer le gate ; à ce jour le wizard ne re-prompte pas un vendeur déjà onboardé)
+- Pas de modification du bloc côté acheteur (la card "Garantie satisfaction" sur ProductPage reste, mais sera ré-alimentée depuis la même table dans un prompt séparé pour single source of truth)
 
-## Switch d'espace
-- Nouveau hook `useAccountSpaces()` → liste { kind, account_id, label, role }.
-- Composant `AccountSwitcher` dans le header utilisateur (visible uniquement si l'user a ≥ 2 espaces ou 1 espace + opposé).
-- Espace actif persistant : `localStorage` + RPC `set_user_preference('active_account', {kind, id})`.
-- `current_vendor_id()` lit la prefs si présente ET valide via membership, sinon fallback ancien comportement (vendors.auth_user_id).
-- Côté acheteur : le contexte panier/RFQ lit `active_buyer_profile_id` provenant des prefs avec même garde-fou.
+## Détails techniques
 
-## Cas Pacheco / PACHECO SA (script ponctuel)
-Étape séparée, exécutée APRÈS validation manuelle du couple cible :
-1. Choisir le profil canonique (à confirmer par toi : lequel garde, Pacheco ou PACHECO SA ?).
-2. Script SQL one-shot dans une migration dédiée (à valider) :
-   - Réassigner les rows orders/rfqs/cart_items/price_alerts/watch_list/sourcing du profil "secondaire" vers le profil "canonique".
-   - Créer `account_memberships` pour les 2 user_id sur le profil canonique (role=admin).
-   - Désactiver (soft) le profil secondaire (status='merged_into:<canonical_id>').
-3. **Je n'exécute PAS automatiquement** : je prépare le script et te demande confirmation.
+### Migration SQL (1 fichier)
+- 2 tables + RLS + index unique partiel `is_current`
+- 3 fonctions SQL (SECURITY DEFINER pour la RPC accept)
+- Seed v1 avec le texte exact de la capture utilisateur, `is_current = true`
+- Backfill INSERT...SELECT depuis vendors
 
-## Fichiers à créer / modifier
+### Fichiers frontend touchés
+- `src/pages/vendor/VendorOnboardingWizard.tsx` — +1 étape, total devient 5
+- nouveau `src/hooks/useGuarantee.ts` — hook lecture version courante + acceptance vendeur
+- nouveau `src/pages/admin/AdminGuarantee.tsx` + route dans `App.tsx`
+- nouveau `src/components/vendor/GuaranteeAcceptStep.tsx` (extrait pour test/réutilisation)
 
-### Migrations
-- `multi_user_accounts_schema.sql` : tables + helpers + RLS + backfill.
+### Sécurité
+- `vendor_accept_guarantee` valide que `auth.uid()` est bien `vendors.auth_user_id` du vendor visé
+- Le texte affiché vendeur = exactement `body_md` + `bullet_points` de la version courante (pas de divergence avec l'admin)
+- Acceptances jamais modifiables/supprimables hors super_admin (RLS UPDATE/DELETE = false sauf super_admin)
 
-### Edge function
-- `account-invitation` transactional email (template + send via `send-transactional-email`).
-
-### Frontend
-- `src/hooks/useAccountMembers.ts`, `useAccountInvitations.ts`, `useAccountSpaces.ts`.
-- `src/components/account/AccountMembersPanel.tsx` (réutilisé côté buyer & vendor settings).
-- `src/components/account/AccountSwitcher.tsx` monté dans le header user (existant).
-- `src/pages/JoinAccountPage.tsx` route `/rejoindre`.
-- Patch léger `current_vendor_id` resolver côté hooks vendeur (`useVendorId`) pour lire la prefs.
-
-### Hors-scope (signalé, pas touché)
-- Pas de notifications push membres
-- Pas de logs d'audit dédiés (audit_logs continue de logger qui fait quoi)
-- Pas de quotas (nombre max de membres)
-- Pas de SSO/SAML par compte
-- Pas de modification des emails transactionnels existants
-- Fusion Pacheco = étape séparée à valider après livraison de la mécanique
-
-## Ordre d'exécution proposé
-1. Migration schéma + backfill + RLS → **demande d'approbation explicite**.
-2. Edge function email d'invitation.
-3. Pages UI (équipe + /rejoindre + switcher).
-4. Hooks vendor/buyer pour respecter l'espace actif.
-5. Script de fusion Pacheco — **pause + ta validation cible avant exécution**.
-
-Réponds par "go étape 1" pour lancer la migration, ou indique ce que tu veux ajuster.
+## Vérifications post-implémentation
+1. `bunx tsc --noEmit`
+2. Linter Supabase (RLS warnings)
+3. Test manuel onboarding : impossible de cliquer Suivant sans cocher → coché → acceptance créée → étape 5 OK
+4. Page admin `/admin/guarantee` : édition + publication v2 → vérifier qu'`is_current` bascule correctement, ancienne version reste consultable
+5. Compter `vendor_guarantee_acceptances` après backfill = nombre de vendors existants (source='backfill')

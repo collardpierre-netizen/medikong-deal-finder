@@ -1382,6 +1382,7 @@ export default function VendorOffers() {
 
   const openCreate = () => { setForm(emptyForm); setInitialSnapshot(null); setEditingId(null); setShowForm(true); };
   const openEdit = async (offer: any) => {
+    try {
     // Charger les catégories liées à l'offre + le coût par défaut produit/vendeur
     const [{ data: linkedCats }, { data: defaultCost }] = await Promise.all([
       supabase

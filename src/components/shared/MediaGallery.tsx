@@ -201,7 +201,12 @@ function buildPartnerUrl(rawUrl: string, ownerKey: string): string {
   }
 }
 
-function trackPartnerBannerClick(ownerKey: string, href: string) {
+function trackPartnerBannerClick(
+  ownerKey: string,
+  href: string,
+  ctaLabel: string,
+  bannerId: string | number | null,
+) {
   try {
     const w = window as unknown as { dataLayer?: Array<Record<string, unknown>> };
     w.dataLayer = w.dataLayer ?? [];
@@ -209,12 +214,15 @@ function trackPartnerBannerClick(ownerKey: string, href: string) {
       event: "media_partner_banner_click",
       partner: "balooh",
       owner_key: ownerKey,
+      cta_label: ctaLabel,
+      offer_id: bannerId,
       destination: href,
     });
   } catch {
     /* no-op */
   }
 }
+
 
 function MediaPartnerBanner({ ownerKey }: { ownerKey: string }) {
   const { data } = useQuery({

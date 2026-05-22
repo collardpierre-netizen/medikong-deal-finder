@@ -14,6 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          account_id: string
+          account_kind: string
+          created_at: string
+          created_by: string | null
+          email: string | null
+          expires_at: string
+          id: string
+          join_code: string | null
+          revoked_at: string | null
+          role: string
+          token_hash: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          account_id: string
+          account_kind: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          expires_at?: string
+          id?: string
+          join_code?: string | null
+          revoked_at?: string | null
+          role?: string
+          token_hash?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          account_id?: string
+          account_kind?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          expires_at?: string
+          id?: string
+          join_code?: string | null
+          revoked_at?: string | null
+          role?: string
+          token_hash?: string | null
+        }
+        Relationships: []
+      }
+      account_memberships: {
+        Row: {
+          accepted_at: string | null
+          account_id: string
+          account_kind: string
+          created_at: string
+          id: string
+          invited_by: string | null
+          invited_email: string | null
+          role: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          account_id: string
+          account_kind: string
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          invited_email?: string | null
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          account_id?: string
+          account_kind?: string
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          invited_email?: string | null
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       admin_users: {
         Row: {
           created_at: string
@@ -18594,8 +18684,52 @@ export type Database = {
       }
     }
     Functions: {
+      _account_hash_token: { Args: { _token: string }; Returns: string }
       _cat_tokens: { Args: { _label: string }; Returns: string[] }
       _sub_is_admin: { Args: never; Returns: boolean }
+      account_accept_invitation: {
+        Args: { _join_code?: string; _token?: string }
+        Returns: {
+          account_id: string
+          account_kind: string
+          role: string
+        }[]
+      }
+      account_create_join_code: {
+        Args: { _account_id: string; _kind: string; _role?: string }
+        Returns: {
+          invitation_id: string
+          join_code: string
+        }[]
+      }
+      account_has_other_admin: {
+        Args: { _account_id: string; _excluding_user: string; _kind: string }
+        Returns: boolean
+      }
+      account_invite_by_email: {
+        Args: {
+          _account_id: string
+          _email: string
+          _kind: string
+          _role?: string
+        }
+        Returns: {
+          invitation_id: string
+          token: string
+        }[]
+      }
+      account_revoke_invitation: {
+        Args: { _invitation_id: string }
+        Returns: undefined
+      }
+      account_revoke_member: {
+        Args: { _membership_id: string }
+        Returns: undefined
+      }
+      account_update_member_role: {
+        Args: { _membership_id: string; _new_role: string }
+        Returns: undefined
+      }
       activate_vendor_market_intel_subscription: {
         Args: {
           _billing_method: Database["public"]["Enums"]["vendor_market_intel_billing"]
@@ -19170,6 +19304,8 @@ export type Database = {
         Returns: Json
       }
       current_buyer_id: { Args: never; Returns: string }
+      current_user_buyer_account_ids: { Args: never; Returns: string[] }
+      current_user_vendor_account_ids: { Args: never; Returns: string[] }
       current_vendor_id: { Args: never; Returns: string }
       decrement_offer_stock: {
         Args: { p_offer_id: string; p_quantity: number }
@@ -19489,6 +19625,10 @@ export type Database = {
       increment_proprietary_code_observation: {
         Args: { _code: string; _supplier: string }
         Returns: undefined
+      }
+      is_account_admin: {
+        Args: { _account_id: string; _kind: string }
+        Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }

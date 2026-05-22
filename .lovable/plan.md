@@ -1,84 +1,106 @@
+# Multi-users par compte (acheteur / vendeur) + switch d'espace
+
 ## Objectif
+Permettre à plusieurs utilisateurs auth de partager le même compte acheteur et/ou le même compte vendeur, avec 2 rôles (admin / member), invitation par email **ou** code, et switch d'espace pour un user lié aux deux côtés. Plus migration ciblée Pacheco ↔ PACHECO SA.
 
-Permettre à un acheteur vérifié de chercher tous les produits/offres offrant au moins X% de remise vs un prix de référence (PVP **ou** prix marché), filtrer par marque/fabricant et exporter le résultat. Le même filtre est aussi exposé en sidebar sur `/catalogue`.
+## Modèle de données (migration)
 
-## Périmètre
+### 1. Table `account_memberships` (lien N-N entre user et compte)
+- `user_id uuid` → auth.users
+- `account_kind text check ('buyer','vendor')`
+- `account_id uuid` → soit `profiles.id` (kind=buyer) soit `vendors.id` (kind=vendor)
+- `role text check ('admin','member')` default 'member'
+- `status text check ('active','invited','revoked')` default 'active'
+- `invited_email text` (nullable)
+- `invited_by uuid`, `accepted_at timestamptz`
+- UNIQUE (user_id, account_kind, account_id)
+- INDEX (account_kind, account_id) ; (user_id)
 
-### 1. Backend — RPC `search_discount_offers`
-Nouvelle fonction SQL `security_invoker = true`, restreinte aux acheteurs vérifiés (sinon `raise exception 'unauthorized'`).
+### 2. Table `account_invitations`
+- `id`, `account_kind`, `account_id`, `email`, `role`, `token_hash` (sha256 du magic-link), `join_code` (6 chars, unique partiel), `expires_at` (default now()+14j), `created_by`, `accepted_by`, `accepted_at`, `revoked_at`
+- INDEX (token_hash) ; INDEX (join_code where revoked_at is null and accepted_at is null)
 
-Paramètres :
-- `_reference text` — `'pvp'` ou `'market'`
-- `_min_discount_pct numeric` — ex. 50 (= 50% mini)
-- `_brand_ids uuid[]` — optionnel
-- `_manufacturer_ids uuid[]` — optionnel
-- `_country text` — `BE`/`FR`/`LU`/`ALL`
-- `_categories uuid[]` — optionnel
-- `_limit int default 100`, `_offset int default 0`
+### 3. Backfill historique
+- Pour chaque `profiles.user_id IS NOT NULL` : INSERT membership(buyer, profile.id, role=admin)
+- Pour chaque `vendors.auth_user_id IS NOT NULL` : INSERT membership(vendor, vendor.id, role=admin)
+- Garantit qu'aucun compte existant ne perd l'accès.
 
-Retourne par ligne : `product_id, product_name, brand_id, brand_name, manufacturer_id, manufacturer_name, vendor_id, vendor_name, best_price_htva_cents, reference_price_cents, discount_pct, country, pack_size, total_count`.
+### 4. Helpers SECURITY DEFINER (anti-récursion RLS)
+- `current_user_buyer_ids() returns setof uuid` → tous les profiles dont l'user est membre actif
+- `current_user_vendor_ids() returns setof uuid` → idem côté vendors
+- `is_account_admin(_kind, _account_id) returns boolean`
+- `current_vendor_id()` (déjà existant via vendors.auth_user_id) → on étend pour fallback sur membership active la plus récente / espace actif (cf. §6).
 
-Source : `effective_offer_prices_v` (meilleur prix par produit/pays) jointe à `products_with_country_stats_v` (pour `market_price_*`) et `resolve_product_pvp(product_id)` (PVP). Calcul du delta côté SQL, filtre `discount_pct >= _min_discount_pct`, tri `discount_pct DESC`. `total_count` via window function.
+### 5. Mise à jour RLS (sans toucher aux helpers eux-mêmes)
+On remplace les filtres `auth.uid() = user_id` (côté profiles) et `vendors.auth_user_id = auth.uid()` par `EXISTS (membership active)` pour tables liées :
+- `profiles` (SELECT/UPDATE pour membres ; DELETE réservé admin)
+- `vendors` (idem)
+- Toutes les tables filtrant via `current_vendor_id()` héritent automatiquement (offers, vendor_notifications, vendor_catalog_interests, etc.)
+- Tables acheteur sensibles : `orders`, `cart_items`, `rfqs`, `rfq_buyer_balances`, `rfq_credit_ledger`, `price_alerts`, `watch_list`, `buyer_comparator_sourcing_items` → SELECT/INSERT/UPDATE accessibles à tout membre actif du compte ; DELETE réservé admin pour les objets critiques (balances, sourcing).
 
-### 2. Page dédiée `/bonnes-affaires`
-Nouvelle route protégée par `RequireVerifiedBuyer` (composant existant).
+NOTE: changement RLS strictement aligné sur la nouvelle notion de "compte" — pas de fix opportuniste ailleurs.
 
-Layout :
-- En-tête : titre + sous-titre explicatif
-- Bloc "Critères" (sticky desktop) :
-  - Toggle référence : **PVP conseillé** / **Prix marché moyen** (par défaut PVP)
-  - Slider + input numérique : remise mini (10–90%, défaut 30%)
-  - MultiSelect Marques (réutilise `useBrands`)
-  - MultiSelect Fabricants (réutilise `useManufacturers`)
-  - Select pays
-  - Boutons : Rechercher / Réinitialiser / **Exporter XLSX** / **Exporter CSV**
-- Résultats : tableau paginé (100/page, useInfiniteQuery) — colonnes Produit, Marque, Fabricant, Vendeur, Prix HTVA, Prix réf., Économie %, Stock + lien fiche produit. État empty/loading/error explicites.
+## Flux d'invitation
 
-### 3. Entrée menu
-Ajout dans `Header` (menu principal acheteur) d'un lien "Bonnes affaires" (icône `Tag` ou `Percent`) visible uniquement si `isVerifiedBuyer`. Pour les non-vérifiés : route accessible mais affiche un teaser → CTA vers KYC.
+### Côté admin (page `/compte/equipe` pour acheteur, `/vendor/settings/equipe` pour vendeur)
+- Liste des membres + statut + rôle (changement admin↔member par admin uniquement, jamais retirer le dernier admin).
+- Bouton "Inviter par email" → RPC `account_invite_by_email(_kind, _account_id, _email, _role)` qui crée invitation + envoie email transactionnel (template `account-invitation`) avec lien `/rejoindre?token=...`.
+- Bouton "Générer un code de jonction" → RPC `account_create_join_code(...)` retourne code 6 chars affiché à l'admin.
+- Action "Révoquer" sur invitation ou membre.
 
-### 4. Filtre sidebar `/catalogue`
-Dans `CatalogFilters` :
-- Nouveau bloc collapsible "Remise vs prix public" avec :
-  - Mini-toggle PVP / Marché
-  - Slider 0–90% (défaut 0 = inactif)
-- Branchement dans `useCatalogProducts` : nouveaux params `minDiscountPct` + `discountReference`. Côté SQL, on ajoute deux helpers dans `products_with_country_stats_v` (déjà colonnes `country_min_price_cents` et `country_market_price_cents`) + lecture de `pvp_ttc_cents` directement sur `products`. Filtre :
-  - `discount = 1 - (best_price_htva / reference_ttc_or_htva)`
-  - On compare HTVA vs HTVA (PVP TTC ramené HTVA via `resolve_product_vat_rate`).
-- Query string : `?remise=50&ref=pvp` (partageable).
+### Côté invité
+- Page publique `/rejoindre` accepte `?token=` (email) **ou** champ code manuel.
+- Si non connecté : signup/login standard puis redirection sur le même `/rejoindre` (token persisté en sessionStorage).
+- RPC `account_accept_invitation(_token, _join_code)` :
+  - valide expiry/revoked, vérifie email si token (email match obligatoire),
+  - crée membership active,
+  - marque invitation accepted_by/accepted_at.
+- Toast + redirection vers l'espace du compte (acheteur ou vendeur).
 
-### 5. Export
-- **XLSX** : helper `exportDiscountResultsXlsx` (basé sur `xlsx` déjà utilisé dans le comparateur acheteur) — onglet "Bonnes affaires", colonnes alignées sur le tableau, filtres appliqués mentionnés en en-tête.
-- **CSV** : export client (Blob `text/csv;charset=utf-8`), même colonnes, séparateur `;` (Excel-FR).
-- Export full résultat (jusqu'à 5000 lignes, RPC appelée avec `_limit=5000`).
+## Switch d'espace
+- Nouveau hook `useAccountSpaces()` → liste { kind, account_id, label, role }.
+- Composant `AccountSwitcher` dans le header utilisateur (visible uniquement si l'user a ≥ 2 espaces ou 1 espace + opposé).
+- Espace actif persistant : `localStorage` + RPC `set_user_preference('active_account', {kind, id})`.
+- `current_vendor_id()` lit la prefs si présente ET valide via membership, sinon fallback ancien comportement (vendors.auth_user_id).
+- Côté acheteur : le contexte panier/RFQ lit `active_buyer_profile_id` provenant des prefs avec même garde-fou.
 
-## Détails techniques
+## Cas Pacheco / PACHECO SA (script ponctuel)
+Étape séparée, exécutée APRÈS validation manuelle du couple cible :
+1. Choisir le profil canonique (à confirmer par toi : lequel garde, Pacheco ou PACHECO SA ?).
+2. Script SQL one-shot dans une migration dédiée (à valider) :
+   - Réassigner les rows orders/rfqs/cart_items/price_alerts/watch_list/sourcing du profil "secondaire" vers le profil "canonique".
+   - Créer `account_memberships` pour les 2 user_id sur le profil canonique (role=admin).
+   - Désactiver (soft) le profil secondaire (status='merged_into:<canonical_id>').
+3. **Je n'exécute PAS automatiquement** : je prépare le script et te demande confirmation.
 
-```
-src/
-  pages/BonnesAffairesPage.tsx                (nouvelle route)
-  components/discount/
-    DiscountCriteriaForm.tsx
-    DiscountResultsTable.tsx
-    DiscountExportButtons.tsx
-  hooks/useDiscountSearch.ts                  (RPC + infinite query)
-  lib/discount-export.ts                      (xlsx + csv)
-src/components/catalog/CatalogFilters.tsx     (+ bloc Remise)
-src/hooks/useCatalogProducts.ts               (+ params minDiscountPct/ref)
-src/components/Header.tsx                     (+ lien menu)
-src/App.tsx                                   (+ <Route path="/bonnes-affaires">)
-supabase/migrations/*.sql                     (RPC search_discount_offers + grants)
-```
+## Fichiers à créer / modifier
 
-Aucune modif des autres pages, aucune autre migration. Pas de cache MV — la RPC requête à la volée (PVP+market déjà denormalisés dans la vue).
+### Migrations
+- `multi_user_accounts_schema.sql` : tables + helpers + RLS + backfill.
 
-## Hors périmètre (à confirmer plus tard)
+### Edge function
+- `account-invitation` transactional email (template + send via `send-transactional-email`).
 
-- Sauvegarde des "recherches favorites" (alertes email auto si nouveaux produits matchent)
-- Filtre par catégorie (le multiselect catégorie reste sur /catalogue — ajout possible v2)
-- Export PDF
-- Visibilité partielle pour non-vérifiés (teaser uniquement)
+### Frontend
+- `src/hooks/useAccountMembers.ts`, `useAccountInvitations.ts`, `useAccountSpaces.ts`.
+- `src/components/account/AccountMembersPanel.tsx` (réutilisé côté buyer & vendor settings).
+- `src/components/account/AccountSwitcher.tsx` monté dans le header user (existant).
+- `src/pages/JoinAccountPage.tsx` route `/rejoindre`.
+- Patch léger `current_vendor_id` resolver côté hooks vendeur (`useVendorId`) pour lire la prefs.
 
-## Question ouverte avant code
+### Hors-scope (signalé, pas touché)
+- Pas de notifications push membres
+- Pas de logs d'audit dédiés (audit_logs continue de logger qui fait quoi)
+- Pas de quotas (nombre max de membres)
+- Pas de SSO/SAML par compte
+- Pas de modification des emails transactionnels existants
+- Fusion Pacheco = étape séparée à valider après livraison de la mécanique
 
-Le filtre côté `/catalogue` doit-il **persister** dans `profiles.preferences` (comme le toggle Trivago/Grid) ou rester volatile par session ? Par défaut je pars sur **volatile + query string** — plus simple, partageable, et n'altère pas les préférences globales.
+## Ordre d'exécution proposé
+1. Migration schéma + backfill + RLS → **demande d'approbation explicite**.
+2. Edge function email d'invitation.
+3. Pages UI (équipe + /rejoindre + switcher).
+4. Hooks vendor/buyer pour respecter l'espace actif.
+5. Script de fusion Pacheco — **pause + ta validation cible avant exécution**.
+
+Réponds par "go étape 1" pour lancer la migration, ou indique ce que tu veux ajuster.

@@ -736,13 +736,17 @@ export default function RestockOpportunities() {
 
   /* ── Render helpers ── */
   const renderOfferCard = (offer: any) => {
+    const finalPrice = finalBuyerPrice(offer.price_ht || 0, commissionPct);
     const cataloguePrice = getCataloguePrice(offer);
-    const discount = getDiscount(offer);
+    const discount = cataloguePrice > 0 ? Math.round((1 - finalPrice / cataloguePrice) * 100) : 0;
     const grade = offer.grade || stateToGrade[offer.product_state] || "A";
     const gc = gradeConfig[grade] || gradeConfig.A;
     const delivery = deliveryLabels[offer.delivery_condition] || deliveryLabels.both;
     const DeliveryIcon = delivery.icon;
     const imgSrc = offer.product_image_url && isValidProductImage(offer.product_image_url) ? offer.product_image_url : null;
+    const canShip = offer.delivery_condition !== "pickup";
+    const canPickup = offer.delivery_condition !== "shipping";
+
 
     if (viewMode === "list") {
       return (

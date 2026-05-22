@@ -1968,6 +1968,7 @@ export default function ProductPage() {
                           <p className="text-[11px] text-muted-foreground mt-1">Afficher uniquement les offres livrees dans ce delai</p>
                         </div>
                       </div>
+                      {/* 🚫 Désactivé temporairement à la demande user — filtre "Vendeurs vérifiés FAGG uniquement"
                       <label className="mt-3 flex items-center gap-2 text-xs text-foreground cursor-pointer select-none">
                         <input
                           type="checkbox"
@@ -1977,6 +1978,7 @@ export default function ProductPage() {
                         />
                         Vendeurs vérifiés FAGG uniquement
                       </label>
+                      */}
                     </div>
 
                     {/* My encoded price banner — visible only if user has an encoded price for this product */}

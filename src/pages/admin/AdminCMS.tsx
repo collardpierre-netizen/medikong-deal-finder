@@ -339,13 +339,30 @@ const AdminCMS = () => {
               <div className="flex gap-2 items-center">
                 <span className="text-[11px] text-muted-foreground">ou</span>
                 <Input placeholder="URL externe de l'image..." value={newImageUrl} onChange={e => setNewImageUrl(e.target.value)} className="text-[13px] flex-1" />
-                <Button size="sm" onClick={() => newImageUrl && addImage.mutate()} disabled={!newImageUrl || addImage.isPending} className="bg-[#1B5BDA] hover:bg-[#1548B0] text-white gap-1.5">
+                <Button size="sm" onClick={() => newImageUrl && !validateHeroUrl(newLinkUrl) && addImage.mutate()} disabled={!newImageUrl || addImage.isPending || !!validateHeroUrl(newLinkUrl) || (!!newCtaText.trim() && !newLinkUrl.trim()) || (!!newLinkUrl.trim() && !newCtaText.trim())} className="bg-[#1B5BDA] hover:bg-[#1548B0] text-white gap-1.5">
                   <Plus size={14} /> Ajouter URL
                 </Button>
               </div>
-              <div className="flex gap-2 items-center">
-                <Input placeholder="URL de destination (ex: /promotions)..." value={newLinkUrl} onChange={e => setNewLinkUrl(e.target.value)} className="text-[13px] flex-1" />
-                <Input placeholder="Texte CTA (ex: Découvrir →)..." value={newCtaText} onChange={e => setNewCtaText(e.target.value)} className="text-[13px] w-[220px]" />
+              <div>
+                <div className="flex gap-2 items-center">
+                  <Input
+                    placeholder="URL de destination (ex: /promotions)..."
+                    value={newLinkUrl}
+                    onChange={e => setNewLinkUrl(e.target.value)}
+                    aria-invalid={!!validateHeroUrl(newLinkUrl)}
+                    className={`text-[13px] flex-1 ${validateHeroUrl(newLinkUrl) ? "border-red-400 bg-red-50/40" : ""}`}
+                  />
+                  <Input placeholder="Texte CTA (ex: Découvrir →)..." value={newCtaText} onChange={e => setNewCtaText(e.target.value)} className="text-[13px] w-[220px]" />
+                </div>
+                {validateHeroUrl(newLinkUrl) && (
+                  <p className="text-[10px] text-red-600 mt-1">{validateHeroUrl(newLinkUrl)}</p>
+                )}
+                {!validateHeroUrl(newLinkUrl) && newLinkUrl.trim() && !newCtaText.trim() && (
+                  <p className="text-[10px] text-red-600 mt-1">Label CTA requis si une URL est définie</p>
+                )}
+                {!validateHeroUrl(newLinkUrl) && newCtaText.trim() && !newLinkUrl.trim() && (
+                  <p className="text-[10px] text-red-600 mt-1">URL requise si un label CTA est défini</p>
+                )}
               </div>
             </div>
 

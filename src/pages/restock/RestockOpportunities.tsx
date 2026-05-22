@@ -1257,7 +1257,7 @@ export default function RestockOpportunities() {
           })()}
           <DialogFooter>
             <Button variant="outline" onClick={() => { setConfirmTarget(null); setBuyQuantity(0); }}>Annuler</Button>
-            <Button onClick={() => takeMutation.mutate({ offer: confirmTarget, qty: buyQuantity })} disabled={takeMutation.isPending || !confirmTarget || buyQuantity < (confirmTarget?.moq || 1) || (confirmTarget?.lot_size > 1 && buyQuantity % confirmTarget.lot_size !== 0)} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+            <Button onClick={() => { const cond = confirmTarget?.delivery_condition || "both"; const mode: "pickup" | "shipping" = cond === "pickup" ? "pickup" : cond === "shipping" ? "shipping" : deliveryChoice; takeMutation.mutate({ offer: confirmTarget, qty: buyQuantity, mode }); }} disabled={takeMutation.isPending || !confirmTarget || buyQuantity < (confirmTarget?.moq || 1) || (confirmTarget?.lot_size > 1 && buyQuantity % confirmTarget.lot_size !== 0)} className="bg-emerald-600 hover:bg-emerald-700 text-white">
               Confirmer
             </Button>
           </DialogFooter>

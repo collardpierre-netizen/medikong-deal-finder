@@ -1059,6 +1059,7 @@ export default function RestockOpportunities() {
                 buyer={buyer}
                 formatPrice={formatPrice}
                 commissionPct={commissionPct}
+                shippingFee={shippingFee}
               />
             ) : viewMode === "grid" ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">

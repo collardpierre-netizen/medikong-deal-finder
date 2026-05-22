@@ -177,6 +177,8 @@ Deno.serve(async (req) => {
       manufacturer: string | null;
       price: number | null;
       priceTtc: number | null;
+      purchasePrice: number | null;
+      packSize: number | null;
       vat: number | null;
       stock: number | null;
       moq: number | null;
@@ -196,6 +198,8 @@ Deno.serve(async (req) => {
         (pickField(r, normalizedKeys, "manufacturer") as string | undefined)?.toString().trim() || null,
       price: toNum(pickField(r, normalizedKeys, "price")),
       priceTtc: toNum(pickField(r, normalizedKeys, "price_ttc")),
+      purchasePrice: toNum(pickField(r, normalizedKeys, "purchase_price")),
+      packSize: toInt(pickField(r, normalizedKeys, "pack_size")),
       vat: toNum(pickField(r, normalizedKeys, "vat")),
       stock: toInt(pickField(r, normalizedKeys, "stock")),
       moq: toInt(pickField(r, normalizedKeys, "moq")),

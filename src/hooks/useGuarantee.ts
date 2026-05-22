@@ -25,7 +25,7 @@ export function useCurrentGuarantee() {
         .eq("is_current", true)
         .maybeSingle();
       if (error) throw error;
-      return (data as GuaranteeVersion | null) ?? null;
+      return (data as unknown as GuaranteeVersion | null) ?? null;
     },
     staleTime: 5 * 60 * 1000,
   });

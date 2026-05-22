@@ -36,6 +36,12 @@ const deliveryLabels: Record<string, { label: string; icon: typeof Truck }> = {
   both: { label: "Enlèvement / Livraison", icon: Truck },
 };
 
+/** Prix final acheteur (commission MediKong déjà incluse, hors livraison). */
+const finalBuyerPrice = (priceHt: number, commissionPct: number) =>
+  priceHt * (1 + (commissionPct || 0) / 100);
+
+const fmtEur = (p: number) => `${p.toFixed(2)} €`;
+
 /* ── Sidebar filter section ── */
 function FilterSection({ title, children, defaultOpen = true }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);

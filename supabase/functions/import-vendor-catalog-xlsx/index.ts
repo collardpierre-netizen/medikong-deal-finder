@@ -211,21 +211,22 @@ Deno.serve(async (req) => {
     const gtins = [...new Set(parsed.map((p) => p.gtin).filter(Boolean) as string[])];
     const cnks = [...new Set(parsed.map((p) => p.cnk).filter(Boolean) as string[])];
 
-    // Batch lookup products
-    const productByGtin = new Map<string, { id: string; vat_rate_be: number | null }>();
-    const productByCnk = new Map<string, { id: string; vat_rate_be: number | null }>();
+    // Batch lookup products (+ primary_category_id for auto-linking)
+    type ProductLookup = { id: string; vat_rate_be: number | null; primary_category_id: string | null };
+    const productByGtin = new Map<string, ProductLookup>();
+    const productByCnk = new Map<string, ProductLookup>();
     if (gtins.length) {
       const { data, error } = await admin
         .from("products")
-        .select("id, gtin, vat_rate_be")
+        .select("id, gtin, vat_rate_be, primary_category_id")
         .in("gtin", gtins);
       if (error) throw error;
-      (data ?? []).forEach((p) => p.gtin && productByGtin.set(p.gtin, p));
+      (data ?? []).forEach((p: any) => p.gtin && productByGtin.set(p.gtin, p));
     }
     if (cnks.length) {
       const { data, error } = await admin
         .from("products")
-        .select("id, cnk_code, vat_rate_be")
+        .select("id, cnk_code, vat_rate_be, primary_category_id")
         .in("cnk_code", cnks);
       if (error) throw error;
       (data ?? []).forEach((p: any) => p.cnk_code && productByCnk.set(p.cnk_code, p));

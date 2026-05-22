@@ -113,7 +113,7 @@ export function MediaGallery({ owner, title = "Médias officiels" }: { owner: Me
         ))}
       </div>
 
-      <MediaPartnerBanner />
+      <MediaPartnerBanner ownerKey={ownerKey} />
 
       <MediaLightbox
         items={data}
@@ -125,7 +125,36 @@ export function MediaGallery({ owner, title = "Médias officiels" }: { owner: Me
   );
 }
 
-function MediaPartnerBanner() {
+function buildPartnerUrl(rawUrl: string, ownerKey: string): string {
+  try {
+    const u = new URL(rawUrl);
+    const params = u.searchParams;
+    if (!params.has("utm_source")) params.set("utm_source", "medikong");
+    if (!params.has("utm_medium")) params.set("utm_medium", "media_banner");
+    if (!params.has("utm_campaign")) params.set("utm_campaign", "brand_partner");
+    if (!params.has("utm_content")) params.set("utm_content", ownerKey);
+    return u.toString();
+  } catch {
+    return rawUrl;
+  }
+}
+
+function trackPartnerBannerClick(ownerKey: string, href: string) {
+  try {
+    const w = window as unknown as { dataLayer?: Array<Record<string, unknown>> };
+    w.dataLayer = w.dataLayer ?? [];
+    w.dataLayer.push({
+      event: "media_partner_banner_click",
+      partner: "balooh",
+      owner_key: ownerKey,
+      destination: href,
+    });
+  } catch {
+    /* no-op */
+  }
+}
+
+function MediaPartnerBanner({ ownerKey }: { ownerKey: string }) {
   const { data } = useQuery({
     queryKey: ["site-config", "media-banner"],
     queryFn: async () => {
@@ -142,11 +171,17 @@ function MediaPartnerBanner() {
 
   if (!data || !data.media_banner_enabled || !data.media_banner_cta_url) return null;
 
+  const trackedHref = buildPartnerUrl(data.media_banner_cta_url, ownerKey);
+
   return (
     <a
-      href={data.media_banner_cta_url}
+      href={trackedHref}
       target="_blank"
       rel="noopener noreferrer sponsored"
+      onClick={() => trackPartnerBannerClick(ownerKey, trackedHref)}
+      onAuxClick={(e) => { if (e.button === 1) trackPartnerBannerClick(ownerKey, trackedHref); }}
+      data-tracking="media-partner-banner"
+      data-owner-key={ownerKey}
       className="group mt-5 block relative overflow-hidden rounded-2xl border border-mk-line bg-gradient-to-br from-mk-navy via-mk-navy to-[#0b1e4a] p-5 md:p-7 hover:shadow-xl transition-all"
     >
       {/* Glow décoratif rappel logo Balooh */}

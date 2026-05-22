@@ -1144,23 +1144,33 @@ export default function RestockOpportunities() {
                           {buyQuantity < moq ? `Minimum ${moq} unités` : lotSz > 1 && buyQuantity % lotSz !== 0 ? `Multiple de ${lotSz}` : `Maximum ${maxQty}`}
                         </p>
                       )}
-                      <p className="text-sm text-muted-foreground">{buyQuantity} × {formatPrice(confirmTarget.price_ht || 0)} HT</p>
+                      <p className="text-sm text-muted-foreground">{buyQuantity} × {formatPrice(finalBuyerPrice(confirmTarget.price_ht || 0, commissionPct))} HT</p>
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">{maxQty} × {formatPrice(confirmTarget.price_ht || 0)} HT</p>
+                    <p className="text-sm text-muted-foreground">{maxQty} × {formatPrice(finalBuyerPrice(confirmTarget.price_ht || 0, commissionPct))} HT</p>
                   )}
                   {(() => {
                     const qtyForTotal = isPartial ? buyQuantity : maxQty;
-                    const subtotal = (confirmTarget.price_ht || 0) * qtyForTotal;
-                    const commission = subtotal * (commissionPct / 100);
+                    const productsTotal = finalBuyerPrice(confirmTarget.price_ht || 0, commissionPct) * qtyForTotal;
+                    const isShip = (confirmTarget.delivery_condition || "both") !== "pickup";
+                    const ship = isShip ? shippingFee : 0;
                     return (
                       <div className="border-t border-border pt-2 mt-1 space-y-0.5">
-                        <div className="flex justify-between text-xs text-muted-foreground"><span>Sous-total HT</span><span>{formatPrice(subtotal)}</span></div>
-                        <div className="flex justify-between text-xs text-muted-foreground"><span>+ Commission MediKong ({commissionPct}%)</span><span>{formatPrice(commission)}</span></div>
-                        <div className="flex justify-between text-sm font-bold text-primary pt-1 border-t border-border"><span>Total à payer HT</span><span>{formatPrice(subtotal + commission)}</span></div>
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>{isShip ? "Produits (commission incluse)" : "Total enlèvement (commission incluse)"}</span>
+                          <span>{formatPrice(productsTotal)}</span>
+                        </div>
+                        {isShip && (
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>+ Livraison estimée</span>
+                            <span>{formatPrice(ship)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-sm font-bold text-primary pt-1 border-t border-border"><span>Total à payer HT</span><span>{formatPrice(productsTotal + ship)}</span></div>
                       </div>
                     );
                   })()}
+
                 </div>
               </div>
             );

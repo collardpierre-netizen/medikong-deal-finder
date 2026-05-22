@@ -197,15 +197,29 @@ function TinderDetailSheet({ offer, onClose, onAddToCart, onCounterOffer, commis
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold" style={{ backgroundColor: grade.bg, color: grade.color }}>{grade.label}</span>
             <span className="text-xs text-muted-foreground">{grade.desc}</span>
           </div>
-          <div className="bg-primary/5 rounded-xl p-4">
-            <div className="flex items-baseline gap-2 mb-1">
-              <span className="text-3xl font-extrabold text-primary">{(offer.price_ht || 0).toFixed(2)} €</span>
+          <div className="bg-primary/5 rounded-xl p-4 space-y-2">
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-extrabold text-primary">{fmtEur(finalPrice)}</span>
               <span className="text-sm text-muted-foreground">HT/unité</span>
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="line-through">{cataloguePrice.toFixed(2)} €</span>
+              <span className="line-through">{fmtEur(cataloguePrice)}</span>
               {discount > 0 && <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold">−{discount}%</span>}
-              <span>soit <b className="text-foreground">{((offer.price_ht || 0) * qty).toFixed(2)} €</b> pour {qty} u</span>
+              <span>soit <b className="text-foreground">{fmtEur(finalPrice * qty)}</b> pour {qty} u</span>
+            </div>
+            <div className="pt-2 border-t border-primary/10 space-y-1 text-xs">
+              {offer.delivery_condition !== "shipping" && (
+                <div className="flex items-center justify-between text-foreground">
+                  <span className="flex items-center gap-1.5"><MapPin size={12} className="text-primary" /> Enlèvement sur place</span>
+                  <b>{fmtEur(finalPrice)} <span className="font-normal text-muted-foreground">/u</span></b>
+                </div>
+              )}
+              {offer.delivery_condition !== "pickup" && (
+                <div className="flex items-center justify-between text-foreground">
+                  <span className="flex items-center gap-1.5"><Truck size={12} className="text-primary" /> Livraison estimée</span>
+                  <b>{fmtEur(finalPrice)} <span className="font-normal text-muted-foreground">/u + {fmtEur(shippingFee)} de port</span></b>
+                </div>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -218,6 +232,7 @@ function TinderDetailSheet({ offer, onClose, onAddToCart, onCounterOffer, commis
               <div key={i} className="bg-muted/40 rounded-xl p-3">
                 <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wider mb-1"><item.icon size={11} />{item.label}</div>
                 <p className="text-sm font-semibold text-foreground">{item.value}</p>
+
               </div>
             ))}
           </div>

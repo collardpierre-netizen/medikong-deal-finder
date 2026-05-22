@@ -250,6 +250,7 @@ const translations: Record<Lang, Record<string, string>> = {
     academy: "Academy",
     shipments: "Verzendingen",
     billing: "Facturatie",
+    documents: "Documenten & Overeenkomsten",
     search: "Zoeken...",
     all: "Alle",
     inactive: "Inactief",

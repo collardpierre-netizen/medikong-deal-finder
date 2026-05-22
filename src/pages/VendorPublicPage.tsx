@@ -470,7 +470,7 @@ export default function VendorPublicPage() {
     visRules,
     { country: String(currentCountry) }
   ) : false;
-  const vendorDisplayName = vendor ? getVendorPublicName(vendor, showReal) : "Fournisseur";
+  const vendorDisplayName = vendor ? getVendorBoutiqueDisplayName(vendor, showReal) : "Fournisseur";
 
   // 404 normal : display_code inexistant ou vendeur désactivé.
   // Placé APRES tous les hooks pour respecter Rules of Hooks.

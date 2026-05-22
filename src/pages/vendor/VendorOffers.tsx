@@ -1452,6 +1452,17 @@ export default function VendorOffers() {
     });
     setEditingId(offer.id);
     setShowForm(true);
+    } catch (e: any) {
+      console.error("[VendorOffers.openEdit] failed", e);
+      toast.error("Impossible d'ouvrir cette offre en édition", {
+        description: e?.message || "Erreur inconnue. Recharge la page et réessaye.",
+      });
+      // Reset l'état pour éviter un editingId figé qui bloquerait les éditions suivantes
+      setShowForm(false);
+      setEditingId(null);
+      setForm(emptyForm);
+      setInitialSnapshot(null);
+    }
   };
   const navigate = useNavigate();
   // Contexte de retour vers /vendor/catalog (filtre marque/fabricant à restaurer)

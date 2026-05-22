@@ -43,6 +43,14 @@ const HEADER_MAP: Record<string, string> = {
   // commercial
   price: "price", prix: "price", priceht: "price", prixht: "price", priceexclvat: "price", prixhtva: "price",
   pricettc: "price_ttc", pricetva: "price_ttc", priceinclvat: "price_ttc", prixttc: "price_ttc", prixtvac: "price_ttc",
+  // purchase price (cost) — used to compute margins
+  purchaseprice: "purchase_price", prixachat: "purchase_price", prixdachat: "purchase_price",
+  costprice: "purchase_price", cost: "purchase_price", costht: "purchase_price",
+  purchasepriceexclvat: "purchase_price", prixachatht: "purchase_price", prixachathtva: "purchase_price",
+  // pack size override — affects unit price display
+  packsize: "pack_size", taillepack: "pack_size", taillepaquet: "pack_size",
+  conditionnement: "pack_size", packagesize: "pack_size", piecesperpack: "pack_size",
+  unitsperpack: "pack_size", nbunites: "pack_size", uniteparpack: "pack_size",
   vat: "vat", tva: "vat", vatrate: "vat", tauxtva: "vat",
   stock: "stock", quantity: "stock", qty: "stock", quantite: "stock", stockquantity: "stock",
   moq: "moq", minorder: "moq", quantitemin: "moq",

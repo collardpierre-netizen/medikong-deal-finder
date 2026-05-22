@@ -452,7 +452,7 @@ function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart
 
       <AnimatePresence>
         {tinderDetail && !tinderCounter && (
-          <TinderDetailSheet offer={tinderDetail} onClose={() => setTinderDetail(null)} onAddToCart={(qty: number) => addFromDetail(tinderDetail, qty)} onCounterOffer={() => setTinderCounter(true)} />
+          <TinderDetailSheet offer={tinderDetail} onClose={() => setTinderDetail(null)} onAddToCart={(qty: number) => addFromDetail(tinderDetail, qty)} onCounterOffer={() => setTinderCounter(true)} commissionPct={commissionPct} shippingFee={shippingFee} />
         )}
       </AnimatePresence>
 

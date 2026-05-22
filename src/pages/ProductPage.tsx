@@ -1203,6 +1203,8 @@ export default function ProductPage() {
   const [copied, setCopied] = useState(false);
   const [movFilter, setMovFilter] = useState<number | null>(null);
   const [delayFilter, setDelayFilter] = useState<number | null>(null);
+  const [moqMaxFilter, setMoqMaxFilter] = useState<number | null>(null);
+  const [desiredQty, setDesiredQty] = useState<number | null>(null);
   const [faggOnly, setFaggOnly] = useState(false);
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [stickyQty, setStickyQty] = useState(1);
@@ -1395,6 +1397,11 @@ export default function ProductPage() {
   const filteredOffers = realOffers.filter((o) => {
     if (movFilter && o.movEur > movFilter) return false;
     if (delayFilter && o.deliveryDays > delayFilter) return false;
+    if (moqMaxFilter && (o.bundleSize || 1) > moqMaxFilter) return false;
+    if (desiredQty && desiredQty > 0) {
+      if ((o.stockQuantity || 0) < desiredQty) return false;
+      if ((o.bundleSize || 1) > desiredQty) return false;
+    }
     if (faggOnly && !trustMap[o.sellerId]?.isFaggVerified) return false;
     return true;
   });
@@ -1899,6 +1906,35 @@ export default function ProductPage() {
                         <span className="text-sm font-bold text-foreground">Filtrer les offres</span>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">Quantité souhaitée</label>
+                          <input
+                            type="number"
+                            min={1}
+                            placeholder="Ex : 50"
+                            className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                            value={desiredQty ?? ""}
+                            onChange={(e) => setDesiredQty(e.target.value ? Math.max(1, Number(e.target.value)) : null)}
+                          />
+                          <p className="text-[11px] text-muted-foreground mt-1">N'affiche que les vendeurs dont le stock couvre ce volume et dont la taille de lot est compatible</p>
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">Taille de lot (MOQ) max</label>
+                          <select
+                            className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                            value={moqMaxFilter || ""}
+                            onChange={(e) => setMoqMaxFilter(e.target.value ? Number(e.target.value) : null)}
+                          >
+                            <option value="">Tous</option>
+                            <option value="1">1 (à l'unité)</option>
+                            <option value="6">6</option>
+                            <option value="12">12</option>
+                            <option value="24">24</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                          </select>
+                          <p className="text-[11px] text-muted-foreground mt-1">Afficher uniquement les offres dont le lot minimum est jusqu'à cette taille</p>
+                        </div>
                         <div>
                           <label className="text-xs text-muted-foreground mb-1 block">MOV maximum</label>
                           <select

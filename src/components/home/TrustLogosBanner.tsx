@@ -45,13 +45,21 @@ export default function TrustLogosBanner({
   if (!logos.length) return null;
 
   return (
-    <section className={`py-12 bg-mk-alt border-y border-mk-line overflow-hidden ${className}`}>
-      <div className="max-w-5xl mx-auto px-5 text-center mb-8">
-        <p className="text-xs font-semibold text-mk-sec uppercase tracking-widest mb-1">{eyebrow}</p>
-        <h3 className="text-lg font-bold text-mk-navy">{title}</h3>
+    <section className={`py-8 sm:py-10 md:py-14 bg-mk-alt border-y border-mk-line overflow-hidden ${className}`}>
+      <div className="mk-container text-center mb-6 sm:mb-8">
+        <p className="text-[10px] sm:text-xs font-semibold text-mk-sec uppercase tracking-[0.18em] sm:tracking-widest mb-1.5">
+          {eyebrow}
+        </p>
+        <h3 className="text-base sm:text-lg md:text-xl font-bold text-mk-navy leading-snug max-w-2xl mx-auto px-2">
+          {title}
+        </h3>
       </div>
       <div className="relative">
-        <div className="flex animate-[marquee_30s_linear_infinite] gap-12 items-center">
+        {/* Fade edges */}
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-10 sm:w-16 md:w-24 z-10 bg-gradient-to-r from-mk-alt to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-10 sm:w-16 md:w-24 z-10 bg-gradient-to-l from-mk-alt to-transparent" />
+
+        <div className="flex animate-[marquee_30s_linear_infinite] gap-6 sm:gap-10 md:gap-14 items-center">
           {[...logos, ...logos].map((logo, i) => {
             const src = resolveSrc(logo);
             return (
@@ -60,14 +68,15 @@ export default function TrustLogosBanner({
                 href={logo.website_url || "#"}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="shrink-0 opacity-60 hover:opacity-100 transition-opacity grayscale hover:grayscale-0"
+                className="shrink-0 opacity-60 hover:opacity-100 transition-opacity grayscale hover:grayscale-0 flex items-center justify-center"
                 title={logo.name}
+                aria-label={logo.name}
               >
                 <img
                   src={src}
                   alt={logo.name}
                   loading="lazy"
-                  className="h-10 md:h-12 w-auto object-contain"
+                  className="h-7 sm:h-9 md:h-12 w-auto max-w-[100px] sm:max-w-[140px] md:max-w-[180px] object-contain"
                   onError={(e) => {
                     const el = e.currentTarget;
                     el.onerror = null;

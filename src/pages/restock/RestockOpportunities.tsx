@@ -535,7 +535,7 @@ export default function RestockOpportunities() {
       if (matchedIds.length > 0) {
         const { data: products } = await supabase
           .from("products")
-          .select("id, name, slug, best_price_excl_vat, best_price_incl_vat, image_url, gtin")
+          .select("id, name, slug, best_price_excl_vat, best_price_incl_vat, image_url, gtin, pvp_ttc_cents, pvp_source")
           .in("id", [...new Set(matchedIds)]);
         if (products) {
           productsMap = Object.fromEntries(products.map(p => [p.id, p]));

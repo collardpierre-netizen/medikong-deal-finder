@@ -350,63 +350,23 @@ const AdminCMS = () => {
 
             <div className="space-y-3">
               {heroImages.map((img, idx) => (
-                <div key={img.id} className="flex items-center gap-4 px-4 py-3 rounded-lg" style={{ backgroundColor: "#F8FAFC" }}>
-                  <div className="flex flex-col gap-0.5">
+                <div key={img.id} className="flex flex-col lg:flex-row items-start gap-4 px-4 py-3 rounded-lg" style={{ backgroundColor: "#F8FAFC" }}>
+                  <div className="flex lg:flex-col gap-1">
                     <button onClick={() => reorderImage(idx, "up")} disabled={idx === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-30"><ArrowUp size={14} /></button>
                     <button onClick={() => reorderImage(idx, "down")} disabled={idx === heroImages.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-30"><ArrowDown size={14} /></button>
+                    <span className="text-[10px] font-bold lg:mt-1" style={{ color: "#8B95A5" }}>#{img.sort_order}</span>
                   </div>
-                  <img src={img.image_url} alt={img.alt_text} className="w-20 h-14 object-cover rounded-lg border border-border" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-medium truncate" style={{ color: "#1D2530" }}>{img.alt_text || "Sans description"}</p>
-                    {(img.title || img.subtitle) && (
-                      <p className="text-[10px] mt-0.5" style={{ color: "#1D2530" }}>
-                        {img.title && <span className="font-semibold">{img.title}</span>}
-                        {img.subtitle && <span className="ml-1 text-[#8B95A5]">— {img.subtitle}</span>}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-2 mt-1">
-                      <input
-                        placeholder="Titre banner..."
-                        defaultValue={img.title || ""}
-                        onBlur={(e) => {
-                          const val = e.target.value.trim();
-                          if (val !== (img.title || "")) {
-                            sb.from("cms_hero_images").update({ title: val || null }).eq("id", img.id).then(() => {
-                              queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] });
-                              queryClient.invalidateQueries({ queryKey: ["cms-hero-images"] });
-                            });
-                          }
-                        }}
-                        className="text-[11px] border border-transparent hover:border-gray-300 focus:border-blue-400 rounded px-1.5 py-0.5 w-[180px] bg-transparent focus:bg-white"
-                      />
-                      <input
-                        placeholder="Sous-titre..."
-                        defaultValue={img.subtitle || ""}
-                        onBlur={(e) => {
-                          const val = e.target.value.trim();
-                          if (val !== (img.subtitle || "")) {
-                            sb.from("cms_hero_images").update({ subtitle: val || null }).eq("id", img.id).then(() => {
-                              queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] });
-                              queryClient.invalidateQueries({ queryKey: ["cms-hero-images"] });
-                            });
-                          }
-                        }}
-                        className="text-[11px] border border-transparent hover:border-gray-300 focus:border-blue-400 rounded px-1.5 py-0.5 w-[140px] bg-transparent focus:bg-white"
-                      />
-                    </div>
-                    {(img.link_url || img.cta_text) && (
-                      <p className="text-[10px] mt-0.5" style={{ color: "#1B5BDA" }}>
-                        {img.cta_text && <span className="font-medium">[{img.cta_text}]</span>}
-                        {img.link_url && <span className="ml-1">→ {img.link_url}</span>}
-                      </p>
-                    )}
+                  <div className="flex-1 min-w-0 w-full">
+                    <p className="text-[11px] font-medium truncate mb-2" style={{ color: "#1D2530" }}>{img.alt_text || "Sans description"}</p>
+                    <HeroImageEditor img={img} />
                   </div>
-                  <span className="text-[11px] font-bold" style={{ color: "#8B95A5" }}>#{img.sort_order}</span>
-                  <button onClick={() => toggleImage.mutate({ id: img.id, is_active: !img.is_active })} className="flex items-center gap-1.5">
-                    {img.is_active ? <Eye size={14} style={{ color: "#059669" }} /> : <EyeOff size={14} style={{ color: "#8B95A5" }} />}
-                    <span className="text-[11px]" style={{ color: img.is_active ? "#059669" : "#8B95A5" }}>{img.is_active ? "Actif" : "Masqué"}</span>
-                  </button>
-                  <button onClick={() => deleteImage.mutate(img.id)} className="text-red-400 hover:text-red-600"><Trash2 size={14} /></button>
+                  <div className="flex lg:flex-col items-center gap-3 lg:gap-2">
+                    <button onClick={() => toggleImage.mutate({ id: img.id, is_active: !img.is_active })} className="flex items-center gap-1.5">
+                      {img.is_active ? <Eye size={14} style={{ color: "#059669" }} /> : <EyeOff size={14} style={{ color: "#8B95A5" }} />}
+                      <span className="text-[11px]" style={{ color: img.is_active ? "#059669" : "#8B95A5" }}>{img.is_active ? "Actif" : "Masqué"}</span>
+                    </button>
+                    <button onClick={() => deleteImage.mutate(img.id)} className="text-red-400 hover:text-red-600"><Trash2 size={14} /></button>
+                  </div>
                 </div>
               ))}
               {heroImages.length === 0 && (

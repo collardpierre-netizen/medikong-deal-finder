@@ -381,6 +381,7 @@ const translations: Record<Lang, Record<string, string>> = {
     academy: "Academy",
     shipments: "Sendungen",
     billing: "Abrechnung",
+    documents: "Dokumente & Verträge",
     search: "Suchen...",
     all: "Alle",
     inactive: "Inaktiv",

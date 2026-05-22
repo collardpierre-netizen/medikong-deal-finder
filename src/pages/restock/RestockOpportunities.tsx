@@ -546,6 +546,7 @@ export default function RestockOpportunities() {
   const [counterForm, setCounterForm] = useState({ price: "", quantity: "" });
   const [confirmTarget, setConfirmTarget] = useState<any>(null);
   const [buyQuantity, setBuyQuantity] = useState<number>(0);
+  const [deliveryChoice, setDeliveryChoice] = useState<"pickup" | "shipping">("shipping");
 
   // Tinder mode state
   const [tinderIdx, setTinderIdx] = useState(0);

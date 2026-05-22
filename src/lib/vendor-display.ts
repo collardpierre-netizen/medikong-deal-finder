@@ -55,3 +55,29 @@ export function resolveVendorVisibility(
 
   return !!vendor.show_real_name;
 }
+
+/**
+ * 🟡 EXCEPTION CIBLÉE — page boutique vendeur (`/vendeur/:code`).
+ *
+ * Sur la page boutique publique, l'identité du vendeur est déjà trivialement
+ * dérivable (logo de marque, top marques, délégués…). On autorise donc
+ * l'affichage du nom réel UNIQUEMENT si le backend l'autorise via
+ * `vendor_visibility_rules` / `show_real_name`. Sinon on retombe sur
+ * l'anonymisation standard "Fournisseur <display_code>".
+ *
+ * ⚠️ Ce helper est réservé à la page boutique. Toute autre surface
+ * (panier, fiche produit, RFQ, emails, exports) DOIT continuer à utiliser
+ * `getVendorPublicName`. L'allowlist du linter d'anonymisation autorise ce
+ * helper uniquement dans `src/pages/VendorPublicPage.tsx`.
+ */
+export function getVendorBoutiqueDisplayName(
+  vendor: VendorDisplayInput,
+  showReal: boolean
+): string {
+  if (showReal) {
+    const real = (vendor.company_name || vendor.name || "").trim();
+    if (real) return real;
+  }
+  const code = vendor.display_code || "XXXXXX";
+  return `Fournisseur ${code}`;
+}

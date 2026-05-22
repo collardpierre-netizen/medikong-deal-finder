@@ -43,6 +43,14 @@ const HEADER_MAP: Record<string, string> = {
   // commercial
   price: "price", prix: "price", priceht: "price", prixht: "price", priceexclvat: "price", prixhtva: "price",
   pricettc: "price_ttc", pricetva: "price_ttc", priceinclvat: "price_ttc", prixttc: "price_ttc", prixtvac: "price_ttc",
+  // purchase price (cost) — used to compute margins
+  purchaseprice: "purchase_price", prixachat: "purchase_price", prixdachat: "purchase_price",
+  costprice: "purchase_price", cost: "purchase_price", costht: "purchase_price",
+  purchasepriceexclvat: "purchase_price", prixachatht: "purchase_price", prixachathtva: "purchase_price",
+  // pack size override — affects unit price display
+  packsize: "pack_size", taillepack: "pack_size", taillepaquet: "pack_size",
+  conditionnement: "pack_size", packagesize: "pack_size", piecesperpack: "pack_size",
+  unitsperpack: "pack_size", nbunites: "pack_size", uniteparpack: "pack_size",
   vat: "vat", tva: "vat", vatrate: "vat", tauxtva: "vat",
   stock: "stock", quantity: "stock", qty: "stock", quantite: "stock", stockquantity: "stock",
   moq: "moq", minorder: "moq", quantitemin: "moq",
@@ -169,6 +177,8 @@ Deno.serve(async (req) => {
       manufacturer: string | null;
       price: number | null;
       priceTtc: number | null;
+      purchasePrice: number | null;
+      packSize: number | null;
       vat: number | null;
       stock: number | null;
       moq: number | null;
@@ -188,6 +198,8 @@ Deno.serve(async (req) => {
         (pickField(r, normalizedKeys, "manufacturer") as string | undefined)?.toString().trim() || null,
       price: toNum(pickField(r, normalizedKeys, "price")),
       priceTtc: toNum(pickField(r, normalizedKeys, "price_ttc")),
+      purchasePrice: toNum(pickField(r, normalizedKeys, "purchase_price")),
+      packSize: toInt(pickField(r, normalizedKeys, "pack_size")),
       vat: toNum(pickField(r, normalizedKeys, "vat")),
       stock: toInt(pickField(r, normalizedKeys, "stock")),
       moq: toInt(pickField(r, normalizedKeys, "moq")),
@@ -199,21 +211,22 @@ Deno.serve(async (req) => {
     const gtins = [...new Set(parsed.map((p) => p.gtin).filter(Boolean) as string[])];
     const cnks = [...new Set(parsed.map((p) => p.cnk).filter(Boolean) as string[])];
 
-    // Batch lookup products
-    const productByGtin = new Map<string, { id: string; vat_rate_be: number | null }>();
-    const productByCnk = new Map<string, { id: string; vat_rate_be: number | null }>();
+    // Batch lookup products (+ primary_category_id for auto-linking)
+    type ProductLookup = { id: string; vat_rate_be: number | null; primary_category_id: string | null };
+    const productByGtin = new Map<string, ProductLookup>();
+    const productByCnk = new Map<string, ProductLookup>();
     if (gtins.length) {
       const { data, error } = await admin
         .from("products")
-        .select("id, gtin, vat_rate_be")
+        .select("id, gtin, vat_rate_be, primary_category_id")
         .in("gtin", gtins);
       if (error) throw error;
-      (data ?? []).forEach((p) => p.gtin && productByGtin.set(p.gtin, p));
+      (data ?? []).forEach((p: any) => p.gtin && productByGtin.set(p.gtin, p));
     }
     if (cnks.length) {
       const { data, error } = await admin
         .from("products")
-        .select("id, cnk_code, vat_rate_be")
+        .select("id, cnk_code, vat_rate_be, primary_category_id")
         .in("cnk_code", cnks);
       if (error) throw error;
       (data ?? []).forEach((p: any) => p.cnk_code && productByCnk.set(p.cnk_code, p));
@@ -267,8 +280,11 @@ Deno.serve(async (req) => {
           moq: r.moq ?? 1,
           mov: r.mov,
           delivery_days: r.deliveryDays ?? undefined,
+          purchase_price_excl_vat: r.purchasePrice ?? undefined,
+          pack_size_override: r.packSize ?? undefined,
           is_active: true,
           synced_at: new Date().toISOString(),
+          _primary_category_id: (product as any).primary_category_id ?? null, // stripped before upsert
         });
         matched++;
       } else {
@@ -306,12 +322,16 @@ Deno.serve(async (req) => {
 
     let offersUpserted = 0;
     let submissionsCreated = 0;
+    let categoriesLinked = 0;
 
     if (!dryRun) {
-      // Upsert offers in chunks
+      // Upsert offers in chunks (strip transient _primary_category_id)
       const CHUNK = 200;
       for (let i = 0; i < offerRows.length; i += CHUNK) {
-        const slice = offerRows.slice(i, i + CHUNK);
+        const slice = offerRows.slice(i, i + CHUNK).map((o) => {
+          const { _primary_category_id, ...rest } = o;
+          return rest;
+        });
         const { error } = await admin
           .from("offers")
           .upsert(slice, { onConflict: "product_id,vendor_id,country_code" });
@@ -319,6 +339,50 @@ Deno.serve(async (req) => {
           errors.push({ line: 0, reason: `Upsert offers: ${error.message}` });
         } else {
           offersUpserted += slice.length;
+        }
+      }
+
+      // Auto-link offers to their product's primary_category_id (idempotent via UNIQUE)
+      const offerKeysWithCat = offerRows
+        .filter((o) => o._primary_category_id)
+        .map((o) => ({
+          product_id: o.product_id as string,
+          vendor_id: o.vendor_id as string,
+          country_code: o.country_code as string,
+          category_id: o._primary_category_id as string,
+        }));
+      if (offerKeysWithCat.length > 0) {
+        const productIds = Array.from(new Set(offerKeysWithCat.map((k) => k.product_id)));
+        const { data: createdOffers, error: fetchErr } = await admin
+          .from("offers")
+          .select("id, product_id, vendor_id, country_code")
+          .eq("vendor_id", vendor.id)
+          .eq("country_code", countryCode)
+          .in("product_id", productIds);
+        if (fetchErr) {
+          errors.push({ line: 0, reason: `Fetch offers for category link: ${fetchErr.message}` });
+        } else {
+          const offerIdByKey = new Map<string, string>();
+          (createdOffers ?? []).forEach((o: any) => {
+            offerIdByKey.set(`${o.product_id}|${o.vendor_id}|${o.country_code}`, o.id);
+          });
+          const catRows = offerKeysWithCat
+            .map((k) => {
+              const offerId = offerIdByKey.get(`${k.product_id}|${k.vendor_id}|${k.country_code}`);
+              return offerId ? { offer_id: offerId, category_id: k.category_id } : null;
+            })
+            .filter(Boolean) as { offer_id: string; category_id: string }[];
+          for (let i = 0; i < catRows.length; i += CHUNK) {
+            const slice = catRows.slice(i, i + CHUNK);
+            const { error: catErr, count } = await admin
+              .from("offer_categories")
+              .upsert(slice, { onConflict: "offer_id,category_id", ignoreDuplicates: true, count: "exact" });
+            if (catErr) {
+              errors.push({ line: 0, reason: `Link offer_categories: ${catErr.message}` });
+            } else {
+              categoriesLinked += count ?? slice.length;
+            }
+          }
         }
       }
 
@@ -385,6 +449,7 @@ Deno.serve(async (req) => {
       },
       offers_upserted: offersUpserted,
       submissions_created: submissionsCreated,
+      categories_linked: categoriesLinked,
       errors: errors.slice(0, 200),
       category_anomalies: categoryAnomalies,
     });

@@ -67,11 +67,6 @@ function CheckItem({ label, count, checked, onChange }: { label: string; count: 
 }
 
 /* ── Swipe Card (inline for mobile tinder mode) ── */
-function SwipeCard({
-  offer, onSwipe, isFront, onTap,
-}: {
-  offer: any; onSwipe: (dir: "left" | "right") => void; isFront: boolean; onTap: () => void;
-}) {
 /* ── Swipe Card (inline for mobile tinder mode) ── */
 function SwipeCard({
   offer, onSwipe, isFront, onTap, commissionPct = 0, shippingFee = 0,

@@ -13,7 +13,7 @@ import {
   CheckCircle2, Building2, Search, X, Plus, Minus, ShoppingCart, Eye,
 } from "lucide-react";
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { getVendorPublicName, getVendorBoutiqueDisplayName, resolveVendorVisibility } from "@/lib/vendor-display";
+import { getVendorBoutiqueDisplayName, resolveVendorVisibility } from "@/lib/vendor-display";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";

@@ -1210,24 +1210,44 @@ export default function RestockOpportunities() {
                     <p className="text-sm text-muted-foreground">{maxQty} × {formatPrice(finalBuyerPrice(confirmTarget.price_ht || 0, commissionPct))} HT</p>
                   )}
                   {(() => {
+                    const cond = confirmTarget.delivery_condition || "both";
+                    const canPickup = cond !== "shipping";
+                    const canShip = cond !== "pickup";
+                    const showChoice = canPickup && canShip;
+                    const effectiveChoice = !canShip ? "pickup" : !canPickup ? "shipping" : deliveryChoice;
                     const qtyForTotal = isPartial ? buyQuantity : maxQty;
                     const productsTotal = finalBuyerPrice(confirmTarget.price_ht || 0, commissionPct) * qtyForTotal;
-                    const isShip = (confirmTarget.delivery_condition || "both") !== "pickup";
+                    const isShip = effectiveChoice === "shipping";
                     const ship = isShip ? shippingFee : 0;
                     return (
-                      <div className="border-t border-border pt-2 mt-1 space-y-0.5">
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>{isShip ? "Produits (commission incluse)" : "Total enlèvement (commission incluse)"}</span>
-                          <span>{formatPrice(productsTotal)}</span>
-                        </div>
-                        {isShip && (
-                          <div className="flex justify-between text-xs text-muted-foreground">
-                            <span>+ Livraison estimée</span>
-                            <span>{formatPrice(ship)}</span>
+                      <>
+                        {showChoice && (
+                          <div className="border-t border-border pt-2 mt-1">
+                            <Label className="text-xs text-muted-foreground">Mode de réception</Label>
+                            <div className="flex gap-2 mt-1.5">
+                              <button type="button" onClick={() => setDeliveryChoice("pickup")} className={`flex-1 text-xs px-2 py-2 rounded-lg border transition ${effectiveChoice === "pickup" ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border text-muted-foreground hover:border-primary/50"}`}>
+                                Enlèvement sur place (gratuit)
+                              </button>
+                              <button type="button" onClick={() => setDeliveryChoice("shipping")} className={`flex-1 text-xs px-2 py-2 rounded-lg border transition ${effectiveChoice === "shipping" ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border text-muted-foreground hover:border-primary/50"}`}>
+                                Livraison (+ {formatPrice(shippingFee)})
+                              </button>
+                            </div>
                           </div>
                         )}
-                        <div className="flex justify-between text-sm font-bold text-primary pt-1 border-t border-border"><span>Total à payer HT</span><span>{formatPrice(productsTotal + ship)}</span></div>
-                      </div>
+                        <div className="border-t border-border pt-2 mt-1 space-y-0.5">
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>{isShip ? "Produits (commission incluse)" : "Total enlèvement (commission incluse)"}</span>
+                            <span>{formatPrice(productsTotal)}</span>
+                          </div>
+                          {isShip && (
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                              <span>+ Livraison estimée</span>
+                              <span>{formatPrice(ship)}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between text-sm font-bold text-primary pt-1 border-t border-border"><span>Total à payer HT</span><span>{formatPrice(productsTotal + ship)}</span></div>
+                        </div>
+                      </>
                     );
                   })()}
 

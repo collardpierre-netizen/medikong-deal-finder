@@ -7,6 +7,7 @@ import { usePriceAlertEventsCount } from "@/hooks/useVendorPriceAlertRules";
 import { useVendorPriceAlertRealtime } from "@/hooks/useVendorPriceAlertRealtime";
 import { commissionRates } from "@/lib/vendor-tokens";
 import { NotificationsBell } from "@/components/vendor/NotificationsBell";
+import { VendorAdminStatusBadge } from "@/components/vendor/VendorAdminStatusBadge";
 
 const langs: Lang[] = ["fr", "nl", "de"];
 

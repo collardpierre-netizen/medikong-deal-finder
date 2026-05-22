@@ -264,6 +264,7 @@ const VendorShipmentDetail = lazyWithRetry(() => import("./pages/vendor/VendorSh
 const VendorBilling = lazyWithRetry(() => import("./pages/vendor/VendorBilling"), "VendorBilling");
 const VendorContractPage = lazyWithRetry(() => import("./pages/vendor/VendorContractPage"), "VendorContractPage");
 const VendorContractChangelogPage = lazyWithRetry(() => import("./pages/vendor/VendorContractChangelogPage"), "VendorContractChangelogPage");
+const VendorDocuments = lazyWithRetry(() => import("./pages/vendor/VendorDocuments"), "VendorDocuments");
 
 // ReStock pages
 const RestockSiteLayout = lazyWithRetry(() => import("./components/restock/RestockSiteLayout"), "RestockSiteLayout");

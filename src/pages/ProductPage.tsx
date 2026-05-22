@@ -1397,6 +1397,11 @@ export default function ProductPage() {
   const filteredOffers = realOffers.filter((o) => {
     if (movFilter && o.movEur > movFilter) return false;
     if (delayFilter && o.deliveryDays > delayFilter) return false;
+    if (moqMaxFilter && (o.bundleSize || 1) > moqMaxFilter) return false;
+    if (desiredQty && desiredQty > 0) {
+      if ((o.stockQuantity || 0) < desiredQty) return false;
+      if ((o.bundleSize || 1) > desiredQty) return false;
+    }
     if (faggOnly && !trustMap[o.sellerId]?.isFaggVerified) return false;
     return true;
   });

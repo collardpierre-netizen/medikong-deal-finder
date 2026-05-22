@@ -282,6 +282,7 @@ export default function VendorOnboardingWizard() {
       if (shippingMode === "own_sendcloud") return !!scKeys.public_key && !!scKeys.secret_key;
       if (shippingMode === "medikong_whitelabel") return !!address.address_line_1 && !!address.city && !!address.postal_code;
     }
+    if (step === 4) return guaranteeAccepted && !!guarantee?.id;
     return true;
   };
 

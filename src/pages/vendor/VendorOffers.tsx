@@ -1382,6 +1382,7 @@ export default function VendorOffers() {
 
   const openCreate = () => { setForm(emptyForm); setInitialSnapshot(null); setEditingId(null); setShowForm(true); };
   const openEdit = async (offer: any) => {
+    try {
     // Charger les catégories liées à l'offre + le coût par défaut produit/vendeur
     const [{ data: linkedCats }, { data: defaultCost }] = await Promise.all([
       supabase
@@ -1451,13 +1452,33 @@ export default function VendorOffers() {
     });
     setEditingId(offer.id);
     setShowForm(true);
+    } catch (e: any) {
+      console.error("[VendorOffers.openEdit] failed", e);
+      toast.error("Impossible d'ouvrir cette offre en édition", {
+        description: e?.message || "Erreur inconnue. Recharge la page et réessaye.",
+      });
+      // Reset l'état pour éviter un editingId figé qui bloquerait les éditions suivantes
+      setShowForm(false);
+      setEditingId(null);
+      setForm(emptyForm);
+      setInitialSnapshot(null);
+    }
   };
   const navigate = useNavigate();
   // Contexte de retour vers /vendor/catalog (filtre marque/fabricant à restaurer)
   const [catalogReturn, setCatalogReturn] = useState<{ brandId?: string; manufacturerId?: string } | null>(null);
   // File d'attente de produits à traiter en série
   const [batchQueue, setBatchQueue] = useState<{ remaining: string[]; pos: number; total: number } | null>(null);
-  const closeForm = () => { setShowForm(false); setEditingId(null); setForm(emptyForm); setInitialSnapshot(null); setCatalogReturn(null); setBatchQueue(null); };
+  const closeForm = () => {
+    setShowForm(false);
+    setEditingId(null);
+    setForm(emptyForm);
+    setInitialSnapshot(null);
+    setCatalogReturn(null);
+    setBatchQueue(null);
+    // Reset toute mutation save encore en flight/erreur pour ne pas figer le state lors de la prochaine édition
+    try { saveOffer.reset(); } catch {}
+  };
   const backToCatalog = () => {
     const params = new URLSearchParams();
     if (catalogReturn?.brandId) params.set("brand", catalogReturn.brandId);

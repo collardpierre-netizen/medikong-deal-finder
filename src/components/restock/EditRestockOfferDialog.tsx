@@ -197,9 +197,15 @@ export function EditRestockOfferDialog({ offer, open, onOpenChange, onSaved }: E
             </>
           )}
 
-          <div className="col-span-2">
-            <Label className="text-xs">Fin de publication (optionnel)</Label>
+          <div>
+            <Label className="text-xs">Début de diffusion (optionnel)</Label>
+            <Input type="datetime-local" value={form.publish_start} onChange={(e) => update({ publish_start: e.target.value })} />
+            <p className="text-[10px] text-[#8B929C] mt-1">Vide = diffusion immédiate</p>
+          </div>
+          <div>
+            <Label className="text-xs">Fin de diffusion (optionnel)</Label>
             <Input type="datetime-local" value={form.publish_end} onChange={(e) => update({ publish_end: e.target.value })} />
+            <p className="text-[10px] text-[#8B929C] mt-1">Vide = pas de date de fin</p>
           </div>
 
           <div className="col-span-2">

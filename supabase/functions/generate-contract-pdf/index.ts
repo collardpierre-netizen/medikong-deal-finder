@@ -179,8 +179,12 @@ function generatePdf(args: {
   if (v.address) writeWrapped(`Siège social : ${v.address}`);
   if (v.bce) writeWrapped(`Numéro d'entreprise (BCE) : ${v.bce}`);
   if (v.vat) writeWrapped(`Numéro de TVA : ${v.vat}`);
+  // Le représentant nommé dans le corps = signataire courant (et non la donnée
+  // figée sur la fiche vendeur, qui peut être obsolète).
+  const bodyRepName = (args.signerName && args.signerName.trim()) || v.representative_name;
+  const bodyRepRole = (args.signerRole && args.signerRole.trim()) || v.representative_role || "";
   writeWrapped(
-    `Représenté par : ${v.representative_name}${v.representative_role ? `, en qualité de ${v.representative_role}` : ""}`,
+    `Représenté par : ${bodyRepName}${bodyRepRole ? `, en qualité de ${bodyRepRole}` : ""}`,
     { spacing: 4 }
   );
 

@@ -828,7 +828,24 @@ export function BuyerImportModal({ open, onOpenChange, initialJobId = null }: Pr
     selected.forEach(idx => {
       const r = results[idx];
       if (r.offerId && r.productId) {
-        addToCart.mutate({ offerId: r.offerId, productId: r.productId, quantity: r.quantity });
+        addToCart.mutate({
+          offerId: r.offerId,
+          productId: r.productId,
+          quantity: r.quantity,
+          // 🩹 Sans ces champs, l'update optimiste locale insère un item à 0 € "Produit"
+          //    avant que la sync DB ne ré-hydrate avec le vrai prix.
+          priceExclVat: r.mediPrice,
+          productData: r.productId
+            ? {
+                id: r.productId,
+                name: r.productName || "Produit",
+                brand: "",
+                slug: "",
+                price: r.mediPrice ?? 0,
+                imageUrl: r.productImage,
+              }
+            : undefined,
+        });
         added++;
       }
     });
@@ -837,6 +854,7 @@ export function BuyerImportModal({ open, onOpenChange, initialJobId = null }: Pr
       handleClose(false);
     }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>

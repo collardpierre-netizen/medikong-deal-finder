@@ -36,6 +36,12 @@ const deliveryLabels: Record<string, { label: string; icon: typeof Truck }> = {
   both: { label: "Enlèvement / Livraison", icon: Truck },
 };
 
+/** Prix final acheteur (commission MediKong déjà incluse, hors livraison). */
+const finalBuyerPrice = (priceHt: number, commissionPct: number) =>
+  priceHt * (1 + (commissionPct || 0) / 100);
+
+const fmtEur = (p: number) => `${p.toFixed(2)} €`;
+
 /* ── Sidebar filter section ── */
 function FilterSection({ title, children, defaultOpen = true }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -66,18 +72,28 @@ function SwipeCard({
 }: {
   offer: any; onSwipe: (dir: "left" | "right") => void; isFront: boolean; onTap: () => void;
 }) {
+/* ── Swipe Card (inline for mobile tinder mode) ── */
+function SwipeCard({
+  offer, onSwipe, isFront, onTap, commissionPct = 0, shippingFee = 0,
+}: {
+  offer: any; onSwipe: (dir: "left" | "right") => void; isFront: boolean; onTap: () => void;
+  commissionPct?: number; shippingFee?: number;
+}) {
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-12, 12]);
   const rightOverlay = useTransform(x, [0, 80], [0, 1]);
   const leftOverlay = useTransform(x, [-80, 0], [1, 0]);
 
+  const finalPrice = finalBuyerPrice(offer.price_ht || 0, commissionPct);
   const medikongPrice = offer.medikong_product?.best_price_excl_vat;
-  const cataloguePrice = medikongPrice || (offer.price_ht || 0) * 1.3;
-  const discount = medikongPrice
-    ? Math.round((1 - (offer.price_ht || 0) / medikongPrice) * 100)
-    : Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
+  const cataloguePrice = medikongPrice || finalPrice * 1.3;
+  const discount = cataloguePrice > 0
+    ? Math.round((1 - finalPrice / cataloguePrice) * 100)
+    : 0;
   const grade = gradeConfig[offer.grade] || gradeConfig.A;
   const imgSrc = offer.product_image_url && isValidProductImage(offer.product_image_url) ? offer.product_image_url : null;
+  const canShip = offer.delivery_condition !== "pickup";
+  const canPickup = offer.delivery_condition !== "shipping";
 
   const handleDragEnd = (_: any, info: PanInfo) => {
     if (info.offset.x > 100) onSwipe("right");
@@ -121,15 +137,22 @@ function SwipeCard({
           <h3 className="font-bold text-foreground text-[17px] leading-tight line-clamp-2">{offer.designation || "Produit"}</h3>
           <p className="text-[11px] text-muted-foreground">{offer.ean && `EAN ${offer.ean}`}{offer.ean && offer.cnk && " · "}{offer.cnk && `CNK ${offer.cnk}`}</p>
           <div className="flex items-baseline gap-2">
-            <span className="text-sm text-muted-foreground line-through">{cataloguePrice.toFixed(2)} €</span>
-            <span className="text-2xl font-extrabold text-primary">{(offer.price_ht || 0).toFixed(2)} €</span>
+            <span className="text-sm text-muted-foreground line-through">{fmtEur(cataloguePrice)}</span>
+            <span className="text-2xl font-extrabold text-primary">{fmtEur(finalPrice)}</span>
             <span className="text-xs text-muted-foreground">HT/u</span>
           </div>
-          <div className="grid grid-cols-2 gap-2 text-[12px] text-muted-foreground">
+          <div className="space-y-0.5 text-[11px] text-muted-foreground">
+            {canPickup && (
+              <div className="flex items-center gap-1.5"><MapPin size={11} /> Enlèvement sur place inclus</div>
+            )}
+            {canShip && (
+              <div className="flex items-center gap-1.5"><Truck size={11} /> Livraison estimée <b className="text-foreground ml-1">+ {fmtEur(shippingFee)}</b></div>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-[12px] text-muted-foreground pt-1">
             <div className="flex items-center gap-1.5"><Box size={13} /><b className="text-foreground">{offer.quantity}</b> unités</div>
             <div className="flex items-center gap-1.5"><Clock size={13} />DLU {offer.dlu ? new Date(offer.dlu).toLocaleDateString("fr-BE", { day: "2-digit", month: "short", year: "numeric" }) : "—"}</div>
             <div className="flex items-center gap-1.5"><MapPin size={13} />{formatSellerLocation({ city: offer.seller_city, postal_code: offer.seller_postal_code, province: offer.seller_province })}</div>
-            <div className="flex items-center gap-1.5">{offer.delivery_condition === "pickup" ? <MapPin size={13} /> : <Truck size={13} />}{offer.delivery_condition === "pickup" ? "Enlèvement" : offer.delivery_condition === "shipping" ? "Livraison" : "Les deux"}</div>
           </div>
         </div>
       </div>
@@ -138,11 +161,13 @@ function SwipeCard({
 }
 
 /* ── Detail bottom sheet ── */
-function TinderDetailSheet({ offer, onClose, onAddToCart, onCounterOffer }: {
+function TinderDetailSheet({ offer, onClose, onAddToCart, onCounterOffer, commissionPct = 0, shippingFee = 0 }: {
   offer: any; onClose: () => void; onAddToCart: (qty: number) => void; onCounterOffer: () => void;
+  commissionPct?: number; shippingFee?: number;
 }) {
+  const finalPrice = finalBuyerPrice(offer.price_ht || 0, commissionPct);
   const medikongPrice = offer.medikong_product?.best_price_excl_vat;
-  const cataloguePrice = medikongPrice || (offer.price_ht || 0) * 1.3;
+  const cataloguePrice = medikongPrice || finalPrice * 1.3;
   const discount = medikongPrice
     ? Math.round((1 - (offer.price_ht || 0) / medikongPrice) * 100)
     : Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
@@ -172,15 +197,29 @@ function TinderDetailSheet({ offer, onClose, onAddToCart, onCounterOffer }: {
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold" style={{ backgroundColor: grade.bg, color: grade.color }}>{grade.label}</span>
             <span className="text-xs text-muted-foreground">{grade.desc}</span>
           </div>
-          <div className="bg-primary/5 rounded-xl p-4">
-            <div className="flex items-baseline gap-2 mb-1">
-              <span className="text-3xl font-extrabold text-primary">{(offer.price_ht || 0).toFixed(2)} €</span>
+          <div className="bg-primary/5 rounded-xl p-4 space-y-2">
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-extrabold text-primary">{fmtEur(finalPrice)}</span>
               <span className="text-sm text-muted-foreground">HT/unité</span>
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="line-through">{cataloguePrice.toFixed(2)} €</span>
+              <span className="line-through">{fmtEur(cataloguePrice)}</span>
               {discount > 0 && <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold">−{discount}%</span>}
-              <span>soit <b className="text-foreground">{((offer.price_ht || 0) * qty).toFixed(2)} €</b> pour {qty} u</span>
+              <span>soit <b className="text-foreground">{fmtEur(finalPrice * qty)}</b> pour {qty} u</span>
+            </div>
+            <div className="pt-2 border-t border-primary/10 space-y-1 text-xs">
+              {offer.delivery_condition !== "shipping" && (
+                <div className="flex items-center justify-between text-foreground">
+                  <span className="flex items-center gap-1.5"><MapPin size={12} className="text-primary" /> Enlèvement sur place</span>
+                  <b>{fmtEur(finalPrice)} <span className="font-normal text-muted-foreground">/u</span></b>
+                </div>
+              )}
+              {offer.delivery_condition !== "pickup" && (
+                <div className="flex items-center justify-between text-foreground">
+                  <span className="flex items-center gap-1.5"><Truck size={12} className="text-primary" /> Livraison estimée</span>
+                  <b>{fmtEur(finalPrice)} <span className="font-normal text-muted-foreground">/u + {fmtEur(shippingFee)} de port</span></b>
+                </div>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -193,6 +232,7 @@ function TinderDetailSheet({ offer, onClose, onAddToCart, onCounterOffer }: {
               <div key={i} className="bg-muted/40 rounded-xl p-3">
                 <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wider mb-1"><item.icon size={11} />{item.label}</div>
                 <p className="text-sm font-semibold text-foreground">{item.value}</p>
+
               </div>
             ))}
           </div>
@@ -217,14 +257,19 @@ function TinderDetailSheet({ offer, onClose, onAddToCart, onCounterOffer }: {
   );
 }
 /* ── Tinder View (inline) ── */
-function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart, tinderDetail, setTinderDetail, tinderCounter, setTinderCounter, tinderCounterPrice, setTinderCounterPrice, tinderCounterQty, setTinderCounterQty, buyer, formatPrice, commissionPct = 5 }: any) {
+function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart, tinderDetail, setTinderDetail, tinderCounter, setTinderCounter, tinderCounterPrice, setTinderCounterPrice, tinderCounterQty, setTinderCounterQty, buyer, formatPrice, commissionPct = 5, shippingFee = 0 }: any) {
   const remaining = offers.slice(tinderIdx);
   const currentOffer = remaining[0];
   const allSwiped = tinderIdx >= offers.length;
   const progress = offers.length > 0 ? Math.round((tinderIdx / offers.length) * 100) : 0;
-  const cartSubtotal = tinderCart.reduce((sum: number, c: any) => sum + (c.price_ht || 0) * (c.qty || c.quantity || 1), 0);
-  const cartCommission = cartSubtotal * (commissionPct / 100);
-  const cartTotal = cartSubtotal + cartCommission;
+  // Prix final = prix vendeur HT + commission MediKong déjà majorée. Livraison à part.
+  const cartProductsTotal = tinderCart.reduce(
+    (sum: number, c: any) => sum + finalBuyerPrice(c.price_ht || 0, commissionPct) * (c.qty || c.quantity || 1),
+    0,
+  );
+  const cartShipping = tinderCart.some((c: any) => (c.delivery_condition || "both") !== "pickup") ? shippingFee : 0;
+  const cartTotal = cartProductsTotal + cartShipping;
+
 
   // Full-screen flash feedback
   const [flash, setFlash] = useState<"accept" | "reject" | null>(null);
@@ -366,10 +411,13 @@ function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart
                 ))}
                 {tinderCart.length > 5 && <p className="text-[10px] text-emerald-600">+{tinderCart.length - 5} autres…</p>}
                 <div className="border-t border-emerald-200 pt-2 space-y-0.5">
-                  <div className="flex justify-between text-[11px] text-emerald-700"><span>Sous-total HT</span><span>{formatPrice(cartSubtotal)}</span></div>
-                  <div className="flex justify-between text-[11px] text-emerald-700"><span>+ Commission MediKong ({commissionPct}%)</span><span>{formatPrice(cartCommission)}</span></div>
+                  <div className="flex justify-between text-[11px] text-emerald-700"><span>Produits (commission incluse)</span><span>{formatPrice(cartProductsTotal)}</span></div>
+                  {cartShipping > 0 && (
+                    <div className="flex justify-between text-[11px] text-emerald-700"><span>+ Livraison estimée</span><span>{formatPrice(cartShipping)}</span></div>
+                  )}
                   <div className="flex justify-between text-sm font-bold text-emerald-800 pt-1 border-t border-emerald-200"><span>Total à payer HT</span><span>{formatPrice(cartTotal)}</span></div>
                 </div>
+
               </div>
               <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl py-5 text-base font-bold shadow-lg shadow-emerald-500/30">Finaliser ma commande →</Button>
             </div>
@@ -384,7 +432,7 @@ function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart
             <AnimatePresence>
               {remaining.slice(0, 3).reverse().map((offer: any, i: number) => {
                 const isFront = i === Math.min(remaining.length, 3) - 1;
-                return <SwipeCard key={offer.id} offer={offer} onSwipe={onSwipe} isFront={isFront} onTap={() => isFront && setTinderDetail(offer)} />;
+                return <SwipeCard key={offer.id} offer={offer} onSwipe={onSwipe} isFront={isFront} onTap={() => isFront && setTinderDetail(offer)} commissionPct={commissionPct} shippingFee={shippingFee} />;
               })}
             </AnimatePresence>
           </div>
@@ -398,13 +446,13 @@ function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart
 
       {tinderCart.length > 0 && !allSwiped && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2 flex items-center justify-between">
-          <span className="text-xs text-emerald-700"><b>{tinderCart.length}</b> produit{tinderCart.length > 1 ? "s" : ""} · <b>{formatPrice(cartTotal)}</b> HT <span className="text-emerald-600/80">(comm. {commissionPct}% incl.)</span></span>
+          <span className="text-xs text-emerald-700"><b>{tinderCart.length}</b> produit{tinderCart.length > 1 ? "s" : ""} · <b>{formatPrice(cartTotal)}</b> HT {cartShipping > 0 && <span className="text-emerald-600/80">(livraison {formatPrice(cartShipping)} incl.)</span>}</span>
         </div>
       )}
 
       <AnimatePresence>
         {tinderDetail && !tinderCounter && (
-          <TinderDetailSheet offer={tinderDetail} onClose={() => setTinderDetail(null)} onAddToCart={(qty: number) => addFromDetail(tinderDetail, qty)} onCounterOffer={() => setTinderCounter(true)} />
+          <TinderDetailSheet offer={tinderDetail} onClose={() => setTinderDetail(null)} onAddToCart={(qty: number) => addFromDetail(tinderDetail, qty)} onCounterOffer={() => setTinderCounter(true)} commissionPct={commissionPct} shippingFee={shippingFee} />
         )}
       </AnimatePresence>
 
@@ -688,13 +736,17 @@ export default function RestockOpportunities() {
 
   /* ── Render helpers ── */
   const renderOfferCard = (offer: any) => {
+    const finalPrice = finalBuyerPrice(offer.price_ht || 0, commissionPct);
     const cataloguePrice = getCataloguePrice(offer);
-    const discount = getDiscount(offer);
+    const discount = cataloguePrice > 0 ? Math.round((1 - finalPrice / cataloguePrice) * 100) : 0;
     const grade = offer.grade || stateToGrade[offer.product_state] || "A";
     const gc = gradeConfig[grade] || gradeConfig.A;
     const delivery = deliveryLabels[offer.delivery_condition] || deliveryLabels.both;
     const DeliveryIcon = delivery.icon;
     const imgSrc = offer.product_image_url && isValidProductImage(offer.product_image_url) ? offer.product_image_url : null;
+    const canShip = offer.delivery_condition !== "pickup";
+    const canPickup = offer.delivery_condition !== "shipping";
+
 
     if (viewMode === "list") {
       return (
@@ -723,15 +775,22 @@ export default function RestockOpportunities() {
           {/* Price + actions */}
           <div className="shrink-0 flex flex-col items-end justify-between">
             <div className="text-right">
-              <span className="text-lg font-bold text-primary">{formatPrice(offer.price_ht || 0)}</span>
-              <span className="text-[10px] text-muted-foreground ml-1">HT/u</span>
-              {discount > 0 && <span className="ml-2 text-xs font-bold text-emerald-600">-{discount}%</span>}
+              <div className="flex items-baseline justify-end gap-1.5">
+                <span className="text-lg font-bold text-primary">{formatPrice(finalPrice)}</span>
+                <span className="text-[10px] text-muted-foreground">HT/u</span>
+                {discount > 0 && <span className="ml-1 text-xs font-bold text-emerald-600">-{discount}%</span>}
+              </div>
+              <div className="text-[10px] text-muted-foreground mt-0.5 flex flex-col items-end gap-0.5">
+                {canPickup && <span className="flex items-center gap-1"><MapPin size={9} /> Enlèvement inclus</span>}
+                {canShip && <span className="flex items-center gap-1"><Truck size={9} /> + {formatPrice(shippingFee)} livraison</span>}
+              </div>
               {offer.medikong_product && (
-                <a href={`/produit/${offer.medikong_product.slug || offer.medikong_product.id}`} className="ml-2 text-[10px] text-emerald-600 hover:underline" onClick={e => e.stopPropagation()}>
+                <a href={`/produit/${offer.medikong_product.slug || offer.medikong_product.id}`} className="text-[10px] text-emerald-600 hover:underline" onClick={e => e.stopPropagation()}>
                   Voir neuf →
                 </a>
               )}
             </div>
+
             <div className="flex gap-2 mt-2">
               <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => { setCounterOfferTarget(offer); setCounterForm({ price: "", quantity: String(offer.allow_partial ? offer.moq : offer.quantity) }); }}>
                 <MessageSquare size={12} /> Contre-offre
@@ -773,13 +832,22 @@ export default function RestockOpportunities() {
           </p>
 
           <div className="flex items-baseline gap-2">
-            <span className="text-xl font-bold text-primary">{formatPrice(offer.price_ht || 0)}</span>
+            <span className="text-xl font-bold text-primary">{formatPrice(finalPrice)}</span>
             <span className="text-xs text-muted-foreground line-through">{formatPrice(cataloguePrice)}</span>
             <span className="text-[11px] text-muted-foreground">HT/u</span>
             {offer.medikong_product && (
               <a href={`/produit/${offer.medikong_product.slug || offer.medikong_product.id}`} className="text-[10px] text-emerald-600 font-medium hover:underline" onClick={e => e.stopPropagation()}>
                 vs neuf →
               </a>
+            )}
+          </div>
+
+          <div className="space-y-0.5 text-[11px] text-muted-foreground">
+            {canPickup && (
+              <div className="flex items-center gap-1.5"><MapPin size={11} /> Enlèvement sur place inclus</div>
+            )}
+            {canShip && (
+              <div className="flex items-center gap-1.5"><Truck size={11} /> Livraison <b className="text-foreground ml-1">+ {formatPrice(shippingFee)}</b></div>
             )}
           </div>
 
@@ -796,11 +864,8 @@ export default function RestockOpportunities() {
               <span>Min. {offer.moq} u{offer.lot_size > 1 ? `, par ${offer.lot_size}` : ""}</span>
             </div>
           )}
-
-          {offer.delivery_condition !== "pickup" && (
-            <p className="text-[11px] text-muted-foreground">Livraison : {formatPrice(shippingFee)}</p>
-          )}
         </div>
+
 
         <div className="border-t border-border p-3 flex gap-2">
           <Button variant="outline" size="sm" className="flex-1 text-xs gap-1" onClick={() => { setCounterOfferTarget(offer); setCounterForm({ price: "", quantity: String(offer.allow_partial ? offer.moq : offer.quantity) }); }}>
@@ -1011,6 +1076,7 @@ export default function RestockOpportunities() {
                 buyer={buyer}
                 formatPrice={formatPrice}
                 commissionPct={commissionPct}
+                shippingFee={shippingFee}
               />
             ) : viewMode === "grid" ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -1078,23 +1144,33 @@ export default function RestockOpportunities() {
                           {buyQuantity < moq ? `Minimum ${moq} unités` : lotSz > 1 && buyQuantity % lotSz !== 0 ? `Multiple de ${lotSz}` : `Maximum ${maxQty}`}
                         </p>
                       )}
-                      <p className="text-sm text-muted-foreground">{buyQuantity} × {formatPrice(confirmTarget.price_ht || 0)} HT</p>
+                      <p className="text-sm text-muted-foreground">{buyQuantity} × {formatPrice(finalBuyerPrice(confirmTarget.price_ht || 0, commissionPct))} HT</p>
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">{maxQty} × {formatPrice(confirmTarget.price_ht || 0)} HT</p>
+                    <p className="text-sm text-muted-foreground">{maxQty} × {formatPrice(finalBuyerPrice(confirmTarget.price_ht || 0, commissionPct))} HT</p>
                   )}
                   {(() => {
                     const qtyForTotal = isPartial ? buyQuantity : maxQty;
-                    const subtotal = (confirmTarget.price_ht || 0) * qtyForTotal;
-                    const commission = subtotal * (commissionPct / 100);
+                    const productsTotal = finalBuyerPrice(confirmTarget.price_ht || 0, commissionPct) * qtyForTotal;
+                    const isShip = (confirmTarget.delivery_condition || "both") !== "pickup";
+                    const ship = isShip ? shippingFee : 0;
                     return (
                       <div className="border-t border-border pt-2 mt-1 space-y-0.5">
-                        <div className="flex justify-between text-xs text-muted-foreground"><span>Sous-total HT</span><span>{formatPrice(subtotal)}</span></div>
-                        <div className="flex justify-between text-xs text-muted-foreground"><span>+ Commission MediKong ({commissionPct}%)</span><span>{formatPrice(commission)}</span></div>
-                        <div className="flex justify-between text-sm font-bold text-primary pt-1 border-t border-border"><span>Total à payer HT</span><span>{formatPrice(subtotal + commission)}</span></div>
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>{isShip ? "Produits (commission incluse)" : "Total enlèvement (commission incluse)"}</span>
+                          <span>{formatPrice(productsTotal)}</span>
+                        </div>
+                        {isShip && (
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>+ Livraison estimée</span>
+                            <span>{formatPrice(ship)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-sm font-bold text-primary pt-1 border-t border-border"><span>Total à payer HT</span><span>{formatPrice(productsTotal + ship)}</span></div>
                       </div>
                     );
                   })()}
+
                 </div>
               </div>
             );

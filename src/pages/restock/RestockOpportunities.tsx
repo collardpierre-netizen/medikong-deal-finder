@@ -72,18 +72,28 @@ function SwipeCard({
 }: {
   offer: any; onSwipe: (dir: "left" | "right") => void; isFront: boolean; onTap: () => void;
 }) {
+/* ── Swipe Card (inline for mobile tinder mode) ── */
+function SwipeCard({
+  offer, onSwipe, isFront, onTap, commissionPct = 0, shippingFee = 0,
+}: {
+  offer: any; onSwipe: (dir: "left" | "right") => void; isFront: boolean; onTap: () => void;
+  commissionPct?: number; shippingFee?: number;
+}) {
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-12, 12]);
   const rightOverlay = useTransform(x, [0, 80], [0, 1]);
   const leftOverlay = useTransform(x, [-80, 0], [1, 0]);
 
+  const finalPrice = finalBuyerPrice(offer.price_ht || 0, commissionPct);
   const medikongPrice = offer.medikong_product?.best_price_excl_vat;
-  const cataloguePrice = medikongPrice || (offer.price_ht || 0) * 1.3;
-  const discount = medikongPrice
-    ? Math.round((1 - (offer.price_ht || 0) / medikongPrice) * 100)
-    : Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
+  const cataloguePrice = medikongPrice || finalPrice * 1.3;
+  const discount = cataloguePrice > 0
+    ? Math.round((1 - finalPrice / cataloguePrice) * 100)
+    : 0;
   const grade = gradeConfig[offer.grade] || gradeConfig.A;
   const imgSrc = offer.product_image_url && isValidProductImage(offer.product_image_url) ? offer.product_image_url : null;
+  const canShip = offer.delivery_condition !== "pickup";
+  const canPickup = offer.delivery_condition !== "shipping";
 
   const handleDragEnd = (_: any, info: PanInfo) => {
     if (info.offset.x > 100) onSwipe("right");
@@ -127,15 +137,22 @@ function SwipeCard({
           <h3 className="font-bold text-foreground text-[17px] leading-tight line-clamp-2">{offer.designation || "Produit"}</h3>
           <p className="text-[11px] text-muted-foreground">{offer.ean && `EAN ${offer.ean}`}{offer.ean && offer.cnk && " · "}{offer.cnk && `CNK ${offer.cnk}`}</p>
           <div className="flex items-baseline gap-2">
-            <span className="text-sm text-muted-foreground line-through">{cataloguePrice.toFixed(2)} €</span>
-            <span className="text-2xl font-extrabold text-primary">{(offer.price_ht || 0).toFixed(2)} €</span>
+            <span className="text-sm text-muted-foreground line-through">{fmtEur(cataloguePrice)}</span>
+            <span className="text-2xl font-extrabold text-primary">{fmtEur(finalPrice)}</span>
             <span className="text-xs text-muted-foreground">HT/u</span>
           </div>
-          <div className="grid grid-cols-2 gap-2 text-[12px] text-muted-foreground">
+          <div className="space-y-0.5 text-[11px] text-muted-foreground">
+            {canPickup && (
+              <div className="flex items-center gap-1.5"><MapPin size={11} /> Enlèvement sur place inclus</div>
+            )}
+            {canShip && (
+              <div className="flex items-center gap-1.5"><Truck size={11} /> Livraison estimée <b className="text-foreground ml-1">+ {fmtEur(shippingFee)}</b></div>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-[12px] text-muted-foreground pt-1">
             <div className="flex items-center gap-1.5"><Box size={13} /><b className="text-foreground">{offer.quantity}</b> unités</div>
             <div className="flex items-center gap-1.5"><Clock size={13} />DLU {offer.dlu ? new Date(offer.dlu).toLocaleDateString("fr-BE", { day: "2-digit", month: "short", year: "numeric" }) : "—"}</div>
             <div className="flex items-center gap-1.5"><MapPin size={13} />{formatSellerLocation({ city: offer.seller_city, postal_code: offer.seller_postal_code, province: offer.seller_province })}</div>
-            <div className="flex items-center gap-1.5">{offer.delivery_condition === "pickup" ? <MapPin size={13} /> : <Truck size={13} />}{offer.delivery_condition === "pickup" ? "Enlèvement" : offer.delivery_condition === "shipping" ? "Livraison" : "Les deux"}</div>
           </div>
         </div>
       </div>
@@ -144,11 +161,13 @@ function SwipeCard({
 }
 
 /* ── Detail bottom sheet ── */
-function TinderDetailSheet({ offer, onClose, onAddToCart, onCounterOffer }: {
+function TinderDetailSheet({ offer, onClose, onAddToCart, onCounterOffer, commissionPct = 0, shippingFee = 0 }: {
   offer: any; onClose: () => void; onAddToCart: (qty: number) => void; onCounterOffer: () => void;
+  commissionPct?: number; shippingFee?: number;
 }) {
+  const finalPrice = finalBuyerPrice(offer.price_ht || 0, commissionPct);
   const medikongPrice = offer.medikong_product?.best_price_excl_vat;
-  const cataloguePrice = medikongPrice || (offer.price_ht || 0) * 1.3;
+  const cataloguePrice = medikongPrice || finalPrice * 1.3;
   const discount = medikongPrice
     ? Math.round((1 - (offer.price_ht || 0) / medikongPrice) * 100)
     : Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);

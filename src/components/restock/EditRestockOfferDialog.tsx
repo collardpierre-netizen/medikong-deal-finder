@@ -117,6 +117,7 @@ export function EditRestockOfferDialog({ offer, open, onOpenChange, onSaved }: E
       allow_partial: form.allow_partial,
       moq: Number(form.moq) || 1,
       lot_size: Number(form.lot_size) || 1,
+      publish_start: form.publish_start ? new Date(form.publish_start).toISOString() : null,
       publish_end: form.publish_end ? new Date(form.publish_end).toISOString() : null,
       status: form.status,
       photos: form.photos,

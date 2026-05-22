@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import { PAGE_IMAGE_REGISTRY } from "@/data/page-image-registry";
 import FeaturedCategoriesTab from "@/components/admin/FeaturedCategoriesTab";
+import HeroImageEditor, { validateHeroUrl } from "@/components/admin/HeroImageEditor";
 
 // --- Static mock data for non-DB tabs ---
 const pages = [

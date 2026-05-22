@@ -199,7 +199,9 @@ function SwipeCard({
               <div className="flex items-center gap-1.5"><Truck size={11} /> Livraison estimée <b className="text-foreground ml-1">+ {fmtEur(shippingFee)}</b></div>
             )}
           </div>
+          <MarginBlock offer={offer} finalPrice={finalPrice} compact />
           <div className="grid grid-cols-2 gap-2 text-[12px] text-muted-foreground pt-1">
+
             <div className="flex items-center gap-1.5"><Box size={13} /><b className="text-foreground">{offer.quantity}</b> unités</div>
             <div className="flex items-center gap-1.5"><Clock size={13} />DLU {offer.dlu ? new Date(offer.dlu).toLocaleDateString("fr-BE", { day: "2-digit", month: "short", year: "numeric" }) : "—"}</div>
             <div className="flex items-center gap-1.5"><MapPin size={13} />{formatSellerLocation({ city: offer.seller_city, postal_code: offer.seller_postal_code, province: offer.seller_province })}</div>
@@ -272,7 +274,9 @@ function TinderDetailSheet({ offer, onClose, onAddToCart, onCounterOffer, commis
               )}
             </div>
           </div>
+          <MarginBlock offer={offer} finalPrice={finalPrice} />
           <div className="grid grid-cols-2 gap-3">
+
             {[
               { icon: Box, label: "Quantité", value: `${offer.quantity} unités` },
               { icon: Clock, label: "DLU", value: offer.dlu ? new Date(offer.dlu).toLocaleDateString("fr-BE", { day: "2-digit", month: "short", year: "numeric" }) : "—" },
@@ -840,8 +844,10 @@ export default function RestockOpportunities() {
                 </a>
               )}
             </div>
+            <div className="w-full mt-2"><MarginBlock offer={offer} finalPrice={finalPrice} compact /></div>
 
             <div className="flex gap-2 mt-2">
+
               <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => { setCounterOfferTarget(offer); setCounterForm({ price: "", quantity: String(offer.allow_partial ? offer.moq : offer.quantity) }); }}>
                 <MessageSquare size={12} /> Contre-offre
               </Button>
@@ -901,7 +907,10 @@ export default function RestockOpportunities() {
             )}
           </div>
 
+          <MarginBlock offer={offer} finalPrice={finalPrice} compact />
+
           <div className="grid grid-cols-2 gap-1.5 text-xs text-muted-foreground">
+
             <span className="flex items-center gap-1"><Box size={12} /><b>{offer.quantity}</b> u</span>
             <span className="flex items-center gap-1"><Clock size={12} />DLU {formatDate(offer.dlu)}</span>
             <span className="flex items-center gap-1"><MapPin size={12} />{formatSellerLocation({ city: offer.seller_city, postal_code: offer.seller_postal_code, province: offer.seller_province })}</span>

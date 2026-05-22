@@ -46,7 +46,7 @@ interface SendcloudKeys {
 
 /* ─── Step indicator ─── */
 function StepIndicator({ current, total }: { current: number; total: number }) {
-  const labels = ["Entreprise", "Expédition", "Configuration", "Récap", "Convention"];
+  const labels = ["Entreprise", "Expédition", "Configuration", "Garantie", "Récap"];
   return (
     <div className="flex items-center gap-2 mb-8">
       {Array.from({ length: total }, (_, i) => {

@@ -280,8 +280,11 @@ Deno.serve(async (req) => {
           moq: r.moq ?? 1,
           mov: r.mov,
           delivery_days: r.deliveryDays ?? undefined,
+          purchase_price_excl_vat: r.purchasePrice ?? undefined,
+          pack_size_override: r.packSize ?? undefined,
           is_active: true,
           synced_at: new Date().toISOString(),
+          _primary_category_id: (product as any).primary_category_id ?? null, // stripped before upsert
         });
         matched++;
       } else {

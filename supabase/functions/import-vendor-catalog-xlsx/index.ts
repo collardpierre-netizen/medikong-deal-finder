@@ -449,6 +449,7 @@ Deno.serve(async (req) => {
       },
       offers_upserted: offersUpserted,
       submissions_created: submissionsCreated,
+      categories_linked: categoriesLinked,
       errors: errors.slice(0, 200),
       category_anomalies: categoryAnomalies,
     });

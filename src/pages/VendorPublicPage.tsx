@@ -836,7 +836,7 @@ export default function VendorPublicPage() {
                 description: quickViewProduct.description,
                 gtin: quickViewProduct.gtin,
                 vendorId: quickViewProduct.vendorId || vendor?.id,
-                vendorDisplayName: getVendorPublicName(vendor),
+                vendorDisplayName: vendorDisplayName,
                 vendorDisplayCode: code,
               }
             : null

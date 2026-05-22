@@ -42,6 +42,61 @@ const finalBuyerPrice = (priceHt: number, commissionPct: number) =>
 
 const fmtEur = (p: number) => `${p.toFixed(2)} €`;
 
+/**
+ * Calcule la marge potentielle pour le pharmacien acheteur :
+ *  - PVP HT = prix public conseillé (products.pvp_ttc_cents) converti HT via vat_rate offer
+ *  - prix pharmacien = prix MediKong neuf HT (products.best_price_excl_vat) — référence marché
+ *  - prix demandé = prix final acheteur HT (offer + commission MediKong)
+ *  - marge € / % = (PVP HT − prix demandé HT) sur le PVP HT
+ */
+function computeMarginBreakdown(offer: any, finalPriceHt: number) {
+  const vatRate = offer?.vat_rate != null ? Number(offer.vat_rate) : 0.06;
+  const vatMul = 1 + (isNaN(vatRate) ? 0.06 : vatRate);
+  const pvpTtc = offer?.medikong_product?.pvp_ttc_cents
+    ? Number(offer.medikong_product.pvp_ttc_cents) / 100
+    : null;
+  const pvpHt = pvpTtc != null ? pvpTtc / vatMul : null;
+  const pharmacistPriceHt = offer?.medikong_product?.best_price_excl_vat ?? null;
+  const marginEur = pvpHt != null ? pvpHt - finalPriceHt : null;
+  const marginPct = pvpHt && pvpHt > 0 && marginEur != null ? (marginEur / pvpHt) * 100 : null;
+  return { pvpHt, pvpTtc, pharmacistPriceHt, finalPriceHt, marginEur, marginPct, vatRatePct: Math.round((vatMul - 1) * 100) };
+}
+
+function MarginBlock({ offer, finalPrice, compact = false }: { offer: any; finalPrice: number; compact?: boolean }) {
+  const b = computeMarginBreakdown(offer, finalPrice);
+  // Si pas de PVP ET pas de prix pharmacien, rien à afficher
+  if (b.pvpHt == null && b.pharmacistPriceHt == null) return null;
+  const positive = (b.marginEur ?? 0) > 0;
+  return (
+    <div className={`rounded-lg border border-border bg-muted/30 ${compact ? "px-2.5 py-1.5" : "px-3 py-2"} space-y-1`}>
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+        <span>Prix public conseillé (PVP)</span>
+        <span className="font-semibold text-foreground">
+          {b.pvpHt != null ? <>{fmtEur(b.pvpHt)} HT <span className="text-[10px] text-muted-foreground/80">({fmtEur(b.pvpTtc!)} TTC)</span></> : <span className="italic text-muted-foreground/70">—</span>}
+        </span>
+      </div>
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+        <span>Prix pharmacien (neuf MediKong)</span>
+        <span className="font-semibold text-foreground">
+          {b.pharmacistPriceHt != null ? <>{fmtEur(b.pharmacistPriceHt)} HT</> : <span className="italic text-muted-foreground/70">—</span>}
+        </span>
+      </div>
+      <div className="flex items-center justify-between text-[11px]">
+        <span className="text-muted-foreground">Prix demandé (vous payez)</span>
+        <span className="font-bold text-primary">{fmtEur(finalPrice)} HT</span>
+      </div>
+      {b.marginEur != null && (
+        <div className={`flex items-center justify-between text-[11px] pt-1 mt-1 border-t border-border ${positive ? "text-emerald-700" : "text-red-600"}`}>
+          <span className="font-semibold">Marge potentielle vs PVP</span>
+          <span className="font-extrabold">
+            {positive ? "+" : ""}{fmtEur(b.marginEur)} <span className="opacity-80">/ {b.marginPct!.toFixed(1)}%</span>
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Sidebar filter section ── */
 function FilterSection({ title, children, defaultOpen = true }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -144,7 +199,9 @@ function SwipeCard({
               <div className="flex items-center gap-1.5"><Truck size={11} /> Livraison estimée <b className="text-foreground ml-1">+ {fmtEur(shippingFee)}</b></div>
             )}
           </div>
+          <MarginBlock offer={offer} finalPrice={finalPrice} compact />
           <div className="grid grid-cols-2 gap-2 text-[12px] text-muted-foreground pt-1">
+
             <div className="flex items-center gap-1.5"><Box size={13} /><b className="text-foreground">{offer.quantity}</b> unités</div>
             <div className="flex items-center gap-1.5"><Clock size={13} />DLU {offer.dlu ? new Date(offer.dlu).toLocaleDateString("fr-BE", { day: "2-digit", month: "short", year: "numeric" }) : "—"}</div>
             <div className="flex items-center gap-1.5"><MapPin size={13} />{formatSellerLocation({ city: offer.seller_city, postal_code: offer.seller_postal_code, province: offer.seller_province })}</div>
@@ -217,7 +274,9 @@ function TinderDetailSheet({ offer, onClose, onAddToCart, onCounterOffer, commis
               )}
             </div>
           </div>
+          <MarginBlock offer={offer} finalPrice={finalPrice} />
           <div className="grid grid-cols-2 gap-3">
+
             {[
               { icon: Box, label: "Quantité", value: `${offer.quantity} unités` },
               { icon: Clock, label: "DLU", value: offer.dlu ? new Date(offer.dlu).toLocaleDateString("fr-BE", { day: "2-digit", month: "short", year: "numeric" }) : "—" },
@@ -535,7 +594,7 @@ export default function RestockOpportunities() {
       if (matchedIds.length > 0) {
         const { data: products } = await supabase
           .from("products")
-          .select("id, name, slug, best_price_excl_vat, best_price_incl_vat, image_url, gtin")
+          .select("id, name, slug, best_price_excl_vat, best_price_incl_vat, image_url, gtin, pvp_ttc_cents, pvp_source")
           .in("id", [...new Set(matchedIds)]);
         if (products) {
           productsMap = Object.fromEntries(products.map(p => [p.id, p]));
@@ -785,8 +844,10 @@ export default function RestockOpportunities() {
                 </a>
               )}
             </div>
+            <div className="w-full mt-2"><MarginBlock offer={offer} finalPrice={finalPrice} compact /></div>
 
             <div className="flex gap-2 mt-2">
+
               <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => { setCounterOfferTarget(offer); setCounterForm({ price: "", quantity: String(offer.allow_partial ? offer.moq : offer.quantity) }); }}>
                 <MessageSquare size={12} /> Contre-offre
               </Button>
@@ -846,7 +907,10 @@ export default function RestockOpportunities() {
             )}
           </div>
 
+          <MarginBlock offer={offer} finalPrice={finalPrice} compact />
+
           <div className="grid grid-cols-2 gap-1.5 text-xs text-muted-foreground">
+
             <span className="flex items-center gap-1"><Box size={12} /><b>{offer.quantity}</b> u</span>
             <span className="flex items-center gap-1"><Clock size={12} />DLU {formatDate(offer.dlu)}</span>
             <span className="flex items-center gap-1"><MapPin size={12} />{formatSellerLocation({ city: offer.seller_city, postal_code: offer.seller_postal_code, province: offer.seller_province })}</span>

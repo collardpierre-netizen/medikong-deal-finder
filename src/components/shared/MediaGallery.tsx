@@ -224,28 +224,43 @@ function trackPartnerBannerClick(
 }
 
 
-function MediaPartnerBanner({ ownerKey }: { ownerKey: string }) {
+function MediaPartnerBanner({ owner, ownerKey }: { owner: MediaOwner; ownerKey: string }) {
+  const brandId = "brandId" in owner ? owner.brandId : null;
+  const manufacturerId = "manufacturerId" in owner ? owner.manufacturerId : null;
+
   const { data } = useQuery({
-    queryKey: ["site-config", "media-banner"],
+    queryKey: ["media-banner-pick", brandId, manufacturerId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("site_config")
-        .select("media_banner_enabled, media_banner_title, media_banner_subtitle, media_banner_cta_label, media_banner_cta_url")
-        .eq("id", 1)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc("pick_media_banner", {
+        p_brand_id: brandId,
+        p_manufacturer_id: manufacturerId,
+      });
       if (error) throw error;
-      return data as any;
+      // Supabase RPC returning a composite type -> single row object (or null)
+      return (Array.isArray(data) ? data[0] : data) as
+        | {
+            id: string;
+            enabled: boolean;
+            partner_name: string | null;
+            title: string | null;
+            subtitle: string | null;
+            cta_label: string | null;
+            cta_url: string | null;
+            logo_url: string | null;
+          }
+        | null;
     },
     staleTime: 5 * 60_000,
   });
 
-  if (!data || !data.media_banner_enabled || !data.media_banner_cta_url) return null;
+  if (!data || !data.cta_url) return null;
 
-  const trackedHref = buildPartnerUrl(data.media_banner_cta_url, ownerKey);
-  const ctaLabel = data.media_banner_cta_label || "Découvrir Balooh";
-  // site_config est un singleton (id = 1) ; ce bandeau n'est pas lié à une offre produit.
-  // On expose néanmoins l'identifiant du bandeau pour disambiguation future en GTM.
-  const bannerId = (data as any).id ?? 1;
+  const trackedHref = buildPartnerUrl(data.cta_url, ownerKey);
+  const ctaLabel = data.cta_label || `Découvrir ${data.partner_name || "le partenaire"}`;
+  // Vrai identifiant du bandeau (chaque ligne media_banners = un deal distinct)
+  const bannerId = data.id;
+  const logoSrc = data.logo_url || balaoohLogo;
+  const partnerLabel = data.partner_name || "Partenaire";
 
   return (
     <a
@@ -256,51 +271,50 @@ function MediaPartnerBanner({ ownerKey }: { ownerKey: string }) {
       onAuxClick={(e) => { if (e.button === 1) trackPartnerBannerClick(ownerKey, trackedHref, ctaLabel, bannerId); }}
       data-tracking="media-partner-banner"
       data-owner-key={ownerKey}
+      data-banner-id={bannerId}
       className="group mt-5 block relative overflow-hidden rounded-2xl border border-mk-line bg-gradient-to-br from-mk-navy via-mk-navy to-[#0b1e4a] p-5 md:p-7 hover:shadow-xl transition-all"
     >
-      {/* Glow décoratif rappel logo Balooh */}
+      {/* Glow décoratif */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden>
         <div className="absolute -right-16 -top-20 w-72 h-72 rounded-full bg-gradient-to-br from-pink-400/30 via-fuchsia-400/20 to-indigo-400/20 blur-3xl" />
         <div className="absolute -left-10 -bottom-24 w-72 h-72 rounded-full bg-gradient-to-tr from-amber-300/20 via-rose-300/20 to-violet-400/20 blur-3xl" />
       </div>
 
       <div className="relative flex flex-col md:flex-row md:items-center gap-5 md:gap-7">
-        {/* Logo Balooh */}
         <div className="shrink-0 flex md:block items-center">
           <img
-            src={balaoohLogo}
-            alt="Balooh"
+            src={logoSrc}
+            alt={partnerLabel}
             className="h-14 md:h-16 w-auto object-contain drop-shadow-[0_4px_20px_rgba(236,72,153,0.35)]"
             loading="lazy"
           />
         </div>
 
-        {/* Texte */}
         <div className="flex-1 min-w-0">
           <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/60 mb-1.5">
             <span className="h-1 w-1 rounded-full bg-fuchsia-400" /> Partenaire officiel · Sponsorisé
           </span>
-          {data.media_banner_title && (
+          {data.title && (
             <h3 className="text-white font-bold text-base md:text-xl leading-snug font-display">
-              {data.media_banner_title}
+              {data.title}
             </h3>
           )}
-          {data.media_banner_subtitle && (
+          {data.subtitle && (
             <p className="text-white/75 text-sm md:text-[15px] mt-1.5 leading-relaxed">
-              {data.media_banner_subtitle}
+              {data.subtitle}
             </p>
           )}
         </div>
 
-        {/* CTA */}
         <span className="inline-flex items-center gap-2 bg-white text-mk-navy font-semibold text-sm px-5 py-3 rounded-xl shrink-0 shadow-md group-hover:shadow-lg group-hover:translate-x-0.5 transition-all">
-          {data.media_banner_cta_label || "Découvrir Balooh"}
+          {ctaLabel}
           <ArrowUpRight size={16} />
         </span>
       </div>
     </a>
   );
 }
+
 
 
 function MediaCard({ item, onOpen }: { item: MediaItem; onOpen: () => void }) {

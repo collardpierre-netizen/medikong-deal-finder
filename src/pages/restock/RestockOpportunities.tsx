@@ -42,6 +42,61 @@ const finalBuyerPrice = (priceHt: number, commissionPct: number) =>
 
 const fmtEur = (p: number) => `${p.toFixed(2)} €`;
 
+/**
+ * Calcule la marge potentielle pour le pharmacien acheteur :
+ *  - PVP HT = prix public conseillé (products.pvp_ttc_cents) converti HT via vat_rate offer
+ *  - prix pharmacien = prix MediKong neuf HT (products.best_price_excl_vat) — référence marché
+ *  - prix demandé = prix final acheteur HT (offer + commission MediKong)
+ *  - marge € / % = (PVP HT − prix demandé HT) sur le PVP HT
+ */
+function computeMarginBreakdown(offer: any, finalPriceHt: number) {
+  const vatRate = offer?.vat_rate != null ? Number(offer.vat_rate) : 0.06;
+  const vatMul = 1 + (isNaN(vatRate) ? 0.06 : vatRate);
+  const pvpTtc = offer?.medikong_product?.pvp_ttc_cents
+    ? Number(offer.medikong_product.pvp_ttc_cents) / 100
+    : null;
+  const pvpHt = pvpTtc != null ? pvpTtc / vatMul : null;
+  const pharmacistPriceHt = offer?.medikong_product?.best_price_excl_vat ?? null;
+  const marginEur = pvpHt != null ? pvpHt - finalPriceHt : null;
+  const marginPct = pvpHt && pvpHt > 0 && marginEur != null ? (marginEur / pvpHt) * 100 : null;
+  return { pvpHt, pvpTtc, pharmacistPriceHt, finalPriceHt, marginEur, marginPct, vatRatePct: Math.round((vatMul - 1) * 100) };
+}
+
+function MarginBlock({ offer, finalPrice, compact = false }: { offer: any; finalPrice: number; compact?: boolean }) {
+  const b = computeMarginBreakdown(offer, finalPrice);
+  // Si pas de PVP ET pas de prix pharmacien, rien à afficher
+  if (b.pvpHt == null && b.pharmacistPriceHt == null) return null;
+  const positive = (b.marginEur ?? 0) > 0;
+  return (
+    <div className={`rounded-lg border border-border bg-muted/30 ${compact ? "px-2.5 py-1.5" : "px-3 py-2"} space-y-1`}>
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+        <span>Prix public conseillé (PVP)</span>
+        <span className="font-semibold text-foreground">
+          {b.pvpHt != null ? <>{fmtEur(b.pvpHt)} HT <span className="text-[10px] text-muted-foreground/80">({fmtEur(b.pvpTtc!)} TTC)</span></> : <span className="italic text-muted-foreground/70">—</span>}
+        </span>
+      </div>
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+        <span>Prix pharmacien (neuf MediKong)</span>
+        <span className="font-semibold text-foreground">
+          {b.pharmacistPriceHt != null ? <>{fmtEur(b.pharmacistPriceHt)} HT</> : <span className="italic text-muted-foreground/70">—</span>}
+        </span>
+      </div>
+      <div className="flex items-center justify-between text-[11px]">
+        <span className="text-muted-foreground">Prix demandé (vous payez)</span>
+        <span className="font-bold text-primary">{fmtEur(finalPrice)} HT</span>
+      </div>
+      {b.marginEur != null && (
+        <div className={`flex items-center justify-between text-[11px] pt-1 mt-1 border-t border-border ${positive ? "text-emerald-700" : "text-red-600"}`}>
+          <span className="font-semibold">Marge potentielle vs PVP</span>
+          <span className="font-extrabold">
+            {positive ? "+" : ""}{fmtEur(b.marginEur)} <span className="opacity-80">/ {b.marginPct!.toFixed(1)}%</span>
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Sidebar filter section ── */
 function FilterSection({ title, children, defaultOpen = true }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);

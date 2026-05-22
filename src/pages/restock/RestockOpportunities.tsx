@@ -726,7 +726,7 @@ export default function RestockOpportunities() {
 
   // Mutations
   const takeMutation = useMutation({
-    mutationFn: async ({ offer, qty }: { offer: any; qty: number }) => {
+    mutationFn: async ({ offer, qty, mode }: { offer: any; qty: number; mode: "pickup" | "shipping" }) => {
       const isFullTake = qty >= offer.quantity;
       if (isFullTake) {
         const { error } = await supabase.from("restock_offers").update({ status: "sold" }).eq("id", offer.id);
@@ -738,8 +738,8 @@ export default function RestockOpportunities() {
       const { data: txData, error: txError } = await supabase.from("restock_transactions").insert({
         offer_id: offer.id, buyer_id: buyer?.id || null, seller_id: offer.seller_id,
         final_price: offer.price_ht, quantity: qty,
-        delivery_mode: offer.delivery_condition === "pickup" ? "pickup" : "shipping",
-        shipping_cost: offer.delivery_condition === "pickup" ? 0 : shippingFee,
+        delivery_mode: mode,
+        shipping_cost: mode === "pickup" ? 0 : shippingFee,
         commission_amount: offer.price_ht * qty * 0.05, status: "pending_payment",
       }).select("id").single();
       if (txError) throw txError;

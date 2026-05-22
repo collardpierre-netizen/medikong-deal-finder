@@ -322,12 +322,16 @@ Deno.serve(async (req) => {
 
     let offersUpserted = 0;
     let submissionsCreated = 0;
+    let categoriesLinked = 0;
 
     if (!dryRun) {
-      // Upsert offers in chunks
+      // Upsert offers in chunks (strip transient _primary_category_id)
       const CHUNK = 200;
       for (let i = 0; i < offerRows.length; i += CHUNK) {
-        const slice = offerRows.slice(i, i + CHUNK);
+        const slice = offerRows.slice(i, i + CHUNK).map((o) => {
+          const { _primary_category_id, ...rest } = o;
+          return rest;
+        });
         const { error } = await admin
           .from("offers")
           .upsert(slice, { onConflict: "product_id,vendor_id,country_code" });
@@ -335,6 +339,50 @@ Deno.serve(async (req) => {
           errors.push({ line: 0, reason: `Upsert offers: ${error.message}` });
         } else {
           offersUpserted += slice.length;
+        }
+      }
+
+      // Auto-link offers to their product's primary_category_id (idempotent via UNIQUE)
+      const offerKeysWithCat = offerRows
+        .filter((o) => o._primary_category_id)
+        .map((o) => ({
+          product_id: o.product_id as string,
+          vendor_id: o.vendor_id as string,
+          country_code: o.country_code as string,
+          category_id: o._primary_category_id as string,
+        }));
+      if (offerKeysWithCat.length > 0) {
+        const productIds = Array.from(new Set(offerKeysWithCat.map((k) => k.product_id)));
+        const { data: createdOffers, error: fetchErr } = await admin
+          .from("offers")
+          .select("id, product_id, vendor_id, country_code")
+          .eq("vendor_id", vendor.id)
+          .eq("country_code", countryCode)
+          .in("product_id", productIds);
+        if (fetchErr) {
+          errors.push({ line: 0, reason: `Fetch offers for category link: ${fetchErr.message}` });
+        } else {
+          const offerIdByKey = new Map<string, string>();
+          (createdOffers ?? []).forEach((o: any) => {
+            offerIdByKey.set(`${o.product_id}|${o.vendor_id}|${o.country_code}`, o.id);
+          });
+          const catRows = offerKeysWithCat
+            .map((k) => {
+              const offerId = offerIdByKey.get(`${k.product_id}|${k.vendor_id}|${k.country_code}`);
+              return offerId ? { offer_id: offerId, category_id: k.category_id } : null;
+            })
+            .filter(Boolean) as { offer_id: string; category_id: string }[];
+          for (let i = 0; i < catRows.length; i += CHUNK) {
+            const slice = catRows.slice(i, i + CHUNK);
+            const { error: catErr, count } = await admin
+              .from("offer_categories")
+              .upsert(slice, { onConflict: "offer_id,category_id", ignoreDuplicates: true, count: "exact" });
+            if (catErr) {
+              errors.push({ line: 0, reason: `Link offer_categories: ${catErr.message}` });
+            } else {
+              categoriesLinked += count ?? slice.length;
+            }
+          }
         }
       }
 

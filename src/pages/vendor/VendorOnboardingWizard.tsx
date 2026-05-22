@@ -12,6 +12,7 @@ import {
   MapPin, Clipboard
 } from "lucide-react";
 import { toast } from "sonner";
+import { useCurrentGuarantee } from "@/hooks/useGuarantee";
 
 /* ─── Types ─── */
 type ShippingMode = "no_shipping" | "own_sendcloud" | "medikong_whitelabel";

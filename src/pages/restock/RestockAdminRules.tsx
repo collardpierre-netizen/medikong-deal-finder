@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Plus, Shield } from "lucide-react";
+import { Plus, Shield, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { isRestockDemoActive, setRestockDemo } from "@/data/restock-demo-mock";
 
 export default function RestockAdminRules() {
   const queryClient = useQueryClient();

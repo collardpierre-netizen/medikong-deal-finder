@@ -5101,6 +5101,66 @@ export type Database = {
           },
         ]
       }
+      media_banners: {
+        Row: {
+          created_at: string
+          cta_label: string | null
+          cta_url: string | null
+          enabled: boolean
+          ends_at: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          partner_name: string | null
+          priority: number
+          scope: string
+          starts_at: string | null
+          subtitle: string | null
+          target_brand_ids: string[]
+          target_manufacturer_ids: string[]
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          enabled?: boolean
+          ends_at?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          partner_name?: string | null
+          priority?: number
+          scope?: string
+          starts_at?: string | null
+          subtitle?: string | null
+          target_brand_ids?: string[]
+          target_manufacturer_ids?: string[]
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          enabled?: boolean
+          ends_at?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          partner_name?: string | null
+          priority?: number
+          scope?: string
+          starts_at?: string | null
+          subtitle?: string | null
+          target_brand_ids?: string[]
+          target_manufacturer_ids?: string[]
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       media_downloads: {
         Row: {
           country_code: string | null
@@ -19723,6 +19783,34 @@ export type Database = {
       pause_subscription: {
         Args: { _reason?: string; _sub_id: string }
         Returns: undefined
+      }
+      pick_media_banner: {
+        Args: { p_brand_id?: string; p_manufacturer_id?: string }
+        Returns: {
+          created_at: string
+          cta_label: string | null
+          cta_url: string | null
+          enabled: boolean
+          ends_at: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          partner_name: string | null
+          priority: number
+          scope: string
+          starts_at: string | null
+          subtitle: string | null
+          target_brand_ids: string[]
+          target_manufacturer_ids: string[]
+          title: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "media_banners"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       public_active_offers_count: {
         Args: { _country_code?: string }

@@ -13,7 +13,7 @@ import {
   CheckCircle2, Building2, Search, X, Plus, Minus, ShoppingCart, Eye,
 } from "lucide-react";
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { getVendorPublicName, resolveVendorVisibility } from "@/lib/vendor-display";
+import { getVendorBoutiqueDisplayName, resolveVendorVisibility } from "@/lib/vendor-display";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -470,7 +470,7 @@ export default function VendorPublicPage() {
     visRules,
     { country: String(currentCountry) }
   ) : false;
-  const vendorDisplayName = vendor ? getVendorPublicName(vendor, showReal) : "Fournisseur";
+  const vendorDisplayName = vendor ? getVendorBoutiqueDisplayName(vendor, showReal) : "Fournisseur";
 
   // 404 normal : display_code inexistant ou vendeur désactivé.
   // Placé APRES tous les hooks pour respecter Rules of Hooks.
@@ -836,7 +836,7 @@ export default function VendorPublicPage() {
                 description: quickViewProduct.description,
                 gtin: quickViewProduct.gtin,
                 vendorId: quickViewProduct.vendorId || vendor?.id,
-                vendorDisplayName: getVendorPublicName(vendor),
+                vendorDisplayName: vendorDisplayName,
                 vendorDisplayCode: code,
               }
             : null

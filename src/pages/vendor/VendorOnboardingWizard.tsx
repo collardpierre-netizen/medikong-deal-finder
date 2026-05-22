@@ -607,8 +607,74 @@ export default function VendorOnboardingWizard() {
             </div>
           )}
 
-          {/* ─── STEP 4: Review ─── */}
+          {/* ─── STEP 4: Garantie satisfaction & remboursement ─── */}
           {step === 4 && (
+            <div className="space-y-5">
+              <div className="flex items-center gap-2 mb-4">
+                <ShieldCheck className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">
+                  {guarantee?.title ?? "Garantie satisfaction et remboursement"}
+                </h2>
+              </div>
+
+              {guaranteeQuery.isLoading && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Chargement…
+                </div>
+              )}
+
+              {guarantee && (
+                <>
+                  <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                    {guarantee.body_md && (
+                      <p className="text-sm text-foreground">{guarantee.body_md}</p>
+                    )}
+                    {guarantee.bullet_points?.length > 0 && (
+                      <ul className="space-y-1.5 text-sm text-foreground">
+                        {guarantee.bullet_points.map((b, i) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                            <span>{b}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <p className="text-[11px] text-muted-foreground pt-2 border-t border-primary/10">
+                      Version {guarantee.version} · publiée le{" "}
+                      {guarantee.published_at
+                        ? new Date(guarantee.published_at).toLocaleDateString("fr-FR")
+                        : "—"}
+                    </p>
+                  </div>
+
+                  <label className="flex items-start gap-3 cursor-pointer rounded-lg border-2 border-border p-4 hover:border-primary/40 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={guaranteeAccepted}
+                      onChange={(e) => setGuaranteeAccepted(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 accent-primary cursor-pointer"
+                    />
+                    <span className="text-sm text-foreground">
+                      <span className="font-medium">J'ai lu et j'accepte</span> la
+                      Garantie satisfaction et remboursement de MediKong, et je
+                      m'engage à l'appliquer à toutes mes offres actives sur la
+                      plateforme.
+                    </span>
+                  </label>
+                </>
+              )}
+
+              {!guaranteeQuery.isLoading && !guarantee && (
+                <div className="text-sm text-destructive flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4" />
+                  Garantie marketplace introuvable. Contactez le support.
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ─── STEP 5: Review ─── */}
+          {step === 5 && (
             <div className="space-y-5">
               <div className="flex items-center gap-2 mb-4">
                 <Clipboard className="w-5 h-5 text-primary" />

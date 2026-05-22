@@ -95,7 +95,6 @@ export default function RestockLayout() {
       <main className="flex-1 min-h-screen md:ml-[240px] pt-14 md:pt-0">
         <Outlet />
       </main>
-      <DemoModeToggle />
     </div>
   );
 }

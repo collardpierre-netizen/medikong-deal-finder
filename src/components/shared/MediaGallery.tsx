@@ -125,14 +125,76 @@ export function MediaGallery({ owner, title = "Médias officiels" }: { owner: Me
   );
 }
 
+const UTM_DEFAULTS: Record<string, string> = {
+  utm_source: "medikong",
+  utm_medium: "media_banner",
+  utm_campaign: "brand_partner",
+};
+
+function pushUtmConflict(payload: Record<string, unknown>) {
+  try {
+    const w = window as unknown as { dataLayer?: Array<Record<string, unknown>> };
+    w.dataLayer = w.dataLayer ?? [];
+    w.dataLayer.push({ event: "media_partner_utm_conflict", partner: "balooh", ...payload });
+  } catch {
+    /* no-op */
+  }
+}
+
 function buildPartnerUrl(rawUrl: string, ownerKey: string): string {
   try {
     const u = new URL(rawUrl);
     const params = u.searchParams;
-    if (!params.has("utm_source")) params.set("utm_source", "medikong");
-    if (!params.has("utm_medium")) params.set("utm_medium", "media_banner");
-    if (!params.has("utm_campaign")) params.set("utm_campaign", "brand_partner");
-    if (!params.has("utm_content")) params.set("utm_content", ownerKey);
+
+    // 1. Déduplique les clés UTM présentes plusieurs fois (garde la première occurrence)
+    //    et logge le conflit pour visibilité GTM.
+    const utmKeys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"];
+    for (const key of utmKeys) {
+      const all = params.getAll(key);
+      if (all.length > 1) {
+        pushUtmConflict({
+          reason: "duplicate_param",
+          owner_key: ownerKey,
+          param: key,
+          values: all,
+        });
+        const kept = all[0];
+        params.delete(key);
+        params.set(key, kept);
+      }
+    }
+
+    // 2. Pour utm_source/medium/campaign : on ne réécrit pas si le partenaire en a déjà un,
+    //    mais on logge si sa valeur diffère de notre défaut (utile pour audit).
+    for (const [key, defVal] of Object.entries(UTM_DEFAULTS)) {
+      const current = params.get(key);
+      if (current === null) {
+        params.set(key, defVal);
+      } else if (current !== defVal) {
+        pushUtmConflict({
+          reason: "default_overridden_by_partner",
+          owner_key: ownerKey,
+          param: key,
+          partner_value: current,
+          medikong_default: defVal,
+        });
+      }
+    }
+
+    // 3. utm_content DOIT toujours correspondre à ownerKey (cohérence tracking attribution).
+    //    Si le partenaire a injecté une valeur différente, on l'écrase et on logge le conflit.
+    const currentContent = params.get("utm_content");
+    if (currentContent !== ownerKey) {
+      if (currentContent !== null && currentContent !== "") {
+        pushUtmConflict({
+          reason: "utm_content_overridden",
+          owner_key: ownerKey,
+          partner_value: currentContent,
+        });
+      }
+      params.set("utm_content", ownerKey);
+    }
+
     return u.toString();
   } catch {
     return rawUrl;

@@ -546,6 +546,7 @@ export default function RestockOpportunities() {
   const [counterForm, setCounterForm] = useState({ price: "", quantity: "" });
   const [confirmTarget, setConfirmTarget] = useState<any>(null);
   const [buyQuantity, setBuyQuantity] = useState<number>(0);
+  const [deliveryChoice, setDeliveryChoice] = useState<"pickup" | "shipping">("shipping");
 
   // Tinder mode state
   const [tinderIdx, setTinderIdx] = useState(0);
@@ -725,7 +726,7 @@ export default function RestockOpportunities() {
 
   // Mutations
   const takeMutation = useMutation({
-    mutationFn: async ({ offer, qty }: { offer: any; qty: number }) => {
+    mutationFn: async ({ offer, qty, mode }: { offer: any; qty: number; mode: "pickup" | "shipping" }) => {
       const isFullTake = qty >= offer.quantity;
       if (isFullTake) {
         const { error } = await supabase.from("restock_offers").update({ status: "sold" }).eq("id", offer.id);
@@ -737,8 +738,8 @@ export default function RestockOpportunities() {
       const { data: txData, error: txError } = await supabase.from("restock_transactions").insert({
         offer_id: offer.id, buyer_id: buyer?.id || null, seller_id: offer.seller_id,
         final_price: offer.price_ht, quantity: qty,
-        delivery_mode: offer.delivery_condition === "pickup" ? "pickup" : "shipping",
-        shipping_cost: offer.delivery_condition === "pickup" ? 0 : shippingFee,
+        delivery_mode: mode,
+        shipping_cost: mode === "pickup" ? 0 : shippingFee,
         commission_amount: offer.price_ht * qty * 0.05, status: "pending_payment",
       }).select("id").single();
       if (txError) throw txError;
@@ -851,7 +852,7 @@ export default function RestockOpportunities() {
               <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => { setCounterOfferTarget(offer); setCounterForm({ price: "", quantity: String(offer.allow_partial ? offer.moq : offer.quantity) }); }}>
                 <MessageSquare size={12} /> Contre-offre
               </Button>
-              <Button size="sm" className="h-8 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => { setConfirmTarget(offer); setBuyQuantity(offer.allow_partial ? offer.moq : offer.quantity); }}>
+              <Button size="sm" className="h-8 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => { setConfirmTarget(offer); setBuyQuantity(offer.allow_partial ? offer.moq : offer.quantity); setDeliveryChoice(offer.delivery_condition === "pickup" ? "pickup" : "shipping"); }}>
                 <ShoppingCart size={12} /> Je prends
               </Button>
             </div>
@@ -930,7 +931,7 @@ export default function RestockOpportunities() {
           <Button variant="outline" size="sm" className="flex-1 text-xs gap-1" onClick={() => { setCounterOfferTarget(offer); setCounterForm({ price: "", quantity: String(offer.allow_partial ? offer.moq : offer.quantity) }); }}>
             <MessageSquare size={13} /> Contre-offre
           </Button>
-          <Button size="sm" className="flex-1 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => { setConfirmTarget(offer); setBuyQuantity(offer.allow_partial ? offer.moq : offer.quantity); }}>
+          <Button size="sm" className="flex-1 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => { setConfirmTarget(offer); setBuyQuantity(offer.allow_partial ? offer.moq : offer.quantity); setDeliveryChoice(offer.delivery_condition === "pickup" ? "pickup" : "shipping"); }}>
             <ShoppingCart size={13} /> Je prends
           </Button>
         </div>
@@ -1209,24 +1210,44 @@ export default function RestockOpportunities() {
                     <p className="text-sm text-muted-foreground">{maxQty} × {formatPrice(finalBuyerPrice(confirmTarget.price_ht || 0, commissionPct))} HT</p>
                   )}
                   {(() => {
+                    const cond = confirmTarget.delivery_condition || "both";
+                    const canPickup = cond !== "shipping";
+                    const canShip = cond !== "pickup";
+                    const showChoice = canPickup && canShip;
+                    const effectiveChoice = !canShip ? "pickup" : !canPickup ? "shipping" : deliveryChoice;
                     const qtyForTotal = isPartial ? buyQuantity : maxQty;
                     const productsTotal = finalBuyerPrice(confirmTarget.price_ht || 0, commissionPct) * qtyForTotal;
-                    const isShip = (confirmTarget.delivery_condition || "both") !== "pickup";
+                    const isShip = effectiveChoice === "shipping";
                     const ship = isShip ? shippingFee : 0;
                     return (
-                      <div className="border-t border-border pt-2 mt-1 space-y-0.5">
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>{isShip ? "Produits (commission incluse)" : "Total enlèvement (commission incluse)"}</span>
-                          <span>{formatPrice(productsTotal)}</span>
-                        </div>
-                        {isShip && (
-                          <div className="flex justify-between text-xs text-muted-foreground">
-                            <span>+ Livraison estimée</span>
-                            <span>{formatPrice(ship)}</span>
+                      <>
+                        {showChoice && (
+                          <div className="border-t border-border pt-2 mt-1">
+                            <Label className="text-xs text-muted-foreground">Mode de réception</Label>
+                            <div className="flex gap-2 mt-1.5">
+                              <button type="button" onClick={() => setDeliveryChoice("pickup")} className={`flex-1 text-xs px-2 py-2 rounded-lg border transition ${effectiveChoice === "pickup" ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border text-muted-foreground hover:border-primary/50"}`}>
+                                Enlèvement sur place (gratuit)
+                              </button>
+                              <button type="button" onClick={() => setDeliveryChoice("shipping")} className={`flex-1 text-xs px-2 py-2 rounded-lg border transition ${effectiveChoice === "shipping" ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border text-muted-foreground hover:border-primary/50"}`}>
+                                Livraison (+ {formatPrice(shippingFee)})
+                              </button>
+                            </div>
                           </div>
                         )}
-                        <div className="flex justify-between text-sm font-bold text-primary pt-1 border-t border-border"><span>Total à payer HT</span><span>{formatPrice(productsTotal + ship)}</span></div>
-                      </div>
+                        <div className="border-t border-border pt-2 mt-1 space-y-0.5">
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>{isShip ? "Produits (commission incluse)" : "Total enlèvement (commission incluse)"}</span>
+                            <span>{formatPrice(productsTotal)}</span>
+                          </div>
+                          {isShip && (
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                              <span>+ Livraison estimée</span>
+                              <span>{formatPrice(ship)}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between text-sm font-bold text-primary pt-1 border-t border-border"><span>Total à payer HT</span><span>{formatPrice(productsTotal + ship)}</span></div>
+                        </div>
+                      </>
                     );
                   })()}
 
@@ -1236,7 +1257,7 @@ export default function RestockOpportunities() {
           })()}
           <DialogFooter>
             <Button variant="outline" onClick={() => { setConfirmTarget(null); setBuyQuantity(0); }}>Annuler</Button>
-            <Button onClick={() => takeMutation.mutate({ offer: confirmTarget, qty: buyQuantity })} disabled={takeMutation.isPending || !confirmTarget || buyQuantity < (confirmTarget?.moq || 1) || (confirmTarget?.lot_size > 1 && buyQuantity % confirmTarget.lot_size !== 0)} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+            <Button onClick={() => { const cond = confirmTarget?.delivery_condition || "both"; const mode: "pickup" | "shipping" = cond === "pickup" ? "pickup" : cond === "shipping" ? "shipping" : deliveryChoice; takeMutation.mutate({ offer: confirmTarget, qty: buyQuantity, mode }); }} disabled={takeMutation.isPending || !confirmTarget || buyQuantity < (confirmTarget?.moq || 1) || (confirmTarget?.lot_size > 1 && buyQuantity % confirmTarget.lot_size !== 0)} className="bg-emerald-600 hover:bg-emerald-700 text-white">
               Confirmer
             </Button>
           </DialogFooter>

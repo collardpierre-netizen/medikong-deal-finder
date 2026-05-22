@@ -163,6 +163,17 @@ export default function VendorOnboardingWizard() {
       if (vendorErr) throw vendorErr;
       const vendorId = vendor.id;
 
+      // 1b. Enregistrer l'acceptation de la Garantie satisfaction & remboursement
+      if (guarantee?.id) {
+        const { error: gErr } = await supabase.rpc(
+          "vendor_accept_guarantee" as any,
+          { _version_id: guarantee.id } as any
+        );
+        if (gErr) throw gErr;
+      } else {
+        throw new Error("Garantie marketplace introuvable");
+      }
+
       // 2. Mode-specific setup
       if (shippingMode === "own_sendcloud") {
         await supabase.from("vendor_sendcloud_credentials").insert({

@@ -931,7 +931,7 @@ export default function RestockOpportunities() {
           <Button variant="outline" size="sm" className="flex-1 text-xs gap-1" onClick={() => { setCounterOfferTarget(offer); setCounterForm({ price: "", quantity: String(offer.allow_partial ? offer.moq : offer.quantity) }); }}>
             <MessageSquare size={13} /> Contre-offre
           </Button>
-          <Button size="sm" className="flex-1 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => { setConfirmTarget(offer); setBuyQuantity(offer.allow_partial ? offer.moq : offer.quantity); }}>
+          <Button size="sm" className="flex-1 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => { setConfirmTarget(offer); setBuyQuantity(offer.allow_partial ? offer.moq : offer.quantity); setDeliveryChoice(offer.delivery_condition === "pickup" ? "pickup" : "shipping"); }}>
             <ShoppingCart size={13} /> Je prends
           </Button>
         </div>

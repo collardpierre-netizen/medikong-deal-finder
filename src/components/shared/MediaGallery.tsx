@@ -201,7 +201,12 @@ function buildPartnerUrl(rawUrl: string, ownerKey: string): string {
   }
 }
 
-function trackPartnerBannerClick(ownerKey: string, href: string) {
+function trackPartnerBannerClick(
+  ownerKey: string,
+  href: string,
+  ctaLabel: string,
+  bannerId: string | number | null,
+) {
   try {
     const w = window as unknown as { dataLayer?: Array<Record<string, unknown>> };
     w.dataLayer = w.dataLayer ?? [];
@@ -209,12 +214,15 @@ function trackPartnerBannerClick(ownerKey: string, href: string) {
       event: "media_partner_banner_click",
       partner: "balooh",
       owner_key: ownerKey,
+      cta_label: ctaLabel,
+      offer_id: bannerId,
       destination: href,
     });
   } catch {
     /* no-op */
   }
 }
+
 
 function MediaPartnerBanner({ ownerKey }: { ownerKey: string }) {
   const { data } = useQuery({
@@ -234,14 +242,18 @@ function MediaPartnerBanner({ ownerKey }: { ownerKey: string }) {
   if (!data || !data.media_banner_enabled || !data.media_banner_cta_url) return null;
 
   const trackedHref = buildPartnerUrl(data.media_banner_cta_url, ownerKey);
+  const ctaLabel = data.media_banner_cta_label || "Découvrir Balooh";
+  // site_config est un singleton (id = 1) ; ce bandeau n'est pas lié à une offre produit.
+  // On expose néanmoins l'identifiant du bandeau pour disambiguation future en GTM.
+  const bannerId = (data as any).id ?? 1;
 
   return (
     <a
       href={trackedHref}
       target="_blank"
       rel="noopener noreferrer sponsored"
-      onClick={() => trackPartnerBannerClick(ownerKey, trackedHref)}
-      onAuxClick={(e) => { if (e.button === 1) trackPartnerBannerClick(ownerKey, trackedHref); }}
+      onClick={() => trackPartnerBannerClick(ownerKey, trackedHref, ctaLabel, bannerId)}
+      onAuxClick={(e) => { if (e.button === 1) trackPartnerBannerClick(ownerKey, trackedHref, ctaLabel, bannerId); }}
       data-tracking="media-partner-banner"
       data-owner-key={ownerKey}
       className="group mt-5 block relative overflow-hidden rounded-2xl border border-mk-line bg-gradient-to-br from-mk-navy via-mk-navy to-[#0b1e4a] p-5 md:p-7 hover:shadow-xl transition-all"

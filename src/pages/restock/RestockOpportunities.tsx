@@ -432,7 +432,7 @@ function TinderView({ offers, tinderIdx, setTinderIdx, tinderCart, setTinderCart
             <AnimatePresence>
               {remaining.slice(0, 3).reverse().map((offer: any, i: number) => {
                 const isFront = i === Math.min(remaining.length, 3) - 1;
-                return <SwipeCard key={offer.id} offer={offer} onSwipe={onSwipe} isFront={isFront} onTap={() => isFront && setTinderDetail(offer)} />;
+                return <SwipeCard key={offer.id} offer={offer} onSwipe={onSwipe} isFront={isFront} onTap={() => isFront && setTinderDetail(offer)} commissionPct={commissionPct} shippingFee={shippingFee} />;
               })}
             </AnimatePresence>
           </div>

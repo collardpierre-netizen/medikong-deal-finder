@@ -90,8 +90,14 @@ export async function generateContractPdf({
   if (vendor.address) writeWrapped(`Siège social : ${vendor.address}`);
   if (vendor.bce) writeWrapped(`Numéro d'entreprise (BCE) : ${vendor.bce}`);
   if (vendor.vat) writeWrapped(`Numéro de TVA : ${vendor.vat}`);
+  // Le représentant nommé dans le corps doit être celui qui SIGNE, pas le
+  // représentant historiquement stocké sur la fiche vendeur (qui peut être
+  // obsolète). On retombe sur les données vendeur uniquement si le signataire
+  // n'a pas saisi de nom/rôle.
+  const bodyRepName = signerName?.trim() || vendor.representative_name;
+  const bodyRepRole = (signerRole?.trim() || vendor.representative_role || "") as string;
   writeWrapped(
-    `Représenté par : ${vendor.representative_name}${vendor.representative_role ? `, en qualité de ${vendor.representative_role}` : ""}`,
+    `Représenté par : ${bodyRepName}${bodyRepRole ? `, en qualité de ${bodyRepRole}` : ""}`,
     { spacing: 4 }
   );
 

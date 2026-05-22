@@ -3,7 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Package, Tag, ShoppingCart, Lightbulb, Bell, FileText, BarChart3, Trophy,
   DollarSign, Truck, HeartPulse, MessageSquare, GraduationCap, Settings, ChevronLeft, ChevronRight, Receipt,
-  AlertOctagon, BookOpen, PlusSquare, Inbox,
+  AlertOctagon, BookOpen, PlusSquare, Inbox, FolderArchive,
 } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
@@ -55,6 +55,7 @@ const sidebarSections: { label: string | null; items: SidebarItem[] }[] = [
     items: [
       { key: "finances", icon: DollarSign, path: "/vendor/finance", comingSoon: true },
       { key: "billing", icon: Receipt, path: "/vendor/billing", modes: ["medikong_whitelabel"] },
+      { key: "documents", icon: FolderArchive, path: "/vendor/documents" },
       { key: "shipments", icon: Truck, path: "/vendor/shipments" },
       { key: "health", icon: HeartPulse, path: "/vendor/health" },
       { key: "messages", icon: MessageSquare, path: "/vendor/messages", comingSoon: true },

@@ -576,6 +576,7 @@ const App = () => (
               <Route path="billing" element={<LP><VendorBilling /></LP>} />
               <Route path="contract" element={<LP><VendorContractPage /></LP>} />
               <Route path="contract/changelog" element={<LP><VendorContractChangelogPage /></LP>} />
+              <Route path="documents" element={<LP><VendorDocuments /></LP>} />
             </Route>
 
             {/* ReStock — all routes under main site layout with sub-nav */}

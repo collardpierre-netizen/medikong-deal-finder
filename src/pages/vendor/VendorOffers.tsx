@@ -1404,6 +1404,19 @@ export default function VendorOffers() {
         : defaultCost?.default_purchase_price_excl_vat != null
           ? String(defaultCost.default_purchase_price_excl_vat)
           : "";
+    // Catégories liées à l'offre. Si vide, fallback auto sur la catégorie native du produit
+    // (primary_category_id puis category_id legacy) pour éviter d'imposer au vendeur de cocher
+    // manuellement dans l'arbre de 4000+ catégories à chaque édition.
+    let categoryIds: string[] = (linkedCats || []).map((c: any) => c.category_id);
+    if (categoryIds.length === 0 && offer.product_id) {
+      const { data: prodCat } = await supabase
+        .from("products")
+        .select("primary_category_id, category_id")
+        .eq("id", offer.product_id)
+        .maybeSingle();
+      const fallbackCat = (prodCat as any)?.primary_category_id || (prodCat as any)?.category_id;
+      if (fallbackCat) categoryIds = [fallbackCat];
+    }
     setForm({
       product_id: offer.product_id,
       product_name: (offer.products as any)?.name || "",
@@ -1416,7 +1429,7 @@ export default function VendorOffers() {
       mov_amount: String(offer.mov_amount || 0),
       delivery_days: String(offer.delivery_days),
       country_code: offer.country_code || "BE",
-      category_ids: (linkedCats || []).map((c: any) => c.category_id),
+      category_ids: categoryIds,
       pack_size_override: offer.pack_size_override != null ? String(offer.pack_size_override) : "",
       product_pack_size_fallback: (offer.products as any)?.pack_size ?? null,
       vendor_note: (offer as any).vendor_note ?? "",

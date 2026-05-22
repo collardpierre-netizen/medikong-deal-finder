@@ -59,6 +59,7 @@ export function EditRestockOfferDialog({ offer, open, onOpenChange, onSaved }: E
       allow_partial: !!offer.allow_partial,
       moq: offer.moq ?? 1,
       lot_size: offer.lot_size ?? 1,
+      publish_start: toDatetimeLocal(offer.publish_start),
       publish_end: toDatetimeLocal(offer.publish_end),
       status: offer.status ?? "published",
       photos: Array.isArray(offer.photos) ? [...offer.photos] : [],
@@ -116,6 +117,7 @@ export function EditRestockOfferDialog({ offer, open, onOpenChange, onSaved }: E
       allow_partial: form.allow_partial,
       moq: Number(form.moq) || 1,
       lot_size: Number(form.lot_size) || 1,
+      publish_start: form.publish_start ? new Date(form.publish_start).toISOString() : null,
       publish_end: form.publish_end ? new Date(form.publish_end).toISOString() : null,
       status: form.status,
       photos: form.photos,
@@ -195,9 +197,15 @@ export function EditRestockOfferDialog({ offer, open, onOpenChange, onSaved }: E
             </>
           )}
 
-          <div className="col-span-2">
-            <Label className="text-xs">Fin de publication (optionnel)</Label>
+          <div>
+            <Label className="text-xs">Début de diffusion (optionnel)</Label>
+            <Input type="datetime-local" value={form.publish_start} onChange={(e) => update({ publish_start: e.target.value })} />
+            <p className="text-[10px] text-[#8B929C] mt-1">Vide = diffusion immédiate</p>
+          </div>
+          <div>
+            <Label className="text-xs">Fin de diffusion (optionnel)</Label>
             <Input type="datetime-local" value={form.publish_end} onChange={(e) => update({ publish_end: e.target.value })} />
+            <p className="text-[10px] text-[#8B929C] mt-1">Vide = pas de date de fin</p>
           </div>
 
           <div className="col-span-2">

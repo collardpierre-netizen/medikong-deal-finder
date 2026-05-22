@@ -4986,6 +4986,45 @@ export type Database = {
           },
         ]
       }
+      marketplace_guarantee_versions: {
+        Row: {
+          body_md: string
+          bullet_points: string[]
+          created_at: string
+          created_by: string | null
+          id: string
+          is_current: boolean
+          published_at: string | null
+          title: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          body_md?: string
+          bullet_points?: string[]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_current?: boolean
+          published_at?: string | null
+          title: string
+          updated_at?: string
+          version: number
+        }
+        Update: {
+          body_md?: string
+          bullet_points?: string[]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_current?: boolean
+          published_at?: string | null
+          title?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       media_assets: {
         Row: {
           asset_type: Database["public"]["Enums"]["media_asset_type"]
@@ -13941,6 +13980,99 @@ export type Database = {
           },
         ]
       }
+      vendor_guarantee_acceptances: {
+        Row: {
+          accepted_at: string
+          accepted_by_user_id: string | null
+          created_at: string
+          guarantee_version_id: string
+          id: string
+          ip: string | null
+          source: Database["public"]["Enums"]["guarantee_acceptance_source"]
+          user_agent: string | null
+          vendor_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          accepted_by_user_id?: string | null
+          created_at?: string
+          guarantee_version_id: string
+          id?: string
+          ip?: string | null
+          source?: Database["public"]["Enums"]["guarantee_acceptance_source"]
+          user_agent?: string | null
+          vendor_id: string
+        }
+        Update: {
+          accepted_at?: string
+          accepted_by_user_id?: string | null
+          created_at?: string
+          guarantee_version_id?: string
+          id?: string
+          ip?: string | null
+          source?: Database["public"]["Enums"]["guarantee_acceptance_source"]
+          user_agent?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_guarantee_acceptances_guarantee_version_id_fkey"
+            columns: ["guarantee_version_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_guarantee_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_guarantee_acceptances_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_guarantee_acceptances_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_guarantee_acceptances_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_guarantee_acceptances_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_guarantee_acceptances_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_guarantee_acceptances_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_guarantee_acceptances_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_invoices: {
         Row: {
           base_cost_cents: number
@@ -19364,6 +19496,7 @@ export type Database = {
         Returns: Json
       }
       current_buyer_id: { Args: never; Returns: string }
+      current_guarantee_version_id: { Args: never; Returns: string }
       current_user_buyer_account_ids: { Args: never; Returns: string[] }
       current_user_vendor_account_ids: { Args: never; Returns: string[] }
       current_vendor_id: { Args: never; Returns: string }
@@ -20416,6 +20549,14 @@ export type Database = {
         Args: { _brand_id: string; _user_id: string }
         Returns: boolean
       }
+      vendor_accept_guarantee: {
+        Args: { _version_id: string }
+        Returns: string
+      }
+      vendor_has_accepted_current_guarantee: {
+        Args: { _vendor_id: string }
+        Returns: boolean
+      }
       vendor_market_intel_access: {
         Args: { _vendor_id: string }
         Returns: boolean
@@ -20478,6 +20619,7 @@ export type Database = {
         | "delivered"
         | "cancelled"
       fulfillment_type: "qogita" | "medikong_direct" | "vendor_direct"
+      guarantee_acceptance_source: "onboarding" | "backfill" | "admin_override"
       home_featured_badge: "bestseller" | "top_vente" | "nouveau" | "promo"
       home_featured_locale: "fr" | "nl" | "de" | "en" | "all"
       import_job_status:
@@ -20809,6 +20951,7 @@ export const Constants = {
         "cancelled",
       ],
       fulfillment_type: ["qogita", "medikong_direct", "vendor_direct"],
+      guarantee_acceptance_source: ["onboarding", "backfill", "admin_override"],
       home_featured_badge: ["bestseller", "top_vente", "nouveau", "promo"],
       home_featured_locale: ["fr", "nl", "de", "en", "all"],
       import_job_status: [

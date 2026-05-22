@@ -113,7 +113,7 @@ export function MediaGallery({ owner, title = "Médias officiels" }: { owner: Me
         ))}
       </div>
 
-      <MediaPartnerBanner />
+      <MediaPartnerBanner ownerKey={ownerKey} />
 
       <MediaLightbox
         items={data}

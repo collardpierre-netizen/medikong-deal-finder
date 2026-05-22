@@ -832,13 +832,22 @@ export default function RestockOpportunities() {
           </p>
 
           <div className="flex items-baseline gap-2">
-            <span className="text-xl font-bold text-primary">{formatPrice(offer.price_ht || 0)}</span>
+            <span className="text-xl font-bold text-primary">{formatPrice(finalPrice)}</span>
             <span className="text-xs text-muted-foreground line-through">{formatPrice(cataloguePrice)}</span>
             <span className="text-[11px] text-muted-foreground">HT/u</span>
             {offer.medikong_product && (
               <a href={`/produit/${offer.medikong_product.slug || offer.medikong_product.id}`} className="text-[10px] text-emerald-600 font-medium hover:underline" onClick={e => e.stopPropagation()}>
                 vs neuf →
               </a>
+            )}
+          </div>
+
+          <div className="space-y-0.5 text-[11px] text-muted-foreground">
+            {canPickup && (
+              <div className="flex items-center gap-1.5"><MapPin size={11} /> Enlèvement sur place inclus</div>
+            )}
+            {canShip && (
+              <div className="flex items-center gap-1.5"><Truck size={11} /> Livraison <b className="text-foreground ml-1">+ {formatPrice(shippingFee)}</b></div>
             )}
           </div>
 
@@ -855,11 +864,8 @@ export default function RestockOpportunities() {
               <span>Min. {offer.moq} u{offer.lot_size > 1 ? `, par ${offer.lot_size}` : ""}</span>
             </div>
           )}
-
-          {offer.delivery_condition !== "pickup" && (
-            <p className="text-[11px] text-muted-foreground">Livraison : {formatPrice(shippingFee)}</p>
-          )}
         </div>
+
 
         <div className="border-t border-border p-3 flex gap-2">
           <Button variant="outline" size="sm" className="flex-1 text-xs gap-1" onClick={() => { setCounterOfferTarget(offer); setCounterForm({ price: "", quantity: String(offer.allow_partial ? offer.moq : offer.quantity) }); }}>

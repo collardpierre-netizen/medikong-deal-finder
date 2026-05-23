@@ -1,82 +1,123 @@
-# Garantie Satisfaction & Remboursement — acceptation vendeur obligatoire
+# Plan — Pickup (enlèvement sur place) sur ReStock
 
-## Objectif
-Garantir contractuellement que tous les vendeurs MediKong adhèrent à la "Garantie satisfaction et remboursement" affichée côté acheteur (produits 100% authentiques, remboursement intégral, retour 14j, SAV). Acceptation versionnée, capturée au moment de l'onboarding/contrat. Vendeurs existants : considérés comme déjà acceptants (backfill silencieux, pas de re-prompt forcé maintenant).
+Scope : **ReStock uniquement** (pas le marketplace B2B classique). Le paiement reste obligatoire et reste **bloqué en escrow** jusqu'à confirmation de remise. Les coordonnées vendeur ne sont révélées **qu'après paiement**.
 
-## Modèle de données
+---
 
-### `marketplace_guarantee_versions`
-Texte légal de la garantie, versionné, géré par admin.
-- `version` (int unique, auto-incrémenté logiquement)
-- `title`, `body_md` (markdown), `bullet_points` (text[]) — sourcés depuis le bloc déjà affiché en fiche produit
-- `published_at` (NULL = brouillon)
-- `is_current` (bool, unique partial index sur true)
-- RLS : SELECT public sur versions `published_at IS NOT NULL`, ALL admin
+## 1. Modèle de données
 
-### `vendor_guarantee_acceptances`
-Trace immuable d'acceptation par vendeur × version.
-- `vendor_id` (FK vendors)
-- `guarantee_version_id` (FK marketplace_guarantee_versions)
-- `accepted_at`, `accepted_by_user_id`, `ip`, `user_agent`
-- `source` enum : `onboarding` / `backfill` / `admin_override`
-- UNIQUE(vendor_id, guarantee_version_id)
-- RLS : SELECT propre vendeur + admin ; INSERT via RPC dédiée
+### `restock_listings` — nouvelles colonnes
+- `pickup_enabled boolean default false` — le vendeur active "enlèvement sur place possible" sur l'annonce
+- `pickup_address_line1 text`, `pickup_address_line2 text`, `pickup_postal_code text`, `pickup_city text`, `pickup_country_code text` — adresse de retrait (peut différer de l'adresse du vendeur)
+- `pickup_contact_name text`, `pickup_contact_phone text`, `pickup_contact_email text`
+- `pickup_hours jsonb` — créneaux horaires par jour (`{mon:[{from:"09:00",to:"12:00"}],…}`)
+- `pickup_instructions text` — instructions libres (étage, code porte, parking, frigo…)
 
-### Helpers SQL
-- `current_guarantee_version_id()` — retourne l'id de la version `is_current`
-- `vendor_has_accepted_current_guarantee(vendor_id)` — bool
-- RPC `vendor_accept_guarantee(_version_id)` — insère acceptance avec auth.uid() comme `accepted_by_user_id`, ip/UA via headers, source='onboarding'
+> Toutes ces colonnes sont **PRIVÉES** côté RLS : jamais exposées sur les annonces publiques. La vue publique ReStock continue de masquer le vendeur (cf. `mem://features/restock-anonymisation-vendeur`).
 
-### Backfill
-INSERT idempotent : pour chaque vendor existant (`accepted_at = vendor.created_at`, source='backfill') sur la v1.
+### `restock_transactions` — nouvelles colonnes
+- `delivery_mode text check in ('shipping','pickup')` — choix de l'acheteur au checkout
+- `pickup_deadline_at timestamptz` — = `paid_at + 10 jours`
+- `pickup_handover_code text` — code 6 chiffres généré au paiement
+- `pickup_qr_token text` — token UUID signé pour le QR code
+- `pickup_confirmed_at timestamptz`, `pickup_confirmed_by uuid` (vendeur ou acheteur — les deux peuvent scanner / saisir)
+- `pickup_confirmation_method text check in ('code_by_seller','code_by_buyer','qr_scan')`
 
-## Frontend
+### Nouvelle table `restock_pickup_events`
+Audit trail : `transaction_id`, `event_type` (`code_attempt`/`code_success`/`qr_scan_success`/`coords_revealed`/`reminder_sent`/`auto_cancelled`), `actor_user_id`, `metadata jsonb`, `created_at`. RLS : lecture vendeur + acheteur de la transaction + admin.
 
-### 1. Ajout étape "Garantie" dans `VendorOnboardingWizard.tsx`
-Wizard passe de 4 → 5 étapes. Nouvelle **étape 4** (avant la confirmation finale, l'ancienne étape 4 devient étape 5) :
-- Affiche le bloc complet (titre + bullets + body_md) lu depuis `marketplace_guarantee_versions` via hook `useCurrentGuarantee`
-- Checkbox "J'ai lu et j'accepte la Garantie satisfaction et remboursement de MediKong"
-- Bouton "Suivant" désactivé tant que la case n'est pas cochée
-- Au passage à l'étape 5 : appel RPC `vendor_accept_guarantee(version_id)`
+---
 
-### 2. Page admin `/admin/guarantee`
-- Liste des versions (current, brouillons, archivées)
-- Éditeur (titre + bullets + body_md) avec preview live identique au bloc fiche produit
-- Bouton "Publier comme version courante" (transactionnel : flip `is_current`)
-- Onglet "Adhésions vendeurs" : liste vendor × version × date × source, filtre par version
-- Export CSV des acceptations
+## 2. Workflow Pickup
 
-### 3. Hook `useVendorGuaranteeStatus(vendorId)`
-Retourne `{ hasAcceptedCurrent, currentVersion, lastAcceptance }`. Utilisé par le wizard et le bandeau optionnel (futur).
+```text
+1. Vendeur publie l'annonce
+   └─ Toggle "Enlèvement sur place possible" → remplit adresse + horaires + contact + instructions
+   
+2. Acheteur voit l'annonce
+   └─ Si pickup_enabled : choix au checkout entre "Livraison" et "Enlèvement sur place (gratuit)"
+   └─ AUCUNE coordonnée vendeur affichée à ce stade
+   
+3. Paiement (escrow comme aujourd'hui — cf. restock-checkout-flow)
+   └─ paid → génère pickup_handover_code (6 chiffres) + pickup_qr_token (UUID)
+   └─ pickup_deadline_at = paid_at + 10 jours
+   └─ Email acheteur : coordonnées complètes vendeur + horaires + instructions + code + QR + deadline
+   └─ Email vendeur : notif "commande à préparer pour enlèvement" + code + QR + deadline
+   └─ Event coords_revealed loggé
+   
+4. Enlèvement physique
+   └─ Méthode A : acheteur tape le code côté écran vendeur (app vendeur)
+   └─ Méthode B : vendeur tape le code côté écran acheteur (app acheteur)
+   └─ Méthode C : l'un scanne le QR de l'autre
+   └─ Toute confirmation valide → pickup_confirmed_at, déclenche escrow_release_window 48h (idem livraison)
+   
+5. Litige / no-show
+   └─ J+8 : rappel email acheteur ("plus que 48h pour venir")
+   └─ J+10 sans confirmation : auto-cancel transaction
+       ├─ Remboursement acheteur MOINS flake penalty 20€ (cf. restock-flake-penalty)
+       └─ Vendeur notifié, lot remis en vente automatiquement
+```
 
-## Hors scope explicite (à valider plus tard si besoin)
-- Pas de garde-fou DB sur `offers.is_active = true` (choix utilisateur : blocage en amont seulement à l'onboarding)
-- Pas de bandeau bloquant pour les vendeurs déjà actifs (backfill = acceptée)
-- Pas de re-prompt automatique sur publication d'une nouvelle version → la mécanique de "re-acceptation obligatoire" sera ajoutée dans un prompt séparé (l'infra versionnée est en place, il suffira d'activer le gate ; à ce jour le wizard ne re-prompte pas un vendeur déjà onboardé)
-- Pas de modification du bloc côté acheteur (la card "Garantie satisfaction" sur ProductPage reste, mais sera ré-alimentée depuis la même table dans un prompt séparé pour single source of truth)
+---
 
-## Détails techniques
+## 3. UI
 
-### Migration SQL (1 fichier)
-- 2 tables + RLS + index unique partiel `is_current`
-- 3 fonctions SQL (SECURITY DEFINER pour la RPC accept)
-- Seed v1 avec le texte exact de la capture utilisateur, `is_current = true`
-- Backfill INSERT...SELECT depuis vendors
+### Côté vendeur
+- **Édition annonce ReStock** : nouvelle section "Enlèvement sur place" (toggle + formulaire adresse/horaires/contact/instructions) en dessous des options livraison existantes
+- **Détail commande** (`/restock/vendor/orders/:id`) si `delivery_mode='pickup'` :
+  - Bloc "Enlèvement sur place" avec deadline countdown
+  - Bouton "Valider le retrait" → modal avec 2 onglets : "Saisir le code de l'acheteur" / "Scanner son QR"
+  - Affiche aussi le code/QR du vendeur (pour que l'acheteur le saisisse côté vendeur)
 
-### Fichiers frontend touchés
-- `src/pages/vendor/VendorOnboardingWizard.tsx` — +1 étape, total devient 5
-- nouveau `src/hooks/useGuarantee.ts` — hook lecture version courante + acceptance vendeur
-- nouveau `src/pages/admin/AdminGuarantee.tsx` + route dans `App.tsx`
-- nouveau `src/components/vendor/GuaranteeAcceptStep.tsx` (extrait pour test/réutilisation)
+### Côté acheteur
+- **Checkout ReStock** : radio Livraison / Enlèvement sur place (gratuit) si dispo
+- **Page confirmation paiement** + **email** : carte "Coordonnées de retrait" (adresse complète, contact, horaires, instructions, deadline) + code 6 chiffres en grand + QR code
+- **Page commande** (`/restock/orders/:id`) : même bloc + bouton "Confirmer le retrait" (modal saisie code / scan QR)
 
-### Sécurité
-- `vendor_accept_guarantee` valide que `auth.uid()` est bien `vendors.auth_user_id` du vendor visé
-- Le texte affiché vendeur = exactement `body_md` + `bullet_points` de la version courante (pas de divergence avec l'admin)
-- Acceptances jamais modifiables/supprimables hors super_admin (RLS UPDATE/DELETE = false sauf super_admin)
+### Admin
+- Colonne `delivery_mode` dans le listing commandes ReStock + filtre
+- Vue détail : timeline `restock_pickup_events`
 
-## Vérifications post-implémentation
-1. `bunx tsc --noEmit`
-2. Linter Supabase (RLS warnings)
-3. Test manuel onboarding : impossible de cliquer Suivant sans cocher → coché → acceptance créée → étape 5 OK
-4. Page admin `/admin/guarantee` : édition + publication v2 → vérifier qu'`is_current` bascule correctement, ancienne version reste consultable
-5. Compter `vendor_guarantee_acceptances` après backfill = nombre de vendors existants (source='backfill')
+---
+
+## 4. RLS & sécurité
+
+- `restock_listings.pickup_*` colonnes : visibles uniquement par le vendeur propriétaire et admin
+- Coordonnées révélées à l'acheteur **uniquement via la vue/RPC `get_pickup_details(transaction_id)`** qui vérifie `transaction.buyer_user_id = auth.uid() AND transaction.status IN ('paid','awaiting_pickup','disputed')`
+- `pickup_handover_code` : jamais exposé dans la vue publique de l'annonce ; généré server-side au moment du `paid` (trigger sur `restock_transactions`)
+- Validation du code via **RPC `confirm_pickup(transaction_id, code | qr_token)`** : rate-limited (max 5 tentatives / 10 min via `restock_pickup_events`), retourne erreur générique en cas d'échec
+
+---
+
+## 5. Cron / jobs
+
+- Cron horaire `restock-pickup-watchdog` (edge function) :
+  - J+8 sans confirmation → email rappel acheteur + event `reminder_sent`
+  - J+10 sans confirmation → appelle RPC `auto_cancel_pickup_transaction(id)` qui :
+    - status → `cancelled_no_show`
+    - rembourse acheteur (montant − 20€ flake penalty)
+    - relibère le lot vendeur (stock dispo + `is_active=true`)
+    - notifie les 2 parties
+    - log event `auto_cancelled`
+
+---
+
+## 6. Découpage en étapes
+
+1. **Migration DB** : colonnes `restock_listings` + `restock_transactions`, table `restock_pickup_events`, RLS, trigger génération code/QR au paiement, RPC `get_pickup_details` + `confirm_pickup` + `auto_cancel_pickup_transaction`
+2. **UI vendeur** : section pickup dans l'édition annonce + bloc confirmation retrait dans détail commande
+3. **UI acheteur** : option pickup au checkout + bloc coordonnées + bouton confirmation
+4. **Emails** : 3 templates React-Email (`restock-pickup-instructions-buyer`, `restock-pickup-ready-seller`, `restock-pickup-reminder-buyer`)
+5. **Cron watchdog** : edge function `restock-pickup-watchdog` + cron horaire
+6. **Admin** : colonne + filtre + timeline events
+
+---
+
+## 7. Hors scope (à confirmer plus tard)
+
+- Pas de géolocalisation/distance — l'acheteur voit juste l'adresse au paiement
+- Pas de réservation de créneau précis (juste les horaires d'ouverture vendeur)
+- Pas de signature manuscrite — code + QR suffisent
+- Pas de photo preuve de remise — peut s'ajouter en v2 si besoin
+
+Confirme et je commence par l'étape 1 (migration DB).

@@ -1,4 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
+import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
@@ -110,7 +111,7 @@ export default function RestockFaqPage() {
                       <AccordionContent className="px-3 pb-4">
                         <div
                           className="text-sm text-[#5C6470] prose prose-sm max-w-none"
-                          dangerouslySetInnerHTML={{ __html: item.answer_html }}
+                          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(item.answer_html || "") }}
                         />
                       </AccordionContent>
                     </AccordionItem>

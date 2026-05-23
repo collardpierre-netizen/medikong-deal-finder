@@ -14,12 +14,15 @@ import { RestockPickupConfirmModal } from "@/components/restock/RestockPickupCon
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
   pending_payment: { label: "En attente paiement", color: "#F59E0B", bg: "#FEF3C7", icon: Clock },
   paid: { label: "Payé — Escrow", color: "#1C58D9", bg: "#EBF0FB", icon: Shield },
+  awaiting_pickup: { label: "À retirer sur place", color: "#7C3AED", bg: "#F3E8FF", icon: MapPin },
+  picked_up: { label: "Retiré — Sous escrow", color: "#F59E0B", bg: "#FEF3C7", icon: ShieldCheck },
   shipped: { label: "Expédié", color: "#8B5CF6", bg: "#F3E8FF", icon: Truck },
   delivered: { label: "Livré — Sous escrow", color: "#F59E0B", bg: "#FEF3C7", icon: Clock },
   released: { label: "Fonds libérés ✓", color: "#00B85C", bg: "#EEFBF4", icon: Wallet },
   disputed: { label: "Litige", color: "#E54545", bg: "#FEE2E2", icon: AlertTriangle },
   refunded: { label: "Remboursé", color: "#8B929C", bg: "#F7F8FA", icon: DollarSign },
   cancelled: { label: "Annulé", color: "#8B929C", bg: "#F7F8FA", icon: AlertTriangle },
+  cancelled_no_show: { label: "Annulé (no-show)", color: "#E54545", bg: "#FEE2E2", icon: AlertTriangle },
 };
 
 const ESCROW_STEPS = ["pending_payment", "paid", "shipped", "delivered", "released"];

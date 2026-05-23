@@ -168,12 +168,23 @@ export default function RestockSellerSales() {
               {transactions.map((t: any) => {
                 const offer = t.restock_offers;
                 const cfg = STATUS_CONFIG[t.status] || STATUS_CONFIG.pending_payment;
-                const isRevealed = ["paid", "shipped", "delivered", "released"].includes(t.status);
+                const isRevealed = ["paid", "shipped", "delivered", "released", "awaiting_pickup", "picked_up"].includes(t.status);
+                const isPickup = t.delivery_mode === "pickup";
+                const canConfirmPickup = isPickup && t.status === "awaiting_pickup";
+                const deadline = t.pickup_deadline_at ? new Date(t.pickup_deadline_at) : null;
                 return (
                   <tr key={t.id} className="border-t border-[#D0D5DC]/50 hover:bg-[#F7F8FA]/50">
                     <td className="px-4 py-3">
                       <p className="font-medium text-[#1E252F] truncate max-w-[200px]">{offer?.designation || "—"}</p>
                       <p className="text-[10px] text-[#8B929C]">{offer?.ean && `EAN ${offer.ean}`}{offer?.cnk && ` · CNK ${offer.cnk}`}</p>
+                      {isPickup && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#7C3AED] mt-0.5">
+                          <MapPin size={10} /> Enlèvement sur place
+                          {deadline && t.status === "awaiting_pickup" && (
+                            <span className="text-[#8B929C]">— avant {deadline.toLocaleDateString("fr-BE")}</span>
+                          )}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-center text-[#1E252F] font-medium">{t.quantity}</td>
                     <td className="px-4 py-3 text-right font-bold text-[#00B85C]">{Number(t.seller_amount || 0).toFixed(2)} €</td>
@@ -188,7 +199,16 @@ export default function RestockSellerSales() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-[#8B929C] text-xs">{new Date(t.created_at).toLocaleDateString("fr-BE")}</td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right space-x-1">
+                      {canConfirmPickup && (
+                        <Button
+                          size="sm"
+                          className="text-xs gap-1 bg-[#7C3AED] hover:bg-[#6D28D9] text-white h-7"
+                          onClick={() => setPickupModal({ id: t.id, code: t.pickup_handover_code, qr: t.pickup_qr_token })}
+                        >
+                          <ShieldCheck size={12} /> Valider le retrait
+                        </Button>
+                      )}
                       {t.tracking_number && (
                         <Button size="sm" variant="ghost" className="text-xs gap-1 text-[#1C58D9]">
                           <Truck size={12} /> Suivi

@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import {
   PackagePlus, List, MessageSquare, CheckCircle, HelpCircle, LayoutGrid,
   Users, Mail, Shield, Settings, Zap, Gift, Database, Wallet, ArrowLeft,
-  Home, ShoppingCart, Store,
+  Home, ShoppingCart, Store, MapPin,
 } from "lucide-react";
 
 const buyerNav = [

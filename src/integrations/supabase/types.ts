@@ -9916,6 +9916,41 @@ export type Database = {
           },
         ]
       }
+      restock_pickup_events: {
+        Row: {
+          actor_user_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json
+          transaction_id: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json
+          transaction_id: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json
+          transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restock_pickup_events_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "restock_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restock_questions: {
         Row: {
           answer: string | null
@@ -10148,6 +10183,60 @@ export type Database = {
           rule_type?: string
           updated_at?: string
           value?: Json
+        }
+        Relationships: []
+      }
+      restock_seller_pickup_locations: {
+        Row: {
+          address_line1: string | null
+          address_line2: string | null
+          city: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          country_code: string | null
+          created_at: string
+          hours: Json
+          id: string
+          instructions: string | null
+          is_enabled: boolean
+          postal_code: string | null
+          seller_id: string
+          updated_at: string
+        }
+        Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          country_code?: string | null
+          created_at?: string
+          hours?: Json
+          id?: string
+          instructions?: string | null
+          is_enabled?: boolean
+          postal_code?: string | null
+          seller_id: string
+          updated_at?: string
+        }
+        Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          country_code?: string | null
+          created_at?: string
+          hours?: Json
+          id?: string
+          instructions?: string | null
+          is_enabled?: boolean
+          postal_code?: string | null
+          seller_id?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -10491,6 +10580,7 @@ export type Database = {
           buyer_postal_code: string | null
           buyer_street: string | null
           buyer_vat_number: string | null
+          cancelled_reason: string | null
           commission_amount: number | null
           commission_rate: number | null
           created_at: string
@@ -10506,6 +10596,13 @@ export type Database = {
           offer_id: string
           paid_at: string | null
           penalty_applied: boolean
+          pickup_confirmation_method: string | null
+          pickup_confirmed_at: string | null
+          pickup_confirmed_by: string | null
+          pickup_deadline_at: string | null
+          pickup_handover_code: string | null
+          pickup_qr_token: string | null
+          pickup_reminder_sent_at: string | null
           quantity: number
           seller_id: string
           seller_pickup_address: string | null
@@ -10531,6 +10628,7 @@ export type Database = {
           buyer_postal_code?: string | null
           buyer_street?: string | null
           buyer_vat_number?: string | null
+          cancelled_reason?: string | null
           commission_amount?: number | null
           commission_rate?: number | null
           created_at?: string
@@ -10546,6 +10644,13 @@ export type Database = {
           offer_id: string
           paid_at?: string | null
           penalty_applied?: boolean
+          pickup_confirmation_method?: string | null
+          pickup_confirmed_at?: string | null
+          pickup_confirmed_by?: string | null
+          pickup_deadline_at?: string | null
+          pickup_handover_code?: string | null
+          pickup_qr_token?: string | null
+          pickup_reminder_sent_at?: string | null
           quantity: number
           seller_id: string
           seller_pickup_address?: string | null
@@ -10571,6 +10676,7 @@ export type Database = {
           buyer_postal_code?: string | null
           buyer_street?: string | null
           buyer_vat_number?: string | null
+          cancelled_reason?: string | null
           commission_amount?: number | null
           commission_rate?: number | null
           created_at?: string
@@ -10586,6 +10692,13 @@ export type Database = {
           offer_id?: string
           paid_at?: string | null
           penalty_applied?: boolean
+          pickup_confirmation_method?: string | null
+          pickup_confirmed_at?: string | null
+          pickup_confirmed_by?: string | null
+          pickup_deadline_at?: string | null
+          pickup_handover_code?: string | null
+          pickup_qr_token?: string | null
+          pickup_reminder_sent_at?: string | null
           quantity?: number
           seller_id?: string
           seller_pickup_address?: string | null
@@ -19403,6 +19516,10 @@ export type Database = {
           table_name: string
         }[]
       }
+      auto_cancel_pickup_transaction: {
+        Args: { _transaction_id: string }
+        Returns: Json
+      }
       auto_merge_brand_duplicates: {
         Args: { _dry_run?: boolean }
         Returns: Json
@@ -19476,6 +19593,10 @@ export type Database = {
         }[]
       }
       cleanup_old_savings_simulations: { Args: never; Returns: number }
+      confirm_pickup: {
+        Args: { _code?: string; _qr_token?: string; _transaction_id: string }
+        Returns: Json
+      }
       consume_qogita_tokens: { Args: { _amount: number }; Returns: Json }
       count_products_per_category: {
         Args: never
@@ -19641,6 +19762,7 @@ export type Database = {
           vendor_id: string
         }[]
       }
+      get_pickup_details: { Args: { _transaction_id: string }; Returns: Json }
       get_product_category_anomalies: {
         Args: { _product_ids: string[] }
         Returns: {
@@ -20094,6 +20216,14 @@ export type Database = {
           display_code: string
           id: string
           is_active: boolean
+        }[]
+      }
+      restock_pickup_watchdog_targets: {
+        Args: never
+        Returns: {
+          action: string
+          pickup_deadline_at: string
+          transaction_id: string
         }[]
       }
       restore_brands_from_backup: {

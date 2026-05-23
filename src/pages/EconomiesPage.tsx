@@ -121,22 +121,39 @@ export default function EconomiesPage() {
     };
   }, [simId, sim?.status]);
 
-  // Fetch lines once simulation is done
+  // Fetch lines once simulation is done (via SECURITY DEFINER RPC, no PII)
   useEffect(() => {
     if (!simId || sim?.status !== "done" || lines !== null) return;
     (async () => {
       const { data, error } = await supabase
-        .from("savings_simulation_lines")
-        .select("id,line_number,detected_name,detected_brand,detected_cnk,detected_quantity,detected_unit_price_excl_vat,matched_product_id,match_method,match_confidence,medikong_min_price_excl_vat,medikong_supplier_count,line_savings,line_savings_pct,matched_product:products(name,slug)")
-        .eq("simulation_id", simId)
-        .order("line_savings", { ascending: false, nullsFirst: false });
+        .rpc("get_savings_simulation_lines_public", { _sim_id: simId });
       if (error) {
         console.error("[economies] fetch lines error", error);
         return;
       }
-      setLines((data ?? []) as unknown as SimulationLine[]);
+      const mapped = (data ?? []).map((r: any) => ({
+        id: r.id,
+        line_number: r.line_number,
+        detected_name: r.detected_name,
+        detected_brand: r.detected_brand,
+        detected_cnk: r.detected_cnk,
+        detected_quantity: r.detected_quantity,
+        detected_unit_price_excl_vat: r.detected_unit_price_excl_vat,
+        matched_product_id: r.matched_product_id,
+        match_method: r.match_method,
+        match_confidence: r.match_confidence,
+        medikong_min_price_excl_vat: r.medikong_min_price_excl_vat,
+        medikong_supplier_count: r.medikong_supplier_count,
+        line_savings: r.line_savings,
+        line_savings_pct: r.line_savings_pct,
+        matched_product: r.matched_product_name || r.matched_product_slug
+          ? { name: r.matched_product_name, slug: r.matched_product_slug }
+          : null,
+      }));
+      setLines(mapped as SimulationLine[]);
     })();
   }, [simId, sim?.status, lines]);
+
 
   const handleFile = (f: File | null) => {
     if (!f) return;

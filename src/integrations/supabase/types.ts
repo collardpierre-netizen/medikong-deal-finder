@@ -20478,6 +20478,46 @@ export type Database = {
           vendor_id: string
         }[]
       }
+      get_savings_simulation_lines_public: {
+        Args: { _sim_id: string }
+        Returns: {
+          detected_brand: string
+          detected_cnk: string
+          detected_name: string
+          detected_quantity: number
+          detected_unit_price_excl_vat: number
+          id: string
+          line_number: number
+          line_savings: number
+          line_savings_pct: number
+          match_confidence: number
+          match_method: string
+          matched_product_id: string
+          matched_product_name: string
+          matched_product_slug: string
+          medikong_min_price_excl_vat: number
+          medikong_supplier_count: number
+        }[]
+      }
+      get_savings_simulation_public: {
+        Args: { _sim_id: string }
+        Returns: {
+          created_at: string
+          error_message: string
+          id: string
+          match_rate: number
+          matched_lines: number
+          medikong_total_excl_vat: number
+          savings_amount: number
+          savings_pct: number
+          source_file_type: string
+          source_supplier: string
+          source_total_excl_vat: number
+          status: string
+          total_lines: number
+          updated_at: string
+        }[]
+      }
       get_source_mapping_issues: {
         Args: { _kind?: string; _limit?: number; _source: string }
         Returns: {

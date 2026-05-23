@@ -9,6 +9,7 @@ const sellerNav = [
   { to: "/restock/seller/offers", label: "Mes offres", icon: List },
   { to: "/restock/seller/counteroffers", label: "Contre-offres", icon: MessageSquare },
   { to: "/restock/seller/sales", label: "Ventes conclues", icon: CheckCircle },
+  { to: "/restock/seller/pickup", label: "Enlèvement sur place", icon: MapPin },
   { to: "/restock/seller/help", label: "Guide d'aide", icon: HelpCircle },
 ];
 

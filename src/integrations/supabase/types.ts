@@ -104,6 +104,30 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_settings: {
+        Row: {
+          description: string | null
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value_json: Json
+        }
+        Insert: {
+          description?: string | null
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value_json: Json
+        }
+        Update: {
+          description?: string | null
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value_json?: Json
+        }
+        Relationships: []
+      }
       admin_users: {
         Row: {
           created_at: string
@@ -1433,6 +1457,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      buyers: {
+        Row: {
+          address: Json | null
+          audience: string
+          created_at: string
+          id: string
+          is_active: boolean
+          pharmacy_name: string | null
+          region: string | null
+          updated_at: string
+          user_id: string | null
+          vat_number: string | null
+        }
+        Insert: {
+          address?: Json | null
+          audience?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          pharmacy_name?: string | null
+          region?: string | null
+          updated_at?: string
+          user_id?: string | null
+          vat_number?: string | null
+        }
+        Update: {
+          address?: Json | null
+          audience?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          pharmacy_name?: string | null
+          region?: string | null
+          updated_at?: string
+          user_id?: string | null
+          vat_number?: string | null
+        }
+        Relationships: []
       }
       cart_items: {
         Row: {
@@ -3391,6 +3454,78 @@ export type Database = {
           },
         ]
       }
+      gamme_demand_signals: {
+        Row: {
+          brand_slug: string
+          buyer_id: string
+          buyer_net_price_cents: number
+          cnk_requested: string
+          created_at: string
+          expires_at: string
+          fulfilled_at: string | null
+          fulfilled_by_seller_id: string | null
+          id: string
+          invoice_line_id: string | null
+          notified_seller_ids: string[] | null
+          product_label_extracted: string
+          quantity: number | null
+          status: string
+          target_price_hint_cents: number
+          updated_at: string
+        }
+        Insert: {
+          brand_slug: string
+          buyer_id: string
+          buyer_net_price_cents: number
+          cnk_requested: string
+          created_at?: string
+          expires_at: string
+          fulfilled_at?: string | null
+          fulfilled_by_seller_id?: string | null
+          id?: string
+          invoice_line_id?: string | null
+          notified_seller_ids?: string[] | null
+          product_label_extracted: string
+          quantity?: number | null
+          status?: string
+          target_price_hint_cents: number
+          updated_at?: string
+        }
+        Update: {
+          brand_slug?: string
+          buyer_id?: string
+          buyer_net_price_cents?: number
+          cnk_requested?: string
+          created_at?: string
+          expires_at?: string
+          fulfilled_at?: string | null
+          fulfilled_by_seller_id?: string | null
+          id?: string
+          invoice_line_id?: string | null
+          notified_seller_ids?: string[] | null
+          product_label_extracted?: string
+          quantity?: number | null
+          status?: string
+          target_price_hint_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gamme_demand_signals_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "buyers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gamme_demand_signals_invoice_line_id_fkey"
+            columns: ["invoice_line_id"]
+            isOneToOne: false
+            referencedRelation: "imported_invoice_lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       home_featured_brands: {
         Row: {
           brand_id: string
@@ -3883,6 +4018,319 @@ export type Database = {
           unavailable_count?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      imported_invoice_lines: {
+        Row: {
+          alignment_request_id: string | null
+          alternative_matches_json: Json | null
+          anomaly_reasons: string[] | null
+          applied_discount_pct: number | null
+          brand_extracted: string | null
+          created_at: string
+          discount_source: string | null
+          eligibility_category: string | null
+          gamme_demand_signal_id: string | null
+          historical_avg_price_cents: number | null
+          id: string
+          invoice_id: string
+          is_anomalous: boolean
+          line_index: number
+          line_savings_cents: number | null
+          line_savings_pct: number | null
+          match_confidence: string | null
+          match_method: string | null
+          match_score: number | null
+          matched_product_id: string | null
+          medikong_best_price_cents: number | null
+          medikong_status: string | null
+          net_total_ht_cents: number | null
+          net_unit_price_ht_cents: number | null
+          quantity: number | null
+          raw_cnk: string | null
+          raw_description: string | null
+          raw_discount_pct: number | null
+          raw_ean: string | null
+          raw_quantity: number | null
+          raw_total_ht_cents: number | null
+          raw_unit_price_ht_cents: number | null
+          raw_vat_amount_cents: number | null
+          raw_vat_rate: number | null
+          total_ht_cents: number | null
+          unit_price_ht_cents: number | null
+          vat_amount_cents: number | null
+          vat_rate: number | null
+        }
+        Insert: {
+          alignment_request_id?: string | null
+          alternative_matches_json?: Json | null
+          anomaly_reasons?: string[] | null
+          applied_discount_pct?: number | null
+          brand_extracted?: string | null
+          created_at?: string
+          discount_source?: string | null
+          eligibility_category?: string | null
+          gamme_demand_signal_id?: string | null
+          historical_avg_price_cents?: number | null
+          id?: string
+          invoice_id: string
+          is_anomalous?: boolean
+          line_index: number
+          line_savings_cents?: number | null
+          line_savings_pct?: number | null
+          match_confidence?: string | null
+          match_method?: string | null
+          match_score?: number | null
+          matched_product_id?: string | null
+          medikong_best_price_cents?: number | null
+          medikong_status?: string | null
+          net_total_ht_cents?: number | null
+          net_unit_price_ht_cents?: number | null
+          quantity?: number | null
+          raw_cnk?: string | null
+          raw_description?: string | null
+          raw_discount_pct?: number | null
+          raw_ean?: string | null
+          raw_quantity?: number | null
+          raw_total_ht_cents?: number | null
+          raw_unit_price_ht_cents?: number | null
+          raw_vat_amount_cents?: number | null
+          raw_vat_rate?: number | null
+          total_ht_cents?: number | null
+          unit_price_ht_cents?: number | null
+          vat_amount_cents?: number | null
+          vat_rate?: number | null
+        }
+        Update: {
+          alignment_request_id?: string | null
+          alternative_matches_json?: Json | null
+          anomaly_reasons?: string[] | null
+          applied_discount_pct?: number | null
+          brand_extracted?: string | null
+          created_at?: string
+          discount_source?: string | null
+          eligibility_category?: string | null
+          gamme_demand_signal_id?: string | null
+          historical_avg_price_cents?: number | null
+          id?: string
+          invoice_id?: string
+          is_anomalous?: boolean
+          line_index?: number
+          line_savings_cents?: number | null
+          line_savings_pct?: number | null
+          match_confidence?: string | null
+          match_method?: string | null
+          match_score?: number | null
+          matched_product_id?: string | null
+          medikong_best_price_cents?: number | null
+          medikong_status?: string | null
+          net_total_ht_cents?: number | null
+          net_unit_price_ht_cents?: number | null
+          quantity?: number | null
+          raw_cnk?: string | null
+          raw_description?: string | null
+          raw_discount_pct?: number | null
+          raw_ean?: string | null
+          raw_quantity?: number | null
+          raw_total_ht_cents?: number | null
+          raw_unit_price_ht_cents?: number | null
+          raw_vat_amount_cents?: number | null
+          raw_vat_rate?: number | null
+          total_ht_cents?: number | null
+          unit_price_ht_cents?: number | null
+          vat_amount_cents?: number | null
+          vat_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imported_invoice_lines_eligibility_category_fkey"
+            columns: ["eligibility_category"]
+            isOneToOne: false
+            referencedRelation: "product_eligibility_categories"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "imported_invoice_lines_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "imported_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imported_invoices: {
+        Row: {
+          analysis_json: Json | null
+          buyer_id: string
+          created_at: string
+          currency: string
+          due_date: string | null
+          eligible_lines_count: number | null
+          excluded_lines_count: number | null
+          exported_csv_at: string | null
+          exported_pdf_at: string | null
+          exported_to_peppol_invoice_id: string | null
+          extraction_completed_at: string | null
+          extraction_cost_eur: number | null
+          extraction_error: string | null
+          extraction_model: string | null
+          extraction_started_at: string | null
+          id: string
+          invoice_date: string | null
+          invoice_number: string | null
+          known_supplier_id: string | null
+          matched_eligible_lines_count: number | null
+          net_total_ht_cents: number | null
+          onboarding_complete: boolean
+          potential_savings_cents: number | null
+          source_hash: string | null
+          source_pages: number | null
+          source_size_bytes: number | null
+          source_type: string
+          source_url: string
+          status: string
+          supplier_name: string | null
+          supplier_vat_number: string | null
+          total_ht_cents: number | null
+          total_ttc_cents: number | null
+          total_vat_cents: number | null
+          updated_at: string
+          user_id: string
+          wholesaler_profile_id: string | null
+        }
+        Insert: {
+          analysis_json?: Json | null
+          buyer_id: string
+          created_at?: string
+          currency?: string
+          due_date?: string | null
+          eligible_lines_count?: number | null
+          excluded_lines_count?: number | null
+          exported_csv_at?: string | null
+          exported_pdf_at?: string | null
+          exported_to_peppol_invoice_id?: string | null
+          extraction_completed_at?: string | null
+          extraction_cost_eur?: number | null
+          extraction_error?: string | null
+          extraction_model?: string | null
+          extraction_started_at?: string | null
+          id?: string
+          invoice_date?: string | null
+          invoice_number?: string | null
+          known_supplier_id?: string | null
+          matched_eligible_lines_count?: number | null
+          net_total_ht_cents?: number | null
+          onboarding_complete?: boolean
+          potential_savings_cents?: number | null
+          source_hash?: string | null
+          source_pages?: number | null
+          source_size_bytes?: number | null
+          source_type: string
+          source_url: string
+          status?: string
+          supplier_name?: string | null
+          supplier_vat_number?: string | null
+          total_ht_cents?: number | null
+          total_ttc_cents?: number | null
+          total_vat_cents?: number | null
+          updated_at?: string
+          user_id: string
+          wholesaler_profile_id?: string | null
+        }
+        Update: {
+          analysis_json?: Json | null
+          buyer_id?: string
+          created_at?: string
+          currency?: string
+          due_date?: string | null
+          eligible_lines_count?: number | null
+          excluded_lines_count?: number | null
+          exported_csv_at?: string | null
+          exported_pdf_at?: string | null
+          exported_to_peppol_invoice_id?: string | null
+          extraction_completed_at?: string | null
+          extraction_cost_eur?: number | null
+          extraction_error?: string | null
+          extraction_model?: string | null
+          extraction_started_at?: string | null
+          id?: string
+          invoice_date?: string | null
+          invoice_number?: string | null
+          known_supplier_id?: string | null
+          matched_eligible_lines_count?: number | null
+          net_total_ht_cents?: number | null
+          onboarding_complete?: boolean
+          potential_savings_cents?: number | null
+          source_hash?: string | null
+          source_pages?: number | null
+          source_size_bytes?: number | null
+          source_type?: string
+          source_url?: string
+          status?: string
+          supplier_name?: string | null
+          supplier_vat_number?: string | null
+          total_ht_cents?: number | null
+          total_ttc_cents?: number | null
+          total_vat_cents?: number | null
+          updated_at?: string
+          user_id?: string
+          wholesaler_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imported_invoices_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "buyers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imported_invoices_known_supplier_id_fkey"
+            columns: ["known_supplier_id"]
+            isOneToOne: false
+            referencedRelation: "known_suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imported_invoices_wholesaler_profile_id_fkey"
+            columns: ["wholesaler_profile_id"]
+            isOneToOne: false
+            referencedRelation: "wholesaler_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      known_suppliers: {
+        Row: {
+          created_at: string
+          detection_patterns: Json | null
+          id: string
+          layout_hints_json: Json | null
+          name: string
+          notes: string | null
+          template_active: boolean
+          vat_number: string | null
+        }
+        Insert: {
+          created_at?: string
+          detection_patterns?: Json | null
+          id?: string
+          layout_hints_json?: Json | null
+          name: string
+          notes?: string | null
+          template_active?: boolean
+          vat_number?: string | null
+        }
+        Update: {
+          created_at?: string
+          detection_patterns?: Json | null
+          id?: string
+          layout_hints_json?: Json | null
+          name?: string
+          notes?: string | null
+          template_active?: boolean
+          vat_number?: string | null
         }
         Relationships: []
       }
@@ -7071,6 +7519,72 @@ export type Database = {
           },
         ]
       }
+      pharmacist_wholesaler_settings: {
+        Row: {
+          account_number: string | null
+          buyer_id: string
+          configured_at: string
+          contract_start_date: string | null
+          created_at: string
+          id: string
+          is_supplier_of_pharmacist: boolean
+          last_reviewed_at: string | null
+          notes: string | null
+          override_default_discount_pct: number | null
+          override_rules_json: Json | null
+          updated_at: string
+          user_id: string
+          wholesaler_profile_id: string
+        }
+        Insert: {
+          account_number?: string | null
+          buyer_id: string
+          configured_at?: string
+          contract_start_date?: string | null
+          created_at?: string
+          id?: string
+          is_supplier_of_pharmacist?: boolean
+          last_reviewed_at?: string | null
+          notes?: string | null
+          override_default_discount_pct?: number | null
+          override_rules_json?: Json | null
+          updated_at?: string
+          user_id: string
+          wholesaler_profile_id: string
+        }
+        Update: {
+          account_number?: string | null
+          buyer_id?: string
+          configured_at?: string
+          contract_start_date?: string | null
+          created_at?: string
+          id?: string
+          is_supplier_of_pharmacist?: boolean
+          last_reviewed_at?: string | null
+          notes?: string | null
+          override_default_discount_pct?: number | null
+          override_rules_json?: Json | null
+          updated_at?: string
+          user_id?: string
+          wholesaler_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pharmacist_wholesaler_settings_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "buyers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pharmacist_wholesaler_settings_wholesaler_profile_id_fkey"
+            columns: ["wholesaler_profile_id"]
+            isOneToOne: false
+            referencedRelation: "wholesaler_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       price_adjustment_log: {
         Row: {
           adjusted_at: string
@@ -8099,6 +8613,30 @@ export type Database = {
             referencedColumns: ["product_id"]
           },
         ]
+      }
+      product_eligibility_categories: {
+        Row: {
+          code: string
+          display_color: string | null
+          eligible_for_marketplace: boolean
+          excluded_reason: string | null
+          label: string
+        }
+        Insert: {
+          code: string
+          display_color?: string | null
+          eligible_for_marketplace: boolean
+          excluded_reason?: string | null
+          label: string
+        }
+        Update: {
+          code?: string
+          display_color?: string | null
+          eligible_for_marketplace?: boolean
+          excluded_reason?: string | null
+          label?: string
+        }
+        Relationships: []
       }
       product_market_codes: {
         Row: {
@@ -11975,6 +12513,94 @@ export type Database = {
           zero_results?: boolean | null
         }
         Relationships: []
+      }
+      seller_alignment_requests: {
+        Row: {
+          aligned_at: string | null
+          aligned_new_price_cents: number | null
+          buyer_id: string
+          buyer_net_price_cents: number
+          cnk: string
+          cooldown_until: string | null
+          created_at: string
+          current_seller_id: string
+          current_seller_price_cents: number
+          declined_reason: string | null
+          delta_cents: number
+          delta_pct: number
+          expires_at: string
+          id: string
+          invoice_line_id: string | null
+          product_id: string
+          status: string
+          updated_at: string
+          wholesaler_profile_id: string | null
+        }
+        Insert: {
+          aligned_at?: string | null
+          aligned_new_price_cents?: number | null
+          buyer_id: string
+          buyer_net_price_cents: number
+          cnk: string
+          cooldown_until?: string | null
+          created_at?: string
+          current_seller_id: string
+          current_seller_price_cents: number
+          declined_reason?: string | null
+          delta_cents: number
+          delta_pct: number
+          expires_at: string
+          id?: string
+          invoice_line_id?: string | null
+          product_id: string
+          status?: string
+          updated_at?: string
+          wholesaler_profile_id?: string | null
+        }
+        Update: {
+          aligned_at?: string | null
+          aligned_new_price_cents?: number | null
+          buyer_id?: string
+          buyer_net_price_cents?: number
+          cnk?: string
+          cooldown_until?: string | null
+          created_at?: string
+          current_seller_id?: string
+          current_seller_price_cents?: number
+          declined_reason?: string | null
+          delta_cents?: number
+          delta_pct?: number
+          expires_at?: string
+          id?: string
+          invoice_line_id?: string | null
+          product_id?: string
+          status?: string
+          updated_at?: string
+          wholesaler_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_alignment_requests_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "buyers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_alignment_requests_invoice_line_id_fkey"
+            columns: ["invoice_line_id"]
+            isOneToOne: false
+            referencedRelation: "imported_invoice_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_alignment_requests_wholesaler_profile_id_fkey"
+            columns: ["wholesaler_profile_id"]
+            isOneToOne: false
+            referencedRelation: "wholesaler_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       seller_contracts: {
         Row: {
@@ -16833,6 +17459,59 @@ export type Database = {
           youtube_url?: string | null
         }
         Relationships: []
+      }
+      wholesaler_profiles: {
+        Row: {
+          country: string
+          created_at: string
+          default_discount_pct: number | null
+          default_discount_rules_json: Json | null
+          discount_mechanic: string
+          display_name: string
+          extraction_hints_json: Json | null
+          id: string
+          is_active: boolean
+          known_supplier_id: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          country?: string
+          created_at?: string
+          default_discount_pct?: number | null
+          default_discount_rules_json?: Json | null
+          discount_mechanic: string
+          display_name: string
+          extraction_hints_json?: Json | null
+          id?: string
+          is_active?: boolean
+          known_supplier_id?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          country?: string
+          created_at?: string
+          default_discount_pct?: number | null
+          default_discount_rules_json?: Json | null
+          discount_mechanic?: string
+          display_name?: string
+          extraction_hints_json?: Json | null
+          id?: string
+          is_active?: boolean
+          known_supplier_id?: string | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wholesaler_profiles_known_supplier_id_fkey"
+            columns: ["known_supplier_id"]
+            isOneToOne: false
+            referencedRelation: "known_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

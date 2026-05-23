@@ -227,6 +227,15 @@ export default function RestockSellerSales() {
           </table>
         </div>
       )}
+
+      <RestockPickupConfirmModal
+        transactionId={pickupModal?.id ?? null}
+        sellerCode={pickupModal?.code}
+        sellerQrToken={pickupModal?.qr}
+        open={!!pickupModal}
+        onOpenChange={(o) => { if (!o) setPickupModal(null); }}
+        onConfirmed={() => queryClient.invalidateQueries({ queryKey: ["restock-seller-sales", user?.id] })}
+      />
     </div>
   );
 }

@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { isRestockDemoActive, demoTransactions } from "@/data/restock-demo-mock";
@@ -6,25 +7,36 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   CheckCircle, Clock, Truck, Shield, Wallet, Package, Download,
-  AlertTriangle, DollarSign, ArrowRight,
+  AlertTriangle, DollarSign, ArrowRight, MapPin, ShieldCheck,
 } from "lucide-react";
+import { RestockPickupConfirmModal } from "@/components/restock/RestockPickupConfirmModal";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
   pending_payment: { label: "En attente paiement", color: "#F59E0B", bg: "#FEF3C7", icon: Clock },
   paid: { label: "Payé — Escrow", color: "#1C58D9", bg: "#EBF0FB", icon: Shield },
+  awaiting_pickup: { label: "À retirer sur place", color: "#7C3AED", bg: "#F3E8FF", icon: MapPin },
+  picked_up: { label: "Retiré — Sous escrow", color: "#F59E0B", bg: "#FEF3C7", icon: ShieldCheck },
   shipped: { label: "Expédié", color: "#8B5CF6", bg: "#F3E8FF", icon: Truck },
   delivered: { label: "Livré — Sous escrow", color: "#F59E0B", bg: "#FEF3C7", icon: Clock },
   released: { label: "Fonds libérés ✓", color: "#00B85C", bg: "#EEFBF4", icon: Wallet },
   disputed: { label: "Litige", color: "#E54545", bg: "#FEE2E2", icon: AlertTriangle },
   refunded: { label: "Remboursé", color: "#8B929C", bg: "#F7F8FA", icon: DollarSign },
   cancelled: { label: "Annulé", color: "#8B929C", bg: "#F7F8FA", icon: AlertTriangle },
+  cancelled_no_show: { label: "Annulé (no-show)", color: "#E54545", bg: "#FEE2E2", icon: AlertTriangle },
 };
 
 const ESCROW_STEPS = ["pending_payment", "paid", "shipped", "delivered", "released"];
 
 function EscrowTimeline({ status }: { status: string }) {
   const currentIdx = ESCROW_STEPS.indexOf(status);
-  if (status === "disputed" || status === "refunded" || status === "cancelled") {
+  if (
+    status === "disputed" ||
+    status === "refunded" ||
+    status === "cancelled" ||
+    status === "cancelled_no_show" ||
+    status === "awaiting_pickup" ||
+    status === "picked_up"
+  ) {
     const cfg = STATUS_CONFIG[status];
     return (
       <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ backgroundColor: cfg.bg }}>
@@ -59,7 +71,10 @@ function EscrowTimeline({ status }: { status: string }) {
 
 export default function RestockSellerSales() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const demoOn = isRestockDemoActive();
+  const [pickupModal, setPickupModal] = useState<{ id: string; code?: string | null; qr?: string | null } | null>(null);
+
 
   const { data: transactionsRaw = [], isLoading } = useQuery({
     queryKey: ["restock-seller-sales", user?.id],
@@ -153,12 +168,23 @@ export default function RestockSellerSales() {
               {transactions.map((t: any) => {
                 const offer = t.restock_offers;
                 const cfg = STATUS_CONFIG[t.status] || STATUS_CONFIG.pending_payment;
-                const isRevealed = ["paid", "shipped", "delivered", "released"].includes(t.status);
+                const isRevealed = ["paid", "shipped", "delivered", "released", "awaiting_pickup", "picked_up"].includes(t.status);
+                const isPickup = t.delivery_mode === "pickup";
+                const canConfirmPickup = isPickup && t.status === "awaiting_pickup";
+                const deadline = t.pickup_deadline_at ? new Date(t.pickup_deadline_at) : null;
                 return (
                   <tr key={t.id} className="border-t border-[#D0D5DC]/50 hover:bg-[#F7F8FA]/50">
                     <td className="px-4 py-3">
                       <p className="font-medium text-[#1E252F] truncate max-w-[200px]">{offer?.designation || "—"}</p>
                       <p className="text-[10px] text-[#8B929C]">{offer?.ean && `EAN ${offer.ean}`}{offer?.cnk && ` · CNK ${offer.cnk}`}</p>
+                      {isPickup && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#7C3AED] mt-0.5">
+                          <MapPin size={10} /> Enlèvement sur place
+                          {deadline && t.status === "awaiting_pickup" && (
+                            <span className="text-[#8B929C]">— avant {deadline.toLocaleDateString("fr-BE")}</span>
+                          )}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-center text-[#1E252F] font-medium">{t.quantity}</td>
                     <td className="px-4 py-3 text-right font-bold text-[#00B85C]">{Number(t.seller_amount || 0).toFixed(2)} €</td>
@@ -173,7 +199,16 @@ export default function RestockSellerSales() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-[#8B929C] text-xs">{new Date(t.created_at).toLocaleDateString("fr-BE")}</td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right space-x-1">
+                      {canConfirmPickup && (
+                        <Button
+                          size="sm"
+                          className="text-xs gap-1 bg-[#7C3AED] hover:bg-[#6D28D9] text-white h-7"
+                          onClick={() => setPickupModal({ id: t.id, code: t.pickup_handover_code, qr: t.pickup_qr_token })}
+                        >
+                          <ShieldCheck size={12} /> Valider le retrait
+                        </Button>
+                      )}
                       {t.tracking_number && (
                         <Button size="sm" variant="ghost" className="text-xs gap-1 text-[#1C58D9]">
                           <Truck size={12} /> Suivi
@@ -192,6 +227,15 @@ export default function RestockSellerSales() {
           </table>
         </div>
       )}
+
+      <RestockPickupConfirmModal
+        transactionId={pickupModal?.id ?? null}
+        sellerCode={pickupModal?.code}
+        sellerQrToken={pickupModal?.qr}
+        open={!!pickupModal}
+        onOpenChange={(o) => { if (!o) setPickupModal(null); }}
+        onConfirmed={() => queryClient.invalidateQueries({ queryKey: ["restock-seller-sales", user?.id] })}
+      />
     </div>
   );
 }

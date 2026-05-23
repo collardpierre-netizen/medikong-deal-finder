@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import {
   PackagePlus, List, MessageSquare, CheckCircle, HelpCircle, LayoutGrid,
   Users, Mail, Shield, Settings, Zap, Gift, Database, Wallet, ArrowLeft,
-  Home, ShoppingCart, Store,
+  Home, ShoppingCart, Store, MapPin,
 } from "lucide-react";
 
 const buyerNav = [
@@ -18,6 +18,7 @@ const sellerNav = [
   { to: "/restock/seller/offers", label: "Mes offres", icon: List },
   { to: "/restock/seller/counteroffers", label: "Contre-offres", icon: MessageSquare },
   { to: "/restock/seller/sales", label: "Ventes", icon: CheckCircle },
+  { to: "/restock/seller/pickup", label: "Enlèvement", icon: MapPin },
   { to: "/restock/seller/referral", label: "Parrainage", icon: Gift },
   { to: "/restock/seller/help", label: "Aide", icon: HelpCircle },
 ];

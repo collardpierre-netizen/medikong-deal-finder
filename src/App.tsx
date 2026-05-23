@@ -288,6 +288,7 @@ const RestockAdminFaq = lazyWithRetry(() => import("./pages/restock/RestockAdmin
 const RestockAdminPriceReferences = lazyWithRetry(() => import("./pages/restock/RestockAdminPriceReferences"), "RestockAdminPriceReferences");
 const RestockAdminPayouts = lazyWithRetry(() => import("./pages/restock/RestockAdminPayouts"), "RestockAdminPayouts");
 const RestockSellerReferral = lazyWithRetry(() => import("./pages/restock/RestockSellerReferral"), "RestockSellerReferral");
+const RestockSellerPickupLocation = lazyWithRetry(() => import("./pages/restock/RestockSellerPickupLocation"), "RestockSellerPickupLocation");
 const RestockCheckout = lazyWithRetry(() => import("./pages/restock/RestockCheckout"), "RestockCheckout");
 const PitchdeckRedirect = lazyWithRetry(() => import("./pages/PitchdeckRedirect"), "PitchdeckRedirect");
 
@@ -594,6 +595,7 @@ const App = () => (
               <Route path="/restock/seller/counteroffers" element={<LP><RestockSellerCounterOffers /></LP>} />
               <Route path="/restock/seller/sales" element={<LP><RestockSellerSales /></LP>} />
               <Route path="/restock/seller/referral" element={<LP><RestockSellerReferral /></LP>} />
+              <Route path="/restock/seller/pickup" element={<LP><RestockSellerPickupLocation /></LP>} />
               <Route path="/restock/seller/help" element={<LP><RestockSellerHelp /></LP>} />
               <Route path="/restock/faq" element={<LP><RestockFaqPage /></LP>} />
 

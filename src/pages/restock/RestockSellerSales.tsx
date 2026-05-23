@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { isRestockDemoActive, demoTransactions } from "@/data/restock-demo-mock";
@@ -6,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   CheckCircle, Clock, Truck, Shield, Wallet, Package, Download,
-  AlertTriangle, DollarSign, ArrowRight,
+  AlertTriangle, DollarSign, ArrowRight, MapPin, ShieldCheck,
 } from "lucide-react";
+import { RestockPickupConfirmModal } from "@/components/restock/RestockPickupConfirmModal";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
   pending_payment: { label: "En attente paiement", color: "#F59E0B", bg: "#FEF3C7", icon: Clock },

@@ -18,6 +18,7 @@ const sellerNav = [
   { to: "/restock/seller/offers", label: "Mes offres", icon: List },
   { to: "/restock/seller/counteroffers", label: "Contre-offres", icon: MessageSquare },
   { to: "/restock/seller/sales", label: "Ventes", icon: CheckCircle },
+  { to: "/restock/seller/pickup", label: "Enlèvement", icon: MapPin },
   { to: "/restock/seller/referral", label: "Parrainage", icon: Gift },
   { to: "/restock/seller/help", label: "Aide", icon: HelpCircle },
 ];

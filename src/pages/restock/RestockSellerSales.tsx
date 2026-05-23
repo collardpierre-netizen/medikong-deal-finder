@@ -29,7 +29,14 @@ const ESCROW_STEPS = ["pending_payment", "paid", "shipped", "delivered", "releas
 
 function EscrowTimeline({ status }: { status: string }) {
   const currentIdx = ESCROW_STEPS.indexOf(status);
-  if (status === "disputed" || status === "refunded" || status === "cancelled") {
+  if (
+    status === "disputed" ||
+    status === "refunded" ||
+    status === "cancelled" ||
+    status === "cancelled_no_show" ||
+    status === "awaiting_pickup" ||
+    status === "picked_up"
+  ) {
     const cfg = STATUS_CONFIG[status];
     return (
       <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ backgroundColor: cfg.bg }}>

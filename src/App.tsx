@@ -288,6 +288,7 @@ const RestockAdminFaq = lazyWithRetry(() => import("./pages/restock/RestockAdmin
 const RestockAdminPriceReferences = lazyWithRetry(() => import("./pages/restock/RestockAdminPriceReferences"), "RestockAdminPriceReferences");
 const RestockAdminPayouts = lazyWithRetry(() => import("./pages/restock/RestockAdminPayouts"), "RestockAdminPayouts");
 const RestockSellerReferral = lazyWithRetry(() => import("./pages/restock/RestockSellerReferral"), "RestockSellerReferral");
+const RestockSellerPickupLocation = lazyWithRetry(() => import("./pages/restock/RestockSellerPickupLocation"), "RestockSellerPickupLocation");
 const RestockCheckout = lazyWithRetry(() => import("./pages/restock/RestockCheckout"), "RestockCheckout");
 const PitchdeckRedirect = lazyWithRetry(() => import("./pages/PitchdeckRedirect"), "PitchdeckRedirect");
 

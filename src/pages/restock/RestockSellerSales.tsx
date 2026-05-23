@@ -71,7 +71,10 @@ function EscrowTimeline({ status }: { status: string }) {
 
 export default function RestockSellerSales() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const demoOn = isRestockDemoActive();
+  const [pickupModal, setPickupModal] = useState<{ id: string; code?: string | null; qr?: string | null } | null>(null);
+
 
   const { data: transactionsRaw = [], isLoading } = useQuery({
     queryKey: ["restock-seller-sales", user?.id],

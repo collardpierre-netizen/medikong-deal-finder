@@ -1555,6 +1555,13 @@ export type Database = {
             foreignKeyName: "cart_items_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
+            referencedRelation: "offers_with_exclusivity_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "cart_items_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
             referencedRelation: "public_offers"
             referencedColumns: ["id"]
           },
@@ -2726,6 +2733,13 @@ export type Database = {
             foreignKeyName: "discount_tiers_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
+            referencedRelation: "offers_with_exclusivity_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "discount_tiers_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
             referencedRelation: "public_offers"
             referencedColumns: ["id"]
           },
@@ -2856,6 +2870,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "external_offers"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_leads_external_offer_id_fkey"
+            columns: ["external_offer_id"]
+            isOneToOne: false
+            referencedRelation: "external_offers_with_exclusivity_v"
+            referencedColumns: ["external_offer_id"]
           },
           {
             foreignKeyName: "external_leads_external_vendor_id_fkey"
@@ -4775,6 +4796,13 @@ export type Database = {
             foreignKeyName: "market_delta_anomalies_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
+            referencedRelation: "offers_with_exclusivity_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "market_delta_anomalies_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
             referencedRelation: "public_offers"
             referencedColumns: ["id"]
           },
@@ -5779,6 +5807,13 @@ export type Database = {
             foreignKeyName: "offer_buyer_profile_prices_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
+            referencedRelation: "offers_with_exclusivity_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "offer_buyer_profile_prices_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
             referencedRelation: "public_offers"
             referencedColumns: ["id"]
           },
@@ -5850,6 +5885,13 @@ export type Database = {
             foreignKeyName: "offer_categories_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
+            referencedRelation: "offers_with_exclusivity_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "offer_categories_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
             referencedRelation: "public_offers"
             referencedColumns: ["id"]
           },
@@ -5910,6 +5952,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "offers"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_data_quality_logs_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_with_exclusivity_v"
+            referencedColumns: ["offer_id"]
           },
           {
             foreignKeyName: "offer_data_quality_logs_offer_id_fkey"
@@ -6044,6 +6093,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "offers"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_margin_snapshots_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_with_exclusivity_v"
+            referencedColumns: ["offer_id"]
           },
           {
             foreignKeyName: "offer_margin_snapshots_offer_id_fkey"
@@ -6209,6 +6265,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "offers"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_price_tiers_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_with_exclusivity_v"
+            referencedColumns: ["offer_id"]
           },
           {
             foreignKeyName: "offer_price_tiers_offer_id_fkey"
@@ -6816,6 +6879,13 @@ export type Database = {
             foreignKeyName: "order_items_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
+            referencedRelation: "offers_with_exclusivity_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "order_items_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
             referencedRelation: "public_offers"
             referencedColumns: ["id"]
           },
@@ -7037,6 +7107,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "offers"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_with_exclusivity_v"
+            referencedColumns: ["offer_id"]
           },
           {
             foreignKeyName: "order_lines_offer_id_fkey"
@@ -14495,6 +14572,13 @@ export type Database = {
             foreignKeyName: "vendor_competitor_alerts_my_offer_id_fkey"
             columns: ["my_offer_id"]
             isOneToOne: false
+            referencedRelation: "offers_with_exclusivity_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_my_offer_id_fkey"
+            columns: ["my_offer_id"]
+            isOneToOne: false
             referencedRelation: "public_offers"
             referencedColumns: ["id"]
           },
@@ -16652,6 +16736,13 @@ export type Database = {
             foreignKeyName: "vendor_price_challenges_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
+            referencedRelation: "offers_with_exclusivity_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "vendor_price_challenges_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
             referencedRelation: "public_offers"
             referencedColumns: ["id"]
           },
@@ -18187,6 +18278,13 @@ export type Database = {
             foreignKeyName: "order_lines_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
+            referencedRelation: "offers_with_exclusivity_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "order_lines_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
             referencedRelation: "public_offers"
             referencedColumns: ["id"]
           },
@@ -18410,6 +18508,73 @@ export type Database = {
           },
         ]
       }
+      external_offers_with_exclusivity_v: {
+        Row: {
+          exclusive_vendor_id: string | null
+          exclusivity_id: string | null
+          exclusivity_mode:
+            | Database["public"]["Enums"]["vendor_exclusivity_mode"]
+            | null
+          external_offer_id: string | null
+          external_vendor_id: string | null
+          is_active: boolean | null
+          is_blocked: boolean | null
+          is_hidden: boolean | null
+          is_showcase_dimmed: boolean | null
+          product_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_offers_external_vendor_id_fkey"
+            columns: ["external_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "external_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "external_offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "external_offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
       market_intelligence_v: {
         Row: {
           max_price: number | null
@@ -18464,6 +18629,115 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "public_top_price_deltas"
             referencedColumns: ["product_id"]
+          },
+        ]
+      }
+      offers_with_exclusivity_v: {
+        Row: {
+          exclusive_vendor_id: string | null
+          exclusivity_id: string | null
+          exclusivity_mode:
+            | Database["public"]["Enums"]["vendor_exclusivity_mode"]
+            | null
+          is_active: boolean | null
+          is_blocked: boolean | null
+          is_hidden: boolean | null
+          is_showcase_dimmed: boolean | null
+          offer_id: string | null
+          product_id: string | null
+          vendor_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -20969,6 +21243,21 @@ export type Database = {
         Returns: number
       }
       normalize_brand_name: { Args: { _name: string }; Returns: string }
+      offer_exclusivity_flags: {
+        Args: {
+          p_country_code?: string
+          p_product_id: string
+          p_vendor_id: string
+        }
+        Returns: {
+          exclusive_vendor_id: string
+          exclusivity_id: string
+          exclusivity_mode: Database["public"]["Enums"]["vendor_exclusivity_mode"]
+          is_blocked: boolean
+          is_hidden: boolean
+          is_showcase_dimmed: boolean
+        }[]
+      }
       override_volume_threshold: {
         Args: { _new_threshold: number; _sub_id: string }
         Returns: undefined

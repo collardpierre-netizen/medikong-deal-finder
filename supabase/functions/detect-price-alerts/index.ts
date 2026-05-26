@@ -16,7 +16,16 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Use the SQL function via rpc
+    // Require a valid cron shared secret to invoke this scanner.
+    const cronSecret = req.headers.get("x-cron-secret") ?? "";
+    const { data: ok, error: vErr } = await supabase.rpc("validate_cron_secret", { _secret: cronSecret });
+    if (vErr || !ok) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { data, error } = await supabase.rpc("detect_price_alerts_batch", {
       _th_info: 5,
       _th_warn: 15,

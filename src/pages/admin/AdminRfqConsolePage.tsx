@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Loader2, Search, ExternalLink, BellRing, UserPlus, RefreshCw, Eye } from "lucide-react";
+import { Loader2, Search, ExternalLink, BellRing, UserPlus, RefreshCw, Eye, Send } from "lucide-react";
 import { RfqDispatchTracker } from "@/components/rfq/RfqDispatchTracker";
 
 type RfqStatus = "draft" | "dispatched" | "in_followup" | "closed" | "awarded" | "cancelled";

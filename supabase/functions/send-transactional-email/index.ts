@@ -58,6 +58,37 @@ Deno.serve(async (req) => {
     )
   }
 
+  // Require caller authentication to prevent abuse:
+  // - A valid user JWT (from the app/client), OR
+  // - The service-role key (from internal Edge Functions calling via supabase.functions.invoke).
+  // Public/unauthenticated callers cannot trigger MediKong-branded emails.
+  const authHeader = req.headers.get('Authorization') ?? ''
+  const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
+  if (!bearer) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+  if (bearer !== supabaseServiceKey) {
+    try {
+      const authClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY') ?? supabaseServiceKey)
+      const { data: claimsData, error: claimsErr } = await authClient.auth.getClaims(bearer)
+      if (claimsErr || !claimsData?.claims?.sub) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+    } catch {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+  }
+
+
   // Parse request body
   let templateName: string
   let recipientEmail: string

@@ -265,7 +265,7 @@ function RfqDetailPanel({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("full_name, company_name, country, vat_number, buyer_profile_id, profession_type_id, buyer_profiles:buyer_profile_id(label), profession_types:profession_type_id(label)")
+        .select("full_name, company_name, country, vat_number, buyer_profile_id, profession_type_id, buyer_profiles:buyer_profile_id(label), profession_types:profession_type_id(name)")
         .eq("user_id", rfq!.buyer_user_id)
         .maybeSingle();
       if (error) throw error;

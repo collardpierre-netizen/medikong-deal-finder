@@ -251,8 +251,22 @@ function RfqDetailPanel({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("rfqs")
-        .select("*, products(name), brands(name)")
+        .select("*, products(name, gtin, cnk_code, pack_size, slug, image_url), brands(name, slug)")
         .eq("id", rfqId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
+  const { data: buyer } = useQuery({
+    enabled: !!rfq?.buyer_user_id,
+    queryKey: ["admin-rfq-buyer", rfq?.buyer_user_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("full_name, company_name, country, vat_number, buyer_profile_id, profession_type_id, buyer_profiles:buyer_profile_id(label), profession_types:profession_type_id(label)")
+        .eq("user_id", rfq!.buyer_user_id)
         .maybeSingle();
       if (error) throw error;
       return data as any;

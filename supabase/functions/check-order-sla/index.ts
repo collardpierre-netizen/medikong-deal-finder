@@ -34,7 +34,15 @@ Deno.serve(async (req) => {
   const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
+  // Require a valid cron shared secret.
+  const cronSecret = req.headers.get("x-cron-secret") ?? "";
+  const { data: secretOk, error: secretErr } = await supabase.rpc("validate_cron_secret", { _secret: cronSecret });
+  if (secretErr || !secretOk) {
+    return j({ error: "Unauthorized" }, 401);
+  }
+
   // 1) Load settings
+
   const { data: settingsRow } = await supabase
     .from("vendor_sla_settings")
     .select("*")

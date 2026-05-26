@@ -11691,6 +11691,7 @@ export type Database = {
           email_message_id: string | null
           error: string | null
           id: string
+          manual_admin: boolean
           rfq_id: string
           sent_at: string
           template_id: string | null
@@ -11701,6 +11702,7 @@ export type Database = {
           email_message_id?: string | null
           error?: string | null
           id?: string
+          manual_admin?: boolean
           rfq_id: string
           sent_at?: string
           template_id?: string | null
@@ -11711,6 +11713,7 @@ export type Database = {
           email_message_id?: string | null
           error?: string | null
           id?: string
+          manual_admin?: boolean
           rfq_id?: string
           sent_at?: string
           template_id?: string | null
@@ -20949,6 +20952,21 @@ export type Database = {
         Args: { _backup_table_name?: string }
         Returns: Json
       }
+      rfq_admin_add_vendor: {
+        Args: { _rfq_id: string; _vendor_id: string }
+        Returns: Json
+      }
+      rfq_admin_eligible_vendors_not_targeted: {
+        Args: { _rfq_id: string }
+        Returns: {
+          reason: Database["public"]["Enums"]["rfq_target_reason"]
+          score: number
+          vendor_company: string
+          vendor_country: string
+          vendor_id: string
+          vendor_name: string
+        }[]
+      }
       rfq_admin_grant_access: {
         Args: {
           _expires_at?: string
@@ -20962,6 +20980,10 @@ export type Database = {
       rfq_admin_revoke_access: {
         Args: { _notes?: string; _rfq_id: string; _user_id: string }
         Returns: undefined
+      }
+      rfq_admin_send_reminder_now: {
+        Args: { _rfq_id: string; _template_id: string; _vendor_id: string }
+        Returns: Json
       }
       rfq_audit_routing: { Args: { _rfq_id: string }; Returns: number }
       rfq_buyer_can_view_results: {

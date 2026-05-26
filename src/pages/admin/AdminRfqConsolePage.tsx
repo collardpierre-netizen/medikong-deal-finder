@@ -315,6 +315,17 @@ function RfqDetailPanel({
       </DialogHeader>
 
       <div className="flex gap-2 flex-wrap">
+        {rfq?.status === "draft" && (
+          <Button
+            size="sm"
+            variant="default"
+            onClick={() => dispatchMut.mutate()}
+            disabled={dispatchMut.isPending}
+          >
+            {dispatchMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+            Diffuser maintenant
+          </Button>
+        )}
         <Button size="sm" variant="outline" onClick={onOpenReminder}>
           <BellRing className="h-4 w-4 mr-2" /> Relancer maintenant
         </Button>

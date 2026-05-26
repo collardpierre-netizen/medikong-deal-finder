@@ -31,15 +31,19 @@ Deno.serve(async (req) => {
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
   let simulation_id: string;
+  let provided_email: string;
   try {
     const body = await req.json();
     simulation_id = body.simulation_id;
+    provided_email = String(body.email ?? "").trim().toLowerCase();
     if (!simulation_id) throw new Error("simulation_id required");
+    if (!provided_email) throw new Error("email required");
   } catch (e) {
     return new Response(JSON.stringify({ error: String(e) }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+
 
   // 1. Load simulation + lines
   const { data: sim, error: simErr } = await supabase

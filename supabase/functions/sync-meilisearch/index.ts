@@ -245,6 +245,39 @@ serve(async (req) => {
     const action = body.action || "webhook";
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // Authentication: require a signed-in user for any call. Admin-only actions
+    // additionally require is_admin. get-search-key is allowed for any authenticated session.
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    const isServiceRole = bearer && bearer === SUPABASE_SERVICE_ROLE_KEY;
+    let userId: string | null = null;
+    let isAdmin = false;
+    if (!isServiceRole) {
+      if (!bearer) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data: claims } = await supabase.auth.getClaims(bearer);
+      userId = claims?.claims?.sub ?? null;
+      if (!userId) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data: adminCheck } = await supabase.rpc("is_admin", { _user_id: userId });
+      isAdmin = adminCheck === true;
+    } else {
+      isAdmin = true;
+    }
+    const ADMIN_ACTIONS = new Set(["setup", "full-sync", "sync-products-batch", "sync-brands-categories", "sync-product-ids"]);
+    if (ADMIN_ACTIONS.has(action) && !isAdmin) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+
     if (action === "get-search-key") {
       const searchKey = Deno.env.get("MEILISEARCH_SEARCH_KEY");
       if (!searchKey) {

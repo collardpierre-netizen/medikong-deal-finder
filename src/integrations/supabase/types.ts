@@ -11706,6 +11706,151 @@ export type Database = {
           },
         ]
       }
+      rfq_external_invitations: {
+        Row: {
+          contact_email: string
+          contact_name: string | null
+          created_at: string
+          email_message_id: string | null
+          external_vendor_id: string
+          id: string
+          invited_by: string | null
+          responded_at: string | null
+          rfq_id: string
+          status: string
+          token: string
+          token_expires_at: string
+          updated_at: string
+          viewed_at: string | null
+        }
+        Insert: {
+          contact_email: string
+          contact_name?: string | null
+          created_at?: string
+          email_message_id?: string | null
+          external_vendor_id: string
+          id?: string
+          invited_by?: string | null
+          responded_at?: string | null
+          rfq_id: string
+          status?: string
+          token: string
+          token_expires_at?: string
+          updated_at?: string
+          viewed_at?: string | null
+        }
+        Update: {
+          contact_email?: string
+          contact_name?: string | null
+          created_at?: string
+          email_message_id?: string | null
+          external_vendor_id?: string
+          id?: string
+          invited_by?: string | null
+          responded_at?: string | null
+          rfq_id?: string
+          status?: string
+          token?: string
+          token_expires_at?: string
+          updated_at?: string
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_external_invitations_external_vendor_id_fkey"
+            columns: ["external_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "external_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_external_invitations_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfqs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rfq_external_responses: {
+        Row: {
+          attachments_urls: string[]
+          comment: string | null
+          contact_email: string | null
+          contact_name: string | null
+          created_at: string
+          currency_code: string
+          external_vendor_id: string
+          id: string
+          invitation_id: string
+          lead_time_days: number | null
+          payment_terms: string | null
+          quantity_available: number | null
+          rfq_id: string
+          unit_price_excl_vat_cents: number
+          updated_at: string
+          validity_days: number | null
+        }
+        Insert: {
+          attachments_urls?: string[]
+          comment?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string
+          currency_code?: string
+          external_vendor_id: string
+          id?: string
+          invitation_id: string
+          lead_time_days?: number | null
+          payment_terms?: string | null
+          quantity_available?: number | null
+          rfq_id: string
+          unit_price_excl_vat_cents: number
+          updated_at?: string
+          validity_days?: number | null
+        }
+        Update: {
+          attachments_urls?: string[]
+          comment?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string
+          currency_code?: string
+          external_vendor_id?: string
+          id?: string
+          invitation_id?: string
+          lead_time_days?: number | null
+          payment_terms?: string | null
+          quantity_available?: number | null
+          rfq_id?: string
+          unit_price_excl_vat_cents?: number
+          updated_at?: string
+          validity_days?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_external_responses_external_vendor_id_fkey"
+            columns: ["external_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "external_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_external_responses_invitation_id_fkey"
+            columns: ["invitation_id"]
+            isOneToOne: true
+            referencedRelation: "rfq_external_invitations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_external_responses_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfqs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rfq_plans: {
         Row: {
           code: string
@@ -21468,7 +21613,11 @@ export type Database = {
         Returns: Json
       }
       rfq_admin_add_vendor: {
-        Args: { _rfq_id: string; _vendor_id: string }
+        Args: {
+          _bypass_eligibility?: boolean
+          _rfq_id: string
+          _vendor_id: string
+        }
         Returns: Json
       }
       rfq_admin_eligible_vendors_not_targeted: {
@@ -21491,6 +21640,15 @@ export type Database = {
           _user_id: string
         }
         Returns: string
+      }
+      rfq_admin_invite_external_vendor: {
+        Args: {
+          _contact_email: string
+          _contact_name?: string
+          _external_vendor_id: string
+          _rfq_id: string
+        }
+        Returns: Json
       }
       rfq_admin_revoke_access: {
         Args: { _notes?: string; _rfq_id: string; _user_id: string }
@@ -21550,6 +21708,24 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      rfq_external_get_invitation: { Args: { _token: string }; Returns: Json }
+      rfq_external_submit_response: {
+        Args: {
+          _attachments_urls?: string[]
+          _comment?: string
+          _contact_email?: string
+          _contact_name?: string
+          _currency_code?: string
+          _decline?: boolean
+          _lead_time_days?: number
+          _payment_terms?: string
+          _quantity_available?: number
+          _token: string
+          _unit_price_excl_vat_cents: number
+          _validity_days?: number
+        }
+        Returns: Json
       }
       rfq_grant_credits: {
         Args: {

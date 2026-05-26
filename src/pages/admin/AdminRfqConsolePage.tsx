@@ -618,27 +618,55 @@ function ReminderModal({ rfqId, open, onClose }: { rfqId: string; open: boolean;
 // ===== Add Vendor Modal =====
 function AddVendorModal({ rfqId, open, onClose }: { rfqId: string; open: boolean; onClose: () => void }) {
   const qc = useQueryClient();
+  const [tab, setTab] = useState<"medikong" | "external">("medikong");
+
+  // ---- MediKong vendor selection state ----
   const [vendorId, setVendorId] = useState<string>("");
   const [filter, setFilter] = useState("");
+  const [bypass, setBypass] = useState(false);
 
-  const { data: eligible = [], isLoading } = useQuery({
+  // Eligible list (filtered server-side)
+  const { data: eligible = [], isLoading: eligibleLoading } = useQuery({
     queryKey: ["admin-rfq-eligible-vendors", rfqId],
     queryFn: async () => {
       const { data, error } = await supabase.rpc("rfq_admin_eligible_vendors_not_targeted" as never, { _rfq_id: rfqId } as never);
       if (error) throw error;
       return (data ?? []) as any[];
     },
-    enabled: open,
+    enabled: open && tab === "medikong" && !bypass,
   });
+
+  // Full vendors list (used when bypass is on)
+  const { data: allVendors = [], isLoading: allLoading } = useQuery({
+    queryKey: ["admin-rfq-all-vendors", rfqId, filter],
+    queryFn: async () => {
+      let q = supabase
+        .from("vendors")
+        .select("id, name, company_name, country_code, kyc_status, accepts_rfq")
+        .order("company_name", { ascending: true })
+        .limit(200);
+      if (filter.trim()) {
+        const f = `%${filter.trim()}%`;
+        q = q.or(`name.ilike.${f},company_name.ilike.${f}`);
+      }
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+    enabled: open && tab === "medikong" && bypass,
+  });
+
+  const isLoading = bypass ? allLoading : eligibleLoading;
+  const source = bypass ? allVendors : eligible;
 
   const filtered = useMemo(() => {
     const f = filter.toLowerCase().trim();
-    if (!f) return eligible;
-    return eligible.filter((v: any) =>
+    if (!f) return source;
+    return source.filter((v: any) =>
       (v.company_name || "").toLowerCase().includes(f) ||
       (v.name || "").toLowerCase().includes(f)
     );
-  }, [eligible, filter]);
+  }, [source, filter]);
 
   const addMut = useMutation({
     mutationFn: async () => {
@@ -646,11 +674,11 @@ function AddVendorModal({ rfqId, open, onClose }: { rfqId: string; open: boolean
       const { data, error } = await supabase.rpc("rfq_admin_add_vendor" as never, {
         _rfq_id: rfqId,
         _vendor_id: vendorId,
+        _bypass_eligibility: bypass,
       } as never);
       if (error) throw error;
       const result = data as any;
 
-      // Fire-and-forget email (best-effort)
       if (result?.was_new) {
         try {
           const [{ data: vendor }, { data: dispatch }, { data: rfq }] = await Promise.all([
@@ -681,7 +709,9 @@ function AddVendorModal({ rfqId, open, onClose }: { rfqId: string; open: boolean
                   offerValidityDays: rfq.required_offer_validity_days,
                   comment: rfq.comment,
                   targetReason: "manual",
-                  targetReasonLabel: "Ajouté manuellement par un administrateur",
+                  targetReasonLabel: bypass
+                    ? "Forcé par un administrateur (bypass éligibilité)"
+                    : "Ajouté manuellement par un administrateur",
                   rfqUrl: `https://medikong-deal-finder.lovable.app/vendor/rfq/${rfqId}?t=${dispatch.tracking_token}`,
                 },
               },
@@ -694,13 +724,115 @@ function AddVendorModal({ rfqId, open, onClose }: { rfqId: string; open: boolean
       return result;
     },
     onSuccess: (r: any) => {
-      if (r?.was_new) toast.success("Vendeur ajouté et notifié");
+      if (r?.was_new) toast.success(r?.bypassed ? "Vendeur forcé et notifié" : "Vendeur ajouté et notifié");
       else toast.info("Vendeur déjà ciblé");
       qc.invalidateQueries({ queryKey: ["rfq-dispatch-summary", rfqId] });
       qc.invalidateQueries({ queryKey: ["admin-rfq-eligible-vendors", rfqId] });
+      qc.invalidateQueries({ queryKey: ["admin-rfq-all-vendors", rfqId] });
       qc.invalidateQueries({ queryKey: ["admin-rfq-list"] });
       onClose();
       setVendorId("");
+      setBypass(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // ---- External vendor invitation state ----
+  const [extVendorId, setExtVendorId] = useState<string>("");
+  const [extEmail, setExtEmail] = useState("");
+  const [extName, setExtName] = useState("");
+
+  const { data: extVendors = [], isLoading: extLoading } = useQuery({
+    queryKey: ["admin-external-vendors-rfq-picker"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("external_vendors")
+        .select("id, name, contact_email, country_code, logo_url, is_active")
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: open && tab === "external",
+  });
+
+  const onPickExtVendor = (id: string) => {
+    setExtVendorId(id);
+    const v = extVendors.find((x: any) => x.id === id);
+    if (v) {
+      if (!extEmail) setExtEmail(v.contact_email || "");
+      if (!extName) setExtName(v.name || "");
+    }
+  };
+
+  const inviteExtMut = useMutation({
+    mutationFn: async () => {
+      if (!extVendorId) throw new Error("Sélectionnez un vendeur externe");
+      if (!extEmail.trim()) throw new Error("Email du contact requis");
+
+      const { data, error } = await supabase.rpc("rfq_admin_invite_external_vendor" as never, {
+        _rfq_id: rfqId,
+        _external_vendor_id: extVendorId,
+        _contact_email: extEmail.trim(),
+        _contact_name: extName.trim() || null,
+      } as never);
+      if (error) throw error;
+      const result = data as any;
+      const token: string = result.token;
+      const origin = typeof window !== "undefined" ? window.location.origin : "https://medikong.pro";
+      const rfqUrl = `${origin}/rfq/externe/${token}`;
+
+      // Best-effort email
+      try {
+        const [{ data: rfq }, { data: extVendor }] = await Promise.all([
+          supabase.from("rfqs").select("quantity, target_price_excl_vat_cents, destination_country_code, responses_deadline, desired_delivery_date, payment_terms, required_offer_validity_days, comment, product_id, brand_id").eq("id", rfqId).maybeSingle(),
+          supabase.from("external_vendors").select("name").eq("id", extVendorId).maybeSingle(),
+        ]);
+        if (rfq) {
+          const [productRes, brandRes] = await Promise.all([
+            rfq.product_id ? supabase.from("products").select("name").eq("id", rfq.product_id).maybeSingle() : Promise.resolve({ data: null }),
+            rfq.brand_id ? supabase.from("brands").select("name").eq("id", rfq.brand_id).maybeSingle() : Promise.resolve({ data: null }),
+          ]);
+          await supabase.functions.invoke("send-transactional-email", {
+            body: {
+              templateName: "rfq-vendor-invitation",
+              recipientEmail: extEmail.trim(),
+              idempotencyKey: `rfq-ext-invite-${result.invitation_id}`,
+              templateData: {
+                vendorName: extName.trim() || (extVendor as any)?.name || "",
+                productName: (productRes as any)?.data?.name ?? null,
+                brandName: (brandRes as any)?.data?.name ?? null,
+                quantity: rfq.quantity,
+                targetPriceCents: rfq.target_price_excl_vat_cents,
+                countryCode: rfq.destination_country_code,
+                deadline: rfq.responses_deadline,
+                desiredDeliveryDate: rfq.desired_delivery_date,
+                paymentTerms: rfq.payment_terms,
+                offerValidityDays: rfq.required_offer_validity_days,
+                comment: rfq.comment,
+                targetReason: "external",
+                targetReasonLabel: "Invitation externe — encodage via lien sécurisé",
+                rfqUrl,
+              },
+            },
+          });
+        }
+      } catch (e) {
+        console.warn("external invitation email failed", e);
+      }
+      return { ...result, rfqUrl };
+    },
+    onSuccess: (r: any) => {
+      toast.success(r?.was_new ? "Invitation envoyée" : "Invitation mise à jour");
+      // Copy link to clipboard for convenience
+      if (r?.rfqUrl && typeof navigator !== "undefined" && navigator.clipboard) {
+        navigator.clipboard.writeText(r.rfqUrl).catch(() => {});
+      }
+      qc.invalidateQueries({ queryKey: ["rfq-dispatch-summary", rfqId] });
+      onClose();
+      setExtVendorId("");
+      setExtEmail("");
+      setExtName("");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -709,54 +841,138 @@ function AddVendorModal({ rfqId, open, onClose }: { rfqId: string; open: boolean
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Ajouter un vendeur</DialogTitle>
+          <DialogTitle>Ajouter un vendeur à la RFQ</DialogTitle>
           <DialogDescription>
-            Seuls les vendeurs éligibles (KYC, accepts_rfq, capacité, devise, pays, stock/MOQ) non encore ciblés apparaissent.
+            Vendeur MediKong (avec ou sans bypass éligibilité) ou vendeur externe invité par email.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3">
-          <Input
-            placeholder="Filtrer par nom de société…"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          />
-          <div className="border rounded-lg max-h-80 overflow-y-auto">
-            {isLoading ? (
-              <Skeleton className="h-32 w-full" />
-            ) : filtered.length === 0 ? (
-              <p className="text-sm text-muted-foreground p-4 text-center">
-                Aucun vendeur éligible non ciblé.
-              </p>
-            ) : (
-              filtered.map((v: any) => (
-                <label key={v.vendor_id} className="flex items-center gap-3 p-2 hover:bg-muted/40 cursor-pointer border-b last:border-b-0">
-                  <input
-                    type="radio"
-                    name="vendor"
-                    checked={vendorId === v.vendor_id}
-                    onChange={() => setVendorId(v.vendor_id)}
-                  />
-                  <div className="flex-1 text-sm">
-                    <div className="font-medium">{v.company_name || v.name || v.vendor_id.slice(0, 8)}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {v.country_code ?? "—"} · {v.match_reason ?? "éligible"}
-                      {v.score != null && ` · score ${Number(v.score).toFixed(2)}`}
-                    </div>
-                  </div>
-                </label>
-              ))
-            )}
-          </div>
-        </div>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as "medikong" | "external")}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="medikong">Vendeur MediKong</TabsTrigger>
+            <TabsTrigger value="external">Vendeur externe (email)</TabsTrigger>
+          </TabsList>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Annuler</Button>
-          <Button onClick={() => addMut.mutate()} disabled={addMut.isPending || !vendorId}>
-            {addMut.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Ajouter et notifier
-          </Button>
-        </DialogFooter>
+          {/* === MediKong tab === */}
+          <TabsContent value="medikong" className="space-y-3 mt-3">
+            <label className="flex items-start gap-2 p-3 rounded-md border bg-amber-50 border-amber-200 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={bypass}
+                onChange={(e) => { setBypass(e.target.checked); setVendorId(""); }}
+                className="mt-0.5"
+              />
+              <div className="text-sm">
+                <div className="font-medium text-amber-900">Forcer l'ajout (bypass éligibilité)</div>
+                <div className="text-xs text-amber-800">
+                  Ignore tous les filtres serveur : KYC, devise, pays, stock/MOQ, capacité, opt-in. Tracé dans l'audit du routage.
+                </div>
+              </div>
+            </label>
+
+            <Input
+              placeholder={bypass ? "Rechercher dans tous les vendeurs…" : "Filtrer par nom de société…"}
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            />
+            <div className="border rounded-lg max-h-72 overflow-y-auto">
+              {isLoading ? (
+                <Skeleton className="h-32 w-full" />
+              ) : filtered.length === 0 ? (
+                <p className="text-sm text-muted-foreground p-4 text-center">
+                  {bypass ? "Aucun vendeur trouvé." : "Aucun vendeur éligible non ciblé."}
+                </p>
+              ) : (
+                filtered.map((v: any) => (
+                  <label key={v.id ?? v.vendor_id} className="flex items-center gap-3 p-2 hover:bg-muted/40 cursor-pointer border-b last:border-b-0">
+                    <input
+                      type="radio"
+                      name="vendor"
+                      checked={vendorId === (v.id ?? v.vendor_id)}
+                      onChange={() => setVendorId(v.id ?? v.vendor_id)}
+                    />
+                    <div className="flex-1 text-sm">
+                      <div className="font-medium">{v.company_name || v.name || (v.id ?? v.vendor_id).slice(0, 8)}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {v.country_code ?? "—"}
+                        {bypass && v.kyc_status && <> · KYC: <span className={v.kyc_status === "accepted" || v.kyc_status === "approved" ? "text-emerald-600" : "text-amber-600"}>{v.kyc_status}</span></>}
+                        {bypass && v.accepts_rfq === false && <span className="text-amber-600"> · opt-out RFQ</span>}
+                        {!bypass && v.match_reason && <> · {v.match_reason}</>}
+                        {!bypass && v.score != null && ` · score ${Number(v.score).toFixed(2)}`}
+                      </div>
+                    </div>
+                  </label>
+                ))
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={onClose}>Annuler</Button>
+              <Button onClick={() => addMut.mutate()} disabled={addMut.isPending || !vendorId}>
+                {addMut.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {bypass ? "Forcer l'ajout et notifier" : "Ajouter et notifier"}
+              </Button>
+            </div>
+          </TabsContent>
+
+          {/* === External vendor tab === */}
+          <TabsContent value="external" className="space-y-3 mt-3">
+            <p className="text-xs text-muted-foreground">
+              Envoie un email au contact avec un lien sécurisé vers une page web où il pourra encoder son devis sans créer de compte.
+              Le lien expire dans 30 jours.
+            </p>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Vendeur externe</label>
+              <Select value={extVendorId} onValueChange={onPickExtVendor}>
+                <SelectTrigger>
+                  <SelectValue placeholder={extLoading ? "Chargement…" : "Sélectionner un vendeur externe"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {extVendors.map((v: any) => (
+                    <SelectItem key={v.id} value={v.id}>
+                      {v.name} {v.country_code ? `(${v.country_code})` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Pas dans la liste ? <a href="/admin/vendeurs-externes" target="_blank" className="underline">Créer un vendeur externe</a>
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Email du contact *</label>
+                <Input
+                  type="email"
+                  value={extEmail}
+                  onChange={(e) => setExtEmail(e.target.value)}
+                  placeholder="contact@vendeur.com"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Nom du contact</label>
+                <Input
+                  value={extName}
+                  onChange={(e) => setExtName(e.target.value)}
+                  placeholder="Jean Dupont"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={onClose}>Annuler</Button>
+              <Button
+                onClick={() => inviteExtMut.mutate()}
+                disabled={inviteExtMut.isPending || !extVendorId || !extEmail.trim()}
+              >
+                {inviteExtMut.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Inviter par email
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

@@ -190,6 +190,7 @@ const AdminDbBackups = lazyWithRetry(() => import("./pages/admin/AdminDbBackups"
 const AdminBackupRlsAudit = lazyWithRetry(() => import("./pages/admin/AdminBackupRlsAudit"), "AdminBackupRlsAudit");
 const AdminRfqCreditsPage = lazyWithRetry(() => import("./pages/admin/AdminRfqCreditsPage"), "AdminRfqCreditsPage");
 const AdminRfqConsolePage = lazyWithRetry(() => import("./pages/admin/AdminRfqConsolePage"), "AdminRfqConsolePage");
+const RfqExternalResponsePage = lazyWithRetry(() => import("./pages/RfqExternalResponsePage"), "RfqExternalResponsePage");
 const AdminRfqLedgerPage = lazyWithRetry(() => import("./pages/admin/AdminRfqLedgerPage"), "AdminRfqLedgerPage");
 const AdminRfqPlansPage = lazyWithRetry(() => import("./pages/admin/AdminRfqPlansPage"), "AdminRfqPlansPage");
 const AdminPriceCockpitPage = lazyWithRetry(() => import("./pages/admin/AdminPriceCockpitPage"), "AdminPriceCockpitPage");
@@ -349,6 +350,7 @@ const App = () => (
             <Route path="/compte/mes-categories" element={<LP><MesCategoriesPage /></LP>} />
             <Route path="/compte/mes-rfq" element={<LP><MesRfqPage /></LP>} />
             <Route path="/compte/rfq-credits" element={<LP><RfqCreditsPage /></LP>} />
+            <Route path="/rfq/externe/:token" element={<LP><RfqExternalResponsePage /></LP>} />
             <Route path="/compte/imports" element={<LP><ImportHistoryPage /></LP>} />
             <Route path="/espace-pharmacie/abonnement" element={<LP><PharmacieAbonnementPage /></LP>} />
             <Route path="/checkout" element={<LP><CheckoutPage /></LP>} />

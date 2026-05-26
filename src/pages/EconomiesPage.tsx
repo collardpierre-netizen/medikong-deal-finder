@@ -218,7 +218,7 @@ export default function EconomiesPage() {
     toast.info("Génération du rapport PDF en cours… vous le recevrez par email d'ici quelques minutes.");
     // Lot 4 : edge function generate-savings-report (à implémenter)
     try {
-      await supabase.functions.invoke("generate-savings-report", { body: { simulation_id: simId } });
+      await supabase.functions.invoke("generate-savings-report", { body: { simulation_id: simId, email: identity.email } });
     } catch (err) {
       console.error("[economies] report request error", err);
     }

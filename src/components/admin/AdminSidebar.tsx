@@ -102,6 +102,18 @@ const sections: NavSection[] = [
     ],
   },
   {
+    labelKey: "rfq",
+    items: [
+      { label: "Console RFQ", path: "/admin/rfq", icon: MessageSquare },
+      { label: "Crédits & plans", path: "/admin/rfq-credits", icon: CreditCard },
+      { label: "Historique crédits", path: "/admin/rfq-ledger", icon: ClipboardList },
+      { label: "Plans (config)", path: "/admin/rfq-plans", icon: Settings },
+      { label: "Templates de relance", path: "/admin/rfq-reminders", icon: Mail },
+      { label: "Audit du routage", path: "/admin/rfq-routing-audit", icon: ShieldCheck },
+      { label: "Test du routage", path: "/admin/rfq-routing-test", icon: ShieldCheckAlt },
+    ],
+  },
+  {
     labelKey: "operations",
     items: [
       { labelKey: "users", path: "/admin/users", icon: Users },

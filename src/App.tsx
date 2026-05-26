@@ -350,6 +350,7 @@ const App = () => (
             <Route path="/compte/mes-categories" element={<LP><MesCategoriesPage /></LP>} />
             <Route path="/compte/mes-rfq" element={<LP><MesRfqPage /></LP>} />
             <Route path="/compte/rfq-credits" element={<LP><RfqCreditsPage /></LP>} />
+            <Route path="/rfq/externe/:token" element={<LP><RfqExternalResponsePage /></LP>} />
             <Route path="/compte/imports" element={<LP><ImportHistoryPage /></LP>} />
             <Route path="/espace-pharmacie/abonnement" element={<LP><PharmacieAbonnementPage /></LP>} />
             <Route path="/checkout" element={<LP><CheckoutPage /></LP>} />

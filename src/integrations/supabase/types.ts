@@ -14722,6 +14722,221 @@ export type Database = {
           },
         ]
       }
+      vendor_exclusivities: {
+        Row: {
+          brand_id: string | null
+          category_id: string | null
+          contract_ref: string | null
+          country_codes: string[] | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          manufacturer_id: string | null
+          mode: Database["public"]["Enums"]["vendor_exclusivity_mode"]
+          product_id: string | null
+          reason: string | null
+          scope: Database["public"]["Enums"]["vendor_exclusivity_scope"]
+          updated_at: string
+          valid_from: string
+          valid_until: string
+          vendor_id: string
+        }
+        Insert: {
+          brand_id?: string | null
+          category_id?: string | null
+          contract_ref?: string | null
+          country_codes?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          manufacturer_id?: string | null
+          mode: Database["public"]["Enums"]["vendor_exclusivity_mode"]
+          product_id?: string | null
+          reason?: string | null
+          scope: Database["public"]["Enums"]["vendor_exclusivity_scope"]
+          updated_at?: string
+          valid_from: string
+          valid_until: string
+          vendor_id: string
+        }
+        Update: {
+          brand_id?: string | null
+          category_id?: string | null
+          contract_ref?: string | null
+          country_codes?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          manufacturer_id?: string | null
+          mode?: Database["public"]["Enums"]["vendor_exclusivity_mode"]
+          product_id?: string | null
+          reason?: string | null
+          scope?: Database["public"]["Enums"]["vendor_exclusivity_scope"]
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_exclusivities_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivities_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_kpis"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivities_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_logistics_stats"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivities_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivities_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_top_brands_mv"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivities_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivities_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivities_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivities_manufacturer_id_fkey"
+            columns: ["manufacturer_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivities_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivities_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivities_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivities_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivities_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivities_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivities_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivities_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivities_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivities_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivities_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivities_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivities_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_guarantee_acceptances: {
         Row: {
           accepted_at: string
@@ -20373,6 +20588,7 @@ export type Database = {
         Args: { _vendor_id: string }
         Returns: Json
       }
+      expire_vendor_exclusivities: { Args: never; Returns: number }
       expire_vendor_market_intel_trials: { Args: never; Returns: number }
       export_table_as_sql: {
         Args: { _table_name: string }
@@ -20898,6 +21114,16 @@ export type Database = {
       resolve_market_delta_threshold: {
         Args: { _product_id: string }
         Returns: number
+      }
+      resolve_offer_exclusivity: {
+        Args: { _country: string; _product_id: string }
+        Returns: {
+          exclusivity_id: string
+          mode: Database["public"]["Enums"]["vendor_exclusivity_mode"]
+          scope: Database["public"]["Enums"]["vendor_exclusivity_scope"]
+          valid_until: string
+          vendor_id: string
+        }[]
       }
       resolve_offer_price_for_profile: {
         Args: { _buyer_profile_id: string; _offer_id: string }
@@ -21616,6 +21842,12 @@ export type Database = {
         | "offers_multi_vendor"
         | "vendor_top_brands_mv"
       urgency_enum: "low" | "medium" | "high"
+      vendor_exclusivity_mode: "showcase" | "hide" | "block"
+      vendor_exclusivity_scope:
+        | "brand"
+        | "manufacturer"
+        | "product"
+        | "category"
       vendor_market_intel_billing: "stripe" | "medikong_invoice"
       vendor_market_intel_status:
         | "none"
@@ -21962,6 +22194,13 @@ export const Constants = {
         "vendor_top_brands_mv",
       ],
       urgency_enum: ["low", "medium", "high"],
+      vendor_exclusivity_mode: ["showcase", "hide", "block"],
+      vendor_exclusivity_scope: [
+        "brand",
+        "manufacturer",
+        "product",
+        "category",
+      ],
       vendor_market_intel_billing: ["stripe", "medikong_invoice"],
       vendor_market_intel_status: [
         "none",

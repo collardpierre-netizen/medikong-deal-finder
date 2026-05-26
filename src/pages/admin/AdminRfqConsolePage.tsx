@@ -251,8 +251,22 @@ function RfqDetailPanel({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("rfqs")
-        .select("*, products(name), brands(name)")
+        .select("*, products(name, gtin, cnk_code, pack_size, slug, image_url), brands(name, slug)")
         .eq("id", rfqId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
+  const { data: buyer } = useQuery({
+    enabled: !!rfq?.buyer_user_id,
+    queryKey: ["admin-rfq-buyer", rfq?.buyer_user_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("full_name, company_name, country, vat_number, buyer_profile_id, profession_type_id, buyer_profiles:buyer_profile_id(label), profession_types:profession_type_id(name)")
+        .eq("user_id", rfq!.buyer_user_id)
         .maybeSingle();
       if (error) throw error;
       return data as any;
@@ -297,6 +311,91 @@ function RfqDetailPanel({
           </a>
         </Button>
       </div>
+
+      {rfq && (
+        <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+          <div className="flex gap-3">
+            {rfq.products?.image_url && (
+              <img src={rfq.products.image_url} alt="" className="w-16 h-16 object-contain rounded border bg-background flex-shrink-0" />
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-sm">
+                {rfq.products?.name ? (
+                  <a href={`/produit/${rfq.products.slug}`} target="_blank" rel="noreferrer" className="hover:underline inline-flex items-center gap-1">
+                    {rfq.products.name} <ExternalLink className="h-3 w-3" />
+                  </a>
+                ) : rfq.brands?.name ? (
+                  <a href={`/marques/${rfq.brands.slug}`} target="_blank" rel="noreferrer" className="hover:underline inline-flex items-center gap-1">
+                    Marque : {rfq.brands.name} <ExternalLink className="h-3 w-3" />
+                  </a>
+                ) : "—"}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+                {rfq.products?.gtin && <span>EAN <span className="font-mono">{rfq.products.gtin}</span></span>}
+                {rfq.products?.cnk_code && <span>CNK <span className="font-mono">{rfq.products.cnk_code}</span></span>}
+                {rfq.products?.pack_size && <span>Pack {rfq.products.pack_size}</span>}
+                <span>Scope : {rfq.target_scope}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+            <div>
+              <div className="text-muted-foreground">Quantité</div>
+              <div className="font-medium">{rfq.quantity?.toLocaleString("fr-FR")} u.</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Prix cible HTVA</div>
+              <div className="font-medium font-mono">{rfq.target_price_excl_vat_cents != null ? `${(rfq.target_price_excl_vat_cents / 100).toFixed(2)} ${rfq.currency_code}` : "—"}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Pays livraison</div>
+              <div className="font-medium">{rfq.destination_country_code}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Livraison souhaitée</div>
+              <div className="font-medium">{rfq.desired_delivery_date ? new Date(rfq.desired_delivery_date).toLocaleDateString("fr-FR") : "—"}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Échéance réponses</div>
+              <div className="font-medium">{new Date(rfq.responses_deadline).toLocaleDateString("fr-FR")}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Validité offre</div>
+              <div className="font-medium">{rfq.required_offer_validity_days ? `${rfq.required_offer_validity_days} j` : "—"}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Paiement</div>
+              <div className="font-medium truncate" title={rfq.payment_terms ?? ""}>{rfq.payment_terms || "—"}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Vague</div>
+              <div className="font-medium">{rfq.current_wave} / 2</div>
+            </div>
+          </div>
+
+          {buyer && (
+            <div className="pt-2 border-t text-xs">
+              <div className="text-muted-foreground mb-1">Acheteur</div>
+              <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                <span className="font-medium">{buyer.company_name || buyer.full_name || "—"}</span>
+                {buyer.full_name && buyer.company_name && <span className="text-muted-foreground">· {buyer.full_name}</span>}
+                {buyer.country && <span className="text-muted-foreground">· {buyer.country}</span>}
+                {buyer.vat_number && <span className="text-muted-foreground">· TVA {buyer.vat_number}</span>}
+                {buyer.profession_types?.name && <Badge variant="outline" className="h-4 text-[10px]">{buyer.profession_types.name}</Badge>}
+                {buyer.buyer_profiles?.label && <Badge variant="secondary" className="h-4 text-[10px]">Profil prix : {buyer.buyer_profiles.label}</Badge>}
+              </div>
+            </div>
+          )}
+
+          {rfq.comment && (
+            <div className="pt-2 border-t text-xs">
+              <div className="text-muted-foreground mb-1">Commentaire acheteur</div>
+              <div className="whitespace-pre-wrap">{rfq.comment}</div>
+            </div>
+          )}
+        </div>
+      )}
 
       <Tabs defaultValue="diffusion" className="mt-2">
         <TabsList>

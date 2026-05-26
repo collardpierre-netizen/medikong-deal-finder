@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Loader2, Search, ExternalLink, BellRing, UserPlus, RefreshCw, Eye } from "lucide-react";
+import { Loader2, Search, ExternalLink, BellRing, UserPlus, RefreshCw, Eye, Send } from "lucide-react";
 import { RfqDispatchTracker } from "@/components/rfq/RfqDispatchTracker";
 
 type RfqStatus = "draft" | "dispatched" | "in_followup" | "closed" | "awarded" | "cancelled";
@@ -286,6 +286,22 @@ function RfqDetailPanel({
     },
   });
 
+  const qcDetail = useQueryClient();
+  const dispatchMut = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("dispatch-rfq", { body: { rfq_id: rfqId } });
+      if (error) throw error;
+      return data as { vendors_targeted: number; notifications_created: number };
+    },
+    onSuccess: (r) => {
+      toast.success(`RFQ diffusée à ${r.vendors_targeted} vendeur(s) (${r.notifications_created} notification(s) créée(s)).`);
+      qcDetail.invalidateQueries({ queryKey: ["admin-rfq-detail", rfqId] });
+      qcDetail.invalidateQueries({ queryKey: ["admin-rfq-list"] });
+      qcDetail.invalidateQueries({ queryKey: ["admin-rfq-dispatch-log", rfqId] });
+    },
+    onError: (e: any) => toast.error(`Échec diffusion : ${e?.message ?? "erreur inconnue"}`),
+  });
+
   return (
     <>
       <DialogHeader>
@@ -299,6 +315,17 @@ function RfqDetailPanel({
       </DialogHeader>
 
       <div className="flex gap-2 flex-wrap">
+        {rfq?.status === "draft" && (
+          <Button
+            size="sm"
+            variant="default"
+            onClick={() => dispatchMut.mutate()}
+            disabled={dispatchMut.isPending}
+          >
+            {dispatchMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+            Diffuser maintenant
+          </Button>
+        )}
         <Button size="sm" variant="outline" onClick={onOpenReminder}>
           <BellRing className="h-4 w-4 mr-2" /> Relancer maintenant
         </Button>

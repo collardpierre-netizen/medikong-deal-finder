@@ -22111,6 +22111,7 @@ export type Database = {
         Args: { _brand_id: string; _user_id: string }
         Returns: boolean
       }
+      validate_cron_secret: { Args: { _secret: string }; Returns: boolean }
       vendor_accept_guarantee: {
         Args: { _version_id: string }
         Returns: string

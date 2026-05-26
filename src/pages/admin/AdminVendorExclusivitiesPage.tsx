@@ -146,10 +146,10 @@ export default function AdminVendorExclusivitiesPage() {
     queryFn: async () => {
       const map = new Map<string, string>();
       const queries: Promise<any>[] = [];
-      if (targetIds.brand.size) queries.push(supabase.from("brands").select("id, name").in("id", Array.from(targetIds.brand)));
-      if (targetIds.manufacturer.size) queries.push(supabase.from("manufacturers").select("id, name").in("id", Array.from(targetIds.manufacturer)));
-      if (targetIds.product.size) queries.push(supabase.from("products").select("id, name").in("id", Array.from(targetIds.product)));
-      if (targetIds.category.size) queries.push(supabase.from("categories").select("id, name").in("id", Array.from(targetIds.category)));
+      if (targetIds.brand.size) queries.push(Promise.resolve(supabase.from("brands").select("id, name").in("id", Array.from(targetIds.brand))));
+      if (targetIds.manufacturer.size) queries.push(Promise.resolve(supabase.from("manufacturers").select("id, name").in("id", Array.from(targetIds.manufacturer))));
+      if (targetIds.product.size) queries.push(Promise.resolve(supabase.from("products").select("id, name").in("id", Array.from(targetIds.product))));
+      if (targetIds.category.size) queries.push(Promise.resolve(supabase.from("categories").select("id, name").in("id", Array.from(targetIds.category))));
       const results = await Promise.all(queries);
       results.forEach((res) => {
         (res.data || []).forEach((row: any) => map.set(row.id, row.name || row.id));

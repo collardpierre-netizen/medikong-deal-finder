@@ -53,11 +53,18 @@ Deno.serve(async (req) => {
       status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+  // Proof-of-possession: caller must know the email tied to this simulation.
+  if (!sim.email || String(sim.email).trim().toLowerCase() !== provided_email) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), {
+      status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
   if (sim.status !== "done") {
     return new Response(JSON.stringify({ error: "simulation_not_ready", status: sim.status }), {
       status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+
 
   const { data: lines } = await supabase
     .from("savings_simulation_lines")

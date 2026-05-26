@@ -286,6 +286,22 @@ function RfqDetailPanel({
     },
   });
 
+  const qcDetail = useQueryClient();
+  const dispatchMut = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("dispatch-rfq", { body: { rfq_id: rfqId } });
+      if (error) throw error;
+      return data as { vendors_targeted: number; notifications_created: number };
+    },
+    onSuccess: (r) => {
+      toast.success(`RFQ diffusée à ${r.vendors_targeted} vendeur(s) (${r.notifications_created} notification(s) créée(s)).`);
+      qcDetail.invalidateQueries({ queryKey: ["admin-rfq-detail", rfqId] });
+      qcDetail.invalidateQueries({ queryKey: ["admin-rfq-list"] });
+      qcDetail.invalidateQueries({ queryKey: ["admin-rfq-dispatch-log", rfqId] });
+    },
+    onError: (e: any) => toast.error(`Échec diffusion : ${e?.message ?? "erreur inconnue"}`),
+  });
+
   return (
     <>
       <DialogHeader>

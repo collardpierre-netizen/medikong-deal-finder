@@ -1,73 +1,151 @@
-# Plan — Broadcast RFQ + Console admin RFQ agrégée
 
-## Décisions actées
-1. **Ciblage** : suppression du cap Top 8. Tous les vendeurs éligibles (porteurs d'offre + intérêts marque/fabricant/produit/catégorie) sont notifiés. **Tous les filtres serveur actuels sont conservés** : KYC (`accepted`/`approved`), `accepts_rfq`, `max_open_rfqs`, devise, pays (ships_to_countries ∪ limitrophes), stock + MOQ pour la branche `product_offer`.
-2. **Relances** : auto (templates T+24h / T+72h existants, inchangé) **+** relance manuelle admin avec choix du template existant (pas de message libre dans ce lot).
-3. **Ajout manuel** : picker proposant uniquement les vendeurs **éligibles non encore ciblés** (mêmes filtres que le routing automatique).
-4. **Console admin agrégée** : nouvelle page `/admin/rfq` (liste + détail).
+# Exclusivités vendeur — Plan d'implémentation
 
-## Périmètre — ce qui change
+## Décisions verrouillées (récap)
+1. **Niveaux** : marque, fabricant *(bonus, même mécanique)*, produit, catégorie. Tous les niveaux supportés dès la phase 1, modèle unique.
+2. **Mode** : mix `showcase` | `hide` | `block` (1 mode actif par exclusivité).
+3. **RFQ** : non concerné — le routage RFQ ignore complètement la table.
+4. **Périmètre offres** : s'applique aux offres MediKong vendeurs **et** aux offres externes (Qogita compris).
+5. **Durée** : `valid_from` + `valid_until` **obligatoires** (date fin > date début, future).
+6. **Visibilité acheteur** : assumée — badge "Exclusivité MediKong" + nom du vendeur exclusif quand pertinent.
 
-### 1. Backend — suppression du cap, conservation du scoring (pour info uniquement)
+---
 
-- `rfq_select_top_vendors` : on bypass la sélection Top N → renvoie **tous** les candidats éligibles renvoyés par `rfq_score_target_vendors`. Le score reste calculé pour affichage admin (ordre par défaut dans `/admin/rfq/:id`).
-- `rfq_routing_settings.default_max_target_vendors` : conservé en colonne mais **ignoré** par `rfq_dispatch`. Un commentaire SQL le signale (utilisable plus tard si on veut revenir à un cap par RFQ via `rfqs.max_target_vendors`).
-- `rfq_audit_routing` : le statut `over_cap` n'est plus produit (tous les éligibles passent en `selected`). On garde le code path pour rétrocompatibilité.
+## 1. Modèle de données
 
-### 2. Backend — Ajout manuel d'un vendeur à une RFQ dispatchée
+### Table `vendor_exclusivities`
+| Colonne | Type | Notes |
+|---|---|---|
+| `id` | uuid PK | |
+| `vendor_id` | uuid FK vendors | bénéficiaire de l'exclusivité |
+| `scope` | enum `brand` / `manufacturer` / `product` / `category` | un seul renseigné selon scope |
+| `brand_id` / `manufacturer_id` / `product_id` / `category_id` | uuid nullable | un seul non-null (check) |
+| `mode` | enum `showcase` / `hide` / `block` | |
+| `valid_from` | timestamptz NOT NULL | |
+| `valid_until` | timestamptz NOT NULL | check > valid_from |
+| `country_codes` | text[] nullable | NULL = tous pays ; sinon BE/FR/LU/NL |
+| `reason` | text | interne admin |
+| `contract_ref` | text | n° contrat/avenant |
+| `is_active` | bool default true | kill switch manuel |
+| `created_by` / `created_at` / `updated_at` | | |
 
-- Nouvelle RPC `rfq_admin_add_vendor(_rfq_id uuid, _vendor_id uuid, _reason text default 'manual')` SECURITY DEFINER, gated `is_admin()` :
-  - Vérifie que le vendeur passe les filtres d'éligibilité (KYC + accepts_rfq + capacité + devise + pays + stock/MOQ si product_id). Renvoie une erreur explicite sinon.
-  - Insert idempotent dans `rfq_dispatch_log` (UNIQUE `rfq_id`+`vendor_id`).
-  - Crée la `vendor_notification` + déclenche l'email d'invitation (réutilise la logique de `dispatch-rfq`).
-  - Audit dans `rfq_routing_audit_log` (`status='selected'`, `reason_code='manual_admin'`).
-- Nouvelle RPC `rfq_admin_eligible_vendors_not_targeted(_rfq_id uuid)` : renvoie la liste paginable des vendeurs qui passeraient les filtres mais ne sont pas encore dans `rfq_dispatch_log` (pour alimenter le picker).
+**Index** : `(scope, brand_id)`, `(scope, product_id)`, `(valid_until)` partiel `is_active=true`.
 
-### 3. Backend — Relance manuelle admin
+**Contrainte d'unicité fonctionnelle** : une seule exclusivité **active+en cours** par (scope, target_id, country) — vérifiée par trigger (impossible en UNIQUE classique à cause des plages temporelles + array pays). Conflit → erreur claire.
 
-- Nouvelle RPC `rfq_admin_send_reminder_now(_rfq_id uuid, _vendor_id uuid, _template_id uuid)` SECURITY DEFINER, gated `is_admin()` :
-  - Vérifie qu'une `rfq_dispatch_log` existe pour ce couple.
-  - Vérifie qu'aucune relance déjà loggée pour la **vague courante** (sinon retourne `already_sent`).
-  - Rend le template (mêmes variables que le cron), crée la `vendor_notification`, log dans `rfq_reminder_log` avec une marque `manual_admin = true` (nouvelle colonne booléenne, default false).
-  - Bypass des conditions temporelles (T+24h / T+72h) puisque c'est volontaire admin.
-- Aucune modif du cron auto (`send-rfq-reminders` reste tel quel).
+### Modes
+- `showcase` : les offres des autres vendeurs restent visibles mais grisées + badge "Exclusivité <vendeur>". L'acheteur peut quand même cliquer.
+- `hide` : les offres concurrentes sont **filtrées** côté lecture (catalog, fiche produit, marque) ; non comptées dans `country_*_stats`.
+- `block` : `hide` + interdiction côté backend pour les autres vendeurs de publier/mettre à jour une offre sur le scope concerné (trigger sur `offers` + `external_offers`).
 
-### 4. Frontend — Console admin agrégée `/admin/rfq`
+---
 
-#### Page liste `/admin/rfq`
-- KPIs (4 cards) : RFQ actives, en attente de réponse, RFQ sans aucune réponse à T+48h (à challenger), taux de réponse global 30j.
-- Table paginée : RFQ ID court, acheteur (email), produit/marque, quantité, pays, deadline, statut (badge), # ciblés, # répondus, # déclinés, # vues, dernière activité, actions (Voir détail).
-- Filtres : statut (multi), pays, période, recherche acheteur/produit, "uniquement RFQ sans réponse".
-- Tri : par défaut deadline asc, sinon créés/ciblés/répondus.
+## 2. Logique serveur
 
-#### Page détail `/admin/rfq/:id`
-- En-tête RFQ : tous les champs (produit, brand, quantité, prix cible, pays, deadline, paiement, validité, commentaire, statut), bouton "Relancer le dispatch" (rejoue `dispatch-rfq` pour cibler de nouveaux vendeurs apparus depuis).
-- Bloc **Funnel** : réutilise `RfqDispatchTracker` (chips ciblés/ouverts/cliqués/vus/relancés/répondus/refusés).
-- Bloc **Acheteur** : réutilise `BuyerRfqTracker` pour la timeline.
-- Bloc **Audit routing** : lien vers `/admin/rfq-routing-audit?rfq=<id>` + résumé inline (selected/excluded par reason_code).
-- Bloc **Réponses** : table des `rfq_responses` avec score, prix, délai, conformité, attachments.
-- Bloc **Vendeurs ciblés** : table enrichie de `RfqDispatchTracker` avec, par ligne :
-  - Vendeur (nom + lien), source (`reason`), statut, dernière action, vagues de relance reçues.
-  - Actions par ligne : **"Relancer maintenant"** (modal sélection template) → `rfq_admin_send_reminder_now`.
-- Bloc **Ajouter un vendeur** : bouton ouvre un Dialog avec `Combobox` listant les vendeurs éligibles non ciblés (RPC `rfq_admin_eligible_vendors_not_targeted`), recherche par nom. Soumet → `rfq_admin_add_vendor`.
+### RPC `resolve_offer_exclusivity(_offer_id uuid, _country text)` → record
+Retourne `{ exclusive_vendor_id, mode, exclusivity_id }` ou null. Cascade :
+1. product (le plus spécifique)
+2. brand
+3. manufacturer
+4. category (le moins spécifique)
 
-### 5. Mémoires à mettre à jour
-- Mettre à jour `mem://features/rfq-vendor-prioritization` pour acter le broadcast (scoring conservé en affichage uniquement, plus de cap).
-- Mettre à jour `mem://features/rfq-routing-audit-log` pour acter le retrait du statut `over_cap`.
-- Nouvelle mémoire `mem://admin/rfq-console-aggregee` : page `/admin/rfq` + détail + RPCs `rfq_admin_add_vendor` / `rfq_admin_send_reminder_now` / `rfq_admin_eligible_vendors_not_targeted`.
+Le plus spécifique gagne ; à scope égal, la plus récente.
 
-## Hors scope (à confirmer pour un lot ultérieur)
-- Cap par RFQ (`rfqs.max_target_vendors`) → infrastructure conservée mais pas d'UI.
-- Vendeurs de **marques équivalentes** (extension future de la branche brand_interest).
-- Messages libres pour relances manuelles (uniquement templates pour l'instant).
-- Stop / annulation manuelle d'une RFQ depuis l'admin.
+### Vue `effective_offers_v` (security_invoker)
+Joint `offers` + `external_offers` (UNION via colonne `source`) avec la RPC ci-dessus pour exposer :
+- `is_excluded_by_exclusivity` (bool) → utilisé par `hide`
+- `is_showcase_dimmed` (bool) → utilisé par `showcase`
+- `exclusive_vendor_id` / `exclusive_vendor_public_name`
 
-## Découpage en livraisons
-1. **Migration DB** : modif `rfq_select_top_vendors`, nouvelles RPCs admin, colonne `rfq_reminder_log.manual_admin`. Linter après.
-2. **Frontend** : page liste + page détail + modal "Ajouter vendeur" + modal "Relancer maintenant".
-3. **Mémoires** : maj des 2 existantes + création de la nouvelle.
+**`useProductOffers`, `effective_offer_prices_v`, `products_with_country_stats_v` et la MV `admin_price_cockpit_mv`** consomment cette vue ⇒ filtrage natif pour `hide` ; flag transmis au front pour `showcase`.
 
-## Note technique sensible
-La suppression du cap peut générer **20–50+ emails par RFQ** au lieu de 8. Les filtres `max_open_rfqs` (par vendeur) et `accepts_rfq` (opt-out) restent les seules vannes anti-spam. Si après quelques semaines tu constates de la friction vendeur, on pourra ré-activer un cap soft via `rfqs.max_target_vendors` sans migration supplémentaire (uniquement un toggle dans le code de `rfq_dispatch`).
+### Trigger `block`
+Sur INSERT/UPDATE de `offers` et `external_offers` : si une exclusivité active `mode='block'` cible le produit/marque/fabricant/catégorie pour un autre vendeur que celui inséré → `RAISE EXCEPTION`.
 
-OK pour lancer la migration DB (étape 1) ?
+### Cron horaire
+Désactivation auto des exclusivités où `valid_until < now()` (passe `is_active=false` + log `audit_logs`).
+
+### RLS
+- `vendor_exclusivities` : lecture admin + vendeur bénéficiaire ; écriture admin uniquement (phase 1).
+- GRANT standard.
+
+---
+
+## 3. Impact sur les surfaces existantes
+
+| Surface | Comportement |
+|---|---|
+| Fiche produit `/produit/:slug` | mode `hide` masque les autres offres ; `showcase` les grise + bandeau "Exclusivité \<vendeur>" ; `block` = idem hide |
+| Catalogue grid + Trivago | filtre `hide` ; tri prix recalculé sans les offres exclues |
+| Fiche marque `/marques/:slug` | si exclusivité brand en mode hide → seules les offres du vendeur exclusif s'affichent ; bandeau global "Marque distribuée exclusivement par \<vendeur> jusqu'au DD/MM/YYYY" |
+| Admin Price Cockpit | MV regénérée en tenant compte du filtre ; chip "Exclu" sur produits sous exclusivité hide/block |
+| Vendor portal (autre vendeur) | si tentative create/edit offre sur scope `block` → erreur explicite "Produit sous exclusivité jusqu'au …" |
+| External Offers Import (Qogita inclus) | mêmes triggers ; lignes rejetées listées dans `external_offers_import_logs` |
+| **RFQ** | aucun impact — `rfq_resolve_target_vendors` n'interroge pas la table |
+
+---
+
+## 4. UI
+
+### Admin (`/admin/exclusivites`)
+- Liste filtrable (scope, vendeur, mode, statut temporel : à venir / en cours / expirée).
+- Formulaire création : vendor picker, scope (radio) + target picker (brand/product/manufacturer/category), mode, dates, pays, raison, contrat. Validation côté form + RPC.
+- Détail : audit (créé par, conflits détectés, offres impactées count).
+- Bouton "Désactiver" (soft, garde l'historique).
+- Entrée sidebar "EXCLUSIVITÉS" (proche de Vendeurs).
+
+### Vendeur
+- Onglet "Exclusivités" en lecture seule dans son portail : liste de ses exclusivités actives + à venir + expirées (30 derniers jours).
+
+### Acheteur (assumé public)
+- Badge `<Crown className="…" />` "Exclusivité MediKong" sur cards/fiches concernées.
+- Tooltip : "Distribué exclusivement par \<vendeur public name> jusqu'au DD/MM/YYYY".
+- Mode `showcase` : badge + offres concurrentes grisées (opacity 0.5 + tag "non recommandé").
+
+---
+
+## 5. Détails techniques
+
+- Anonymisation vendeur : passer par `getVendorPublicName` partout pour respecter la guardrail mémoire.
+- Helper `useExclusivityForProduct(productId, country)` + `useExclusivityForBrand(brandId, country)` côté front.
+- Mémoire à créer : `mem://features/vendor-exclusivities` (modèle, modes, surfaces impactées, exclusion explicite RFQ).
+- i18n FR/NL/DE/EN sur badges, tooltips, formulaires.
+
+---
+
+## 6. Lots d'implémentation
+
+**Lot 1 — Schéma & moteur (DB)**
+- Migration `vendor_exclusivities` + enums + check + indexes + trigger unicité + trigger block + cron expiration.
+- RPC `resolve_offer_exclusivity` + vue `effective_offers_v`.
+- RLS + grants.
+- Refacto consommateurs SQL (`effective_offer_prices_v`, `products_with_country_stats_v`, MV cockpit) pour appliquer `hide`.
+
+**Lot 2 — Admin UI**
+- Page `/admin/exclusivites` (liste + form + détail) + route + sidebar.
+- Hooks `useExclusivities`, mutations CRUD.
+
+**Lot 3 — Front acheteur**
+- Helpers `useExclusivityFor*`.
+- Intégration badge + grisage `showcase` sur CatalogProductCard, ProductPage, BrandPage.
+- Bandeau marque exclusive.
+
+**Lot 4 — Front vendeur**
+- Onglet "Exclusivités" lecture seule.
+- Message d'erreur explicite côté formulaire d'offre quand `block` rejette.
+
+**Lot 5 — QA & mémoire**
+- Test `rfq_routing_self_test` (vérifier que RFQ ignore bien).
+- Test exclusivité produit hide → MV cockpit recalculée.
+- Mémoire `mem://features/vendor-exclusivities`.
+
+---
+
+## Hors scope (à valider plus tard si besoin)
+- Workflow de demande d'exclusivité côté vendeur (vendor self-service).
+- Exclusivité par **profil acheteur** (B2B/B2C/pharmacie…).
+- Tarification dynamique liée à l'exclusivité (commission ↑).
+- Notification email auto au vendeur exclusif à l'activation/expiration.
+- Reporting financier "valeur des exclusivités" (€ générés vs. seuil contractuel).
+
+Valide ce plan (ou demande des ajustements) et j'enchaîne Lot 1.

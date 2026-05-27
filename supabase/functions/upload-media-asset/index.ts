@@ -10,12 +10,40 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { Image } from "https://deno.land/x/imagescript@1.2.17/mod.ts";
+import {
+  isUuid,
+  rateLimitCheck,
+  safeExtension,
+  safeSegment,
+  sniffMime,
+} from "../_shared/upload-guards.ts";
 
 const BUCKET = "media-assets";
 const THUMB_SIZE = 400;
 const ALLOWED_ASSET_TYPES = ["catalogue", "affiche", "video", "fiche", "brochure"] as const;
 const ALLOWED_LANGS = ["fr", "nl", "en", "de"] as const;
 const ALLOWED_VISIBILITY = ["public", "authenticated", "premium"] as const;
+
+// Per asset_type allow-list of MIME types + max byte size.
+const ASSET_RULES: Record<
+  typeof ALLOWED_ASSET_TYPES[number],
+  { mimes: Set<string>; maxBytes: number }
+> = {
+  catalogue: { mimes: new Set(["application/pdf"]), maxBytes: 50 * 1024 * 1024 },
+  brochure: { mimes: new Set(["application/pdf"]), maxBytes: 50 * 1024 * 1024 },
+  fiche: { mimes: new Set(["application/pdf"]), maxBytes: 25 * 1024 * 1024 },
+  affiche: {
+    mimes: new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]),
+    maxBytes: 25 * 1024 * 1024,
+  },
+  video: {
+    mimes: new Set(["video/mp4", "video/quicktime", "video/webm"]),
+    maxBytes: 200 * 1024 * 1024,
+  },
+};
+
+const MAX_THUMB_BYTES = 5 * 1024 * 1024;
+const ALLOWED_THUMB_MIMES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -37,6 +65,22 @@ Deno.serve(async (req) => {
 
   const { data: isAdmin } = await userClient.rpc("is_admin", { _user_id: userId });
   if (isAdmin !== true) return json({ error: "Admin only" }, 403);
+
+  // Rate limit per admin (best-effort, in-memory per instance).
+  const rl = rateLimitCheck(userId, {
+    bucket: "upload-media-asset",
+    windowMs: 60_000,
+    max: 30,
+  });
+  if (!rl.ok) {
+    return new Response(
+      JSON.stringify({ error: "rate_limited" }),
+      {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": String(rl.retryAfterSec) },
+      },
+    );
+  }
 
   // Parse multipart form
   let form: FormData;
@@ -73,6 +117,27 @@ Deno.serve(async (req) => {
     return json({ error: `visibility must be one of ${ALLOWED_VISIBILITY.join(", ")}` }, 400);
   if ((brand_id && manufacturer_id) || (!brand_id && !manufacturer_id))
     return json({ error: "Exactly one of brand_id / manufacturer_id is required" }, 400);
+  if (brand_id && !isUuid(brand_id)) return json({ error: "invalid_brand_id" }, 400);
+  if (manufacturer_id && !isUuid(manufacturer_id)) return json({ error: "invalid_manufacturer_id" }, 400);
+
+  // Per-type size + MIME allow-list with magic-byte sniffing.
+  const rules = ASSET_RULES[asset_type as keyof typeof ASSET_RULES];
+  if (file.size === 0) return json({ error: "empty_file" }, 400);
+  if (file.size > rules.maxBytes) {
+    return json({ error: "file_too_large", max_bytes: rules.maxBytes }, 413);
+  }
+  const declaredMime = (file.type || "").toLowerCase();
+  if (!rules.mimes.has(declaredMime)) {
+    return json({ error: "mime_not_allowed", allowed: Array.from(rules.mimes) }, 400);
+  }
+  const fileBuf = new Uint8Array(await file.arrayBuffer());
+  // Magic-byte sniff for images + pdf (we cannot reliably sniff video here).
+  if (declaredMime.startsWith("image/") || declaredMime === "application/pdf") {
+    const sniffed = sniffMime(fileBuf);
+    if (!sniffed || sniffed !== declaredMime) {
+      return json({ error: "mime_mismatch", declared: declaredMime, sniffed }, 400);
+    }
+  }
 
   const tags = tagsRaw
     .split(",")
@@ -80,20 +145,21 @@ Deno.serve(async (req) => {
     .filter((t) => t.length > 0);
 
   // Storage path: <owner-scope>/<owner-id>/<uuid>-<safe-filename>
+  // ownerId is a validated UUID; filename is hard-sanitised; extension allow-listed.
   const ownerScope = brand_id ? "brand" : "manufacturer";
   const ownerId = brand_id ?? manufacturer_id;
   const assetUuid = crypto.randomUUID();
-  const safeName = file.name.replace(/[^\w.\-]+/g, "_");
-  const filePath = `${ownerScope}/${ownerId}/${assetUuid}-${safeName}`;
+  const safeName = safeSegment(file.name.replace(/\.[^.]+$/, ""), 60);
+  const mainExt = safeExtension(ext(file.name) ?? declaredMime.split("/")[1], "bin");
+  const filePath = `${ownerScope}/${ownerId}/${assetUuid}-${safeName}.${mainExt}`;
 
   const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
   // Upload main file
-  const fileBuf = new Uint8Array(await file.arrayBuffer());
   const { error: upErr } = await admin.storage
     .from(BUCKET)
     .upload(filePath, fileBuf, {
-      contentType: file.type || "application/octet-stream",
+      contentType: declaredMime || "application/octet-stream",
       upsert: false,
     });
   if (upErr) return json({ error: `Upload failed: ${upErr.message}` }, 500);
@@ -102,17 +168,31 @@ Deno.serve(async (req) => {
   let thumbnail_path: string | null = null;
   try {
     if (thumbnailFile instanceof File && thumbnailFile.size > 0) {
-      // Admin provided a manual thumbnail (video / PDF / override)
-      const thumbBuf = new Uint8Array(await thumbnailFile.arrayBuffer());
-      const thumbPath = `${ownerScope}/${ownerId}/${assetUuid}-thumb.${ext(thumbnailFile.name) || "jpg"}`;
-      const { error: thErr } = await admin.storage
-        .from(BUCKET)
-        .upload(thumbPath, thumbBuf, {
-          contentType: thumbnailFile.type || "image/jpeg",
-          upsert: false,
-        });
-      if (!thErr) thumbnail_path = thumbPath;
-    } else if (file.type.startsWith("image/")) {
+      if (thumbnailFile.size > MAX_THUMB_BYTES) {
+        console.warn("Thumbnail too large, skipped");
+      } else {
+        const thumbBuf = new Uint8Array(await thumbnailFile.arrayBuffer());
+        const sniffedThumb = sniffMime(thumbBuf);
+        const declaredThumb = (thumbnailFile.type || "").toLowerCase();
+        if (
+          sniffedThumb &&
+          ALLOWED_THUMB_MIMES.has(sniffedThumb) &&
+          (!declaredThumb || declaredThumb === sniffedThumb)
+        ) {
+          const thumbExt = safeExtension(sniffedThumb.split("/")[1], "jpg");
+          const thumbPath = `${ownerScope}/${ownerId}/${assetUuid}-thumb.${thumbExt}`;
+          const { error: thErr } = await admin.storage
+            .from(BUCKET)
+            .upload(thumbPath, thumbBuf, {
+              contentType: sniffedThumb,
+              upsert: false,
+            });
+          if (!thErr) thumbnail_path = thumbPath;
+        } else {
+          console.warn("Thumbnail rejected (mime mismatch or not allowed)");
+        }
+      }
+    } else if (declaredMime.startsWith("image/")) {
       // Auto-generate 400×400 thumbnail for images
       const img = await Image.decode(fileBuf);
       const ratio = img.width / img.height;

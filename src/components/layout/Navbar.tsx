@@ -1,4 +1,4 @@
-import { Bell, ShoppingCart, Users, Menu, X, LogOut, Shield, Store, Tag, Percent } from "lucide-react";
+import { ShoppingCart, Users, Menu, X, LogOut, Shield, Store, Tag, Percent } from "lucide-react";
 import { usePriceDisplay } from "@/contexts/PriceDisplayContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
 import { InstantSearchBar } from "@/components/search/InstantSearchBar";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { NotificationsBell } from "@/components/notifications/NotificationsBell";
 import logoHorizontal from "@/assets/logo-medikong.png";
 
 export function Navbar() {
@@ -91,13 +92,7 @@ export function Navbar() {
             <span className="text-muted-foreground">/</span>
             <span className={isTVAC ? "text-primary font-bold" : "text-muted-foreground"}>TTC</span>
           </button>
-          <button
-            type="button"
-            aria-label={t("common.notifications", "Notifications")}
-            className="p-2 rounded-full hover:bg-muted transition-colors"
-          >
-            <Bell className="text-foreground" size={20} aria-hidden="true" />
-          </button>
+          {user && <NotificationsBell scope="buyer" variant="light" />}
           <Link
             to="/panier"
             aria-label={t("common.cart", "Panier")}

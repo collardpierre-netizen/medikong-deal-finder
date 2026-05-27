@@ -4,6 +4,8 @@ import logoLight from "@/assets/logo-horizontal.png";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useActionCenter } from "@/hooks/useActionCenter";
+import { NotificationsBell } from "@/components/notifications/NotificationsBell";
 import {
   LayoutDashboard, Store, UserPlus, Package, Layers, Tag, SlidersHorizontal,
   ShoppingCart, AlertCircle, DollarSign, Eye, Link, BarChart3,
@@ -154,6 +156,17 @@ const AdminSidebar = () => {
     refetchInterval: 30000,
   });
 
+  const { data: actionCenter } = useActionCenter("admin");
+  const sectionCounts: Record<string, number> = {};
+  for (const s of actionCenter?.sections ?? []) sectionCounts[s.key] = s.count;
+  const pathToSection: Record<string, string> = {
+    "/admin/rfq": "rfq",
+    "/admin/vendeurs": "kyc",
+    "/admin/produits-soumis": "submissions",
+    "/admin/categories/anomalies": "anomalies",
+    "/admin/contract-audit": "security",
+  };
+
   const isActive = (path: string) => location.pathname === path;
 
   const handleLogout = async () => {
@@ -166,12 +179,15 @@ const AdminSidebar = () => {
       className="fixed left-0 top-0 bottom-0 w-[240px] z-50 overflow-y-auto flex flex-col"
       style={{ backgroundColor: "#1E293B" }}
     >
-      {/* Logo */}
-      <div className="px-5 py-4 border-b border-white/10">
-        <img src={logoLight} alt="MediKong.pro" className="h-16" />
-        <p className="text-[11px] mt-1" style={{ color: "#8B95A5" }}>
-          {t("superadminPanel")}
-        </p>
+      {/* Logo + bell */}
+      <div className="px-5 py-4 border-b border-white/10 flex items-start justify-between gap-2">
+        <div>
+          <img src={logoLight} alt="MediKong.pro" className="h-16" />
+          <p className="text-[11px] mt-1" style={{ color: "#8B95A5" }}>
+            {t("superadminPanel")}
+          </p>
+        </div>
+        <NotificationsBell scope="admin" variant="dark" />
       </div>
 
       {/* Dashboard link */}
@@ -202,7 +218,10 @@ const AdminSidebar = () => {
               {t(section.labelKey)}
             </p>
             {section.items.map((item) => {
-              const showBadge = item.path === "/admin/vendeurs" && pendingVendorsCount > 0;
+              const acKey = pathToSection[item.path];
+              const acCount = acKey ? sectionCounts[acKey] ?? 0 : 0;
+              const legacyBadge = item.path === "/admin/vendeurs" ? pendingVendorsCount : 0;
+              const badgeCount = Math.max(acCount, legacyBadge);
               return (
                 <NavLink
                   key={item.path}
@@ -216,9 +235,9 @@ const AdminSidebar = () => {
                 >
                   <item.icon size={16} strokeWidth={1.8} />
                   <span className="flex-1">{item.label ?? (item.labelKey ? t(item.labelKey) : "")}</span>
-                  {showBadge && (
+                  {badgeCount > 0 && (
                     <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white" style={{ backgroundColor: "#EF4444", minWidth: 18, textAlign: "center" }}>
-                      {pendingVendorsCount}
+                      {badgeCount > 99 ? "99+" : badgeCount}
                     </span>
                   )}
                 </NavLink>
@@ -227,6 +246,7 @@ const AdminSidebar = () => {
           </div>
         ))}
       </nav>
+
       {/* Admin info + Logout */}
       <div className="px-3 pb-4 border-t border-white/10 pt-3 space-y-3">
         {adminName && (

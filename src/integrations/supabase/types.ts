@@ -21136,6 +21136,7 @@ export type Database = {
         Returns: Json
       }
       force_switch_to_paid: { Args: { _sub_id: string }; Returns: undefined }
+      get_action_center: { Args: { _scope: string }; Returns: Json }
       get_admin_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["admin_role"]

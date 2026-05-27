@@ -84,6 +84,9 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
   const shippingMode = ((vendor as any)?.vendor_shipping_mode ?? "no_shipping") as ShippingMode;
   const { data: competitorAlertsCount = 0 } = useCompetitorAlertsCount(vendor?.id);
   const { data: unreadNotifsCount = 0 } = useVendorUnreadNotificationsCount(vendor?.id);
+  const { data: actionCenter } = useActionCenter("vendor", !!vendor?.id);
+  const vendorRfqCount = actionCenter?.sections.find((s) => s.key === "rfq")?.count ?? 0;
+  const vendorChallengesCount = actionCenter?.sections.find((s) => s.key === "challenges")?.count ?? 0;
 
   return (
     <aside
@@ -93,16 +96,20 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
       )}
       style={{ backgroundColor: "#1E293B" }}
     >
-      <div className="flex items-center gap-3 px-4 h-14 shrink-0">
+      <div className="flex items-center gap-2 px-4 h-14 shrink-0">
         {collapsed ? (
           <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm shrink-0" style={{ backgroundColor: "#1B5BDA" }}>M</div>
         ) : (
-          <div className="overflow-hidden">
+          <div className="overflow-hidden flex-1">
             <img src={logoLight} alt="MediKong.pro" className="h-16" />
             <p className="text-white/40 text-[10px] font-medium mt-0.5">Espace Vendeur</p>
           </div>
         )}
+        {!collapsed && vendor?.id && (
+          <NotificationsBell scope="vendor" variant="dark" />
+        )}
       </div>
+
 
       <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-4">
         {sidebarSections.map((section, si) => {

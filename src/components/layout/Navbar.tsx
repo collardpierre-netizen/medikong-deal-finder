@@ -92,13 +92,7 @@ export function Navbar() {
             <span className="text-muted-foreground">/</span>
             <span className={isTVAC ? "text-primary font-bold" : "text-muted-foreground"}>TTC</span>
           </button>
-          <button
-            type="button"
-            aria-label={t("common.notifications", "Notifications")}
-            className="p-2 rounded-full hover:bg-muted transition-colors"
-          >
-            <Bell className="text-foreground" size={20} aria-hidden="true" />
-          </button>
+          {user && <NotificationsBell scope="buyer" variant="light" />}
           <Link
             to="/panier"
             aria-label={t("common.cart", "Panier")}

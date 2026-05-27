@@ -655,6 +655,23 @@ Deno.serve(async (req) => {
     return new Response("Method not allowed", { status: 405, headers: corsHeaders });
   }
 
+  // Public endpoint → best-effort IP rate limit (5 uploads / 10 min / IP, per instance).
+  const ip = clientIp(req);
+  const rl = rateLimitCheck(ip, {
+    bucket: "process-savings-upload",
+    windowMs: 10 * 60_000,
+    max: 5,
+  });
+  if (!rl.ok) {
+    return Response.json(
+      { error: "rate_limited", message: "Trop de demandes, réessayez sous peu." },
+      {
+        status: 429,
+        headers: { ...corsHeaders, "Retry-After": String(rl.retryAfterSec) },
+      },
+    );
+  }
+
   try {
     const form = await req.formData();
     const file = form.get("file") as File | null;
@@ -668,16 +685,28 @@ Deno.serve(async (req) => {
     if (!file) return Response.json({ error: "missing file" }, { status: 400, headers: corsHeaders });
     if (!consent)
       return Response.json({ error: "consent_required" }, { status: 400, headers: corsHeaders });
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255)
       return Response.json({ error: "invalid_email" }, { status: 400, headers: corsHeaders });
-    if (file.size > 10 * 1024 * 1024)
-      return Response.json({ error: "file_too_large" }, { status: 400, headers: corsHeaders });
 
     const fileKind = detectFileKind(file.type);
     if (!fileKind)
       return Response.json({ error: "unsupported_file_type", type: file.type }, { status: 400, headers: corsHeaders });
     if (!["febelco", "cerp", "pharma_belgium", "other"].includes(supplier))
       return Response.json({ error: "invalid_supplier" }, { status: 400, headers: corsHeaders });
+
+    // Read once, then validate size + sniff magic bytes (skip sniff for CSV).
+    const fileBytes = new Uint8Array(await file.arrayBuffer());
+    const check = validateUploadBytes(fileBytes, {
+      maxBytes: MAX_UPLOAD_BYTES,
+      kind: "image-pdf-csv",
+      declaredMime: file.type,
+    });
+    if (!check.ok) {
+      return Response.json(
+        { error: check.code, message: check.message },
+        { status: check.status, headers: corsHeaders },
+      );
+    }
 
     const supabase = getAdminClient();
 
@@ -705,7 +734,7 @@ Deno.serve(async (req) => {
         source_supplier: supplier,
         source_file_type: fileKind,
         status: "processing",
-        ip_address: req.headers.get("x-forwarded-for") || null,
+        ip_address: ip !== "unknown" ? ip : null,
         user_agent: req.headers.get("user-agent") || null,
       })
       .select("id")
@@ -715,12 +744,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: "db_error" }, { status: 500, headers: corsHeaders });
     }
 
-    // Upload fichier dans Storage (clé: <id>/source.<ext>)
-    const ext = fileKind === "pdf" ? "pdf" : fileKind === "csv" ? "csv" : file.type === "image/png" ? "png" : "jpg";
+    // Upload fichier dans Storage (clé: <id>/source.<ext>) — sim.id est un UUID DB-généré.
+    const guessedExt = fileKind === "pdf" ? "pdf" : fileKind === "csv" ? "csv" : check.mime.split("/")[1];
+    const ext = safeExtension(guessedExt, "bin");
     const storageKey = `${sim.id}/source.${ext}`;
     const { error: upErr } = await supabase.storage
       .from("savings-uploads")
-      .upload(storageKey, file, { contentType: file.type, upsert: true });
+      .upload(storageKey, fileBytes, { contentType: check.mime, upsert: true });
     if (upErr) {
       console.error("storage upload error", upErr);
       // On ne bloque pas le pipeline pour autant

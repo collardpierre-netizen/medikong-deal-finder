@@ -37,7 +37,7 @@ export function useActionCenter(scope: ActionCenterScope, enabled = true) {
         console.warn("[action-center] rpc error", error);
         return EMPTY;
       }
-      return (data as ActionCenterPayload) ?? EMPTY;
+      return (data as unknown as ActionCenterPayload) ?? EMPTY;
     },
   });
 }

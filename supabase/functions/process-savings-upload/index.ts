@@ -761,8 +761,9 @@ Deno.serve(async (req) => {
         .eq("id", sim.id);
     }
 
-    // Pipeline en arrière-plan — toujours catcher pour ne jamais perdre l'erreur
-    const bgTask = processSimulation(sim.id, file, fileKind, supplier).catch(async (e) => {
+    // Pipeline en arrière-plan — recrée un File à partir des bytes (le body initial a été consommé).
+    const reusableFile = new File([fileBytes], file.name || `source.${ext}`, { type: check.mime });
+    const bgTask = processSimulation(sim.id, reusableFile, fileKind, supplier).catch(async (e) => {
       console.error("[pipeline] uncaught", e);
       try {
         await supabase

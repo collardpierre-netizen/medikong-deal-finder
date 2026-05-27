@@ -12739,6 +12739,54 @@ export type Database = {
         }
         Relationships: []
       }
+      security_audit_logs: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          actor_role: string | null
+          category: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          payload: Json | null
+          severity: string
+          target_id: string | null
+          target_type: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_role?: string | null
+          category: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          payload?: Json | null
+          severity?: string
+          target_id?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_role?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          payload?: Json | null
+          severity?: string
+          target_id?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       seller_alignment_requests: {
         Row: {
           aligned_at: string | null
@@ -20776,6 +20824,33 @@ export type Database = {
           suggested_categories: Json
         }[]
       }
+      admin_security_audit_kpis: { Args: { _from?: string }; Returns: Json }
+      admin_security_audit_query: {
+        Args: {
+          _actor_id?: string
+          _category?: string
+          _from?: string
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _severity?: string
+          _to?: string
+        }
+        Returns: {
+          action: string
+          actor_email: string
+          actor_id: string
+          actor_role: string
+          category: string
+          created_at: string
+          id: string
+          payload: Json
+          severity: string
+          target_id: string
+          target_type: string
+          total_count: number
+        }[]
+      }
       admin_sla_open_alerts_count: {
         Args: never
         Returns: {
@@ -21339,6 +21414,17 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_security_event: {
+        Args: {
+          _action: string
+          _category: string
+          _payload?: Json
+          _severity?: string
+          _target_id?: string
+          _target_type?: string
+        }
+        Returns: string
+      }
       mark_extension_contacted: {
         Args: { _notes?: string; _req_id: string }
         Returns: undefined
@@ -21456,6 +21542,7 @@ export type Database = {
       }
       public_verified_vendors_count: { Args: never; Returns: number }
       purge_bulk_deactivation_events: { Args: never; Returns: number }
+      purge_security_audit_logs: { Args: never; Returns: Json }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {

@@ -9,6 +9,8 @@ import { useI18n } from "@/contexts/I18nContext";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { useCompetitorAlertsCount } from "@/hooks/useVendorCompetitorAlerts";
 import { useVendorUnreadNotificationsCount } from "@/hooks/useVendorNotifications";
+import { useActionCenter } from "@/hooks/useActionCenter";
+import { NotificationsBell } from "@/components/notifications/NotificationsBell";
 import { cn } from "@/lib/utils";
 import logoLight from "@/assets/logo-horizontal.png";
 

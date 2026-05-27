@@ -1,4 +1,4 @@
-import { Bell, ShoppingCart, Users, Menu, X, LogOut, Shield, Store, Tag, Percent } from "lucide-react";
+import { ShoppingCart, Users, Menu, X, LogOut, Shield, Store, Tag, Percent } from "lucide-react";
 import { usePriceDisplay } from "@/contexts/PriceDisplayContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
 import { InstantSearchBar } from "@/components/search/InstantSearchBar";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { NotificationsBell } from "@/components/notifications/NotificationsBell";
 import logoHorizontal from "@/assets/logo-medikong.png";
 
 export function Navbar() {

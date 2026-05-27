@@ -20,6 +20,7 @@ import {
   ServerCog,
   Database,
 } from "lucide-react";
+import { SecurityAuditPanel } from "@/components/admin/SecurityAuditPanel";
 
 /**
  * Page d'audit dédiée à la chaîne de signature des conventions vendeur.

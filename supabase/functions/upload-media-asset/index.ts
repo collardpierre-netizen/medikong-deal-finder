@@ -10,12 +10,40 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { Image } from "https://deno.land/x/imagescript@1.2.17/mod.ts";
+import {
+  isUuid,
+  rateLimitCheck,
+  safeExtension,
+  safeSegment,
+  sniffMime,
+} from "../_shared/upload-guards.ts";
 
 const BUCKET = "media-assets";
 const THUMB_SIZE = 400;
 const ALLOWED_ASSET_TYPES = ["catalogue", "affiche", "video", "fiche", "brochure"] as const;
 const ALLOWED_LANGS = ["fr", "nl", "en", "de"] as const;
 const ALLOWED_VISIBILITY = ["public", "authenticated", "premium"] as const;
+
+// Per asset_type allow-list of MIME types + max byte size.
+const ASSET_RULES: Record<
+  typeof ALLOWED_ASSET_TYPES[number],
+  { mimes: Set<string>; maxBytes: number }
+> = {
+  catalogue: { mimes: new Set(["application/pdf"]), maxBytes: 50 * 1024 * 1024 },
+  brochure: { mimes: new Set(["application/pdf"]), maxBytes: 50 * 1024 * 1024 },
+  fiche: { mimes: new Set(["application/pdf"]), maxBytes: 25 * 1024 * 1024 },
+  affiche: {
+    mimes: new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]),
+    maxBytes: 25 * 1024 * 1024,
+  },
+  video: {
+    mimes: new Set(["video/mp4", "video/quicktime", "video/webm"]),
+    maxBytes: 200 * 1024 * 1024,
+  },
+};
+
+const MAX_THUMB_BYTES = 5 * 1024 * 1024;
+const ALLOWED_THUMB_MIMES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });

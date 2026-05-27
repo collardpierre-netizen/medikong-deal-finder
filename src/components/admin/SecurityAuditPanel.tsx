@@ -73,7 +73,7 @@ export function SecurityAuditPanel() {
   const totalCount = rows[0]?.total_count ?? 0;
 
   const fetchKpis = useCallback(async () => {
-    const { data } = await supabase.rpc("admin_security_audit_kpis" as never, {});
+    const { data } = await (supabase.rpc as unknown as (fn: string, args?: unknown) => Promise<{ data: unknown }>)("admin_security_audit_kpis", {});
     if (data) setKpis(data as Kpis);
   }, []);
 

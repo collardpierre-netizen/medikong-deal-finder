@@ -20,6 +20,7 @@ import {
   ServerCog,
   Database,
 } from "lucide-react";
+import { SecurityAuditPanel } from "@/components/admin/SecurityAuditPanel";
 
 /**
  * Page d'audit dédiée à la chaîne de signature des conventions vendeur.
@@ -423,6 +424,9 @@ const AdminContractAudit = () => {
             <div className="p-6 text-sm text-slate-500">Test en cours...</div>
           )}
         </Card>
+
+        {/* Audit sécurité — actions sensibles (RFQ admin, storage, DDL, rôles) */}
+        <SecurityAuditPanel />
       </div>
     </div>
   );

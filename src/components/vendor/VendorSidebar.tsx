@@ -164,7 +164,9 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
 
                   const badgeCount =
                     item.key === "marketIntel" ? competitorAlertsCount :
-                    item.key === "notificationsCenter" ? unreadNotifsCount : 0;
+                    item.key === "notificationsCenter" ? unreadNotifsCount :
+                    item.key === "rfqInbox" ? vendorRfqCount :
+                    item.key === "myOffers" ? vendorChallengesCount : 0;
 
                   return (
                     <NavLink

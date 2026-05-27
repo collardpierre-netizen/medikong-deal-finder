@@ -4,9 +4,16 @@ import logoLight from "@/assets/logo-horizontal.png";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useActionCenter } from "@/hooks/useActionCenter";
+import { NotificationsBell } from "@/components/notifications/NotificationsBell";
 import {
   LayoutDashboard, Store, UserPlus, Package, Layers, Tag, SlidersHorizontal,
   ShoppingCart, AlertCircle, DollarSign, Eye, Link, BarChart3,
+  Shield, Upload, MessageSquare, Layout, Truck, ShieldCheck, Settings, FileText,
+  LogOut, Users, ClipboardList, Percent, RefreshCw, Key, Book, Factory, Globe, Hash, ExternalLink,
+  CreditCard, TrendingUp, TrendingDown, AlertTriangle, Zap, Recycle, LayoutGrid, Users2, Mail, ShieldCheck as ShieldCheckAlt,
+  Search, Image as ImageIcon,
+} from "lucide-react";
   Shield, Upload, MessageSquare, Layout, Truck, ShieldCheck, Settings, FileText,
   LogOut, Users, ClipboardList, Percent, RefreshCw, Key, Book, Factory, Globe, Hash, ExternalLink,
   CreditCard, TrendingUp, TrendingDown, AlertTriangle, Zap, Recycle, LayoutGrid, Users2, Mail, ShieldCheck as ShieldCheckAlt,

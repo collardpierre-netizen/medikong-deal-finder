@@ -81,8 +81,11 @@ export function SecurityAuditPanel() {
     setLoading(true);
     setError(null);
     try {
-      const { data, error: rpcError } = await supabase.rpc(
-        "admin_security_audit_query" as never,
+      const { data, error: rpcError } = await (supabase.rpc as unknown as (
+        fn: string,
+        args?: unknown,
+      ) => Promise<{ data: unknown; error: { message: string } | null }>)(
+        "admin_security_audit_query",
         {
           _category: category === "all" ? null : category,
           _severity: severity === "all" ? null : severity,
@@ -92,7 +95,7 @@ export function SecurityAuditPanel() {
           _search: search || null,
           _limit: PAGE_SIZE,
           _offset: page * PAGE_SIZE,
-        } as never,
+        },
       );
       if (rpcError) throw rpcError;
       setRows((data ?? []) as AuditRow[]);

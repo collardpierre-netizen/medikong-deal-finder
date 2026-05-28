@@ -2138,6 +2138,13 @@ export default function ProductPage() {
                       </div>
                     )}
 
+                    {/* ── Deuxième Chance — ReStock (sous le bloc meilleure offre) ── */}
+                    <RestockSecondChance
+                      ean={product.ean || product.gtin}
+                      cnk={product.cnk}
+                      productName={product.name}
+                    />
+
                     {/* Other Offers */}
                     {otherOffers.length > 0 && (
                       <div className="border border-border rounded-xl p-4 md:p-6">
@@ -2784,18 +2791,14 @@ export default function ProductPage() {
               </div>
               )}
 
-              {/* ── Deuxième Chance — ReStock ── */}
-              <RestockSecondChance
-                ean={product.ean || product.gtin}
-                cnk={product.cnk}
-                productName={product.name}
-              />
+              {/* ── Deuxième Chance ReStock : déplacé sous "Meilleure offre" plus haut ── */}
 
               {/* ── Description ── */}
               <div className="mb-8">
                 <h2 className="text-lg font-bold text-foreground mb-3">Description du produit</h2>
                 <ProductDescription description={description} />
               </div>
+
 
               {/* ── Product Details ── */}
               <div className="mb-8">

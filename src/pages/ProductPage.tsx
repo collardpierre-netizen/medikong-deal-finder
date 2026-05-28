@@ -2138,6 +2138,13 @@ export default function ProductPage() {
                       </div>
                     )}
 
+                    {/* ── Deuxième Chance — ReStock (sous le bloc meilleure offre) ── */}
+                    <RestockSecondChance
+                      ean={product.ean || product.gtin}
+                      cnk={product.cnk}
+                      productName={product.name}
+                    />
+
                     {/* Other Offers */}
                     {otherOffers.length > 0 && (
                       <div className="border border-border rounded-xl p-4 md:p-6">

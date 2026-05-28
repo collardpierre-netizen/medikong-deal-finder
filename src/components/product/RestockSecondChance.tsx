@@ -1,7 +1,8 @@
+import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { Tag, Clock, MapPin, Package, ArrowRight, RefreshCw } from "lucide-react";
+import { Clock, MapPin, ArrowRight, RefreshCw, TrendingDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const GRADE_CONFIG: Record<string, { label: string; desc: string; color: string; bg: string }> = {
@@ -20,13 +21,25 @@ function daysUntil(date: string) {
   return diff;
 }
 
+function pushGtm(event: string, payload: Record<string, unknown>) {
+  if (typeof window === "undefined") return;
+  const w = window as any;
+  w.dataLayer = w.dataLayer || [];
+  w.dataLayer.push({ event, ...payload });
+}
+
 interface Props {
   ean?: string;
   cnk?: string;
   productName: string;
+  productId?: string;
+  /** Prix HTVA de référence MediKong neuf (meilleure offre) pour calculer l'économie */
+  newPriceHtva?: number;
+  /** Le bloc n'est rendu que pour les acheteurs vérifiés */
+  isVerifiedBuyer?: boolean;
 }
 
-export function RestockSecondChance({ ean, cnk, productName }: Props) {
+export function RestockSecondChance({ ean, cnk, productName, productId, newPriceHtva, isVerifiedBuyer }: Props) {
   const { data: restockOffers = [] } = useQuery({
     queryKey: ["restock-second-chance", ean, cnk],
     queryFn: async () => {
@@ -37,7 +50,6 @@ export function RestockSecondChance({ ean, cnk, productName }: Props) {
         .order("price_ht", { ascending: true })
         .limit(5);
 
-      // Match by EAN or CNK
       if (ean && ean.length > 0) {
         query = query.eq("ean", ean);
       } else if (cnk && cnk.length > 0) {
@@ -50,11 +62,47 @@ export function RestockSecondChance({ ean, cnk, productName }: Props) {
       if (error) return [];
       return (data || []) as any[];
     },
-    enabled: !!(ean || cnk),
+    enabled: !!(ean || cnk) && !!isVerifiedBuyer,
     staleTime: 5 * 60 * 1000,
   });
 
+  const viewedRef = useRef(false);
+  useEffect(() => {
+    if (viewedRef.current) return;
+    if (!isVerifiedBuyer) return;
+    if (restockOffers.length === 0) return;
+    viewedRef.current = true;
+    const cheapest = restockOffers[0];
+    const deltaVal = newPriceHtva && cheapest ? newPriceHtva - Number(cheapest.price_ht) : null;
+    const deltaPct = newPriceHtva && cheapest && newPriceHtva > 0 ? ((newPriceHtva - Number(cheapest.price_ht)) / newPriceHtva) * 100 : null;
+    pushGtm("restock_cross_sell_viewed", {
+      product_id: productId,
+      product_name: productName,
+      offers_count: restockOffers.length,
+      cheapest_offer_id: cheapest?.id,
+      cheapest_price_htva: cheapest?.price_ht,
+      new_price_htva: newPriceHtva ?? null,
+      economy_value_htva: deltaVal,
+      economy_pct: deltaPct,
+    });
+  }, [restockOffers, isVerifiedBuyer, newPriceHtva, productId, productName]);
+
+  if (!isVerifiedBuyer) return null;
   if (restockOffers.length === 0) return null;
+
+  const handleOfferClick = (offerId: string, priceHt: number) => {
+    const deltaVal = newPriceHtva ? newPriceHtva - priceHt : null;
+    const deltaPct = newPriceHtva && newPriceHtva > 0 ? ((newPriceHtva - priceHt) / newPriceHtva) * 100 : null;
+    pushGtm("restock_cross_sell_clicked", {
+      product_id: productId,
+      product_name: productName,
+      offer_id: offerId,
+      offer_price_htva: priceHt,
+      new_price_htva: newPriceHtva ?? null,
+      economy_value_htva: deltaVal,
+      economy_pct: deltaPct,
+    });
+  };
 
   return (
     <div className="mb-8">
@@ -80,6 +128,10 @@ export function RestockSecondChance({ ean, cnk, productName }: Props) {
           {restockOffers.map((offer: any) => {
             const grade = GRADE_CONFIG[offer.grade] || GRADE_CONFIG.B;
             const dlu = offer.dlu ? daysUntil(offer.dlu) : null;
+            const priceHt = Number(offer.price_ht) || 0;
+            const hasDelta = !!newPriceHtva && newPriceHtva > priceHt;
+            const deltaVal = hasDelta ? newPriceHtva! - priceHt : 0;
+            const deltaPct = hasDelta ? (deltaVal / newPriceHtva!) * 100 : 0;
 
             return (
               <div key={offer.id} className="px-5 py-3.5 flex items-center gap-4 hover:bg-amber-50/50 transition-colors">
@@ -92,12 +144,18 @@ export function RestockSecondChance({ ean, cnk, productName }: Props) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-semibold text-foreground">
-                      {formatEur(offer.price_ht)} € <span className="text-[10px] font-normal text-muted-foreground">HTVA</span>
+                      {formatEur(priceHt)} € <span className="text-[10px] font-normal text-muted-foreground">HTVA</span>
                     </span>
                     <span className="text-xs text-muted-foreground">×{offer.quantity} unités</span>
                     {offer.allow_partial && offer.moq && (
                       <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                         min. {offer.moq}
+                      </span>
+                    )}
+                    {hasDelta && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-green-700 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded">
+                        <TrendingDown size={10} />
+                        −{deltaPct.toFixed(0)}% · −{formatEur(deltaVal)} €
                       </span>
                     )}
                   </div>
@@ -116,9 +174,10 @@ export function RestockSecondChance({ ean, cnk, productName }: Props) {
                   </div>
                 </div>
 
-                {/* CTA */}
+                {/* CTA — deep-link sur l'offre */}
                 <Link
-                  to="/restock/opportunities"
+                  to={`/restock/opportunities?offer=${offer.id}`}
+                  onClick={() => handleOfferClick(offer.id, priceHt)}
                   className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 hover:text-amber-800 transition-colors"
                 >
                   Voir <ArrowRight size={12} />

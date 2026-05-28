@@ -2143,6 +2143,9 @@ export default function ProductPage() {
                       ean={product.ean || product.gtin}
                       cnk={product.cnk}
                       productName={product.name}
+                      productId={product.id}
+                      newPriceHtva={bestOffer?.unitPriceEur}
+                      isVerifiedBuyer={isVerifiedBuyer}
                     />
 
                     {/* Other Offers */}

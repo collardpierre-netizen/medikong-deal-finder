@@ -88,7 +88,7 @@ const AdminVendeurDetail = () => {
       // Get this vendor's offers with product info
       const { data: myOffers } = await supabase
         .from("offers")
-        .select("id, product_id, price_excl_vat, purchase_price, margin_amount, applied_margin_percentage, qogita_base_price, stock_quantity, is_active, vat_rate, products(name, gtin, offer_count, best_price_excl_vat)")
+        .select("id, product_id, price_excl_vat, purchase_price, margin_amount, applied_margin_percentage, qogita_base_price, stock_quantity, is_active, vat_rate, source_supplier, products(name, gtin, offer_count, best_price_excl_vat)")
         .eq("vendor_id", id!)
         .eq("is_active", true)
         .order("price_excl_vat", { ascending: true });
@@ -133,6 +133,7 @@ const AdminVendeurDetail = () => {
           net_margin: netMargin,
           margin_pct: marginPct,
           stock: o.stock_quantity,
+          source_supplier: (o as any).source_supplier ?? null,
         };
       });
     },
@@ -397,7 +398,7 @@ const AdminVendeurDetail = () => {
             <table className="w-full text-left">
               <thead>
                 <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                  {["Produit", "GTIN", "Offres", "Prix vente HT", "Prix achat HT", "Marge €", "Marge %", "Stock"].map(h => (
+                  {["Produit", "GTIN", "Offres", "Prix vente HT", "Prix achat HT", "Marge €", "Marge %", "Stock", "Source"].map(h => (
                     <th key={h} className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                   ))}
                 </tr>
@@ -430,6 +431,9 @@ const AdminVendeurDetail = () => {
                       ) : "—"}
                     </td>
                     <td className="px-3 py-2.5 text-[12px]" style={{ color: "#616B7C" }}>{o.stock}</td>
+                    <td className="px-3 py-2.5 text-[11px]" style={{ color: "#616B7C" }} title="Fournisseur source déclaré par le vendeur">
+                      {(o as any).source_supplier || <span style={{ color: "#CBD5E1" }}>—</span>}
+                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -118,12 +118,15 @@ interface OfferForm {
   carton_size_override: string;
   /** Codes ISO 639-1 (2 lettres) des langues présentes sur le packaging. */
   packaging_languages: string[];
+  /** Source fournisseur privée (ex. "Quirumed") — sert au vendeur à retrouver où repasser commande. */
+  source_supplier: string;
 }
 
 const emptyForm: OfferForm = {
   product_id: "", product_name: "", price_excl_vat: "", purchase_price_excl_vat: "", save_as_product_default: false, vat_rate: "21", stock_quantity: "", moq: "1", mov_amount: "0", delivery_days: "3", country_code: "BE", category_ids: [],
   pack_size_override: "", product_pack_size_fallback: null, vendor_note: "",
   carton_size_override: "", packaging_languages: [],
+  source_supplier: "",
 };
 
 function ProductThumb({ imageUrls, alt = "" }: { imageUrls?: string[] | null; alt?: string }) {
@@ -1436,6 +1439,7 @@ export default function VendorOffers() {
       vendor_note: (offer as any).vendor_note ?? "",
       carton_size_override: (offer as any).carton_size_override != null ? String((offer as any).carton_size_override) : "",
       packaging_languages: Array.isArray((offer as any).packaging_languages) ? (offer as any).packaging_languages : [],
+      source_supplier: (offer as any).source_supplier ?? "",
     });
     // Snapshot "avant" : prix HT + pack effectif au moment de l'ouverture
     const initialOverride = offer.pack_size_override;
@@ -1608,6 +1612,7 @@ export default function VendorOffers() {
           ? Math.max(1, Math.min(100000, parseInt(form.carton_size_override, 10) || 0)) || null
           : null,
         packaging_languages: form.packaging_languages.length > 0 ? form.packaging_languages : null,
+        source_supplier: form.source_supplier?.trim() ? form.source_supplier.trim().slice(0, 120) : null,
         is_active: true,
       };
       let offerId = editingId;
@@ -2131,6 +2136,20 @@ export default function VendorOffers() {
                 </label>
               )}
             </div>
+            <div className="md:col-span-2">
+              <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>
+                Source fournisseur <span className="text-[#8B95A5] font-normal">— optionnel, privé (ex. « Quirumed »). Sert à retrouver où repasser commande.</span>
+              </label>
+              <input
+                type="text"
+                maxLength={120}
+                placeholder="Ex: Quirumed"
+                className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
+                style={{ borderColor: "#E2E8F0" }}
+                value={form.source_supplier}
+                onChange={e => setForm(p => ({ ...p, source_supplier: e.target.value }))}
+              />
+            </div>
           </div>
 
           {/* ─── Catégories de visibilité (obligatoire) ─── */}
@@ -2428,6 +2447,7 @@ export default function VendorOffers() {
                   <th className="text-center py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }}>MOQ</th>
                   <th className="text-center py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }}>Délai</th>
                   <th className="text-center py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }}>Pays</th>
+                  <th className="text-left py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }} title="Fournisseur d'origine privé (où vous avez acheté).">Source</th>
                   <th className="text-center py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }}>Statut</th>
                   <th className="text-right py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }}>Actions</th>
                 </tr>
@@ -2523,6 +2543,13 @@ export default function VendorOffers() {
                       <td className="py-2.5 px-3 text-center">{offer.moq}</td>
                       <td className="py-2.5 px-3 text-center">{offer.delivery_days}j</td>
                       <td className="py-2.5 px-3 text-center">{offer.country_code}</td>
+                      <td className="py-2.5 px-3 text-[11px]" style={{ color: "#5C6B7F" }}>
+                        {offer.source_supplier ? (
+                          <span title="Fournisseur source — privé vendeur">{offer.source_supplier}</span>
+                        ) : (
+                          <span style={{ color: "#CBD5E1" }}>—</span>
+                        )}
+                      </td>
                       <td className="py-2.5 px-3 text-center">
                         <button
                           type="button"

@@ -288,6 +288,7 @@ Deno.serve(async (req) => {
           delivery_days: r.deliveryDays ?? undefined,
           purchase_price_excl_vat: r.purchasePrice ?? undefined,
           pack_size_override: r.packSize ?? undefined,
+          source_supplier: r.sourceSupplier ?? undefined,
           is_active: true,
           synced_at: new Date().toISOString(),
           _primary_category_id: (product as any).primary_category_id ?? null, // stripped before upsert

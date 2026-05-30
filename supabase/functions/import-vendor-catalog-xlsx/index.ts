@@ -321,6 +321,7 @@ Deno.serve(async (req) => {
             mov: r.mov,
             delivery_days: r.deliveryDays,
             notes: r.notes,
+            source_supplier: r.sourceSupplier,
           },
         });
         unmatched++;

@@ -57,6 +57,10 @@ const HEADER_MAP: Record<string, string> = {
   mov: "mov", minordervalue: "mov",
   delivery: "delivery_days", deliverydays: "delivery_days", delai: "delivery_days", delailivraison: "delivery_days",
   notes: "notes", note: "notes", commentaire: "notes",
+  // source supplier (private vendor field — where the vendor bought the product)
+  source: "source_supplier", sourcefournisseur: "source_supplier", fournisseursource: "source_supplier",
+  fournisseur: "source_supplier", supplier: "source_supplier", suppliername: "source_supplier",
+  sourcesupplier: "source_supplier", origine: "source_supplier",
 };
 
 function pickField(row: RawRow, normalizedKeys: Record<string, string>, target: string): unknown {

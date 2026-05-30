@@ -903,15 +903,15 @@ function useOfferImport(vendorId: string | undefined) {
 function downloadTemplate() {
   const ws = XLSX.utils.aoa_to_sheet([
     [
-      "EAN", "CNK", "Prix HT", "Prix_Achat_HT", "TVA", "Stock", "MOQ", "MOV", "Délai", "Pays", "Conditionnement",
+      "EAN", "CNK", "Prix HT", "Prix_Achat_HT", "TVA", "Stock", "MOQ", "MOV", "Délai", "Pays", "Conditionnement", "Source",
       "Profil", "Profil_Pays", "Prix_Profil_HT", "Remise_%", "MOQ_Profil", "MOV_Profil",
     ],
-    ["3401560100013", "1234567", "12.50", "8.00", "21", "100", "1", "150", "3", "BE", "24", "", "", "", "", "", ""],
-    ["3401560100013", "", "13.00", "8.50", "20", "", "1", "200", "5", "FR", "24", "", "", "", "", "", ""],
-    ["3401560100013", "", "", "", "", "", "", "", "", "", "", "pharmacy", "BE", "11.00", "", "5", "150"],
-    ["3401560100013", "", "", "", "", "", "", "", "", "", "", "hospital", "", "", "10", "10", "500"],
+    ["3401560100013", "1234567", "12.50", "8.00", "21", "100", "1", "150", "3", "BE", "24", "Quirumed", "", "", "", "", "", ""],
+    ["3401560100013", "", "13.00", "8.50", "20", "", "1", "200", "5", "FR", "24", "", "", "", "", "", "", ""],
+    ["3401560100013", "", "", "", "", "", "", "", "", "", "", "", "pharmacy", "BE", "11.00", "", "5", "150"],
+    ["3401560100013", "", "", "", "", "", "", "", "", "", "", "", "hospital", "", "", "10", "10", "500"],
   ]);
-  ws["!cols"] = Array(17).fill(null).map(() => ({ wch: 16 }));
+  ws["!cols"] = Array(18).fill(null).map(() => ({ wch: 16 }));
 
   // Price tiers sheet
   const wsTiers = XLSX.utils.aoa_to_sheet([
@@ -938,6 +938,7 @@ function downloadTemplate() {
     ["Délai", "Délai de livraison en jours (par défaut : 3)"],
     ["Pays", "Code pays (BE, FR, NL, LU, DE) — une ligne par pays pour des configs différentes"],
     ["Conditionnement", "Nombre d'unités par pack vendu (ex: 24 pour un carton de 24). Entier 1..10 000 ou vide. Vide = utilise le pack de la fiche produit MediKong en fallback. L'export ajoute une colonne 'Conditionnement_Source' (Override offre / Fiche produit / Aucun) pour tracer d'où vient le pack appliqué."],
+    ["Source", "Champ privé (non affiché aux acheteurs) — fournisseur d'origine pour retrouver où repasser commande (ex: Quirumed, CERP, Febelco). Max 120 caractères."],
     [""],
     ["=== Colonnes profil (optionnelles, pour prix différenciés) ==="],
     ["Profil", "Type de profil : pharmacy, hospital, dentist, nursing, veterinary, ehpad, wholesale"],

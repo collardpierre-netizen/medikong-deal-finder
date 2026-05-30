@@ -118,12 +118,15 @@ interface OfferForm {
   carton_size_override: string;
   /** Codes ISO 639-1 (2 lettres) des langues présentes sur le packaging. */
   packaging_languages: string[];
+  /** Source fournisseur privée (ex. "Quirumed") — sert au vendeur à retrouver où repasser commande. */
+  source_supplier: string;
 }
 
 const emptyForm: OfferForm = {
   product_id: "", product_name: "", price_excl_vat: "", purchase_price_excl_vat: "", save_as_product_default: false, vat_rate: "21", stock_quantity: "", moq: "1", mov_amount: "0", delivery_days: "3", country_code: "BE", category_ids: [],
   pack_size_override: "", product_pack_size_fallback: null, vendor_note: "",
   carton_size_override: "", packaging_languages: [],
+  source_supplier: "",
 };
 
 function ProductThumb({ imageUrls, alt = "" }: { imageUrls?: string[] | null; alt?: string }) {

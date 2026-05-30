@@ -431,6 +431,9 @@ const AdminVendeurDetail = () => {
                       ) : "—"}
                     </td>
                     <td className="px-3 py-2.5 text-[12px]" style={{ color: "#616B7C" }}>{o.stock}</td>
+                    <td className="px-3 py-2.5 text-[11px]" style={{ color: "#616B7C" }} title="Fournisseur source déclaré par le vendeur">
+                      {(o as any).source_supplier || <span style={{ color: "#CBD5E1" }}>—</span>}
+                    </td>
                   </tr>
                 ))}
               </tbody>

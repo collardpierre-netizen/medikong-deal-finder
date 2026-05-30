@@ -1612,6 +1612,7 @@ export default function VendorOffers() {
           ? Math.max(1, Math.min(100000, parseInt(form.carton_size_override, 10) || 0)) || null
           : null,
         packaging_languages: form.packaging_languages.length > 0 ? form.packaging_languages : null,
+        source_supplier: form.source_supplier?.trim() ? form.source_supplier.trim().slice(0, 120) : null,
         is_active: true,
       };
       let offerId = editingId;

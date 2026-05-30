@@ -88,7 +88,7 @@ const AdminVendeurDetail = () => {
       // Get this vendor's offers with product info
       const { data: myOffers } = await supabase
         .from("offers")
-        .select("id, product_id, price_excl_vat, purchase_price, margin_amount, applied_margin_percentage, qogita_base_price, stock_quantity, is_active, vat_rate, products(name, gtin, offer_count, best_price_excl_vat)")
+        .select("id, product_id, price_excl_vat, purchase_price, margin_amount, applied_margin_percentage, qogita_base_price, stock_quantity, is_active, vat_rate, source_supplier, products(name, gtin, offer_count, best_price_excl_vat)")
         .eq("vendor_id", id!)
         .eq("is_active", true)
         .order("price_excl_vat", { ascending: true });

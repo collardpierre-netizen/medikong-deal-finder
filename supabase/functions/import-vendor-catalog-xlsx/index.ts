@@ -189,6 +189,7 @@ Deno.serve(async (req) => {
       mov: number | null;
       deliveryDays: number | null;
       notes: string | null;
+      sourceSupplier: string | null;
     };
 
     const parsed: ParsedRow[] = rows.map((r, i) => ({

@@ -2136,6 +2136,20 @@ export default function VendorOffers() {
                 </label>
               )}
             </div>
+            <div className="md:col-span-2">
+              <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>
+                Source fournisseur <span className="text-[#8B95A5] font-normal">— optionnel, privé (ex. « Quirumed »). Sert à retrouver où repasser commande.</span>
+              </label>
+              <input
+                type="text"
+                maxLength={120}
+                placeholder="Ex: Quirumed"
+                className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
+                style={{ borderColor: "#E2E8F0" }}
+                value={form.source_supplier}
+                onChange={e => setForm(p => ({ ...p, source_supplier: e.target.value }))}
+              />
+            </div>
           </div>
 
           {/* ─── Catégories de visibilité (obligatoire) ─── */}

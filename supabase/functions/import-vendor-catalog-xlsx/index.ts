@@ -211,6 +211,7 @@ Deno.serve(async (req) => {
       mov: toNum(pickField(r, normalizedKeys, "mov")),
       deliveryDays: toInt(pickField(r, normalizedKeys, "delivery_days")),
       notes: (pickField(r, normalizedKeys, "notes") as string | undefined)?.toString().trim() || null,
+      sourceSupplier: (pickField(r, normalizedKeys, "source_supplier") as string | undefined)?.toString().trim() || null,
     }));
 
     const gtins = [...new Set(parsed.map((p) => p.gtin).filter(Boolean) as string[])];

@@ -2447,6 +2447,7 @@ export default function VendorOffers() {
                   <th className="text-center py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }}>MOQ</th>
                   <th className="text-center py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }}>Délai</th>
                   <th className="text-center py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }}>Pays</th>
+                  <th className="text-left py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }} title="Fournisseur d'origine privé (où vous avez acheté).">Source</th>
                   <th className="text-center py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }}>Statut</th>
                   <th className="text-right py-2.5 px-3 font-medium" style={{ color: "#8B95A5" }}>Actions</th>
                 </tr>

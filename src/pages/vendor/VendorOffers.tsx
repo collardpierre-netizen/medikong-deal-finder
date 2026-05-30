@@ -2543,6 +2543,13 @@ export default function VendorOffers() {
                       <td className="py-2.5 px-3 text-center">{offer.moq}</td>
                       <td className="py-2.5 px-3 text-center">{offer.delivery_days}j</td>
                       <td className="py-2.5 px-3 text-center">{offer.country_code}</td>
+                      <td className="py-2.5 px-3 text-[11px]" style={{ color: "#5C6B7F" }}>
+                        {offer.source_supplier ? (
+                          <span title="Fournisseur source — privé vendeur">{offer.source_supplier}</span>
+                        ) : (
+                          <span style={{ color: "#CBD5E1" }}>—</span>
+                        )}
+                      </td>
                       <td className="py-2.5 px-3 text-center">
                         <button
                           type="button"

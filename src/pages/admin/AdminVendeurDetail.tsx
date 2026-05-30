@@ -133,6 +133,7 @@ const AdminVendeurDetail = () => {
           net_margin: netMargin,
           margin_pct: marginPct,
           stock: o.stock_quantity,
+          source_supplier: (o as any).source_supplier ?? null,
         };
       });
     },

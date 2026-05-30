@@ -6386,6 +6386,7 @@ export type Database = {
           qogita_offer_qid: string | null
           qogita_seller_fid: string | null
           shipping_from_country: string | null
+          source_supplier: string | null
           stock_quantity: number
           stock_status: Database["public"]["Enums"]["stock_status_enum"]
           suggested_retail_price_cents: number | null
@@ -6450,6 +6451,7 @@ export type Database = {
           qogita_offer_qid?: string | null
           qogita_seller_fid?: string | null
           shipping_from_country?: string | null
+          source_supplier?: string | null
           stock_quantity?: number
           stock_status?: Database["public"]["Enums"]["stock_status_enum"]
           suggested_retail_price_cents?: number | null
@@ -6514,6 +6516,7 @@ export type Database = {
           qogita_offer_qid?: string | null
           qogita_seller_fid?: string | null
           shipping_from_country?: string | null
+          source_supplier?: string | null
           stock_quantity?: number
           stock_status?: Database["public"]["Enums"]["stock_status_enum"]
           suggested_retail_price_cents?: number | null
@@ -20695,6 +20698,7 @@ export type Database = {
           qogita_offer_qid: string | null
           qogita_seller_fid: string | null
           shipping_from_country: string | null
+          source_supplier: string | null
           stock_quantity: number
           stock_status: Database["public"]["Enums"]["stock_status_enum"]
           suggested_retail_price_cents: number | null

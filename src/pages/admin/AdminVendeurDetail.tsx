@@ -398,7 +398,7 @@ const AdminVendeurDetail = () => {
             <table className="w-full text-left">
               <thead>
                 <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                  {["Produit", "GTIN", "Offres", "Prix vente HT", "Prix achat HT", "Marge €", "Marge %", "Stock"].map(h => (
+                  {["Produit", "GTIN", "Offres", "Prix vente HT", "Prix achat HT", "Marge €", "Marge %", "Stock", "Source"].map(h => (
                     <th key={h} className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                   ))}
                 </tr>

@@ -57,6 +57,10 @@ const HEADER_MAP: Record<string, string> = {
   mov: "mov", minordervalue: "mov",
   delivery: "delivery_days", deliverydays: "delivery_days", delai: "delivery_days", delailivraison: "delivery_days",
   notes: "notes", note: "notes", commentaire: "notes",
+  // source supplier (private vendor field — where the vendor bought the product)
+  source: "source_supplier", sourcefournisseur: "source_supplier", fournisseursource: "source_supplier",
+  fournisseur: "source_supplier", supplier: "source_supplier", suppliername: "source_supplier",
+  sourcesupplier: "source_supplier", origine: "source_supplier",
 };
 
 function pickField(row: RawRow, normalizedKeys: Record<string, string>, target: string): unknown {
@@ -185,6 +189,7 @@ Deno.serve(async (req) => {
       mov: number | null;
       deliveryDays: number | null;
       notes: string | null;
+      sourceSupplier: string | null;
     };
 
     const parsed: ParsedRow[] = rows.map((r, i) => ({
@@ -206,6 +211,7 @@ Deno.serve(async (req) => {
       mov: toNum(pickField(r, normalizedKeys, "mov")),
       deliveryDays: toInt(pickField(r, normalizedKeys, "delivery_days")),
       notes: (pickField(r, normalizedKeys, "notes") as string | undefined)?.toString().trim() || null,
+      sourceSupplier: (pickField(r, normalizedKeys, "source_supplier") as string | undefined)?.toString().trim() || null,
     }));
 
     const gtins = [...new Set(parsed.map((p) => p.gtin).filter(Boolean) as string[])];
@@ -282,6 +288,7 @@ Deno.serve(async (req) => {
           delivery_days: r.deliveryDays ?? undefined,
           purchase_price_excl_vat: r.purchasePrice ?? undefined,
           pack_size_override: r.packSize ?? undefined,
+          source_supplier: r.sourceSupplier ?? undefined,
           is_active: true,
           synced_at: new Date().toISOString(),
           _primary_category_id: (product as any).primary_category_id ?? null, // stripped before upsert
@@ -314,6 +321,7 @@ Deno.serve(async (req) => {
             mov: r.mov,
             delivery_days: r.deliveryDays,
             notes: r.notes,
+            source_supplier: r.sourceSupplier,
           },
         });
         unmatched++;

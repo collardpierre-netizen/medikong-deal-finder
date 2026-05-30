@@ -95,8 +95,9 @@ export function VendorCatalogXlsxImport({ children }: { children?: React.ReactNo
         <DialogHeader>
           <DialogTitle>Importer un catalogue XLSX</DialogTitle>
           <DialogDescription>
-            Colonnes reconnues : GTIN/EAN, CNK, nom, marque, fabricant, prix HT, prix TTC, TVA, stock, MOQ, MOV,
-            délai de livraison. Les lignes sans correspondance produit créent une proposition à valider.
+            Colonnes reconnues : GTIN/EAN, CNK, nom, marque, fabricant, prix HT, prix TTC, TVA, prix d'achat, stock, MOQ, MOV,
+            délai de livraison, <strong>source</strong> (fournisseur d'origine, ex. « Quirumed » — privé, sert à retrouver où repasser commande).
+            Les lignes sans correspondance produit créent une proposition à valider.
           </DialogDescription>
         </DialogHeader>
 

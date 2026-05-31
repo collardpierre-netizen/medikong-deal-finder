@@ -2353,6 +2353,51 @@ export type Database = {
         }
         Relationships: []
       }
+      contract_templates: {
+        Row: {
+          articles: Json
+          contract_type: string
+          created_at: string
+          created_by: string | null
+          effective_at: string | null
+          id: string
+          medikong_data: Json
+          notes: string | null
+          required_fields: Json
+          status: string
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          articles?: Json
+          contract_type?: string
+          created_at?: string
+          created_by?: string | null
+          effective_at?: string | null
+          id?: string
+          medikong_data?: Json
+          notes?: string | null
+          required_fields?: Json
+          status?: string
+          updated_at?: string
+          version: string
+        }
+        Update: {
+          articles?: Json
+          contract_type?: string
+          created_at?: string
+          created_by?: string | null
+          effective_at?: string | null
+          id?: string
+          medikong_data?: Json
+          notes?: string | null
+          required_fields?: Json
+          status?: string
+          updated_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
       countries: {
         Row: {
           code: string
@@ -20922,6 +20967,29 @@ export type Database = {
       auto_promote_proprietary_codes: { Args: never; Returns: number }
       bulk_override_requested: { Args: never; Returns: boolean }
       bulk_set_cnk_codes: { Args: { pairs: Json }; Returns: number }
+      bump_contract_template: {
+        Args: { _new_version: string; _notes?: string; _type: string }
+        Returns: {
+          articles: Json
+          contract_type: string
+          created_at: string
+          created_by: string | null
+          effective_at: string | null
+          id: string
+          medikong_data: Json
+          notes: string | null
+          required_fields: Json
+          status: string
+          updated_at: string
+          version: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "contract_templates"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       bump_translation_cache_hit: {
         Args: { _source_hash: string }
         Returns: undefined
@@ -21141,6 +21209,29 @@ export type Database = {
       }
       force_switch_to_paid: { Args: { _sub_id: string }; Returns: undefined }
       get_action_center: { Args: { _scope: string }; Returns: Json }
+      get_active_contract_template: {
+        Args: { _type?: string }
+        Returns: {
+          articles: Json
+          contract_type: string
+          created_at: string
+          created_by: string | null
+          effective_at: string | null
+          id: string
+          medikong_data: Json
+          notes: string | null
+          required_fields: Json
+          status: string
+          updated_at: string
+          version: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "contract_templates"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       get_admin_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["admin_role"]
@@ -21546,6 +21637,29 @@ export type Database = {
         }[]
       }
       public_verified_vendors_count: { Args: never; Returns: number }
+      publish_contract_template: {
+        Args: { _effective_at?: string; _id: string }
+        Returns: {
+          articles: Json
+          contract_type: string
+          created_at: string
+          created_by: string | null
+          effective_at: string | null
+          id: string
+          medikong_data: Json
+          notes: string | null
+          required_fields: Json
+          status: string
+          updated_at: string
+          version: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "contract_templates"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       purge_bulk_deactivation_events: { Args: never; Returns: number }
       purge_security_audit_logs: { Args: never; Returns: Json }
       read_email_batch: {
@@ -22142,6 +22256,35 @@ export type Database = {
       subscription_run_daily_tick: { Args: never; Returns: Json }
       unaccent: { Args: { "": string }; Returns: string }
       update_brand_product_counts: { Args: never; Returns: undefined }
+      update_contract_template_draft: {
+        Args: {
+          _articles: Json
+          _id: string
+          _medikong_data: Json
+          _notes: string
+          _required_fields: Json
+        }
+        Returns: {
+          articles: Json
+          contract_type: string
+          created_at: string
+          created_by: string | null
+          effective_at: string | null
+          id: string
+          medikong_data: Json
+          notes: string | null
+          required_fields: Json
+          status: string
+          updated_at: string
+          version: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "contract_templates"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       update_manufacturer_product_counts: { Args: never; Returns: undefined }
       update_market_delta_anomaly: {
         Args: {

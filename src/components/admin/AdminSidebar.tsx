@@ -133,6 +133,7 @@ const sections: NavSection[] = [
       { labelKey: "logs", path: "/admin/logs", icon: FileText },
       { labelKey: "auditLog", path: "/admin/audit-log", icon: ClipboardList },
       { labelKey: "contractAudit", path: "/admin/contract-audit", icon: ShieldCheckAlt },
+      { label: "Contrat vendeur (template)", path: "/admin/contract-template", icon: FileText },
     ],
   },
 ];

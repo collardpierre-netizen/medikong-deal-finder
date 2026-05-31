@@ -1,94 +1,94 @@
-# Lot 2 + Lot 3 — Vendor Exclusivities
+## Objectif
 
-Lot 1a (moteur DB) déjà livré : table `vendor_exclusivities`, RPC `resolve_offer_exclusivity`, vues `offers_with_exclusivity_v` / `external_offers_with_exclusivity_v`, triggers overlap/block, cron horaire.
+Page admin `/admin/contract-template` permettant d'éditer le mandat de facturation, bumper une nouvelle version, prévisualiser le PDF, et publier — sans toucher au code pour les évolutions futures.
 
-Ordre proposé : **Lot 2 d'abord** (pour pouvoir créer des règles depuis l'UI), **Lot 3 ensuite** (pour voir l'effet sans passer par SQL).
+## Architecture cible
 
----
+Aujourd'hui le contenu (`CONTRACT_VERSION`, `MEDIKONG_DEFAULTS`, `CONTRACT_ARTICLES`) est hard-codé dans deux fichiers miroirs. Pour permettre l'édition admin, on déplace ce contenu **en DB** et on lit le miroir code uniquement en fallback de bootstrap (seed v1.0 si la table est vide).
 
-## Lot 2 — Admin CRUD `/admin/exclusivites`
+## 1. DB — Table `contract_templates`
 
-### Page `src/pages/admin/AdminVendorExclusivitiesPage.tsx` (nouvelle)
+Nouvelle table (admin-only en écriture, lecture authentifiée) :
 
-- Liste filtrable des `vendor_exclusivities` :
-  - Filtres : vendeur (Combobox), scope (`brand`/`manufacturer`/`product`/`category`), mode (`showcase`/`hide`/`block`), statut (actif / expiré / futur), pays.
-  - Colonnes : Vendeur · Scope (badge) + cible résolue (nom marque/produit/…) · Mode (badge couleur) · Pays · Validité (du → au) · Source · Notes · Actions.
-  - Tri par défaut : actifs d'abord, puis date de fin asc.
-- Bouton **"Nouvelle règle"** → Sheet/Dialog :
-  - Vendeur (Combobox sur `vendors_public`).
-  - Scope (Select) → champ cible conditionnel :
-    - `brand` → Combobox `brands`
-    - `manufacturer` → Combobox `manufacturers`
-    - `product` → Combobox `products`
-    - `category` → Combobox `categories`
-  - Mode (RadioGroup `showcase`/`hide`/`block`) + tooltip explicatif par mode.
-  - `valid_from` (date, default = today) + `valid_until` (date, obligatoire).
-  - `country_codes[]` (MultiSelect BE/FR/LU/NL/DE/…) — vide = tous.
-  - `notes` (Textarea) + `source` (Input texte libre : contrat, mail, …).
-  - Validations front : `valid_until > valid_from`, cible requise selon scope.
-  - Submit = INSERT direct (RLS admin) — les triggers DB s'occupent du contrôle overlap (toast l'erreur Postgres `vendor_exclusivity_overlap` en clair).
-- Édition : même Sheet en mode update (UPDATE).
-- Actions ligne :
-  - "Désactiver maintenant" (set `valid_until = now()`).
-  - "Supprimer" (DELETE, confirmation).
-  - "Dupliquer".
+```text
+id              uuid pk
+contract_type   text  ('mandat_facturation')
+version         text  ('v1.0', 'v1.1', …)  UNIQUE(contract_type,version)
+status          text  ('draft' | 'published' | 'archived')
+effective_at    timestamptz NULL    -- date d'entrée en vigueur (publication)
+medikong_data   jsonb               -- MEDIKONG_DEFAULTS
+articles        jsonb               -- CONTRACT_ARTICLES (même shape qu'aujourd'hui)
+required_fields jsonb               -- REQUIRED_VENDOR_FIELDS
+notes           text                -- commentaire interne de version
+created_by      uuid (auth.users)
+created_at, updated_at
+```
 
-### Sidebar
+Contraintes :
+- Une seule ligne `published` par `contract_type` à la fois (trigger).
+- Bump = INSERT d'une nouvelle ligne `draft`, copie du dernier published.
+- Publish = `status='published'`, archive l'ancienne.
 
-- Ajouter une entrée **"Exclusivités vendeurs"** dans la section admin existante (à côté de RFQ / Prix cockpit) — icône `ShieldCheck`.
+RPC `get_active_contract_template(_type)` → renvoie la ligne `published` courante (security definer, lecture publique).
+RPC admin `bump_contract_template(_type, _new_version, _notes)` → clone last published en draft.
+RPC admin `publish_contract_template(_id, _effective_at)`.
 
-### Routing
+Seed initial : insert la v1.0 actuelle depuis le contenu du fichier code (one-shot dans la migration).
 
-- Ajouter route `/admin/exclusivites` dans `App.tsx` (lazy import, garde admin déjà en place sur le layout).
+## 2. Lecture serveur
 
----
+- `supabase/functions/_shared/contract-template.ts` : devient un fallback statique. Nouveau helper `loadActiveContractTemplate(supabase)` qui appelle la RPC ; en cas d'erreur, retombe sur les constantes en dur (pour ne pas casser la signature en cours).
+- `generate-contract-pdf/index.ts` : utilise `loadActiveContractTemplate` au lieu d'importer directement les constantes. Le `CONTRACT_VERSION` stocké dans `contracts` provient désormais de la ligne DB.
 
-## Lot 3 — Consommation des vues côté front
+## 3. Lecture client (vendeur)
 
-L'objectif : que `mode='hide'` et `mode='block'` masquent l'offre, et que `mode='showcase'` mette un badge "Exclusivité <Vendeur>" sur la card / fiche produit (résolu côté front via `vendor_exclusivities` joinée à la vue + pays acheteur).
+- `src/lib/contract/mandat-facturation-template.ts` : pareil, devient fallback. Nouveau hook `useActiveContractTemplate()` (React Query) qui appelle la RPC.
+- `VendorContractPage` consomme le hook au lieu des constantes (transition transparente).
 
-### Hook central
+## 4. Page admin `/admin/contract-template`
 
-- `src/hooks/useEffectiveOffers.ts` (nouveau) : wrappe `effective_offer_prices_v` + jointure `vendor_exclusivities` via la vue `offers_with_exclusivity_v`. Renvoie `{ offers, showcaseByVendorId }` filtré par pays de l'acheteur (`useUserCountry`).
-- Filtrage : `hide` et `block` → offre exclue du tableau renvoyé.
-- `showcase` → offre conservée + flag `is_showcase: true` + `showcase_vendor_id`.
+UI minimaliste (pas de WYSIWYG, pas de Tiptap — édition structurée JSON + textarea par paragraphe pour rester maintenable) :
 
-### Fichiers à patcher (front public uniquement)
+- **Header** : version active, date d'effet, bouton "Nouvelle version (draft)" (saisie semver `v1.1`, `v2.0`…).
+- **Sélecteur de version** (drafts + published + archived).
+- **Form** :
+  - Bloc "Coordonnées MediKong" (champs `MEDIKONG_DEFAULTS`).
+  - Liste d'articles drag-and-drop (@dnd-kit, déjà au projet) :
+    - Numéro, titre.
+    - Paragraphes : texte simple, liste à puces, ou sous-article (3 boutons "Ajouter…").
+    - Suppression article / paragraphe.
+  - Champs requis vendeur (toggle par champ).
+  - Textarea "Notes de version" (changelog interne).
+- **Actions sur draft** :
+  - "Enregistrer" (UPDATE jsonb).
+  - "Prévisualiser PDF" : appelle `generate-contract-pdf` en mode `dry_run=true` avec `template_id` du draft + données vendeur fictives → renvoie PDF base64, ouvert dans nouvel onglet. *(extension légère de l'edge function existante)*.
+  - "Publier" : confirm dialog (effet : archive l'ancienne, applique la nouvelle à toute signature future, vendeurs déjà signés restent sur leur version). Saisie `effective_at` (default = now).
+- **Aperçu HTML inline** rendu via le même renderer que `VendorContractPage`.
 
-1. **Fiche produit** `src/components/product/ProductOffersTable.tsx` (et `useProductOffers.ts`) :
-   - Remplacer la lecture directe par `useEffectiveOffers`.
-   - Si `is_showcase` sur la meilleure offre → badge "Exclusivité MediKong via <Vendeur anonymisé>" au-dessus du tableau.
-2. **Catalog cards** `src/components/catalog/CatalogProductCard.tsx` + `TrivagoOfferRow.tsx` :
-   - Idem : passer par le hook ; `hide`/`block` retirent l'offre du compteur de prix mini ; `showcase` ajoute un petit pictogramme `ShieldCheck` avec tooltip.
-3. **Vue Trivago `/catalogue`** `src/pages/catalogue/...` :
-   - Le hook `useCatalogProducts` lit déjà `products_with_country_stats_v`. **Ne pas refactor la MV** (hors scope). Le filtrage exclusivité s'applique uniquement sur le panneau "Offres" déplié (lazy). Les `country_*` agrégés peuvent rester légèrement sur-comptés pour cette V1 — à signaler dans la note de delivery, refacto MV dans un lot ultérieur.
-4. **Recherche / fiche `/marques/:slug`** : pas de changement (les listes de produits ne dépendent pas des offres individuelles ici).
+## 5. Routing + sidebar
 
-### Edge functions
+- `App.tsx` : `<Route path="contract-template" element={<AdminContractTemplate />} />` sous `/admin`.
+- Lien dans la sidebar admin section "Légal / Vendeurs" (à côté de `contract-audit`).
 
-- **Aucun changement** : les fonctions tournent en service_role et continuent à voir toutes les offres (volontaire — back-office, dispatch RFQ, etc. ne sont pas filtrés par exclusivité, c'est uniquement de la présentation acheteur).
+## 6. Audit & sécurité
 
----
+- `audit_logs` : INSERT à chaque bump / publish / preview avec `template_id`, `version`, `actor`.
+- Toutes les RPC d'écriture : gated par `is_admin(auth.uid())` + `log_security_event('contract_template.*', …)`.
 
-## Hors scope (à proposer dans un lot 4 séparé si tu valides)
+## Out of scope (à valider séparément si voulu)
 
-- Refacto de `products_with_country_stats_v` / `admin_price_cockpit_mv` pour intégrer les exclusivités dans les agrégats pays.
-- UI côté vendeur ("Mes exclusivités" lecture seule dans portail vendeur).
-- UI côté acheteur premium : page "Exclusivités du moment".
-- Notifications vendeur quand une exclusivité expire dans <7j.
+- Édition WYSIWYG riche (gras/italique/liens).
+- Diff visuel entre 2 versions.
+- Notification email automatique aux vendeurs déjà signés lors d'une publication (l'article 10 prévoit "30 jours avant entrée en vigueur" — process manuel pour l'instant).
+- Migration des vendeurs signés vers une nouvelle version (volontairement non-automatique : ils restent sur leur version signée jusqu'à re-signature).
 
----
+## Livrables (5 fichiers + 1 migration)
 
-## Validation
+1. Migration `contract_templates` + RPCs + seed v1.0.
+2. `supabase/functions/_shared/contract-template-loader.ts` (helper DB+fallback).
+3. Extension `generate-contract-pdf` : support `dry_run` + `template_id`.
+4. `src/hooks/useActiveContractTemplate.ts`.
+5. `src/pages/admin/AdminContractTemplate.tsx` + sous-composants éditeur.
+6. Route + entrée sidebar admin.
 
-- **Build** : `bunx tsc --noEmit` après chaque lot.
-- **Lot 2** : créer manuellement 1 règle de chaque mode/scope via la nouvelle page, vérifier l'overlap (créer un doublon → toast d'erreur clair).
-- **Lot 3** : avec les règles créées en Lot 2, charger une fiche produit affectée → vérifier masquage `hide`/`block` + badge `showcase`. Idem sur card catalogue.
-
----
-
-## Question avant d'envoyer
-
-Tu confirmes :
-- l'ordre **Lot 2 puis Lot 3** dans la même réponse (je livre les deux d'un coup), et
-- le **hors-scope assumé** (MV pays non refactorée → agrégats catalogue légèrement sur-comptés pour les produits sous exclusivité `hide`/`block`, seulement visible sur les chiffres "à partir de X €" du tri Trivago) ?
+Mémoire à mettre à jour : ajouter "Contract Template Editor" décrivant la nouvelle table + la chaîne de lecture.

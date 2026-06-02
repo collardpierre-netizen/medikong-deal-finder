@@ -1,6 +1,7 @@
 import { Bell } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useActionCenter, type ActionCenterScope } from "@/hooks/useActionCenter";
 import { cn } from "@/lib/utils";
 
@@ -14,7 +15,9 @@ interface Props {
 export function NotificationsBell({ scope, variant = "light", enabled = true }: Props) {
   const { data } = useActionCenter(scope, enabled);
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
 
   const total = data?.total ?? 0;
   const items = data?.items ?? [];
@@ -22,18 +25,36 @@ export function NotificationsBell({ scope, variant = "light", enabled = true }: 
 
   useEffect(() => {
     if (!open) return;
-    const onClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    const computePos = () => {
+      const r = btnRef.current?.getBoundingClientRect();
+      if (!r) return;
+      const width = 360;
+      const left = Math.max(8, Math.min(window.innerWidth - width - 8, r.right - width));
+      setPos({ top: r.bottom + 8, left });
     };
+    computePos();
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (panelRef.current?.contains(target)) return;
+      if (btnRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+    window.addEventListener("resize", computePos);
+    window.addEventListener("scroll", computePos, true);
     document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
+    return () => {
+      window.removeEventListener("resize", computePos);
+      window.removeEventListener("scroll", computePos, true);
+      document.removeEventListener("mousedown", onClick);
+    };
   }, [open]);
 
   const isDark = variant === "dark";
 
   return (
-    <div ref={ref} className="relative">
+    <>
       <button
+        ref={btnRef}
         type="button"
         aria-label="Notifications"
         onClick={() => setOpen((o) => !o)}
@@ -53,8 +74,12 @@ export function NotificationsBell({ scope, variant = "light", enabled = true }: 
         )}
       </button>
 
-      {open && (
-        <div className="absolute right-0 mt-2 w-[360px] bg-white rounded-lg shadow-xl border border-border z-[60] overflow-hidden">
+      {open && pos && createPortal(
+        <div
+          ref={panelRef}
+          style={{ position: "fixed", top: pos.top, left: pos.left, width: 360, zIndex: 1000 }}
+          className="bg-white rounded-lg shadow-xl border border-border overflow-hidden"
+        >
           <div className="px-4 py-3 border-b border-border flex items-center justify-between">
             <p className="text-sm font-semibold text-foreground">Actions à traiter</p>
             <span className="text-[11px] text-muted-foreground">{total} en attente</span>
@@ -111,8 +136,9 @@ export function NotificationsBell({ scope, variant = "light", enabled = true }: 
               ))
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }

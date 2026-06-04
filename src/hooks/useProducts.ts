@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getPreferredProductImageUrls, isValidProductImage } from "@/lib/image-utils";
 import { useCountry } from "@/contexts/CountryContext";
-import { getVendorPublicName } from "@/lib/vendor-display";
+import { getVendorPublicName, resolveVendorLabel, type VendorVisibilityRule } from "@/lib/vendor-display";
 import { applyHiddenCategoryFilter } from "@/lib/catalog-filters";
 import { useBuyerProfileId } from "@/hooks/useResolvedOfferPrice";
 import { resolvePriceCascade, type PriceCascadeSource } from "@/lib/price-cascade";

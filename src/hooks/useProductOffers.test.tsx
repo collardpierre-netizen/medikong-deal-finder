@@ -24,6 +24,7 @@ vi.mock("@/contexts/CountryContext", () => ({
 
 vi.mock("@/lib/vendor-display", () => ({
   resolveVendorVisibility: () => true,
+  resolveVendorLabel: (v: any) => v?.company_name || v?.name || `Fournisseur ${v?.display_code ?? "X"}`,
   getVendorPublicName: (v: any) => v?.name || "Vendor",
 }));
 

@@ -57,6 +57,32 @@ export function resolveVendorVisibility(
 }
 
 /**
+ * 🟢 Résolveur CMS-driven du libellé vendeur pour les surfaces publiques
+ * (cards offres, fiche produit, listes externes…).
+ *
+ * Contrairement à `getVendorPublicName` qui anonymise toujours, ce helper
+ * honore les `vendor_visibility_rules` gérées par l'admin dans le CMS :
+ * si une règle matchante (pays + profil acheteur) autorise `show_real_name`,
+ * on retourne le vrai nom (company_name || name). Sinon, on retombe sur le
+ * libellé anonymisé "Fournisseur <display_code>".
+ *
+ * Whitelisté par le linter d'anonymisation (cf. SAFE_CALLERS).
+ */
+export function resolveVendorLabel(
+  vendor: VendorDisplayInput & { id?: string },
+  rules: VendorVisibilityRule[],
+  context?: { country?: string; customerType?: string }
+): string {
+  const showReal = resolveVendorVisibility(vendor, rules, context);
+  if (showReal) {
+    const real = (vendor.company_name || vendor.name || "").trim();
+    if (real) return real;
+  }
+  const code = vendor.display_code || "XXXXXX";
+  return `Fournisseur ${code}`;
+}
+
+/**
  * 🟡 EXCEPTION CIBLÉE — page boutique vendeur (`/vendeur/:code`).
  *
  * Sur la page boutique publique, l'identité du vendeur est déjà trivialement

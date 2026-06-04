@@ -258,8 +258,8 @@ serve(async (req) => {
           status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const { data: claims } = await supabase.auth.getClaims(bearer);
-      userId = claims?.claims?.sub ?? null;
+      const { data: userData } = await supabase.auth.getUser(bearer);
+      userId = userData?.user?.id ?? null;
       if (!userId) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
           status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -261,11 +261,13 @@ export function useProductOffers(productId: string | undefined) {
       const legacyLevelPrice: number | null = null;
 
 
-      // Fetch vendors and discount tiers in parallel
-      // 🔒 Anonymisation : on ne consomme JAMAIS name / company_name / show_real_name côté buyer.
-      const [vendorsResult, tiersResult, priceTiersResult] = await Promise.all([
+      // Fetch vendors, discount tiers, price tiers AND visibility rules in parallel.
+      // 🟢 CMS-driven : `vendor_visibility_rules` (gérées dans /admin/vendeurs → onglet
+      // Visibilité) déterminent si le vrai nom peut s'afficher sur les cards offres,
+      // selon le pays + profil acheteur. Cf. resolveVendorLabel.
+      const [vendorsResult, tiersResult, priceTiersResult, rulesResult] = await Promise.all([
         vendorIds.length > 0
-          ? supabase.from("vendors_public" as any).select("id, display_name, slug, is_verified, rating, display_code, is_top_seller, type").in("id", vendorIds)
+          ? supabase.from("vendors_public" as any).select("id, display_name, slug, is_verified, rating, display_code, is_top_seller, type, name, company_name, show_real_name").in("id", vendorIds)
           : Promise.resolve({ data: [] }),
         offerIds.length > 0
           ? supabase.from("discount_tiers").select("*").in("offer_id", offerIds).order("mov_amount", { ascending: true })
@@ -273,9 +275,14 @@ export function useProductOffers(productId: string | undefined) {
         offerIds.length > 0
           ? supabase.from("offer_price_tiers").select("*").in("offer_id", offerIds).order("tier_index", { ascending: true })
           : Promise.resolve({ data: [] }),
+        vendorIds.length > 0
+          ? supabase.from("vendor_visibility_rules" as any).select("vendor_id, country_code, customer_type, show_real_name, priority").in("vendor_id", vendorIds)
+          : Promise.resolve({ data: [] }),
       ]);
 
       const vendorMap = new Map((vendorsResult.data || []).map((v: any) => [v.id, v]));
+      const visibilityRules: VendorVisibilityRule[] = (rulesResult.data || []) as any[];
+      const visibilityContext = { country, customerType: buyerProfileId || undefined };
       const tiersMap = new Map<string, any[]>();
       for (const t of (tiersResult.data || [])) {
         const arr = tiersMap.get(t.offer_id) || [];

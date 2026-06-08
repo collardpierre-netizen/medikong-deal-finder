@@ -219,9 +219,16 @@ export function useProductOffers(productId: string | undefined) {
   return useQuery({
     queryKey: ["offers", productId, country, buyerProfileId],
     queryFn: async () => {
+      // Colonnes explicites (jamais "*") : la table `offers` expose des champs
+      // internes sensibles (coûts d'achat, marge, commission, notes admin) qui
+      // ne doivent jamais être lisibles côté anon. Les grants colonnes côté DB
+      // refusent déjà ces colonnes au rôle anon ; on aligne le SELECT ici pour
+      // éviter une erreur de permission lors d'un browse anonyme.
       const { data: offers, error } = await supabase
         .from("offers")
-        .select("*")
+        .select(
+          "id, product_id, vendor_id, price_excl_vat, price_incl_vat, vat_rate, stock_quantity, stock_status, moq, mov, mov_amount, mov_currency, delivery_days, shipping_from_country, price_tiers, is_active, synced_at, updated_at, country_code, is_traceable, has_extended_delivery, min_delivery_days, max_delivery_days, estimated_delivery_days, is_qogita_backed, qogita_offer_qid, is_top_seller, pack_size_override, suggested_retail_price_cents, suggested_retail_price_source, carton_size_override, packaging_languages, vendor_note, campaign_id"
+        )
         .eq("product_id", productId!)
         .eq("is_active", true)
         .eq("country_code", country)

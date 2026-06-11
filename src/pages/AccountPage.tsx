@@ -137,6 +137,11 @@ export default function AccountPage() {
   const { data: products = [] } = useFeaturedProducts(20);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
   const { favorites, isFavorite, toggleFavorite } = useFavorites();
   const { lists, createList, deleteList } = useFavoriteLists();
   const { activities } = useRecentActivity();

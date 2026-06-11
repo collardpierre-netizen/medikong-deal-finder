@@ -2,7 +2,7 @@ import { Layout } from "@/components/layout/Layout";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getOrderStatusMeta, formatOrderDateTime } from "@/lib/order-status";
 import { ProductImage } from "@/components/shared/ProductCard";
-import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail, Phone, Clock, List, Plus, Trash2, Eye, ShoppingCart, Search, TrendingDown, BarChart3, Upload, FileSpreadsheet, Recycle, BellRing, Tag, Coins, ScanLine, Store, ArrowRight } from "lucide-react";
+import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail, Phone, Clock, List, Plus, Trash2, Eye, ShoppingCart, Search, TrendingDown, BarChart3, Upload, FileSpreadsheet, Recycle, BellRing, Tag, Coins, ScanLine, Store, ArrowRight, LogOut } from "lucide-react";
 import { BuyerImportModal } from "@/components/buyer/BuyerImportModal";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
@@ -135,7 +135,13 @@ function DeleteAccountButton() {
 
 export default function AccountPage() {
   const { data: products = [] } = useFeaturedProducts(20);
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
   const { favorites, isFavorite, toggleFavorite } = useFavorites();
   const { lists, createList, deleteList } = useFavoriteLists();
   const { activities } = useRecentActivity();
@@ -397,9 +403,18 @@ export default function AccountPage() {
                       transition={{ delay: 0.1 + i * 0.04 }}
                     >
                       {inner}
-                    </motion.button>
-                  );
-                })}
+                  </motion.button>
+                );
+              })}
+                <motion.button
+                  onClick={handleSignOut}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-md text-sm whitespace-nowrap transition-colors text-mk-sec hover:bg-mk-alt hover:text-destructive"
+                  whileHover={{ x: 4 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <LogOut size={16} />
+                  Déconnexion
+                </motion.button>
               </div>
             </motion.aside>
 

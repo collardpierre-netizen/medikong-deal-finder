@@ -403,9 +403,18 @@ export default function AccountPage() {
                       transition={{ delay: 0.1 + i * 0.04 }}
                     >
                       {inner}
-                    </motion.button>
-                  );
-                })}
+                  </motion.button>
+                );
+              })}
+                <motion.button
+                  onClick={handleSignOut}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-md text-sm whitespace-nowrap transition-colors text-mk-sec hover:bg-mk-alt hover:text-destructive"
+                  whileHover={{ x: 4 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <LogOut size={16} />
+                  Déconnexion
+                </motion.button>
               </div>
             </motion.aside>
 

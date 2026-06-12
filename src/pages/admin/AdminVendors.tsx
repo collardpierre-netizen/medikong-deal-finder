@@ -5,8 +5,9 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Copy, ExternalLink, Loader2, RefreshCw, Sparkles } from "lucide-react";
+import { Copy, ExternalLink, Loader2, RefreshCw, Sparkles, SlidersHorizontal } from "lucide-react";
 import { formatUpdatedAt } from "@/lib/format-date";
+import AdminVendorMovMoqModal from "@/components/admin/AdminVendorMovMoqModal";
 
 type StripeStatus = "none" | "pending" | "active";
 
@@ -57,6 +58,7 @@ const AdminVendors = () => {
   const { isAdmin, loading: authLoading } = useAdminAuth();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [vmiBusyId, setVmiBusyId] = useState<string | null>(null);
+  const [movMoqVendor, setMovMoqVendor] = useState<{ id: string; name: string | null } | null>(null);
 
   const { data: vendors = [], isLoading, refetch } = useQuery({
     queryKey: ["admin-vendors-stripe"],
@@ -240,6 +242,13 @@ const AdminVendors = () => {
                   <TableCell className="text-right">
                     <div className="inline-flex items-center gap-2">
                       {busy && <Loader2 size={14} className="animate-spin text-muted-foreground" />}
+                      <button
+                        onClick={() => setMovMoqVendor({ id: v.id, name: v.name })}
+                        className="inline-flex items-center gap-1 text-[12px] px-2.5 py-1.5 rounded-md border border-[#E2E8F0] bg-white hover:bg-[#F1F5F9]"
+                        title="Éditer MOV / MOQ"
+                      >
+                        <SlidersHorizontal size={12} /> MOV/MOQ
+                      </button>
                       {st === "none" && (
                         <button
                           disabled={busy}
@@ -297,6 +306,13 @@ const AdminVendors = () => {
           </TableBody>
         </Table>
       </div>
+
+      <AdminVendorMovMoqModal
+        vendorId={movMoqVendor?.id ?? null}
+        vendorName={movMoqVendor?.name ?? null}
+        open={!!movMoqVendor}
+        onOpenChange={(v) => { if (!v) setMovMoqVendor(null); }}
+      />
     </div>
   );
 };

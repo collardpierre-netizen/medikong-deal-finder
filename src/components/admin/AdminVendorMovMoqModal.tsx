@@ -41,10 +41,7 @@ function OffersMovMoqTable({ vendorId }: { vendorId: string }) {
 
   const saveOffer = useMutation({
     mutationFn: async ({ id, moq, mov }: { id: string; moq: number | null; mov: number | null }) => {
-      const patch: Record<string, unknown> = {};
-      if (moq !== undefined) patch.moq = moq;
-      if (mov !== undefined) patch.mov = mov;
-      const { error } = await supabase.from("offers").update(patch).eq("id", id);
+      const { error } = await supabase.from("offers").update({ moq, mov } as any).eq("id", id);
       if (error) throw error;
     },
     onSuccess: (_d, vars) => {

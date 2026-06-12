@@ -419,7 +419,7 @@ function OfferRow({
         <div className="flex flex-col gap-1.5">
           {(() => {
             if (vendorTrust) {
-              return <VendorTrustHeader trust={vendorTrust} variant="full" />;
+              return <VendorTrustHeader trust={vendorTrust} variant="full" realNameOverride={offer.sellerName ?? null} />;
             }
             return (
               <span className="font-bold text-sm text-foreground inline-flex items-center gap-1.5">

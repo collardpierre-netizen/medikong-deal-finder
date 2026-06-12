@@ -65,6 +65,12 @@ interface Props {
   trust: VendorTrust;
   /** "compact" : bandeau réduit (1 ligne nom + chips) ; "full" : avec en-tête + tooltip identifiant */
   variant?: "compact" | "full";
+  /**
+   * Override CMS-driven du nom réel résolu via `vendor_visibility_rules`
+   * (cf. `resolveVendorLabel`). Si fourni et ≠ "Fournisseur <code>",
+   * remplace l'affichage anonyme issu de `public_vendor_trust_signals`.
+   */
+  realNameOverride?: string | null;
   className?: string;
 }
 
@@ -76,9 +82,13 @@ interface Props {
  *  - On ne montre jamais de signal négatif.
  *  - Pas de signaux bidons : un nouveau vendeur sans historique n'affiche que KYC + origine + ancienneté.
  */
-export function VendorTrustHeader({ trust, variant = "full", className = "" }: Props) {
+export function VendorTrustHeader({ trust, variant = "full", realNameOverride = null, className = "" }: Props) {
   const isAnonymous = trust.displayMode === "anonymous";
-  const realName = !isAnonymous ? trust.companyName ?? null : null;
+  const overrideIsReal =
+    !!realNameOverride && realNameOverride.trim().length > 0 && !/^Fournisseur\s/i.test(realNameOverride.trim());
+  const realName = overrideIsReal
+    ? realNameOverride!.trim()
+    : (!isAnonymous ? trust.companyName ?? null : null);
   const displayName = realName ?? `Fournisseur ${trust.publicIdentifier}`;
 
   const chips: React.ReactNode[] = [];

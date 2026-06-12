@@ -242,6 +242,13 @@ const AdminVendors = () => {
                   <TableCell className="text-right">
                     <div className="inline-flex items-center gap-2">
                       {busy && <Loader2 size={14} className="animate-spin text-muted-foreground" />}
+                      <button
+                        onClick={() => setMovMoqVendor({ id: v.id, name: v.name })}
+                        className="inline-flex items-center gap-1 text-[12px] px-2.5 py-1.5 rounded-md border border-[#E2E8F0] bg-white hover:bg-[#F1F5F9]"
+                        title="Éditer MOV / MOQ"
+                      >
+                        <SlidersHorizontal size={12} /> MOV/MOQ
+                      </button>
                       {st === "none" && (
                         <button
                           disabled={busy}

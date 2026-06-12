@@ -58,6 +58,7 @@ const AdminVendors = () => {
   const { isAdmin, loading: authLoading } = useAdminAuth();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [vmiBusyId, setVmiBusyId] = useState<string | null>(null);
+  const [movMoqVendor, setMovMoqVendor] = useState<{ id: string; name: string | null } | null>(null);
 
   const { data: vendors = [], isLoading, refetch } = useQuery({
     queryKey: ["admin-vendors-stripe"],

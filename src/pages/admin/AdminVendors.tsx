@@ -306,6 +306,13 @@ const AdminVendors = () => {
           </TableBody>
         </Table>
       </div>
+
+      <AdminVendorMovMoqModal
+        vendorId={movMoqVendor?.id ?? null}
+        vendorName={movMoqVendor?.name ?? null}
+        open={!!movMoqVendor}
+        onOpenChange={(v) => { if (!v) setMovMoqVendor(null); }}
+      />
     </div>
   );
 };

@@ -225,6 +225,7 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
         verification_email: form.email.trim(),
         expires_at: data.expires_at ?? null,
         email_error: data.email_error ?? null,
+        mode: "attach",
       });
       dismissError();
       queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });

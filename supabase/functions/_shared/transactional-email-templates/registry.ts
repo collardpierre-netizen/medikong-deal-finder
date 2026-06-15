@@ -32,6 +32,7 @@ import { template as orderLineRefundedAdmin } from './order-line-refunded-admin.
 import { template as auditConfirmation } from './audit-confirmation.tsx'
 import { template as auditNewLead } from './audit-new-lead.tsx'
 import { template as auditReportReady } from './audit-report-ready.tsx'
+import { template as accountInvitation } from './account-invitation.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'vendor-invoices': vendorInvoices,

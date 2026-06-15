@@ -10,6 +10,7 @@ import {
   DollarSign, Package, Tag, Factory, Activity, Eye, Plus, Trash2,
   CheckCircle2, XCircle, Clock, Globe, Phone, FileText, Loader2,
   Pencil, Power, AlertTriangle, Save, ExternalLink, Link2, Send, Copy, Users,
+  Info,
 } from "lucide-react";
 import { AccountMembersPanel } from "@/components/account/AccountMembersPanel";
 import { useImpersonation } from "@/contexts/impersonation";

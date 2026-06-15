@@ -30,6 +30,13 @@ interface LogRow {
   created_at: string;
 }
 
+interface DeliveryRow {
+  message_id: string | null;
+  status: string | null;
+  error_message: string | null;
+  created_at: string;
+}
+
 function modeBadge(mode: string) {
   const c = getVendorOnboardingModeBadgeColors(mode as VendorOnboardingMode);
   return (

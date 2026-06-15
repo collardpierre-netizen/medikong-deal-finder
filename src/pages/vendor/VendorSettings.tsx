@@ -203,6 +203,18 @@ export default function VendorSettings() {
         <VendorTeamTab vendor={vendor} />
       )}
 
+      {activeTab === "users" && vendor && (
+        <VCard>
+          <div className="mb-4">
+            <h2 className="text-[15px] font-bold text-[#1D2530]">Utilisateurs & accès</h2>
+            <p className="text-[12px] text-[#8B95A5] mt-0.5">
+              Invite des collègues à gérer ce compte vendeur. Les admins peuvent inviter d'autres membres, les membres peuvent gérer les offres et commandes.
+            </p>
+          </div>
+          <AccountMembersPanelLazy vendorId={vendor.id} ownerUserId={vendor.auth_user_id ?? null} />
+        </VCard>
+      )}
+
       {activeTab === "addresses" && vendorId && (
         <AddressesTab vendorId={vendorId} shippingMode={shippingMode} vendor={vendor} />
       )}

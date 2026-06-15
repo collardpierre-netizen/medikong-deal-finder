@@ -12,12 +12,12 @@ interface OverrideRow {
   default_moq: number | null;
   notes: string | null;
   is_active: boolean;
-  customer?: { id: string; name: string | null; email: string | null; country_code: string | null; customer_type: string | null } | null;
+  customer?: { id: string; company_name: string | null; email: string | null; country_code: string | null; customer_type: string | null } | null;
 }
 
 interface CustomerLite {
   id: string;
-  name: string | null;
+  company_name: string | null;
   email: string | null;
   country_code: string | null;
   customer_type: string | null;
@@ -35,7 +35,7 @@ export default function VendorBuyerOverridesTable({ vendorId }: { vendorId: stri
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vendor_buyer_overrides" as any)
-        .select("*, customer:buyer_account_id(id, name, email, country_code, customer_type)")
+        .select("*, customer:buyer_account_id(id, company_name, email, country_code, customer_type)")
         .eq("vendor_id", vendorId)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -48,9 +48,9 @@ export default function VendorBuyerOverridesTable({ vendorId }: { vendorId: stri
     queryKey: ["override-customer-picker", pickerSearch],
     queryFn: async () => {
       const q = pickerSearch.trim();
-      let query = supabase.from("customers").select("id, name, email, country_code, customer_type").limit(20);
+      let query = supabase.from("customers").select("id, company_name, email, country_code, customer_type").limit(20);
       if (q) {
-        query = query.or(`name.ilike.%${q}%,email.ilike.%${q}%`);
+        query = query.or(`company_name.ilike.%${q}%,email.ilike.%${q}%`);
       } else {
         query = query.order("created_at", { ascending: false });
       }
@@ -172,8 +172,8 @@ export default function VendorBuyerOverridesTable({ vendorId }: { vendorId: stri
               return (
                 <tr key={o.id} className="border-t" style={{ borderColor: "#E2E8F0" }}>
                   <td className="px-3 py-2">
-                    <div className="font-medium text-[#1D2530] truncate max-w-[220px]" title={o.customer?.name || ""}>
-                      {o.customer?.name || "—"}
+                    <div className="font-medium text-[#1D2530] truncate max-w-[220px]" title={o.customer?.company_name || ""}>
+                      {o.customer?.company_name || "—"}
                     </div>
                     <div className="text-[10px] text-[#8B95A5]">
                       {o.customer?.email || ""}{o.customer?.country_code ? ` · ${o.customer.country_code}` : ""}
@@ -309,7 +309,7 @@ export default function VendorBuyerOverridesTable({ vendorId }: { vendorId: stri
                     className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed border"
                     style={{ borderColor: "#E2E8F0" }}
                   >
-                    <div className="font-medium text-[12px] text-[#1D2530]">{c.name || "(sans nom)"}</div>
+                    <div className="font-medium text-[12px] text-[#1D2530]">{c.company_name || "(sans nom)"}</div>
                     <div className="text-[10px] text-[#8B95A5]">
                       {c.email}{c.country_code ? ` · ${c.country_code}` : ""}{c.customer_type ? ` · ${c.customer_type}` : ""}
                       {already && " · déjà ciblé"}

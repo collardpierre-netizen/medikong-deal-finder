@@ -132,6 +132,7 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
           verification_email: form.email.trim(),
           expires_at: data.expires_at ?? null,
           email_error: data.email_error ?? null,
+          mode: "create",
         });
         if (data.verification_sent) {
           toast.success(`Vendeur créé. Email de vérification envoyé à ${form.email.trim()} (valide 24 h). L'accès s'activera après confirmation.`, { duration: 12000 });

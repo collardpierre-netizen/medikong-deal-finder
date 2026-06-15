@@ -182,6 +182,7 @@ export default function VendorPublicPage() {
     brands: initialBrand ? [initialBrand] : [],
   });
   const { currentCountry } = useCountry();
+  const buyerProfileId = useBuyerProfileId();
   const { items: cartItems, addToCart, openDrawer } = useCart();
   const [quickViewProduct, setQuickViewProduct] = useState<any | null>(null);
   const [delegateDialogOpen, setDelegateDialogOpen] = useState(false);
@@ -469,7 +470,7 @@ export default function VendorPublicPage() {
   const showReal = vendor ? resolveVendorVisibility(
     { ...vendor, id: vendor.id },
     visRules,
-    { country: String(currentCountry) }
+    { country: currentCountry?.code, customerType: buyerProfileId || undefined }
   ) : false;
   const vendorDisplayName = vendor ? getVendorBoutiqueDisplayName(vendor, showReal) : "Fournisseur";
 

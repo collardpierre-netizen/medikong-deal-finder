@@ -147,14 +147,55 @@ Deno.serve(async (req) => {
         return jsonErr(`Erreur rattachement: ${updateError.message}`, "attach_failed");
       }
 
+      // Best-effort onboarding email pour le mode ATTACH
+      let recoveryUrl: string | null = null;
+      // Résoudre la langue préférée du vendeur (fallback FR)
+      const { data: vendorLang } = await supabaseAdmin
+        .from("vendors")
+        .select("preferred_language, country_code, company_name, name")
+        .eq("id", vendor_id)
+        .maybeSingle();
+      const attachLocale = (vendorLang?.preferred_language as string)
+        || (vendorLang?.country_code === "NL" ? "nl"
+          : (["FR","BE","LU"].includes(String(vendorLang?.country_code || "")) ? "fr" : "en"));
+      try {
+        const { data: linkData } = await supabaseAdmin.auth.admin.generateLink({
+          type: "recovery",
+          email: normalizedEmail,
+          options: { redirectTo: "https://www.medikong.pro/vendor/login" },
+        });
+        recoveryUrl = linkData?.properties?.action_link ?? null;
+      } catch (e) {
+        console.warn("[create-vendor-account/ATTACH] generateLink failed:", e);
+      }
+      try {
+        await supabaseAdmin.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "vendor-account-created",
+            recipientEmail: normalizedEmail,
+            idempotencyKey: `vendor-onboarding-attach-${vendor_id}`,
+            templateData: {
+              companyName: vendorLang?.company_name || vendorLang?.name || existingVendor.company_name || existingVendor.name,
+              loginEmail: normalizedEmail,
+              recoveryUrl,
+              tempPassword: tempPassword && !recoveryUrl ? tempPassword : null,
+              locale: attachLocale,
+            },
+          },
+        });
+      } catch (e) {
+        console.warn("[create-vendor-account/ATTACH] onboarding email failed:", e);
+      }
+
       return jsonOk({
         vendor_id,
         user_id: userId,
         temp_password: tempPassword,
+        recovery_url: recoveryUrl,
         reused_existing_user: !tempPassword,
         message: tempPassword
-          ? "Accès créé. Mot de passe temporaire généré."
-          : "Compte existant rattaché au vendeur. Le vendeur conserve son mot de passe actuel.",
+          ? "Accès créé. Mot de passe temporaire généré + email envoyé."
+          : "Compte existant rattaché au vendeur. Email de notification envoyé.",
       });
     }
 

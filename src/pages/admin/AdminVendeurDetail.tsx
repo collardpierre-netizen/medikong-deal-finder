@@ -22,6 +22,10 @@ import { EntityDelegatesSection } from "@/components/admin/EntityDelegatesSectio
 import { ContractHistoryTable } from "@/components/vendor/ContractHistoryTable";
 import { VendorMarketIntelAdminCard } from "@/components/admin/VendorMarketIntelAdminCard";
 import { useVendorActiveMarginRule } from "@/hooks/useVendorActiveMarginRule";
+import {
+  VENDOR_ONBOARDING_MODE_META,
+  getVendorOnboardingModeLabel,
+} from "@/lib/vendor-onboarding-mode-labels";
 
 type VendorValidationStatus = "pending_review" | "under_review" | "accepted" | "approved" | "rejected";
 

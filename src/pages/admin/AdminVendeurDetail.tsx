@@ -237,7 +237,7 @@ const AdminVendeurDetail = () => {
             <button
               onClick={async () => {
                 if (!vendor.email) { toast.error("Renseignez d'abord un email sur la fiche vendeur."); return; }
-                if (!confirm(`Créer un accès portail pour ${vendor.email} ?\n\nUn compte sera créé (ou rattaché si l'email existe déjà). Vous obtiendrez un mot de passe temporaire à transmettre au vendeur.`)) return;
+                if (!confirm(`Envoyer un email de vérification à ${vendor.email} pour créer un accès portail ?\n\nL'accès ne sera activé qu'après que le destinataire ait cliqué le lien dans l'email (valide 24 h).`)) return;
                 try {
                   const { data, error } = await supabase.functions.invoke("attach-user-to-vendor", {
                     body: {
@@ -247,18 +247,17 @@ const AdminVendeurDetail = () => {
                   });
                   if (error) throw error;
                   if (data?.ok === false || data?.error) throw new Error(data?.error || "Erreur inconnue");
-                  if (data?.temp_password) {
-                    toast.success(`Accès créé ! Mot de passe temporaire : ${data.temp_password}`, { duration: 30000 });
-                  } else if (data?.reused_existing_user) {
-                    toast.success("Compte existant rattaché. Le vendeur peut se connecter avec son mot de passe actuel.");
+                  if (data?.verification_sent) {
+                    toast.success(`Email de vérification envoyé à ${vendor.email} (valide 24 h). L'accès portail s'activera après confirmation.`, { duration: 12000 });
                   } else {
-                    toast.success("Accès créé avec succès.");
+                    toast.error(`Vérification créée mais l'envoi d'email a échoué (${data?.email_error ?? "erreur inconnue"}). Renvoyez le lien depuis cette fiche.`, { duration: 12000 });
                   }
                   queryClient.invalidateQueries({ queryKey: ["vendor-detail", id] });
                 } catch (e: any) {
                   toast.error(e.message || "Erreur lors de la création de l'accès");
                 }
               }}
+
               className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold transition-opacity hover:opacity-90"
               style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA", border: "1px solid #DBEAFE" }}
             >

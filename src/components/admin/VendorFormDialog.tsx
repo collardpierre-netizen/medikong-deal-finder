@@ -207,10 +207,19 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
         vendor_id: data.vendor_id,
         temp_password: data.temp_password ?? null,
         reused: !!data.reused_existing_user,
+        verification_sent: !!data.verification_sent,
+        verification_email: form.email.trim(),
+        expires_at: data.expires_at ?? null,
+        email_error: data.email_error ?? null,
       });
       dismissError();
       queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });
-      toast.success("Accès rattaché au vendeur existant.");
+      if (data.verification_sent) {
+        toast.success(`Email de vérification envoyé à ${form.email.trim()} (valide 24 h). L'accès s'activera après confirmation.`, { duration: 12000 });
+      } else {
+        toast.error(`Vérification créée mais l'envoi d'email a échoué (${data.email_error ?? "erreur inconnue"}).`, { duration: 12000 });
+      }
+
     } catch (e: any) {
       toast.error(e.message || "Erreur lors du rattachement");
     } finally {

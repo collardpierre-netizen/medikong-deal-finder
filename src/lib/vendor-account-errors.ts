@@ -14,8 +14,10 @@ export type VendorAccountErrorCode =
   | "unauthorized"
   | "forbidden"
   | "attach_failed"
+  | "verification_create_failed"
   | "internal_error"
   | string;
+
 
 export type VendorAccountErrorPayload = {
   ok?: false;

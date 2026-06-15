@@ -65,6 +65,23 @@ export function useVendorMov(vendorIds: string[]) {
     staleTime: 2 * 60 * 1000,
   });
 
+  // Per-buyer overrides (vendor × buyer_account) — highest priority
+  const { data: buyerOverrides } = useQuery({
+    queryKey: ["vendor-buyer-overrides-cart", realVendorIds, customer?.id],
+    queryFn: async () => {
+      if (!customer?.id || realVendorIds.length === 0) return [];
+      const { data } = await supabase
+        .from("vendor_buyer_overrides" as any)
+        .select("vendor_id, default_mov")
+        .eq("buyer_account_id", customer.id)
+        .eq("is_active", true)
+        .in("vendor_id", realVendorIds);
+      return (data || []) as any[];
+    },
+    enabled: !!customer?.id && realVendorIds.length > 0,
+    staleTime: 2 * 60 * 1000,
+  });
+
   const getMovForVendor = (vendorId: string): number => {
     const vendorInfo = vendorTypes?.find(v => v.id === vendorId);
 

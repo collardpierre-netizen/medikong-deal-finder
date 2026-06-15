@@ -1,59 +1,66 @@
-# Plan — Multi-utilisateurs vendeur + langue portail vendeur
+## Périmètre exact (option C+2)
 
-## Lot 1 — Admin : onglet "Utilisateurs & accès" dans fiche vendeur
-**Fichier** : `src/pages/admin/AdminVendorDetail.tsx` (ou équivalent existant)
-- Nouvel onglet **"Utilisateurs & accès"** affichant :
-  - Le propriétaire (`vendors.auth_user_id`) avec badge "Propriétaire"
-  - Liste des membres via `account_memberships` (scope=`vendor`, account_id=vendor.id) : email, rôle (`admin`/`member`/`viewer`), date d'ajout, dernière connexion
-  - Liste des invitations en attente via `account_invitations` (statut=`pending`)
-- Actions admin (via RPCs existants du système multi-user) :
-  - **Inviter** (email + rôle) → crée invitation + envoie email
-  - **Changer le rôle** d'un membre
-  - **Révoquer** un membre ou une invitation
-  - Garde-fou : impossible de retirer le dernier admin
-- Composant réutilisable `AccountMembersPanel` (props : `accountId`, `scope`)
+Tout `/vendor/*` + `src/components/vendor/**` + emails vendeur (`vendor-*.tsx`). FR câblé via `t(...)`, NL/DE/EN générés automatiquement par `translate-and-cache`.
 
-## Lot 2 — Portail vendeur : page "Équipe & accès"
-**Fichier** : `src/pages/vendor/VendorSettingsTeamPage.tsx` (nouveau) + entrée dans la sidebar vendeur "Paramètres → Équipe & accès"
-- Même composant `AccountMembersPanel` réutilisé, scopé sur `current_user_vendor_account_ids`
-- Restrictions : seuls les membres `admin` du compte vendeur peuvent inviter/révoquer/changer rôles. Les `member`/`viewer` voient la liste en lecture seule.
-- Bandeau d'explication des rôles (admin = tout, member = gestion offres/commandes, viewer = lecture seule)
+- **35 pages** sous `src/pages/vendor/`
+- **~35 composants top-level** sous `src/components/vendor/` + sous-dossiers `catalog/`, `contract/`, `dashboard/`, `ui/`
+- **12 templates email** `vendor-*.tsx` (FR par défaut, fallback FR si recipient inconnu)
 
-## Lot 3 — Email d'invitation + page d'acceptation
-- **Template email** : `supabase/functions/_shared/email-templates/account-invitation.tsx` (React Email, branding MediKong) — sujet "Vous êtes invité·e à rejoindre <vendor_name> sur MediKong"
-- **Edge function** : `send-account-invitation` (déclenchée par la RPC d'invitation, idempotency key = token)
-- **Page publique** : `/account/invitation/:token`
-  - Affiche le compte cible, le rôle proposé, qui invite
-  - Si non connecté → propose login/signup avec email pré-rempli
-  - Si connecté avec un email différent → message explicite (l'invitation est liée à un email précis)
-  - Bouton "Accepter" → appelle RPC `accept_account_invitation(token)` → redirige vers `/vendor` (ou `/compte` si scope buyer)
-- Route ajoutée dans `App.tsx` (publique, noindex)
+## Méthode (2) : FR câblé + traduction auto
 
-## Lot 4 — Langue sur le portail vendeur
-- Monter le composant `<LanguageSelector />` (existant dans `src/components/LanguageSelector.tsx`) dans la **topbar du portail vendeur** (`src/components/vendor/VendorTopBar.tsx` ou équivalent)
-- Vérifier que le contexte i18n (`src/i18n/index.ts`) est bien provider-wrappé au-dessus des routes `/vendor/*` (sinon ajouter)
-- Persistance de la langue choisie : déjà gérée par `LanguageSelector` (localStorage + `profiles.preferences.locale` via `set_user_preference` si présent)
+Pour chaque fichier :
+1. Repérer toutes les chaînes FR hardcodées (texte JSX, `placeholder`, `aria-label`, `title`, `toast.success/error`, `confirm`, libellés `<Button>`).
+2. Remplacer par `t('vendor.<page>.<key>')` (namespace stable par fichier).
+3. Ajouter les clés à `src/i18n/locales/fr.json` sous `vendor.*`.
+4. **Pas** de pluralisation complexe ni d'ICU : on garde `{{var}}` simple (interpolation i18next native).
 
-## Détails techniques
+Pour les emails : ajouter une prop `locale` (fallback `'fr'`) + table `COPY[locale]` comme le template `vendor-account-created` créé hier. Le `locale` se déduit de `vendors.preferred_language` côté trigger (best-effort, fallback `fr`).
 
-### RPCs supposés présents (mémoire `features/multi-user-accounts`)
-- `invite_account_member(account_id, scope, email, role)` → renvoie token + crée ligne `account_invitations`
-- `accept_account_invitation(token)` → crée ligne `account_memberships`, marque invitation `accepted`
-- `revoke_account_member(membership_id)` / `revoke_account_invitation(invitation_id)`
-- `update_account_member_role(membership_id, new_role)` (garde-fou dernier admin)
-- Helpers `current_user_vendor_account_ids()` / `is_account_admin(account_id, scope)`
+## Lots indépendants (chaque lot est mergeable et testable seul)
 
-**À vérifier en lecture DB avant Lot 1** : noms exacts des RPCs et colonnes des tables `account_memberships` / `account_invitations`. Si manquants, je m'arrête et te le signale (zéro migration sans validation).
+### Lot 0 — Infrastructure (1 PR)
+- Ajouter le namespace `vendor` dans `src/i18n/index.ts` si pas déjà présent.
+- Créer le script `scripts/translate-vendor-i18n.ts` qui :
+  - Lit `src/i18n/locales/fr.json` → branche `vendor.*`
+  - Pour chaque langue cible (nl, de, en) : compare avec le JSON existant, n'envoie à `translate-and-cache` que les clés manquantes ou modifiées (hash sha256 par valeur stocké à part dans `scripts/.i18n-vendor-hashes.json`).
+  - Écrit le résultat dans `src/i18n/locales/{nl,de,en}.json` sous `vendor.*`.
+  - Idempotent + relançable.
 
-### Hors scope (à signaler, je ne touche pas)
-- Fusion historique Pacheco / backfill des anciens vendeurs multi-user
-- Extension RLS sur d'autres tables (offers, orders…) — la mémoire indique RLS additif uniquement sur `profiles` + `vendors` actuellement
-- Traductions effectives des chaînes du portail vendeur (le `<LanguageSelector />` change la locale mais les `t('…')` doivent déjà exister côté i18n ; je ne traduis pas tous les écrans vendeur)
+### Lot 1 — Layout & navigation vendeur (forte visibilité, peu de strings)
+`VendorLayout.tsx`, `VendorSidebar.tsx`, `VendorTopBar.tsx`, `VendorAdminStatusBadge.tsx`, `ContractSignatureBanner.tsx`, `NotificationsBell.tsx`, `VendorMarketIntelGate.tsx`.
 
-## Ordre de livraison
-1. Lecture DB de vérification (RPCs + colonnes)
-2. Lot 3 (template email + edge function + page publique d'acceptation) — pré-requis pour que l'invitation fonctionne de bout en bout
-3. Lot 1 (admin) + Lot 2 (portail vendeur) — partagent le composant `AccountMembersPanel`
-4. Lot 4 (langue portail vendeur) — indépendant, en parallèle si possible
+### Lot 2 — Pages "core opérationnelles"
+`VendorDashboard.tsx`, `VendorOffers.tsx` (+ `EditOfferPopup.tsx`, `AdjustPriceModal.tsx`, `ProfilePricesEditor.tsx`, `ResolvedProfilePricesPreview.tsx`, `OfferSuggestedRetailPriceEditor.tsx`, `OfferCommissionOverrideDialog.tsx`, `VendorCommissionOverrideDialog.tsx`, `MarginBreakdownDetails.tsx`, `MarginInsightCard.tsx`), `VendorOrders.tsx` (+ `OrderDetailPopup.tsx`), `VendorCatalog.tsx` (+ sous-dossier `catalog/`), `VendorNotifications.tsx`.
 
-Confirme-moi pour que je lance.
+### Lot 3 — RFQ & opportunités vendeur
+`VendorRfqInbox.tsx`, `VendorTenders.tsx`, `VendorOpportunities.tsx`, `VendorRfqResponseForm.tsx`, `VendorProductSubmissionPage.tsx`.
+
+### Lot 4 — Veille marché & alertes
+`VendorMarketIntel.tsx`, `VendorMarketIntelHub.tsx`, `VendorPositioning.tsx`, `VendorAlerts.tsx`, `VendorCompetitorAlerts.tsx`, `VendorPriceAlerts.tsx`, `VendorPriceAlertRulesPage.tsx`, `AlertHistoryChart.tsx`, `VendorTopBrands.tsx`.
+
+### Lot 5 — Réglages & onboarding vendeur
+`VendorSettings.tsx`, `VendorOnboardingWizard.tsx`, `VendorCommercialSettings.tsx`, `VendorCommissionTab.tsx`, `VendorBrandingTab.tsx`, `VendorShippingSettings.tsx`, `VendorProfileDefaults.tsx`, `VendorTeamTab.tsx`, `VendorDelegateCompact.tsx`, `VendorDelegateDetailDialog.tsx`, `VendorDelegatesPublic.tsx`, `VendorKycStepper.tsx`.
+
+### Lot 6 — Logistique, finance, contrats, divers
+`VendorLogistics.tsx`, `VendorShipments.tsx`, `VendorShipmentDetail.tsx`, `VendorNewShipment.tsx`, `VendorBilling.tsx`, `VendorFinance.tsx`, `VendorInvoices`-related (`InvoicePreview.tsx`), `VendorContractPage.tsx`, `VendorContractChangelogPage.tsx` (+ sous-dossier `contract/`, `ContractHistoryTable.tsx`), `VendorDocuments.tsx`, `VendorAcademy.tsx`, `VendorMessages.tsx`, `VendorHealth.tsx`, `VendorAnalytics.tsx`, `VendorLoginPage.tsx`, `VendorStripeOnboardingPage.tsx`, `VendorStripeRefreshPage.tsx`, `VendorStripeSuccessPage.tsx`, `VendorProductQuickView.tsx`, `PrixRefDetailPopup.tsx`, `CategoryTreeSelector.tsx`, sous-dossier `dashboard/`, sous-dossier `ui/`.
+
+### Lot 7 — Emails vendeur (12 templates)
+Convertir `vendor-application`, `vendor-approved`, `vendor-rejected`, `vendor-contract-*` (4), `vendor-new-order`, `vendor-invoices`, `vendor-price-challenge`, `rfq-vendor-invitation`, `admin-vendor-market-intel-notification` au pattern `COPY[locale]` (fr/nl/de/en) avec prop `locale`. Côté trigger : lire `vendors.preferred_language` quand connu, fallback `'fr'`. Sujet → fonction `(data) => COPY[locale].subject`.
+
+### Lot 8 — Run final du script de traduction
+Une fois TOUS les lots 1-7 mergés et `fr.json` complet, lancer `bun run scripts/translate-vendor-i18n.ts` qui remplit `nl.json`, `de.json`, `en.json`.
+
+## Garde-fous
+
+- Chaque lot livré seul ne casse rien : si `t('vendor.x.y')` n'existe pas encore en NL, i18next renvoie la valeur FR par défaut (fallback déjà configuré).
+- Aucun changement de logique métier, aucun changement de schéma DB, aucune migration.
+- Pas de touche aux pages acheteur, admin, restock, légales, marketing — strictement vendeur + emails vendeur.
+
+## Question avant de démarrer
+
+Vu le volume (~92 fichiers), je propose de **livrer lot par lot** dans des messages séparés et que tu valides "OK lot suivant" entre chaque, pour éviter qu'un seul mega-changeset soit ingérable à relire.
+
+Dis-moi :
+- **(a)** OK, fais-le lot par lot avec validation entre chaque (recommandé), OU
+- **(b)** Enchaîne tout en autonomie, je relirai à la fin, OU
+- **(c)** Réduis le périmètre (ex : juste lots 1+2+5+7, le reste plus tard).

@@ -17,6 +17,10 @@ import {
   type VendorAccountErrorPayload,
 } from "@/lib/vendor-account-errors";
 import { VendorAccountErrorAlert } from "@/components/admin/VendorAccountErrorAlert";
+import {
+  getVendorOnboardingModeBadgeColors,
+  getVendorOnboardingModeLabel,
+} from "@/lib/vendor-onboarding-mode-labels";
 
 function slugify(text: string): string {
   return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -301,20 +305,19 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
                 ? "Email de vérification envoyé"
                 : result.reused ? "Accès rattaché !" : "Vendeur créé !"}
             </DialogTitle>
-            {result.mode && (
-              <div className="mt-1">
-                <span
-                  className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide"
-                  style={
-                    result.mode === "create"
-                      ? { backgroundColor: "#EFF6FF", color: "#1B5BDA", border: "1px solid #DBEAFE" }
-                      : { backgroundColor: "#F0FDF4", color: "#059669", border: "1px solid #BBF7D0" }
-                  }
-                >
-                  Mode : {result.mode === "create" ? "Création" : "Rattachement"}
-                </span>
-              </div>
-            )}
+            {result.mode && (() => {
+              const colors = getVendorOnboardingModeBadgeColors(result.mode);
+              return (
+                <div className="mt-1">
+                  <span
+                    className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide"
+                    style={{ backgroundColor: colors.bg, color: colors.text, border: `1px solid ${colors.border}` }}
+                  >
+                    Mode : {getVendorOnboardingModeLabel(result.mode)}
+                  </span>
+                </div>
+              );
+            })()}
           </DialogHeader>
           <div className="space-y-4 mt-2">
             {result.verification_sent ? (

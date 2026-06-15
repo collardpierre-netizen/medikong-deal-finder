@@ -223,7 +223,6 @@ Deno.serve(async (req) => {
     });
 
     if (authError) {
-      // Filet de sécurité au cas où la course aurait laissé passer
       if (/already.*registered|exists/i.test(authError.message)) {
         return jsonErr(
           "Un compte utilisateur existe déjà avec cet email.",
@@ -256,8 +255,9 @@ Deno.serve(async (req) => {
         ? 'fr'
         : 'en';
 
+    // ⛔ Ne PAS poser auth_user_id ici. Activation différée après vérification email.
     const { data: vendor, error: vendorError } = await supabaseAdmin.from("vendors").insert({
-      auth_user_id: userId,
+      auth_user_id: null,
       name: company_name.trim(),
       slug,
       company_name: company_name.trim(),
@@ -277,17 +277,13 @@ Deno.serve(async (req) => {
     }).select("id").single();
 
     if (vendorError) {
-      // Rollback du user auth créé juste avant
       await supabaseAdmin.auth.admin.deleteUser(userId);
 
-      // Conflit unique (race entre 2 admins) → l'index unique CI sur lower(email) garantit l'atomicité.
-      // Postgres renvoie le code 23505 (unique_violation).
       const isUniqueViolation =
         (vendorError as any).code === "23505" ||
         /vendors_email_unique_ci|duplicate key value/i.test(vendorError.message || "");
 
       if (isUniqueViolation) {
-        // Re-lookup pour proposer la bonne action (rattacher / ouvrir)
         const racedVendor = await findVendorByEmail(normalizedEmail);
         return jsonErr(
           racedVendor
@@ -305,59 +301,39 @@ Deno.serve(async (req) => {
       return jsonErr(`Erreur vendeur: ${vendorError.message}`, "vendor_insert_failed");
     }
 
-    // Best-effort : magic link de récupération + email d'onboarding multilingue.
-    let recoveryUrl: string | null = null;
+    // Émet un token de vérification + email "vendor-attach-verification".
+    // L'activation (vendor.auth_user_id) se fait après clic du destinataire via /vendor/verifier-acces.
+    let verif: Awaited<ReturnType<typeof issueAttachVerification>>;
     try {
-      const { data: linkData } = await supabaseAdmin.auth.admin.generateLink({
-        type: "recovery",
+      verif = await issueAttachVerification({
+        supabaseAdmin,
+        vendorId: vendor.id,
+        userId,
         email: normalizedEmail,
-        options: { redirectTo: "https://www.medikong.pro/vendor/login" },
+        companyName: company_name.trim(),
+        locale: preferredLanguage as "fr" | "nl" | "en",
+        createdByAdminId: caller.id,
       });
-      recoveryUrl = linkData?.properties?.action_link ?? null;
     } catch (e) {
-      console.warn("[create-vendor-account] generateLink failed:", e);
-    }
-
-    {
-      const idemKey = `vendor-onboarding-${vendor.id}`;
-      let logStatus: "enqueued" | "failed" = "enqueued";
-      let logError: string | null = null;
-      try {
-        const { error: invokeErr } = await supabaseAdmin.functions.invoke("send-transactional-email", {
-          body: {
-            templateName: "vendor-account-created",
-            recipientEmail: normalizedEmail,
-            idempotencyKey: idemKey,
-            templateData: {
-              companyName: company_name.trim(),
-              loginEmail: normalizedEmail,
-              recoveryUrl,
-              tempPassword: recoveryUrl ? null : tempPassword,
-              locale: preferredLanguage,
-            },
-          },
-        });
-        if (invokeErr) { logStatus = "failed"; logError = invokeErr.message ?? String(invokeErr); }
-      } catch (e) {
-        logStatus = "failed";
-        logError = e instanceof Error ? e.message : String(e);
-        console.warn("[create-vendor-account] onboarding email failed:", e);
-      }
-      try {
-        await supabaseAdmin.from("vendor_onboarding_email_logs").insert({
-          vendor_id: vendor.id, mode: "create", template_name: "vendor-account-created",
-          locale: preferredLanguage, recipient_email: normalizedEmail,
-          idempotency_key: idemKey, status: logStatus, error_message: logError,
-        });
-      } catch (e) { console.warn("[create-vendor-account] log insert failed:", e); }
+      // Rollback complet : vendor + user auth
+      await supabaseAdmin.from("vendors").delete().eq("id", vendor.id);
+      await supabaseAdmin.auth.admin.deleteUser(userId);
+      return jsonErr(
+        `Erreur création vérification: ${e instanceof Error ? e.message : String(e)}`,
+        "verification_create_failed",
+      );
     }
 
     return jsonOk({
       vendor_id: vendor.id,
       user_id: userId,
-      temp_password: tempPassword,
-      recovery_url: recoveryUrl,
-      message: "Vendeur créé avec succès",
+      verification_sent: verif.emailStatus === "enqueued",
+      verification_id: verif.verificationId,
+      expires_at: verif.expiresAt,
+      email_error: verif.emailError,
+      message: verif.emailStatus === "enqueued"
+        ? `Email de vérification envoyé à ${normalizedEmail} (valide 24 h). L'accès portail s'activera après confirmation par le destinataire.`
+        : `Vérification créée mais l'envoi d'email a échoué (${verif.emailError ?? "erreur inconnue"}). Renvoyez le lien depuis la fiche vendeur.`,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

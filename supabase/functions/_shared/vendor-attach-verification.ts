@@ -117,11 +117,11 @@ export async function issueAttachVerification(
     emailError = e instanceof Error ? e.message : String(e);
   }
 
-  // Log dans vendor_onboarding_email_logs (mode=attach, template=vendor-attach-verification)
+  // Log dans vendor_onboarding_email_logs (mode dynamique : create | attach | self_register)
   try {
     await supabaseAdmin.from("vendor_onboarding_email_logs").insert({
       vendor_id: vendorId,
-      mode: "attach",
+      mode: logMode,
       template_name: "vendor-attach-verification",
       locale,
       recipient_email: email,

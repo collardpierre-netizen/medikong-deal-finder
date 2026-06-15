@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCountry } from "@/contexts/CountryContext";
+import { useBuyerProfileId } from "@/hooks/useResolvedOfferPrice";
 import VendorDelegatesPublic from "@/components/vendor/VendorDelegatesPublic";
 import VendorDelegateDetailDialog from "@/components/vendor/VendorDelegateDetailDialog";
 import VendorProductQuickView from "@/components/vendor/VendorProductQuickView";
@@ -181,6 +182,7 @@ export default function VendorPublicPage() {
     brands: initialBrand ? [initialBrand] : [],
   });
   const { currentCountry } = useCountry();
+  const buyerProfileId = useBuyerProfileId();
   const { items: cartItems, addToCart, openDrawer } = useCart();
   const [quickViewProduct, setQuickViewProduct] = useState<any | null>(null);
   const [delegateDialogOpen, setDelegateDialogOpen] = useState(false);
@@ -468,7 +470,7 @@ export default function VendorPublicPage() {
   const showReal = vendor ? resolveVendorVisibility(
     { ...vendor, id: vendor.id },
     visRules,
-    { country: String(currentCountry) }
+    { country: currentCountry?.code, customerType: buyerProfileId || undefined }
   ) : false;
   const vendorDisplayName = vendor ? getVendorBoutiqueDisplayName(vendor, showReal) : "Fournisseur";
 

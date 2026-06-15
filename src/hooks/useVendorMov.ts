@@ -15,13 +15,13 @@ const DEFAULT_MOV = 500;
 export function useVendorMov(vendorIds: string[]) {
   const { user } = useAuth();
 
-  // Get buyer's profile type and country
+  // Get buyer's profile type, country AND customer id (for per-buyer overrides)
   const { data: customer } = useQuery({
     queryKey: ["cart-customer-profile", user?.id],
     queryFn: async () => {
       const { data } = await supabase
         .from("customers")
-        .select("customer_type, country_code")
+        .select("id, customer_type, country_code")
         .eq("auth_user_id", user!.id)
         .maybeSingle();
       return data;

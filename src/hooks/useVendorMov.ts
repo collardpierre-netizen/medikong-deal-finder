@@ -93,6 +93,13 @@ export function useVendorMov(vendorIds: string[]) {
     // For real vendors, resolve from vendor_profile_defaults
     if (!vendorDefaults || !customer) return DEFAULT_MOV;
 
+    // Highest priority: per-buyer override (vendor × buyer_account)
+    const buyerOverride = (buyerOverrides || []).find((o: any) => o.vendor_id === vendorId);
+    if (buyerOverride && buyerOverride.default_mov != null) {
+      return Number(buyerOverride.default_mov) || 0;
+    }
+
+
     const profileType = customer.customer_type || "pharmacy";
     const countryCode = customer.country_code || "BE";
 

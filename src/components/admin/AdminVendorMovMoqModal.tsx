@@ -221,12 +221,17 @@ export default function AdminVendorMovMoqModal({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="profiles" className="mt-2">
-          <TabsList className="grid grid-cols-3 w-full">
-            <TabsTrigger value="profiles">Par client / profil</TabsTrigger>
-            <TabsTrigger value="vendor">MOV global du vendeur</TabsTrigger>
+        <Tabs defaultValue="buyers" className="mt-2">
+          <TabsList className="grid grid-cols-4 w-full">
+            <TabsTrigger value="buyers">Par acheteur</TabsTrigger>
+            <TabsTrigger value="profiles">Par profil</TabsTrigger>
+            <TabsTrigger value="vendor">MOV global</TabsTrigger>
             <TabsTrigger value="offers">Par offre</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="buyers" className="pt-4">
+            <VendorBuyerOverridesTable vendorId={vendorId} />
+          </TabsContent>
 
           <TabsContent value="profiles" className="pt-4">
             <VendorProfileDefaults vendorId={vendorId} />

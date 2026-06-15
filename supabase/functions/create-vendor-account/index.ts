@@ -60,6 +60,10 @@ Deno.serve(async (req) => {
       phone,
       vat_number,
       address,
+      address_line1,
+      city,
+      postal_code,
+      country_code,
       commission_rate,
       description,
       type,
@@ -215,6 +219,13 @@ Deno.serve(async (req) => {
       slug = `${baseSlug}-${i}`;
     }
 
+    const normalizedCountry = (country_code ? String(country_code).trim().toUpperCase() : null) || null;
+    const preferredLanguage = normalizedCountry === 'NL'
+      ? 'nl'
+      : (normalizedCountry === 'FR' || normalizedCountry === 'BE' || normalizedCountry === 'LU')
+        ? 'fr'
+        : 'en';
+
     const { data: vendor, error: vendorError } = await supabaseAdmin.from("vendors").insert({
       auth_user_id: userId,
       name: company_name.trim(),
@@ -223,7 +234,11 @@ Deno.serve(async (req) => {
       email: normalizedEmail,
       phone: phone || null,
       vat_number: vat_number || null,
-      address_line1: address || null,
+      address_line1: address_line1 || address || null,
+      city: city || null,
+      postal_code: postal_code || null,
+      country_code: normalizedCountry,
+      preferred_language: preferredLanguage,
       type: vendorType,
       is_active: true,
       can_manage_offers: true,
@@ -260,10 +275,43 @@ Deno.serve(async (req) => {
       return jsonErr(`Erreur vendeur: ${vendorError.message}`, "vendor_insert_failed");
     }
 
+    // Best-effort : magic link de récupération + email d'onboarding multilingue.
+    let recoveryUrl: string | null = null;
+    try {
+      const { data: linkData } = await supabaseAdmin.auth.admin.generateLink({
+        type: "recovery",
+        email: normalizedEmail,
+        options: { redirectTo: "https://www.medikong.pro/vendor/login" },
+      });
+      recoveryUrl = linkData?.properties?.action_link ?? null;
+    } catch (e) {
+      console.warn("[create-vendor-account] generateLink failed:", e);
+    }
+
+    try {
+      await supabaseAdmin.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "vendor-account-created",
+          recipientEmail: normalizedEmail,
+          idempotencyKey: `vendor-onboarding-${vendor.id}`,
+          templateData: {
+            companyName: company_name.trim(),
+            loginEmail: normalizedEmail,
+            recoveryUrl,
+            tempPassword: recoveryUrl ? null : tempPassword,
+            locale: preferredLanguage,
+          },
+        },
+      });
+    } catch (e) {
+      console.warn("[create-vendor-account] onboarding email failed:", e);
+    }
+
     return jsonOk({
       vendor_id: vendor.id,
       user_id: userId,
       temp_password: tempPassword,
+      recovery_url: recoveryUrl,
       message: "Vendeur créé avec succès",
     });
   } catch (err) {

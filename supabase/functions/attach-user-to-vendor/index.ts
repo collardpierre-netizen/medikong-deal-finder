@@ -15,6 +15,8 @@ const corsHeaders = {
 };
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { issueAttachVerification, resolveAttachLocale } from "../_shared/vendor-attach-verification.ts";
+
 
 function jsonOk(payload: Record<string, unknown>) {
   return new Response(JSON.stringify({ ok: true, ...payload }), {
@@ -112,12 +114,12 @@ Deno.serve(async (req) => {
     ) ?? null;
 
     let userId: string;
-    let tempPassword: string | null = null;
+    let createdAuthUser = false;
 
     if (matched) {
       userId = matched.id;
     } else {
-      tempPassword = crypto.randomUUID().slice(0, 12) + "Aa1!";
+      const tempPassword = crypto.randomUUID().slice(0, 12) + "Aa1!";
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email: normalizedEmail,
         password: tempPassword,
@@ -134,39 +136,55 @@ Deno.serve(async (req) => {
         );
       }
       userId = authData.user.id;
+      createdAuthUser = true;
     }
 
-    // 4) Rattachement
-    const { error: updateError } = await supabaseAdmin
+    // 4) ⛔ Pas de rattachement immédiat. Génère token + envoie email de vérification.
+    const { data: vendorLang } = await supabaseAdmin
       .from("vendors")
-      .update({ auth_user_id: userId, email: normalizedEmail })
-      .eq("id", vendor_id);
+      .select("preferred_language, country_code")
+      .eq("id", vendor_id)
+      .maybeSingle();
+    const attachLocale = resolveAttachLocale(
+      vendorLang?.preferred_language as string | null,
+      vendorLang?.country_code as string | null,
+    );
 
-    if (updateError) {
-      // Rollback du user fraîchement créé si on l'a créé pour cette opération
-      if (tempPassword) {
+    let verif: Awaited<ReturnType<typeof issueAttachVerification>>;
+    try {
+      verif = await issueAttachVerification({
+        supabaseAdmin,
+        vendorId: vendor_id,
+        userId,
+        email: normalizedEmail,
+        companyName: existingVendor.company_name || existingVendor.name || "",
+        locale: attachLocale,
+        createdByAdminId: caller.id,
+      });
+    } catch (e) {
+      if (createdAuthUser) {
         await supabaseAdmin.auth.admin.deleteUser(userId);
       }
-      // Conflit unique email côté DB (lower(email))
-      if ((updateError as any).code === "23505") {
-        return jsonErr(
-          "Cet email est déjà rattaché à un autre vendeur.",
-          "vendor_email_already_exists",
-        );
-      }
-      return jsonErr(`Erreur rattachement: ${updateError.message}`, "attach_failed");
+      return jsonErr(
+        `Erreur création vérification: ${e instanceof Error ? e.message : String(e)}`,
+        "verification_create_failed",
+      );
     }
 
     return jsonOk({
       vendor_id,
       user_id: userId,
-      temp_password: tempPassword,
-      reused_existing_user: !tempPassword,
-      message: tempPassword
-        ? "Accès créé. Mot de passe temporaire généré."
-        : "Compte existant rattaché au vendeur. Le vendeur conserve son mot de passe actuel.",
+      reused_existing_user: !createdAuthUser,
+      verification_sent: verif.emailStatus === "enqueued",
+      verification_id: verif.verificationId,
+      expires_at: verif.expiresAt,
+      email_error: verif.emailError,
+      message: verif.emailStatus === "enqueued"
+        ? `Email de vérification envoyé à ${normalizedEmail} (valide 24 h). L'accès portail s'activera après confirmation par le destinataire.`
+        : `Vérification créée mais l'envoi d'email a échoué (${verif.emailError ?? "erreur inconnue"}). Renvoyez le lien depuis la fiche vendeur.`,
     });
   } catch (e: any) {
     return jsonErr(`Erreur serveur: ${e?.message ?? "inconnue"}`, "server_error", {}, 500);
   }
 });
+

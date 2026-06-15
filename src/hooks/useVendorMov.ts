@@ -15,13 +15,13 @@ const DEFAULT_MOV = 500;
 export function useVendorMov(vendorIds: string[]) {
   const { user } = useAuth();
 
-  // Get buyer's profile type and country
+  // Get buyer's profile type, country AND customer id (for per-buyer overrides)
   const { data: customer } = useQuery({
     queryKey: ["cart-customer-profile", user?.id],
     queryFn: async () => {
       const { data } = await supabase
         .from("customers")
-        .select("customer_type, country_code")
+        .select("id, customer_type, country_code")
         .eq("auth_user_id", user!.id)
         .maybeSingle();
       return data;
@@ -65,6 +65,23 @@ export function useVendorMov(vendorIds: string[]) {
     staleTime: 2 * 60 * 1000,
   });
 
+  // Per-buyer overrides (vendor × buyer_account) — highest priority
+  const { data: buyerOverrides } = useQuery({
+    queryKey: ["vendor-buyer-overrides-cart", realVendorIds, customer?.id],
+    queryFn: async () => {
+      if (!customer?.id || realVendorIds.length === 0) return [];
+      const { data } = await supabase
+        .from("vendor_buyer_overrides" as any)
+        .select("vendor_id, default_mov")
+        .eq("buyer_account_id", customer.id)
+        .eq("is_active", true)
+        .in("vendor_id", realVendorIds);
+      return (data || []) as any[];
+    },
+    enabled: !!customer?.id && realVendorIds.length > 0,
+    staleTime: 2 * 60 * 1000,
+  });
+
   const getMovForVendor = (vendorId: string): number => {
     const vendorInfo = vendorTypes?.find(v => v.id === vendorId);
 
@@ -75,6 +92,13 @@ export function useVendorMov(vendorIds: string[]) {
 
     // For real vendors, resolve from vendor_profile_defaults
     if (!vendorDefaults || !customer) return DEFAULT_MOV;
+
+    // Highest priority: per-buyer override (vendor × buyer_account)
+    const buyerOverride = (buyerOverrides || []).find((o: any) => o.vendor_id === vendorId);
+    if (buyerOverride && buyerOverride.default_mov != null) {
+      return Number(buyerOverride.default_mov) || 0;
+    }
+
 
     const profileType = customer.customer_type || "pharmacy";
     const countryCode = customer.country_code || "BE";

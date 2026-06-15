@@ -14424,6 +14424,102 @@ export type Database = {
           },
         ]
       }
+      vendor_buyer_overrides: {
+        Row: {
+          buyer_account_id: string
+          created_at: string
+          created_by: string | null
+          default_moq: number | null
+          default_mov: number | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          buyer_account_id: string
+          created_at?: string
+          created_by?: string | null
+          default_moq?: number | null
+          default_mov?: number | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          buyer_account_id?: string
+          created_at?: string
+          created_by?: string | null
+          default_moq?: number | null
+          default_mov?: number | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_buyer_overrides_buyer_account_id_fkey"
+            columns: ["buyer_account_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_buyer_overrides_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_buyer_overrides_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_buyer_overrides_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_buyer_overrides_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_buyer_overrides_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_buyer_overrides_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_buyer_overrides_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_catalog_interests: {
         Row: {
           brand_id: string | null

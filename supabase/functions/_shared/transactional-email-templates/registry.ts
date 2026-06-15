@@ -60,4 +60,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'audit-new-lead': auditNewLead,
   'audit-report-ready': auditReportReady,
   'account-invitation': accountInvitation,
+  'vendor-account-created': vendorAccountCreated,
 }

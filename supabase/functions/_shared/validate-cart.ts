@@ -186,9 +186,27 @@ export async function validateCart(
     byVendor.set(v.vendor_id, cur);
   }
 
+  // Per-buyer overrides (vendor × buyer_account) — highest priority for MOV
+  const vendorIdsInCart = [...byVendor.keys()];
+  let buyerOverrides: Record<string, { mov: number | null }> = {};
+  if (buyerAccountId && vendorIdsInCart.length > 0) {
+    const { data: ovs } = await supabase
+      .from("vendor_buyer_overrides")
+      .select("vendor_id, default_mov")
+      .eq("buyer_account_id", buyerAccountId)
+      .eq("is_active", true)
+      .in("vendor_id", vendorIdsInCart);
+    for (const o of (ovs || []) as any[]) {
+      buyerOverrides[o.vendor_id] = { mov: o.default_mov != null ? Number(o.default_mov) : null };
+    }
+  }
+
   const vendors: VendorSummary[] = [];
   for (const [vendorId, agg] of byVendor) {
-    const movRequired = Math.max(agg.movMax, DEFAULT_MEDIKONG_MOV);
+    const override = buyerOverrides[vendorId];
+    const movRequired = override && override.mov != null
+      ? override.mov
+      : Math.max(agg.movMax, DEFAULT_MEDIKONG_MOV);
     const reached = agg.subtotal >= movRequired;
     const missing = reached ? 0 : round2(movRequired - agg.subtotal);
     vendors.push({

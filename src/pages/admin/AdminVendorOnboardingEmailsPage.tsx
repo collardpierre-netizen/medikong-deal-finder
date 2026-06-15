@@ -37,6 +37,23 @@ const MODE_LABEL: Record<string, string> = {
   self_register: "Auto-inscription",
 };
 
+function modeBadge(mode: string) {
+  const cfg: Record<string, { bg: string; text: string; border: string }> = {
+    create: { bg: "#EFF6FF", text: "#1B5BDA", border: "#DBEAFE" },
+    attach: { bg: "#F0FDF4", text: "#059669", border: "#BBF7D0" },
+    self_register: { bg: "#FAF5FF", text: "#7C3AED", border: "#E9D5FF" },
+  };
+  const c = cfg[mode] ?? { bg: "#F1F5F9", text: "#475569", border: "#E2E8F0" };
+  return (
+    <span
+      className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide"
+      style={{ backgroundColor: c.bg, color: c.text, border: `1px solid ${c.border}` }}
+    >
+      {MODE_LABEL[mode] ?? mode}
+    </span>
+  );
+}
+
 function statusBadge(status: string | null) {
   const s = (status || "").toLowerCase();
   if (s === "sent") return <Badge className="bg-emerald-100 text-emerald-800">Livré</Badge>;
@@ -192,7 +209,7 @@ export default function AdminVendorOnboardingEmailsPage() {
                     <td className="p-3 text-muted-foreground whitespace-nowrap">
                       {format(new Date(l.created_at), "dd/MM/yy HH:mm", { locale: fr })}
                     </td>
-                    <td className="p-3">{MODE_LABEL[l.mode] ?? l.mode}</td>
+                    <td className="p-3">{modeBadge(l.mode)}</td>
                     <td className="p-3 font-mono text-xs">{l.template_name}</td>
                     <td className="p-3 uppercase text-xs">{l.locale ?? "—"}</td>
                     <td className="p-3">{l.recipient_email}</td>

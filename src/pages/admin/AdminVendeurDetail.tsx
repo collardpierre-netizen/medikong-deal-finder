@@ -248,9 +248,9 @@ const AdminVendeurDetail = () => {
                   if (error) throw error;
                   if (data?.ok === false || data?.error) throw new Error(data?.error || "Erreur inconnue");
                   if (data?.verification_sent) {
-                    toast.success(`Email de vérification envoyé à ${vendor.email} (valide 24 h). L'accès portail s'activera après confirmation.`, { duration: 12000 });
+                    toast.success(`[Mode : Rattachement] Email de vérification envoyé à ${vendor.email} (valide 24 h). L'accès portail s'activera après confirmation.`, { duration: 12000 });
                   } else {
-                    toast.error(`Vérification créée mais l'envoi d'email a échoué (${data?.email_error ?? "erreur inconnue"}). Renvoyez le lien depuis cette fiche.`, { duration: 12000 });
+                    toast.error(`[Mode : Rattachement] Vérification créée mais l'envoi d'email a échoué (${data?.email_error ?? "erreur inconnue"}). Renvoyez le lien depuis cette fiche.`, { duration: 12000 });
                   }
                   queryClient.invalidateQueries({ queryKey: ["vendor-detail", id] });
                 } catch (e: any) {

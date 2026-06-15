@@ -43,7 +43,7 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
-  const [result, setResult] = useState<{ vendor_id: string; temp_password: string | null; reused?: boolean; verification_sent?: boolean; verification_email?: string; expires_at?: string | null; email_error?: string | null } | null>(null);
+  const [result, setResult] = useState<{ vendor_id: string; temp_password: string | null; reused?: boolean; verification_sent?: boolean; verification_email?: string; expires_at?: string | null; email_error?: string | null; mode?: "create" | "attach" } | null>(null);
   const [copied, setCopied] = useState(false);
   // Erreur applicative normalisée renvoyée par l'edge function (any code)
   const [errorPresentation, setErrorPresentation] = useState<VendorAccountErrorPresentation | null>(null);
@@ -132,6 +132,7 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
           verification_email: form.email.trim(),
           expires_at: data.expires_at ?? null,
           email_error: data.email_error ?? null,
+          mode: "create",
         });
         if (data.verification_sent) {
           toast.success(`Vendeur créé. Email de vérification envoyé à ${form.email.trim()} (valide 24 h). L'accès s'activera après confirmation.`, { duration: 12000 });
@@ -224,6 +225,7 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
         verification_email: form.email.trim(),
         expires_at: data.expires_at ?? null,
         email_error: data.email_error ?? null,
+        mode: "attach",
       });
       dismissError();
       queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });
@@ -299,6 +301,20 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
                 ? "Email de vérification envoyé"
                 : result.reused ? "Accès rattaché !" : "Vendeur créé !"}
             </DialogTitle>
+            {result.mode && (
+              <div className="mt-1">
+                <span
+                  className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide"
+                  style={
+                    result.mode === "create"
+                      ? { backgroundColor: "#EFF6FF", color: "#1B5BDA", border: "1px solid #DBEAFE" }
+                      : { backgroundColor: "#F0FDF4", color: "#059669", border: "1px solid #BBF7D0" }
+                  }
+                >
+                  Mode : {result.mode === "create" ? "Création" : "Rattachement"}
+                </span>
+              </div>
+            )}
           </DialogHeader>
           <div className="space-y-4 mt-2">
             {result.verification_sent ? (

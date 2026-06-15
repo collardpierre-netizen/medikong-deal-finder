@@ -43,7 +43,7 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
-  const [result, setResult] = useState<{ vendor_id: string; temp_password: string | null; reused?: boolean; verification_sent?: boolean; verification_email?: string; expires_at?: string | null; email_error?: string | null } | null>(null);
+  const [result, setResult] = useState<{ vendor_id: string; temp_password: string | null; reused?: boolean; verification_sent?: boolean; verification_email?: string; expires_at?: string | null; email_error?: string | null; mode?: "create" | "attach" } | null>(null);
   const [copied, setCopied] = useState(false);
   // Erreur applicative normalisée renvoyée par l'edge function (any code)
   const [errorPresentation, setErrorPresentation] = useState<VendorAccountErrorPresentation | null>(null);

@@ -71,7 +71,8 @@ export default function VendorSettings() {
   const tabs = [
     { id: "profile", label: "Profil" },
     { id: "branding", label: "Branding" },
-    { id: "team", label: "Équipe" },
+    { id: "team", label: "Équipe commerciale" },
+    { id: "users", label: "Utilisateurs & accès" },
     { id: "addresses", label: "Adresses" },
     { id: "shipping_mode", label: "Mode expédition" },
     { id: "pricing_defaults", label: "Prix & MOV par profil" },

@@ -23,7 +23,9 @@ interface LogRow {
   template_name: string;
   locale: string | null;
   recipient_email: string;
-...
+  idempotency_key: string;
+  message_id: string | null;
+  status: string | null;
   error_message: string | null;
   created_at: string;
 }

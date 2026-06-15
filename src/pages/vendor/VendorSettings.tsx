@@ -24,6 +24,7 @@ import { useVendorActiveMarginRule } from "@/hooks/useVendorActiveMarginRule";
 
 export default function VendorSettings() {
   const [activeTab, setActiveTab] = useState("profile");
+  const { user } = useAuth();
   const [editing, setEditing] = useState(false);
   const { data: vendor, isLoading } = useCurrentVendor();
   const qc = useQueryClient();

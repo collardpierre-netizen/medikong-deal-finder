@@ -425,6 +425,8 @@ const App = () => (
             <Route path="/politique-confidentialite" element={<LP><PrivacyPage /></LP>} />
             <Route path="/cookies" element={<LP><CookiePolicyPage /></LP>} />
             <Route path="/unsubscribe" element={<LP><UnsubscribePage /></LP>} />
+            <Route path="/account/invitation" element={<LP><AccountInvitationPage /></LP>} />
+            <Route path="/account/invitation/:token" element={<LP><AccountInvitationPage /></LP>} />
             <Route path="/audit-achats" element={<AuditAchatsPage />} />
             <Route path="/audit-achats/confirmation" element={<AuditAchatsConfirmationPage />} />
 

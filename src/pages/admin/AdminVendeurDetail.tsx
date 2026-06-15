@@ -523,6 +523,34 @@ const AdminVendeurDetail = () => {
               Gère les membres rattachés à ce compte vendeur (propriétaire, admins, membres). Les admins peuvent gérer les offres et inviter d'autres utilisateurs.
             </p>
           </div>
+
+          <div className="mb-5 rounded-lg p-4" style={{ backgroundColor: "#F8FAFC", border: "1px solid #E2E8F0" }}>
+            <div className="flex items-center gap-2 mb-2">
+              <Info size={14} style={{ color: "#1B5BDA" }} />
+              <span className="text-[12px] font-bold" style={{ color: "#1D2530" }}>Modes d'accès au portail vendeur</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-start gap-2">
+                <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide" style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA" }}>CREATE</span>
+                <p className="text-[12px] leading-relaxed" style={{ color: "#616B7C" }}>
+                  Un vendeur est créé dans MediKong <strong>et</strong> un compte utilisateur est généré en même temps. L'accès reste inactif jusqu'à ce que le destinataire clique le lien de vérification envoyé par email (24 h).
+                </p>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide" style={{ backgroundColor: "#F0FDF4", color: "#059669" }}>ATTACH</span>
+                <p className="text-[12px] leading-relaxed" style={{ color: "#616B7C" }}>
+                  Un vendeur existe déjà dans la base MediKong mais n'a pas encore de compte d'accès. On lui rattache un utilisateur (existant ou nouveau) après vérification de son email.
+                </p>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide" style={{ backgroundColor: "#F5F3FF", color: "#7C3AED" }}>Auto-inscription</span>
+                <p className="text-[12px] leading-relaxed" style={{ color: "#616B7C" }}>
+                  Le vendeur s'inscrit de lui-même via le formulaire public. Son compte est créé en mode <em>shadow</em> ; un admin doit valider son profil pour activer l'accès complet au portail.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <AccountMembersPanel
             accountKind="vendor"
             accountId={vendor.id}

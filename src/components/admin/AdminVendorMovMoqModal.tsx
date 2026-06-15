@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Save } from "lucide-react";
 import VendorCommercialSettings from "@/components/vendor/VendorCommercialSettings";
 import VendorProfileDefaults from "@/components/vendor/VendorProfileDefaults";
+import VendorBuyerOverridesTable from "@/components/admin/VendorBuyerOverridesTable";
 
 interface OfferRow {
   id: string;

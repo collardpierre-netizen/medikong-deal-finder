@@ -214,7 +214,12 @@ export default function VendorSettings() {
               Invite des collègues à gérer ce compte vendeur. Les admins peuvent inviter d'autres membres, les membres peuvent gérer les offres et commandes.
             </p>
           </div>
-          <AccountMembersPanelLazy vendorId={vendor.id} ownerUserId={vendor.auth_user_id ?? null} />
+          <AccountMembersPanel
+            accountKind="vendor"
+            accountId={vendor.id}
+            canManage={!!user && user.id === vendor.auth_user_id}
+            ownerUserId={vendor.auth_user_id ?? null}
+          />
         </VCard>
       )}
 

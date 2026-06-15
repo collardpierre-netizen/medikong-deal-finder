@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCountry } from "@/contexts/CountryContext";
+import { useBuyerProfileId } from "@/hooks/useResolvedOfferPrice";
 import VendorDelegatesPublic from "@/components/vendor/VendorDelegatesPublic";
 import VendorDelegateDetailDialog from "@/components/vendor/VendorDelegateDetailDialog";
 import VendorProductQuickView from "@/components/vendor/VendorProductQuickView";

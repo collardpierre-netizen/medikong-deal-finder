@@ -43,7 +43,7 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
-  const [result, setResult] = useState<{ vendor_id: string; temp_password: string | null; reused?: boolean } | null>(null);
+  const [result, setResult] = useState<{ vendor_id: string; temp_password: string | null; reused?: boolean; verification_sent?: boolean; verification_email?: string; expires_at?: string | null; email_error?: string | null } | null>(null);
   const [copied, setCopied] = useState(false);
   // Erreur applicative normalisée renvoyée par l'edge function (any code)
   const [errorPresentation, setErrorPresentation] = useState<VendorAccountErrorPresentation | null>(null);
@@ -282,32 +282,49 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle2 size={20} className="text-green-600" />
-              {result.reused ? "Accès rattaché !" : "Vendeur créé !"}
+              {result.verification_sent
+                ? "Email de vérification envoyé"
+                : result.reused ? "Accès rattaché !" : "Vendeur créé !"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-2">
-            <p className="text-sm text-muted-foreground">
-              {result.reused
-                ? "Le compte utilisateur existant a été rattaché au vendeur. Le vendeur conserve son mot de passe actuel."
-                : "Le compte a été créé. Communiquez ces identifiants au vendeur :"}
-            </p>
-            <div className="rounded-lg p-4 space-y-3" style={{ backgroundColor: "#F8FAFC", border: "1px solid #E2E8F0" }}>
-              <div>
-                <span className="text-[11px] font-semibold uppercase text-muted-foreground">Email</span>
-                <p className="text-sm font-mono">{form.email}</p>
-              </div>
-              {result.temp_password && (
-                <div>
-                  <span className="text-[11px] font-semibold uppercase text-muted-foreground">Mot de passe temporaire</span>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-mono font-bold">{result.temp_password}</p>
-                    <button onClick={copyPassword} className="p-1 rounded hover:bg-muted transition-colors">
-                      {copied ? <CheckCircle2 size={14} className="text-green-600" /> : <Copy size={14} className="text-muted-foreground" />}
-                    </button>
-                  </div>
+            {result.verification_sent ? (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Un email de vérification a été envoyé à <strong>{result.verification_email}</strong>. L'accès au portail
+                  vendeur ne sera activé qu'après que le destinataire ait cliqué le lien (valide 24&nbsp;h).
+                </p>
+                <div className="rounded-lg p-3 text-xs" style={{ backgroundColor: "#FEF3C7", border: "1px solid #FDE68A", color: "#92400E" }}>
+                  Tant que le lien n'est pas cliqué, le vendeur n'a aucun accès. Aucun mot de passe temporaire n'est généré.
                 </div>
-              )}
-            </div>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  {result.reused
+                    ? "Le compte utilisateur existant a été rattaché au vendeur. Le vendeur conserve son mot de passe actuel."
+                    : "Le compte a été créé. Communiquez ces identifiants au vendeur :"}
+                </p>
+                <div className="rounded-lg p-4 space-y-3" style={{ backgroundColor: "#F8FAFC", border: "1px solid #E2E8F0" }}>
+                  <div>
+                    <span className="text-[11px] font-semibold uppercase text-muted-foreground">Email</span>
+                    <p className="text-sm font-mono">{form.email}</p>
+                  </div>
+                  {result.temp_password && (
+                    <div>
+                      <span className="text-[11px] font-semibold uppercase text-muted-foreground">Mot de passe temporaire</span>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-mono font-bold">{result.temp_password}</p>
+                        <button onClick={copyPassword} className="p-1 rounded hover:bg-muted transition-colors">
+                          {copied ? <CheckCircle2 size={14} className="text-green-600" /> : <Copy size={14} className="text-muted-foreground" />}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
             <p className="text-xs text-muted-foreground">
               Le vendeur pourra se connecter sur <strong>/vendor/login</strong> et compléter son profil depuis les paramètres.
             </p>

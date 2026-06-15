@@ -33,6 +33,7 @@ const tabList = [
   { key: "products", label: "Produits", icon: Package },
   { key: "delegates", label: "Délégués", icon: Globe },
   { key: "contracts", label: "Conventions", icon: FileText },
+  { key: "users", label: "Utilisateurs", icon: Users },
   { key: "activity", label: "Activité", icon: Activity },
 ];
 

@@ -37,6 +37,23 @@ const MODE_LABEL: Record<string, string> = {
   self_register: "Auto-inscription",
 };
 
+function modeBadge(mode: string) {
+  const cfg: Record<string, { bg: string; text: string; border: string }> = {
+    create: { bg: "#EFF6FF", text: "#1B5BDA", border: "#DBEAFE" },
+    attach: { bg: "#F0FDF4", text: "#059669", border: "#BBF7D0" },
+    self_register: { bg: "#FAF5FF", text: "#7C3AED", border: "#E9D5FF" },
+  };
+  const c = cfg[mode] ?? { bg: "#F1F5F9", text: "#475569", border: "#E2E8F0" };
+  return (
+    <span
+      className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide"
+      style={{ backgroundColor: c.bg, color: c.text, border: `1px solid ${c.border}` }}
+    >
+      {MODE_LABEL[mode] ?? mode}
+    </span>
+  );
+}
+
 function statusBadge(status: string | null) {
   const s = (status || "").toLowerCase();
   if (s === "sent") return <Badge className="bg-emerald-100 text-emerald-800">Livré</Badge>;

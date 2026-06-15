@@ -64,6 +64,8 @@ export async function validateCart(
   // deno-lint-ignore no-explicit-any
   supabase: any,
   items: CartInputItem[],
+  // Optional: when provided, allows resolving per-buyer overrides on top of the cascade.
+  buyerAccountId?: string | null,
 ): Promise<ValidateCartResult> {
   const errors: ValidationError[] = [];
   const validated: ValidatedItem[] = [];

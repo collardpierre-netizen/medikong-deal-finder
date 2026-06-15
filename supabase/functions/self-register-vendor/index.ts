@@ -123,6 +123,28 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Best-effort : email d'accusé de réception "candidature reçue, en cours de validation".
+    const normalizedCountry = (country_code ? String(country_code).trim().toUpperCase() : null);
+    const locale = (preferred_language as string)
+      || (normalizedCountry === "NL" ? "nl"
+        : (["FR","BE","LU"].includes(String(normalizedCountry || "")) ? "fr" : "en"));
+    try {
+      await supabaseAdmin.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "vendor-self-registered",
+          recipientEmail: safeEmail,
+          idempotencyKey: `vendor-self-registered-${inserted.id}`,
+          templateData: {
+            companyName: safeName,
+            loginEmail: safeEmail,
+            locale,
+          },
+        },
+      });
+    } catch (e) {
+      console.warn("[self-register-vendor] welcome email failed:", e);
+    }
+
     return jsonOk({ vendor_id: inserted.id });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

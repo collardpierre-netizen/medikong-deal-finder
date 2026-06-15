@@ -37,6 +37,8 @@ export function resolveAttachLocale(
   return "en";
 }
 
+export type AttachLogMode = "create" | "attach" | "self_register";
+
 export interface IssueAttachVerificationInput {
   supabaseAdmin: AnyClient;
   vendorId: string;
@@ -45,6 +47,8 @@ export interface IssueAttachVerificationInput {
   companyName: string;
   locale: "fr" | "nl" | "en";
   createdByAdminId?: string | null;
+  /** Mode logged in `vendor_onboarding_email_logs.mode`. Defaults to "attach" for back-compat. */
+  mode?: AttachLogMode;
 }
 
 export interface IssueAttachVerificationResult {

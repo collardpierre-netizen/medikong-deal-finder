@@ -58,4 +58,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'audit-confirmation': auditConfirmation,
   'audit-new-lead': auditNewLead,
   'audit-report-ready': auditReportReady,
+  'account-invitation': accountInvitation,
 }

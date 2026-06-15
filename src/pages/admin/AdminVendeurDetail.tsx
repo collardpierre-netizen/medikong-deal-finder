@@ -515,6 +515,23 @@ const AdminVendeurDetail = () => {
         </div>
       )}
 
+      {activeTab === "users" && (
+        <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+          <div className="mb-4">
+            <h3 className="text-[14px] font-bold" style={{ color: "#1D2530" }}>Utilisateurs & accès</h3>
+            <p className="text-[12px]" style={{ color: "#8B95A5" }}>
+              Gère les membres rattachés à ce compte vendeur (propriétaire, admins, membres). Les admins peuvent gérer les offres et inviter d'autres utilisateurs.
+            </p>
+          </div>
+          <AccountMembersPanel
+            accountKind="vendor"
+            accountId={vendor.id}
+            canManage={true}
+            ownerUserId={vendor.auth_user_id ?? null}
+          />
+        </div>
+      )}
+
       {activeTab === "activity" && (
         <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
           <h3 className="text-[14px] font-bold mb-4" style={{ color: "#1D2530" }}>Activité récente</h3>

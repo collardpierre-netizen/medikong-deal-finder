@@ -10,6 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Mail, MailCheck, MailX, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import {
+  getVendorOnboardingModeBadgeColors,
+  getVendorOnboardingModeLabel,
+  type VendorOnboardingMode,
+} from "@/lib/vendor-onboarding-mode-labels";
 
 interface LogRow {
   id: string;
@@ -18,38 +23,19 @@ interface LogRow {
   template_name: string;
   locale: string | null;
   recipient_email: string;
-  idempotency_key: string;
-  status: "enqueued" | "failed";
+...
   error_message: string | null;
   created_at: string;
 }
-
-interface DeliveryRow {
-  message_id: string | null;
-  status: string | null;
-  error_message: string | null;
-  created_at: string;
-}
-
-const MODE_LABEL: Record<string, string> = {
-  create: "Création admin",
-  attach: "Rattachement",
-  self_register: "Auto-inscription",
-};
 
 function modeBadge(mode: string) {
-  const cfg: Record<string, { bg: string; text: string; border: string }> = {
-    create: { bg: "#EFF6FF", text: "#1B5BDA", border: "#DBEAFE" },
-    attach: { bg: "#F0FDF4", text: "#059669", border: "#BBF7D0" },
-    self_register: { bg: "#FAF5FF", text: "#7C3AED", border: "#E9D5FF" },
-  };
-  const c = cfg[mode] ?? { bg: "#F1F5F9", text: "#475569", border: "#E2E8F0" };
+  const c = getVendorOnboardingModeBadgeColors(mode as VendorOnboardingMode);
   return (
     <span
       className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide"
       style={{ backgroundColor: c.bg, color: c.text, border: `1px solid ${c.border}` }}
     >
-      {MODE_LABEL[mode] ?? mode}
+      {getVendorOnboardingModeLabel(mode as VendorOnboardingMode)}
     </span>
   );
 }

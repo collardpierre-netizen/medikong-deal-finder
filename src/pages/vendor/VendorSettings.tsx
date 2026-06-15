@@ -8,6 +8,8 @@ import { VBtn } from "@/components/vendor/ui/VBtn";
 import VendorShippingSettings from "@/components/vendor/VendorShippingSettings";
 import VendorBrandingTab from "@/components/vendor/VendorBrandingTab";
 import VendorTeamTab from "@/components/vendor/VendorTeamTab";
+import { AccountMembersPanel } from "@/components/account/AccountMembersPanel";
+import { useAuth } from "@/contexts/AuthContext";
 import VendorProfileDefaults from "@/components/vendor/VendorProfileDefaults";
 import {
   Check, Save, Loader2, Plus, Trash2, Star, MapPin, Bell, BellOff,
@@ -22,6 +24,7 @@ import { useVendorActiveMarginRule } from "@/hooks/useVendorActiveMarginRule";
 
 export default function VendorSettings() {
   const [activeTab, setActiveTab] = useState("profile");
+  const { user } = useAuth();
   const [editing, setEditing] = useState(false);
   const { data: vendor, isLoading } = useCurrentVendor();
   const qc = useQueryClient();
@@ -71,7 +74,8 @@ export default function VendorSettings() {
   const tabs = [
     { id: "profile", label: "Profil" },
     { id: "branding", label: "Branding" },
-    { id: "team", label: "Équipe" },
+    { id: "team", label: "Équipe commerciale" },
+    { id: "users", label: "Utilisateurs & accès" },
     { id: "addresses", label: "Adresses" },
     { id: "shipping_mode", label: "Mode expédition" },
     { id: "pricing_defaults", label: "Prix & MOV par profil" },
@@ -200,6 +204,23 @@ export default function VendorSettings() {
 
       {activeTab === "team" && vendor && (
         <VendorTeamTab vendor={vendor} />
+      )}
+
+      {activeTab === "users" && vendor && (
+        <VCard>
+          <div className="mb-4">
+            <h2 className="text-[15px] font-bold text-[#1D2530]">Utilisateurs & accès</h2>
+            <p className="text-[12px] text-[#8B95A5] mt-0.5">
+              Invite des collègues à gérer ce compte vendeur. Les admins peuvent inviter d'autres membres, les membres peuvent gérer les offres et commandes.
+            </p>
+          </div>
+          <AccountMembersPanel
+            accountKind="vendor"
+            accountId={vendor.id}
+            canManage={!!user && user.id === vendor.auth_user_id}
+            ownerUserId={vendor.auth_user_id ?? null}
+          />
+        </VCard>
       )}
 
       {activeTab === "addresses" && vendorId && (

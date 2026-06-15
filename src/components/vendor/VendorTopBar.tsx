@@ -9,7 +9,7 @@ import { commissionRates } from "@/lib/vendor-tokens";
 import { NotificationsBell } from "@/components/vendor/NotificationsBell";
 import { VendorAdminStatusBadge } from "@/components/vendor/VendorAdminStatusBadge";
 
-const langs: Lang[] = ["fr", "nl", "de"];
+const langs: Lang[] = ["fr", "nl", "de", "en"];
 
 function getLevel(score: number) {
   return commissionRates.find(r => score >= r.minScore && score <= r.maxScore) ?? commissionRates[0];

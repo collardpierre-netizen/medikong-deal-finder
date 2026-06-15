@@ -65,6 +65,7 @@ const DelegateDesignDemoPage = lazyWithRetry(() => import("./pages/DelegateDesig
 const InvestPage = lazyWithRetry(() => import("./pages/InvestPage"), "InvestPage");
 const ForgotPasswordPage = lazyWithRetry(() => import("./pages/ForgotPasswordPage"), "ForgotPasswordPage");
 const ResetPasswordPage = lazyWithRetry(() => import("./pages/ResetPasswordPage"), "ResetPasswordPage");
+const AccountInvitationPage = lazyWithRetry(() => import("./pages/AccountInvitationPage"), "AccountInvitationPage");
 const VendorPublicPage = lazyWithRetry(() => import("./pages/VendorPublicPage"), "VendorPublicPage");
 const VendorLegacySlugGone = lazyWithRetry(() => import("./pages/VendorLegacySlugGone"), "VendorLegacySlugGone");
 import { isLegacyVendorSlug } from "./pages/VendorLegacySlugGone";
@@ -424,6 +425,8 @@ const App = () => (
             <Route path="/politique-confidentialite" element={<LP><PrivacyPage /></LP>} />
             <Route path="/cookies" element={<LP><CookiePolicyPage /></LP>} />
             <Route path="/unsubscribe" element={<LP><UnsubscribePage /></LP>} />
+            <Route path="/account/invitation" element={<LP><AccountInvitationPage /></LP>} />
+            <Route path="/account/invitation/:token" element={<LP><AccountInvitationPage /></LP>} />
             <Route path="/audit-achats" element={<AuditAchatsPage />} />
             <Route path="/audit-achats/confirmation" element={<AuditAchatsConfirmationPage />} />
 

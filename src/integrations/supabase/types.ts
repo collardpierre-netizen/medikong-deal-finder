@@ -16581,6 +16581,45 @@ export type Database = {
           },
         ]
       }
+      vendor_onboarding_email_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          idempotency_key: string
+          locale: string | null
+          mode: string
+          recipient_email: string
+          status: string
+          template_name: string
+          vendor_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          idempotency_key: string
+          locale?: string | null
+          mode: string
+          recipient_email: string
+          status: string
+          template_name: string
+          vendor_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          idempotency_key?: string
+          locale?: string | null
+          mode?: string
+          recipient_email?: string
+          status?: string
+          template_name?: string
+          vendor_id?: string | null
+        }
+        Relationships: []
+      }
       vendor_order_tokens: {
         Row: {
           created_at: string

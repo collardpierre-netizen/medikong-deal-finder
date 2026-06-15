@@ -35,6 +35,7 @@ const sections: NavSection[] = [
       { label: "Vendors Stripe", path: "/admin/vendors-stripe", icon: CreditCard },
       { labelKey: "externalVendors", path: "/admin/vendeurs-externes", icon: ExternalLink },
       { labelKey: "onboarding", path: "/admin/onboarding", icon: UserPlus },
+      { label: "Emails onboarding vendeur", path: "/admin/vendor-onboarding-emails", icon: Mail },
       { labelKey: "products", path: "/admin/produits", icon: Package },
       { labelKey: "productSubmissions", path: "/admin/produits-soumis", icon: ClipboardList },
       { labelKey: "categories", path: "/admin/categories", icon: Layers },

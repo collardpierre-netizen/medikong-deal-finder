@@ -3,6 +3,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { issueAttachVerification, resolveAttachLocale } from "../_shared/vendor-attach-verification.ts";
+
 
 // Helper: réponse 200 normalisée (succès ou erreur applicative)
 function jsonOk(payload: Record<string, unknown>) {
@@ -113,12 +115,12 @@ Deno.serve(async (req) => {
 
       const matched = await findAuthUserByEmail(normalizedEmail);
       let userId: string;
-      let tempPassword: string | null = null;
+      let createdAuthUser = false;
 
       if (matched) {
         userId = matched.id;
       } else {
-        tempPassword = crypto.randomUUID().slice(0, 12) + "Aa1!";
+        const tempPassword = crypto.randomUUID().slice(0, 12) + "Aa1!";
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
           email: normalizedEmail,
           password: tempPassword,
@@ -135,86 +137,58 @@ Deno.serve(async (req) => {
           );
         }
         userId = authData.user.id;
+        createdAuthUser = true;
       }
 
-      const { error: updateError } = await supabaseAdmin
-        .from("vendors")
-        .update({ auth_user_id: userId, email: normalizedEmail })
-        .eq("id", vendor_id);
-
-      if (updateError) {
-        if (tempPassword) await supabaseAdmin.auth.admin.deleteUser(userId);
-        return jsonErr(`Erreur rattachement: ${updateError.message}`, "attach_failed");
-      }
-
-      // Best-effort onboarding email pour le mode ATTACH
-      let recoveryUrl: string | null = null;
-      // Résoudre la langue préférée du vendeur (fallback FR)
+      // ⛔ Ne PAS poser vendor.auth_user_id ici. Activation différée après vérification email.
       const { data: vendorLang } = await supabaseAdmin
         .from("vendors")
         .select("preferred_language, country_code, company_name, name")
         .eq("id", vendor_id)
         .maybeSingle();
-      const attachLocale = (vendorLang?.preferred_language as string)
-        || (vendorLang?.country_code === "NL" ? "nl"
-          : (["FR","BE","LU"].includes(String(vendorLang?.country_code || "")) ? "fr" : "en"));
+      const attachLocale = resolveAttachLocale(
+        vendorLang?.preferred_language as string | null,
+        vendorLang?.country_code as string | null,
+      );
+
+      let verif: Awaited<ReturnType<typeof issueAttachVerification>>;
       try {
-        const { data: linkData } = await supabaseAdmin.auth.admin.generateLink({
-          type: "recovery",
+        verif = await issueAttachVerification({
+          supabaseAdmin,
+          vendorId: vendor_id,
+          userId,
           email: normalizedEmail,
-          options: { redirectTo: "https://www.medikong.pro/vendor/login" },
+          companyName: vendorLang?.company_name || vendorLang?.name || existingVendor.company_name || existingVendor.name || "",
+          locale: attachLocale,
+          createdByAdminId: caller.id,
         });
-        recoveryUrl = linkData?.properties?.action_link ?? null;
       } catch (e) {
-        console.warn("[create-vendor-account/ATTACH] generateLink failed:", e);
-      }
-      {
-        const idemKey = `vendor-onboarding-attach-${vendor_id}`;
-        let logStatus: "enqueued" | "failed" = "enqueued";
-        let logError: string | null = null;
-        try {
-          const { error: invokeErr } = await supabaseAdmin.functions.invoke("send-transactional-email", {
-            body: {
-              templateName: "vendor-account-created",
-              recipientEmail: normalizedEmail,
-              idempotencyKey: idemKey,
-              templateData: {
-                companyName: vendorLang?.company_name || vendorLang?.name || existingVendor.company_name || existingVendor.name,
-                loginEmail: normalizedEmail,
-                recoveryUrl,
-                tempPassword: tempPassword && !recoveryUrl ? tempPassword : null,
-                locale: attachLocale,
-              },
-            },
-          });
-          if (invokeErr) { logStatus = "failed"; logError = invokeErr.message ?? String(invokeErr); }
-        } catch (e) {
-          logStatus = "failed";
-          logError = e instanceof Error ? e.message : String(e);
-          console.warn("[create-vendor-account/ATTACH] onboarding email failed:", e);
+        if (createdAuthUser) {
+          // Rollback du user fraîchement créé pour cette opération
+          await supabaseAdmin.auth.admin.deleteUser(userId);
         }
-        try {
-          await supabaseAdmin.from("vendor_onboarding_email_logs").insert({
-            vendor_id, mode: "attach", template_name: "vendor-account-created",
-            locale: attachLocale, recipient_email: normalizedEmail,
-            idempotency_key: idemKey, status: logStatus, error_message: logError,
-          });
-        } catch (e) { console.warn("[create-vendor-account/ATTACH] log insert failed:", e); }
+        return jsonErr(
+          `Erreur création vérification: ${e instanceof Error ? e.message : String(e)}`,
+          "verification_create_failed",
+        );
       }
 
       return jsonOk({
         vendor_id,
         user_id: userId,
-        temp_password: tempPassword,
-        recovery_url: recoveryUrl,
-        reused_existing_user: !tempPassword,
-        message: tempPassword
-          ? "Accès créé. Mot de passe temporaire généré + email envoyé."
-          : "Compte existant rattaché au vendeur. Email de notification envoyé.",
+        reused_existing_user: !createdAuthUser,
+        verification_sent: verif.emailStatus === "enqueued",
+        verification_id: verif.verificationId,
+        expires_at: verif.expiresAt,
+        email_error: verif.emailError,
+        message: verif.emailStatus === "enqueued"
+          ? `Email de vérification envoyé à ${normalizedEmail} (valide 24 h). L'accès portail s'activera après confirmation par le destinataire.`
+          : `Vérification créée mais l'envoi d'email a échoué (${verif.emailError ?? "erreur inconnue"}). Renvoyez le lien depuis la fiche vendeur.`,
       });
     }
 
     // ─── MODE 2 : CREATE FROM SCRATCH ─────────────────────────────────────
+
 
     // ⛳ Pré-check doublon email → on propose "rattacher" si un vendor existe déjà
     const existingVendorSameEmail = await findVendorByEmail(normalizedEmail);

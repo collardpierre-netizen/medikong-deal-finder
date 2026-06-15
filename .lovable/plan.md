@@ -1,66 +1,106 @@
-## Périmètre exact (option C+2)
+# Vérification email avant activation accès portail (mode ATTACH)
 
-Tout `/vendor/*` + `src/components/vendor/**` + emails vendeur (`vendor-*.tsx`). FR câblé via `t(...)`, NL/DE/EN générés automatiquement par `translate-and-cache`.
+## Objectif strict
+Quand un admin rattache un email à un vendeur existant (ATTACH), **ne plus activer immédiatement** `vendor.auth_user_id`. À la place, envoyer un email de vérification avec un token unique. L'accès n'est activé qu'après que le destinataire clique le lien.
 
-- **35 pages** sous `src/pages/vendor/`
-- **~35 composants top-level** sous `src/components/vendor/` + sous-dossiers `catalog/`, `contract/`, `dashboard/`, `ui/`
-- **12 templates email** `vendor-*.tsx` (FR par défaut, fallback FR si recipient inconnu)
+**Hors scope** (non modifié) :
+- Mode CREATE de `create-vendor-account` (création complète d'un vendeur from scratch)
+- `self-register-vendor`
+- Vendors déjà rattachés (`auth_user_id` non null)
 
-## Méthode (2) : FR câblé + traduction auto
+## Comportement actuel (à corriger)
+Deux chemins ATTACH écrivent `auth_user_id` immédiatement :
+- `create-vendor-account` (branche `if (vendor_id)`)
+- `attach-user-to-vendor` (edge function dédiée)
 
-Pour chaque fichier :
-1. Repérer toutes les chaînes FR hardcodées (texte JSX, `placeholder`, `aria-label`, `title`, `toast.success/error`, `confirm`, libellés `<Button>`).
-2. Remplacer par `t('vendor.<page>.<key>')` (namespace stable par fichier).
-3. Ajouter les clés à `src/i18n/locales/fr.json` sous `vendor.*`.
-4. **Pas** de pluralisation complexe ni d'ICU : on garde `{{var}}` simple (interpolation i18next native).
+Risque : un admin saisit un email erroné → le titulaire de cet email obtient l'accès au portail vendeur sans preuve qu'il représente bien le vendeur.
 
-Pour les emails : ajouter une prop `locale` (fallback `'fr'`) + table `COPY[locale]` comme le template `vendor-account-created` créé hier. Le `locale` se déduit de `vendors.preferred_language` côté trigger (best-effort, fallback `fr`).
+## Nouveau flux
 
-## Lots indépendants (chaque lot est mergeable et testable seul)
+```text
+Admin → ATTACH
+  ├─ Trouve/crée le user auth (email_confirm=true)
+  ├─ ⛔ N'écrit PAS vendor.auth_user_id
+  ├─ Génère token random 32 octets, stocke SHA-256 + expires_at (24h)
+  ├─ Envoie email "vendor-attach-verification" au candidat
+  └─ Réponse admin : "Email de vérification envoyé"
 
-### Lot 0 — Infrastructure (1 PR)
-- Ajouter le namespace `vendor` dans `src/i18n/index.ts` si pas déjà présent.
-- Créer le script `scripts/translate-vendor-i18n.ts` qui :
-  - Lit `src/i18n/locales/fr.json` → branche `vendor.*`
-  - Pour chaque langue cible (nl, de, en) : compare avec le JSON existant, n'envoie à `translate-and-cache` que les clés manquantes ou modifiées (hash sha256 par valeur stocké à part dans `scripts/.i18n-vendor-hashes.json`).
-  - Écrit le résultat dans `src/i18n/locales/{nl,de,en}.json` sous `vendor.*`.
-  - Idempotent + relançable.
+Destinataire → clique lien /vendor/verifier-acces?token=XYZ
+  └─ Page appelle verify-vendor-attach (public)
+       ├─ Hash token, lookup non consommé + non expiré
+       ├─ Met à jour vendors.auth_user_id + vendors.email
+       ├─ Marque consumed_at
+       ├─ Génère magic-link recovery (set password) côté serveur
+       └─ Renvoie {ok, recovery_url, vendor_id}
+  └─ Page affiche succès + bouton "Définir mon mot de passe"
+```
 
-### Lot 1 — Layout & navigation vendeur (forte visibilité, peu de strings)
-`VendorLayout.tsx`, `VendorSidebar.tsx`, `VendorTopBar.tsx`, `VendorAdminStatusBadge.tsx`, `ContractSignatureBanner.tsx`, `NotificationsBell.tsx`, `VendorMarketIntelGate.tsx`.
+## Changements
 
-### Lot 2 — Pages "core opérationnelles"
-`VendorDashboard.tsx`, `VendorOffers.tsx` (+ `EditOfferPopup.tsx`, `AdjustPriceModal.tsx`, `ProfilePricesEditor.tsx`, `ResolvedProfilePricesPreview.tsx`, `OfferSuggestedRetailPriceEditor.tsx`, `OfferCommissionOverrideDialog.tsx`, `VendorCommissionOverrideDialog.tsx`, `MarginBreakdownDetails.tsx`, `MarginInsightCard.tsx`), `VendorOrders.tsx` (+ `OrderDetailPopup.tsx`), `VendorCatalog.tsx` (+ sous-dossier `catalog/`), `VendorNotifications.tsx`.
+### 1. Migration SQL — `vendor_attach_verifications`
+```sql
+create table public.vendor_attach_verifications (
+  id uuid primary key default gen_random_uuid(),
+  vendor_id uuid not null references public.vendors(id) on delete cascade,
+  user_id uuid not null,            -- auth.users.id pré-créé/résolu
+  email text not null,
+  token_hash text not null unique,  -- sha-256 hex
+  expires_at timestamptz not null,
+  consumed_at timestamptz,
+  created_by_admin_id uuid,         -- caller admin
+  created_at timestamptz not null default now()
+);
+create index on public.vendor_attach_verifications (vendor_id) where consumed_at is null;
+-- RLS : admin lecture, pas d'accès anon/authenticated (la consommation passe par edge function service_role)
+grant select on public.vendor_attach_verifications to service_role;
+grant all on public.vendor_attach_verifications to service_role;
+alter table public.vendor_attach_verifications enable row level security;
+create policy "Admins read attach verifications" on public.vendor_attach_verifications
+  for select to authenticated using (public.is_admin());
+```
 
-### Lot 3 — RFQ & opportunités vendeur
-`VendorRfqInbox.tsx`, `VendorTenders.tsx`, `VendorOpportunities.tsx`, `VendorRfqResponseForm.tsx`, `VendorProductSubmissionPage.tsx`.
+### 2. Nouvelle edge function `verify-vendor-attach` (verify_jwt = false)
+- Body : `{ token: string }`
+- Hash SHA-256, lookup `vendor_attach_verifications` where `consumed_at IS NULL AND expires_at > now()`
+- Re-check : `vendors.auth_user_id IS NULL` (sinon `already_attached`)
+- Re-check : email non utilisé par un autre vendor (sinon `email_conflict`)
+- Update vendor (`auth_user_id`, `email`), marque consumed_at
+- Génère `recovery` magic-link, renvoie `{ok, vendor_id, recovery_url, login_email}`
+- Log dans `audit_logs` (event `vendor_attach_verified`)
 
-### Lot 4 — Veille marché & alertes
-`VendorMarketIntel.tsx`, `VendorMarketIntelHub.tsx`, `VendorPositioning.tsx`, `VendorAlerts.tsx`, `VendorCompetitorAlerts.tsx`, `VendorPriceAlerts.tsx`, `VendorPriceAlertRulesPage.tsx`, `AlertHistoryChart.tsx`, `VendorTopBrands.tsx`.
+### 3. Modifier `create-vendor-account` (branche ATTACH) et `attach-user-to-vendor`
+Remplacer le bloc « update vendors.auth_user_id » par :
+- Génération token + insert `vendor_attach_verifications`
+- Envoi email `vendor-attach-verification` (locale résolue) avec URL `https://www.medikong.pro/vendor/verifier-acces?token=...`
+- Log dans `vendor_onboarding_email_logs` (nouveau template_name `vendor-attach-verification`, status `enqueued`/`failed`)
+- Réponse : `{ ok: true, vendor_id, verification_sent: true, expires_at, message: "Email de vérification envoyé au candidat (valide 24h)" }`
+- ⚠️ Si un user auth a été créé pour cette opération mais que l'envoi d'email échoue → on garde le user (il peut être réutilisé), on retourne tout de même `verification_sent: false` + `error` pour que l'admin renvoie
 
-### Lot 5 — Réglages & onboarding vendeur
-`VendorSettings.tsx`, `VendorOnboardingWizard.tsx`, `VendorCommercialSettings.tsx`, `VendorCommissionTab.tsx`, `VendorBrandingTab.tsx`, `VendorShippingSettings.tsx`, `VendorProfileDefaults.tsx`, `VendorTeamTab.tsx`, `VendorDelegateCompact.tsx`, `VendorDelegateDetailDialog.tsx`, `VendorDelegatesPublic.tsx`, `VendorKycStepper.tsx`.
+### 4. Nouveau template email `vendor-attach-verification.tsx`
+FR/NL/EN, structure miroir de `vendor-account-created.tsx` :
+- Sujet : "Confirmez votre accès vendeur MediKong" / NL / EN
+- Corps : "Un admin MediKong a configuré un accès portail vendeur pour cette adresse email. Confirmez que vous êtes bien le représentant de **{companyName}** pour activer l'accès."
+- Bouton : "Confirmer mon accès" → URL token
+- Note : "Si vous n'êtes pas à l'origine de cette demande, ignorez ce message. Le lien expire dans 24h."
+- Enregistrer dans `registry.ts`
 
-### Lot 6 — Logistique, finance, contrats, divers
-`VendorLogistics.tsx`, `VendorShipments.tsx`, `VendorShipmentDetail.tsx`, `VendorNewShipment.tsx`, `VendorBilling.tsx`, `VendorFinance.tsx`, `VendorInvoices`-related (`InvoicePreview.tsx`), `VendorContractPage.tsx`, `VendorContractChangelogPage.tsx` (+ sous-dossier `contract/`, `ContractHistoryTable.tsx`), `VendorDocuments.tsx`, `VendorAcademy.tsx`, `VendorMessages.tsx`, `VendorHealth.tsx`, `VendorAnalytics.tsx`, `VendorLoginPage.tsx`, `VendorStripeOnboardingPage.tsx`, `VendorStripeRefreshPage.tsx`, `VendorStripeSuccessPage.tsx`, `VendorProductQuickView.tsx`, `PrixRefDetailPopup.tsx`, `CategoryTreeSelector.tsx`, sous-dossier `dashboard/`, sous-dossier `ui/`.
+### 5. Nouvelle page `/vendor/verifier-acces` (`VendorVerifyAttachPage.tsx`)
+- Lit `?token=` dans l'URL
+- Appelle `verify-vendor-attach` au mount (1× via ref guard)
+- États : `verifying` / `success` / `expired` / `already_used` / `error`
+- Succès : carte "Accès activé ✅", bouton primaire "Définir mon mot de passe" (lien recovery_url), bouton secondaire "Aller à la connexion"
+- noindex (la page est privée)
 
-### Lot 7 — Emails vendeur (12 templates)
-Convertir `vendor-application`, `vendor-approved`, `vendor-rejected`, `vendor-contract-*` (4), `vendor-new-order`, `vendor-invoices`, `vendor-price-challenge`, `rfq-vendor-invitation`, `admin-vendor-market-intel-notification` au pattern `COPY[locale]` (fr/nl/de/en) avec prop `locale`. Côté trigger : lire `vendors.preferred_language` quand connu, fallback `'fr'`. Sujet → fonction `(data) => COPY[locale].subject`.
+### 6. Route dans `src/App.tsx`
+Ajouter `<Route path="/vendor/verifier-acces" element={<VendorVerifyAttachPage />} />` (lazy import)
 
-### Lot 8 — Run final du script de traduction
-Une fois TOUS les lots 1-7 mergés et `fr.json` complet, lancer `bun run scripts/translate-vendor-i18n.ts` qui remplit `nl.json`, `de.json`, `en.json`.
+### 7. UI admin — messages
+- `VendorFormDialog.tsx` et `AdminVendeurDetail.tsx` : adapter le toast de succès post-ATTACH pour dire « Email de vérification envoyé à `{email}` (valide 24h). L'accès portail s'activera après confirmation. »
+- `vendor-account-errors.ts` : ajouter codes éventuels (`verification_send_failed`)
 
-## Garde-fous
+### 8. Page admin `/admin/vendor-onboarding-emails`
+Aucun changement structurel : les nouveaux logs (template `vendor-attach-verification`, mode `attach`) apparaissent automatiquement.
 
-- Chaque lot livré seul ne casse rien : si `t('vendor.x.y')` n'existe pas encore en NL, i18next renvoie la valeur FR par défaut (fallback déjà configuré).
-- Aucun changement de logique métier, aucun changement de schéma DB, aucune migration.
-- Pas de touche aux pages acheteur, admin, restock, légales, marketing — strictement vendeur + emails vendeur.
-
-## Question avant de démarrer
-
-Vu le volume (~92 fichiers), je propose de **livrer lot par lot** dans des messages séparés et que tu valides "OK lot suivant" entre chaque, pour éviter qu'un seul mega-changeset soit ingérable à relire.
-
-Dis-moi :
-- **(a)** OK, fais-le lot par lot avec validation entre chaque (recommandé), OU
-- **(b)** Enchaîne tout en autonomie, je relirai à la fin, OU
-- **(c)** Réduis le périmètre (ex : juste lots 1+2+5+7, le reste plus tard).
+## Vérifications avant de clore
+- `bunx tsc --noEmit`
+- Test manuel : ATTACH depuis `/admin/vendeurs` → vérifier qu'aucun `auth_user_id` n'est posé, que la ligne `vendor_attach_verifications` existe, que l'email est loggé, qu'un appel `verify-vendor-attach` consomme la ligne et active l'accès.

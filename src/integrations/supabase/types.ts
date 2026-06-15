@@ -14424,6 +14424,95 @@ export type Database = {
           },
         ]
       }
+      vendor_attach_verifications: {
+        Row: {
+          consumed_at: string | null
+          consumed_ip: string | null
+          created_at: string
+          created_by_admin_id: string | null
+          email: string
+          expires_at: string
+          id: string
+          token_hash: string
+          user_id: string
+          vendor_id: string
+        }
+        Insert: {
+          consumed_at?: string | null
+          consumed_ip?: string | null
+          created_at?: string
+          created_by_admin_id?: string | null
+          email: string
+          expires_at: string
+          id?: string
+          token_hash: string
+          user_id: string
+          vendor_id: string
+        }
+        Update: {
+          consumed_at?: string | null
+          consumed_ip?: string | null
+          created_at?: string
+          created_by_admin_id?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          token_hash?: string
+          user_id?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_attach_verifications_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_attach_verifications_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_attach_verifications_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_attach_verifications_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_attach_verifications_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_attach_verifications_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_attach_verifications_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_buyer_overrides: {
         Row: {
           buyer_account_id: string

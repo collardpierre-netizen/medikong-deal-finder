@@ -238,6 +238,8 @@ const AdminReconciliation = lazyWithRetry(() => import("./pages/admin/AdminRecon
 
 // Vendor pages
 const VendorLoginPage = lazyWithRetry(() => import("./pages/vendor/VendorLoginPage"), "VendorLoginPage");
+const VendorVerifyAttachPage = lazyWithRetry(() => import("./pages/vendor/VendorVerifyAttachPage"), "VendorVerifyAttachPage");
+
 const VendorOrderPage = lazyWithRetry(() => import("./pages/VendorOrderPage"), "VendorOrderPage");
 const VendorLayout = lazyWithRetry(() => import("./components/vendor/VendorLayout"), "VendorLayout");
 const VendorDashboard = lazyWithRetry(() => import("./pages/vendor/VendorDashboard"), "VendorDashboard");
@@ -555,6 +557,8 @@ const App = () => (
             {/* Vendor Dashboard */}
             <Route path="/espace-vendeur/catalogue" element={<Navigate to="/vendor/catalog" replace />} />
             <Route path="/vendor/login" element={<LP><VendorLoginPage /></LP>} />
+            <Route path="/vendor/verifier-acces" element={<LP><VendorVerifyAttachPage /></LP>} />
+
             <Route path="/vendor/orders/:order_number" element={<LP><VendorOrderPage /></LP>} />
             <Route path="/vendor/onboarding" element={<LP><VendorOnboardingWizard /></LP>} />
             <Route path="/vendor/stripe-onboarding" element={<LP><VendorStripeOnboardingPage /></LP>} />

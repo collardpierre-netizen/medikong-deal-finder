@@ -64,5 +64,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'audit-report-ready': auditReportReady,
   'account-invitation': accountInvitation,
   'vendor-account-created': vendorAccountCreated,
+  'vendor-attach-verification': vendorAttachVerification,
   'vendor-self-registered': vendorSelfRegistered,
 }
+

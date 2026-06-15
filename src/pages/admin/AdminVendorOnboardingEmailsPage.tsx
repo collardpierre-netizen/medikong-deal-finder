@@ -147,9 +147,9 @@ export default function AdminVendorOnboardingEmailsPage() {
           <SelectTrigger className="w-[180px]"><SelectValue placeholder="Mode" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tous les modes</SelectItem>
-            <SelectItem value="create">Création admin</SelectItem>
-            <SelectItem value="attach">Rattachement</SelectItem>
-            <SelectItem value="self_register">Auto-inscription</SelectItem>
+            <SelectItem value="create">{getVendorOnboardingModeLabel("create")}</SelectItem>
+            <SelectItem value="attach">{getVendorOnboardingModeLabel("attach")}</SelectItem>
+            <SelectItem value="self_register">{getVendorOnboardingModeLabel("self_register")}</SelectItem>
           </SelectContent>
         </Select>
         <Select value={status} onValueChange={setStatus}>

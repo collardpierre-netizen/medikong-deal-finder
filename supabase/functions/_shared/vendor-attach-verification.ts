@@ -63,7 +63,8 @@ export interface IssueAttachVerificationResult {
 export async function issueAttachVerification(
   input: IssueAttachVerificationInput,
 ): Promise<IssueAttachVerificationResult> {
-  const { supabaseAdmin, vendorId, userId, email, companyName, locale, createdByAdminId } = input;
+  const { supabaseAdmin, vendorId, userId, email, companyName, locale, createdByAdminId, mode } = input;
+  const logMode: AttachLogMode = mode ?? "attach";
 
   // Invalide les éventuels tokens pendants pour ce vendor (un seul lien valide à la fois)
   await supabaseAdmin

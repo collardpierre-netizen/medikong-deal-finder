@@ -125,8 +125,21 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
           return;
         }
 
-        setResult({ vendor_id: data.vendor_id, temp_password: data.temp_password ?? null });
-        toast.success("Vendeur créé avec compte d'accès !");
+        setResult({
+          vendor_id: data.vendor_id,
+          temp_password: data.temp_password ?? null,
+          verification_sent: !!data.verification_sent,
+          verification_email: form.email.trim(),
+          expires_at: data.expires_at ?? null,
+          email_error: data.email_error ?? null,
+        });
+        if (data.verification_sent) {
+          toast.success(`Vendeur créé. Email de vérification envoyé à ${form.email.trim()} (valide 24 h). L'accès s'activera après confirmation.`, { duration: 12000 });
+        } else if (data.verification_id) {
+          toast.error(`Vendeur créé mais l'envoi du lien de vérification a échoué (${data.email_error ?? "erreur inconnue"}). Renvoyez-le depuis la fiche vendeur.`, { duration: 12000 });
+        } else {
+          toast.success("Vendeur créé avec compte d'accès !");
+        }
       } else {
         // Insert direct sans compte auth
         const slug = slugify(form.company_name);

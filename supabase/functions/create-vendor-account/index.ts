@@ -168,23 +168,38 @@ Deno.serve(async (req) => {
       } catch (e) {
         console.warn("[create-vendor-account/ATTACH] generateLink failed:", e);
       }
-      try {
-        await supabaseAdmin.functions.invoke("send-transactional-email", {
-          body: {
-            templateName: "vendor-account-created",
-            recipientEmail: normalizedEmail,
-            idempotencyKey: `vendor-onboarding-attach-${vendor_id}`,
-            templateData: {
-              companyName: vendorLang?.company_name || vendorLang?.name || existingVendor.company_name || existingVendor.name,
-              loginEmail: normalizedEmail,
-              recoveryUrl,
-              tempPassword: tempPassword && !recoveryUrl ? tempPassword : null,
-              locale: attachLocale,
+      {
+        const idemKey = `vendor-onboarding-attach-${vendor_id}`;
+        let logStatus: "enqueued" | "failed" = "enqueued";
+        let logError: string | null = null;
+        try {
+          const { error: invokeErr } = await supabaseAdmin.functions.invoke("send-transactional-email", {
+            body: {
+              templateName: "vendor-account-created",
+              recipientEmail: normalizedEmail,
+              idempotencyKey: idemKey,
+              templateData: {
+                companyName: vendorLang?.company_name || vendorLang?.name || existingVendor.company_name || existingVendor.name,
+                loginEmail: normalizedEmail,
+                recoveryUrl,
+                tempPassword: tempPassword && !recoveryUrl ? tempPassword : null,
+                locale: attachLocale,
+              },
             },
-          },
-        });
-      } catch (e) {
-        console.warn("[create-vendor-account/ATTACH] onboarding email failed:", e);
+          });
+          if (invokeErr) { logStatus = "failed"; logError = invokeErr.message ?? String(invokeErr); }
+        } catch (e) {
+          logStatus = "failed";
+          logError = e instanceof Error ? e.message : String(e);
+          console.warn("[create-vendor-account/ATTACH] onboarding email failed:", e);
+        }
+        try {
+          await supabaseAdmin.from("vendor_onboarding_email_logs").insert({
+            vendor_id, mode: "attach", template_name: "vendor-account-created",
+            locale: attachLocale, recipient_email: normalizedEmail,
+            idempotency_key: idemKey, status: logStatus, error_message: logError,
+          });
+        } catch (e) { console.warn("[create-vendor-account/ATTACH] log insert failed:", e); }
       }
 
       return jsonOk({
@@ -329,23 +344,38 @@ Deno.serve(async (req) => {
       console.warn("[create-vendor-account] generateLink failed:", e);
     }
 
-    try {
-      await supabaseAdmin.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "vendor-account-created",
-          recipientEmail: normalizedEmail,
-          idempotencyKey: `vendor-onboarding-${vendor.id}`,
-          templateData: {
-            companyName: company_name.trim(),
-            loginEmail: normalizedEmail,
-            recoveryUrl,
-            tempPassword: recoveryUrl ? null : tempPassword,
-            locale: preferredLanguage,
+    {
+      const idemKey = `vendor-onboarding-${vendor.id}`;
+      let logStatus: "enqueued" | "failed" = "enqueued";
+      let logError: string | null = null;
+      try {
+        const { error: invokeErr } = await supabaseAdmin.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "vendor-account-created",
+            recipientEmail: normalizedEmail,
+            idempotencyKey: idemKey,
+            templateData: {
+              companyName: company_name.trim(),
+              loginEmail: normalizedEmail,
+              recoveryUrl,
+              tempPassword: recoveryUrl ? null : tempPassword,
+              locale: preferredLanguage,
+            },
           },
-        },
-      });
-    } catch (e) {
-      console.warn("[create-vendor-account] onboarding email failed:", e);
+        });
+        if (invokeErr) { logStatus = "failed"; logError = invokeErr.message ?? String(invokeErr); }
+      } catch (e) {
+        logStatus = "failed";
+        logError = e instanceof Error ? e.message : String(e);
+        console.warn("[create-vendor-account] onboarding email failed:", e);
+      }
+      try {
+        await supabaseAdmin.from("vendor_onboarding_email_logs").insert({
+          vendor_id: vendor.id, mode: "create", template_name: "vendor-account-created",
+          locale: preferredLanguage, recipient_email: normalizedEmail,
+          idempotency_key: idemKey, status: logStatus, error_message: logError,
+        });
+      } catch (e) { console.warn("[create-vendor-account] log insert failed:", e); }
     }
 
     return jsonOk({

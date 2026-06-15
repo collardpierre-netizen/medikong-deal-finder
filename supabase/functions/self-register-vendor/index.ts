@@ -128,21 +128,32 @@ Deno.serve(async (req) => {
     const locale = (preferred_language as string)
       || (normalizedCountry === "NL" ? "nl"
         : (["FR","BE","LU"].includes(String(normalizedCountry || "")) ? "fr" : "en"));
-    try {
-      await supabaseAdmin.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "vendor-self-registered",
-          recipientEmail: safeEmail,
-          idempotencyKey: `vendor-self-registered-${inserted.id}`,
-          templateData: {
-            companyName: safeName,
-            loginEmail: safeEmail,
-            locale,
+    {
+      const idemKey = `vendor-self-registered-${inserted.id}`;
+      let logStatus: "enqueued" | "failed" = "enqueued";
+      let logError: string | null = null;
+      try {
+        const { error: invokeErr } = await supabaseAdmin.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "vendor-self-registered",
+            recipientEmail: safeEmail,
+            idempotencyKey: idemKey,
+            templateData: { companyName: safeName, loginEmail: safeEmail, locale },
           },
-        },
-      });
-    } catch (e) {
-      console.warn("[self-register-vendor] welcome email failed:", e);
+        });
+        if (invokeErr) { logStatus = "failed"; logError = invokeErr.message ?? String(invokeErr); }
+      } catch (e) {
+        logStatus = "failed";
+        logError = e instanceof Error ? e.message : String(e);
+        console.warn("[self-register-vendor] welcome email failed:", e);
+      }
+      try {
+        await supabaseAdmin.from("vendor_onboarding_email_logs").insert({
+          vendor_id: inserted.id, mode: "self_register", template_name: "vendor-self-registered",
+          locale, recipient_email: safeEmail,
+          idempotency_key: idemKey, status: logStatus, error_message: logError,
+        });
+      } catch (e) { console.warn("[self-register-vendor] log insert failed:", e); }
     }
 
     return jsonOk({ vendor_id: inserted.id });

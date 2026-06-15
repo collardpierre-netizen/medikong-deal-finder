@@ -34,7 +34,9 @@ import { template as auditNewLead } from './audit-new-lead.tsx'
 import { template as auditReportReady } from './audit-report-ready.tsx'
 import { template as accountInvitation } from './account-invitation.tsx'
 import { template as vendorAccountCreated } from './vendor-account-created.tsx'
+import { template as vendorAttachVerification } from './vendor-attach-verification.tsx'
 import { template as vendorSelfRegistered } from './vendor-self-registered.tsx'
+
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'vendor-invoices': vendorInvoices,

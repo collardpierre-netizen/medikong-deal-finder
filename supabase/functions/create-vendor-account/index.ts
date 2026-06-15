@@ -275,10 +275,43 @@ Deno.serve(async (req) => {
       return jsonErr(`Erreur vendeur: ${vendorError.message}`, "vendor_insert_failed");
     }
 
+    // Best-effort : magic link de récupération + email d'onboarding multilingue.
+    let recoveryUrl: string | null = null;
+    try {
+      const { data: linkData } = await supabaseAdmin.auth.admin.generateLink({
+        type: "recovery",
+        email: normalizedEmail,
+        options: { redirectTo: "https://www.medikong.pro/vendor/login" },
+      });
+      recoveryUrl = linkData?.properties?.action_link ?? null;
+    } catch (e) {
+      console.warn("[create-vendor-account] generateLink failed:", e);
+    }
+
+    try {
+      await supabaseAdmin.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "vendor-account-created",
+          recipientEmail: normalizedEmail,
+          idempotencyKey: `vendor-onboarding-${vendor.id}`,
+          templateData: {
+            companyName: company_name.trim(),
+            loginEmail: normalizedEmail,
+            recoveryUrl,
+            tempPassword: recoveryUrl ? null : tempPassword,
+            locale: preferredLanguage,
+          },
+        },
+      });
+    } catch (e) {
+      console.warn("[create-vendor-account] onboarding email failed:", e);
+    }
+
     return jsonOk({
       vendor_id: vendor.id,
       user_id: userId,
       temp_password: tempPassword,
+      recovery_url: recoveryUrl,
       message: "Vendeur créé avec succès",
     });
   } catch (err) {

@@ -313,6 +313,7 @@ Deno.serve(async (req) => {
         companyName: company_name.trim(),
         locale: preferredLanguage as "fr" | "nl" | "en",
         createdByAdminId: caller.id,
+        mode: "create",
       });
     } catch (e) {
       // Rollback complet : vendor + user auth

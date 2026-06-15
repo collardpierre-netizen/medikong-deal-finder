@@ -37,6 +37,8 @@ export function resolveAttachLocale(
   return "en";
 }
 
+export type AttachLogMode = "create" | "attach" | "self_register";
+
 export interface IssueAttachVerificationInput {
   supabaseAdmin: AnyClient;
   vendorId: string;
@@ -45,6 +47,8 @@ export interface IssueAttachVerificationInput {
   companyName: string;
   locale: "fr" | "nl" | "en";
   createdByAdminId?: string | null;
+  /** Mode logged in `vendor_onboarding_email_logs.mode`. Defaults to "attach" for back-compat. */
+  mode?: AttachLogMode;
 }
 
 export interface IssueAttachVerificationResult {
@@ -59,7 +63,8 @@ export interface IssueAttachVerificationResult {
 export async function issueAttachVerification(
   input: IssueAttachVerificationInput,
 ): Promise<IssueAttachVerificationResult> {
-  const { supabaseAdmin, vendorId, userId, email, companyName, locale, createdByAdminId } = input;
+  const { supabaseAdmin, vendorId, userId, email, companyName, locale, createdByAdminId, mode } = input;
+  const logMode: AttachLogMode = mode ?? "attach";
 
   // Invalide les éventuels tokens pendants pour ce vendor (un seul lien valide à la fois)
   await supabaseAdmin
@@ -112,11 +117,11 @@ export async function issueAttachVerification(
     emailError = e instanceof Error ? e.message : String(e);
   }
 
-  // Log dans vendor_onboarding_email_logs (mode=attach, template=vendor-attach-verification)
+  // Log dans vendor_onboarding_email_logs (mode dynamique : create | attach | self_register)
   try {
     await supabaseAdmin.from("vendor_onboarding_email_logs").insert({
       vendor_id: vendorId,
-      mode: "attach",
+      mode: logMode,
       template_name: "vendor-attach-verification",
       locale,
       recipient_email: email,

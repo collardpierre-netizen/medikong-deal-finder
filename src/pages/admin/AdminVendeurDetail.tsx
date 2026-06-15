@@ -534,26 +534,29 @@ const AdminVendeurDetail = () => {
               <span className="text-[12px] font-bold" style={{ color: "#1D2530" }}>Modes d'accès au portail vendeur</span>
             </div>
             <div className="space-y-2">
-              <div className="flex items-start gap-2">
-                <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide" style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA" }}>CREATE</span>
-                <p className="text-[12px] leading-relaxed" style={{ color: "#616B7C" }}>
-                  Un vendeur est créé dans MediKong <strong>et</strong> un compte utilisateur est généré en même temps. L'accès reste inactif jusqu'à ce que le destinataire clique le lien de vérification envoyé par email (24 h).
-                </p>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide" style={{ backgroundColor: "#F0FDF4", color: "#059669" }}>ATTACH</span>
-                <p className="text-[12px] leading-relaxed" style={{ color: "#616B7C" }}>
-                  Un vendeur existe déjà dans la base MediKong mais n'a pas encore de compte d'accès. On lui rattache un utilisateur (existant ou nouveau) après vérification de son email.
-                </p>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide" style={{ backgroundColor: "#F5F3FF", color: "#7C3AED" }}>Auto-inscription</span>
-                <p className="text-[12px] leading-relaxed" style={{ color: "#616B7C" }}>
-                  Le vendeur s'inscrit de lui-même via le formulaire public. Son compte est créé en mode <em>shadow</em> ; un admin doit valider son profil pour activer l'accès complet au portail.
-                </p>
-              </div>
+              {(["create", "attach", "self_register"] as const).map((mode) => {
+                const meta = VENDOR_ONBOARDING_MODE_META[mode];
+                return (
+                  <div key={mode} className="flex items-start gap-2">
+                    <span
+                      className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide"
+                      style={{ backgroundColor: meta.badge.bg, color: meta.badge.text, border: `1px solid ${meta.badge.border}` }}
+                      title={`NL : ${meta.label.nl} — EN : ${meta.label.en}`}
+                    >
+                      {meta.label.fr}
+                    </span>
+                    <p className="text-[12px] leading-relaxed" style={{ color: "#616B7C" }}>
+                      {meta.description.fr}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
+            <p className="mt-3 text-[11px]" style={{ color: "#8B95A5" }}>
+              Libellés multilingues — NL : {VENDOR_ONBOARDING_MODE_META.create.label.nl} / {VENDOR_ONBOARDING_MODE_META.attach.label.nl} / {VENDOR_ONBOARDING_MODE_META.self_register.label.nl} · EN : {VENDOR_ONBOARDING_MODE_META.create.label.en} / {VENDOR_ONBOARDING_MODE_META.attach.label.en} / {VENDOR_ONBOARDING_MODE_META.self_register.label.en}
+            </p>
           </div>
+
 
           <AccountMembersPanel
             accountKind="vendor"

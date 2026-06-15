@@ -17,6 +17,10 @@ import {
   type VendorAccountErrorPayload,
 } from "@/lib/vendor-account-errors";
 import { VendorAccountErrorAlert } from "@/components/admin/VendorAccountErrorAlert";
+import {
+  getVendorOnboardingModeBadgeColors,
+  getVendorOnboardingModeLabel,
+} from "@/lib/vendor-onboarding-mode-labels";
 
 function slugify(text: string): string {
   return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");

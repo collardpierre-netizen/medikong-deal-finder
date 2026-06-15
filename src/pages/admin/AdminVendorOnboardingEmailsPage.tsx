@@ -209,7 +209,7 @@ export default function AdminVendorOnboardingEmailsPage() {
                     <td className="p-3 text-muted-foreground whitespace-nowrap">
                       {format(new Date(l.created_at), "dd/MM/yy HH:mm", { locale: fr })}
                     </td>
-                    <td className="p-3">{MODE_LABEL[l.mode] ?? l.mode}</td>
+                    <td className="p-3">{modeBadge(l.mode)}</td>
                     <td className="p-3 font-mono text-xs">{l.template_name}</td>
                     <td className="p-3 uppercase text-xs">{l.locale ?? "—"}</td>
                     <td className="p-3">{l.recipient_email}</td>

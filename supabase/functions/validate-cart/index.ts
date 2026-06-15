@@ -42,7 +42,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    const result = await validateCart(supabase, items);
+    // Resolve buyer_account_id (customers.id) for per-buyer override cascade
+    const { data: customer } = await supabase
+      .from("customers")
+      .select("id")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+
+    const result = await validateCart(supabase, items, customer?.id ?? null);
     return new Response(JSON.stringify(result), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

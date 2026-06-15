@@ -217,7 +217,7 @@ Deno.serve(async (req) => {
       const cartItems = lines
         .filter((l: any) => l.offer_id)
         .map((l: any) => ({ offer_id: l.offer_id as string, quantity: Number(l.quantity) }));
-      const validation = await validateCart(supabase, cartItems);
+      const validation = await validateCart(supabase, cartItems, customer.id);
       if (!validation.valid) {
         return new Response(
           JSON.stringify({ error: "cart_validation_failed", validation }),

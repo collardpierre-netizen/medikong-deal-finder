@@ -66,6 +66,8 @@ export async function validateCart(
   items: CartInputItem[],
   // Optional: when provided, allows resolving per-buyer overrides on top of the cascade.
   buyerAccountId?: string | null,
+  // Optional: buyer profile + country, used to resolve vendor_profile_defaults.
+  buyerContext?: { customer_type?: string | null; country_code?: string | null } | null,
 ): Promise<ValidateCartResult> {
   const errors: ValidationError[] = [];
   const validated: ValidatedItem[] = [];

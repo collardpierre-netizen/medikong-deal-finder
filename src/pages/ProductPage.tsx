@@ -2143,7 +2143,7 @@ export default function ProductPage() {
 
                     {/* Other Offers */}
                     {otherOffers.length > 0 && (
-                      <div className="border border-border rounded-xl p-4 md:p-6">
+                      <div className="border border-border rounded-xl p-4 md:p-6 overflow-hidden">
                         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                           <div className="flex items-center gap-2">
                             <h3 className="text-base font-bold text-foreground">

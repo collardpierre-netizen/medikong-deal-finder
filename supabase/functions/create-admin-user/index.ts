@@ -5,6 +5,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -13,26 +20,59 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const admin = createClient(supabaseUrl, serviceRoleKey);
 
-    // Accept optional body params
-    let adminEmail = "admin@medikong.pro";
-    let adminPassword = "Admin123!";
-    let adminName = "Super Admin";
-    let adminRole = "super_admin";
+    let body: { email?: string; password?: string; name?: string; role?: string } = {};
+    try { body = await req.json(); } catch { /* allow empty body only during bootstrap */ }
 
-    try {
-      const body = await req.json();
-      if (body.email) adminEmail = body.email;
-      if (body.password) adminPassword = body.password;
-      if (body.name) adminName = body.name;
-      if (body.role) adminRole = body.role;
-    } catch {
-      // No body, use defaults
+    // Validate inputs — no hardcoded defaults anymore
+    const adminEmail = (body.email ?? "").trim().toLowerCase();
+    const adminPassword = body.password ?? "";
+    const adminName = (body.name ?? "Super Admin").trim();
+    const adminRole = (body.role ?? "super_admin").trim();
+
+    if (!adminEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(adminEmail)) {
+      return json({ success: false, error: "Valid email required" }, 400);
+    }
+    if (!adminPassword || adminPassword.length < 12) {
+      return json({ success: false, error: "Password must be at least 12 characters" }, 400);
+    }
+    if (!["super_admin", "admin", "moderator"].includes(adminRole)) {
+      return json({ success: false, error: "Invalid role" }, 400);
     }
 
-    // Create auth user
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    // Authorization: bootstrap allowed only if no admin exists yet.
+    // Otherwise the caller MUST be an authenticated super_admin.
+    const { count: adminCount, error: countErr } = await admin
+      .from("admin_users")
+      .select("id", { count: "exact", head: true })
+      .eq("is_active", true);
+    if (countErr) throw countErr;
+
+    if ((adminCount ?? 0) > 0) {
+      const authHeader = req.headers.get("Authorization") ?? "";
+      const token = authHeader.replace(/^Bearer\s+/i, "");
+      if (!token) return json({ success: false, error: "Unauthorized" }, 401);
+
+      const userClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+      });
+      const { data: userData, error: userErr } = await userClient.auth.getUser();
+      if (userErr || !userData?.user) {
+        return json({ success: false, error: "Unauthorized" }, 401);
+      }
+      const { data: callerAdmin } = await admin
+        .from("admin_users")
+        .select("role, is_active")
+        .eq("user_id", userData.user.id)
+        .maybeSingle();
+      if (!callerAdmin?.is_active || callerAdmin.role !== "super_admin") {
+        return json({ success: false, error: "Forbidden: super_admin required" }, 403);
+      }
+    }
+
+    const { data: authData, error: authError } = await admin.auth.admin.createUser({
       email: adminEmail,
       password: adminPassword,
       email_confirm: true,
@@ -43,27 +83,21 @@ Deno.serve(async (req) => {
     }
 
     let userId = authData?.user?.id;
-
-    // If user already exists, find their id
     if (!userId) {
-      const { data: users } = await supabase.auth.admin.listUsers();
-      const existing = users?.users?.find((u: any) => u.email === adminEmail);
+      const { data: users } = await admin.auth.admin.listUsers();
+      const existing = users?.users?.find((u: { email?: string }) => u.email === adminEmail);
       userId = existing?.id;
     }
+    if (!userId) throw new Error("Could not find or create user");
 
-    if (!userId) {
-      throw new Error("Could not find or create user");
-    }
-
-    // Check if already in admin_users
-    const { data: existing } = await supabase
+    const { data: existing } = await admin
       .from("admin_users")
       .select("id")
       .eq("user_id", userId)
       .maybeSingle();
 
     if (!existing) {
-      const { error: insertError } = await supabase.from("admin_users").insert({
+      const { error: insertError } = await admin.from("admin_users").insert({
         user_id: userId,
         name: adminName,
         email: adminEmail,
@@ -73,18 +107,9 @@ Deno.serve(async (req) => {
       if (insertError) throw insertError;
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: `Admin created: ${adminEmail}`,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json({ success: true, message: `Admin created: ${adminEmail}` });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return new Response(
-      JSON.stringify({ success: false, error: message }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json({ success: false, error: message }, 400);
   }
 });

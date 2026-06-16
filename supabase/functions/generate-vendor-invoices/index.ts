@@ -247,7 +247,10 @@ Deno.serve(async (req) => {
   // 5. Trigger email if at least one invoice created
   if (invoicesCreated.length > 0) {
     try {
-      await supabase.functions.invoke("send-invoices-email", { body: { order_id: orderId } });
+      await supabase.functions.invoke("send-invoices-email", {
+        body: { order_id: orderId },
+        headers: { Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` },
+      });
     } catch (e) {
       console.error("[generate-vendor-invoices] send-invoices-email failed", e);
     }

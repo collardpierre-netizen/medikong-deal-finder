@@ -155,11 +155,28 @@ type SyncType = "categories" | "brands" | "products" | "offers_detail" | "offers
 
 /* ─── Pipeline Card ───────────────────────────── */
 
-function PipelineRunCard({ run }: { run: any }) {
+function PipelineRunCard({ run, runningLog }: { run: any; runningLog?: any }) {
   const [expanded, setExpanded] = useState(run.status === "running");
   const steps = (run.steps_status as any[]) || [];
   const completedSteps = steps.filter((s: any) => s.status === "completed").length;
-  const pct = run.total_steps > 0 ? Math.round((completedSteps / run.total_steps) * 100) : 0;
+  const runningStepIdx = steps.findIndex((s: any) => s.status === "running");
+
+  // Live sub-progress on the currently running step
+  const subCurrent = Number(runningLog?.progress_current || 0);
+  const subTotal = Number(runningLog?.progress_total || 0);
+  const subPct = subTotal > 0 ? Math.min(Math.round((subCurrent / subTotal) * 100), 100) : 0;
+
+  // Global pipeline % = completed steps + fraction of running step
+  const stepFraction =
+    runningStepIdx >= 0 && subTotal > 0 ? subPct / 100 : 0;
+  const pct =
+    run.total_steps > 0
+      ? Math.min(
+          Math.round(((completedSteps + stepFraction) / run.total_steps) * 100),
+          99 + (run.status === "completed" ? 1 : 0),
+        )
+      : 0;
+
   const duration =
     run.completed_at && run.started_at
       ? Math.round((new Date(run.completed_at).getTime() - new Date(run.started_at).getTime()) / 1000)
@@ -172,6 +189,9 @@ function PipelineRunCard({ run }: { run: any }) {
     run.status === "failed" ? "text-red-700 bg-red-50" :
     run.status === "running" ? "text-blue-700 bg-blue-50" :
     "text-muted-foreground bg-muted";
+
+  const runningStep = runningStepIdx >= 0 ? steps[runningStepIdx] : null;
+  const liveMessage = runningLog?.progress_message;
 
   return (
     <div className="bg-card rounded-xl border p-4" style={{ borderColor: run.status === "running" ? "#93C5FD" : undefined }}>
@@ -206,43 +226,81 @@ function PipelineRunCard({ run }: { run: any }) {
       {run.status === "running" && (
         <div className="mt-3">
           <Progress value={pct} className="h-2" />
-          <span className="text-[11px] mt-1 block" style={{ color: "#616B7C" }}>
-            Étape {completedSteps + 1}/{run.total_steps} — {pct}%
-          </span>
+          <div className="flex justify-between items-center mt-1 text-[11px]" style={{ color: "#616B7C" }}>
+            <span>
+              Étape {Math.min(completedSteps + 1, run.total_steps)}/{run.total_steps}
+              {runningStep ? ` — ${runningStep.label || runningStep.step}` : ""}
+            </span>
+            <span className="font-semibold text-blue-600">{pct}%</span>
+          </div>
+          {liveMessage && (
+            <div className="mt-1 text-[11px] truncate" style={{ color: "#475569" }} title={liveMessage}>
+              ↳ {liveMessage}
+              {subTotal > 0 && (
+                <span className="ml-2 text-[10px]" style={{ color: "#8B95A5" }}>
+                  ({subCurrent.toLocaleString()} / {subTotal.toLocaleString()})
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
 
       {expanded && (
         <div className="mt-4 space-y-2">
-          {steps.map((s: any, i: number) => (
-            <div
-              key={i}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-[12px]"
-              style={{
-                backgroundColor: s.status === "running" ? "#EFF6FF" : s.status === "failed" ? "#FEF2F2" : "#F8FAFC",
-              }}
-            >
-              {stepIcon(s.status)}
-              <span className="font-medium flex-1" style={{ color: "#1E293B" }}>
-                {i + 1}. {s.label || s.step}
-              </span>
-              {s.stats && (
-                <span className="text-[10px] px-2 py-0.5 rounded bg-white border" style={{ color: "#616B7C" }}>
-                  {typeof s.stats === "object"
-                    ? Object.entries(s.stats)
-                        .filter(([k]) => k !== "error")
-                        .map(([k, v]) => `${k}: ${v}`)
-                        .join(" | ")
-                    : String(s.stats)}
-                </span>
-              )}
-              {s.completed_at && s.started_at && (
-                <span className="text-[10px]" style={{ color: "#8B95A5" }}>
-                  {formatDurationStr(Math.round((new Date(s.completed_at).getTime() - new Date(s.started_at).getTime()) / 1000))}
-                </span>
-              )}
-            </div>
-          ))}
+          {steps.map((s: any, i: number) => {
+            const isRunning = s.status === "running";
+            const showSub = isRunning && !!runningLog && subTotal > 0;
+            return (
+              <div
+                key={i}
+                className="rounded-lg text-[12px]"
+                style={{
+                  backgroundColor: s.status === "running" ? "#EFF6FF" : s.status === "failed" ? "#FEF2F2" : "#F8FAFC",
+                }}
+              >
+                <div className="flex items-center gap-3 px-3 py-2">
+                  {stepIcon(s.status)}
+                  <span className="font-medium flex-1" style={{ color: "#1E293B" }}>
+                    {i + 1}. {s.label || s.step}
+                  </span>
+                  {s.stats && (
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-white border" style={{ color: "#616B7C" }}>
+                      {typeof s.stats === "object"
+                        ? Object.entries(s.stats)
+                            .filter(([k]) => k !== "error")
+                            .map(([k, v]) => `${k}: ${v}`)
+                            .join(" | ")
+                        : String(s.stats)}
+                    </span>
+                  )}
+                  {s.completed_at && s.started_at && (
+                    <span className="text-[10px]" style={{ color: "#8B95A5" }}>
+                      {formatDurationStr(Math.round((new Date(s.completed_at).getTime() - new Date(s.started_at).getTime()) / 1000))}
+                    </span>
+                  )}
+                  {isRunning && subTotal > 0 && (
+                    <span className="text-[10px] font-semibold text-blue-600">{subPct}%</span>
+                  )}
+                </div>
+                {isRunning && (
+                  <div className="px-3 pb-2 -mt-1 space-y-1">
+                    <Progress value={showSub ? subPct : undefined} className="h-1.5" />
+                    <div className="flex justify-between text-[10px]" style={{ color: "#616B7C" }}>
+                      <span className="truncate" title={liveMessage || ""}>
+                        {liveMessage || "En cours…"}
+                      </span>
+                      {subTotal > 0 && (
+                        <span className="shrink-0 ml-2">
+                          {subCurrent.toLocaleString()} / {subTotal.toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
           {run.error_message && (
             <div className="text-[11px] text-red-600 mt-2 px-3">{run.error_message}</div>
           )}

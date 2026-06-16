@@ -275,6 +275,7 @@ const translations: Record<Lang, Record<string, string>> = {
     restockBuyers: "Kopers",
     restockCampaigns: "E-mailcampagnes",
     restockRules: "Filterregels",
+    exclusivities: "Exclusiviteiten",
   },
   de: {
     dashboard: "Dashboard",

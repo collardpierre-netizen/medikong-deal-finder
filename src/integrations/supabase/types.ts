@@ -9969,6 +9969,45 @@ export type Database = {
         }
         Relationships: []
       }
+      qogita_connection_tests: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          http_status: number | null
+          id: string
+          latency_ms: number | null
+          source: string
+          success: boolean
+          tested_at: string
+          tested_by: string | null
+          tested_email_masked: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          http_status?: number | null
+          id?: string
+          latency_ms?: number | null
+          source?: string
+          success: boolean
+          tested_at?: string
+          tested_by?: string | null
+          tested_email_masked?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          http_status?: number | null
+          id?: string
+          latency_ms?: number | null
+          source?: string
+          success?: boolean
+          tested_at?: string
+          tested_by?: string | null
+          tested_email_masked?: string | null
+        }
+        Relationships: []
+      }
       qogita_rate_limit: {
         Row: {
           available_tokens: number

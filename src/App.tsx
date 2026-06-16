@@ -217,6 +217,7 @@ const AdminCommissions = lazyWithRetry(() => import("./pages/admin/AdminCommissi
 const AdminCommissionOverridesPage = lazyWithRetry(() => import("./pages/admin/AdminCommissionOverridesPage"), "AdminCommissionOverridesPage");
 const AdminOnboardingCMS = lazyWithRetry(() => import("./pages/admin/AdminOnboardingCMS"), "AdminOnboardingCMS");
 const AdminSync = lazyWithRetry(() => import("./pages/admin/AdminSync"), "AdminSync");
+const AdminQogitaConnection = lazyWithRetry(() => import("./pages/admin/AdminQogitaConnection"), "AdminQogitaConnection");
 const AdminFabricants = lazyWithRetry(() => import("./pages/admin/AdminFabricants"), "AdminFabricants");
 const AdminApiKeys = lazyWithRetry(() => import("./pages/admin/AdminApiKeys"), "AdminApiKeys");
 const AdminApiDocs = lazyWithRetry(() => import("./pages/admin/AdminApiDocs"), "AdminApiDocs");
@@ -527,6 +528,7 @@ const App = () => (
               <Route path="commissions" element={<LP><AdminCommissions /></LP>} />
               <Route path="commission-overrides" element={<LP><AdminCommissionOverridesPage /></LP>} />
               <Route path="sync" element={<LP><AdminSync /></LP>} />
+              <Route path="qogita-connection" element={<LP><AdminQogitaConnection /></LP>} />
               <Route path="api-keys" element={<LP><AdminApiKeys /></LP>} />
               <Route path="api-docs" element={<LP><AdminApiDocs /></LP>} />
               <Route path="pays" element={<LP><AdminCountries /></LP>} />

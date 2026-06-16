@@ -203,12 +203,68 @@ export async function validateCart(
     }
   }
 
+  // Vendor types — distinguishes real vendors (which honor vendor_profile_defaults)
+  // from Qogita/virtual vendors (which keep the global DEFAULT_MEDIKONG_MOV floor).
+  let vendorTypeMap: Record<string, string> = {};
+  if (vendorIdsInCart.length > 0) {
+    const { data: vrows } = await supabase
+      .from("vendors")
+      .select("id, type")
+      .in("id", vendorIdsInCart);
+    for (const v of (vrows || []) as any[]) vendorTypeMap[v.id] = v.type;
+  }
+
+  // vendor_profile_defaults — per-vendor MOV cascade (profile + country)
+  const realVendorIds = vendorIdsInCart.filter((id) => vendorTypeMap[id] === "real");
+  let vendorDefaults: any[] = [];
+  if (realVendorIds.length > 0) {
+    const { data: vd } = await supabase
+      .from("vendor_profile_defaults")
+      .select("vendor_id, profile_type, country_code, default_mov")
+      .in("vendor_id", realVendorIds);
+    vendorDefaults = (vd || []) as any[];
+  }
+
+  const profileType = buyerContext?.customer_type || "pharmacy";
+  const countryCode = buyerContext?.country_code || "BE";
+
+  const resolveVendorProfileMov = (vendorId: string): number | null => {
+    if (vendorDefaults.length === 0) return null;
+    const exact = vendorDefaults.find(
+      (d) => d.vendor_id === vendorId && d.profile_type === profileType && d.country_code === countryCode,
+    );
+    if (exact) return Number(exact.default_mov) || 0;
+    const byProfile = vendorDefaults.find((d) => d.vendor_id === vendorId && d.profile_type === profileType);
+    if (byProfile) return Number(byProfile.default_mov) || 0;
+    const byCountry = vendorDefaults.find((d) => d.vendor_id === vendorId && d.country_code === countryCode);
+    if (byCountry) return Number(byCountry.default_mov) || 0;
+    const any = vendorDefaults.find((d) => d.vendor_id === vendorId);
+    if (any) return Number(any.default_mov) || 0;
+    return null;
+  };
+
   const vendors: VendorSummary[] = [];
   for (const [vendorId, agg] of byVendor) {
+    // Resolution cascade (most → least specific):
+    //   1. vendor_buyer_overrides (vendor × buyer)
+    //   2. vendor_profile_defaults (vendor × profile × country) — real vendors only
+    //   3. offer.mov (per-item)
+    //   4. DEFAULT_MEDIKONG_MOV floor (Qogita/virtual vendors only)
     const override = buyerOverrides[vendorId];
-    const movRequired = override && override.mov != null
-      ? override.mov
-      : Math.max(agg.movMax, DEFAULT_MEDIKONG_MOV);
+    const vendorProfileMov = vendorTypeMap[vendorId] === "real" ? resolveVendorProfileMov(vendorId) : null;
+    let movRequired: number;
+    if (override && override.mov != null) {
+      movRequired = override.mov;
+    } else if (vendorProfileMov != null) {
+      // Real vendor with an explicit MOV setting → honor it as-is (no floor).
+      movRequired = Math.max(vendorProfileMov, agg.movMax);
+    } else if (vendorTypeMap[vendorId] === "real") {
+      // Real vendor with no setting → fall back to per-offer MOV (no Qogita floor).
+      movRequired = agg.movMax;
+    } else {
+      // Qogita / virtual vendors → keep historical 500€ floor.
+      movRequired = Math.max(agg.movMax, DEFAULT_MEDIKONG_MOV);
+    }
     const reached = agg.subtotal >= movRequired;
     const missing = reached ? 0 : round2(movRequired - agg.subtotal);
     vendors.push({

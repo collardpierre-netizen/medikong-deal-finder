@@ -558,7 +558,10 @@ export default function VendorPublicPage() {
                 {showReal && vendor.description && <p className="text-sm text-muted-foreground mb-2 max-w-[600px]">{vendor.description}</p>}
                 <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                   {vendor.city && showReal && <span className="flex items-center gap-1"><MapPin size={12} /> {vendor.city}, {vendor.country_code}</span>}
-                  <span className="flex items-center gap-1"><Package size={12} /> {vendorOfferCount || vendorProducts.length} produits</span>
+                  <span className="flex items-center gap-1">
+                    <Package size={12} /> {productsStatValue} produits
+                    {offersStatValue && offersStatValue !== productsStatValue ? ` · ${offersStatValue} offres` : ""}
+                  </span>
                 </div>
               </div>
             </div>

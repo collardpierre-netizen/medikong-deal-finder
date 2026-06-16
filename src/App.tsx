@@ -463,6 +463,7 @@ const App = () => (
               <Route path="rfq-routing-test" element={<LP><AdminRfqRoutingTestPage /></LP>} />
               <Route path="rfq-routing-audit" element={<LP><AdminRfqRoutingAuditPage /></LP>} />
               <Route path="vendor-market-intel" element={<LP><AdminVendorMarketIntelPage /></LP>} />
+              <Route path="vendor-exclusivity-requests" element={<LP><AdminVendorExclusivityRequests /></LP>} />
               <Route path="vendor-onboarding-emails" element={<LP><AdminVendorOnboardingEmailsPage /></LP>} />
 
               <Route path="abonnements" element={<LP><AdminAbonnements /></LP>} />

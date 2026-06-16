@@ -2060,7 +2060,7 @@ export default function ProductPage() {
 
                     {/* Best Offer */}
                     {bestOffer ? (
-                      <div className="border-2 border-emerald-300 bg-emerald-50/60 rounded-xl p-4 md:p-6 mb-4">
+                      <div className="border-2 border-emerald-300 bg-emerald-50/60 rounded-xl p-4 md:p-6 mb-4 overflow-hidden">
                         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                           <div className="flex items-center gap-2">
                             <Award size={18} className="text-emerald-700" />

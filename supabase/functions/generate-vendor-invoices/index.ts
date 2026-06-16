@@ -25,6 +25,9 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
 
+  const auth = await requireAdminOrService(req);
+  if (!auth.ok) return jsonResponse({ error: auth.error }, auth.status);
+
   let body: { order_id?: string; session_id?: string };
   try {
     body = await req.json();

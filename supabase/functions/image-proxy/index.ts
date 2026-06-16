@@ -97,51 +97,57 @@ Deno.serve(async (req) => {
     return new Response("Missing url param", { status: 400, headers: corsHeaders });
   }
 
+  const validated = validateImageUrl(imageUrl);
+  if (!validated.ok) {
+    return new Response(validated.reason, { status: 400, headers: corsHeaders });
+  }
+  imageUrl = validated.url.toString();
+
   // Bypass: redirect to the source for trusted hosts (CSP must allow them).
-  try {
-    const host = new URL(imageUrl).hostname.toLowerCase();
-    if (BYPASS_HOSTS.has(host)) {
-      return new Response(null, {
-        status: 302,
-        headers: {
-          ...corsHeaders,
-          Location: imageUrl,
-          "Cache-Control": "public, max-age=86400",
-        },
+  if (BYPASS_HOSTS.has(validated.url.hostname.toLowerCase())) {
+    return new Response(null, {
+      status: 302,
+      headers: {
+        ...corsHeaders,
+        Location: imageUrl,
+        "Cache-Control": "public, max-age=86400",
+      },
+    });
+  }
+
+  // Follow redirects manually so each hop is SSRF-validated.
+  async function safeFetch(initialUrl: string, maxHops = 5): Promise<Response | null> {
+    let current = initialUrl;
+    for (let i = 0; i < maxHops; i++) {
+      const v = validateImageUrl(current);
+      if (!v.ok) return null;
+      const r = await fetch(current, {
+        headers: buildUpstreamHeaders(current),
+        redirect: "manual",
       });
+      if (r.status >= 300 && r.status < 400) {
+        const loc = r.headers.get("location");
+        if (!loc) return r;
+        current = new URL(loc, current).toString();
+        continue;
+      }
+      return r;
     }
-  } catch {
-    // invalid URL — fall through to fetch which will error cleanly
+    return null;
   }
 
   try {
-    const upstreamHeaders = buildUpstreamHeaders(imageUrl);
     let resp: Response | null = null;
+    try { resp = await safeFetch(imageUrl); } catch { resp = null; }
 
-    // Strategy 1: standard fetch
-    try {
-      resp = await fetch(imageUrl, {
-        headers: upstreamHeaders,
-        redirect: "follow",
-      });
-    } catch {
-      resp = null;
-    }
-
-    // Strategy 2: try HTTP if HTTPS failed
+    // Strategy 2: try HTTP if HTTPS failed (still SSRF-validated each hop)
     if (!resp || !resp.ok) {
       const httpUrl = imageUrl.replace(/^https:\/\//i, "http://");
       if (httpUrl !== imageUrl) {
-        try {
-          resp = await fetch(httpUrl, {
-            headers: buildUpstreamHeaders(httpUrl),
-            redirect: "follow",
-          });
-        } catch {
-          // keep previous resp
-        }
+        try { resp = await safeFetch(httpUrl); } catch { /* keep previous */ }
       }
     }
+
 
     if (!resp || !resp.ok) {
       return new Response(`Upstream ${resp?.status ?? 0}`, {

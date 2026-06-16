@@ -576,7 +576,7 @@ Deno.serve(async (req) => {
   let productsEnriched = 0;
   let offersUpserted = 0;
   try {
-    const result = await syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, lastOffset, startTime, fetchMultiVendor, recordEndpointError, recordProgress, resyncLogId, offsetCursor);
+    const result = await syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, lastOffset, startTime, fetchMultiVendor, recordEndpointError, recordProgress, resyncLogId, offsetCursor, syncRunId);
     productsEnriched = result?.products_enriched || 0;
     offersUpserted = result?.offers_upserted || 0;
   } catch (e: any) {

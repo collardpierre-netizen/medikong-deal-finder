@@ -296,6 +296,10 @@ function OfferRow({
   const displayPrice = priceFromUnit(baseUnitPrice, compareBasis as CompareBasis, packSize);
   const basisSuffix = ` ${formatBasisLabel(compareBasis as CompareBasis, { packSize, withPackSize: true })}`;
   const priceLabel = isTVAC ? "TVAC" : "HTVA";
+  // L'unité commandée côté vendeur est le pack (offers.price_excl_vat = prix du pack).
+  // On affiche donc "pack(s)" dès que le pack regroupe plusieurs unités, sinon "unité(s)".
+  const sellingUnitLabel = packSize > 1 ? "pack(s)" : "unité(s)";
+  const sellingUnitLabelShort = packSize > 1 ? "packs" : "unités";
   // Trust signals (FAGG verified, ratings, etc.) are injected via VendorTrustContext
   // — hooks must be called at the top level, never inside an IIFE/callback.
   const vendorTrust = useVendorTrustForId(offer.sellerId);

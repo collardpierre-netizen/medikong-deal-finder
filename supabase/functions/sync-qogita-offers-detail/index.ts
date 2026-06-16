@@ -441,15 +441,20 @@ Deno.serve(async (req) => {
   let fetchMultiVendor = true;
   let resyncLogId: string | null = null;
   let offsetCursor = 0;
+  // Sweep A : run id provided by run-sync-pipeline at full-run start.
+  // Stamped on every offer / vendor upsert so qogita_reconcile can detect leftovers.
+  let syncRunId: string | null = null;
   try {
     const body = await req.json();
     if (body?.country) targetCountry = body.country;
     // body.multi_vendor ignoré : forcé à true.
     if (body?.resync_log_id) resyncLogId = String(body.resync_log_id);
     if (body?.offset !== undefined) offsetCursor = parseInt(String(body.offset), 10) || 0;
+    if (body?.sync_run_id) syncRunId = String(body.sync_run_id);
   } catch {
     // no-op
   }
+
 
   // Helper closure: log endpoint errors to qogita_resync_logs (no-op if no resyncLogId)
   const recordEndpointError = async (endpoint: string, status: number | null, message: string) => {

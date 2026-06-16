@@ -851,6 +851,7 @@ async function processSingleProduct(
   parentStats: any,
   recordEndpointError?: (endpoint: string, status: number | null, message: string) => Promise<void>,
   recordProgress?: (delta: Record<string, number>) => Promise<void>,
+  syncRunId: string | null = null,
 ) {
   const localStats = {
     products_enriched: 0,

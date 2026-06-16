@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
+import QogitaReconciliationPanel from "@/components/admin/QogitaReconciliationPanel";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -1143,6 +1145,10 @@ export default function AdminSync() {
 
       {/* Test API Offers */}
       <TestApiOffers />
+
+      {/* Réconciliation Qogita (sweeps A/B/C) */}
+      <QogitaReconciliationPanel />
+
 
       {/* Error banner */}
       {config?.sync_error_message && (

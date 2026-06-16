@@ -696,7 +696,7 @@ function OfferRow({
           )}
           {/* Stock + MOQ hint */}
           <div className="flex items-center justify-end gap-2 text-[10px] text-muted-foreground w-full">
-            <span className="tabular-nums">Stock disponible : <span className="font-medium text-foreground">{offer.stockQuantity.toLocaleString("fr-FR")}</span> unité(s)</span>
+            <span className="tabular-nums">Stock disponible : <span className="font-medium text-foreground">{offer.stockQuantity.toLocaleString("fr-FR")}</span> {sellingUnitLabel}</span>
             {step > 1 && <span>· Min : {step}</span>}
           </div>
           {/* Real-time tier hint: next reachable tier */}

@@ -2156,7 +2156,7 @@ export default function ProductPage() {
                           </span>
                         </div>
 
-                        <div className="hidden md:grid grid-cols-[minmax(150px,1fr)_minmax(180px,1fr)_minmax(96px,auto)_176px] gap-x-3 px-1 py-3 text-xs font-semibold text-muted-foreground border-b border-border sticky top-16 z-20 bg-background">
+                        <div className="hidden lg:grid grid-cols-[minmax(150px,1fr)_minmax(180px,1fr)_minmax(96px,auto)_176px] gap-x-3 px-1 py-3 text-xs font-semibold text-muted-foreground border-b border-border sticky top-16 z-20 bg-background">
                           <span>Fournisseur</span>
                           <span>Prix {offerCompareBasis === 'pack' ? '/ pack' : offerCompareBasis === 'unit' ? '/ unité' : '/ 100 u.'} · MOV</span>
                           <span className="text-right">Stock</span>

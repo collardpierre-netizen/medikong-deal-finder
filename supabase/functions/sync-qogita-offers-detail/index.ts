@@ -722,7 +722,7 @@ async function syncOffers(
       const currentChunkEnd = Math.min(batchStart + (chunkIndex + 1) * executionProfile.parallelConcurrency, batchEnd);
       const results = await Promise.allSettled(
         chunk.map((p: any) =>
-          processSingleProduct(sb, p, baseUrl, token, country, vatRate, vatMultiplier, bestPriceVendorId, fetchMultiVendor, stats, recordEndpointError, recordProgress)
+          processSingleProduct(sb, p, baseUrl, token, country, vatRate, vatMultiplier, bestPriceVendorId, fetchMultiVendor, stats, recordEndpointError, recordProgress, syncRunId)
         )
       );
 

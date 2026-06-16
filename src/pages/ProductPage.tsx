@@ -716,7 +716,7 @@ function OfferRow({
       </div>
 
       {/* Mobile layout */}
-      <div className="md:hidden space-y-3">
+      <div className="lg:hidden space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-0.5">
             <span className="font-bold text-sm">{sellerLabel}</span>

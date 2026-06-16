@@ -42,14 +42,19 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Resolve buyer_account_id (customers.id) for per-buyer override cascade
+    // Resolve buyer_account_id (customers.id) + profile/country for cascade
     const { data: customer } = await supabase
       .from("customers")
-      .select("id")
+      .select("id, customer_type, country_code")
       .eq("auth_user_id", user.id)
       .maybeSingle();
 
-    const result = await validateCart(supabase, items, customer?.id ?? null);
+    const result = await validateCart(
+      supabase,
+      items,
+      customer?.id ?? null,
+      customer ? { customer_type: customer.customer_type, country_code: customer.country_code } : null,
+    );
     return new Response(JSON.stringify(result), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -690,17 +690,6 @@ function OfferRow({
               </div>
             )
           )}
-          <div className="flex items-center justify-end gap-2 text-[10px] text-muted-foreground w-full min-w-0">
-            {step > 1 && (
-              <span className="tabular-nums" title={`Quantité minimum de commande : ${step}. Toute quantité doit être un multiple de ${step}.`}>
-                Lots de {step}
-              </span>
-            )}
-            <span className="tabular-nums" aria-live="polite">
-              Total&nbsp;<span className="font-semibold text-foreground">{formatEur(Math.min(qty, maxQty) * basePackPrice)}&nbsp;€</span>{" "}
-              <span className="opacity-70">{priceLabel}</span>
-            </span>
-          </div>
           {/* Stock + MOQ hint */}
           <div className="flex items-center justify-end gap-2 text-[10px] text-muted-foreground w-full">
             <span className="tabular-nums">Stock disponible : <span className="font-medium text-foreground">{offer.stockQuantity.toLocaleString("fr-FR")}</span> unité(s)</span>

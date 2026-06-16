@@ -953,6 +953,7 @@ async function processSingleProduct(
             shipping_from_country: country,
             is_active: true,
             synced_at: new Date().toISOString(),
+            ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
           },
           // Aligned with multi-vendor upsert — qogita_offer_qid is the canonical key.
           { onConflict: "qogita_offer_qid", ignoreDuplicates: false },

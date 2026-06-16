@@ -148,9 +148,9 @@ export function VendorTrustHeader({ trust, variant = "full", realNameOverride = 
           {initials}
         </span>
 
-        <span className="font-bold text-sm text-foreground min-w-0 flex items-baseline gap-1.5 flex-wrap" title={displayName}>
+        <span className="font-bold text-sm text-foreground min-w-0 flex-1 flex items-baseline gap-1.5 flex-wrap" title={displayName}>
           {realName ? (
-            <span className="truncate">{realName}</span>
+            <span className="min-w-0 break-words leading-tight">{realName}</span>
           ) : (
             <>
               <span className="text-foreground">Fournisseur</span>

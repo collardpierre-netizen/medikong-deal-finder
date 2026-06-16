@@ -6410,6 +6410,7 @@ export type Database = {
           is_qogita_backed: boolean
           is_top_seller: boolean | null
           is_traceable: boolean | null
+          last_sync_run_id: string | null
           margin_amount: number | null
           margin_split_pct: number | null
           max_delivery_days: number | null
@@ -6475,6 +6476,7 @@ export type Database = {
           is_qogita_backed?: boolean
           is_top_seller?: boolean | null
           is_traceable?: boolean | null
+          last_sync_run_id?: string | null
           margin_amount?: number | null
           margin_split_pct?: number | null
           max_delivery_days?: number | null
@@ -6540,6 +6542,7 @@ export type Database = {
           is_qogita_backed?: boolean
           is_top_seller?: boolean | null
           is_traceable?: boolean | null
+          last_sync_run_id?: string | null
           margin_amount?: number | null
           margin_split_pct?: number | null
           max_delivery_days?: number | null
@@ -9163,6 +9166,7 @@ export type Database = {
           label: string | null
           last_detail_sync: string | null
           last_offers_sync: string | null
+          last_sync_run_id: string | null
           manual_mapping_validated: boolean
           manual_mapping_validated_at: string | null
           manual_mapping_validated_by: string | null
@@ -9255,6 +9259,7 @@ export type Database = {
           label?: string | null
           last_detail_sync?: string | null
           last_offers_sync?: string | null
+          last_sync_run_id?: string | null
           manual_mapping_validated?: boolean
           manual_mapping_validated_at?: string | null
           manual_mapping_validated_by?: string | null
@@ -9347,6 +9352,7 @@ export type Database = {
           label?: string | null
           last_detail_sync?: string | null
           last_offers_sync?: string | null
+          last_sync_run_id?: string | null
           manual_mapping_validated?: boolean
           manual_mapping_validated_at?: string | null
           manual_mapping_validated_by?: string | null
@@ -9993,6 +9999,8 @@ export type Database = {
           country_code: string | null
           created_at: string
           duration_ms: number | null
+          entities_deactivated: Json
+          entities_spared: Json
           error_message: string | null
           errors_by_endpoint: Json
           id: string
@@ -10007,6 +10015,9 @@ export type Database = {
           products_targeted: number
           started_at: string
           status: Database["public"]["Enums"]["qogita_resync_status"]
+          sweep_type: string | null
+          sync_run_id: string | null
+          threshold_days: number | null
           tiers_synced: number
           total_errors: number
           triggered_by: string | null
@@ -10016,6 +10027,8 @@ export type Database = {
           country_code?: string | null
           created_at?: string
           duration_ms?: number | null
+          entities_deactivated?: Json
+          entities_spared?: Json
           error_message?: string | null
           errors_by_endpoint?: Json
           id?: string
@@ -10030,6 +10043,9 @@ export type Database = {
           products_targeted?: number
           started_at?: string
           status?: Database["public"]["Enums"]["qogita_resync_status"]
+          sweep_type?: string | null
+          sync_run_id?: string | null
+          threshold_days?: number | null
           tiers_synced?: number
           total_errors?: number
           triggered_by?: string | null
@@ -10039,6 +10055,8 @@ export type Database = {
           country_code?: string | null
           created_at?: string
           duration_ms?: number | null
+          entities_deactivated?: Json
+          entities_spared?: Json
           error_message?: string | null
           errors_by_endpoint?: Json
           id?: string
@@ -10053,6 +10071,9 @@ export type Database = {
           products_targeted?: number
           started_at?: string
           status?: Database["public"]["Enums"]["qogita_resync_status"]
+          sweep_type?: string | null
+          sync_run_id?: string | null
+          threshold_days?: number | null
           tiers_synced?: number
           total_errors?: number
           triggered_by?: string | null
@@ -18033,6 +18054,7 @@ export type Database = {
           is_manufacturer: boolean
           is_top_seller: boolean | null
           is_verified: boolean
+          last_sync_run_id: string | null
           linkedin_url: string | null
           logo_url: string | null
           margin_split_pct: number
@@ -18115,6 +18137,7 @@ export type Database = {
           is_manufacturer?: boolean
           is_top_seller?: boolean | null
           is_verified?: boolean
+          last_sync_run_id?: string | null
           linkedin_url?: string | null
           logo_url?: string | null
           margin_split_pct?: number
@@ -18197,6 +18220,7 @@ export type Database = {
           is_manufacturer?: boolean
           is_top_seller?: boolean | null
           is_verified?: boolean
+          last_sync_run_id?: string | null
           linkedin_url?: string | null
           logo_url?: string | null
           margin_split_pct?: number
@@ -21167,6 +21191,7 @@ export type Database = {
           is_qogita_backed: boolean
           is_top_seller: boolean | null
           is_traceable: boolean | null
+          last_sync_run_id: string | null
           margin_amount: number | null
           margin_split_pct: number | null
           max_delivery_days: number | null

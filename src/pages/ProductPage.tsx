@@ -415,7 +415,7 @@ function OfferRow({
       })()}
 
       {/* Desktop grid */}
-      <div className="hidden md:grid grid-cols-[minmax(150px,1fr)_minmax(180px,1fr)_minmax(96px,auto)_176px] gap-x-3 items-start">
+      <div className="hidden md:grid grid-cols-[minmax(200px,1.4fr)_minmax(180px,1fr)_minmax(96px,auto)_176px] gap-x-3 items-start">
         <div className="flex flex-col gap-1.5">
           {(() => {
             if (vendorTrust) {

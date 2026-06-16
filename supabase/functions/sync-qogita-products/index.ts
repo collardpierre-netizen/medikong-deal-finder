@@ -809,9 +809,13 @@ async function processBatch(
       vat_rate: vat, stock_quantity: s.stock,
       stock_status: s.stock > 0 ? "in_stock" : (s.isPreorder ? "pre_order" : "out_of_stock"),
       delivery_days: s.delivery > 0 ? s.delivery : 3,
-      shipping_from_country: country, is_qogita_backed: true, is_active: true, moq: 1,
+      shipping_from_country: country, is_qogita_backed: true,
+      is_active: s.stock > 0 || s.isPreorder, // Sweep C: zero-stock offers immediately deactivated
+      moq: 1,
       synced_at: new Date().toISOString(),
+      ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
     }));
+
   if (offers.length > 0) {
     await withRetry("upsert offers", async () => {
       const { error } = await sb.from("offers").upsert(offers, {

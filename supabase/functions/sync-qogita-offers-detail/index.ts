@@ -241,7 +241,7 @@ async function fetchVariantWithRetry(
 }
 
 /** Resolve or create a vendor row for a Qogita seller alias */
-async function resolveVendor(sb: any, sellerCode: string, country: string): Promise<string | null> {
+async function resolveVendor(sb: any, sellerCode: string, country: string, syncRunId: string | null): Promise<string | null> {
   if (!sellerCode || sellerCode === "UNKNOWN") return null;
 
   // Check by qogita_seller_alias first
@@ -251,14 +251,22 @@ async function resolveVendor(sb: any, sellerCode: string, country: string): Prom
     .eq("qogita_seller_alias", sellerCode)
     .maybeSingle();
 
-  if (existing?.id) return existing.id;
+  if (existing?.id) {
+    if (syncRunId) {
+      await sb.from("vendors").update({ last_sync_run_id: syncRunId }).eq("id", existing.id);
+    }
+    return existing.id;
+  }
 
   // Create new vendor for this seller code
   const slug = `qogita-seller-${sellerCode.toLowerCase()}`;
   const { data: bySlug } = await sb.from("vendors").select("id").eq("slug", slug).maybeSingle();
   if (bySlug?.id) {
-    // Update alias
-    await sb.from("vendors").update({ qogita_seller_alias: sellerCode }).eq("id", bySlug.id);
+    // Update alias (+ stamp run)
+    await sb.from("vendors").update({
+      qogita_seller_alias: sellerCode,
+      ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
+    }).eq("id", bySlug.id);
     return bySlug.id;
   }
 
@@ -276,6 +284,7 @@ async function resolveVendor(sb: any, sellerCode: string, country: string): Prom
       commission_rate: 0,
       qogita_seller_alias: sellerCode,
       display_code: sellerCode,
+      ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
     })
     .select("id")
     .single();
@@ -286,6 +295,7 @@ async function resolveVendor(sb: any, sellerCode: string, country: string): Prom
   }
   return inserted.id;
 }
+
 
 /**
  * Extract raw price tiers array from a Qogita offer/variant payload.

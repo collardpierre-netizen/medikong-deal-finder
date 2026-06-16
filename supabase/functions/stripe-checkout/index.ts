@@ -173,7 +173,7 @@ Deno.serve(async (req) => {
       // IDOR check : caller must own this order via customers.auth_user_id
       const { data: customer, error: custErr } = await supabase
         .from("customers")
-        .select("id, auth_user_id")
+        .select("id, auth_user_id, customer_type, country_code")
         .eq("id", order.customer_id)
         .maybeSingle();
 

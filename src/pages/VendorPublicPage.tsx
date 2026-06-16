@@ -521,9 +521,13 @@ export default function VendorPublicPage() {
     );
   }
 
-  const productsStatValue = vendorOfferCount || vendorProducts.length || 0;
+  const productsStatValue = vendorProductCount || vendorProducts.length || 0;
+  const offersStatValue = vendorOfferCount || 0;
   const stats = [
     productsStatValue ? { icon: Package, label: "Produits", value: productsStatValue } : null,
+    offersStatValue && offersStatValue !== productsStatValue
+      ? { icon: Package, label: "Offres", value: offersStatValue }
+      : null,
     vendor.rating ? { icon: Star, label: "Note", value: `${Number(vendor.rating).toFixed(1)}/5` } : null,
     vendor.total_sales ? { icon: Truck, label: "Ventes", value: vendor.total_sales } : null,
     { icon: Clock, label: "Membre depuis", value: new Date(vendor.created_at).getFullYear().toString() },

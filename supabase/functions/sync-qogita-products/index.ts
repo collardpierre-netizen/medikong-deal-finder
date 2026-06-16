@@ -149,9 +149,11 @@ Deno.serve(async (req) => {
 
   const action = body?.action || "start";
   const country = body?.country || "BE";
+  const syncRunId: string | null = body?.sync_run_id ?? null;
 
   try {
-    if (action === "start") return await handleStart(sb, country);
+    if (action === "start") return await handleStart(sb, country, syncRunId);
+
     if (action === "chunk") return await handleChunk(sb, body.logId);
     return new Response(JSON.stringify({ error: `Unknown action: ${action}` }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -170,7 +172,7 @@ Deno.serve(async (req) => {
 
 // ───────────────────────── Step 1: START (streaming download → Storage) ─────────────────────────
 
-async function handleStart(sb: any, country: string): Promise<Response> {
+async function handleStart(sb: any, country: string, syncRunId: string | null = null): Promise<Response> {
   const { data: ctryRow } = await sb.from("countries").select("code, default_vat_rate")
     .eq("code", country).eq("is_active", true).eq("qogita_sync_enabled", true).single();
   if (!ctryRow) {
@@ -186,11 +188,12 @@ async function handleStart(sb: any, country: string): Promise<Response> {
 
   const { data: log } = await sb.from("sync_logs").insert({
     sync_type: "products", status: "running",
-    stats: { country, vat: ctryRow.default_vat_rate || 21 },
+    stats: { country, vat: ctryRow.default_vat_rate || 21, sync_run_id: syncRunId },
     progress_current: 0, progress_total: 0,
     progress_message: `${country}: téléchargement CSV en streaming...`,
   }).select().single();
   const logId = log!.id;
+
 
   (globalThis as any).EdgeRuntime.waitUntil(
     streamDownloadToStorage(sb, country, ctryRow.default_vat_rate || 21, logId).catch(async (e: any) => {

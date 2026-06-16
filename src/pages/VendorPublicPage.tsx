@@ -260,23 +260,37 @@ export default function VendorPublicPage() {
     gcTime: 60 * 60 * 1000,
   });
 
-  // Compteur global d'offres actives du vendeur (HEAD count).
-  // Sert à : (a) afficher le vrai compteur Hero indépendamment des filtres, et
-  // (b) déclencher la garde-fou anti-fetch massif sans filtre marque.
-  // NB : UNIQUE(vendor_id, product_id) sur offers → count(offers) == count(distinct product).
-  const { data: vendorOfferCount = 0 } = useQuery({
-    queryKey: ["vendor-offers-count", vendor?.id],
+  // Compteur global offres + produits distincts du vendeur.
+  // En théorie UNIQUE(vendor_id, product_id) impose offers == distinct(product),
+  // mais en pratique on observe des écarts (multi-pays, doublons historiques),
+  // donc on calcule les deux pour afficher un libellé exact.
+  const { data: vendorCounts = { offers: 0, products: 0 } } = useQuery({
+    queryKey: ["vendor-offers-counts", vendor?.id],
     queryFn: async () => {
-      const { count } = await supabase
-        .from("offers")
-        .select("id", { count: "exact", head: true })
-        .eq("vendor_id", vendor!.id)
-        .eq("is_active", true);
-      return count || 0;
+      const [{ count: offersCount }, { data: rows }] = await Promise.all([
+        supabase
+          .from("offers")
+          .select("id", { count: "exact", head: true })
+          .eq("vendor_id", vendor!.id)
+          .eq("is_active", true),
+        supabase
+          .from("offers")
+          .select("product_id")
+          .eq("vendor_id", vendor!.id)
+          .eq("is_active", true)
+          .limit(10000),
+      ]);
+      const productIds = new Set<string>();
+      (rows ?? []).forEach((r: any) => {
+        if (r.product_id) productIds.add(r.product_id as string);
+      });
+      return { offers: offersCount || 0, products: productIds.size };
     },
     enabled: !!vendor?.id,
     staleTime: 5 * 60 * 1000,
   });
+  const vendorOfferCount = vendorCounts.offers;
+  const vendorProductCount = vendorCounts.products;
 
   // N'affiche le bouton "Voir délégué" que si le vendeur a au moins un
   // délégué actif. Inutile d'ouvrir un dialog vide.
@@ -507,9 +521,13 @@ export default function VendorPublicPage() {
     );
   }
 
-  const productsStatValue = vendorOfferCount || vendorProducts.length || 0;
+  const productsStatValue = vendorProductCount || vendorProducts.length || 0;
+  const offersStatValue = vendorOfferCount || 0;
   const stats = [
     productsStatValue ? { icon: Package, label: "Produits", value: productsStatValue } : null,
+    offersStatValue && offersStatValue !== productsStatValue
+      ? { icon: Package, label: "Offres", value: offersStatValue }
+      : null,
     vendor.rating ? { icon: Star, label: "Note", value: `${Number(vendor.rating).toFixed(1)}/5` } : null,
     vendor.total_sales ? { icon: Truck, label: "Ventes", value: vendor.total_sales } : null,
     { icon: Clock, label: "Membre depuis", value: new Date(vendor.created_at).getFullYear().toString() },
@@ -540,7 +558,10 @@ export default function VendorPublicPage() {
                 {showReal && vendor.description && <p className="text-sm text-muted-foreground mb-2 max-w-[600px]">{vendor.description}</p>}
                 <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                   {vendor.city && showReal && <span className="flex items-center gap-1"><MapPin size={12} /> {vendor.city}, {vendor.country_code}</span>}
-                  <span className="flex items-center gap-1"><Package size={12} /> {vendorOfferCount || vendorProducts.length} produits</span>
+                  <span className="flex items-center gap-1">
+                    <Package size={12} /> {productsStatValue} produits
+                    {offersStatValue && offersStatValue !== productsStatValue ? ` · ${offersStatValue} offres` : ""}
+                  </span>
                 </div>
               </div>
             </div>
@@ -658,7 +679,13 @@ export default function VendorPublicPage() {
               <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
                 <Package size={18} /> Catalogue
                 <span className="text-sm font-normal text-muted-foreground">
-                  ({filteredProducts.length}{filteredProducts.length !== vendorProducts.length ? ` / ${vendorProducts.length}` : ""})
+                  ({filteredProducts.length}
+                  {vendorProductCount && vendorProductCount !== filteredProducts.length
+                    ? ` sur ${vendorProductCount}`
+                    : filteredProducts.length !== vendorProducts.length
+                      ? ` / ${vendorProducts.length}`
+                      : ""}
+                  )
                 </span>
               </h2>
               <div className="flex items-center gap-3">

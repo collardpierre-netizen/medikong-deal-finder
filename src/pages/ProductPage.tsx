@@ -296,6 +296,10 @@ function OfferRow({
   const displayPrice = priceFromUnit(baseUnitPrice, compareBasis as CompareBasis, packSize);
   const basisSuffix = ` ${formatBasisLabel(compareBasis as CompareBasis, { packSize, withPackSize: true })}`;
   const priceLabel = isTVAC ? "TVAC" : "HTVA";
+  // L'unité commandée côté vendeur est le pack (offers.price_excl_vat = prix du pack).
+  // On affiche donc "pack(s)" dès que le pack regroupe plusieurs unités, sinon "unité(s)".
+  const sellingUnitLabel = packSize > 1 ? "pack(s)" : "unité(s)";
+  const sellingUnitLabelShort = packSize > 1 ? "packs" : "unités";
   // Trust signals (FAGG verified, ratings, etc.) are injected via VendorTrustContext
   // — hooks must be called at the top level, never inside an IIFE/callback.
   const vendorTrust = useVendorTrustForId(offer.sellerId);
@@ -392,7 +396,7 @@ function OfferRow({
         <div className="mb-2 inline-flex items-center gap-1.5 text-[11px] font-medium text-orange-700 bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-full">
           <Info size={12} aria-hidden />
           <span className="tabular-nums">
-            Min. commande : {formatEur(effectiveMov)} € HT (≈ {minQtyForMov.toLocaleString("fr-FR")} unités)
+            Min. commande : {formatEur(effectiveMov)} € HT (≈ {minQtyForMov.toLocaleString("fr-FR")} {sellingUnitLabelShort})
           </span>
         </div>
       )}
@@ -650,7 +654,7 @@ function OfferRow({
               onClick={handleAdd}
               disabled={outOfStock || qty < step || qty > maxQty}
               title={outOfStock ? "Rupture de stock" : `Ajouter ${Math.min(qty, maxQty)} × ${formatEur(basePackPrice)} € au panier`}
-              aria-label={`Ajouter ${Math.min(qty, maxQty)} unité(s) au panier — total ${formatEur(Math.min(qty, maxQty) * basePackPrice)} € ${priceLabel}`}
+              aria-label={`Ajouter ${Math.min(qty, maxQty)} ${sellingUnitLabel} au panier — total ${formatEur(Math.min(qty, maxQty) * basePackPrice)} € ${priceLabel}`}
             >
               <ShoppingCart size={14} aria-hidden className="shrink-0" />
               <span className="shrink-0">{outOfStock ? "Rupture" : "Ajouter"}</span>
@@ -685,14 +689,14 @@ function OfferRow({
                   className="text-[10px] font-medium text-primary border border-primary/40 hover:bg-primary/5 disabled:opacity-50 disabled:cursor-not-allowed rounded px-2 py-1 tabular-nums"
                   title={minQtyForMov > maxQty ? "Stock insuffisant pour atteindre le MOV" : undefined}
                 >
-                  Atteindre le MOV ({minQtyForMov.toLocaleString("fr-FR")} unités · {formatEur(minQtyForMov * (offer.unitPriceEur || basePackPrice))} €)
+                  Atteindre le MOV ({minQtyForMov.toLocaleString("fr-FR")} {sellingUnitLabelShort} · {formatEur(minQtyForMov * (offer.unitPriceEur || basePackPrice))} €)
                 </button>
               </div>
             )
           )}
           {/* Stock + MOQ hint */}
           <div className="flex items-center justify-end gap-2 text-[10px] text-muted-foreground w-full">
-            <span className="tabular-nums">Stock disponible : <span className="font-medium text-foreground">{offer.stockQuantity.toLocaleString("fr-FR")}</span> unité(s)</span>
+            <span className="tabular-nums">Stock disponible : <span className="font-medium text-foreground">{offer.stockQuantity.toLocaleString("fr-FR")}</span> {sellingUnitLabel}</span>
             {step > 1 && <span>· Min : {step}</span>}
           </div>
           {/* Real-time tier hint: next reachable tier */}
@@ -835,7 +839,7 @@ function OfferRow({
             onClick={handleAdd}
             disabled={outOfStock || qty < step || qty > maxQty}
             title={outOfStock ? "Rupture de stock" : `Ajouter ${Math.min(qty, maxQty)} × ${formatEur(basePackPrice)} € au panier`}
-            aria-label={`Ajouter ${Math.min(qty, maxQty)} unité(s) au panier — total ${formatEur(Math.min(qty, maxQty) * basePackPrice)} € ${priceLabel}`}
+            aria-label={`Ajouter ${Math.min(qty, maxQty)} ${sellingUnitLabel} au panier — total ${formatEur(Math.min(qty, maxQty) * basePackPrice)} € ${priceLabel}`}
           >
             <ShoppingCart size={14} aria-hidden className="shrink-0" />
             <span className="shrink-0">{outOfStock ? "Rupture" : "Ajouter au panier"}</span>
@@ -863,7 +867,7 @@ function OfferRow({
                 className="text-[11px] font-medium text-primary border border-primary/40 hover:bg-primary/5 disabled:opacity-50 disabled:cursor-not-allowed rounded px-2 py-1 tabular-nums"
                 title={minQtyForMov > maxQty ? "Stock insuffisant pour atteindre le MOV" : undefined}
               >
-                Atteindre le MOV ({minQtyForMov.toLocaleString("fr-FR")} unités · {formatEur(minQtyForMov * (offer.unitPriceEur || basePackPrice))} €)
+                Atteindre le MOV ({minQtyForMov.toLocaleString("fr-FR")} {sellingUnitLabelShort} · {formatEur(minQtyForMov * (offer.unitPriceEur || basePackPrice))} €)
               </button>
             </div>
           )

@@ -68,7 +68,11 @@ Deno.serve(async (req) => {
       }
       slugSeen.add(slug);
       nameSeen.add(name);
-      brandsRaw.push({ name, qogita_qid: qid, slug, is_active: true, synced_at: new Date().toISOString() });
+      brandsRaw.push({
+        name, qogita_qid: qid, slug, is_active: true,
+        synced_at: new Date().toISOString(),
+        ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
+      });
     }
 
     // Drop rows that fail the spec (empty name, empty slug, etc.) so we can keep going

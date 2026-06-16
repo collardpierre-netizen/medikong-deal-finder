@@ -625,10 +625,12 @@ async function syncOffers(
   recordProgress: (delta: Record<string, number>) => Promise<void>,
   resyncLogId: string | null,
   offsetCursor: number = 0,
+  syncRunId: string | null = null,
 ) {
   const executionProfile = getExecutionProfile(fetchMultiVendor);
   const { token, baseUrl } = await getQogitaToken(sb);
-  const bestPriceVendorId = await ensureBestPriceVendor(sb, country);
+  const bestPriceVendorId = await ensureBestPriceVendor(sb, country, syncRunId);
+
 
   const incrementalProductFilter = "offer_count.gt.0,synced_at.is.null,qogita_qid.is.null";
 

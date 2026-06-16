@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -9,21 +9,33 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ShieldCheck, Sparkles, EyeOff, Lock, Info, Mail, Loader2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "@/hooks/use-toast";
+import { ShieldCheck, Sparkles, EyeOff, Lock, Info, Plus, Loader2, X } from "lucide-react";
 
 /**
- * Espace Vendeur — lecture seule des exclusivités contractuelles.
+ * Espace Vendeur — exclusivités contractuelles + demandes internes.
  *
- * Source : public.vendor_exclusivities (RLS : "Vendor reads own exclusivities").
- * Écriture admin-only — le vendeur passe par MediKong pour créer/modifier
- * une règle (lien mailto vers contracts@medikong.pro).
- *
- * Voir mem://features/vendor-exclusivities pour le moteur DB (triggers,
- * cron d'expiration, modes showcase/hide/block).
+ * Lecture : public.vendor_exclusivities (admin only en écriture).
+ * Demandes : public.vendor_exclusivity_requests (vendeur crée/annule,
+ * admin approuve/rejette via /admin/vendor-exclusivity-requests).
  */
 
 type Scope = "brand" | "manufacturer" | "product" | "category";
 type Mode = "showcase" | "hide" | "block";
+type ReqStatus = "pending" | "approved" | "rejected" | "cancelled";
 
 interface ExclusivityRow {
   id: string;
@@ -41,6 +53,22 @@ interface ExclusivityRow {
   contract_ref: string | null;
   is_active: boolean;
   created_at: string;
+}
+
+interface RequestRow {
+  id: string;
+  vendor_id: string;
+  mode: Mode;
+  scope_type: Scope;
+  scope_label: string | null;
+  country_codes: string[];
+  valid_from: string | null;
+  valid_until: string | null;
+  message: string | null;
+  status: ReqStatus;
+  admin_notes: string | null;
+  created_at: string;
+  reviewed_at: string | null;
 }
 
 const SCOPE_META: Record<Scope, { label: string; table: "brands" | "manufacturers" | "products" | "categories" }> = {
@@ -61,22 +89,29 @@ const MODE_META: Record<Mode, {
     variant: "default",
     icon: Sparkles,
     vendorHint:
-      "Vos offres sur ce scope sont mises en avant côté acheteur (badge / pictogramme). Les offres concurrentes restent visibles.",
+      "Vos offres sur ce scope sont mises en avant côté acheteur. Les offres concurrentes restent visibles.",
   },
   hide: {
     label: "Masquer concurrents",
     variant: "secondary",
     icon: EyeOff,
     vendorHint:
-      "Seules vos offres sont visibles côté acheteur sur ce scope pendant la période. Les offres concurrentes existantes sont masquées.",
+      "Seules vos offres sont visibles côté acheteur sur ce scope pendant la période.",
   },
   block: {
     label: "Bloquer concurrents",
     variant: "destructive",
     icon: Lock,
     vendorHint:
-      "Aucun autre vendeur ne peut créer ou activer une offre sur ce scope pendant la période (contrôle DB).",
+      "Aucun autre vendeur ne peut créer ou activer une offre sur ce scope pendant la période.",
   },
+};
+
+const STATUS_META: Record<ReqStatus, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  pending: { label: "En attente", variant: "secondary" },
+  approved: { label: "Approuvée", variant: "default" },
+  rejected: { label: "Refusée", variant: "destructive" },
+  cancelled: { label: "Annulée", variant: "outline" },
 };
 
 type StatusFilter = "active" | "future" | "expired";
@@ -84,6 +119,7 @@ type StatusFilter = "active" | "future" | "expired";
 export default function VendorExclusivities() {
   const { data: vendor, isLoading: vendorLoading } = useCurrentVendor();
   const [tab, setTab] = useState<StatusFilter>("active");
+  const [requestOpen, setRequestOpen] = useState(false);
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["vendor-exclusivities", vendor?.id],
@@ -101,13 +137,23 @@ export default function VendorExclusivities() {
     },
   });
 
-  // Résolution libellés cibles
+  const { data: requests = [], isLoading: reqLoading, refetch: refetchRequests } = useQuery({
+    queryKey: ["vendor-exclusivity-requests", vendor?.id],
+    enabled: !!vendor?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendor_exclusivity_requests" as any)
+        .select("*")
+        .eq("vendor_id", vendor!.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as unknown as RequestRow[];
+    },
+  });
+
   const targetIdsByScope = useMemo(() => {
     const map: Record<Scope, Set<string>> = {
-      brand: new Set(),
-      manufacturer: new Set(),
-      product: new Set(),
-      category: new Set(),
+      brand: new Set(), manufacturer: new Set(), product: new Set(), category: new Set(),
     };
     rows.forEach((r) => {
       const id = r.brand_id || r.manufacturer_id || r.product_id || r.category_id;
@@ -132,9 +178,7 @@ export default function VendorExclusivities() {
         const ids = Array.from(targetIdsByScope[scope]);
         if (ids.length === 0) return;
         tasks.push(
-          Promise.resolve(
-            supabase.from(SCOPE_META[scope].table).select("id, name").in("id", ids),
-          ),
+          Promise.resolve(supabase.from(SCOPE_META[scope].table).select("id, name").in("id", ids)),
         );
       });
       const results = await Promise.all(tasks);
@@ -184,25 +228,7 @@ export default function VendorExclusivities() {
     );
   }
 
-  const mailSubject = encodeURIComponent(
-    `[Exclusivité] Demande — ${vendor.company_name || vendor.name || vendor.display_code || "vendeur"}`,
-  );
-  const mailBody = encodeURIComponent(
-    [
-      "Bonjour,",
-      "",
-      "Nous souhaitons mettre en place une exclusivité MediKong avec les paramètres suivants :",
-      "",
-      "- Scope (marque / fabricant / produit / catégorie) :",
-      "- Cible (nom + référence) :",
-      "- Mode souhaité (mise en avant / masquage / blocage) :",
-      "- Pays concernés :",
-      "- Période souhaitée (du … au …) :",
-      "- Référence contrat / motif :",
-      "",
-      "Merci.",
-    ].join("\n"),
-  );
+  const pendingCount = requests.filter((r) => r.status === "pending").length;
 
   return (
     <div className="container mx-auto py-6 space-y-6 max-w-6xl">
@@ -218,33 +244,44 @@ export default function VendorExclusivities() {
             sur une marque, un fabricant, un produit ou une catégorie, sur une période donnée.
           </p>
         </div>
-        <Button asChild variant="outline">
-          <a href={`mailto:contracts@medikong.pro?subject=${mailSubject}&body=${mailBody}`}>
-            <Mail className="h-4 w-4 mr-2" /> Demander une exclusivité
-          </a>
-        </Button>
+        <Dialog open={requestOpen} onOpenChange={setRequestOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" /> Demander une exclusivité
+            </Button>
+          </DialogTrigger>
+          <RequestExclusivityDialog
+            vendorId={vendor.id}
+            onSuccess={() => {
+              setRequestOpen(false);
+              refetchRequests();
+            }}
+          />
+        </Dialog>
       </header>
 
       <Alert>
         <Info className="h-4 w-4" />
-        <AlertTitle>Lecture seule</AlertTitle>
+        <AlertTitle>Comment ça marche</AlertTitle>
         <AlertDescription className="text-xs">
-          Les exclusivités sont liées à un contrat MediKong et gérées par notre équipe.
-          Pour créer, modifier, prolonger ou clôturer une règle, contactez-nous.
+          Soumettez une demande ci-dessous. L'équipe MediKong l'examine, peut vous recontacter
+          pour préciser le contrat, puis active l'exclusivité (les règles approuvées apparaissent
+          dans l'onglet Actives / À venir).
         </AlertDescription>
       </Alert>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-4 gap-3">
         <KpiCard label="Actives" value={buckets.active.length} highlight />
         <KpiCard label="À venir" value={buckets.future.length} />
         <KpiCard label="Expirées" value={buckets.expired.length} />
+        <KpiCard label="Demandes en attente" value={pendingCount} />
       </div>
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Détails</CardTitle>
+          <CardTitle className="text-base">Règles en vigueur</CardTitle>
           <CardDescription>
-            Modes possibles :{" "}
+            Modes :{" "}
             <span className="inline-flex items-center gap-1"><Sparkles className="h-3 w-3" /> mise en avant</span> ·{" "}
             <span className="inline-flex items-center gap-1"><EyeOff className="h-3 w-3" /> masquer concurrents</span> ·{" "}
             <span className="inline-flex items-center gap-1"><Lock className="h-3 w-3" /> bloquer concurrents</span>.
@@ -257,7 +294,6 @@ export default function VendorExclusivities() {
               <TabsTrigger value="future">À venir ({buckets.future.length})</TabsTrigger>
               <TabsTrigger value="expired">Expirées ({buckets.expired.length})</TabsTrigger>
             </TabsList>
-
             <TabsContent value={tab} className="mt-4">
               {isLoading ? (
                 <div className="py-10 text-center text-muted-foreground">
@@ -282,6 +318,32 @@ export default function VendorExclusivities() {
               )}
             </TabsContent>
           </Tabs>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Mes demandes</CardTitle>
+          <CardDescription className="text-xs">
+            Historique de vos demandes envoyées à l'équipe MediKong.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {reqLoading ? (
+            <div className="py-6 text-center text-muted-foreground text-sm">
+              <Loader2 className="h-4 w-4 animate-spin inline-block mr-2" /> Chargement…
+            </div>
+          ) : requests.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">
+              Aucune demande pour le moment.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {requests.map((r) => (
+                <RequestRowCard key={r.id} row={r} onChange={() => refetchRequests()} />
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -316,7 +378,6 @@ function ExclusivityCard({ row, targetLabel }: { row: ExclusivityRow; targetLabe
           <p className="text-xs text-muted-foreground mt-1.5">{mode.vendorHint}</p>
         </div>
       </div>
-
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-xs">
         <Meta label="Du">{new Date(row.valid_from).toLocaleDateString("fr-FR")}</Meta>
         <Meta label="Au">{new Date(row.valid_until).toLocaleDateString("fr-FR")}</Meta>
@@ -329,13 +390,186 @@ function ExclusivityCard({ row, targetLabel }: { row: ExclusivityRow; targetLabe
           {row.contract_ref || <span className="text-muted-foreground">—</span>}
         </Meta>
       </div>
-
       {row.reason && (
         <p className="mt-3 text-xs text-muted-foreground border-t pt-2">
           <span className="font-medium text-foreground">Motif :</span> {row.reason}
         </p>
       )}
     </div>
+  );
+}
+
+function RequestRowCard({ row, onChange }: { row: RequestRow; onChange: () => void }) {
+  const mode = MODE_META[row.mode];
+  const status = STATUS_META[row.status];
+  const [cancelling, setCancelling] = useState(false);
+
+  async function handleCancel() {
+    setCancelling(true);
+    const { error } = await supabase
+      .from("vendor_exclusivity_requests" as any)
+      .update({ status: "cancelled" })
+      .eq("id", row.id);
+    setCancelling(false);
+    if (error) {
+      toast({ title: "Annulation impossible", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Demande annulée" });
+    onChange();
+  }
+
+  return (
+    <div className="border rounded-lg p-3 bg-card">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge variant={status.variant}>{status.label}</Badge>
+            <Badge variant={mode.variant} className="gap-1">{mode.label}</Badge>
+            <Badge variant="outline">{SCOPE_META[row.scope_type].label}</Badge>
+            <span className="font-medium text-sm">{row.scope_label || "—"}</span>
+          </div>
+          <div className="text-xs text-muted-foreground mt-1.5 flex flex-wrap gap-3">
+            <span>
+              {row.valid_from ? new Date(row.valid_from).toLocaleDateString("fr-FR") : "?"} →{" "}
+              {row.valid_until ? new Date(row.valid_until).toLocaleDateString("fr-FR") : "?"}
+            </span>
+            {row.country_codes.length > 0 && <span>Pays : {row.country_codes.join(", ")}</span>}
+            <span>Soumise le {new Date(row.created_at).toLocaleDateString("fr-FR")}</span>
+          </div>
+          {row.message && (
+            <p className="text-xs text-muted-foreground mt-2">{row.message}</p>
+          )}
+          {row.admin_notes && (
+            <p className="text-xs mt-2 border-t pt-2">
+              <span className="font-medium">Réponse MediKong :</span> {row.admin_notes}
+            </p>
+          )}
+        </div>
+        {row.status === "pending" && (
+          <Button size="sm" variant="ghost" onClick={handleCancel} disabled={cancelling}>
+            <X className="h-3.5 w-3.5 mr-1" /> Annuler
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RequestExclusivityDialog({ vendorId, onSuccess }: { vendorId: string; onSuccess: () => void }) {
+  const [mode, setMode] = useState<Mode>("showcase");
+  const [scopeType, setScopeType] = useState<Scope>("brand");
+  const [scopeLabel, setScopeLabel] = useState("");
+  const [validFrom, setValidFrom] = useState("");
+  const [validUntil, setValidUntil] = useState("");
+  const [countries, setCountries] = useState("");
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit() {
+    if (!scopeLabel.trim()) {
+      toast({ title: "Cible requise", description: "Précisez la marque, le fabricant, le produit ou la catégorie ciblée.", variant: "destructive" });
+      return;
+    }
+    setSubmitting(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    const countryArr = countries.split(",").map((c) => c.trim().toUpperCase()).filter(Boolean);
+    const { error } = await supabase.from("vendor_exclusivity_requests" as any).insert({
+      vendor_id: vendorId,
+      requested_by: user?.id,
+      mode,
+      scope_type: scopeType,
+      scope_label: scopeLabel.trim(),
+      country_codes: countryArr,
+      valid_from: validFrom || null,
+      valid_until: validUntil || null,
+      message: message.trim() || null,
+      status: "pending",
+    });
+    setSubmitting(false);
+    if (error) {
+      toast({ title: "Envoi impossible", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Demande envoyée", description: "L'équipe MediKong vous recontactera." });
+    setMode("showcase"); setScopeType("brand"); setScopeLabel("");
+    setValidFrom(""); setValidUntil(""); setCountries(""); setMessage("");
+    onSuccess();
+  }
+
+  return (
+    <DialogContent className="max-w-lg">
+      <DialogHeader>
+        <DialogTitle>Demander une exclusivité</DialogTitle>
+        <DialogDescription>
+          Décrivez la règle souhaitée. Notre équipe vous recontactera pour formaliser le contrat.
+        </DialogDescription>
+      </DialogHeader>
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>Mode</Label>
+            <Select value={mode} onValueChange={(v) => setMode(v as Mode)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="showcase">Mise en avant</SelectItem>
+                <SelectItem value="hide">Masquer concurrents</SelectItem>
+                <SelectItem value="block">Bloquer concurrents</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Type de cible</Label>
+            <Select value={scopeType} onValueChange={(v) => setScopeType(v as Scope)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="brand">Marque</SelectItem>
+                <SelectItem value="manufacturer">Fabricant</SelectItem>
+                <SelectItem value="product">Produit</SelectItem>
+                <SelectItem value="category">Catégorie</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div>
+          <Label>Cible (nom)</Label>
+          <Input
+            value={scopeLabel}
+            onChange={(e) => setScopeLabel(e.target.value)}
+            placeholder="Ex : Bioderma, Pierre Fabre, code produit ou nom catégorie"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>Du</Label>
+            <Input type="date" value={validFrom} onChange={(e) => setValidFrom(e.target.value)} />
+          </div>
+          <div>
+            <Label>Au</Label>
+            <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
+          </div>
+        </div>
+        <div>
+          <Label>Pays concernés <span className="text-muted-foreground text-xs">(ISO 2 lettres, séparés par virgules — vide = tous)</span></Label>
+          <Input value={countries} onChange={(e) => setCountries(e.target.value)} placeholder="BE, FR, LU" />
+        </div>
+        <div>
+          <Label>Message / motif</Label>
+          <Textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Contexte commercial, référence contrat, conditions associées…"
+            rows={4}
+          />
+        </div>
+      </div>
+      <DialogFooter>
+        <Button onClick={handleSubmit} disabled={submitting}>
+          {submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+          Envoyer la demande
+        </Button>
+      </DialogFooter>
+    </DialogContent>
   );
 }
 
@@ -358,11 +592,6 @@ function EmptyState({ tab }: { tab: StatusFilter }) {
     <div className="py-12 text-center">
       <ShieldCheck className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
       <p className="text-sm text-muted-foreground">{msg}</p>
-      {tab === "active" && (
-        <p className="text-xs text-muted-foreground mt-2">
-          Une exclusivité se met en place via contrat avec MediKong.
-        </p>
-      )}
     </div>
   );
 }

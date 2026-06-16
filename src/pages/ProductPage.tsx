@@ -419,7 +419,7 @@ function OfferRow({
       })()}
 
       {/* Desktop grid */}
-      <div className="hidden md:grid grid-cols-[minmax(200px,1.4fr)_minmax(180px,1fr)_minmax(96px,auto)_176px] gap-x-3 items-start">
+      <div className="hidden md:grid grid-cols-[minmax(150px,1fr)_minmax(180px,1fr)_minmax(96px,auto)_176px] gap-x-3 items-start">
         <div className="flex flex-col gap-1.5">
           {(() => {
             if (vendorTrust) {
@@ -2060,7 +2060,7 @@ export default function ProductPage() {
 
                     {/* Best Offer */}
                     {bestOffer ? (
-                      <div className="border-2 border-emerald-300 bg-emerald-50/60 rounded-xl p-4 md:p-6 mb-4">
+                      <div className="border-2 border-emerald-300 bg-emerald-50/60 rounded-xl p-4 md:p-6 mb-4 overflow-hidden">
                         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                           <div className="flex items-center gap-2">
                             <Award size={18} className="text-emerald-700" />
@@ -2143,7 +2143,7 @@ export default function ProductPage() {
 
                     {/* Other Offers */}
                     {otherOffers.length > 0 && (
-                      <div className="border border-border rounded-xl p-4 md:p-6">
+                      <div className="border border-border rounded-xl p-4 md:p-6 overflow-hidden">
                         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                           <div className="flex items-center gap-2">
                             <h3 className="text-base font-bold text-foreground">

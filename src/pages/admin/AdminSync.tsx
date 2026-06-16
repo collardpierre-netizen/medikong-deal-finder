@@ -770,7 +770,7 @@ export default function AdminSync() {
         </div>
 
         {/* Active pipeline */}
-        {activePipeline && <PipelineRunCard run={activePipeline} />}
+        {activePipeline && <PipelineRunCard run={activePipeline} runningLog={runningLog} />}
 
         {/* Pipeline history */}
         <div className="mt-4">

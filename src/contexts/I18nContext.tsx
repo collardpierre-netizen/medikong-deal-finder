@@ -408,6 +408,7 @@ const translations: Record<Lang, Record<string, string>> = {
     restockBuyers: "Käufer",
     restockCampaigns: "E-Mail-Kampagnen",
     restockRules: "Filterregeln",
+    exclusivities: "Exklusivitäten",
   },
   en: {
     dashboard: "Dashboard",

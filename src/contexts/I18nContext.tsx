@@ -142,6 +142,7 @@ const translations: Record<Lang, Record<string, string>> = {
     restockBuyers: "Acheteurs",
     restockCampaigns: "Campagnes email",
     restockRules: "Règles de filtrage",
+    exclusivities: "Exclusivités",
   },
   nl: {
     dashboard: "Dashboard",
@@ -274,6 +275,7 @@ const translations: Record<Lang, Record<string, string>> = {
     restockBuyers: "Kopers",
     restockCampaigns: "E-mailcampagnes",
     restockRules: "Filterregels",
+    exclusivities: "Exclusiviteiten",
   },
   de: {
     dashboard: "Dashboard",
@@ -406,6 +408,7 @@ const translations: Record<Lang, Record<string, string>> = {
     restockBuyers: "Käufer",
     restockCampaigns: "E-Mail-Kampagnen",
     restockRules: "Filterregeln",
+    exclusivities: "Exklusivitäten",
   },
   en: {
     dashboard: "Dashboard",
@@ -539,6 +542,7 @@ const translations: Record<Lang, Record<string, string>> = {
     restockBuyers: "Buyers",
     restockCampaigns: "Email campaigns",
     restockRules: "Filter rules",
+    exclusivities: "Exclusivities",
   },
 };
 

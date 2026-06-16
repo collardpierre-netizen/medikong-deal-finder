@@ -260,6 +260,7 @@ const VendorLogistics = lazyWithRetry(() => import("./pages/vendor/VendorLogisti
 const VendorHealth = lazyWithRetry(() => import("./pages/vendor/VendorHealth"), "VendorHealth");
 const VendorAcademy = lazyWithRetry(() => import("./pages/vendor/VendorAcademy"), "VendorAcademy");
 const VendorSettings = lazyWithRetry(() => import("./pages/vendor/VendorSettings"), "VendorSettings");
+const VendorExclusivities = lazyWithRetry(() => import("./pages/vendor/VendorExclusivities"), "VendorExclusivities");
 const VendorStripeOnboardingPage = lazyWithRetry(() => import("./pages/vendor/VendorStripeOnboardingPage"), "VendorStripeOnboardingPage");
 const VendorStripeSuccessPage = lazyWithRetry(() => import("./pages/vendor/VendorStripeSuccessPage"), "VendorStripeSuccessPage");
 const VendorStripeRefreshPage = lazyWithRetry(() => import("./pages/vendor/VendorStripeRefreshPage"), "VendorStripeRefreshPage");
@@ -580,6 +581,7 @@ const App = () => (
               <Route path="price-alert-rules" element={<LP><VendorMarketIntelHub /></LP>} />
               <Route path="tenders" element={<LP><VendorTenders /></LP>} />
               <Route path="rfq" element={<LP><VendorRfqInbox /></LP>} />
+              <Route path="exclusivities" element={<LP><VendorExclusivities /></LP>} />
               <Route path="analytics" element={<LP><VendorAnalytics /></LP>} />
               <Route path="finance" element={<LP><VendorFinance /></LP>} />
               <Route path="logistics" element={<LP><VendorLogistics /></LP>} />

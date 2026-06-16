@@ -3,7 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Package, Tag, ShoppingCart, Lightbulb, Bell, FileText, BarChart3, Trophy,
   DollarSign, Truck, HeartPulse, MessageSquare, GraduationCap, Settings, ChevronLeft, ChevronRight, Receipt,
-  AlertOctagon, BookOpen, PlusSquare, Inbox, FolderArchive,
+  AlertOctagon, BookOpen, PlusSquare, Inbox, FolderArchive, ShieldCheck,
 } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
@@ -41,6 +41,7 @@ const sidebarSections: { label: string | null; items: SidebarItem[] }[] = [
       { key: "proposeProduct", icon: PlusSquare, path: "/vendor/produits/proposer", parentPath: "/vendor/catalog" },
       { key: "myOffers", icon: Tag, path: "/vendor/offers" },
       { key: "rfqInbox", icon: Inbox, path: "/vendor/rfq" },
+      { key: "exclusivities", icon: ShieldCheck, path: "/vendor/exclusivities" },
       { key: "orders", icon: ShoppingCart, path: "/vendor/orders" },
     ],
   },

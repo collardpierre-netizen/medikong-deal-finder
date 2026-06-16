@@ -867,7 +867,7 @@ function OfferRow({
                 className="text-[11px] font-medium text-primary border border-primary/40 hover:bg-primary/5 disabled:opacity-50 disabled:cursor-not-allowed rounded px-2 py-1 tabular-nums"
                 title={minQtyForMov > maxQty ? "Stock insuffisant pour atteindre le MOV" : undefined}
               >
-                Atteindre le MOV ({minQtyForMov.toLocaleString("fr-FR")} unités · {formatEur(minQtyForMov * (offer.unitPriceEur || basePackPrice))} €)
+                Atteindre le MOV ({minQtyForMov.toLocaleString("fr-FR")} {sellingUnitLabelShort} · {formatEur(minQtyForMov * (offer.unitPriceEur || basePackPrice))} €)
               </button>
             </div>
           )

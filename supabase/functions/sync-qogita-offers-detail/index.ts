@@ -1007,7 +1007,7 @@ async function processSingleProduct(
               const sellerCode = offer.seller || offer.sellerCode;
               if (!sellerCode) continue;
 
-              const vendorId = await resolveVendor(sb, sellerCode, country);
+              const vendorId = await resolveVendor(sb, sellerCode, country, syncRunId);
               if (!vendorId) continue;
 
               const offerPrice = parseFloat(String(offer.price ?? "0")) || 0;

@@ -654,7 +654,7 @@ function OfferRow({
               onClick={handleAdd}
               disabled={outOfStock || qty < step || qty > maxQty}
               title={outOfStock ? "Rupture de stock" : `Ajouter ${Math.min(qty, maxQty)} × ${formatEur(basePackPrice)} € au panier`}
-              aria-label={`Ajouter ${Math.min(qty, maxQty)} unité(s) au panier — total ${formatEur(Math.min(qty, maxQty) * basePackPrice)} € ${priceLabel}`}
+              aria-label={`Ajouter ${Math.min(qty, maxQty)} ${sellingUnitLabel} au panier — total ${formatEur(Math.min(qty, maxQty) * basePackPrice)} € ${priceLabel}`}
             >
               <ShoppingCart size={14} aria-hidden className="shrink-0" />
               <span className="shrink-0">{outOfStock ? "Rupture" : "Ajouter"}</span>

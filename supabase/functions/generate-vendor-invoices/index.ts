@@ -1,5 +1,6 @@
 import Stripe from "https://esm.sh/stripe@14";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireAdminOrService } from "../_shared/admin-or-service.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,6 +24,9 @@ function jsonResponse(body: unknown, status = 200) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
+
+  const auth = await requireAdminOrService(req);
+  if (!auth.ok) return jsonResponse({ error: auth.error }, auth.status);
 
   let body: { order_id?: string; session_id?: string };
   try {
@@ -243,7 +247,10 @@ Deno.serve(async (req) => {
   // 5. Trigger email if at least one invoice created
   if (invoicesCreated.length > 0) {
     try {
-      await supabase.functions.invoke("send-invoices-email", { body: { order_id: orderId } });
+      await supabase.functions.invoke("send-invoices-email", {
+        body: { order_id: orderId },
+        headers: { Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` },
+      });
     } catch (e) {
       console.error("[generate-vendor-invoices] send-invoices-email failed", e);
     }

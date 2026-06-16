@@ -679,7 +679,13 @@ export default function VendorPublicPage() {
               <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
                 <Package size={18} /> Catalogue
                 <span className="text-sm font-normal text-muted-foreground">
-                  ({filteredProducts.length}{filteredProducts.length !== vendorProducts.length ? ` / ${vendorProducts.length}` : ""})
+                  ({filteredProducts.length}
+                  {vendorProductCount && vendorProductCount !== filteredProducts.length
+                    ? ` sur ${vendorProductCount}`
+                    : filteredProducts.length !== vendorProducts.length
+                      ? ` / ${vendorProducts.length}`
+                      : ""}
+                  )
                 </span>
               </h2>
               <div className="flex items-center gap-3">

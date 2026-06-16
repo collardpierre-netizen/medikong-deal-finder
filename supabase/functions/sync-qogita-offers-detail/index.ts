@@ -893,7 +893,10 @@ async function processSingleProduct(
       }
 
       const images = extractImages(variant?.images);
-      const productUpdate: any = { synced_at: new Date().toISOString() };
+      const productUpdate: any = {
+        synced_at: new Date().toISOString(),
+        ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
+      };
       if (variant?.qid) productUpdate.qogita_qid = variant.qid;
       if (variant?.fid) productUpdate.qogita_fid = variant.fid;
       if (variant?.label) productUpdate.description = variant.label;

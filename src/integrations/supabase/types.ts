@@ -15483,6 +15483,133 @@ export type Database = {
           },
         ]
       }
+      vendor_exclusivity_requests: {
+        Row: {
+          admin_notes: string | null
+          country_codes: string[]
+          created_at: string
+          created_exclusivity_id: string | null
+          id: string
+          message: string | null
+          mode: string
+          requested_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          scope_id: string | null
+          scope_label: string | null
+          scope_type: string
+          status: string
+          updated_at: string
+          valid_from: string | null
+          valid_until: string | null
+          vendor_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          country_codes?: string[]
+          created_at?: string
+          created_exclusivity_id?: string | null
+          id?: string
+          message?: string | null
+          mode: string
+          requested_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          scope_id?: string | null
+          scope_label?: string | null
+          scope_type: string
+          status?: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+          vendor_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          country_codes?: string[]
+          created_at?: string
+          created_exclusivity_id?: string | null
+          id?: string
+          message?: string | null
+          mode?: string
+          requested_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          scope_id?: string | null
+          scope_label?: string | null
+          scope_type?: string
+          status?: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_exclusivity_requests_created_exclusivity_id_fkey"
+            columns: ["created_exclusivity_id"]
+            isOneToOne: false
+            referencedRelation: "effective_offer_exclusivity_v"
+            referencedColumns: ["exclusivity_id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivity_requests_created_exclusivity_id_fkey"
+            columns: ["created_exclusivity_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_exclusivities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivity_requests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivity_requests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivity_requests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivity_requests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivity_requests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivity_requests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivity_requests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_guarantee_acceptances: {
         Row: {
           accepted_at: string

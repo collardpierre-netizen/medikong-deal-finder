@@ -203,6 +203,7 @@ const AdminRfqRemindersPage = lazyWithRetry(() => import("./pages/admin/AdminRfq
 const AdminRfqRoutingTestPage = lazyWithRetry(() => import("./pages/admin/AdminRfqRoutingTestPage"), "AdminRfqRoutingTestPage");
 const AdminRfqRoutingAuditPage = lazyWithRetry(() => import("./pages/admin/AdminRfqRoutingAuditPage"), "AdminRfqRoutingAuditPage");
 const AdminVendorMarketIntelPage = lazyWithRetry(() => import("./pages/admin/AdminVendorMarketIntelPage"), "AdminVendorMarketIntelPage");
+const AdminVendorExclusivityRequests = lazyWithRetry(() => import("./pages/admin/AdminVendorExclusivityRequests"), "AdminVendorExclusivityRequests");
 const AdminVendorOnboardingEmailsPage = lazyWithRetry(() => import("./pages/admin/AdminVendorOnboardingEmailsPage"), "AdminVendorOnboardingEmailsPage");
 const AdminAnnouncementBar = lazyWithRetry(() => import("./pages/admin/AdminAnnouncementBar"), "AdminAnnouncementBar");
 const AdminFeatureFlags = lazyWithRetry(() => import("./pages/admin/AdminFeatureFlags"), "AdminFeatureFlags");
@@ -462,6 +463,7 @@ const App = () => (
               <Route path="rfq-routing-test" element={<LP><AdminRfqRoutingTestPage /></LP>} />
               <Route path="rfq-routing-audit" element={<LP><AdminRfqRoutingAuditPage /></LP>} />
               <Route path="vendor-market-intel" element={<LP><AdminVendorMarketIntelPage /></LP>} />
+              <Route path="vendor-exclusivity-requests" element={<LP><AdminVendorExclusivityRequests /></LP>} />
               <Route path="vendor-onboarding-emails" element={<LP><AdminVendorOnboardingEmailsPage /></LP>} />
 
               <Route path="abonnements" element={<LP><AdminAbonnements /></LP>} />

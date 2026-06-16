@@ -41,6 +41,7 @@ const sidebarSections: { label: string | null; items: SidebarItem[] }[] = [
       { key: "proposeProduct", icon: PlusSquare, path: "/vendor/produits/proposer", parentPath: "/vendor/catalog" },
       { key: "myOffers", icon: Tag, path: "/vendor/offers" },
       { key: "rfqInbox", icon: Inbox, path: "/vendor/rfq" },
+      { key: "exclusivities", icon: ShieldCheck, path: "/vendor/exclusivities" },
       { key: "orders", icon: ShoppingCart, path: "/vendor/orders" },
     ],
   },

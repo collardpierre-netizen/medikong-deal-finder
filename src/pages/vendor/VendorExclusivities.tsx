@@ -132,7 +132,9 @@ export default function VendorExclusivities() {
         const ids = Array.from(targetIdsByScope[scope]);
         if (ids.length === 0) return;
         tasks.push(
-          supabase.from(SCOPE_META[scope].table).select("id, name").in("id", ids),
+          Promise.resolve(
+            supabase.from(SCOPE_META[scope].table).select("id, name").in("id", ids),
+          ),
         );
       });
       const results = await Promise.all(tasks);

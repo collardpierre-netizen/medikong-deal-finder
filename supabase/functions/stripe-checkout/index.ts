@@ -173,7 +173,7 @@ Deno.serve(async (req) => {
       // IDOR check : caller must own this order via customers.auth_user_id
       const { data: customer, error: custErr } = await supabase
         .from("customers")
-        .select("id, auth_user_id")
+        .select("id, auth_user_id, customer_type, country_code")
         .eq("id", order.customer_id)
         .maybeSingle();
 
@@ -217,7 +217,10 @@ Deno.serve(async (req) => {
       const cartItems = lines
         .filter((l: any) => l.offer_id)
         .map((l: any) => ({ offer_id: l.offer_id as string, quantity: Number(l.quantity) }));
-      const validation = await validateCart(supabase, cartItems, customer.id);
+      const validation = await validateCart(supabase, cartItems, customer.id, {
+        customer_type: customer.customer_type,
+        country_code: customer.country_code,
+      });
       if (!validation.valid) {
         return new Response(
           JSON.stringify({ error: "cart_validation_failed", validation }),

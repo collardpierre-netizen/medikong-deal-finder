@@ -1050,6 +1050,7 @@ async function processSingleProduct(
                   shipping_from_country: country,
                   is_active: true,
                   synced_at: new Date().toISOString(),
+                  ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
                 },
                 // Conflict cible : (product_id, vendor_id, country_code) — contrainte
                 // offers_product_vendor_country_unique. ignoreDuplicates=false ⇒ UPDATE

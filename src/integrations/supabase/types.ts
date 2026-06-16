@@ -6410,6 +6410,7 @@ export type Database = {
           is_qogita_backed: boolean
           is_top_seller: boolean | null
           is_traceable: boolean | null
+          last_sync_run_id: string | null
           margin_amount: number | null
           margin_split_pct: number | null
           max_delivery_days: number | null
@@ -6475,6 +6476,7 @@ export type Database = {
           is_qogita_backed?: boolean
           is_top_seller?: boolean | null
           is_traceable?: boolean | null
+          last_sync_run_id?: string | null
           margin_amount?: number | null
           margin_split_pct?: number | null
           max_delivery_days?: number | null
@@ -6540,6 +6542,7 @@ export type Database = {
           is_qogita_backed?: boolean
           is_top_seller?: boolean | null
           is_traceable?: boolean | null
+          last_sync_run_id?: string | null
           margin_amount?: number | null
           margin_split_pct?: number | null
           max_delivery_days?: number | null
@@ -9163,6 +9166,7 @@ export type Database = {
           label: string | null
           last_detail_sync: string | null
           last_offers_sync: string | null
+          last_sync_run_id: string | null
           manual_mapping_validated: boolean
           manual_mapping_validated_at: string | null
           manual_mapping_validated_by: string | null
@@ -9255,6 +9259,7 @@ export type Database = {
           label?: string | null
           last_detail_sync?: string | null
           last_offers_sync?: string | null
+          last_sync_run_id?: string | null
           manual_mapping_validated?: boolean
           manual_mapping_validated_at?: string | null
           manual_mapping_validated_by?: string | null
@@ -9347,6 +9352,7 @@ export type Database = {
           label?: string | null
           last_detail_sync?: string | null
           last_offers_sync?: string | null
+          last_sync_run_id?: string | null
           manual_mapping_validated?: boolean
           manual_mapping_validated_at?: string | null
           manual_mapping_validated_by?: string | null
@@ -9993,6 +9999,8 @@ export type Database = {
           country_code: string | null
           created_at: string
           duration_ms: number | null
+          entities_deactivated: Json
+          entities_spared: Json
           error_message: string | null
           errors_by_endpoint: Json
           id: string
@@ -10007,6 +10015,9 @@ export type Database = {
           products_targeted: number
           started_at: string
           status: Database["public"]["Enums"]["qogita_resync_status"]
+          sweep_type: string | null
+          sync_run_id: string | null
+          threshold_days: number | null
           tiers_synced: number
           total_errors: number
           triggered_by: string | null
@@ -10016,6 +10027,8 @@ export type Database = {
           country_code?: string | null
           created_at?: string
           duration_ms?: number | null
+          entities_deactivated?: Json
+          entities_spared?: Json
           error_message?: string | null
           errors_by_endpoint?: Json
           id?: string
@@ -10030,6 +10043,9 @@ export type Database = {
           products_targeted?: number
           started_at?: string
           status?: Database["public"]["Enums"]["qogita_resync_status"]
+          sweep_type?: string | null
+          sync_run_id?: string | null
+          threshold_days?: number | null
           tiers_synced?: number
           total_errors?: number
           triggered_by?: string | null
@@ -10039,6 +10055,8 @@ export type Database = {
           country_code?: string | null
           created_at?: string
           duration_ms?: number | null
+          entities_deactivated?: Json
+          entities_spared?: Json
           error_message?: string | null
           errors_by_endpoint?: Json
           id?: string
@@ -10053,6 +10071,9 @@ export type Database = {
           products_targeted?: number
           started_at?: string
           status?: Database["public"]["Enums"]["qogita_resync_status"]
+          sweep_type?: string | null
+          sync_run_id?: string | null
+          threshold_days?: number | null
           tiers_synced?: number
           total_errors?: number
           triggered_by?: string | null
@@ -18033,6 +18054,7 @@ export type Database = {
           is_manufacturer: boolean
           is_top_seller: boolean | null
           is_verified: boolean
+          last_sync_run_id: string | null
           linkedin_url: string | null
           logo_url: string | null
           margin_split_pct: number
@@ -18115,6 +18137,7 @@ export type Database = {
           is_manufacturer?: boolean
           is_top_seller?: boolean | null
           is_verified?: boolean
+          last_sync_run_id?: string | null
           linkedin_url?: string | null
           logo_url?: string | null
           margin_split_pct?: number
@@ -18197,6 +18220,7 @@ export type Database = {
           is_manufacturer?: boolean
           is_top_seller?: boolean | null
           is_verified?: boolean
+          last_sync_run_id?: string | null
           linkedin_url?: string | null
           logo_url?: string | null
           margin_split_pct?: number
@@ -20848,6 +20872,23 @@ export type Database = {
     Functions: {
       _account_hash_token: { Args: { _token: string }; Returns: string }
       _cat_tokens: { Args: { _label: string }; Returns: string[] }
+      _qogita_apply_sweep: {
+        Args: {
+          _candidate_offers: string[]
+          _candidate_products: string[]
+          _candidate_vendors: string[]
+          _country: string
+          _dry_run?: boolean
+          _error_ratio?: number
+          _sweep_type: string
+          _sync_run_id: string
+          _threshold_days: number
+          _total_active_offers: number
+          _total_active_products: number
+          _total_active_vendors: number
+        }
+        Returns: Json
+      }
       _sub_is_admin: { Args: never; Returns: boolean }
       account_accept_invitation: {
         Args: { _join_code?: string; _token?: string }
@@ -21125,6 +21166,23 @@ export type Database = {
         Args: { _confirm_token?: string; _dry_run?: boolean }
         Returns: Json
       }
+      admin_qogita_reconciliation_history: {
+        Args: { _limit?: number }
+        Returns: {
+          completed_at: string
+          country_code: string
+          duration_ms: number
+          entities_deactivated: Json
+          entities_spared: Json
+          id: string
+          metadata: Json
+          started_at: string
+          status: Database["public"]["Enums"]["qogita_resync_status"]
+          sweep_type: string
+          sync_run_id: string
+          threshold_days: number
+        }[]
+      }
       admin_redispatch_catalog_notifications: {
         Args: { _source_id: string; _source_type: string }
         Returns: number
@@ -21167,6 +21225,7 @@ export type Database = {
           is_qogita_backed: boolean
           is_top_seller: boolean | null
           is_traceable: boolean | null
+          last_sync_run_id: string | null
           margin_amount: number | null
           margin_split_pct: number | null
           max_delivery_days: number | null
@@ -22108,6 +22167,32 @@ export type Database = {
       }
       purge_bulk_deactivation_events: { Args: never; Returns: number }
       purge_security_audit_logs: { Args: never; Returns: Json }
+      qogita_backed_vendor_ids: {
+        Args: never
+        Returns: {
+          vendor_id: string
+        }[]
+      }
+      qogita_deactivate_zero_stock_offers: {
+        Args: { _offer_ids: string[] }
+        Returns: number
+      }
+      qogita_reactivate_entity: {
+        Args: { _id: string; _kind: string; _reason?: string }
+        Returns: Json
+      }
+      qogita_sweep_run_id: {
+        Args: { _country?: string; _dry_run?: boolean; _sync_run_id: string }
+        Returns: Json
+      }
+      qogita_sweep_staleness: {
+        Args: {
+          _country?: string
+          _dry_run?: boolean
+          _threshold_days?: number
+        }
+        Returns: Json
+      }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
@@ -22926,7 +23011,14 @@ export type Database = {
         | "incremental"
         | "full"
         | "manual"
-      qogita_resync_status: "running" | "success" | "partial" | "failed"
+        | "reconciliation_sweep"
+      qogita_resync_status:
+        | "running"
+        | "success"
+        | "partial"
+        | "failed"
+        | "needs_review"
+        | "skipped_guardrail"
       reshipment_status_enum:
         | "not_applicable"
         | "awaiting_reception"
@@ -23268,8 +23360,16 @@ export const Constants = {
         "incremental",
         "full",
         "manual",
+        "reconciliation_sweep",
       ],
-      qogita_resync_status: ["running", "success", "partial", "failed"],
+      qogita_resync_status: [
+        "running",
+        "success",
+        "partial",
+        "failed",
+        "needs_review",
+        "skipped_guardrail",
+      ],
       reshipment_status_enum: [
         "not_applicable",
         "awaiting_reception",

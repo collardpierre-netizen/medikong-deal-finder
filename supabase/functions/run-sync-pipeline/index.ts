@@ -111,8 +111,18 @@ function getPipelineSteps(country: string, mode: string): StepConfig[] {
       params: { action: "full-sync" },
       required: false,
     },
+    {
+      // Sweep A — reconciliation by sync_run_id (full runs only).
+      // Deactivates Qogita entities not touched by this run (with anti-wipe guardrails).
+      name: "reconcile_sweep_a",
+      label: "Réconciliation Qogita (sweep A)",
+      functionName: "qogita-reconcile",
+      params: { sweep: "run_id", country },
+      required: false,
+    },
   ];
 }
+
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -361,6 +371,23 @@ serve(async (req) => {
 
     const STEPS = getPipelineSteps(country, mode);
 
+    // Generate sync_run_id for full runs — stamped on every Qogita upsert
+    // so sweep A can identify entities not touched by this run.
+    const syncRunId: string | null = mode === "full" ? crypto.randomUUID() : null;
+    if (syncRunId) {
+      for (const s of STEPS) {
+        if (s.name === "reconcile_sweep_a") {
+          s.params = { ...s.params, sweep: "run_id", sync_run_id: syncRunId };
+        } else if (
+          s.functionName === "sync-qogita-products" ||
+          s.functionName === "sync-qogita-offers-detail" ||
+          s.functionName === "sync-qogita-brands"
+        ) {
+          s.params = { ...s.params, sync_run_id: syncRunId };
+        }
+      }
+    }
+
     // Create pipeline run record
     const initialSteps = STEPS.map((s) => ({
       step: s.name,
@@ -392,6 +419,7 @@ serve(async (req) => {
       steps: STEPS,
       stepOnly,
     }).catch(async (error: any) => {
+
       console.error("run-sync-pipeline background error:", error);
       await supabase
         .from("sync_pipeline_runs")

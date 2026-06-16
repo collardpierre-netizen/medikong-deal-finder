@@ -149,9 +149,11 @@ Deno.serve(async (req) => {
 
   const action = body?.action || "start";
   const country = body?.country || "BE";
+  const syncRunId: string | null = body?.sync_run_id ?? null;
 
   try {
-    if (action === "start") return await handleStart(sb, country);
+    if (action === "start") return await handleStart(sb, country, syncRunId);
+
     if (action === "chunk") return await handleChunk(sb, body.logId);
     return new Response(JSON.stringify({ error: `Unknown action: ${action}` }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -170,7 +172,7 @@ Deno.serve(async (req) => {
 
 // ───────────────────────── Step 1: START (streaming download → Storage) ─────────────────────────
 
-async function handleStart(sb: any, country: string): Promise<Response> {
+async function handleStart(sb: any, country: string, syncRunId: string | null = null): Promise<Response> {
   const { data: ctryRow } = await sb.from("countries").select("code, default_vat_rate")
     .eq("code", country).eq("is_active", true).eq("qogita_sync_enabled", true).single();
   if (!ctryRow) {
@@ -186,11 +188,12 @@ async function handleStart(sb: any, country: string): Promise<Response> {
 
   const { data: log } = await sb.from("sync_logs").insert({
     sync_type: "products", status: "running",
-    stats: { country, vat: ctryRow.default_vat_rate || 21 },
+    stats: { country, vat: ctryRow.default_vat_rate || 21, sync_run_id: syncRunId },
     progress_current: 0, progress_total: 0,
     progress_message: `${country}: téléchargement CSV en streaming...`,
   }).select().single();
   const logId = log!.id;
+
 
   (globalThis as any).EdgeRuntime.waitUntil(
     streamDownloadToStorage(sb, country, ctryRow.default_vat_rate || 21, logId).catch(async (e: any) => {
@@ -414,6 +417,11 @@ async function processChunkStreaming(sb: any, logId: string, state: any) {
     line_residue, header_parsed, header_line, total_lines,
   } = state;
 
+  // Pull sync_run_id (set by run-sync-pipeline at full-run start) so we can stamp it on every upsert.
+  const { data: logRow } = await sb.from("sync_logs").select("stats").eq("id", logId).single();
+  const syncRunId: string | null = logRow?.stats?.sync_run_id ?? null;
+
+
   const brandNames = new Set<string>(state.brands_seen || []);
   const catNames = new Set<string>(state.categories_seen || []);
   const seenSlugs = new Set<string>();
@@ -519,8 +527,9 @@ async function processChunkStreaming(sb: any, logId: string, state: any) {
   for (let i = 0; i < allLines.length; i += UPSERT_BATCH) {
     const batch = allLines.slice(i, i + UPSERT_BATCH);
     processed += await processBatch(
-      sb, batch, colMap, vat, country, brandNames, catNames, qogitaVendorId, seenSlugs,
+      sb, batch, colMap, vat, country, brandNames, catNames, qogitaVendorId, seenSlugs, syncRunId,
     );
+
   }
 
   const newOffset = byte_offset + chunkBuf.length;
@@ -610,7 +619,9 @@ async function processBatch(
   brandNames: Set<string>, catNames: Set<string>,
   qogitaVendorId: string,
   seenSlugs: Set<string>,
+  syncRunId: string | null = null,
 ): Promise<number> {
+
   const parsedRows: any[] = [];
   const products: any[] = [];
   const csvData: any[] = [];
@@ -709,10 +720,12 @@ async function processBatch(
       image_urls: row.imageUrl ? [row.imageUrl] : [],
       source: "qogita", is_active: true, is_published: true,
       synced_at: new Date().toISOString(),
+      ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
       total_stock: row.stock, is_in_stock: row.stock > 0,
       min_delivery_days: row.delivery > 0 ? row.delivery : null,
       ...(row.pe > 0 ? { best_price_excl_vat: row.pe, best_price_incl_vat: row.pi } : {}),
     });
+
 
     csvData.push({ qid: row.qid, pe: row.pe, pi: row.pi, stock: row.stock, delivery: row.delivery, isPreorder: row.isPreorder });
   }
@@ -796,9 +809,13 @@ async function processBatch(
       vat_rate: vat, stock_quantity: s.stock,
       stock_status: s.stock > 0 ? "in_stock" : (s.isPreorder ? "pre_order" : "out_of_stock"),
       delivery_days: s.delivery > 0 ? s.delivery : 3,
-      shipping_from_country: country, is_qogita_backed: true, is_active: true, moq: 1,
+      shipping_from_country: country, is_qogita_backed: true,
+      is_active: s.stock > 0 || s.isPreorder, // Sweep C: zero-stock offers immediately deactivated
+      moq: 1,
       synced_at: new Date().toISOString(),
+      ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
     }));
+
   if (offers.length > 0) {
     await withRetry("upsert offers", async () => {
       const { error } = await sb.from("offers").upsert(offers, {

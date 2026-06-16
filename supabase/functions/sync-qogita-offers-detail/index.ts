@@ -124,14 +124,19 @@ async function getQogitaToken(sb: any): Promise<{ token: string; baseUrl: string
   return { token: accessToken, baseUrl };
 }
 
-async function ensureBestPriceVendor(sb: any, country: string): Promise<string> {
+async function ensureBestPriceVendor(sb: any, country: string, syncRunId: string | null): Promise<string> {
   const { data: existing } = await sb
     .from("vendors")
     .select("id")
     .eq("slug", "qogita-best-price")
     .maybeSingle();
 
-  if (existing?.id) return existing.id;
+  if (existing?.id) {
+    if (syncRunId) {
+      await sb.from("vendors").update({ last_sync_run_id: syncRunId }).eq("id", existing.id);
+    }
+    return existing.id;
+  }
 
   const { data: inserted, error } = await sb
     .from("vendors")
@@ -145,6 +150,7 @@ async function ensureBestPriceVendor(sb: any, country: string): Promise<string> 
       can_manage_offers: false,
       country_code: country,
       commission_rate: 0,
+      ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
     })
     .select("id")
     .single();
@@ -152,6 +158,7 @@ async function ensureBestPriceVendor(sb: any, country: string): Promise<string> 
   if (error) throw error;
   return inserted.id;
 }
+
 
 async function fetchWithRetry(
   url: string,

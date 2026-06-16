@@ -109,6 +109,7 @@ Deno.serve(async (req) => {
             qogita_qid: brand.qogita_qid,
             is_active: true,
             synced_at: brand.synced_at,
+            ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
           }).eq("name", brand.name);
           if (updErr) {
             upsertErrors++;

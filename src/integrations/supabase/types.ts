@@ -647,6 +647,7 @@ export type Database = {
           is_active: boolean
           is_featured: boolean
           is_top20: boolean
+          last_sync_run_id: string | null
           logo_url: string | null
           main_category: string | null
           manufacturer_id: string | null
@@ -692,6 +693,7 @@ export type Database = {
           is_active?: boolean
           is_featured?: boolean
           is_top20?: boolean
+          last_sync_run_id?: string | null
           logo_url?: string | null
           main_category?: string | null
           manufacturer_id?: string | null
@@ -737,6 +739,7 @@ export type Database = {
           is_active?: boolean
           is_featured?: boolean
           is_top20?: boolean
+          last_sync_run_id?: string | null
           logo_url?: string | null
           main_category?: string | null
           manufacturer_id?: string | null

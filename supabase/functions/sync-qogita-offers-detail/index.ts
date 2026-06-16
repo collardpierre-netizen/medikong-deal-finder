@@ -124,14 +124,19 @@ async function getQogitaToken(sb: any): Promise<{ token: string; baseUrl: string
   return { token: accessToken, baseUrl };
 }
 
-async function ensureBestPriceVendor(sb: any, country: string): Promise<string> {
+async function ensureBestPriceVendor(sb: any, country: string, syncRunId: string | null): Promise<string> {
   const { data: existing } = await sb
     .from("vendors")
     .select("id")
     .eq("slug", "qogita-best-price")
     .maybeSingle();
 
-  if (existing?.id) return existing.id;
+  if (existing?.id) {
+    if (syncRunId) {
+      await sb.from("vendors").update({ last_sync_run_id: syncRunId }).eq("id", existing.id);
+    }
+    return existing.id;
+  }
 
   const { data: inserted, error } = await sb
     .from("vendors")
@@ -145,6 +150,7 @@ async function ensureBestPriceVendor(sb: any, country: string): Promise<string> 
       can_manage_offers: false,
       country_code: country,
       commission_rate: 0,
+      ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
     })
     .select("id")
     .single();
@@ -152,6 +158,7 @@ async function ensureBestPriceVendor(sb: any, country: string): Promise<string> 
   if (error) throw error;
   return inserted.id;
 }
+
 
 async function fetchWithRetry(
   url: string,
@@ -234,7 +241,7 @@ async function fetchVariantWithRetry(
 }
 
 /** Resolve or create a vendor row for a Qogita seller alias */
-async function resolveVendor(sb: any, sellerCode: string, country: string): Promise<string | null> {
+async function resolveVendor(sb: any, sellerCode: string, country: string, syncRunId: string | null): Promise<string | null> {
   if (!sellerCode || sellerCode === "UNKNOWN") return null;
 
   // Check by qogita_seller_alias first
@@ -244,14 +251,22 @@ async function resolveVendor(sb: any, sellerCode: string, country: string): Prom
     .eq("qogita_seller_alias", sellerCode)
     .maybeSingle();
 
-  if (existing?.id) return existing.id;
+  if (existing?.id) {
+    if (syncRunId) {
+      await sb.from("vendors").update({ last_sync_run_id: syncRunId }).eq("id", existing.id);
+    }
+    return existing.id;
+  }
 
   // Create new vendor for this seller code
   const slug = `qogita-seller-${sellerCode.toLowerCase()}`;
   const { data: bySlug } = await sb.from("vendors").select("id").eq("slug", slug).maybeSingle();
   if (bySlug?.id) {
-    // Update alias
-    await sb.from("vendors").update({ qogita_seller_alias: sellerCode }).eq("id", bySlug.id);
+    // Update alias (+ stamp run)
+    await sb.from("vendors").update({
+      qogita_seller_alias: sellerCode,
+      ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
+    }).eq("id", bySlug.id);
     return bySlug.id;
   }
 
@@ -269,6 +284,7 @@ async function resolveVendor(sb: any, sellerCode: string, country: string): Prom
       commission_rate: 0,
       qogita_seller_alias: sellerCode,
       display_code: sellerCode,
+      ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
     })
     .select("id")
     .single();
@@ -279,6 +295,7 @@ async function resolveVendor(sb: any, sellerCode: string, country: string): Prom
   }
   return inserted.id;
 }
+
 
 /**
  * Extract raw price tiers array from a Qogita offer/variant payload.
@@ -424,15 +441,20 @@ Deno.serve(async (req) => {
   let fetchMultiVendor = true;
   let resyncLogId: string | null = null;
   let offsetCursor = 0;
+  // Sweep A : run id provided by run-sync-pipeline at full-run start.
+  // Stamped on every offer / vendor upsert so qogita_reconcile can detect leftovers.
+  let syncRunId: string | null = null;
   try {
     const body = await req.json();
     if (body?.country) targetCountry = body.country;
     // body.multi_vendor ignoré : forcé à true.
     if (body?.resync_log_id) resyncLogId = String(body.resync_log_id);
     if (body?.offset !== undefined) offsetCursor = parseInt(String(body.offset), 10) || 0;
+    if (body?.sync_run_id) syncRunId = String(body.sync_run_id);
   } catch {
     // no-op
   }
+
 
   // Helper closure: log endpoint errors to qogita_resync_logs (no-op if no resyncLogId)
   const recordEndpointError = async (endpoint: string, status: number | null, message: string) => {
@@ -554,7 +576,7 @@ Deno.serve(async (req) => {
   let productsEnriched = 0;
   let offersUpserted = 0;
   try {
-    const result = await syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, lastOffset, startTime, fetchMultiVendor, recordEndpointError, recordProgress, resyncLogId, offsetCursor);
+    const result = await syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, lastOffset, startTime, fetchMultiVendor, recordEndpointError, recordProgress, resyncLogId, offsetCursor, syncRunId);
     productsEnriched = result?.products_enriched || 0;
     offersUpserted = result?.offers_upserted || 0;
   } catch (e: any) {
@@ -603,10 +625,12 @@ async function syncOffers(
   recordProgress: (delta: Record<string, number>) => Promise<void>,
   resyncLogId: string | null,
   offsetCursor: number = 0,
+  syncRunId: string | null = null,
 ) {
   const executionProfile = getExecutionProfile(fetchMultiVendor);
   const { token, baseUrl } = await getQogitaToken(sb);
-  const bestPriceVendorId = await ensureBestPriceVendor(sb, country);
+  const bestPriceVendorId = await ensureBestPriceVendor(sb, country, syncRunId);
+
 
   const incrementalProductFilter = "offer_count.gt.0,synced_at.is.null,qogita_qid.is.null";
 
@@ -698,7 +722,7 @@ async function syncOffers(
       const currentChunkEnd = Math.min(batchStart + (chunkIndex + 1) * executionProfile.parallelConcurrency, batchEnd);
       const results = await Promise.allSettled(
         chunk.map((p: any) =>
-          processSingleProduct(sb, p, baseUrl, token, country, vatRate, vatMultiplier, bestPriceVendorId, fetchMultiVendor, stats, recordEndpointError, recordProgress)
+          processSingleProduct(sb, p, baseUrl, token, country, vatRate, vatMultiplier, bestPriceVendorId, fetchMultiVendor, stats, recordEndpointError, recordProgress, syncRunId)
         )
       );
 
@@ -827,6 +851,7 @@ async function processSingleProduct(
   parentStats: any,
   recordEndpointError?: (endpoint: string, status: number | null, message: string) => Promise<void>,
   recordProgress?: (delta: Record<string, number>) => Promise<void>,
+  syncRunId: string | null = null,
 ) {
   const localStats = {
     products_enriched: 0,
@@ -868,7 +893,10 @@ async function processSingleProduct(
       }
 
       const images = extractImages(variant?.images);
-      const productUpdate: any = { synced_at: new Date().toISOString() };
+      const productUpdate: any = {
+        synced_at: new Date().toISOString(),
+        ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
+      };
       if (variant?.qid) productUpdate.qogita_qid = variant.qid;
       if (variant?.fid) productUpdate.qogita_fid = variant.fid;
       if (variant?.label) productUpdate.description = variant.label;
@@ -925,6 +953,7 @@ async function processSingleProduct(
             shipping_from_country: country,
             is_active: true,
             synced_at: new Date().toISOString(),
+            ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
           },
           // Aligned with multi-vendor upsert — qogita_offer_qid is the canonical key.
           { onConflict: "qogita_offer_qid", ignoreDuplicates: false },
@@ -978,7 +1007,7 @@ async function processSingleProduct(
               const sellerCode = offer.seller || offer.sellerCode;
               if (!sellerCode) continue;
 
-              const vendorId = await resolveVendor(sb, sellerCode, country);
+              const vendorId = await resolveVendor(sb, sellerCode, country, syncRunId);
               if (!vendorId) continue;
 
               const offerPrice = parseFloat(String(offer.price ?? "0")) || 0;
@@ -1021,6 +1050,7 @@ async function processSingleProduct(
                   shipping_from_country: country,
                   is_active: true,
                   synced_at: new Date().toISOString(),
+                  ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
                 },
                 // Conflict cible : (product_id, vendor_id, country_code) — contrainte
                 // offers_product_vendor_country_unique. ignoreDuplicates=false ⇒ UPDATE

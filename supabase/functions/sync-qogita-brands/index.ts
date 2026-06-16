@@ -22,12 +22,22 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
+  // Sweep A : stamp the run id passed by run-sync-pipeline so the reconcile job
+  // can detect brands that were not refreshed by this full run.
+  let syncRunId: string | null = null;
+  try {
+    const body = await req.json();
+    if (body?.sync_run_id) syncRunId = String(body.sync_run_id);
+  } catch { /* no body — ad-hoc run, no stamping */ }
+
   const { data: newLog } = await supabase.from("sync_logs").insert({
-    sync_type: "brands", status: "running", stats: {},
+    sync_type: "brands", status: "running",
+    stats: syncRunId ? { sync_run_id: syncRunId } : {},
     progress_current: 0, progress_total: 0,
     progress_message: "Extraction des marques depuis les produits...",
   }).select().single();
   const syncLogId = newLog!.id;
+
 
   try {
     // Extract unique brands from already-imported products
@@ -58,7 +68,11 @@ Deno.serve(async (req) => {
       }
       slugSeen.add(slug);
       nameSeen.add(name);
-      brandsRaw.push({ name, qogita_qid: qid, slug, is_active: true, synced_at: new Date().toISOString() });
+      brandsRaw.push({
+        name, qogita_qid: qid, slug, is_active: true,
+        synced_at: new Date().toISOString(),
+        ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
+      });
     }
 
     // Drop rows that fail the spec (empty name, empty slug, etc.) so we can keep going
@@ -95,6 +109,7 @@ Deno.serve(async (req) => {
             qogita_qid: brand.qogita_qid,
             is_active: true,
             synced_at: brand.synced_at,
+            ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
           }).eq("name", brand.name);
           if (updErr) {
             upsertErrors++;

@@ -720,10 +720,12 @@ async function processBatch(
       image_urls: row.imageUrl ? [row.imageUrl] : [],
       source: "qogita", is_active: true, is_published: true,
       synced_at: new Date().toISOString(),
+      ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
       total_stock: row.stock, is_in_stock: row.stock > 0,
       min_delivery_days: row.delivery > 0 ? row.delivery : null,
       ...(row.pe > 0 ? { best_price_excl_vat: row.pe, best_price_incl_vat: row.pi } : {}),
     });
+
 
     csvData.push({ qid: row.qid, pe: row.pe, pi: row.pi, stock: row.stock, delivery: row.delivery, isPreorder: row.isPreorder });
   }

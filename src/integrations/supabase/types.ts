@@ -22926,7 +22926,14 @@ export type Database = {
         | "incremental"
         | "full"
         | "manual"
-      qogita_resync_status: "running" | "success" | "partial" | "failed"
+        | "reconciliation_sweep"
+      qogita_resync_status:
+        | "running"
+        | "success"
+        | "partial"
+        | "failed"
+        | "needs_review"
+        | "skipped_guardrail"
       reshipment_status_enum:
         | "not_applicable"
         | "awaiting_reception"
@@ -23268,8 +23275,16 @@ export const Constants = {
         "incremental",
         "full",
         "manual",
+        "reconciliation_sweep",
       ],
-      qogita_resync_status: ["running", "success", "partial", "failed"],
+      qogita_resync_status: [
+        "running",
+        "success",
+        "partial",
+        "failed",
+        "needs_review",
+        "skipped_guardrail",
+      ],
       reshipment_status_enum: [
         "not_applicable",
         "awaiting_reception",

@@ -111,8 +111,18 @@ function getPipelineSteps(country: string, mode: string): StepConfig[] {
       params: { action: "full-sync" },
       required: false,
     },
+    {
+      // Sweep A — reconciliation by sync_run_id (full runs only).
+      // Deactivates Qogita entities not touched by this run (with anti-wipe guardrails).
+      name: "reconcile_sweep_a",
+      label: "Réconciliation Qogita (sweep A)",
+      functionName: "qogita-reconcile",
+      params: { sweep: "run_id", country },
+      required: false,
+    },
   ];
 }
+
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));

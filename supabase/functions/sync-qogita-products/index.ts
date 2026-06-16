@@ -417,6 +417,11 @@ async function processChunkStreaming(sb: any, logId: string, state: any) {
     line_residue, header_parsed, header_line, total_lines,
   } = state;
 
+  // Pull sync_run_id (set by run-sync-pipeline at full-run start) so we can stamp it on every upsert.
+  const { data: logRow } = await sb.from("sync_logs").select("stats").eq("id", logId).single();
+  const syncRunId: string | null = logRow?.stats?.sync_run_id ?? null;
+
+
   const brandNames = new Set<string>(state.brands_seen || []);
   const catNames = new Set<string>(state.categories_seen || []);
   const seenSlugs = new Set<string>();
@@ -522,8 +527,9 @@ async function processChunkStreaming(sb: any, logId: string, state: any) {
   for (let i = 0; i < allLines.length; i += UPSERT_BATCH) {
     const batch = allLines.slice(i, i + UPSERT_BATCH);
     processed += await processBatch(
-      sb, batch, colMap, vat, country, brandNames, catNames, qogitaVendorId, seenSlugs,
+      sb, batch, colMap, vat, country, brandNames, catNames, qogitaVendorId, seenSlugs, syncRunId,
     );
+
   }
 
   const newOffset = byte_offset + chunkBuf.length;
@@ -613,7 +619,9 @@ async function processBatch(
   brandNames: Set<string>, catNames: Set<string>,
   qogitaVendorId: string,
   seenSlugs: Set<string>,
+  syncRunId: string | null = null,
 ): Promise<number> {
+
   const parsedRows: any[] = [];
   const products: any[] = [];
   const csvData: any[] = [];

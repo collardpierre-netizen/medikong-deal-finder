@@ -685,6 +685,17 @@ export default function AdminSync() {
                 ))}
               </SelectContent>
             </Select>
+            <button
+              onClick={() => launchPipeline.mutate({ mode: "incremental" })}
+              disabled={launchPipeline.isPending || !!activePipeline}
+              className="flex items-center gap-1.5 h-9 px-3 rounded-md text-[12px] font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+              title="Lance immédiatement le pipeline de sync Qogita (mode incrémental)"
+            >
+              {launchPipeline.isPending || activePipeline
+                ? <Loader2 size={13} className="animate-spin" />
+                : <Play size={13} />}
+              Relancer la synchro maintenant
+            </button>
           </div>
           <div className="mt-3 flex items-start gap-2 p-3 rounded-lg border border-emerald-200 bg-emerald-50">
             <CheckCircle size={16} className="text-emerald-600 mt-0.5 shrink-0" />

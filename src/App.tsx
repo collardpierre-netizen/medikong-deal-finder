@@ -85,6 +85,9 @@ const MyPriceAlertsPage = lazyWithRetry(() => import("./pages/MyPriceAlertsPage"
 const MesCategoriesPage = lazyWithRetry(() => import("./pages/MesCategoriesPage"), "MesCategoriesPage");
 const MesRfqPage = lazyWithRetry(() => import("./pages/MesRfqPage"), "MesRfqPage");
 const RfqCreditsPage = lazyWithRetry(() => import("./pages/RfqCreditsPage"), "RfqCreditsPage");
+const VentesPriveesPage = lazyWithRetry(() => import("./pages/VentesPriveesPage"), "VentesPriveesPage");
+const OffresRecuesPage = lazyWithRetry(() => import("./pages/OffresRecuesPage"), "OffresRecuesPage");
+const AdminP2PSalesPage = lazyWithRetry(() => import("./pages/admin/AdminP2PSalesPage"), "AdminP2PSalesPage");
 const ImportHistoryPage = lazyWithRetry(() => import("./pages/ImportHistoryPage"), "ImportHistoryPage");
 const PharmacieAbonnementPage = lazyWithRetry(() => import("./pages/PharmacieAbonnementPage"), "PharmacieAbonnementPage");
 const EconomiesPage = lazyWithRetry(() => import("./pages/EconomiesPage"), "EconomiesPage");
@@ -363,6 +366,8 @@ const App = () => (
             <Route path="/compte/mes-categories" element={<LP><MesCategoriesPage /></LP>} />
             <Route path="/compte/mes-rfq" element={<LP><MesRfqPage /></LP>} />
             <Route path="/compte/rfq-credits" element={<LP><RfqCreditsPage /></LP>} />
+            <Route path="/compte/ventes-privees" element={<LP><VentesPriveesPage /></LP>} />
+            <Route path="/compte/offres-recues" element={<LP><OffresRecuesPage /></LP>} />
             <Route path="/rfq/externe/:token" element={<LP><RfqExternalResponsePage /></LP>} />
             <Route path="/compte/imports" element={<LP><ImportHistoryPage /></LP>} />
             <Route path="/espace-pharmacie/abonnement" element={<LP><PharmacieAbonnementPage /></LP>} />
@@ -469,6 +474,7 @@ const App = () => (
               <Route path="rfq-reminders" element={<LP><AdminRfqRemindersPage /></LP>} />
               <Route path="rfq-routing-test" element={<LP><AdminRfqRoutingTestPage /></LP>} />
               <Route path="rfq-routing-audit" element={<LP><AdminRfqRoutingAuditPage /></LP>} />
+              <Route path="ventes-privees" element={<LP><AdminP2PSalesPage /></LP>} />
               <Route path="vendor-market-intel" element={<LP><AdminVendorMarketIntelPage /></LP>} />
               <Route path="vendor-exclusivity-requests" element={<LP><AdminVendorExclusivityRequests /></LP>} />
               <Route path="vendor-onboarding-emails" element={<LP><AdminVendorOnboardingEmailsPage /></LP>} />

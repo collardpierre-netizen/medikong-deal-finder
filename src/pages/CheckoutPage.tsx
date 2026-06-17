@@ -127,6 +127,8 @@ export default function CheckoutPage() {
     vendor_name: string;
     reasons: string[];
     missing?: number;
+    current?: number;
+    required?: number;
   };
   const blockedVendors: BlockedVendor[] = useMemo(() => {
     if (!validation || validation.valid) return [];
@@ -140,7 +142,11 @@ export default function CheckoutPage() {
       const entry: BlockedVendor = map.get(k) || { vendor_id: k, vendor_name: vname, reasons: [] };
       if (e.type === "vendor_mov_not_reached") {
         const missing = Number(e.details?.missing) || 0;
+        const current = Number(e.details?.current) || 0;
+        const required = Number(e.details?.required) || 0;
         entry.missing = missing;
+        entry.current = current;
+        entry.required = required;
         entry.reasons.push(`MOV non atteint — il manque ${missing.toFixed(2)} €`);
       } else if (e.type === "below_moq") {
         entry.reasons.push(`Quantité minimum non respectée (${e.details?.current}/${e.details?.required})`);

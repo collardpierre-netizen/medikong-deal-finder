@@ -261,8 +261,11 @@ export const useDashboardStats = () => {
     staleTime: 60_000,
   });
 
-  const totalOrders = orders.data?.length ?? 0;
-  const gmv = orders.data?.reduce((sum, o) => sum + (Number(o.total_incl_vat) || 0), 0) ?? 0;
+  // Exclure les commandes annulées/refusées du GMV et du total
+  const EXCLUDED_STATUSES = new Set(["cancelled", "canceled", "refunded", "failed", "rejected"]);
+  const billableOrders = orders.data?.filter((o: any) => !EXCLUDED_STATUSES.has(String(o.status ?? "").toLowerCase())) ?? [];
+  const totalOrders = billableOrders.length;
+  const gmv = billableOrders.reduce((sum: number, o: any) => sum + (Number(o.total_incl_vat) || 0), 0);
 
   return {
     activeVendors: countsQuery.data?.activeVendors ?? 0,

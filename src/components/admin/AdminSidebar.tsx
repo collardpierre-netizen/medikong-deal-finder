@@ -223,6 +223,23 @@ const AdminSidebar = () => {
           <LayoutDashboard size={17} strokeWidth={1.8} />
           {t("dashboard")}
         </NavLink>
+        <NavLink
+          to="/admin/notifications"
+          className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium transition-colors mt-0.5 ${
+            isActive("/admin/notifications")
+              ? "text-white"
+              : "text-slate-400 hover:text-white hover:bg-white/5"
+          }`}
+          style={isActive("/admin/notifications") ? { backgroundColor: "#1B5BDA" } : {}}
+        >
+          <Bell size={17} strokeWidth={1.8} />
+          <span className="flex-1">Notifications</span>
+          {adminUnreadNotifs > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white" style={{ backgroundColor: "#EF4444", minWidth: 18, textAlign: "center" }}>
+              {adminUnreadNotifs > 99 ? "99+" : adminUnreadNotifs}
+            </span>
+          )}
+        </NavLink>
       </div>
 
       {/* Sections */}

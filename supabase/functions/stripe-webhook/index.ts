@@ -1,14 +1,31 @@
 import Stripe from "https://esm.sh/stripe@14";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, { apiVersion: "2024-06-20" });
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-);
+// Lazy-initialized singletons so tests can inject stubs before any handler runs.
+let stripe: any = null;
+let supabase: any = null;
 
-const WEBHOOK_SECRET = Deno.env.get("STRIPE_WEBHOOK_SECRET")!;
-const WEBHOOK_SECRET_CONNECT = Deno.env.get("STRIPE_WEBHOOK_SECRET_CONNECT")!;
+function ensureDeps() {
+  if (!stripe) {
+    stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "sk_test_dummy", { apiVersion: "2024-06-20" });
+  }
+  if (!supabase) {
+    supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "http://localhost",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "service-role-dummy",
+    );
+  }
+}
+
+/** Test-only: replace internal stripe / supabase singletons with stubs. */
+export function __setTestDeps(deps: { supabase?: any; stripe?: any }) {
+  if (deps.supabase !== undefined) supabase = deps.supabase;
+  if (deps.stripe !== undefined) stripe = deps.stripe;
+}
+
+const WEBHOOK_SECRET = Deno.env.get("STRIPE_WEBHOOK_SECRET") ?? "";
+const WEBHOOK_SECRET_CONNECT = Deno.env.get("STRIPE_WEBHOOK_SECRET_CONNECT") ?? "";
+
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") {

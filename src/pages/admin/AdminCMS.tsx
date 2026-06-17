@@ -72,6 +72,9 @@ const AdminCMS = () => {
   const [pageUploading, setPageUploading] = useState(false);
   const [activePageUpload, setActivePageUpload] = useState<{ pageKey: string; sectionKey: string } | null>(null);
 
+  // ---- Revendeur Pro state ----
+  const [resellerSearch, setResellerSearch] = useState("");
+
   const toggleSection = (idx: number) => {
     setSections(prev => prev.map((s, i) => i === idx ? { ...s, visible: !s.visible } : s));
   };

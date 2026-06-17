@@ -135,7 +135,7 @@ export default function CheckoutPage() {
   const [initLoading, setInitLoading] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
   const [initErrorStage, setInitErrorStage] = useState<"order" | "session" | null>(null);
-  const [testMode, setTestMode] = useState(false);
+  const testMode = false;
 
   const handlePlaceOrder = useCallback(async () => {
     if (submitting || initLoading) return;

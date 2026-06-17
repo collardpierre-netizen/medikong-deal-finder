@@ -1404,6 +1404,245 @@ export type Database = {
         }
         Relationships: []
       }
+      buyer_p2p_listings: {
+        Row: {
+          accepted_at: string | null
+          batch_number: string | null
+          brand_name: string | null
+          cancelled_at: string | null
+          cnk_code: string | null
+          commission_enabled: boolean
+          commission_payer: Database["public"]["Enums"]["buyer_p2p_commission_payer"]
+          commission_rate_bps: number
+          completed_at: string | null
+          created_at: string
+          currency_code: string
+          declined_at: string | null
+          expiry_date: string | null
+          gtin: string | null
+          id: string
+          notes: string | null
+          product_id: string | null
+          product_name: string
+          quantity: number
+          seller_buyer_id: string
+          sent_at: string | null
+          status: Database["public"]["Enums"]["buyer_p2p_status"]
+          sub_order_id: string | null
+          target_buyer_id: string
+          unit_price_excl_vat_cents: number
+          updated_at: string
+          valid_until: string
+          vat_rate: number
+        }
+        Insert: {
+          accepted_at?: string | null
+          batch_number?: string | null
+          brand_name?: string | null
+          cancelled_at?: string | null
+          cnk_code?: string | null
+          commission_enabled?: boolean
+          commission_payer?: Database["public"]["Enums"]["buyer_p2p_commission_payer"]
+          commission_rate_bps?: number
+          completed_at?: string | null
+          created_at?: string
+          currency_code?: string
+          declined_at?: string | null
+          expiry_date?: string | null
+          gtin?: string | null
+          id?: string
+          notes?: string | null
+          product_id?: string | null
+          product_name: string
+          quantity: number
+          seller_buyer_id: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["buyer_p2p_status"]
+          sub_order_id?: string | null
+          target_buyer_id: string
+          unit_price_excl_vat_cents: number
+          updated_at?: string
+          valid_until: string
+          vat_rate?: number
+        }
+        Update: {
+          accepted_at?: string | null
+          batch_number?: string | null
+          brand_name?: string | null
+          cancelled_at?: string | null
+          cnk_code?: string | null
+          commission_enabled?: boolean
+          commission_payer?: Database["public"]["Enums"]["buyer_p2p_commission_payer"]
+          commission_rate_bps?: number
+          completed_at?: string | null
+          created_at?: string
+          currency_code?: string
+          declined_at?: string | null
+          expiry_date?: string | null
+          gtin?: string | null
+          id?: string
+          notes?: string | null
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          seller_buyer_id?: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["buyer_p2p_status"]
+          sub_order_id?: string | null
+          target_buyer_id?: string
+          unit_price_excl_vat_cents?: number
+          updated_at?: string
+          valid_until?: string
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_p2p_listings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "buyer_p2p_listings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_p2p_listings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "buyer_p2p_listings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_p2p_listings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_p2p_listings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "buyer_p2p_listings_seller_buyer_id_fkey"
+            columns: ["seller_buyer_id"]
+            isOneToOne: false
+            referencedRelation: "buyers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_p2p_listings_sub_order_id_fkey"
+            columns: ["sub_order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["sub_order_id"]
+          },
+          {
+            foreignKeyName: "buyer_p2p_listings_sub_order_id_fkey"
+            columns: ["sub_order_id"]
+            isOneToOne: false
+            referencedRelation: "sub_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_p2p_listings_target_buyer_id_fkey"
+            columns: ["target_buyer_id"]
+            isOneToOne: false
+            referencedRelation: "buyers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      buyer_p2p_messages: {
+        Row: {
+          author_buyer_id: string
+          body: string
+          counter_quantity: number | null
+          counter_unit_price_excl_vat_cents: number | null
+          created_at: string
+          id: string
+          listing_id: string
+        }
+        Insert: {
+          author_buyer_id: string
+          body: string
+          counter_quantity?: number | null
+          counter_unit_price_excl_vat_cents?: number | null
+          created_at?: string
+          id?: string
+          listing_id: string
+        }
+        Update: {
+          author_buyer_id?: string
+          body?: string
+          counter_quantity?: number | null
+          counter_unit_price_excl_vat_cents?: number | null
+          created_at?: string
+          id?: string
+          listing_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_p2p_messages_author_buyer_id_fkey"
+            columns: ["author_buyer_id"]
+            isOneToOne: false
+            referencedRelation: "buyers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_p2p_messages_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "buyer_p2p_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      buyer_p2p_settings: {
+        Row: {
+          commission_payer: Database["public"]["Enums"]["buyer_p2p_commission_payer"]
+          created_at: string
+          default_commission_bps: number
+          id: boolean
+          is_enabled: boolean
+          max_validity_days: number
+          updated_at: string
+        }
+        Insert: {
+          commission_payer?: Database["public"]["Enums"]["buyer_p2p_commission_payer"]
+          created_at?: string
+          default_commission_bps?: number
+          id?: boolean
+          is_enabled?: boolean
+          max_validity_days?: number
+          updated_at?: string
+        }
+        Update: {
+          commission_payer?: Database["public"]["Enums"]["buyer_p2p_commission_payer"]
+          created_at?: string
+          default_commission_bps?: number
+          id?: boolean
+          is_enabled?: boolean
+          max_validity_days?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       buyer_profiles: {
         Row: {
           created_at: string
@@ -21345,6 +21584,7 @@ export type Database = {
     Functions: {
       _account_hash_token: { Args: { _token: string }; Returns: string }
       _cat_tokens: { Args: { _label: string }; Returns: string[] }
+      _current_user_buyer_ids: { Args: never; Returns: string[] }
       _qogita_apply_sweep: {
         Args: {
           _candidate_offers: string[]
@@ -23459,6 +23699,17 @@ export type Database = {
         | "auto_resolved"
       alert_type: "market_price" | "external_offer"
       app_role: "super_admin" | "admin" | "moderator" | "user"
+      buyer_p2p_commission_payer: "seller" | "buyer" | "split"
+      buyer_p2p_status:
+        | "draft"
+        | "sent"
+        | "accepted"
+        | "declined"
+        | "expired"
+        | "cancelled"
+        | "paid"
+        | "shipped"
+        | "completed"
       catalog_submission_status:
         | "active"
         | "pending_review"
@@ -23796,6 +24047,18 @@ export const Constants = {
       alert_status: ["new", "seen", "in_progress", "resolved", "auto_resolved"],
       alert_type: ["market_price", "external_offer"],
       app_role: ["super_admin", "admin", "moderator", "user"],
+      buyer_p2p_commission_payer: ["seller", "buyer", "split"],
+      buyer_p2p_status: [
+        "draft",
+        "sent",
+        "accepted",
+        "declined",
+        "expired",
+        "cancelled",
+        "paid",
+        "shipped",
+        "completed",
+      ],
       catalog_submission_status: [
         "active",
         "pending_review",

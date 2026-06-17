@@ -470,7 +470,9 @@ async function handlePaymentSucceeded(pi: Stripe.PaymentIntent) {
   await sendBuyerOrderConfirmation(orderId);
 }
 
-async function handlePaymentFailed(pi: Stripe.PaymentIntent) {
+export async function handlePaymentFailed(pi: Stripe.PaymentIntent) {
+  ensureDeps();
+
   const orderId = pi.metadata?.order_id;
   if (!orderId) return;
 

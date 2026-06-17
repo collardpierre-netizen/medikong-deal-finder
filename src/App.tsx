@@ -481,6 +481,7 @@ const App = () => (
               <Route path="schemas-pim" element={<LP><AdminSchemasPIM /></LP>} />
               <Route path="commandes" element={<LP><AdminCommandes /></LP>} />
               <Route path="commandes-en-retard" element={<LP><AdminCommandesEnRetard /></LP>} />
+              <Route path="notifications" element={<LP><AdminNotifications /></LP>} />
               <Route path="litiges" element={<LP><AdminLitiges /></LP>} />
               <Route path="finances" element={<LP><AdminFinances /></LP>} />
               <Route path="veille-prix" element={<LP><AdminVeillePrix /></LP>} />

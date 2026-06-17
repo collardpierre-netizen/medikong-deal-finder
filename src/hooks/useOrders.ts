@@ -2,7 +2,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-const BALOOH_VENDOR_ID = "b3aa8188-7584-47eb-9b5f-fd50e33ec569";
 
 export interface OrderItemInput {
   offer_id: string;

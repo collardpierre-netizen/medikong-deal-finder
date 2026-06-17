@@ -143,8 +143,11 @@ Deno.serve(async (req) => {
     const vendorTypeMap = new Map((vendors || []).map((v: any) => [v.id, v.type]));
 
     // order_items (legacy) — must succeed
+    // validateCart returns vat_rate as percent (e.g. 21).
+    // order_items historically stores it as fraction (0.21), order_lines as percent (21).
     const orderItems = validation.items.map((v) => {
       const ref = offerMap.get(v.offer_id);
+      const vatPct = Number(v.vat_rate ?? 21);
       return {
         order_id: order.id,
         offer_id: v.offer_id,
@@ -152,7 +155,7 @@ Deno.serve(async (req) => {
         quantity: v.quantity,
         unit_price_excl_vat: v.unit_price_excl_vat,
         unit_price_incl_vat: v.unit_price_incl_vat,
-        vat_rate: v.vat_rate ?? 0.21,
+        vat_rate: vatPct / 100,
         line_total_excl_vat: v.total_excl_vat,
         line_total_incl_vat: v.total_incl_vat,
         qogita_offer_qid: ref?.qogita_offer_qid ?? null,

@@ -170,6 +170,7 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
                     item.key === "marketIntel" ? competitorAlertsCount :
                     item.key === "notificationsCenter" ? unreadNotifsCount :
                     item.key === "rfqInbox" ? vendorRfqCount :
+                    item.key === "orders" ? vendorOrdersCount :
                     item.key === "myOffers" ? vendorChallengesCount : 0;
 
                   return (

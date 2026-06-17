@@ -179,3 +179,73 @@ Deno.test("MOV cascade — fallback profil (sans country exact)", async () => {
   const res = await validateCart(stub, [{ offer_id: "off-1", quantity: 5 }], BUYER_ID, buyerCtx);
   assertEquals(res.vendors[0].mov_required, 30);
 });
+
+// ---------- Global admin MOV fallback (admin_settings.global_default_mov_cents) ----------
+
+const adminMovRow = (cents: number | null) => ({
+  key: "global_default_mov_cents",
+  value_json: cents,
+});
+
+Deno.test("MOV cascade — global admin MOV utilisé quand vendeur réel n'a aucune règle ET offers.mov=0", async () => {
+  const stub = makeStub({
+    offers: [{ ...baseOffer, mov: 0 }],
+    vendors: [{ id: "v-real", type: "real" }],
+    vendor_profile_defaults: [],
+    vendor_buyer_overrides: [],
+    admin_settings: [adminMovRow(2000)], // 20 €
+  });
+  const res = await validateCart(stub, [{ offer_id: "off-1", quantity: 1 }], BUYER_ID, buyerCtx);
+  assertEquals(res.vendors[0].mov_required, 20);
+});
+
+Deno.test("MOV cascade — offers.mov (vendeur) bat le global admin MOV", async () => {
+  const stub = makeStub({
+    offers: [baseOffer], // offers.mov = 50
+    vendors: [{ id: "v-real", type: "real" }],
+    vendor_profile_defaults: [],
+    vendor_buyer_overrides: [],
+    admin_settings: [adminMovRow(2000)], // 20 € global — ignoré
+  });
+  const res = await validateCart(stub, [{ offer_id: "off-1", quantity: 6 }], BUYER_ID, buyerCtx);
+  assertEquals(res.vendors[0].mov_required, 50);
+});
+
+Deno.test("MOV cascade — global admin MOV NULL → comportement actuel (0 si rien)", async () => {
+  const stub = makeStub({
+    offers: [{ ...baseOffer, mov: 0 }],
+    vendors: [{ id: "v-real", type: "real" }],
+    vendor_profile_defaults: [],
+    vendor_buyer_overrides: [],
+    admin_settings: [adminMovRow(null)],
+  });
+  const res = await validateCart(stub, [{ offer_id: "off-1", quantity: 1 }], BUYER_ID, buyerCtx);
+  assertEquals(res.vendors[0].mov_required, 0);
+  assertEquals(res.vendors[0].mov_reached, true);
+});
+
+Deno.test("MOV cascade — vendeur virtuel garde le plancher 500€ même si global admin MOV défini", async () => {
+  const stub = makeStub({
+    offers: [{ ...baseOffer, vendor_id: "v-qogita", mov: 0 }],
+    vendors: [{ id: "v-qogita", type: "qogita" }],
+    vendor_profile_defaults: [],
+    vendor_buyer_overrides: [],
+    admin_settings: [adminMovRow(2000)], // 20 € global, ignoré
+  });
+  const res = await validateCart(stub, [{ offer_id: "off-1", quantity: 1 }], BUYER_ID, buyerCtx);
+  assertEquals(res.vendors[0].mov_required, DEFAULT_MEDIKONG_MOV);
+});
+
+Deno.test("MOV cascade — vendor_profile_defaults bat le global admin MOV", async () => {
+  const stub = makeStub({
+    offers: [{ ...baseOffer, mov: 0 }],
+    vendors: [{ id: "v-real", type: "real" }],
+    vendor_profile_defaults: [
+      { vendor_id: "v-real", profile_type: "pharmacy", country_code: "BE", default_mov: 30 },
+    ],
+    vendor_buyer_overrides: [],
+    admin_settings: [adminMovRow(9999_00)], // 9999 € — ignoré car vendor_profile_defaults gagne
+  });
+  const res = await validateCart(stub, [{ offer_id: "off-1", quantity: 3 }], BUYER_ID, buyerCtx);
+  assertEquals(res.vendors[0].mov_required, 30);
+});

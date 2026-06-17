@@ -11,6 +11,22 @@ import { InstantSearchBar } from "@/components/search/InstantSearchBar";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { NotificationsBell } from "@/components/notifications/NotificationsBell";
 import logoHorizontal from "@/assets/logo-medikong.png";
+import { useIsResellerPro } from "@/hooks/useCurrentBuyerProfile";
+
+function ResellerNavLink() {
+  const { isReseller } = useIsResellerPro();
+  if (!isReseller) return null;
+  return (
+    <Link
+      to="/pro"
+      className="flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full hover:bg-primary/20 transition-colors"
+      title="Catalogue B2B revendeur"
+    >
+      <Lock size={12} />
+      <span>Espace revendeur</span>
+    </Link>
+  );
+}
 
 export function Navbar() {
   const { t } = useTranslation();

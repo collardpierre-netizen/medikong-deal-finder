@@ -36,6 +36,8 @@ import { template as accountInvitation } from './account-invitation.tsx'
 import { template as vendorAccountCreated } from './vendor-account-created.tsx'
 import { template as vendorAttachVerification } from './vendor-attach-verification.tsx'
 import { template as vendorSelfRegistered } from './vendor-self-registered.tsx'
+import { template as invoicePaymentReminder } from './invoice-payment-reminder.tsx'
+
 
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
@@ -66,5 +68,6 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'vendor-account-created': vendorAccountCreated,
   'vendor-attach-verification': vendorAttachVerification,
   'vendor-self-registered': vendorSelfRegistered,
+  'invoice-payment-reminder': invoicePaymentReminder,
 }
 

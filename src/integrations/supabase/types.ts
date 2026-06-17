@@ -22455,32 +22455,21 @@ export type Database = {
         Args: { _product_id: string }
         Returns: number
       }
-      resolve_offer_exclusivity:
-        | {
-            Args: { _country: string; _product_id: string }
-            Returns: {
-              exclusivity_id: string
-              mode: Database["public"]["Enums"]["vendor_exclusivity_mode"]
-              scope: Database["public"]["Enums"]["vendor_exclusivity_scope"]
-              valid_until: string
-              vendor_id: string
-            }[]
-          }
-        | {
-            Args: {
-              _buyer_profile_id?: string
-              _country: string
-              _product_id: string
-            }
-            Returns: {
-              applied_buyer_profile_id: string
-              exclusivity_id: string
-              mode: Database["public"]["Enums"]["vendor_exclusivity_mode"]
-              scope: Database["public"]["Enums"]["vendor_exclusivity_scope"]
-              valid_until: string
-              vendor_id: string
-            }[]
-          }
+      resolve_offer_exclusivity: {
+        Args: {
+          _buyer_profile_id?: string
+          _country: string
+          _product_id: string
+        }
+        Returns: {
+          applied_buyer_profile_id: string
+          exclusivity_id: string
+          mode: Database["public"]["Enums"]["vendor_exclusivity_mode"]
+          scope: Database["public"]["Enums"]["vendor_exclusivity_scope"]
+          valid_until: string
+          vendor_id: string
+        }[]
+      }
       resolve_offer_price_for_profile: {
         Args: { _buyer_profile_id: string; _offer_id: string }
         Returns: {

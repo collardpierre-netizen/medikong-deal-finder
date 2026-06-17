@@ -2541,6 +2541,7 @@ export type Database = {
           address_line1: string
           address_line2: string | null
           auth_user_id: string | null
+          buyer_profile_id: string | null
           city: string
           company_name: string
           country_code: string
@@ -2562,6 +2563,7 @@ export type Database = {
           address_line1: string
           address_line2?: string | null
           auth_user_id?: string | null
+          buyer_profile_id?: string | null
           city: string
           company_name: string
           country_code?: string
@@ -2583,6 +2585,7 @@ export type Database = {
           address_line1?: string
           address_line2?: string | null
           auth_user_id?: string | null
+          buyer_profile_id?: string | null
           city?: string
           company_name?: string
           country_code?: string
@@ -2600,7 +2603,22 @@ export type Database = {
           updated_at?: string
           vat_number?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customers_buyer_profile_id_fkey"
+            columns: ["buyer_profile_id"]
+            isOneToOne: false
+            referencedRelation: "buyer_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_buyer_profile_id_fkey"
+            columns: ["buyer_profile_id"]
+            isOneToOne: false
+            referencedRelation: "effective_offer_prices_v"
+            referencedColumns: ["buyer_profile_id"]
+          },
+        ]
       }
       db_backup_logs: {
         Row: {
@@ -22156,6 +22174,20 @@ export type Database = {
           display_name: string
           email: string
           user_id: string
+        }[]
+      }
+      list_reseller_offers: {
+        Args: { _country?: string; _limit?: number; _offset?: number }
+        Returns: {
+          country_code: string
+          moq: number
+          mov_amount: number
+          offer_id: string
+          price_excl_vat: number
+          price_source: string
+          product_id: string
+          stock_quantity: number
+          vendor_id: string
         }[]
       }
       log_active_products_without_offers: {

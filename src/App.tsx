@@ -60,6 +60,7 @@ const PromotionsPage = lazyWithRetry(() => import("./pages/PromotionsPage"), "Pr
 const OnboardingPage = lazyWithRetry(() => import("./pages/OnboardingPage"), "OnboardingPage");
 const BuyerCompletionPage = lazyWithRetry(() => import("./pages/BuyerCompletionPage"), "BuyerCompletionPage");
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"), "NotFound");
+const ProPage = lazyWithRetry(() => import("./pages/ProPage"), "ProPage");
 const SellerTrustBadgeDemo = lazyWithRetry(() => import("./pages/SellerTrustBadgeDemo"), "SellerTrustBadgeDemo");
 const DelegateDesignDemoPage = lazyWithRetry(() => import("./pages/DelegateDesignDemoPage"), "DelegateDesignDemoPage");
 const InvestPage = lazyWithRetry(() => import("./pages/InvestPage"), "InvestPage");
@@ -368,6 +369,7 @@ const App = () => (
             <Route path="/inscription" element={<Navigate to="/onboarding" replace />} />
             <Route path="/categorie/:slug" element={<LP><CataloguePage /></LP>} />
             <Route path="/catalogue" element={<LP><CataloguePage /></LP>} />
+            <Route path="/pro" element={<LP><ProPage /></LP>} />
             <Route path="/shop" element={<RedirectShopToCatalogue />} />
             <Route path="/shop/*" element={<RedirectShopToCatalogue />} />
             <Route path="/promotions" element={<LP><PromotionsPage /></LP>} />

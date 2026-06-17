@@ -127,6 +127,8 @@ export default function CheckoutPage() {
     vendor_name: string;
     reasons: string[];
     missing?: number;
+    current?: number;
+    required?: number;
   };
   const blockedVendors: BlockedVendor[] = useMemo(() => {
     if (!validation || validation.valid) return [];
@@ -140,7 +142,11 @@ export default function CheckoutPage() {
       const entry: BlockedVendor = map.get(k) || { vendor_id: k, vendor_name: vname, reasons: [] };
       if (e.type === "vendor_mov_not_reached") {
         const missing = Number(e.details?.missing) || 0;
+        const current = Number(e.details?.current) || 0;
+        const required = Number(e.details?.required) || 0;
         entry.missing = missing;
+        entry.current = current;
+        entry.required = required;
         entry.reasons.push(`MOV non atteint — il manque ${missing.toFixed(2)} €`);
       } else if (e.type === "below_moq") {
         entry.reasons.push(`Quantité minimum non respectée (${e.details?.current}/${e.details?.required})`);
@@ -632,6 +638,41 @@ export default function CheckoutPage() {
                   </div>
                 </div>
                 <div className="border-t border-mk-line pt-3">
+                  {hasBlocking && (
+                    <div className="mb-3 space-y-2">
+                      <div className="flex items-center gap-1.5 text-destructive">
+                        <AlertTriangle size={12} />
+                        <span className="text-[11px] font-semibold uppercase tracking-wide">Vendeurs bloqués</span>
+                      </div>
+                      {blockedVendors.map(v => (
+                        <div key={v.vendor_id} className="border border-destructive/20 rounded-md bg-destructive/5 p-2.5 space-y-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-medium text-mk-navy truncate">{v.vendor_name}</span>
+                            {typeof v.missing === "number" && v.missing > 0 && (
+                              <span className="text-[10px] font-bold text-destructive shrink-0">+{v.missing.toFixed(2)} €</span>
+                            )}
+                          </div>
+                          {(typeof v.current === "number" || typeof v.required === "number") && (
+                            <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px] text-mk-sec">
+                              {typeof v.current === "number" && (
+                                <div>Actuel : <span className="font-medium text-mk-navy">{v.current.toFixed(2)} €</span></div>
+                              )}
+                              {typeof v.required === "number" && (
+                                <div>Minimum : <span className="font-medium text-mk-navy">{v.required.toFixed(2)} €</span></div>
+                              )}
+                            </div>
+                          )}
+                          {v.reasons.length > 0 && (
+                            <ul className="space-y-0.5">
+                              {v.reasons.map((r, i) => (
+                                <li key={i} className="text-[10px] text-destructive">• {r}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <motion.div className="flex justify-between font-bold text-base text-mk-navy"
                     key={`${subtotal}-${shipping}`}
                     initial={{ scale: 1.05, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}

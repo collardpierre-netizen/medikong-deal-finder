@@ -22233,6 +22233,14 @@ export type Database = {
         Args: { _source_hash: string }
         Returns: undefined
       }
+      buyer_p2p_get_contact: {
+        Args: { _listing_id: string; _role: string }
+        Returns: {
+          buyer_id: string
+          email: string
+          pharmacy_name: string
+        }[]
+      }
       calculate_offer_price_for_quantity: {
         Args: { p_offer_id: string; p_quantity: number }
         Returns: {

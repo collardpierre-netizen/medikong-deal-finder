@@ -37,6 +37,10 @@ import { template as vendorAccountCreated } from './vendor-account-created.tsx'
 import { template as vendorAttachVerification } from './vendor-attach-verification.tsx'
 import { template as vendorSelfRegistered } from './vendor-self-registered.tsx'
 import { template as invoicePaymentReminder } from './invoice-payment-reminder.tsx'
+import { template as p2pOfferReceived } from './p2p-offer-received.tsx'
+import { template as p2pOfferAccepted } from './p2p-offer-accepted.tsx'
+import { template as p2pOfferDeclined } from './p2p-offer-declined.tsx'
+import { template as p2pCounterOffer } from './p2p-counter-offer.tsx'
 
 
 
@@ -69,5 +73,9 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'vendor-attach-verification': vendorAttachVerification,
   'vendor-self-registered': vendorSelfRegistered,
   'invoice-payment-reminder': invoicePaymentReminder,
+  'p2p-offer-received': p2pOfferReceived,
+  'p2p-offer-accepted': p2pOfferAccepted,
+  'p2p-offer-declined': p2pOfferDeclined,
+  'p2p-counter-offer': p2pCounterOffer,
 }
 

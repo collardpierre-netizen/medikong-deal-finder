@@ -170,10 +170,18 @@ function CreateDialog({ sellerBuyerId, onDone }: { sellerBuyerId: string; onDone
         expiry_date: form.expiry_date || null,
         status: sendNow ? "sent" : "draft",
       };
-      const { error } = await (supabase as any).from("buyer_p2p_listings").insert(payload);
+      const { data, error } = await (supabase as any).from("buyer_p2p_listings").insert(payload).select().single();
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => { toast.success(sendNow ? "Envoyée" : "Brouillon créé"); onDone(); },
+    onSuccess: async (listing: any) => {
+      if (sendNow && listing?.id) {
+        const { notifyP2POfferReceived } = await import("@/lib/p2p-email");
+        notifyP2POfferReceived(listing);
+      }
+      toast.success(sendNow ? "Envoyée" : "Brouillon créé");
+      onDone();
+    },
     onError: (e: any) => toast.error(e.message),
   });
 

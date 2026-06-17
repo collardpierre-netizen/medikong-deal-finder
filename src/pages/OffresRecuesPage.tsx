@@ -84,9 +84,12 @@ function ListingRow({ listing: l, buyerId }: { listing: any; buyerId: string }) 
       const { error } = await (supabase as any).from("buyer_p2p_listings").update({ status }).eq("id", l.id);
       if (error) throw error;
     },
-    onSuccess: (_v, status) => {
+    onSuccess: async (_v, status) => {
       toast.success(status === "accepted" ? "Offre acceptée" : "Offre refusée");
       qc.invalidateQueries({ queryKey: ["my-p2p-received"] });
+      const { notifyP2POfferAccepted, notifyP2POfferDeclined } = await import("@/lib/p2p-email");
+      if (status === "accepted") notifyP2POfferAccepted(l);
+      else notifyP2POfferDeclined(l);
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -166,13 +169,22 @@ function NegotiateDialog({ listing: l, buyerId, onDone }: { listing: any; buyerI
         counter_quantity: counterQty ? parseInt(counterQty, 10) : null,
         counter_unit_price_excl_vat_cents: counterPrice ? Math.round(parseFloat(counterPrice) * 100) : null,
       };
-      const { error } = await (supabase as any).from("buyer_p2p_messages").insert(payload);
+      const { data, error } = await (supabase as any).from("buyer_p2p_messages").insert(payload).select().single();
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: async (msg: any) => {
+      const sentBody = body.trim();
+      const sentQty = counterQty ? parseInt(counterQty, 10) : null;
+      const sentPrice = counterPrice ? Math.round(parseFloat(counterPrice) * 100) : null;
       setBody(""); setCounterQty(""); setCounterPrice("");
       toast.success("Message envoyé");
       qc.invalidateQueries({ queryKey: ["p2p-msgs", l.id] });
+      const { notifyP2PCounterOffer } = await import("@/lib/p2p-email");
+      notifyP2PCounterOffer({
+        listing: l, authorBuyerId: buyerId, messageId: msg?.id ?? crypto.randomUUID(),
+        body: sentBody, counterQuantity: sentQty, counterUnitPriceCents: sentPrice,
+      });
     },
     onError: (e: any) => toast.error(e.message),
   });

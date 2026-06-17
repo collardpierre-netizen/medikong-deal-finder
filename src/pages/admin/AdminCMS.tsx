@@ -212,7 +212,7 @@ const AdminCMS = () => {
         </a>
       </div>
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="mb-4" style={{ backgroundColor: "#E2E8F0" }}>
+        <TabsList className="mb-4 flex-wrap h-auto gap-1" style={{ backgroundColor: "#E2E8F0" }}>
           <TabsTrigger value="pages" className="text-[13px]">Pages</TabsTrigger>
           <TabsTrigger value="bannieres" className="text-[13px]">Bannières</TabsTrigger>
           <TabsTrigger value="collections" className="text-[13px]">Collections</TabsTrigger>
@@ -220,6 +220,9 @@ const AdminCMS = () => {
           <TabsTrigger value="hero-images" className="text-[13px]">Images Hero</TabsTrigger>
           <TabsTrigger value="page-images" className="text-[13px]">Images Pages</TabsTrigger>
           <TabsTrigger value="featured-cats" className="text-[13px]">Catégories vedettes</TabsTrigger>
+          <TabsTrigger value="revendeur-pro" className="text-[13px] gap-1.5">
+            <Store size={14} /> Espace Revendeur
+          </TabsTrigger>
         </TabsList>
 
         {/* Pages tab */}

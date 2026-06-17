@@ -350,4 +350,7 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}
+
+Deno.serve((req) => handler(req));
+

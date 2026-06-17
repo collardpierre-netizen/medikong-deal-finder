@@ -208,8 +208,38 @@ const AdminParametres = () => {
               <EditableField label="Langues" value={general.languages || ""} onChange={v => setGeneral(p => ({ ...p, languages: v }))} />
               <EditableField label="Fuseau horaire" value={general.timezone || ""} onChange={v => setGeneral(p => ({ ...p, timezone: v }))} />
               <SectionSaveBtn data={general} />
+
+              <div className="mt-8 pt-6 border-t" style={{ borderColor: "#E2E8F0" }}>
+                <h4 className="text-[14px] font-bold mb-1" style={{ color: "#1D2530" }}>
+                  MOV global de repli
+                </h4>
+                <p className="text-[11px] mb-3" style={{ color: "#616B7C" }}>
+                  Utilisé uniquement si le vendeur n'a aucun MOV défini (overrides acheteur, défauts profil, MOV d'offre).
+                  Le MOV encodé par le vendeur est toujours prioritaire. Le plancher 500 € des vendeurs virtuels (Qogita / Balooh) reste appliqué en sus.
+                  Laisser vide pour désactiver le repli.
+                </p>
+                <div className="flex items-center justify-between py-3 border-b gap-4" style={{ borderColor: "#F1F5F9" }}>
+                  <span className="text-[12px] font-medium shrink-0" style={{ color: "#616B7C" }}>
+                    MOV global (€ HTVA)
+                  </span>
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    step={0.01}
+                    placeholder="vide = désactivé"
+                    value={globalMovInput}
+                    onChange={(e) => setGlobalMovInput(e.target.value)}
+                    className="max-w-[200px] h-8 text-[13px] font-semibold text-right"
+                  />
+                </div>
+                <Button onClick={saveGlobalMov} disabled={saving} size="sm" className="mt-4">
+                  <Save size={14} className="mr-1" />{saving ? "..." : "Sauvegarder MOV global"}
+                </Button>
+              </div>
             </div>
           )}
+
 
           {section === "commissions" && (
             <div>

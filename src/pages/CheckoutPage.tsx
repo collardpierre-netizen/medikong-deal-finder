@@ -452,7 +452,14 @@ export default function CheckoutPage() {
                     </div>
                     <div className="flex gap-3">
                       <motion.button onClick={() => setStep(1)} className="border border-mk-navy text-mk-navy font-bold text-sm px-6 py-3 rounded-md" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>Retour</motion.button>
-                      <motion.button onClick={() => setStep(3)} className="bg-mk-navy text-white font-bold text-sm px-6 py-3 rounded-md" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>Confirmer la commande</motion.button>
+                      <motion.button
+                        onClick={() => setStep(3)}
+                        disabled={hasBlocking}
+                        title={hasBlocking ? "Résolvez les blocages vendeurs ci-dessus" : undefined}
+                        className="bg-mk-navy text-white font-bold text-sm px-6 py-3 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                        whileHover={!hasBlocking ? { scale: 1.03 } : {}} whileTap={!hasBlocking ? { scale: 0.97 } : {}}>
+                        Confirmer la commande
+                      </motion.button>
                     </div>
                   </motion.div>
                 )}

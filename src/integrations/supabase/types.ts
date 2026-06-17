@@ -104,6 +104,71 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_notification_reads: {
+        Row: {
+          admin_user_id: string
+          notification_id: string
+          read_at: string
+        }
+        Insert: {
+          admin_user_id: string
+          notification_id: string
+          read_at?: string
+        }
+        Update: {
+          admin_user_id?: string
+          notification_id?: string
+          read_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_notification_reads_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "admin_notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          cta_url: string | null
+          id: string
+          payload: Json
+          severity: string
+          source_id: string | null
+          source_type: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          cta_url?: string | null
+          id?: string
+          payload?: Json
+          severity?: string
+          source_id?: string | null
+          source_type?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          cta_url?: string | null
+          id?: string
+          payload?: Json
+          severity?: string
+          source_id?: string | null
+          source_type?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       admin_settings: {
         Row: {
           description: string | null
@@ -21497,6 +21562,28 @@ export type Database = {
             }
             Returns: string
           }
+      admin_notifications_list: {
+        Args: { _limit?: number; _only_unread?: boolean }
+        Returns: {
+          body: string
+          created_at: string
+          cta_url: string
+          id: string
+          payload: Json
+          read_at: string
+          severity: string
+          source_id: string
+          source_type: string
+          title: string
+          type: string
+        }[]
+      }
+      admin_notifications_mark_all_read: { Args: never; Returns: number }
+      admin_notifications_mark_read: {
+        Args: { _id: string }
+        Returns: undefined
+      }
+      admin_notifications_unread_count: { Args: never; Returns: number }
       admin_price_cockpit_gaps: {
         Args: { _brand_id?: string; _country?: string; _limit?: number }
         Returns: {
@@ -21986,6 +22073,19 @@ export type Database = {
           category_id: string
           product_count: number
         }[]
+      }
+      create_admin_notification: {
+        Args: {
+          _body: string
+          _cta_url: string
+          _payload?: Json
+          _severity: string
+          _source_id: string
+          _source_type: string
+          _title: string
+          _type: string
+        }
+        Returns: undefined
       }
       create_offers_from_products: {
         Args: { _country_code?: string }

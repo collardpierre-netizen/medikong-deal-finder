@@ -12,7 +12,7 @@ import {
   Shield, Upload, MessageSquare, Layout, Truck, ShieldCheck, Settings, FileText,
   LogOut, Users, ClipboardList, Percent, RefreshCw, Key, Book, Factory, Globe, Hash, ExternalLink,
   CreditCard, TrendingUp, TrendingDown, AlertTriangle, Zap, Recycle, LayoutGrid, Users2, Mail, ShieldCheck as ShieldCheckAlt,
-  Search, Image as ImageIcon, Activity,
+  Search, Image as ImageIcon, Activity, Bell,
 } from "lucide-react";
 
 interface NavItem {
@@ -162,6 +162,16 @@ const AdminSidebar = () => {
     refetchInterval: 30000,
   });
 
+  const { data: adminUnreadNotifs = 0 } = useQuery({
+    queryKey: ["admin-notifications-unread"],
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)("admin_notifications_unread_count");
+      if (error) return 0;
+      return (data as number) ?? 0;
+    },
+    refetchInterval: 30000,
+  });
+
   const { data: actionCenter } = useActionCenter("admin");
   const sectionCounts: Record<string, number> = {};
   for (const s of actionCenter?.sections ?? []) sectionCounts[s.key] = s.count;
@@ -212,6 +222,23 @@ const AdminSidebar = () => {
         >
           <LayoutDashboard size={17} strokeWidth={1.8} />
           {t("dashboard")}
+        </NavLink>
+        <NavLink
+          to="/admin/notifications"
+          className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium transition-colors mt-0.5 ${
+            isActive("/admin/notifications")
+              ? "text-white"
+              : "text-slate-400 hover:text-white hover:bg-white/5"
+          }`}
+          style={isActive("/admin/notifications") ? { backgroundColor: "#1B5BDA" } : {}}
+        >
+          <Bell size={17} strokeWidth={1.8} />
+          <span className="flex-1">Notifications</span>
+          {adminUnreadNotifs > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white" style={{ backgroundColor: "#EF4444", minWidth: 18, textAlign: "center" }}>
+              {adminUnreadNotifs > 99 ? "99+" : adminUnreadNotifs}
+            </span>
+          )}
         </NavLink>
       </div>
 

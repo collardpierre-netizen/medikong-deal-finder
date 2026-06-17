@@ -99,6 +99,59 @@ const AdminCMS = () => {
     },
   });
 
+  // ---- Revendeur Pro queries ----
+  const { data: resellerProfile } = useQuery({
+    queryKey: ["admin-reseller-profile"],
+    queryFn: async () => {
+      const { data, error } = await sb.from("buyer_profiles").select("*").eq("id", "revendeur_pro").maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: resellerCustomers = [], isLoading: resellerLoading } = useQuery({
+    queryKey: ["admin-reseller-customers", resellerSearch],
+    queryFn: async () => {
+      let q = sb.from("customers").select("id, company_name, first_name, last_name, email, phone, country, buyer_profile_id, created_at, updated_at").eq("buyer_profile_id", "revendeur_pro").order("updated_at", { ascending: false });
+      if (resellerSearch.trim()) {
+        q = q.or(`company_name.ilike.%${resellerSearch.trim()}%,first_name.ilike.%${resellerSearch.trim()}%,last_name.ilike.%${resellerSearch.trim()}%,email.ilike.%${resellerSearch.trim()}%`);
+      }
+      const { data, error } = await q;
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { data: resellerExclusivities = [] } = useQuery({
+    queryKey: ["admin-reseller-exclusivities"],
+    queryFn: async () => {
+      const { data, error } = await sb.from("vendor_exclusivities").select("*, vendors(company_name, display_code)").contains("buyer_profile_ids", ["revendeur_pro"]).order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { data: resellerOfferCount = 0 } = useQuery({
+    queryKey: ["admin-reseller-offer-count"],
+    queryFn: async () => {
+      const { count, error } = await sb.from("offers").select("id", { count: "exact", head: true }).eq("is_active", true).contains("buyer_profile_ids", ["revendeur_pro"]);
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
+  const assignResellerProfile = useMutation({
+    mutationFn: async ({ customerId, assign }: { customerId: string; assign: boolean }) => {
+      const { error } = await sb.from("customers").update({ buyer_profile_id: assign ? "revendeur_pro" : null }).eq("id", customerId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-reseller-customers"] });
+      toast.success("Profil mis à jour");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const deletePageImage = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await sb.from("cms_page_images").delete().eq("id", id);

@@ -1,54 +1,55 @@
-# MOV global administrable (fallback ultime)
+# Option A — Catalogue privé vendeur→vendeur
 
-## Objectif
+Objectif : permettre à un vendeur de publier des offres avec prix HTVA confidentiels, visibles uniquement par les acheteurs portant le profil `revendeur_pro`, sans duplication d'offre.
 
-Ajouter un **MOV global** configurable depuis l'admin qui sert de **fallback ultime** quand aucune règle vendeur n'est définie. Le MOV vendeur (encodé via son CMS dans `offers.mov` ou ses défauts profil) reste **prioritaire** sur ce global.
+## 1. Migration DB
 
-## Cascade MOV finale (vrais vendeurs)
+**a) Nouveau profil acheteur**
+- INSERT dans `buyer_profiles` : `id='revendeur_pro'`, `label='Revendeur professionnel'`, `display_order=5`, `description='Accès au catalogue B2B inter-vendeurs et aux prix revendeur'`.
 
-```
-1. vendor_buyer_overrides          (négocié 1↔1)
-2. vendor_profile_defaults         (défauts par profil acheteur)
-3. offers.mov                      (MOV de l'offre, vendeur)   ← parent
-4. site_config.global_default_mov  (NOUVEAU — admin)           ← fallback
-5. 0 (= pas de MOV)                si admin laisse vide
-```
+**b) Rattacher un acheteur au profil**
+- Ajouter colonne `customers.buyer_profile_id text NULL REFERENCES public.buyer_profiles(id)` + index.
+- Le profil reste assignable uniquement par un admin (RLS existante sur `customers`).
 
-Pour les **vendeurs virtuels (Qogita / Balooh)** : le plancher hardcodé 500 € reste inchangé et continue de s'appliquer **par-dessus** la cascade ci-dessus (max entre cascade et 500 €). Pas touché.
+**c) RPC `current_buyer_profile_id()`**
+- SECURITY DEFINER, retourne `customers.buyer_profile_id` pour `auth.uid()`, NULL si absent. Utilisée par le front pour le gating `/pro` et par la résolution serveur des prix.
 
-## Changements
+**d) RPC `list_reseller_offers(_country text, _limit int, _offset int)`**
+- SECURITY DEFINER, gate strict : si `current_buyer_profile_id() <> 'revendeur_pro'` → renvoie zéro ligne.
+- Sélectionne les offres ayant une `vendor_exclusivities` active `mode='hide'` + `'revendeur_pro' = ANY(buyer_profile_ids)`.
+- Applique `resolve_offer_price_for_profile(offer_id, 'revendeur_pro')` pour le prix affiché + source.
+- Retourne `offer_id, product_id, vendor_id, price_excl_vat, price_source, moq, mov_amount, stock_quantity, country_code`.
 
-### 1. DB (1 migration)
-- Ajouter une clé `global_default_mov_cents` (INTEGER, nullable, en cents) dans la table `site_config` existante (ou `admin_settings` selon laquelle héberge déjà ce type de réglage — à confirmer en lisant la table avant migration). Default `NULL` = pas de fallback (comportement actuel).
-- Aucun nouveau GRANT/RLS : on réutilise la table existante.
+**e) Bonus serveur (cohérence)** : extension légère de la policy de lecture publique sur `offers` — si l'offre cible une exclusivité `mode='hide'` avec `buyer_profile_ids` non vide ET que `current_buyer_profile_id()` n'est pas dans cette liste → masquée du SELECT public. Évite que `useProducts` / `useSearchProducts` remontent l'offre côté grand public.
 
-### 2. Logique serveur — `supabase/functions/_shared/validate-cart.ts`
-Étendre `resolveMovForVendor()` :
-- Après avoir lu `vendor_buyer_overrides` → `vendor_profile_defaults` → `offers.mov`, si la valeur reste `0 / null` ET vendeur **non virtuel**, lire `site_config.global_default_mov_cents` et l'utiliser.
-- L'ordre relatif est strictement : règles vendeur > global. Si le vendeur a un `offers.mov` > 0, le global est ignoré.
-- Pour les vendeurs virtuels : la cascade reste identique mais le `max(cascade, 500€)` final s'applique toujours.
+## 2. Front — page `/pro`
 
-Le helper est déjà consommé par `validate-cart` ET `stripe-checkout` → un seul point de modification.
+**a) Hook `useCurrentBuyerProfile()`**
+- `src/hooks/useCurrentBuyerProfile.ts` — appelle la RPC, cache react-query 5 min.
 
-### 3. Admin UI
-- Une seule entrée dans la page admin qui édite `site_config` (`/admin/...` — à localiser : probablement `AdminSettings` ou équivalent).
-- Champ "MOV global de repli (EUR HTVA)" + helper text expliquant la cascade et le fait qu'il est ignoré si le vendeur a son propre MOV.
-- Vide = pas de fallback.
+**b) Page `/pro` (`src/pages/ProPage.tsx`)**
+- Garde : si pas de session OU profil ≠ `revendeur_pro` → carte "Accès réservé aux revendeurs vérifiés" + CTA contact.
+- Si OK : grille produits (réutilise `CatalogProductCard`) alimentée par `list_reseller_offers`, filtres pays/marque/recherche basique.
+- Badge "Prix revendeur" sur les cards (composant `ResellerPriceBadge` minimal).
 
-### 4. Tests
-Étendre `validate-cart.mov.test.ts` et `integration.test.ts` :
-- vendeur sans aucune règle + global=20€ → MOV=20€
-- vendeur avec `offers.mov=15€` + global=20€ → MOV=15€ (vendeur gagne)
-- vendeur virtuel sans règle + global=20€ → MOV=500€ (floor gagne)
-- global=NULL + vendeur sans règle → MOV=0 (comportement actuel)
+**c) Route** : ajout dans `src/App.tsx` (`<Route path="/pro" element={<ProPage />} />`, lazy import).
 
-## Hors scope (à ne PAS faire sans validation)
-- Pas de changement sur le plancher 500 € virtuels.
-- Pas de refonte de l'UI vendeur du MOV.
-- Pas d'ajout d'un MOV global par pays/devise/profil (1 seul scalaire global).
-- Pas de migration des MOV vendeurs existants.
+**d) Lien navigation** : entrée discrète "Espace revendeur" dans `Navbar` visible uniquement si `useCurrentBuyerProfile()` matche.
 
-## Validation attendue avant exécution
-1. OK pour héberger le réglage dans `site_config` (sinon préciser la table).
-2. OK pour un scalaire unique global (pas de granularité pays/profil).
-3. Page admin cible : `/admin/parametres` ou autre — préciser si tu as une préférence, sinon je l'ajoute dans l'écran réglages site existant.
+## 3. Côté vendeur (zéro changement UI cette itération)
+
+L'UI vendeur existante (`vendor_exclusivities`, `offer_buyer_profile_prices`, `vendor_profile_defaults`) couvre déjà la saisie : le vendeur crée une exclusivité `hide` ciblant `revendeur_pro` + un prix par profil sur ses offres concernées. Aucun nouveau formulaire ce coup-ci — ce sera un Lot 2 si tu veux une expérience guidée.
+
+## 4. Hors scope (à valider séparément)
+- UI d'assignation `revendeur_pro` côté admin (peut se faire ensuite ; pour l'instant assignation SQL/admin manuelle).
+- Onboarding dédié revendeur.
+- Notifications "nouvelle offre revendeur" pour les comptes pro.
+
+## Détails techniques
+
+Tables touchées (création/altération) : `buyer_profiles` (INSERT), `customers` (ADD COLUMN). Tables lues : `vendor_exclusivities`, `offer_buyer_profile_prices`, `vendor_profile_defaults`, `offers`, `products`.
+
+Fichiers front créés : `src/hooks/useCurrentBuyerProfile.ts`, `src/pages/ProPage.tsx`, `src/components/pro/ResellerPriceBadge.tsx`.
+Fichiers front modifiés : `src/App.tsx` (route), `src/components/layout/Navbar.tsx` (entrée conditionnelle).
+
+Sécurité : toute la résolution prix/visibilité passe par RPC SECURITY DEFINER + policy RLS sur `offers` ; aucun prix revendeur ne fuite côté client si le profil n'est pas accordé.

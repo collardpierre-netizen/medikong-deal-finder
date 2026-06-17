@@ -225,6 +225,22 @@ export async function validateCart(
     vendorDefaults = (vd || []) as any[];
   }
 
+  // Global admin fallback MOV (cents → EUR). Used only when no vendor rule applies.
+  // Vendor-defined values (overrides, profile_defaults, offers.mov) always win over this.
+  let globalFallbackMov = 0;
+  {
+    const { data: gRow } = await supabase
+      .from("admin_settings")
+      .select("value_json")
+      .eq("key", "global_default_mov_cents")
+      .maybeSingle();
+    const cents = gRow?.value_json;
+    if (cents != null && Number.isFinite(Number(cents)) && Number(cents) > 0) {
+      globalFallbackMov = Number(cents) / 100;
+    }
+  }
+
+
   const profileType = buyerContext?.customer_type || "pharmacy";
   const countryCode = buyerContext?.country_code || "BE";
 

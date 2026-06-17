@@ -117,7 +117,7 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
         .select("id, stripe_account_id, commission_rate, stripe_charges_enabled")
         .in("id", vendorIds);
 
-      const vendorMap = new Map(vendors?.map(v => [v.id, v]) || []);
+      const vendorMap = new Map<string, any>(vendors?.map((v: any) => [v.id, v]) || []);
 
       // Build vendor breakdown
       const vendorBreakdown = vendorIds.map(vid => {

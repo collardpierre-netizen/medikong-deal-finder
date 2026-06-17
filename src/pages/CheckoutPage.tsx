@@ -98,10 +98,42 @@ export default function CheckoutPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Per-vendor invoice eligibility (resolved server-side via RPC)
+  const vendorIdsInCart = useMemo(
+    () => [...new Set(items.map((i: any) => i.vendor_id).filter(Boolean))] as string[],
+    [items],
+  );
+  const { data: invoiceEligibility = [] } = useQuery({
+    queryKey: ["invoice-eligibility", user?.id, vendorIdsInCart.join(",")],
+    enabled: !!user && vendorIdsInCart.length > 0,
+    queryFn: async () => {
+      const { data: cust } = await supabase.from("customers").select("id").eq("auth_user_id", user!.id).maybeSingle();
+      if (!cust) return [];
+      const subtotalsByVendor = new Map<string, number>();
+      for (const it of items as any[]) {
+        const k = it.vendor_id; if (!k) continue;
+        subtotalsByVendor.set(k, (subtotalsByVendor.get(k) || 0) + (it.price_excl_vat || 0) * it.quantity);
+      }
+      const results: Array<{ vendor_id: string; eligible: boolean; net_days: number | null }> = [];
+      for (const vid of vendorIdsInCart) {
+        const cents = Math.round((subtotalsByVendor.get(vid) || 0) * 100);
+        const { data } = await supabase.rpc("resolve_invoice_payment_eligibility", {
+          _vendor_id: vid, _customer_id: cust.id, _amount_cents: cents,
+        });
+        const row = Array.isArray(data) ? data[0] : data;
+        results.push({ vendor_id: vid, eligible: !!row?.eligible, net_days: row?.net_days ?? null });
+      }
+      return results;
+    },
+    staleTime: 60_000,
+  });
+  const invoiceEligibleCount = invoiceEligibility.filter((e) => e.eligible).length;
+  const invoiceAvailable = invoiceEligibleCount > 0;
+
   const paymentMethods = [
     { label: "Carte bancaire", enabled: true },
+    { label: `Paiement sur facture${invoiceEligibleCount ? ` (${invoiceEligibleCount} vendeur${invoiceEligibleCount > 1 ? "s" : ""} éligible${invoiceEligibleCount > 1 ? "s" : ""})` : ""}`, enabled: invoiceAvailable },
     { label: "Virement SEPA", enabled: false },
-    { label: "Paiement différé Mondu", enabled: false },
   ];
 
   const getItemPrice = (item: typeof items[0]) => item.price_excl_vat || item.product?.price || 0;
@@ -243,6 +275,15 @@ export default function CheckoutPage() {
         onum = order.order_number;
         setOrderId(oid);
         setOrderNumber(onum);
+      }
+
+      // Invoice payment : pas de Stripe, redirection vers confirmation
+      const selectedLabel = paymentMethods[payment].label;
+      if (selectedLabel.startsWith("Paiement sur facture")) {
+        toast.success("Commande enregistrée — paiement sur facture");
+        clearCart();
+        navigate(`/account/orders?ok=${onum}`);
+        return;
       }
 
       // Step 2 : create Stripe Checkout session

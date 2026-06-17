@@ -162,6 +162,16 @@ const AdminSidebar = () => {
     refetchInterval: 30000,
   });
 
+  const { data: adminUnreadNotifs = 0 } = useQuery({
+    queryKey: ["admin-notifications-unread"],
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)("admin_notifications_unread_count");
+      if (error) return 0;
+      return (data as number) ?? 0;
+    },
+    refetchInterval: 30000,
+  });
+
   const { data: actionCenter } = useActionCenter("admin");
   const sectionCounts: Record<string, number> = {};
   for (const s of actionCenter?.sections ?? []) sectionCounts[s.key] = s.count;

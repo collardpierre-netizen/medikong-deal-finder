@@ -175,12 +175,12 @@ export default function ProPage() {
                 <div className="mt-auto space-y-1.5">
                   <ResellerPriceBadge source={row.price_source} />
                   <div className="text-lg font-bold text-primary">
-                    {formatPrice(Number(row.price_excl_vat))} <span className="text-[11px] font-medium text-muted-foreground">HTVA</span>
+                    {formatEur(Number(row.price_excl_vat))} <span className="text-[11px] font-medium text-muted-foreground">HTVA</span>
                   </div>
                   <div className="text-[11px] text-muted-foreground flex flex-wrap gap-x-3">
                     {row.moq != null && row.moq > 1 && <span>MOQ {row.moq}</span>}
                     {row.mov_amount != null && Number(row.mov_amount) > 0 && (
-                      <span>MOV {formatPrice(Number(row.mov_amount))}</span>
+                      <span>MOV {formatEur(Number(row.mov_amount))}</span>
                     )}
                     {row.stock_quantity != null && <span>Stock {row.stock_quantity}</span>}
                     {row.country_code && <span>{row.country_code}</span>}

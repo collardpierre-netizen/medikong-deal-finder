@@ -170,6 +170,8 @@ const AdminSidebar = () => {
     "/admin/produits-soumis": "submissions",
     "/admin/categories/anomalies": "anomalies",
     "/admin/contract-audit": "security",
+    "/admin/commandes": "orders",
+    "/admin/commandes-en-retard": "orders_sla",
   };
 
   const isActive = (path: string) => location.pathname === path;

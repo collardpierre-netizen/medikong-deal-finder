@@ -8,6 +8,8 @@ interface StatusConfig {
 const defaultStatusMap: Record<string, StatusConfig> = {
   active: { label: "Actif", bg: "#F0FDF4", text: "#059669", dot: "#059669" },
   delivered: { label: "Livré", bg: "#F0FDF4", text: "#059669", dot: "#059669" },
+  confirmed: { label: "Confirmée", bg: "#F0FDF4", text: "#059669", dot: "#059669" },
+  paid: { label: "Payée", bg: "#F0FDF4", text: "#059669", dot: "#059669" },
   shipped: { label: "Expédié", bg: "#EFF6FF", text: "#1B5BDA", dot: "#1B5BDA" },
   processing: { label: "En cours", bg: "#EFF6FF", text: "#1B5BDA", dot: "#1B5BDA" },
   pending: { label: "En attente", bg: "#FFFBEB", text: "#D97706", dot: "#F59E0B" },

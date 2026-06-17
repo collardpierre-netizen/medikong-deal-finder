@@ -137,7 +137,7 @@ export default function CheckoutPage() {
       const vid = (e.details as any)?.vendor_id || null;
       const vname = e.vendor_name || (e.details as any)?.vendor_name || "Vendeur";
       const k = keyFor(vid, vname);
-      const entry = map.get(k) || { vendor_id: k, vendor_name: vname, reasons: [] };
+      const entry: BlockedVendor = map.get(k) || { vendor_id: k, vendor_name: vname, reasons: [] };
       if (e.type === "vendor_mov_not_reached") {
         const missing = Number(e.details?.missing) || 0;
         entry.missing = missing;

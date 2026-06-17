@@ -30,6 +30,7 @@ interface CreateOrderInput {
 function mapPaymentMethod(label: string): "card" | "bank_transfer" | "invoice" {
   if (label === "Carte bancaire") return "card";
   if (label === "Virement SEPA") return "bank_transfer";
+  if (label.startsWith("Paiement sur facture")) return "invoice";
   return "invoice";
 }
 
@@ -200,6 +201,61 @@ Deno.serve(async (req) => {
       await supabase.from("orders").update({ status: "cancelled" }).eq("id", order.id);
       return json(500, { error: "Insertion order_lines : " + linesErr.message });
     }
+
+    // ====== INVOICE PAYMENT — per-vendor resolution & sub_orders ======
+    const orderPaymentMethod = mapPaymentMethod(input.paymentMethod);
+    if (orderPaymentMethod === "invoice") {
+      // Aggregate per vendor (excluding qogita_virtual which always pays by card via Balooh)
+      const perVendor = new Map<string, number>();
+      for (const l of orderLines) {
+        if (l.fulfillment_type === "qogita") continue;
+        perVendor.set(l.vendor_id, (perVendor.get(l.vendor_id) || 0) + Number(l.line_total_excl_vat));
+      }
+      let eligibleAny = false;
+      const eligibilityNotes: any[] = [];
+      for (const [vid, subTotal] of perVendor) {
+        const { data: elig } = await supabase.rpc("resolve_invoice_payment_eligibility", {
+          _vendor_id: vid, _customer_id: customer.id, _amount_cents: Math.round(subTotal * 100),
+        });
+        const row = Array.isArray(elig) ? elig[0] : elig;
+        if (row?.eligible) {
+          eligibleAny = true;
+          const dueDate = new Date(); dueDate.setUTCDate(dueDate.getUTCDate() + (row.net_days || 30));
+          // sub_order for vendor invoice
+          const vendorLines = orderLines.filter((l) => l.vendor_id === vid);
+          const vendorTotalIncVat = vendorLines.reduce((s, l) => s + Number(l.line_total_incl_vat), 0);
+          await supabase.from("sub_orders").insert({
+            order_id: order.id,
+            vendor_id: vid,
+            fulfillment_type: "vendor_direct",
+            subtotal_incl_vat: vendorTotalIncVat,
+            payment_method: "invoice",
+            payment_status: "pending",
+            invoice_net_days: row.net_days,
+            payment_due_date: dueDate.toISOString().slice(0, 10),
+          });
+          eligibilityNotes.push({ vendor_id: vid, eligible: true, net_days: row.net_days });
+        } else {
+          eligibilityNotes.push({ vendor_id: vid, eligible: false, reason: row?.reason || "ineligible" });
+        }
+      }
+      if (!eligibleAny) {
+        await supabase.from("orders").update({ status: "cancelled" }).eq("id", order.id);
+        return json(400, { error: "no_vendor_eligible_for_invoice", eligibility: eligibilityNotes });
+      }
+      // Order-level due date = furthest due (worst case for cashflow tracking)
+      const dueDates = eligibilityNotes.filter((e) => e.eligible).map((e) => e.net_days);
+      const maxDays = Math.max(...dueDates);
+      const orderDue = new Date(); orderDue.setUTCDate(orderDue.getUTCDate() + maxDays);
+      await supabase.from("orders").update({
+        payment_method: "invoice",
+        payment_status: "pending",
+        payment_due_date: orderDue.toISOString().slice(0, 10),
+        status: "confirmed",
+      }).eq("id", order.id);
+      return json(200, { id: order.id, order_number: order.order_number, payment_method: "invoice", eligibility: eligibilityNotes });
+    }
+
 
     return json(200, { id: order.id, order_number: order.order_number });
   } catch (e) {

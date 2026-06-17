@@ -281,7 +281,7 @@ export default function CheckoutPage() {
       const selectedLabel = paymentMethods[payment].label;
       if (selectedLabel.startsWith("Paiement sur facture")) {
         toast.success("Commande enregistrée — paiement sur facture");
-        clearCart();
+        clearCart.mutate();
         navigate(`/account/orders?ok=${onum}`);
         return;
       }

@@ -317,6 +317,77 @@ export default function CheckoutPage() {
             ))}
           </div>
 
+          {/* Cart validation banner — visible sur les 3 étapes */}
+          {items.length > 0 && (
+            <div className="mb-6">
+              {hasBlocking ? (
+                <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle size={20} className="text-destructive shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-destructive">
+                        {blockedVendors.length === 1
+                          ? "1 vendeur bloque la validation de la commande"
+                          : `${blockedVendors.length} vendeurs bloquent la validation de la commande`}
+                      </p>
+                      <p className="text-xs text-mk-sec mt-0.5">
+                        Tant qu'un seul vendeur est bloqué, la commande complète ne peut pas être envoyée. Ajustez votre panier ou retirez les articles concernés.
+                      </p>
+                      <ul className="mt-3 space-y-2">
+                        {blockedVendors.map(v => (
+                          <li key={v.vendor_id} className="bg-white border border-destructive/20 rounded-md px-3 py-2">
+                            <div className="flex items-center justify-between gap-3 flex-wrap">
+                              <span className="text-sm font-semibold text-mk-navy">{v.vendor_name}</span>
+                              {typeof v.missing === "number" && v.missing > 0 && (
+                                <span className="text-xs font-medium text-destructive">
+                                  +{v.missing.toFixed(2)} € pour atteindre le minimum
+                                </span>
+                              )}
+                            </div>
+                            <ul className="mt-1 space-y-0.5">
+                              {v.reasons.map((r, i) => (
+                                <li key={i} className="text-xs text-mk-sec">• {r}</li>
+                              ))}
+                            </ul>
+                          </li>
+                        ))}
+                      </ul>
+                      {readyVendors.length > 0 && (
+                        <p className="text-xs text-mk-sec mt-3">
+                          {readyVendors.length === 1
+                            ? "1 autre vendeur est prêt à être commandé."
+                            : `${readyVendors.length} autres vendeurs sont prêts à être commandés.`}
+                        </p>
+                      )}
+                      <div className="mt-3">
+                        <Link
+                          to="/panier"
+                          className="inline-flex items-center gap-1.5 bg-mk-navy text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-mk-navy/90"
+                        >
+                          <Pencil size={12} /> Modifier le panier
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : validation && validation.valid ? (
+                <div className="rounded-lg border border-mk-green/30 bg-mk-green/5 px-4 py-2.5 flex items-center gap-2">
+                  <CheckCircle2 size={16} className="text-mk-green shrink-0" />
+                  <span className="text-xs text-mk-navy">
+                    Panier validé — {validation.vendors.length} vendeur{validation.vendors.length > 1 ? "s" : ""} prêt{validation.vendors.length > 1 ? "s" : ""}.
+                  </span>
+                </div>
+              ) : validating ? (
+                <div className="rounded-lg border border-mk-line bg-mk-alt/40 px-4 py-2.5 flex items-center gap-2">
+                  <Loader2 size={14} className="animate-spin text-mk-sec" />
+                  <span className="text-xs text-mk-sec">Vérification du panier…</span>
+                </div>
+              ) : null}
+            </div>
+          )}
+
+
+
           <div className="flex flex-col lg:flex-row gap-6">
             <div className="flex-1 min-w-0">
               <AnimatePresence mode="wait">

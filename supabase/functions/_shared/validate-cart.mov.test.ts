@@ -14,6 +14,7 @@ interface MockData {
   vendors: any[];
   vendor_profile_defaults: any[];
   vendor_buyer_overrides: any[];
+  admin_settings?: any[];
 }
 
 /** Mini-stub `supabase` compatible avec les chaînes utilisées par validateCart. */
@@ -23,6 +24,7 @@ function makeStub(data: MockData) {
     vendors: data.vendors,
     vendor_profile_defaults: data.vendor_profile_defaults,
     vendor_buyer_overrides: data.vendor_buyer_overrides,
+    admin_settings: data.admin_settings || [],
   };
 
   function query(table: string) {
@@ -37,11 +39,13 @@ function makeStub(data: MockData) {
         rows = rows.filter((r) => vals.includes(r[col]));
         return builder;
       },
+      maybeSingle: async () => ({ data: rows[0] ?? null, error: null }),
       // Promise-like resolution (Supabase clients are thenables).
       then: (resolve: any) => resolve({ data: rows, error: null }),
     };
     return builder;
   }
+
 
   return {
     from: (table: string) => query(table),

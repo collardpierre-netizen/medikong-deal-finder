@@ -261,7 +261,12 @@ const AdminDashboard = () => {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#8B95A5" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "#8B95A5" }} axisLine={false} tickLine={false} tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} />
+                <YAxis tick={{ fontSize: 11, fill: "#8B95A5" }} axisLine={false} tickLine={false} tickFormatter={(v) => {
+                  if (v >= 1_000_000) return `€${(v / 1_000_000).toFixed(1)}M`;
+                  if (v >= 1_000) return `€${(v / 1_000).toFixed(1)}k`;
+                  return `€${Math.round(v)}`;
+                }} />
+
                 <Tooltip formatter={(value: number) => [`€${value.toLocaleString()}`, "GMV"]} contentStyle={{ borderRadius: 8, border: "1px solid #E2E8F0", fontSize: 12 }} />
                 <Area type="monotone" dataKey="gmv" stroke="#1B5BDA" strokeWidth={2.5} fill="url(#gmvGrad)" />
               </AreaChart>

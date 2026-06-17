@@ -225,6 +225,22 @@ export async function validateCart(
     vendorDefaults = (vd || []) as any[];
   }
 
+  // Global admin fallback MOV (cents → EUR). Used only when no vendor rule applies.
+  // Vendor-defined values (overrides, profile_defaults, offers.mov) always win over this.
+  let globalFallbackMov = 0;
+  {
+    const { data: gRow } = await supabase
+      .from("admin_settings")
+      .select("value_json")
+      .eq("key", "global_default_mov_cents")
+      .maybeSingle();
+    const cents = gRow?.value_json;
+    if (cents != null && Number.isFinite(Number(cents)) && Number(cents) > 0) {
+      globalFallbackMov = Number(cents) / 100;
+    }
+  }
+
+
   const profileType = buyerContext?.customer_type || "pharmacy";
   const countryCode = buyerContext?.country_code || "BE";
 
@@ -248,8 +264,9 @@ export async function validateCart(
     // Resolution cascade (most → least specific):
     //   1. vendor_buyer_overrides (vendor × buyer)
     //   2. vendor_profile_defaults (vendor × profile × country) — real vendors only
-    //   3. offer.mov (per-item)
-    //   4. DEFAULT_MEDIKONG_MOV floor (Qogita/virtual vendors only)
+    //   3. offer.mov (per-item, vendor-encoded)
+    //   4. admin_settings.global_default_mov_cents (admin fallback) — real vendors only
+    //   5. DEFAULT_MEDIKONG_MOV floor — Qogita/virtual vendors only
     const override = buyerOverrides[vendorId];
     const vendorProfileMov = vendorTypeMap[vendorId] === "real" ? resolveVendorProfileMov(vendorId) : null;
     let movRequired: number;
@@ -259,8 +276,9 @@ export async function validateCart(
       // Real vendor with an explicit MOV setting → honor it as-is (no floor).
       movRequired = Math.max(vendorProfileMov, agg.movMax);
     } else if (vendorTypeMap[vendorId] === "real") {
-      // Real vendor with no setting → fall back to per-offer MOV (no Qogita floor).
-      movRequired = agg.movMax;
+      // Real vendor with no vendor-side setting → use offers.mov; if missing, fall back
+      // to the admin global MOV. The vendor's own MOV (offers.mov) always wins when set.
+      movRequired = agg.movMax > 0 ? agg.movMax : globalFallbackMov;
     } else {
       // Qogita / virtual vendors → keep historical 500€ floor.
       movRequired = Math.max(agg.movMax, DEFAULT_MEDIKONG_MOV);
@@ -275,6 +293,7 @@ export async function validateCart(
       mov_reached: reached,
       amount_missing: missing,
     });
+
     if (!reached) {
       errors.push({
         type: "vendor_mov_not_reached",

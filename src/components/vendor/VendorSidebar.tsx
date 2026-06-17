@@ -92,6 +92,7 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
   const { data: actionCenter } = useActionCenter("vendor", !!vendor?.id);
   const vendorRfqCount = actionCenter?.sections.find((s) => s.key === "rfq")?.count ?? 0;
   const vendorChallengesCount = actionCenter?.sections.find((s) => s.key === "challenges")?.count ?? 0;
+  const vendorOrdersCount = actionCenter?.sections.find((s) => s.key === "orders")?.count ?? 0;
 
   return (
     <aside
@@ -169,6 +170,7 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
                     item.key === "marketIntel" ? competitorAlertsCount :
                     item.key === "notificationsCenter" ? unreadNotifsCount :
                     item.key === "rfqInbox" ? vendorRfqCount :
+                    item.key === "orders" ? vendorOrdersCount :
                     item.key === "myOffers" ? vendorChallengesCount : 0;
 
                   return (

@@ -590,7 +590,8 @@ export default function CheckoutPage() {
                           <button
                             type="button"
                             onClick={handlePlaceOrder}
-                            disabled={submitting || initLoading}
+                            disabled={submitting || initLoading || hasBlocking}
+                            title={hasBlocking ? "Résolvez les blocages vendeurs ci-dessus" : undefined}
                             className="bg-mk-green text-white font-bold text-sm px-6 py-3 rounded-md flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                           >
                             {(submitting || initLoading) && <Loader2 size={16} className="animate-spin" />}

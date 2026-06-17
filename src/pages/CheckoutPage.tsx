@@ -115,6 +115,56 @@ export default function CheckoutPage() {
   const shippingCost = selectedOpt ? Number(selectedOpt.price_adjustment) || 0 : 0;
   const total = subtotalTTC + shippingCost;
 
+  // Live cart validation (MOV, MOQ, stock, offre indispo) — debounced
+  const validateItems = useMemo(
+    () => items.map(it => ({ offer_id: it.offer_id, quantity: it.quantity })),
+    [items],
+  );
+  const { data: validation, loading: validating } = useCartValidation(validateItems, { enabled: items.length > 0 });
+
+  type BlockedVendor = {
+    vendor_id: string;
+    vendor_name: string;
+    reasons: string[];
+    missing?: number;
+  };
+  const blockedVendors: BlockedVendor[] = useMemo(() => {
+    if (!validation || validation.valid) return [];
+    const map = new Map<string, BlockedVendor>();
+    const keyFor = (vid: string | null, vname: string | null) => vid || vname || "_unknown";
+    // Vendor MOV errors
+    for (const e of validation.errors) {
+      const vid = (e.details as any)?.vendor_id || null;
+      const vname = e.vendor_name || (e.details as any)?.vendor_name || "Vendeur";
+      const k = keyFor(vid, vname);
+      const entry = map.get(k) || { vendor_id: k, vendor_name: vname, reasons: [] };
+      if (e.type === "vendor_mov_not_reached") {
+        const missing = Number(e.details?.missing) || 0;
+        entry.missing = missing;
+        entry.reasons.push(`MOV non atteint — il manque ${missing.toFixed(2)} €`);
+      } else if (e.type === "below_moq") {
+        entry.reasons.push(`Quantité minimum non respectée (${e.details?.current}/${e.details?.required})`);
+      } else if (e.type === "exceeds_stock") {
+        entry.reasons.push(`Stock insuffisant (${e.details?.current}/${e.details?.available})`);
+      } else if (e.type === "offer_not_available") {
+        entry.reasons.push(`Offre indisponible`);
+      } else if (e.type === "invalid_quantity") {
+        entry.reasons.push(`Quantité invalide`);
+      }
+      map.set(k, entry);
+    }
+    return Array.from(map.values());
+  }, [validation]);
+
+  const readyVendors = useMemo(() => {
+    if (!validation) return [];
+    const blockedIds = new Set(blockedVendors.map(v => v.vendor_id));
+    return (validation.vendors || []).filter(v => !blockedIds.has(v.vendor_id) && v.mov_reached);
+  }, [validation, blockedVendors]);
+
+  const hasBlocking = blockedVendors.length > 0;
+
+
   const stepVariants = {
     initial: { opacity: 0, x: 30 },
     animate: { opacity: 1, x: 0 },

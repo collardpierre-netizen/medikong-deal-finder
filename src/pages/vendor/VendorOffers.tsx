@@ -834,7 +834,15 @@ function useOfferImport(vendorId: string | undefined) {
             const { error: subErr } = await supabase
               .from("product_submissions")
               .insert(batch as any);
-            if (!subErr) submitted += batch.length;
+            if (!subErr) {
+              submitted += batch.length;
+            } else {
+              console.error("[product_submissions insert]", subErr);
+              toast.error(
+                `Échec soumission produits (${batch.length} ligne(s)) : ${subErr.message}`,
+                { duration: 8000 }
+              );
+            }
           }
         }
       }

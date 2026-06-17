@@ -57,6 +57,8 @@ const sidebarSections: { label: string | null; items: SidebarItem[] }[] = [
     label: "COMPTE",
     items: [
       { key: "finances", icon: DollarSign, path: "/vendor/finance", comingSoon: true },
+      { key: "invoicePayments", icon: FileText, path: "/vendor/invoice-payments" },
+      { key: "invoicesToCollect", icon: Receipt, path: "/vendor/invoices-to-collect" },
       { key: "billing", icon: Receipt, path: "/vendor/billing", modes: ["medikong_whitelabel"] },
       { key: "documents", icon: FolderArchive, path: "/vendor/documents" },
       { key: "shipments", icon: Truck, path: "/vendor/shipments" },

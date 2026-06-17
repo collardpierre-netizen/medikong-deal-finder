@@ -28,7 +28,9 @@ const WEBHOOK_SECRET_CONNECT = Deno.env.get("STRIPE_WEBHOOK_SECRET_CONNECT") ?? 
 
 
 Deno.serve(async (req) => {
+  ensureDeps();
   if (req.method !== "POST") {
+
     return new Response("Method not allowed", { status: 405 });
   }
 

@@ -1,4 +1,4 @@
-import { ShoppingCart, Users, Menu, X, LogOut, Shield, Store, Tag, Percent } from "lucide-react";
+import { ShoppingCart, Users, Menu, X, LogOut, Shield, Store, Tag, Percent, Lock } from "lucide-react";
 import { usePriceDisplay } from "@/contexts/PriceDisplayContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -147,6 +147,7 @@ export function Navbar() {
                 <Tag size={13} />
                 <span>{t("nav.myPrices", "Mes Prix")}</span>
               </Link>
+              <ResellerNavLink />
               <Link
                 to="/compte"
                 className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold hover:opacity-90 transition-opacity"

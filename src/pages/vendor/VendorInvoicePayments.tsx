@@ -137,8 +137,8 @@ export default function VendorInvoicePayments() {
   });
 
   const updateRule = useMutation({
-    mutationFn: async ({ id, patch }: { id: string; patch: Partial<Rule> }) => {
-      const { error } = await supabase.from("vendor_invoice_payment_rules").update(patch).eq("id", id);
+    mutationFn: async ({ id, patch }: { id: string; patch: Record<string, any> }) => {
+      const { error } = await supabase.from("vendor_invoice_payment_rules").update(patch as any).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["vendor-invoice-rules", vendorId] }),

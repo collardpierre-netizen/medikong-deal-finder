@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCountry } from "@/contexts/CountryContext";
 import { useIsResellerPro } from "@/hooks/useCurrentBuyerProfile";
 import { ResellerPriceBadge } from "@/components/pro/ResellerPriceBadge";
-import { formatPrice } from "@/lib/price-format";
+import { formatEur } from "@/lib/price-format";
 import { getProductImageSrc } from "@/lib/image-utils";
 import { Layout } from "@/components/layout/Layout";
 
@@ -70,7 +70,7 @@ function AccessDenied({ reason }: { reason: "anon" | "no-profile" }) {
 export default function ProPage() {
   const { user } = useAuth();
   const { isReseller, isLoading: profileLoading } = useIsResellerPro();
-  const { selectedCountry } = useCountry();
+  const { country: selectedCountry } = useCountry();
   const [search, setSearch] = useState("");
 
   const offersQuery = useQuery({

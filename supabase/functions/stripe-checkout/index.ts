@@ -6,18 +6,37 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-Deno.serve(async (req) => {
+// deno-lint-ignore no-explicit-any
+export type SupabaseClientLike = any;
+// deno-lint-ignore no-explicit-any
+export type StripeLike = any;
+
+export interface HandlerDeps {
+  /** Factory injectable pour les tests (sinon : Supabase service-role réel). */
+  makeClient?: () => SupabaseClientLike;
+  /** Factory injectable pour les tests (sinon : Stripe réel via STRIPE_SECRET_KEY). */
+  makeStripe?: () => StripeLike;
+  defaultCommission?: number;
+}
+
+export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, { apiVersion: "2024-06-20" });
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-    const defaultCommission = parseFloat(Deno.env.get("DEFAULT_COMMISSION_RATE") || "0.20");
+    const stripe = deps.makeStripe
+      ? deps.makeStripe()
+      : new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, { apiVersion: "2024-06-20" });
+    const supabase = deps.makeClient
+      ? deps.makeClient()
+      : createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+        );
+    const defaultCommission = deps.defaultCommission
+      ?? parseFloat(Deno.env.get("DEFAULT_COMMISSION_RATE") || "0.20");
+
 
     // Verify auth
     const authHeader = req.headers.get("Authorization");
@@ -98,7 +117,7 @@ Deno.serve(async (req) => {
         .select("id, stripe_account_id, commission_rate, stripe_charges_enabled")
         .in("id", vendorIds);
 
-      const vendorMap = new Map(vendors?.map(v => [v.id, v]) || []);
+      const vendorMap = new Map<string, any>(vendors?.map((v: any) => [v.id, v]) || []);
 
       // Build vendor breakdown
       const vendorBreakdown = vendorIds.map(vid => {
@@ -245,7 +264,7 @@ Deno.serve(async (req) => {
         .from("vendors")
         .select("id, stripe_account_id, commission_rate, stripe_charges_enabled")
         .in("id", vendorIds);
-      const vendorMap = new Map(vendors?.map((v) => [v.id, v]) || []);
+      const vendorMap = new Map<string, any>(vendors?.map((v: any) => [v.id, v]) || []);
       const vendorBreakdown = vendorIds.map((vid) => {
         const vendor = vendorMap.get(vid);
         const subtotalCents = Math.round(vendorTotals[vid] * 100);
@@ -331,4 +350,7 @@ Deno.serve(async (req) => {
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}
+
+Deno.serve((req) => handler(req));
+

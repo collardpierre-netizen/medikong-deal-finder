@@ -9,9 +9,9 @@ import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCreateOrder } from "@/hooks/useOrders";
 import { supabase } from "@/integrations/supabase/client";
-import { validateCartNow } from "@/hooks/useCartValidation";
+import { useCartValidation, validateCartNow } from "@/hooks/useCartValidation";
 import { toast } from "sonner";
-import { ShoppingCart, Loader2, Truck, Pencil } from "lucide-react";
+import { ShoppingCart, Loader2, Truck, Pencil, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useQuery } from "@tanstack/react-query";
@@ -114,6 +114,56 @@ export default function CheckoutPage() {
   const selectedOpt = shippingOpts[shipping] || shippingOpts[0];
   const shippingCost = selectedOpt ? Number(selectedOpt.price_adjustment) || 0 : 0;
   const total = subtotalTTC + shippingCost;
+
+  // Live cart validation (MOV, MOQ, stock, offre indispo) — debounced
+  const validateItems = useMemo(
+    () => items.map(it => ({ offer_id: it.offer_id, quantity: it.quantity })),
+    [items],
+  );
+  const { data: validation, loading: validating } = useCartValidation(validateItems, { enabled: items.length > 0 });
+
+  type BlockedVendor = {
+    vendor_id: string;
+    vendor_name: string;
+    reasons: string[];
+    missing?: number;
+  };
+  const blockedVendors: BlockedVendor[] = useMemo(() => {
+    if (!validation || validation.valid) return [];
+    const map = new Map<string, BlockedVendor>();
+    const keyFor = (vid: string | null, vname: string | null) => vid || vname || "_unknown";
+    // Vendor MOV errors
+    for (const e of validation.errors) {
+      const vid = (e.details as any)?.vendor_id || null;
+      const vname = e.vendor_name || (e.details as any)?.vendor_name || "Vendeur";
+      const k = keyFor(vid, vname);
+      const entry: BlockedVendor = map.get(k) || { vendor_id: k, vendor_name: vname, reasons: [] };
+      if (e.type === "vendor_mov_not_reached") {
+        const missing = Number(e.details?.missing) || 0;
+        entry.missing = missing;
+        entry.reasons.push(`MOV non atteint — il manque ${missing.toFixed(2)} €`);
+      } else if (e.type === "below_moq") {
+        entry.reasons.push(`Quantité minimum non respectée (${e.details?.current}/${e.details?.required})`);
+      } else if (e.type === "exceeds_stock") {
+        entry.reasons.push(`Stock insuffisant (${e.details?.current}/${e.details?.available})`);
+      } else if (e.type === "offer_not_available") {
+        entry.reasons.push(`Offre indisponible`);
+      } else if (e.type === "invalid_quantity") {
+        entry.reasons.push(`Quantité invalide`);
+      }
+      map.set(k, entry);
+    }
+    return Array.from(map.values());
+  }, [validation]);
+
+  const readyVendors = useMemo(() => {
+    if (!validation) return [];
+    const blockedIds = new Set(blockedVendors.map(v => v.vendor_id));
+    return (validation.vendors || []).filter(v => !blockedIds.has(v.vendor_id) && v.mov_reached);
+  }, [validation, blockedVendors]);
+
+  const hasBlocking = blockedVendors.length > 0;
+
 
   const stepVariants = {
     initial: { opacity: 0, x: 30 },
@@ -267,6 +317,77 @@ export default function CheckoutPage() {
             ))}
           </div>
 
+          {/* Cart validation banner — visible sur les 3 étapes */}
+          {items.length > 0 && (
+            <div className="mb-6">
+              {hasBlocking ? (
+                <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle size={20} className="text-destructive shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-destructive">
+                        {blockedVendors.length === 1
+                          ? "1 vendeur bloque la validation de la commande"
+                          : `${blockedVendors.length} vendeurs bloquent la validation de la commande`}
+                      </p>
+                      <p className="text-xs text-mk-sec mt-0.5">
+                        Tant qu'un seul vendeur est bloqué, la commande complète ne peut pas être envoyée. Ajustez votre panier ou retirez les articles concernés.
+                      </p>
+                      <ul className="mt-3 space-y-2">
+                        {blockedVendors.map(v => (
+                          <li key={v.vendor_id} className="bg-white border border-destructive/20 rounded-md px-3 py-2">
+                            <div className="flex items-center justify-between gap-3 flex-wrap">
+                              <span className="text-sm font-semibold text-mk-navy">{v.vendor_name}</span>
+                              {typeof v.missing === "number" && v.missing > 0 && (
+                                <span className="text-xs font-medium text-destructive">
+                                  +{v.missing.toFixed(2)} € pour atteindre le minimum
+                                </span>
+                              )}
+                            </div>
+                            <ul className="mt-1 space-y-0.5">
+                              {v.reasons.map((r, i) => (
+                                <li key={i} className="text-xs text-mk-sec">• {r}</li>
+                              ))}
+                            </ul>
+                          </li>
+                        ))}
+                      </ul>
+                      {readyVendors.length > 0 && (
+                        <p className="text-xs text-mk-sec mt-3">
+                          {readyVendors.length === 1
+                            ? "1 autre vendeur est prêt à être commandé."
+                            : `${readyVendors.length} autres vendeurs sont prêts à être commandés.`}
+                        </p>
+                      )}
+                      <div className="mt-3">
+                        <Link
+                          to="/panier"
+                          className="inline-flex items-center gap-1.5 bg-mk-navy text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-mk-navy/90"
+                        >
+                          <Pencil size={12} /> Modifier le panier
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : validation && validation.valid ? (
+                <div className="rounded-lg border border-mk-green/30 bg-mk-green/5 px-4 py-2.5 flex items-center gap-2">
+                  <CheckCircle2 size={16} className="text-mk-green shrink-0" />
+                  <span className="text-xs text-mk-navy">
+                    Panier validé — {validation.vendors.length} vendeur{validation.vendors.length > 1 ? "s" : ""} prêt{validation.vendors.length > 1 ? "s" : ""}.
+                  </span>
+                </div>
+              ) : validating ? (
+                <div className="rounded-lg border border-mk-line bg-mk-alt/40 px-4 py-2.5 flex items-center gap-2">
+                  <Loader2 size={14} className="animate-spin text-mk-sec" />
+                  <span className="text-xs text-mk-sec">Vérification du panier…</span>
+                </div>
+              ) : null}
+            </div>
+          )}
+
+
+
           <div className="flex flex-col lg:flex-row gap-6">
             <div className="flex-1 min-w-0">
               <AnimatePresence mode="wait">
@@ -302,9 +423,10 @@ export default function CheckoutPage() {
                     </div>
                     <motion.button
                       onClick={() => setStep(2)}
-                      disabled={!canProceedStep1}
+                      disabled={!canProceedStep1 || hasBlocking}
+                      title={hasBlocking ? "Résolvez les blocages vendeurs ci-dessus" : undefined}
                       className="w-full sm:w-auto bg-mk-navy text-white font-bold text-sm px-6 py-3 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-                      whileHover={canProceedStep1 ? { scale: 1.03 } : {}} whileTap={canProceedStep1 ? { scale: 0.97 } : {}}>
+                      whileHover={canProceedStep1 && !hasBlocking ? { scale: 1.03 } : {}} whileTap={canProceedStep1 && !hasBlocking ? { scale: 0.97 } : {}}>
                       Continuer vers le paiement
                     </motion.button>
                   </motion.div>
@@ -330,7 +452,14 @@ export default function CheckoutPage() {
                     </div>
                     <div className="flex gap-3">
                       <motion.button onClick={() => setStep(1)} className="border border-mk-navy text-mk-navy font-bold text-sm px-6 py-3 rounded-md" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>Retour</motion.button>
-                      <motion.button onClick={() => setStep(3)} className="bg-mk-navy text-white font-bold text-sm px-6 py-3 rounded-md" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>Confirmer la commande</motion.button>
+                      <motion.button
+                        onClick={() => setStep(3)}
+                        disabled={hasBlocking}
+                        title={hasBlocking ? "Résolvez les blocages vendeurs ci-dessus" : undefined}
+                        className="bg-mk-navy text-white font-bold text-sm px-6 py-3 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                        whileHover={!hasBlocking ? { scale: 1.03 } : {}} whileTap={!hasBlocking ? { scale: 0.97 } : {}}>
+                        Confirmer la commande
+                      </motion.button>
                     </div>
                   </motion.div>
                 )}
@@ -461,7 +590,8 @@ export default function CheckoutPage() {
                           <button
                             type="button"
                             onClick={handlePlaceOrder}
-                            disabled={submitting || initLoading}
+                            disabled={submitting || initLoading || hasBlocking}
+                            title={hasBlocking ? "Résolvez les blocages vendeurs ci-dessus" : undefined}
                             className="bg-mk-green text-white font-bold text-sm px-6 py-3 rounded-md flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                           >
                             {(submitting || initLoading) && <Loader2 size={16} className="animate-spin" />}

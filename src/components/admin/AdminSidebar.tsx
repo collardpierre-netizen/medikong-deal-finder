@@ -118,6 +118,7 @@ const sections: NavSection[] = [
       { label: "Templates de relance", path: "/admin/rfq-reminders", icon: Mail },
       { label: "Audit du routage", path: "/admin/rfq-routing-audit", icon: ShieldCheck },
       { label: "Test du routage", path: "/admin/rfq-routing-test", icon: ShieldCheckAlt },
+      { label: "Ventes privées P2P", path: "/admin/ventes-privees", icon: Users },
     ],
   },
   {

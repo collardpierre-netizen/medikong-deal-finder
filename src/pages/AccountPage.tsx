@@ -30,6 +30,8 @@ const tabs = [
   { key: "alertes", label: "Mes alertes prix", icon: BellRing, disabled: false, href: "/mes-alertes-prix" },
   { key: "rfq", label: "Mes demandes de prix", icon: Tag, disabled: false, href: "/compte/mes-rfq" },
   { key: "rfq-credits", label: "Crédits RFQ", icon: Coins, disabled: false, href: "/compte/rfq-credits" },
+  { key: "ventes-privees", label: "Ventes privées", icon: Store, disabled: false, href: "/compte/ventes-privees" },
+  { key: "offres-recues", label: "Offres reçues", icon: Inbox, disabled: false, href: "/compte/offres-recues" },
   { key: "categories", label: "Mes catégories", icon: Layers, disabled: false, href: "/compte/mes-categories" },
   { key: "portefeuille", label: "Portefeuille", icon: Zap, disabled: true },
   { key: "comparateur", label: "Comparateur", icon: FileSpreadsheet, disabled: false },

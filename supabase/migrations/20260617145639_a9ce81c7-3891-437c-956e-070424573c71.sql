@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.resolve_offer_exclusivity(uuid, text);

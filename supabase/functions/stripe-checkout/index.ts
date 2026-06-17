@@ -6,18 +6,37 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-Deno.serve(async (req) => {
+// deno-lint-ignore no-explicit-any
+export type SupabaseClientLike = any;
+// deno-lint-ignore no-explicit-any
+export type StripeLike = any;
+
+export interface HandlerDeps {
+  /** Factory injectable pour les tests (sinon : Supabase service-role réel). */
+  makeClient?: () => SupabaseClientLike;
+  /** Factory injectable pour les tests (sinon : Stripe réel via STRIPE_SECRET_KEY). */
+  makeStripe?: () => StripeLike;
+  defaultCommission?: number;
+}
+
+export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, { apiVersion: "2024-06-20" });
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-    const defaultCommission = parseFloat(Deno.env.get("DEFAULT_COMMISSION_RATE") || "0.20");
+    const stripe = deps.makeStripe
+      ? deps.makeStripe()
+      : new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, { apiVersion: "2024-06-20" });
+    const supabase = deps.makeClient
+      ? deps.makeClient()
+      : createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+        );
+    const defaultCommission = deps.defaultCommission
+      ?? parseFloat(Deno.env.get("DEFAULT_COMMISSION_RATE") || "0.20");
+
 
     // Verify auth
     const authHeader = req.headers.get("Authorization");

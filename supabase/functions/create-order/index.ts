@@ -175,6 +175,7 @@ Deno.serve(async (req) => {
       const vId = ref?.vendor_id ?? v.vendor_id;
       const vType = vId ? vendorTypeMap.get(vId) : null;
       const isQogita = vType === "qogita_virtual";
+      const vatPct = Number(v.vat_rate ?? 21);
       return {
         order_id: order.id,
         offer_id: v.offer_id,
@@ -183,7 +184,7 @@ Deno.serve(async (req) => {
         quantity: v.quantity,
         unit_price_excl_vat: v.unit_price_excl_vat,
         unit_price_incl_vat: v.unit_price_incl_vat,
-        vat_rate: (v.vat_rate ?? 0.21) * (v.vat_rate && v.vat_rate < 1 ? 100 : 1), // store as percent
+        vat_rate: vatPct,
         line_total_excl_vat: v.total_excl_vat,
         line_total_incl_vat: v.total_incl_vat,
         fulfillment_type: isQogita ? "qogita" : "vendor_direct",

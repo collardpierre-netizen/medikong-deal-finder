@@ -9,11 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Layout, Image, Layers, GripVertical, Eye, EyeOff, FileText, ToggleLeft, Trash2, Plus, Upload, ArrowUp, ArrowDown, ImageIcon,
+  Store, Shield, Users, ArrowRight, Search, XCircle, CheckCircle, AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PAGE_IMAGE_REGISTRY } from "@/data/page-image-registry";
 import FeaturedCategoriesTab from "@/components/admin/FeaturedCategoriesTab";
 import HeroImageEditor, { validateHeroUrl } from "@/components/admin/HeroImageEditor";
+import { formatUpdatedAt } from "@/lib/format-date";
 
 // --- Static mock data for non-DB tabs ---
 const pages = [

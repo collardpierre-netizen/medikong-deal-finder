@@ -163,7 +163,9 @@ async function sendBuyerOrderConfirmation(orderId: string) {
   }
 }
 
-async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
+export async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
+  ensureDeps();
+
   const orderId = session.metadata?.order_id;
   if (!orderId) {
     console.log("checkout.session.completed: no order_id in metadata, skipping");

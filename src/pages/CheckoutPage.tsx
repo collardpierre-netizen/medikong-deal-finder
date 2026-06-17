@@ -135,7 +135,7 @@ export default function CheckoutPage() {
   const [initLoading, setInitLoading] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
   const [initErrorStage, setInitErrorStage] = useState<"order" | "session" | null>(null);
-  const [testMode, setTestMode] = useState(false);
+  const testMode = false;
 
   const handlePlaceOrder = useCallback(async () => {
     if (submitting || initLoading) return;
@@ -397,76 +397,6 @@ export default function CheckoutPage() {
                         </p>
                       </div>
 
-                      <label className="flex items-center gap-2 text-xs text-mk-sec cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={testMode}
-                          onChange={(e) => {
-                            setTestMode(e.target.checked);
-                            setInitError(null);
-                            setInitErrorStage(null);
-                          }}
-                        />
-                        Mode test (sans paiement carte)
-                      </label>
-
-                      {testMode && (
-                        <div className="rounded-md border border-dashed border-mk-line bg-mk-alt p-4 space-y-3">
-                          <p className="text-sm text-mk-navy">
-                            Mode test activé : la commande sera enregistrée sans appel à Stripe.
-                          </p>
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              if (submitting) return;
-                              setSubmitting(true);
-                              try {
-                                let oid = orderId;
-                                let onum = orderNumber;
-                                if (!oid || !onum) {
-                                  const finalBilling = sameAsBilling ? shippingAddr : billingAddr;
-                                  const order = await createOrder.mutateAsync({
-                                    shippingAddress: formatAddr(shippingAddr),
-                                    billingAddress: formatAddr(finalBilling),
-                                    paymentMethod: paymentMethods[payment].label + " (test)",
-                                    subtotal,
-                                    total,
-                                    customerInfo: {
-                                      company: shippingAddr.company,
-                                      street: shippingAddr.street,
-                                      city: shippingAddr.city,
-                                      postalCode: shippingAddr.postalCode,
-                                      country: shippingAddr.country,
-                                    },
-                                    items: items.map(item => ({
-                                      offer_id: item.offer_id,
-                                      product_id: item.product_id,
-                                      quantity: item.quantity,
-                                      unit_price_excl_vat: item.price_excl_vat || 0,
-                                      unit_price_incl_vat: item.price_incl_vat || item.price_excl_vat || 0,
-                                    })),
-                                  });
-                                  oid = order.id;
-                                  onum = order.order_number;
-                                  setOrderId(oid);
-                                  setOrderNumber(onum);
-                                }
-                                clearCart.mutate();
-                                navigate(`/confirmation?order=${onum}&test=1`);
-                              } catch (e: any) {
-                                toast.error("Erreur test: " + (e.message || "réessayez"));
-                              } finally {
-                                setSubmitting(false);
-                              }
-                            }}
-                            disabled={submitting}
-                            className="bg-mk-navy text-white font-bold text-sm px-4 py-2 rounded-md disabled:opacity-60 flex items-center gap-2"
-                          >
-                            {submitting && <Loader2 size={16} className="animate-spin" />}
-                            Simuler la confirmation de paiement
-                          </button>
-                        </div>
-                      )}
 
                       {!testMode && initError && !initLoading && (() => {
                         const stage = initErrorStage ?? (orderId ? "session" : "order");

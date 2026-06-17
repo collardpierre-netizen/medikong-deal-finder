@@ -13618,9 +13618,17 @@ export type Database = {
           estimated_delivery_date: string | null
           fulfillment_type: Database["public"]["Enums"]["fulfillment_type"]
           id: string
+          invoice_last_reminder_at: string | null
+          invoice_net_days: number | null
+          invoice_paid_at: string | null
+          invoice_paid_marked_by: string | null
+          invoice_reminder_count: number
           last_sla_check_at: string | null
           margin_total: number | null
           order_id: string
+          payment_due_date: string | null
+          payment_method: Database["public"]["Enums"]["payment_method_enum"]
+          payment_status: Database["public"]["Enums"]["payment_status_enum"]
           qogita_cart_qid: string | null
           qogita_checkout_qid: string | null
           qogita_order_qid: string | null
@@ -13650,9 +13658,17 @@ export type Database = {
           estimated_delivery_date?: string | null
           fulfillment_type: Database["public"]["Enums"]["fulfillment_type"]
           id?: string
+          invoice_last_reminder_at?: string | null
+          invoice_net_days?: number | null
+          invoice_paid_at?: string | null
+          invoice_paid_marked_by?: string | null
+          invoice_reminder_count?: number
           last_sla_check_at?: string | null
           margin_total?: number | null
           order_id: string
+          payment_due_date?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method_enum"]
+          payment_status?: Database["public"]["Enums"]["payment_status_enum"]
           qogita_cart_qid?: string | null
           qogita_checkout_qid?: string | null
           qogita_order_qid?: string | null
@@ -13682,9 +13698,17 @@ export type Database = {
           estimated_delivery_date?: string | null
           fulfillment_type?: Database["public"]["Enums"]["fulfillment_type"]
           id?: string
+          invoice_last_reminder_at?: string | null
+          invoice_net_days?: number | null
+          invoice_paid_at?: string | null
+          invoice_paid_marked_by?: string | null
+          invoice_reminder_count?: number
           last_sla_check_at?: string | null
           margin_total?: number | null
           order_id?: string
+          payment_due_date?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method_enum"]
+          payment_status?: Database["public"]["Enums"]["payment_status_enum"]
           qogita_cart_qid?: string | null
           qogita_checkout_qid?: string | null
           qogita_order_qid?: string | null
@@ -15758,6 +15782,203 @@ export type Database = {
             foreignKeyName: "vendor_guarantee_acceptances_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_invoice_payment_rules: {
+        Row: {
+          country_code: string | null
+          created_at: string
+          customer_id: string | null
+          customer_type: Database["public"]["Enums"]["customer_type"] | null
+          enabled: boolean
+          id: string
+          label: string | null
+          min_amount_cents: number
+          net_days: number
+          priority: number
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          country_code?: string | null
+          created_at?: string
+          customer_id?: string | null
+          customer_type?: Database["public"]["Enums"]["customer_type"] | null
+          enabled?: boolean
+          id?: string
+          label?: string | null
+          min_amount_cents?: number
+          net_days?: number
+          priority?: number
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          country_code?: string | null
+          created_at?: string
+          customer_id?: string | null
+          customer_type?: Database["public"]["Enums"]["customer_type"] | null
+          enabled?: boolean
+          id?: string
+          label?: string | null
+          min_amount_cents?: number
+          net_days?: number
+          priority?: number
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_invoice_payment_rules_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_invoice_payment_rules_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_invoice_payment_rules_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_invoice_payment_rules_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_invoice_payment_rules_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_invoice_payment_rules_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_invoice_payment_rules_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_invoice_payment_rules_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_invoice_payment_settings: {
+        Row: {
+          allow_custom_net_days: boolean
+          auto_remind_enabled: boolean
+          created_at: string
+          default_net_days: number
+          enabled: boolean
+          max_net_days: number
+          min_net_days: number
+          min_order_amount_cents: number
+          remind_days_after_due: number[]
+          remind_days_before_due: number
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          allow_custom_net_days?: boolean
+          auto_remind_enabled?: boolean
+          created_at?: string
+          default_net_days?: number
+          enabled?: boolean
+          max_net_days?: number
+          min_net_days?: number
+          min_order_amount_cents?: number
+          remind_days_after_due?: number[]
+          remind_days_before_due?: number
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          allow_custom_net_days?: boolean
+          auto_remind_enabled?: boolean
+          created_at?: string
+          default_net_days?: number
+          enabled?: boolean
+          max_net_days?: number
+          min_net_days?: number
+          min_order_amount_cents?: number
+          remind_days_after_due?: number[]
+          remind_days_before_due?: number
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_invoice_payment_settings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_invoice_payment_settings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_invoice_payment_settings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_invoice_payment_settings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_invoice_payment_settings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_invoice_payment_settings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_invoice_payment_settings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
             referencedRelation: "vendors_public"
             referencedColumns: ["id"]
           },
@@ -22231,6 +22452,7 @@ export type Database = {
         Args: { _notes?: string; _req_id: string }
         Returns: undefined
       }
+      mark_overdue_vendor_invoices: { Args: never; Returns: number }
       match_import_lines: {
         Args: { _lines: Json }
         Returns: {
@@ -22481,6 +22703,19 @@ export type Database = {
         Returns: {
           pack_size: number
           source: string
+        }[]
+      }
+      resolve_invoice_payment_eligibility: {
+        Args: {
+          _amount_cents: number
+          _customer_id: string
+          _vendor_id: string
+        }
+        Returns: {
+          eligible: boolean
+          net_days: number
+          reason: string
+          rule_id: string
         }[]
       }
       resolve_market_delta_threshold: {
@@ -23179,7 +23414,7 @@ export type Database = {
         | "delivered"
         | "cancelled"
         | "error"
-      payment_method_enum: "invoice" | "bank_transfer" | "card"
+      payment_method_enum: "invoice" | "bank_transfer" | "card" | "mixed"
       payment_status_enum: "pending" | "paid" | "overdue" | "refunded"
       product_source:
         | "qogita"
@@ -23526,7 +23761,7 @@ export const Constants = {
         "cancelled",
         "error",
       ],
-      payment_method_enum: ["invoice", "bank_transfer", "card"],
+      payment_method_enum: ["invoice", "bank_transfer", "card", "mixed"],
       payment_status_enum: ["pending", "paid", "overdue", "refunded"],
       product_source: [
         "qogita",

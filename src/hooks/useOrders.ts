@@ -36,108 +36,33 @@ export function useCreateOrder() {
   return useMutation({
     mutationFn: async (input: OrderInput) => {
       if (!user) throw new Error("Non authentifié");
-      let { data: customer } = await supabase.from("customers").select("id").eq("auth_user_id", user.id).maybeSingle();
-      if (!customer) {
-        const ci = input.customerInfo;
-        if (!ci) throw new Error("Profil client non trouvé");
-        const { data: created, error: cErr } = await supabase.from("customers").insert({
-          auth_user_id: user.id,
-          email: user.email!,
-          company_name: ci.company || user.email!,
-          address_line1: ci.street,
-          city: ci.city,
-          postal_code: ci.postalCode,
-          country_code: ci.country || "BE",
-        }).select("id").single();
-        if (cErr) throw cErr;
-        customer = created;
+      const { data, error } = await supabase.functions.invoke("create-order", {
+        body: {
+          shippingAddress: input.shippingAddress,
+          billingAddress: input.billingAddress,
+          paymentMethod: input.paymentMethod,
+          customerInfo: input.customerInfo,
+          items: (input.items || []).map((i) => ({
+            offer_id: i.offer_id,
+            product_id: i.product_id,
+            quantity: i.quantity,
+          })),
+        },
+      });
+      if (error) {
+        // Edge function returned a non-2xx — surface the server payload if present
+        const ctx: any = (error as any).context;
+        let serverMsg: string | undefined;
+        try {
+          const body = await ctx?.json?.();
+          serverMsg = body?.error || (body?.validation ? "Panier invalide" : undefined);
+        } catch (_) {
+          // ignore
+        }
+        throw new Error(serverMsg || error.message || "Création de commande impossible");
       }
-
-      const vatAmount = input.total - input.subtotal;
-      const orderNumber = `MK-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`;
-
-      const { data: order, error } = await supabase.from("orders").insert({
-        order_number: orderNumber,
-        customer_id: customer.id,
-        shipping_address: { line1: input.shippingAddress } as any,
-        billing_address: { line1: input.billingAddress || input.shippingAddress } as any,
-        payment_method: (input.paymentMethod === "Carte bancaire" ? "card" : input.paymentMethod === "Virement SEPA" ? "bank_transfer" : "invoice") as any,
-        subtotal_excl_vat: input.subtotal,
-        vat_amount: vatAmount > 0 ? vatAmount : 0,
-        total_incl_vat: input.total,
-      }).select().single();
-      if (error) throw error;
-
-      if (input.items && input.items.length > 0) {
-        // Fetch offer details including vendor info
-        const offerIds = input.items.map(i => i.offer_id).filter(Boolean);
-        const { data: offers } = offerIds.length > 0
-          ? await supabase.from("offers").select("id, vendor_id, qogita_offer_qid, qogita_seller_fid, qogita_base_price").in("id", offerIds)
-          : { data: [] };
-
-        const offerMap = new Map((offers || []).map(o => [o.id, o]));
-
-        // Fetch vendor types for routing
-        const vendorIds = [...new Set((offers || []).map(o => o.vendor_id))];
-        const { data: vendors } = vendorIds.length > 0
-          ? await supabase.from("vendors").select("id, type").in("id", vendorIds)
-          : { data: [] };
-        const vendorTypeMap = new Map((vendors || []).map(v => [v.id, v.type]));
-
-        // Insert order_items (legacy)
-        const orderItems = input.items.map(item => {
-          const offerRef = offerMap.get(item.offer_id);
-          return {
-            order_id: order.id,
-            offer_id: item.offer_id || null,
-            product_id: item.product_id || null,
-            quantity: item.quantity,
-            unit_price_excl_vat: item.unit_price_excl_vat,
-            unit_price_incl_vat: item.unit_price_incl_vat,
-            vat_rate: item.vat_rate ?? 0.21,
-            line_total_excl_vat: item.unit_price_excl_vat * item.quantity,
-            line_total_incl_vat: item.unit_price_incl_vat * item.quantity,
-            qogita_offer_qid: offerRef?.qogita_offer_qid || null,
-            qogita_seller_fid: offerRef?.qogita_seller_fid || null,
-            qogita_base_price: offerRef?.qogita_base_price || null,
-          };
-        });
-
-        const { error: itemsError } = await supabase.from("order_items" as any).insert(orderItems as any);
-        if (itemsError) console.error("Error inserting order_items:", itemsError);
-
-        // Insert order_lines with vendor routing
-        const orderLines = input.items.map(item => {
-          const offerRef = offerMap.get(item.offer_id);
-          const vendorId = offerRef?.vendor_id;
-          const vendorType = vendorId ? vendorTypeMap.get(vendorId) : null;
-          const isQogitaVirtual = vendorType === "qogita_virtual";
-
-          return {
-            order_id: order.id,
-            offer_id: item.offer_id,
-            product_id: item.product_id,
-            vendor_id: isQogitaVirtual ? BALOOH_VENDOR_ID : vendorId,
-            quantity: item.quantity,
-            unit_price_excl_vat: item.unit_price_excl_vat,
-            unit_price_incl_vat: item.unit_price_incl_vat,
-            vat_rate: item.vat_rate ?? 21,
-            line_total_excl_vat: item.unit_price_excl_vat * item.quantity,
-            line_total_incl_vat: item.unit_price_incl_vat * item.quantity,
-            fulfillment_type: isQogitaVirtual ? "qogita" : "vendor_direct",
-            fulfillment_status: "pending",
-            qogita_order_status: "pending",
-            qogita_offer_qid: offerRef?.qogita_offer_qid || null,
-            qogita_seller_fid: offerRef?.qogita_seller_fid || null,
-            cost_price: offerRef?.qogita_base_price || null,
-          } as any;
-        });
-
-        const { error: linesError } = await supabase.from("order_lines").insert(orderLines);
-        if (linesError) console.error("Error inserting order_lines:", linesError);
-      }
-
-      return order;
+      if (!data?.id) throw new Error(data?.error || "Création de commande impossible");
+      return data as { id: string; order_number: string };
     },
   });
 }

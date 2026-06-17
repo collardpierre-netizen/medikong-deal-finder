@@ -51,6 +51,52 @@ const AdminParametres = () => {
 
   const getConfig = (key: string, fallback: string) => configRows.find((r: any) => r.key === key)?.value || fallback;
 
+  // MOV global de repli (admin_settings.global_default_mov_cents — stocké en cents).
+  const { data: globalMovRow } = useQuery({
+    queryKey: ["admin-global-mov"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("admin_settings")
+        .select("value_json")
+        .eq("key", "global_default_mov_cents")
+        .maybeSingle();
+      return data;
+    },
+  });
+  const [globalMovInput, setGlobalMovInput] = useState<string>("");
+  useEffect(() => {
+    const cents = globalMovRow?.value_json as number | null | undefined;
+    setGlobalMovInput(cents != null ? String(Number(cents) / 100) : "");
+  }, [globalMovRow]);
+
+  const saveGlobalMov = async () => {
+    setSaving(true);
+    try {
+      const trimmed = globalMovInput.trim();
+      let value: number | null = null;
+      if (trimmed !== "") {
+        const parsed = Number(trimmed.replace(",", "."));
+        if (!Number.isFinite(parsed) || parsed < 0) {
+          toast.error("Valeur invalide (€ HTVA, ≥ 0 ou vide)");
+          setSaving(false);
+          return;
+        }
+        value = Math.round(parsed * 100);
+      }
+      const { error } = await supabase
+        .from("admin_settings")
+        .upsert({ key: "global_default_mov_cents", value_json: value as any }, { onConflict: "key" });
+      if (error) throw error;
+      toast.success(value == null ? "MOV global désactivé" : `MOV global enregistré : ${(value / 100).toFixed(2)} €`);
+      qc.invalidateQueries({ queryKey: ["admin-global-mov"] });
+    } catch (e: any) {
+      toast.error(e.message || "Erreur");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+
   // Editable state
   const [general, setGeneral] = useState<Record<string, string>>({});
   const [commissions, setCommissions] = useState<Record<string, string>>({});

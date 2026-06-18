@@ -56,24 +56,23 @@ export default function AccountInvitationPage() {
     let cancelled = false;
     setLoadingInvitation(true);
     setInvitationError(null);
-    supabase
-      .rpc("account_get_invitation_by_token", { _token: token! })
-      .then(({ data, error }) => {
-        if (cancelled) return;
-        if (error) {
-          setInvitationError(error.message);
-        } else {
-          const row = Array.isArray(data) ? data[0] : data;
-          if (!row) {
-            setInvitationError("Invitation introuvable ou déjà supprimée.");
-          } else {
-            setInvitation(row as InvitationInfo);
-          }
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingInvitation(false);
+    (async () => {
+      const { data, error } = await supabase.rpc("account_get_invitation_by_token", {
+        _token: token!,
       });
+      if (cancelled) return;
+      if (error) {
+        setInvitationError(error.message);
+      } else {
+        const row = Array.isArray(data) ? data[0] : data;
+        if (!row) {
+          setInvitationError("Invitation introuvable ou déjà supprimée.");
+        } else {
+          setInvitation(row as InvitationInfo);
+        }
+      }
+      setLoadingInvitation(false);
+    })();
     return () => {
       cancelled = true;
     };

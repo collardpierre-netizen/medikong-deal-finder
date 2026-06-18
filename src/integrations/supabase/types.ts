@@ -10516,7 +10516,6 @@ export type Database = {
       }
       restock_buyers: {
         Row: {
-          access_token: string | null
           apn_number: string | null
           auth_user_id: string | null
           city: string | null
@@ -10538,7 +10537,6 @@ export type Database = {
           verified_status: string
         }
         Insert: {
-          access_token?: string | null
           apn_number?: string | null
           auth_user_id?: string | null
           city?: string | null
@@ -10560,7 +10558,6 @@ export type Database = {
           verified_status?: string
         }
         Update: {
-          access_token?: string | null
           apn_number?: string | null
           auth_user_id?: string | null
           city?: string | null
@@ -12151,8 +12148,8 @@ export type Database = {
           responded_at: string | null
           rfq_id: string
           status: string
-          token: string
           token_expires_at: string
+          token_hash: string
           updated_at: string
           viewed_at: string | null
         }
@@ -12167,8 +12164,8 @@ export type Database = {
           responded_at?: string | null
           rfq_id: string
           status?: string
-          token: string
           token_expires_at?: string
+          token_hash: string
           updated_at?: string
           viewed_at?: string | null
         }
@@ -12183,8 +12180,8 @@ export type Database = {
           responded_at?: string | null
           rfq_id?: string
           status?: string
-          token?: string
           token_expires_at?: string
+          token_hash?: string
           updated_at?: string
           viewed_at?: string | null
         }

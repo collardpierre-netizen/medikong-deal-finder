@@ -76,7 +76,7 @@ export function PriceAlertBellButton({ productId, productName, defaultPrice, siz
     e.stopPropagation();
     if (!user) {
       toast({ title: "Connexion requise", description: "Connectez-vous pour créer une alerte prix." });
-      navigate("/login?redirect=" + encodeURIComponent(window.location.pathname));
+      navigate("/connexion?redirect=" + encodeURIComponent(window.location.pathname));
       return;
     }
     setPrice(existing ? String(existing.user_price_excl_vat) : defaultPrice ? defaultPrice.toFixed(2) : "");

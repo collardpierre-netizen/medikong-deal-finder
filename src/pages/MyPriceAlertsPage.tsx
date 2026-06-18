@@ -24,7 +24,7 @@ export default function MyPriceAlertsPage() {
   const [editNotes, setEditNotes] = useState("");
 
   if (!loading && !user) {
-    navigate("/login?redirect=/mes-alertes-prix");
+    navigate("/connexion?redirect=/mes-alertes-prix");
     return null;
   }
 

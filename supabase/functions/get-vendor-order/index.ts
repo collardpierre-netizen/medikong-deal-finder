@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
       const { error: markErr } = await supabase
         .from("vendor_order_tokens")
         .update({ used_at: new Date().toISOString() })
-        .eq("token", token)
+        .eq("token_hash", tokenHash)
         .is("used_at", null);
       if (markErr) {
         logEvent("token_mark_used_error", { token_fp: tokenFp, order: orderMasked, code: (markErr as any).code ?? null });

@@ -476,7 +476,7 @@ export default function AccountPage() {
                           <Button
                             asChild
                             size="sm"
-                            className="bg-emerald-600 hover:bg-emerald-700 text-black font-bold border border-emerald-700"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold border border-emerald-700"
                           >
                             <Link to="/vendor">Aller à l'espace vendeur</Link>
                           </Button>

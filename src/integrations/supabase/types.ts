@@ -21622,6 +21622,19 @@ export type Database = {
           join_code: string
         }[]
       }
+      account_get_invitation_by_token: {
+        Args: { _token: string }
+        Returns: {
+          accepted: boolean
+          account_kind: string
+          email: string
+          expired: boolean
+          expires_at: string
+          revoked: boolean
+          role: string
+          user_exists: boolean
+        }[]
+      }
       account_has_other_admin: {
         Args: { _account_id: string; _excluding_user: string; _kind: string }
         Returns: boolean

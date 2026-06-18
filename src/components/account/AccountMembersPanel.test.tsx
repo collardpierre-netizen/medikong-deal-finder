@@ -18,11 +18,14 @@ vi.mock("@/integrations/supabase/client", () => {
   };
 
   const builder = (rows: any[]) => {
+    const result = Promise.resolve({ data: rows, error: null });
     const b: any = {
       select: () => b,
       eq: () => b,
       in: () => b,
-      order: () => Promise.resolve({ data: rows, error: null }),
+      is: () => b,
+      order: () => result,
+      then: (...args: any[]) => result.then(...args),
     };
     return b;
   };

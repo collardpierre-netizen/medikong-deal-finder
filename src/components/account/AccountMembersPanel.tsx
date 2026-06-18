@@ -532,6 +532,94 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Reset password confirmation */}
+      <AlertDialog
+        open={!!resetConfirmTarget}
+        onOpenChange={(open) => {
+          if (!open) setResetConfirmTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Réinitialiser le mot de passe</AlertDialogTitle>
+            <AlertDialogDescription>
+              Envoyer un email de réinitialisation de mot de passe à{" "}
+              <strong>{resetConfirmTarget?.label}</strong> ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setResetConfirmTarget(null)}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (resetConfirmTarget) {
+                  sendPasswordReset.mutate({
+                    userId: resetConfirmTarget.userId,
+                    label: resetConfirmTarget.label,
+                  });
+                }
+              }}
+            >
+              {sendPasswordReset.isPending && <Loader2 className="animate-spin mr-2" size={14} />}
+              Confirmer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reset password result */}
+      <Dialog open={!!resetResult} onOpenChange={(open) => { if (!open) setResetResult(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {resetResult?.success ? "Email envoyé" : "Erreur d'envoi"}
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              Résultat de la demande de réinitialisation de mot de passe
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {resetResult?.success ? (
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
+                  <Check size={20} className="text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-[13px] font-medium text-[#1D2530]">
+                    L'email de réinitialisation a bien été envoyé.
+                  </p>
+                  {resetResult.email && (
+                    <p className="text-[12px] text-[#616B7C] mt-1">{resetResult.email}</p>
+                  )}
+                  <p className="text-[11px] text-[#8B95A5] mt-2">
+                    L'utilisateur recevra un lien valable 24 heures pour définir un nouveau mot de passe.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+                  <AlertCircle size={20} className="text-red-600" />
+                </div>
+                <div>
+                  <p className="text-[13px] font-medium text-[#1D2530]">
+                    L'email n'a pas pu être envoyé.
+                  </p>
+                  {resetResult?.error && (
+                    <p className="text-[12px] text-destructive mt-1">{resetResult.error}</p>
+                  )}
+                  <p className="text-[11px] text-[#8B95A5] mt-2">
+                    Vérifiez que l'adresse email est valide ou réessayez plus tard.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setResetResult(null)}>Fermer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

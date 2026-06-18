@@ -5,10 +5,10 @@
 //  - mise à jour de order_lines.fulfillment_status + sub_orders.status/timestamps
 //  - FSM (transitions invalides → 400) et tracking requis sur "ship"
 //
-// Stratégie :
-//  - tests statiques de source (logique d'expiration, références colonnes)
-//  - tests live HTTP contre la fonction déployée (validation, 410, FSM)
-//  - tests DB + HTTP avec fixtures éphémères (happy path confirm/ship + sub_orders)
+// Note sécurité : la colonne `vendor_order_tokens.token` en clair a été
+// supprimée. La DB ne stocke plus que `token_hash` (SHA-256). Les tests
+// génèrent un token brut localement, insèrent son hash, et envoient le brut
+// à la fonction HTTP comme un vrai client.
 import "https://deno.land/std@0.224.0/dotenv/load.ts";
 import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -25,6 +25,14 @@ function admin() {
   return createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+}
+
+async function sha256Hex(input: string): Promise<string> {
+  const buf = new TextEncoder().encode(input);
+  const digest = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 async function call(body: unknown, method = "POST") {
@@ -48,16 +56,12 @@ async function call(body: unknown, method = "POST") {
 Deno.test("source: expiration ne dépend QUE de expires_at, jamais de used_at", opts, async () => {
   const src = await Deno.readTextFile(new URL("./index.ts", import.meta.url));
 
-  // Le code peut renvoyer 410 via `json(410, ...)` ou via le helper `reject(410, ...)`.
   const ret410 = /(?:return\s+)?(?:json|reject)\(\s*410/g;
   const matches = src.match(ret410);
   assert(matches && matches.length > 0, "Un retour 410 doit exister pour token_expired");
 
-  // Le déclenchement doit s'appuyer sur expires_at quelque part dans le fichier.
   assert(/expires_at/.test(src), "Le 410 doit être déclenché par expires_at");
 
-  // Pour chaque occurrence de `json(410` ou `reject(410`, les 300 chars
-  // précédents ne doivent jamais mentionner `used_at` (sinon = 410 sur used_at).
   const needles = ["json(410", "reject(410"];
   for (const needle of needles) {
     let idx = 0;
@@ -75,12 +79,16 @@ Deno.test("source: expiration ne dépend QUE de expires_at, jamais de used_at", 
   }
 });
 
-Deno.test("source: pas de référence à vendor_order_tokens.id", opts, async () => {
+Deno.test("source: pas de référence à vendor_order_tokens.id ni .token (cleartext)", opts, async () => {
   const src = await Deno.readTextFile(new URL("./index.ts", import.meta.url));
   const accesses = src.match(/from\(["']vendor_order_tokens["']\)[\s\S]*?;/g) ?? [];
   assert(accesses.length > 0, "Au moins un accès à vendor_order_tokens attendu");
   for (const block of accesses) {
     assert(!/\.eq\(\s*["']id["']/.test(block), `interdit .eq("id"...) : ${block}`);
+    assert(
+      !/\.eq\(\s*["']token["']/.test(block),
+      `interdit .eq("token"...) — utiliser token_hash : ${block}`,
+    );
   }
 });
 
@@ -123,18 +131,54 @@ Deno.test("HTTP: token inconnu → 401 invalid_token", opts, async () => {
 });
 
 // ---------- 3. 410 UNIQUEMENT sur expires_at (used_at peut être posé) ----------
+//
+// vendor_order_tokens.PK = sub_order_id. La colonne `token` en clair n'existe
+// plus : la DB ne contient que `token_hash`. Les tests insèrent donc une ligne
+// éphémère liée à un sub_order non encore tokenisé, génèrent le brut côté test,
+// stockent le hash, puis nettoient dans `finally`.
+async function borrowOrCreateToken(sb: ReturnType<typeof admin>): Promise<
+  | { token: string; tokenHash: string; sub_order_id: string; order_id: string; vendor_id: string; cleanup: () => Promise<void> }
+  | null
+> {
+  // Trouver un sub_order qui n'a pas encore de vendor_order_tokens.
+  const { data: candidates } = await sb
+    .from("sub_orders")
+    .select("id, order_id, vendor_id")
+    .limit(50);
+  if (!candidates || candidates.length === 0) return null;
 
-// vendor_order_tokens.PK = sub_order_id (1 token max par sub_order). Tous les
-// sub_orders existants ont déjà leur token en base, donc on ne peut PAS insérer
-// un token jetable. Stratégie : on emprunte un token réel, on mute
-// expires_at/used_at le temps du test, on restaure dans `finally`.
-async function borrowToken(sb: ReturnType<typeof admin>) {
-  const { data } = await sb
-    .from("vendor_order_tokens")
-    .select("token, expires_at, used_at, order_id, vendor_id, sub_order_id")
-    .limit(1)
-    .maybeSingle();
-  return data;
+  for (const cand of candidates) {
+    const { data: existing } = await sb
+      .from("vendor_order_tokens")
+      .select("sub_order_id")
+      .eq("sub_order_id", cand.id)
+      .maybeSingle();
+    if (existing) continue;
+
+    const token = `test-${crypto.randomUUID()}`;
+    const tokenHash = await sha256Hex(token);
+    const future = new Date(Date.now() + 7 * 86_400_000).toISOString();
+    const ins = await sb.from("vendor_order_tokens").insert({
+      token_hash: tokenHash,
+      order_id: cand.order_id,
+      vendor_id: cand.vendor_id,
+      sub_order_id: cand.id,
+      order_number: `TEST-${cand.id.slice(0, 8)}`,
+      expires_at: future,
+    });
+    if (ins.error) continue;
+    return {
+      token,
+      tokenHash,
+      sub_order_id: cand.id,
+      order_id: cand.order_id,
+      vendor_id: cand.vendor_id,
+      cleanup: async () => {
+        await sb.from("vendor_order_tokens").delete().eq("token_hash", tokenHash);
+      },
+    };
+  }
+  return null;
 }
 
 Deno.test(
@@ -142,16 +186,17 @@ Deno.test(
   opts,
   async () => {
     const sb = admin();
-    const tk = await borrowToken(sb);
-    if (!tk?.token) {
-      console.warn("Skip: aucun vendor_order_token disponible à emprunter");
+    const tk = await borrowOrCreateToken(sb);
+    if (!tk) {
+      console.warn("Skip: aucun sub_order disponible pour créer un token de test");
       return;
     }
     const past = new Date(Date.now() - 86_400_000).toISOString();
     const mut = await sb.from("vendor_order_tokens")
       .update({ expires_at: past, used_at: null })
-      .eq("token", tk.token);
+      .eq("token_hash", tk.tokenHash);
     if (mut.error) {
+      await tk.cleanup();
       console.warn(`Skip mutate token expiré: ${mut.error.message}`);
       return;
     }
@@ -164,9 +209,7 @@ Deno.test(
       assertEquals(r.status, 410);
       assertEquals(r.body?.error, "token_expired");
     } finally {
-      await sb.from("vendor_order_tokens")
-        .update({ expires_at: tk.expires_at, used_at: tk.used_at })
-        .eq("token", tk.token);
+      await tk.cleanup();
     }
   },
 );
@@ -176,22 +219,22 @@ Deno.test(
   opts,
   async () => {
     const sb = admin();
-    const tk = await borrowToken(sb);
-    if (!tk?.token) {
-      console.warn("Skip: aucun vendor_order_token disponible à emprunter");
+    const tk = await borrowOrCreateToken(sb);
+    if (!tk) {
+      console.warn("Skip: aucun sub_order disponible pour créer un token de test");
       return;
     }
     const future = new Date(Date.now() + 7 * 86_400_000).toISOString();
     const usedAt = new Date().toISOString();
     const mut = await sb.from("vendor_order_tokens")
       .update({ expires_at: future, used_at: usedAt })
-      .eq("token", tk.token);
+      .eq("token_hash", tk.tokenHash);
     if (mut.error) {
+      await tk.cleanup();
       console.warn(`Skip mutate token used: ${mut.error.message}`);
       return;
     }
     try {
-      // line_id bidon → on attend 403 forbidden, surtout PAS 410.
       const r = await call({
         token: tk.token,
         line_id: "00000000-0000-0000-0000-000000000000",
@@ -201,9 +244,7 @@ Deno.test(
       assertEquals(r.status, 403);
       assertEquals(r.body?.error, "forbidden");
     } finally {
-      await sb.from("vendor_order_tokens")
-        .update({ expires_at: tk.expires_at, used_at: tk.used_at })
-        .eq("token", tk.token);
+      await tk.cleanup();
     }
   },
 );
@@ -215,7 +256,6 @@ Deno.test(
   opts,
   async () => {
     const sb = admin();
-    // On cherche une ligne réelle 'pending' pour ne pas avoir à seeder tout l'arbre.
     const { data: pendingLine } = await sb
       .from("order_lines")
       .select("id, order_id, vendor_id, fulfillment_status, sub_order_id")
@@ -228,21 +268,35 @@ Deno.test(
       return;
     }
 
+    // Garantir l'absence préalable d'un token pour ce sub_order (PK unique).
+    if (pendingLine.sub_order_id) {
+      const { data: existing } = await sb
+        .from("vendor_order_tokens")
+        .select("sub_order_id")
+        .eq("sub_order_id", pendingLine.sub_order_id)
+        .maybeSingle();
+      if (existing) {
+        console.warn("Skip: la sub_order de la ligne pending a déjà un token");
+        return;
+      }
+    }
+
     const token = `test-happy-${crypto.randomUUID()}`;
+    const tokenHash = await sha256Hex(token);
     const future = new Date(Date.now() + 7 * 86_400_000).toISOString();
     const ins = await sb.from("vendor_order_tokens").insert({
-      token,
+      token_hash: tokenHash,
       order_id: pendingLine.order_id,
       vendor_id: pendingLine.vendor_id,
       sub_order_id: pendingLine.sub_order_id,
+      order_number: `TEST-HAPPY-${pendingLine.id.slice(0, 8)}`,
       expires_at: future,
-    }).select("token").maybeSingle();
+    }).select("token_hash").maybeSingle();
     if (ins.error) {
       console.warn(`Skip insert token happy: ${ins.error.message}`);
       return;
     }
 
-    // Snapshot avant
     const before = await sb
       .from("sub_orders")
       .select("status, updated_at, vendor_confirmed_at, shipped_at")
@@ -303,8 +357,7 @@ Deno.test(
       assertEquals(r3.status, 400);
       assertEquals(r3.body?.error, "invalid_transition");
     } finally {
-      // Best-effort cleanup : on remet la ligne + sub_order dans leur état initial.
-      await sb.from("vendor_order_tokens").delete().eq("token", token);
+      await sb.from("vendor_order_tokens").delete().eq("token_hash", tokenHash);
       await sb.from("order_lines")
         .update({ fulfillment_status: pendingLine.fulfillment_status, tracking_number: null })
         .eq("id", pendingLine.id);

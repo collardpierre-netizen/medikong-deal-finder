@@ -340,11 +340,7 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
                       variant="ghost"
                       title="Envoyer un email de réinitialisation du mot de passe"
                       disabled={sendPasswordReset.isPending}
-                      onClick={() => {
-                        if (confirm(`Envoyer un email de réinitialisation de mot de passe à ${label} ?`)) {
-                          sendPasswordReset.mutate({ userId: m.user_id, label });
-                        }
-                      }}
+                      onClick={() => setResetConfirmTarget({ userId: m.user_id, label })}
                     >
                       <RotateCcw size={14} />
                     </Button>

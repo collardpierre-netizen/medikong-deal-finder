@@ -25,6 +25,14 @@ function reject(status: number, code: string, ctx: Record<string, unknown> = {})
   return json(status, { error: code, ...ctx });
 }
 
+async function sha256Hex(token: string): Promise<string> {
+  const buf = new TextEncoder().encode(token);
+  const digest = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 type Action = "cancel" | "partial";
 
 Deno.serve(async (req) => {
@@ -80,11 +88,12 @@ Deno.serve(async (req) => {
       { auth: { persistSession: false } },
     );
 
-    // 1) Token
+    // 1) Token — DB stores only SHA-256(token), never the raw value.
+    const tokenHash = await sha256Hex(token);
     const { data: tokenRow, error: tokenErr } = await supabase
       .from("vendor_order_tokens")
       .select("order_id, vendor_id, sub_order_id, expires_at")
-      .eq("token", token)
+      .eq("token_hash", tokenHash)
       .maybeSingle();
     if (tokenErr) {
       console.error(`[refund_order_line.500] token_lookup_failed: ${tokenErr.message}`);

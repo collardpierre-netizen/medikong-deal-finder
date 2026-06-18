@@ -14,17 +14,22 @@ function json(status: number, body: unknown) {
   });
 }
 
-// Returns a short, non-reversible fingerprint of the token for log correlation.
-// We hash the full token with SHA-256 and keep only the first 8 hex chars so
-// logs never contain the secret itself.
+// Returns the SHA-256 hex digest of the supplied token. Used for two things:
+// 1) DB lookup against `vendor_order_tokens.token_hash` (column `token` was
+//    dropped — bearer tokens are never stored in cleartext).
+// 2) Short fingerprint (first 8 chars) for log correlation, so logs never
+//    contain the secret itself.
+async function sha256Hex(token: string): Promise<string> {
+  const buf = new TextEncoder().encode(token);
+  const digest = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 async function tokenFingerprint(token: string): Promise<string> {
   try {
-    const buf = new TextEncoder().encode(token);
-    const digest = await crypto.subtle.digest("SHA-256", buf);
-    const hex = Array.from(new Uint8Array(digest))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-    return hex.slice(0, 8);
+    return (await sha256Hex(token)).slice(0, 8);
   } catch {
     return "unhashable";
   }
@@ -65,7 +70,8 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // 1. Token + order + vendor
+    // 1. Token + order + vendor — DB stores only SHA-256(token), never the raw value.
+    const tokenHash = await sha256Hex(String(token));
     const { data: tokenRow, error: tokenErr } = await supabase
       .from("vendor_order_tokens")
       .select(`
@@ -73,7 +79,7 @@ Deno.serve(async (req) => {
         orders:order_id ( id, order_number, created_at, shipping_address, billing_address, payment_status, status, subtotal_excl_vat, vat_amount, total_incl_vat ),
         vendors:vendor_id ( id, name, slug, commission_rate )
       `)
-      .eq("token", token)
+      .eq("token_hash", tokenHash)
       .eq("order_number", order_number)
       .maybeSingle();
 
@@ -129,7 +135,7 @@ Deno.serve(async (req) => {
       const { error: markErr } = await supabase
         .from("vendor_order_tokens")
         .update({ used_at: new Date().toISOString() })
-        .eq("token", token)
+        .eq("token_hash", tokenHash)
         .is("used_at", null);
       if (markErr) {
         logEvent("token_mark_used_error", { token_fp: tokenFp, order: orderMasked, code: (markErr as any).code ?? null });

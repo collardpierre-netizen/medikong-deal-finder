@@ -1,0 +1,125 @@
+-- 1) Add token_hash, backfill from existing token, drop cleartext token.
+ALTER TABLE public.vendor_order_tokens
+  ADD COLUMN IF NOT EXISTS token_hash text;
+
+UPDATE public.vendor_order_tokens
+   SET token_hash = encode(extensions.digest(token, 'sha256'), 'hex')
+ WHERE token_hash IS NULL AND token IS NOT NULL;
+
+DROP INDEX IF EXISTS public.idx_vendor_order_tokens_token;
+
+ALTER TABLE public.vendor_order_tokens
+  DROP COLUMN IF EXISTS token;
+
+ALTER TABLE public.vendor_order_tokens
+  ALTER COLUMN token_hash SET NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_vendor_order_tokens_token_hash
+  ON public.vendor_order_tokens(token_hash);
+
+-- 2) Rewrite fanout_order_to_vendors : generate raw token, store hash, return raw once.
+--    When a token row already exists for the sub_order, we cannot recover the raw value,
+--    so we return NULL magic_token. The caller (notify-vendors-new-order edge function)
+--    already falls back to the standard portal URL in that case.
+CREATE OR REPLACE FUNCTION public.fanout_order_to_vendors(_order_id uuid)
+ RETURNS TABLE(vendor_id uuid, vendor_email text, vendor_name text, sub_order_id uuid, vendor_subtotal_incl_vat numeric, line_count integer, order_number text, order_total_incl_vat numeric, magic_token text)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+  v_order public.orders%ROWTYPE;
+  v_rec record;
+  v_sub_id uuid;
+  v_token text;
+  v_hash text;
+  v_existing boolean;
+BEGIN
+  SELECT * INTO v_order FROM public.orders WHERE id = _order_id;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Order % not found', _order_id;
+  END IF;
+
+  FOR v_rec IN
+    SELECT
+      ol.vendor_id AS vendor_id,
+      COALESCE(MAX(ol.fulfillment_type::text), 'vendor_direct')::fulfillment_type AS fulfillment_type,
+      SUM(ol.line_total_incl_vat) AS subtotal_incl_vat,
+      SUM(ol.line_cost) AS cost_total,
+      SUM(ol.line_margin) AS margin_total,
+      COUNT(*)::int AS line_count,
+      COALESCE(v.contact_email, v.shipping_email, v.email) AS vendor_email,
+      COALESCE(v.company_name, v.name, 'Vendeur') AS vendor_name
+    FROM public.order_lines ol
+    JOIN public.vendors v ON v.id = ol.vendor_id
+    WHERE ol.order_id = _order_id
+    GROUP BY ol.vendor_id, v.contact_email, v.shipping_email, v.email, v.company_name, v.name
+  LOOP
+    SELECT so.id INTO v_sub_id
+    FROM public.sub_orders so
+    WHERE so.order_id = _order_id AND so.vendor_id = v_rec.vendor_id
+    LIMIT 1;
+
+    IF v_sub_id IS NULL THEN
+      INSERT INTO public.sub_orders (
+        order_id, vendor_id, fulfillment_type, status,
+        subtotal_incl_vat, cost_total, margin_total
+      ) VALUES (
+        _order_id, v_rec.vendor_id, v_rec.fulfillment_type, 'pending',
+        COALESCE(v_rec.subtotal_incl_vat, 0),
+        COALESCE(v_rec.cost_total, 0),
+        COALESCE(v_rec.margin_total, 0)
+      ) RETURNING id INTO v_sub_id;
+
+      INSERT INTO public.order_line_sub_orders (order_line_id, sub_order_id)
+      SELECT ol.id, v_sub_id
+      FROM public.order_lines ol
+      WHERE ol.order_id = _order_id AND ol.vendor_id = v_rec.vendor_id
+      ON CONFLICT DO NOTHING;
+
+      INSERT INTO public.vendor_notifications (
+        vendor_id, type, title, body, cta_url, payload
+      ) VALUES (
+        v_rec.vendor_id,
+        'order_new',
+        'Nouvelle commande à traiter',
+        format('%s ligne(s) à préparer pour la commande %s', v_rec.line_count, v_order.order_number),
+        '/vendor/commandes',
+        jsonb_build_object('order_id', _order_id, 'sub_order_id', v_sub_id, 'order_number', v_order.order_number)
+      );
+
+      INSERT INTO public.vendor_notification_dispatch_log (vendor_id, source_type, source_id)
+      VALUES (v_rec.vendor_id, 'order_new', v_sub_id)
+      ON CONFLICT DO NOTHING;
+    END IF;
+
+    SELECT EXISTS(
+      SELECT 1 FROM public.vendor_order_tokens t WHERE t.sub_order_id = v_sub_id
+    ) INTO v_existing;
+
+    IF v_existing THEN
+      -- Token already issued previously; we cannot recover the cleartext value.
+      -- Return NULL so the caller falls back to the standard portal URL.
+      v_token := NULL;
+    ELSE
+      v_token := encode(extensions.gen_random_bytes(32), 'base64');
+      v_token := replace(replace(replace(v_token, '+', '-'), '/', '_'), '=', '');
+      v_hash := encode(extensions.digest(v_token, 'sha256'), 'hex');
+
+      INSERT INTO public.vendor_order_tokens (sub_order_id, order_id, vendor_id, order_number, token_hash)
+      VALUES (v_sub_id, _order_id, v_rec.vendor_id, v_order.order_number, v_hash);
+    END IF;
+
+    fanout_order_to_vendors.vendor_id := v_rec.vendor_id;
+    fanout_order_to_vendors.vendor_email := v_rec.vendor_email;
+    fanout_order_to_vendors.vendor_name := v_rec.vendor_name;
+    fanout_order_to_vendors.sub_order_id := v_sub_id;
+    fanout_order_to_vendors.vendor_subtotal_incl_vat := COALESCE(v_rec.subtotal_incl_vat, 0);
+    fanout_order_to_vendors.line_count := v_rec.line_count;
+    fanout_order_to_vendors.order_number := v_order.order_number;
+    fanout_order_to_vendors.order_total_incl_vat := v_order.total_incl_vat;
+    fanout_order_to_vendors.magic_token := v_token;
+    RETURN NEXT;
+  END LOOP;
+END;
+$function$;

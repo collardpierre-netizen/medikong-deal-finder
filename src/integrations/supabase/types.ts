@@ -17446,7 +17446,7 @@ export type Database = {
           order_id: string
           order_number: string
           sub_order_id: string
-          token: string
+          token_hash: string
           used_at: string | null
           vendor_id: string
         }
@@ -17456,7 +17456,7 @@ export type Database = {
           order_id: string
           order_number: string
           sub_order_id: string
-          token: string
+          token_hash: string
           used_at?: string | null
           vendor_id: string
         }
@@ -17466,7 +17466,7 @@ export type Database = {
           order_id?: string
           order_number?: string
           sub_order_id?: string
-          token?: string
+          token_hash?: string
           used_at?: string | null
           vendor_id?: string
         }

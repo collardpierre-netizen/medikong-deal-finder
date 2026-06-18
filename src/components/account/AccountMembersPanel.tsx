@@ -205,6 +205,21 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
     onError: (err: any) => toast.error(err?.message || "Erreur"),
   });
 
+  const sendPasswordReset = useMutation({
+    mutationFn: async (payload: { userId: string; label: string }) => {
+      const { data, error } = await supabase.functions.invoke("admin-send-password-reset", {
+        body: { user_id: payload.userId },
+      });
+      if (error) throw error;
+      if (data && data.success === false) throw new Error(data.error || "Erreur");
+      return data;
+    },
+    onSuccess: (data: any) => {
+      toast.success(`Email de réinitialisation envoyé à ${data?.email ?? "l'utilisateur"}`);
+    },
+    onError: (e: any) => toast.error(e?.message || "Erreur d'envoi"),
+  });
+
   const closeInviteDialog = () => {
     setShowInvite(false);
     setInviteEmail("");

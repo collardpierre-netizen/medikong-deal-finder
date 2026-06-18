@@ -62,6 +62,8 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
   const [generatedToken, setGeneratedToken] = useState<string | null>(null);
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [resetConfirmTarget, setResetConfirmTarget] = useState<{ userId: string; label: string } | null>(null);
+  const [resetResult, setResetResult] = useState<{ success: boolean; email?: string; error?: string } | null>(null);
 
   const membersKey = ["account-memberships", accountKind, accountId];
   const invitesKey = ["account-invitations", accountKind, accountId];

@@ -21776,6 +21776,23 @@ export type Database = {
           variant: string
         }[]
       }
+      admin_list_pending_invitations: {
+        Args: never
+        Returns: {
+          account_id: string
+          account_kind: string
+          account_name: string
+          created_at: string
+          created_by: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by_name: string
+          is_expired: boolean
+          join_code: string
+          role: string
+        }[]
+      }
       admin_log_price_challenge:
         | {
             Args: {
@@ -21929,6 +21946,16 @@ export type Database = {
       admin_reorder_home_featured: {
         Args: { _ids: string[]; _kind: string }
         Returns: undefined
+      }
+      admin_resend_invitation: {
+        Args: { _invitation_id: string }
+        Returns: {
+          account_id: string
+          account_kind: string
+          email: string
+          role: string
+          token: string
+        }[]
       }
       admin_restore_order: { Args: { _order_id: string }; Returns: undefined }
       admin_review_offer_commission: {

@@ -5,11 +5,16 @@ import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VBadge } from "@/components/vendor/ui/VBadge";
 import { VEmptyState } from "@/components/vendor/ui/VEmptyState";
-import { ShoppingCart, PackageCheck, Loader2, ChevronDown, ChevronUp, Truck, ExternalLink } from "lucide-react";
+import { ShoppingCart, PackageCheck, Loader2, ChevronDown, ChevronUp, Truck, ExternalLink, Package, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { getVendorPublicName } from "@/lib/vendor-display";
 
 interface OrderLine {
   id: string;
@@ -18,6 +23,7 @@ interface OrderLine {
   offer_id: string;
   vendor_id: string;
   quantity: number;
+  quantity_shipped: number | null;
   unit_price_excl_vat: number;
   unit_price_incl_vat: number;
   line_total_excl_vat: number;
@@ -31,6 +37,8 @@ interface OrderLine {
   cost_price: number | null;
   tracking_number: string | null;
   tracking_url: string | null;
+  cancellation_reason: string | null;
+  refunded_amount_incl_vat: number | null;
 }
 
 interface OrderWithLines {
@@ -39,29 +47,78 @@ interface OrderWithLines {
   order_status: string;
   order_date: string;
   shipping_address: any;
+  customer_id: string;
   lines: (OrderLine & { product_name: string; product_image: string | null })[];
 }
 
 const statusConfig: Record<string, { label: string; color: "info" | "success" | "warning" | "default" }> = {
   pending: { label: "En attente", color: "warning" },
-  processing: { label: "En cours", color: "info" },
+  processing: { label: "En préparation", color: "info" },
   forwarded: { label: "Transmis au fournisseur", color: "success" },
   shipped: { label: "Expédié", color: "info" },
   delivered: { label: "Livré", color: "success" },
   cancelled: { label: "Annulé", color: "default" },
 };
 
+const APP_ORIGIN =
+  typeof window !== "undefined" ? window.location.origin : "https://medikong.pro";
+
+// ============================================================
+// Email helper — fires async, ne bloque jamais l'UX
+// ============================================================
+async function sendBuyerEmail(opts: {
+  customerId: string;
+  vendorId: string;
+  orderId: string;
+  orderNumber: string;
+  productName: string;
+  templateName: string;
+  extraData?: Record<string, any>;
+}) {
+  try {
+    const [{ data: cust }, { data: vend }] = await Promise.all([
+      supabase.from("customers").select("email").eq("id", opts.customerId).maybeSingle(),
+      supabase.from("vendors").select("display_code, name").eq("id", opts.vendorId).maybeSingle(),
+    ]);
+    const email = cust?.email;
+    if (!email) return;
+    const vendorLabel = getVendorPublicName({ display_code: vend?.display_code });
+    await supabase.functions.invoke("send-transactional-email", {
+      body: {
+        templateName: opts.templateName,
+        recipientEmail: email,
+        idempotencyKey: `${opts.templateName}-${opts.orderId}-${Date.now()}`,
+        templateData: {
+          orderNumber: opts.orderNumber,
+          vendorLabel,
+          productName: opts.productName,
+          orderUrl: `${APP_ORIGIN}/commande/${opts.orderId}`,
+          ...(opts.extraData || {}),
+        },
+      },
+    });
+  } catch (e) {
+    console.error("[VendorOrders] email send failed", e);
+  }
+}
+
+// ============================================================
+// Component
+// ============================================================
 export default function VendorOrders() {
   const vendorQuery = useCurrentVendor();
   const vendorId = vendorQuery.data?.id;
   const queryClient = useQueryClient();
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
+  // Modales
+  const [shipLine, setShipLine] = useState<OrderWithLines["lines"][number] & { order: OrderWithLines } | null>(null);
+  const [cancelLine, setCancelLine] = useState<OrderWithLines["lines"][number] & { order: OrderWithLines } | null>(null);
+
   const { data: orders, isLoading } = useQuery({
     queryKey: ["vendor-order-lines", vendorId],
     enabled: !!vendorId,
     queryFn: async () => {
-      // Fetch order_lines for this vendor
       const { data: lines, error } = await supabase
         .from("order_lines")
         .select("*")
@@ -71,20 +128,17 @@ export default function VendorOrders() {
       if (error) throw error;
       if (!lines || lines.length === 0) return [];
 
-      // Get unique order IDs and product IDs
       const orderIds = [...new Set(lines.map(l => l.order_id))];
       const productIds = [...new Set(lines.map(l => l.product_id))];
 
-      // Fetch orders and products in parallel
       const [ordersRes, productsRes] = await Promise.all([
-        supabase.from("orders").select("id, order_number, status, created_at, shipping_address").in("id", orderIds),
+        supabase.from("orders").select("id, order_number, status, created_at, shipping_address, customer_id").in("id", orderIds),
         supabase.from("products").select("id, name, image_url").in("id", productIds),
       ]);
 
       const orderMap = new Map((ordersRes.data || []).map(o => [o.id, o]));
       const productMap = new Map((productsRes.data || []).map(p => [p.id, p]));
 
-      // Group lines by order
       const grouped = new Map<string, OrderWithLines>();
       for (const line of lines) {
         const order = orderMap.get(line.order_id);
@@ -97,13 +151,14 @@ export default function VendorOrders() {
             order_status: order.status,
             order_date: order.created_at,
             shipping_address: order.shipping_address,
+            customer_id: order.customer_id,
             lines: [],
           });
         }
 
         const product = productMap.get(line.product_id);
         grouped.get(line.order_id)!.lines.push({
-          ...line,
+          ...(line as any),
           product_name: product?.name || "Produit inconnu",
           product_image: product?.image_url || null,
         });
@@ -115,6 +170,10 @@ export default function VendorOrders() {
     },
   });
 
+  // ----- Mutations -----
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["vendor-order-lines"] });
+
+  // QOGITA : transmis au fournisseur (inchangé)
   const markForwarded = useMutation({
     mutationFn: async (lineId: string) => {
       const { error } = await supabase
@@ -123,13 +182,55 @@ export default function VendorOrders() {
         .eq("id", lineId);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vendor-order-lines"] });
-      toast.success("Marqué comme transmis au fournisseur");
-    },
+    onSuccess: () => { invalidate(); toast.success("Marqué comme transmis au fournisseur"); },
     onError: () => toast.error("Erreur lors de la mise à jour"),
   });
 
+  // Accepter une ligne pending → processing + email acheteur
+  const acceptLine = useMutation({
+    mutationFn: async (line: OrderWithLines["lines"][number] & { order: OrderWithLines }) => {
+      const { error } = await supabase
+        .from("order_lines")
+        .update({ fulfillment_status: "processing" as any })
+        .eq("id", line.id);
+      if (error) throw error;
+      await sendBuyerEmail({
+        customerId: line.order.customer_id,
+        vendorId: line.vendor_id,
+        orderId: line.order.order_id,
+        orderNumber: line.order.order_number,
+        productName: line.product_name,
+        templateName: "order-line-accepted",
+        extraData: { quantity: line.quantity },
+      });
+    },
+    onSuccess: () => { invalidate(); toast.success("Ligne acceptée — l'acheteur est notifié"); },
+    onError: () => toast.error("Erreur lors de l'acceptation"),
+  });
+
+  // Marquer livré (depuis shipped)
+  const markDelivered = useMutation({
+    mutationFn: async (line: OrderWithLines["lines"][number] & { order: OrderWithLines }) => {
+      const { error } = await supabase
+        .from("order_lines")
+        .update({ fulfillment_status: "delivered" as any })
+        .eq("id", line.id);
+      if (error) throw error;
+      await sendBuyerEmail({
+        customerId: line.order.customer_id,
+        vendorId: line.vendor_id,
+        orderId: line.order.order_id,
+        orderNumber: line.order.order_number,
+        productName: line.product_name,
+        templateName: "order-line-delivered",
+        extraData: { quantity: line.quantity },
+      });
+    },
+    onSuccess: () => { invalidate(); toast.success("Marqué comme livré"); },
+    onError: () => toast.error("Erreur lors de la mise à jour"),
+  });
+
+  // ----- Rendu -----
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -175,10 +276,10 @@ export default function VendorOrders() {
           const totalHT = order.lines.reduce((s, l) => s + l.line_total_excl_vat, 0);
           const hasQogita = order.lines.some(l => l.fulfillment_type === "qogita");
           const allForwarded = order.lines.filter(l => l.fulfillment_type === "qogita").every(l => l.fulfillment_status === "forwarded");
+          const pendingCount = order.lines.filter(l => l.fulfillment_status === "pending" && l.fulfillment_type !== "qogita").length;
 
           return (
             <VCard key={order.order_id} className="overflow-hidden">
-              {/* Order header */}
               <button
                 onClick={() => setExpandedOrder(isExpanded ? null : order.order_id)}
                 className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors text-left"
@@ -188,12 +289,15 @@ export default function VendorOrders() {
                     <ShoppingCart size={18} className="text-primary" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-bold text-foreground">{order.order_number}</span>
                       {hasQogita && (
                         <VBadge color={allForwarded ? "success" : "warning"}>
                           {allForwarded ? "Fournisseur transmis" : "À transmettre au fournisseur"}
                         </VBadge>
+                      )}
+                      {pendingCount > 0 && (
+                        <VBadge color="warning">À traiter : {pendingCount}</VBadge>
                       )}
                     </div>
                     <div className="text-[12px] text-muted-foreground mt-0.5">
@@ -207,25 +311,26 @@ export default function VendorOrders() {
                 </div>
               </button>
 
-              {/* Expanded content */}
               {isExpanded && (
                 <div className="border-t border-border">
-                  {/* Shipping address */}
                   <div className="px-4 py-3 bg-muted/20 flex items-center gap-2 text-[12px] text-muted-foreground">
                     <Truck size={14} />
                     <span>Livraison : {formatAddress(order.shipping_address)}</span>
                   </div>
 
-                  {/* Lines */}
                   <div className="divide-y divide-border">
                     {order.lines.map((line) => {
                       const status = statusConfig[line.fulfillment_status] || statusConfig.pending;
                       const isQogita = line.fulfillment_type === "qogita";
                       const canForward = isQogita && line.fulfillment_status === "pending";
+                      const canAccept = !isQogita && line.fulfillment_status === "pending";
+                      const canShip = !isQogita && (line.fulfillment_status === "pending" || line.fulfillment_status === "processing");
+                      const canDeliver = !isQogita && line.fulfillment_status === "shipped";
+                      const canCancel = !isQogita && ["pending", "processing"].includes(line.fulfillment_status);
+                      const remaining = line.quantity - (line.quantity_shipped || 0);
 
                       return (
                         <div key={line.id} className="px-4 py-3 flex items-start gap-3">
-                          {/* Product image */}
                           <div className="w-10 h-10 rounded bg-muted/30 shrink-0 overflow-hidden">
                             {line.product_image ? (
                               <img src={line.product_image} alt="" className="w-full h-full object-contain" />
@@ -236,14 +341,33 @@ export default function VendorOrders() {
                             )}
                           </div>
 
-                          {/* Product info */}
                           <div className="flex-1 min-w-0">
                             <div className="text-[13px] font-medium text-foreground truncate">{line.product_name}</div>
                             <div className="text-[11px] text-muted-foreground mt-0.5">
-                              Qté: {line.quantity} · €{line.unit_price_excl_vat.toFixed(2)} HT/u · Total: €{line.line_total_excl_vat.toFixed(2)} HT
+                              Qté: {line.quantity}
+                              {line.quantity_shipped ? <> · Expédié : {line.quantity_shipped}/{line.quantity}</> : null}
+                              {" · "}€{line.unit_price_excl_vat.toFixed(2)} HT/u · Total: €{line.line_total_excl_vat.toFixed(2)} HT
                             </div>
 
-                            {/* Centralized supplier details - visible only for centralized lines */}
+                            {line.tracking_number && (
+                              <div className="mt-1.5 text-[11px] text-muted-foreground flex items-center gap-1">
+                                <Truck size={12} />
+                                {line.tracking_url ? (
+                                  <a href={line.tracking_url} target="_blank" rel="noreferrer" className="underline hover:text-primary">
+                                    Suivi : {line.tracking_number}
+                                  </a>
+                                ) : (
+                                  <span>Suivi : {line.tracking_number}</span>
+                                )}
+                              </div>
+                            )}
+
+                            {line.cancellation_reason && (
+                              <div className="mt-1.5 p-1.5 rounded bg-destructive/10 text-[11px] text-destructive">
+                                Motif annulation : {line.cancellation_reason}
+                              </div>
+                            )}
+
                             {isQogita && (
                               <div className="mt-1.5 p-2 rounded bg-muted/30 text-[11px] space-y-0.5">
                                 <div className="font-semibold text-muted-foreground">Détails fournisseur :</div>
@@ -260,23 +384,42 @@ export default function VendorOrders() {
                             )}
                           </div>
 
-                          {/* Status + action */}
                           <div className="flex flex-col items-end gap-2 shrink-0">
                             <VBadge color={status.color}>{status.label}</VBadge>
+
                             {canForward && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-[11px] h-7 px-2"
+                              <Button size="sm" variant="outline" className="text-[11px] h-7 px-2"
                                 disabled={markForwarded.isPending}
-                                onClick={() => markForwarded.mutate(line.id)}
-                              >
-                                {markForwarded.isPending ? (
-                                  <Loader2 size={12} className="animate-spin mr-1" />
-                                ) : (
-                                  <ExternalLink size={12} className="mr-1" />
-                                )}
-                                Transmis au fournisseur
+                                onClick={() => markForwarded.mutate(line.id)}>
+                                {markForwarded.isPending ? <Loader2 size={12} className="animate-spin mr-1" /> : <ExternalLink size={12} className="mr-1" />}
+                                Transmis fournisseur
+                              </Button>
+                            )}
+                            {canAccept && (
+                              <Button size="sm" className="text-[11px] h-7 px-2 bg-primary"
+                                disabled={acceptLine.isPending}
+                                onClick={() => acceptLine.mutate({ ...line, order })}>
+                                <Check size={12} className="mr-1" /> Accepter
+                              </Button>
+                            )}
+                            {canShip && (
+                              <Button size="sm" variant="outline" className="text-[11px] h-7 px-2"
+                                onClick={() => setShipLine({ ...line, order })}>
+                                <Package size={12} className="mr-1" />
+                                {remaining < line.quantity ? "Expédier reliquat" : "Marquer expédié"}
+                              </Button>
+                            )}
+                            {canDeliver && (
+                              <Button size="sm" variant="outline" className="text-[11px] h-7 px-2"
+                                disabled={markDelivered.isPending}
+                                onClick={() => markDelivered.mutate({ ...line, order })}>
+                                <PackageCheck size={12} className="mr-1" /> Marquer livré
+                              </Button>
+                            )}
+                            {canCancel && (
+                              <Button size="sm" variant="ghost" className="text-[11px] h-7 px-2 text-destructive hover:bg-destructive/10"
+                                onClick={() => setCancelLine({ ...line, order })}>
+                                <X size={12} className="mr-1" /> Annuler / Refuser
                               </Button>
                             )}
                           </div>
@@ -290,6 +433,263 @@ export default function VendorOrders() {
           );
         })}
       </div>
+
+      <ShipLineDialog line={shipLine} onClose={() => setShipLine(null)} onDone={invalidate} />
+      <CancelLineDialog line={cancelLine} onClose={() => setCancelLine(null)} onDone={invalidate} />
     </div>
+  );
+}
+
+// ============================================================
+// Modale expédition (full ou backorder partiel)
+// ============================================================
+function ShipLineDialog({
+  line,
+  onClose,
+  onDone,
+}: {
+  line: (OrderLine & { product_name: string; order: OrderWithLines }) | null;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const remaining = line ? line.quantity - (line.quantity_shipped || 0) : 0;
+  const [qty, setQty] = useState<number>(remaining);
+  const [trackingNumber, setTrackingNumber] = useState("");
+  const [trackingUrl, setTrackingUrl] = useState("");
+  const [carrier, setCarrier] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  // reset when line changes
+  if (line && qty === 0) setQty(remaining);
+
+  if (!line) return null;
+
+  const handleSubmit = async () => {
+    if (qty < 1 || qty > remaining) {
+      toast.error(`Quantité doit être entre 1 et ${remaining}`);
+      return;
+    }
+    if (!trackingNumber.trim() && !trackingUrl.trim()) {
+      const ok = window.confirm("Aucun numéro ni URL de suivi renseignés. Continuer quand même ?");
+      if (!ok) return;
+    }
+
+    setSubmitting(true);
+    try {
+      const newQtyShipped = (line.quantity_shipped || 0) + qty;
+      const isFullyShipped = newQtyShipped >= line.quantity;
+      const newStatus = isFullyShipped ? "shipped" : "processing";
+
+      const { error } = await supabase
+        .from("order_lines")
+        .update({
+          fulfillment_status: newStatus as any,
+          quantity_shipped: newQtyShipped,
+          tracking_number: trackingNumber.trim() || line.tracking_number,
+          tracking_url: trackingUrl.trim() || line.tracking_url,
+        })
+        .eq("id", line.id);
+
+      if (error) throw error;
+
+      await sendBuyerEmail({
+        customerId: line.order.customer_id,
+        vendorId: line.vendor_id,
+        orderId: line.order.order_id,
+        orderNumber: line.order.order_number,
+        productName: line.product_name,
+        templateName: "order-line-shipped",
+        extraData: {
+          quantityShipped: newQtyShipped,
+          quantityOrdered: line.quantity,
+          trackingNumber: trackingNumber.trim() || line.tracking_number || null,
+          trackingUrl: trackingUrl.trim() || line.tracking_url || null,
+          carrierName: carrier.trim() || null,
+          isPartial: !isFullyShipped,
+        },
+      });
+
+      toast.success(isFullyShipped ? "Ligne expédiée — acheteur notifié" : "Expédition partielle enregistrée — acheteur notifié");
+      onDone();
+      onClose();
+      setQty(0);
+      setTrackingNumber("");
+      setTrackingUrl("");
+      setCarrier("");
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Erreur lors de l'expédition");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={!!line} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Expédier la ligne</DialogTitle>
+          <DialogDescription className="text-[12px]">
+            {line.product_name} — Restant à expédier : <strong>{remaining}/{line.quantity}</strong>
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3 py-2">
+          <div>
+            <Label className="text-[12px]">Quantité expédiée</Label>
+            <Input
+              type="number"
+              min={1}
+              max={remaining}
+              value={qty}
+              onChange={(e) => setQty(parseInt(e.target.value) || 0)}
+            />
+            <p className="text-[11px] text-muted-foreground mt-1">
+              {qty < remaining
+                ? `Expédition partielle — il restera ${remaining - qty} à expédier (statut "en préparation").`
+                : "Expédition complète — la ligne passera au statut « expédié »."}
+            </p>
+          </div>
+          <div>
+            <Label className="text-[12px]">Transporteur (optionnel)</Label>
+            <Input
+              placeholder="ex : bpost, DPD, UPS…"
+              value={carrier}
+              onChange={(e) => setCarrier(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label className="text-[12px]">N° de suivi</Label>
+            <Input
+              placeholder="ex : 3SBPM1234567890"
+              value={trackingNumber}
+              onChange={(e) => setTrackingNumber(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label className="text-[12px]">URL de suivi (optionnel)</Label>
+            <Input
+              placeholder="https://…"
+              value={trackingUrl}
+              onChange={(e) => setTrackingUrl(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={submitting}>Annuler</Button>
+          <Button onClick={handleSubmit} disabled={submitting}>
+            {submitting ? <Loader2 size={14} className="animate-spin mr-1" /> : <Package size={14} className="mr-1" />}
+            Confirmer l'expédition
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============================================================
+// Modale annulation / refus (avec remboursement manuel admin)
+// ============================================================
+function CancelLineDialog({
+  line,
+  onClose,
+  onDone,
+}: {
+  line: (OrderLine & { product_name: string; order: OrderWithLines }) | null;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [reason, setReason] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  if (!line) return null;
+
+  const remaining = line.quantity - (line.quantity_shipped || 0);
+  const refundQty = remaining;
+  const refundAmount = (line.unit_price_incl_vat || 0) * refundQty;
+
+  const handleSubmit = async () => {
+    if (!reason.trim()) {
+      toast.error("Le motif est requis pour annuler la ligne");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from("order_lines")
+        .update({
+          fulfillment_status: "cancelled" as any,
+          cancellation_reason: reason.trim(),
+          cancelled_at: new Date().toISOString(),
+          refunded_amount_incl_vat: refundAmount,
+        })
+        .eq("id", line.id);
+      if (error) throw error;
+
+      // Email acheteur (template existant order-line-refunded-customer)
+      await sendBuyerEmail({
+        customerId: line.order.customer_id,
+        vendorId: line.vendor_id,
+        orderId: line.order.order_id,
+        orderNumber: line.order.order_number,
+        productName: line.product_name,
+        templateName: "order-line-refunded-customer",
+        extraData: {
+          action: line.quantity_shipped && line.quantity_shipped > 0 ? "partial" : "cancel",
+          quantityRefunded: refundQty,
+          quantityOrdered: line.quantity,
+          refundAmountEur: refundAmount,
+          reason: reason.trim(),
+        },
+      });
+
+      toast.success("Ligne annulée — acheteur notifié, remboursement à traiter côté admin");
+      onDone();
+      onClose();
+      setReason("");
+    } catch (e) {
+      console.error(e);
+      toast.error("Erreur lors de l'annulation");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={!!line} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Annuler / refuser la ligne</DialogTitle>
+          <DialogDescription className="text-[12px]">
+            {line.product_name} — Quantité à rembourser : <strong>{refundQty}</strong> ({refundAmount.toFixed(2)} € TTC)
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3 py-2">
+          <div className="p-2 rounded bg-amber-50 border border-amber-200 text-[11px] text-amber-900">
+            Le remboursement Stripe sera traité <strong>manuellement par l'équipe MediKong</strong> (V1).
+            Une notification admin est créée automatiquement.
+          </div>
+          <div>
+            <Label className="text-[12px]">Motif (obligatoire)</Label>
+            <Textarea
+              placeholder="ex : Rupture de stock définitive, produit retiré du catalogue…"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              rows={3}
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={submitting}>Retour</Button>
+          <Button variant="destructive" onClick={handleSubmit} disabled={submitting || !reason.trim()}>
+            {submitting ? <Loader2 size={14} className="animate-spin mr-1" /> : <X size={14} className="mr-1" />}
+            Confirmer l'annulation
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

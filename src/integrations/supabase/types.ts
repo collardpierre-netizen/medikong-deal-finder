@@ -21602,6 +21602,10 @@ export type Database = {
         }
         Returns: Json
       }
+      _recompute_order_status: {
+        Args: { _order_id: string }
+        Returns: undefined
+      }
       _sub_is_admin: { Args: never; Returns: boolean }
       account_accept_invitation: {
         Args: { _join_code?: string; _token?: string }
@@ -23442,6 +23446,13 @@ export type Database = {
         Returns: Json
       }
       run_pack_mismatch_alert_job: { Args: never; Returns: Json }
+      scan_order_line_sla_alerts: {
+        Args: never
+        Returns: {
+          alerts_created: number
+          lines_overdue: number
+        }[]
+      }
       search_discount_offers: {
         Args: {
           _brand_ids?: string[]

@@ -75,6 +75,14 @@ function runPreflight(): Promise<{ ok: true } | { ok: false; reason: string }> {
   return preflightPromise;
 }
 
+async function sha256Hex(token: string): Promise<string> {
+  const buf = new TextEncoder().encode(token);
+  const digest = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 type Action = "confirm" | "ship" | "deliver" | "cancel";
 
 // FSM (allowed source statuses → target status)

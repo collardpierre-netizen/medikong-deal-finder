@@ -51,7 +51,28 @@ export function useCurrentVendor() {
         .maybeSingle();
 
       if (error) throw error;
-      return data;
+      if (data) return data;
+
+      const { data: memberships, error: membershipsError } = await supabase
+        .from("account_memberships")
+        .select("account_id")
+        .eq("user_id", user.id)
+        .eq("account_kind", "vendor")
+        .eq("status", "active")
+        .limit(1);
+
+      if (membershipsError) throw membershipsError;
+      const memberVendorId = memberships?.[0]?.account_id;
+      if (!memberVendorId) return null;
+
+      const { data: memberVendor, error: memberVendorError } = await supabase
+        .from("vendors")
+        .select("*")
+        .eq("id", memberVendorId)
+        .maybeSingle();
+
+      if (memberVendorError) throw memberVendorError;
+      return memberVendor;
     },
     enabled: !loading && (!!vendorId || !!user),
   });

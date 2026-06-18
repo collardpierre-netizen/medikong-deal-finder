@@ -23759,6 +23759,52 @@ export type Database = {
           offer_count: number
         }[]
       }
+      vendor_update_order_line_status: {
+        Args: {
+          _cancellation_reason?: string
+          _line_id: string
+          _quantity_shipped?: number
+          _refunded_amount_incl_vat?: number
+          _status: string
+          _tracking_number?: string
+          _tracking_url?: string
+        }
+        Returns: {
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cost_price: number | null
+          fulfillment_status: Database["public"]["Enums"]["fulfillment_status"]
+          fulfillment_type: Database["public"]["Enums"]["fulfillment_type"]
+          id: string
+          line_cost: number | null
+          line_margin: number | null
+          line_total_excl_vat: number
+          line_total_incl_vat: number
+          offer_id: string
+          order_id: string
+          product_id: string
+          qogita_offer_qid: string | null
+          qogita_order_status: string
+          qogita_seller_fid: string | null
+          quantity: number
+          quantity_shipped: number | null
+          refunded_amount_incl_vat: number | null
+          stripe_refund_id: string | null
+          tracking_number: string | null
+          tracking_url: string | null
+          unit_price_excl_vat: number
+          unit_price_incl_vat: number
+          updated_at: string
+          vat_rate: number
+          vendor_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "order_lines"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       adjustment_trigger: "manual" | "quick_align" | "auto_align"

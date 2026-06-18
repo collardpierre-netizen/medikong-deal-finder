@@ -176,10 +176,10 @@ export default function VendorOrders() {
   // QOGITA : transmis au fournisseur (inchangé)
   const markForwarded = useMutation({
     mutationFn: async (lineId: string) => {
-      const { error } = await supabase
-        .from("order_lines")
-        .update({ fulfillment_status: "forwarded" as any, qogita_order_status: "forwarded" })
-        .eq("id", lineId);
+      const { error } = await (supabase as any).rpc("vendor_update_order_line_status", {
+        _line_id: lineId,
+        _status: "forwarded",
+      });
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast.success("Marqué comme transmis au fournisseur"); },
@@ -189,10 +189,10 @@ export default function VendorOrders() {
   // Accepter une ligne pending → processing + email acheteur
   const acceptLine = useMutation({
     mutationFn: async (line: OrderWithLines["lines"][number] & { order: OrderWithLines }) => {
-      const { error } = await supabase
-        .from("order_lines")
-        .update({ fulfillment_status: "processing" as any })
-        .eq("id", line.id);
+      const { error } = await (supabase as any).rpc("vendor_update_order_line_status", {
+        _line_id: line.id,
+        _status: "processing",
+      });
       if (error) throw error;
       await sendBuyerEmail({
         customerId: line.order.customer_id,
@@ -211,10 +211,10 @@ export default function VendorOrders() {
   // Marquer livré (depuis shipped)
   const markDelivered = useMutation({
     mutationFn: async (line: OrderWithLines["lines"][number] & { order: OrderWithLines }) => {
-      const { error } = await supabase
-        .from("order_lines")
-        .update({ fulfillment_status: "delivered" as any })
-        .eq("id", line.id);
+      const { error } = await (supabase as any).rpc("vendor_update_order_line_status", {
+        _line_id: line.id,
+        _status: "delivered",
+      });
       if (error) throw error;
       await sendBuyerEmail({
         customerId: line.order.customer_id,
@@ -480,15 +480,13 @@ function ShipLineDialog({
       const isFullyShipped = newQtyShipped >= line.quantity;
       const newStatus = isFullyShipped ? "shipped" : "processing";
 
-      const { error } = await supabase
-        .from("order_lines")
-        .update({
-          fulfillment_status: newStatus as any,
-          quantity_shipped: newQtyShipped,
-          tracking_number: trackingNumber.trim() || line.tracking_number,
-          tracking_url: trackingUrl.trim() || line.tracking_url,
-        })
-        .eq("id", line.id);
+      const { error } = await (supabase as any).rpc("vendor_update_order_line_status", {
+        _line_id: line.id,
+        _status: newStatus,
+        _quantity_shipped: newQtyShipped,
+        _tracking_number: trackingNumber.trim() || null,
+        _tracking_url: trackingUrl.trim() || null,
+      });
 
       if (error) throw error;
 
@@ -616,15 +614,12 @@ function CancelLineDialog({
     }
     setSubmitting(true);
     try {
-      const { error } = await supabase
-        .from("order_lines")
-        .update({
-          fulfillment_status: "cancelled" as any,
-          cancellation_reason: reason.trim(),
-          cancelled_at: new Date().toISOString(),
-          refunded_amount_incl_vat: refundAmount,
-        })
-        .eq("id", line.id);
+      const { error } = await (supabase as any).rpc("vendor_update_order_line_status", {
+        _line_id: line.id,
+        _status: "cancelled",
+        _cancellation_reason: reason.trim(),
+        _refunded_amount_incl_vat: refundAmount,
+      });
       if (error) throw error;
 
       // Email acheteur (template existant order-line-refunded-customer)

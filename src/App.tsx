@@ -188,6 +188,7 @@ const AdminParametres = lazyWithRetry(() => import("./pages/admin/AdminParametre
 const AdminLogs = lazyWithRetry(() => import("./pages/admin/AdminLogs"), "AdminLogs");
 const AdminUsers = lazyWithRetry(() => import("./pages/admin/AdminUsers"), "AdminUsers");
 const AdminAccountInvitations = lazyWithRetry(() => import("./pages/admin/AdminAccountInvitations"), "AdminAccountInvitations");
+const AdminVendorOwnerAlignment = lazyWithRetry(() => import("./pages/admin/AdminVendorOwnerAlignment"), "AdminVendorOwnerAlignment");
 const AdminAuditLog = lazyWithRetry(() => import("./pages/admin/AdminAuditLog"), "AdminAuditLog");
 const AuditAchatsPage = lazyWithRetry(() => import("./pages/AuditAchatsPage"), "AuditAchatsPage");
 const AuditAchatsConfirmationPage = lazyWithRetry(() => import("./pages/AuditAchatsConfirmationPage"), "AuditAchatsConfirmationPage");
@@ -533,6 +534,7 @@ const App = () => (
               <Route path="logs" element={<LP><AdminLogs /></LP>} />
               <Route path="users" element={<LP><AdminUsers /></LP>} />
               <Route path="account-invitations" element={<LP><AdminAccountInvitations /></LP>} />
+              <Route path="vendor-owner-alignment" element={<LP><AdminVendorOwnerAlignment /></LP>} />
               <Route path="audit-log" element={<LP><AdminAuditLog /></LP>} />
               <Route path="contract-audit" element={<LP><AdminContractAudit /></LP>} />
               <Route path="contract-template" element={<LP><AdminContractTemplate /></LP>} />

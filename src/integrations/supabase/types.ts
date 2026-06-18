@@ -21682,6 +21682,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_align_vendor_owner: {
+        Args: { _user_id: string; _vendor_id: string }
+        Returns: Json
+      }
       admin_apply_product_mapping: {
         Args: {
           _brand_id?: string
@@ -21791,6 +21795,24 @@ export type Database = {
           is_expired: boolean
           join_code: string
           role: string
+        }[]
+      }
+      admin_list_vendor_owner_mismatches: {
+        Args: never
+        Returns: {
+          company_name: string
+          current_owner_email: string
+          current_owner_has_auth: boolean
+          current_owner_user_id: string
+          pending_invitations_count: number
+          reason: string
+          suggested_accepted_at: string
+          suggested_role: string
+          suggested_user_email: string
+          suggested_user_full_name: string
+          suggested_user_id: string
+          vendor_id: string
+          vendor_name: string
         }[]
       }
       admin_log_price_challenge:

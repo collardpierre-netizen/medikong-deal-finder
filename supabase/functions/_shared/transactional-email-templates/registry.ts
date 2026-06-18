@@ -41,6 +41,9 @@ import { template as p2pOfferReceived } from './p2p-offer-received.tsx'
 import { template as p2pOfferAccepted } from './p2p-offer-accepted.tsx'
 import { template as p2pOfferDeclined } from './p2p-offer-declined.tsx'
 import { template as p2pCounterOffer } from './p2p-counter-offer.tsx'
+import { template as orderLineAccepted } from './order-line-accepted.tsx'
+import { template as orderLineShipped } from './order-line-shipped.tsx'
+import { template as orderLineDelivered } from './order-line-delivered.tsx'
 
 
 
@@ -77,5 +80,8 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'p2p-offer-accepted': p2pOfferAccepted,
   'p2p-offer-declined': p2pOfferDeclined,
   'p2p-counter-offer': p2pCounterOffer,
+  'order-line-accepted': orderLineAccepted,
+  'order-line-shipped': orderLineShipped,
+  'order-line-delivered': orderLineDelivered,
 }
 

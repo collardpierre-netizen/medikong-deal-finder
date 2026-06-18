@@ -148,8 +148,8 @@ export default function OrderDetailPage() {
 
         {/* Articles */}
         <div className="border border-mk-line rounded-lg overflow-x-auto mb-6">
-          <div className="grid grid-cols-5 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec min-w-[640px]">
-            <span>Produit</span><span>Vendeur</span><span>Quantité</span><span>Prix/u HTVA</span><span>Montant HTVA</span>
+          <div className="grid grid-cols-6 gap-3 px-4 py-2 bg-mk-alt text-xs font-semibold text-mk-sec min-w-[760px]">
+            <span>Produit</span><span>Vendeur</span><span>Quantité</span><span>Prix/u HTVA</span><span>Montant HTVA</span><span>Statut / Suivi</span>
           </div>
           {isLoading ? (
             <div className="px-4 py-6 text-sm text-mk-sec">Chargement…</div>
@@ -158,8 +158,20 @@ export default function OrderDetailPage() {
           ) : items.map((it, idx) => {
             // 🔒 Anonymisation : libellé public uniquement, jamais it.vendor_name brut.
             const vLabel = getVendorPublicName({ display_code: it.vendor_display_code });
+            const lineStatus = (it.fulfillment_status as string) || "pending";
+            const lineStatusMeta: Record<string, { label: string; cls: string }> = {
+              pending: { label: "En attente vendeur", cls: "bg-amber-100 text-amber-800" },
+              processing: { label: "En préparation", cls: "bg-blue-100 text-blue-800" },
+              forwarded: { label: "Transmis fournisseur", cls: "bg-blue-100 text-blue-800" },
+              shipped: { label: "Expédié", cls: "bg-indigo-100 text-indigo-800" },
+              delivered: { label: "Livré", cls: "bg-green-100 text-green-800" },
+              cancelled: { label: "Annulé", cls: "bg-red-100 text-red-700" },
+            };
+            const meta = lineStatusMeta[lineStatus] || lineStatusMeta.pending;
+            const qtyShipped = Number(it.quantity_shipped || 0);
+            const isPartial = qtyShipped > 0 && qtyShipped < Number(it.quantity || 0) && lineStatus !== "delivered" && lineStatus !== "cancelled";
             return (
-            <div key={it.id || idx} className="grid grid-cols-5 gap-3 px-4 py-3 border-t border-mk-line text-sm items-center min-w-[640px]">
+            <div key={it.id || idx} className="grid grid-cols-6 gap-3 px-4 py-3 border-t border-mk-line text-sm items-start min-w-[760px]">
               <div>
                 <div className="font-medium text-mk-navy">{it.product_name || it.name || "—"}</div>
                 <div className="text-[11px] text-mk-sec mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
@@ -175,12 +187,35 @@ export default function OrderDetailPage() {
               ) : (
                 <span className="text-mk-sec text-xs">{vLabel}</span>
               )}
-              <span className="text-mk-sec">{it.quantity}</span>
+              <span className="text-mk-sec">
+                {it.quantity}
+                {qtyShipped > 0 && (
+                  <div className="text-[11px] text-mk-sec mt-0.5">Expédié : {qtyShipped}/{it.quantity}</div>
+                )}
+              </span>
               <span className="text-mk-sec">{formatPrice(Number(it.unit_price_excl_vat || 0))} EUR</span>
               <span className="font-bold text-mk-navy">{formatPrice(Number(it.unit_price_excl_vat || 0) * Number(it.quantity || 0))} EUR</span>
+              <div className="flex flex-col gap-1">
+                <span className={`text-[11px] font-medium px-2 py-0.5 rounded inline-block w-fit ${meta.cls}`}>{meta.label}</span>
+                {isPartial && (
+                  <span className="text-[10px] text-amber-700">Reliquat à venir</span>
+                )}
+                {it.tracking_number && (
+                  it.tracking_url ? (
+                    <a href={it.tracking_url} target="_blank" rel="noreferrer" className="text-[11px] text-mk-primary hover:underline">
+                      Suivi : {it.tracking_number} →
+                    </a>
+                  ) : (
+                    <span className="text-[11px] text-mk-sec">Suivi : {it.tracking_number}</span>
+                  )
+                )}
+                {it.cancellation_reason && (
+                  <span className="text-[10px] text-red-700">Motif : {it.cancellation_reason}</span>
+                )}
+              </div>
             </div>
           );})}
-          <div className="border-t border-mk-line bg-mk-alt px-4 py-3 text-sm space-y-1 min-w-[640px]">
+          <div className="border-t border-mk-line bg-mk-alt px-4 py-3 text-sm space-y-1 min-w-[760px]">
             <div className="flex justify-between"><span className="text-mk-sec">Sous-total HTVA</span><span className="text-mk-navy">{formatPrice(subtotal)} EUR</span></div>
             {shipping > 0 && <div className="flex justify-between"><span className="text-mk-sec">Livraison</span><span className="text-mk-navy">{formatPrice(shipping)} EUR</span></div>}
             <div className="flex justify-between"><span className="text-mk-sec">TVA</span><span className="text-mk-navy">{formatPrice(vat)} EUR</span></div>

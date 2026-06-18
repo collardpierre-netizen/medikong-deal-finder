@@ -67,9 +67,18 @@ function ProfileSelector() {
   const handleChange = async (newId: string) => {
     if (!user || !newId) return;
     setSaving(true);
+    const previous = currentProfileId;
     setCurrentProfileId(newId);
-    await (supabase as any).from("user_profile_assignments").upsert({ user_id: user.id, profile_id: newId });
+    const { error } = await (supabase as any)
+      .from("user_profile_assignments")
+      .upsert({ user_id: user.id, profile_id: newId }, { onConflict: "user_id" });
     setSaving(false);
+    if (error) {
+      setCurrentProfileId(previous);
+      toast.error("Impossible d'enregistrer le profil : " + error.message);
+    } else {
+      toast.success("Profil professionnel enregistré");
+    }
   };
 
   return (
@@ -458,11 +467,17 @@ export default function AccountPage() {
                         <motion.div
                           initial={{ opacity: 0, y: 8 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="mb-6 rounded-lg border border-mk-line bg-mk-alt p-4 flex items-center gap-3"
+                          className="mb-6 rounded-lg border-2 border-emerald-500 bg-emerald-50 p-4 flex items-center gap-3 shadow-sm"
                         >
-                          <Store size={18} className="text-primary shrink-0" />
-                          <p className="text-sm text-mk-sec flex-1">Vous avez aussi un espace vendeur actif sur ce compte.</p>
-                          <Button asChild variant="outline" size="sm">
+                          <Store size={20} className="text-emerald-700 shrink-0" />
+                          <p className="text-sm font-semibold text-emerald-900 flex-1">
+                            Vous avez aussi un espace vendeur actif sur ce compte.
+                          </p>
+                          <Button
+                            asChild
+                            size="sm"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-black font-bold border border-emerald-700"
+                          >
                             <Link to="/vendor">Aller à l'espace vendeur</Link>
                           </Button>
                         </motion.div>

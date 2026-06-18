@@ -25,6 +25,14 @@ function reject(status: number, code: string, ctx: Record<string, unknown> = {})
   return json(status, { error: code, ...ctx });
 }
 
+async function sha256Hex(token: string): Promise<string> {
+  const buf = new TextEncoder().encode(token);
+  const digest = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 type Action = "cancel" | "partial";
 
 Deno.serve(async (req) => {

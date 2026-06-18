@@ -67,9 +67,18 @@ function ProfileSelector() {
   const handleChange = async (newId: string) => {
     if (!user || !newId) return;
     setSaving(true);
+    const previous = currentProfileId;
     setCurrentProfileId(newId);
-    await (supabase as any).from("user_profile_assignments").upsert({ user_id: user.id, profile_id: newId });
+    const { error } = await (supabase as any)
+      .from("user_profile_assignments")
+      .upsert({ user_id: user.id, profile_id: newId }, { onConflict: "user_id" });
     setSaving(false);
+    if (error) {
+      setCurrentProfileId(previous);
+      toast.error("Impossible d'enregistrer le profil : " + error.message);
+    } else {
+      toast.success("Profil professionnel enregistré");
+    }
   };
 
   return (

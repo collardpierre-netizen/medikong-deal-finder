@@ -75,7 +75,7 @@ export default function AccountInvitationPage() {
             Connecte-toi ou crée un compte avec l'email exact qui a reçu cette invitation, puis reviens sur ce lien.
           </p>
           <div className="flex gap-2 justify-center">
-            <Button onClick={() => navigate(`/login?redirect=${encodeURIComponent(window.location.pathname)}`)}>
+            <Button onClick={() => navigate(`/connexion?redirect=${encodeURIComponent(window.location.pathname)}`)}>
               Se connecter
             </Button>
           </div>

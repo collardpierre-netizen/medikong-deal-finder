@@ -35,7 +35,7 @@ export function BuyerVerificationGate({ children }: BuyerVerificationGateProps) 
         <p className="text-sm text-[#5C6470] mb-4">
           Connectez-vous pour accéder aux opportunités ReStock.
         </p>
-        <Button onClick={() => navigate("/login")} className="bg-[#1C58D9] hover:bg-[#1549B8] text-white">
+        <Button onClick={() => navigate("/connexion")} className="bg-[#1C58D9] hover:bg-[#1549B8] text-white">
           Se connecter
         </Button>
       </div>

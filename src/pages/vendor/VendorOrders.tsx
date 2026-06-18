@@ -76,11 +76,11 @@ async function sendBuyerEmail(opts: {
   extraData?: Record<string, any>;
 }) {
   try {
-    const [{ data: prof }, { data: vend }] = await Promise.all([
-      supabase.from("profiles").select("email, full_name").eq("id", opts.customerId).maybeSingle(),
+    const [{ data: cust }, { data: vend }] = await Promise.all([
+      supabase.from("customers").select("email").eq("id", opts.customerId).maybeSingle(),
       supabase.from("vendors").select("display_code, name").eq("id", opts.vendorId).maybeSingle(),
     ]);
-    const email = prof?.email;
+    const email = cust?.email;
     if (!email) return;
     const vendorLabel = getVendorPublicName({ display_code: vend?.display_code });
     await supabase.functions.invoke("send-transactional-email", {

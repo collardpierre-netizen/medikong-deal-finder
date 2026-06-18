@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, UserPlus, Trash2, Copy, Check, Shield, User as UserIcon, Mail, Clock, KeyRound } from "lucide-react";
+import { Loader2, UserPlus, Trash2, Copy, Check, Shield, User as UserIcon, Mail, Clock, KeyRound, RotateCcw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -205,6 +205,21 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
     onError: (err: any) => toast.error(err?.message || "Erreur"),
   });
 
+  const sendPasswordReset = useMutation({
+    mutationFn: async (payload: { userId: string; label: string }) => {
+      const { data, error } = await supabase.functions.invoke("admin-send-password-reset", {
+        body: { user_id: payload.userId },
+      });
+      if (error) throw error;
+      if (data && data.success === false) throw new Error(data.error || "Erreur");
+      return data;
+    },
+    onSuccess: (data: any) => {
+      toast.success(`Email de réinitialisation envoyé à ${data?.email ?? "l'utilisateur"}`);
+    },
+    onError: (e: any) => toast.error(e?.message || "Erreur d'envoi"),
+  });
+
   const closeInviteDialog = () => {
     setShowInvite(false);
     setInviteEmail("");
@@ -302,6 +317,21 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
                     </Select>
                   ) : (
                     roleBadge(m.role)
+                  )}
+                  {canManage && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      title="Envoyer un email de réinitialisation du mot de passe"
+                      disabled={sendPasswordReset.isPending}
+                      onClick={() => {
+                        if (confirm(`Envoyer un email de réinitialisation de mot de passe à ${label} ?`)) {
+                          sendPasswordReset.mutate({ userId: m.user_id, label });
+                        }
+                      }}
+                    >
+                      <RotateCcw size={14} />
+                    </Button>
                   )}
                   {canManage && !isOwner && (
                     <Button

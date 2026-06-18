@@ -227,9 +227,13 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
       return data;
     },
     onSuccess: (data: any) => {
-      toast.success(`Email de réinitialisation envoyé à ${data?.email ?? "l'utilisateur"}`);
+      setResetResult({ success: true, email: data?.email });
+      setResetConfirmTarget(null);
     },
-    onError: (e: any) => toast.error(e?.message || "Erreur d'envoi"),
+    onError: (e: any) => {
+      setResetResult({ success: false, error: e?.message || "Erreur d'envoi" });
+      setResetConfirmTarget(null);
+    },
   });
 
   const closeInviteDialog = () => {

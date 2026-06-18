@@ -70,7 +70,8 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // 1. Token + order + vendor
+    // 1. Token + order + vendor — DB stores only SHA-256(token), never the raw value.
+    const tokenHash = await sha256Hex(String(token));
     const { data: tokenRow, error: tokenErr } = await supabase
       .from("vendor_order_tokens")
       .select(`
@@ -78,7 +79,7 @@ Deno.serve(async (req) => {
         orders:order_id ( id, order_number, created_at, shipping_address, billing_address, payment_status, status, subtotal_excl_vat, vat_amount, total_incl_vat ),
         vendors:vendor_id ( id, name, slug, commission_rate )
       `)
-      .eq("token", token)
+      .eq("token_hash", tokenHash)
       .eq("order_number", order_number)
       .maybeSingle();
 

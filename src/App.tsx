@@ -532,6 +532,7 @@ const App = () => (
               <Route path="parametres" element={<LP><AdminParametres /></LP>} />
               <Route path="logs" element={<LP><AdminLogs /></LP>} />
               <Route path="users" element={<LP><AdminUsers /></LP>} />
+              <Route path="account-invitations" element={<LP><AdminAccountInvitations /></LP>} />
               <Route path="audit-log" element={<LP><AdminAuditLog /></LP>} />
               <Route path="contract-audit" element={<LP><AdminContractAudit /></LP>} />
               <Route path="contract-template" element={<LP><AdminContractTemplate /></LP>} />

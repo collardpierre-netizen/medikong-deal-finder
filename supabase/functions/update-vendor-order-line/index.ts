@@ -172,11 +172,12 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // 1. Token validation — table has NO `id` column, PK is `token`.
+    // 1. Token validation — DB stores only SHA-256(token), never the raw value.
+    const tokenHash = await sha256Hex(token);
     const { data: tokenRow, error: tokenErr } = await supabase
       .from("vendor_order_tokens")
       .select("order_id, vendor_id, sub_order_id, expires_at")
-      .eq("token", token)
+      .eq("token_hash", tokenHash)
       .maybeSingle();
     if (tokenErr) {
       console.error(`[vendor_order_line.update.500] error=token_lookup_failed db_message=${tokenErr.message}`);

@@ -22798,6 +22798,8 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_customer_order: { Args: { _order_id: string }; Returns: boolean }
+      is_order_vendor: { Args: { _order_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_verified_buyer_or_admin: { Args: { _uid?: string }; Returns: boolean }
       list_admin_users: {

@@ -482,6 +482,32 @@ export default function VendorOrders() {
 
       <ShipLineDialog line={shipLine} onClose={() => setShipLine(null)} onDone={invalidate} />
       <CancelLineDialog line={cancelLine} onClose={() => setCancelLine(null)} onDone={invalidate} />
+
+      <AlertDialog open={!!revertConfirm} onOpenChange={(o) => { if (!o) setRevertConfirm(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Modifier le statut de la commande ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Attention, vous changez le statut de cette commande
+              {revertConfirm ? <> de <strong>« {statusConfig[revertConfirm.from]?.label || revertConfirm.from} »</strong> vers <strong>« {statusConfig[revertConfirm.to]?.label || revertConfirm.to} »</strong></> : null}.
+              Cette démarche aura des conséquences sur tout le processus en cours et peut retarder votre recouvrement. Veuillez confirmer ce changement.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={revertStatus.isPending}>Non</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={revertStatus.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (revertConfirm) revertStatus.mutate({ lineId: revertConfirm.lineId, to: revertConfirm.to });
+              }}
+            >
+              {revertStatus.isPending ? <Loader2 size={14} className="animate-spin mr-1" /> : null}
+              Oui, confirmer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

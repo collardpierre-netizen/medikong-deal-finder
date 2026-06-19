@@ -2,6 +2,7 @@ export const MEDIKONG_PLACEHOLDER = "/medikong-placeholder.png";
 
 const KNOWN_PLACEHOLDER_HASHES = [
   "6f37ced36498c7df3a3897a9dbbb3384",
+  "c1b79cffa1a5fa8aab226414b9e4a063",
 ];
 
 const BLOCKED_URL_PATTERNS = [

@@ -457,6 +457,13 @@ export default function DelegatePublicPage() {
           </div>
         </div>
       </PageTransition>
+      <DelegateCallbackDialog
+        open={callbackOpen}
+        onOpenChange={setCallbackOpen}
+        delegateId={delegate.id}
+        vendorId={delegate.vendor_id}
+        delegateName={fullName}
+      />
     </Layout>
   );
 }

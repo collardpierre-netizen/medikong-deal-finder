@@ -402,6 +402,36 @@ export default function VendorOrders() {
 
                           <div className="flex flex-col items-end gap-2 shrink-0">
                             <VBadge color={status.color}>{status.label}</VBadge>
+                            {(() => {
+                              const workflow = isQogita
+                                ? ["forwarded"]
+                                : ["processing", "shipped", "delivered"];
+                              const idx = workflow.indexOf(line.fulfillment_status);
+                              const previous = idx > 0 ? workflow.slice(0, idx) : [];
+                              if (previous.length === 0) return null;
+                              return (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <button className="text-[10px] text-muted-foreground hover:text-primary inline-flex items-center gap-1 underline underline-offset-2">
+                                      <Pencil size={10} /> Edit
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel className="text-[11px]">Revenir à…</DropdownMenuLabel>
+                                    {previous.map((s) => (
+                                      <DropdownMenuItem
+                                        key={s}
+                                        className="text-[12px]"
+                                        onSelect={() => setRevertConfirm({ lineId: line.id, from: line.fulfillment_status, to: s })}
+                                      >
+                                        {statusConfig[s]?.label || s}
+                                      </DropdownMenuItem>
+                                    ))}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              );
+                            })()}
+
 
                             {canForward && (
                               <Button size="sm" variant="outline" className="text-[11px] h-7 px-2"

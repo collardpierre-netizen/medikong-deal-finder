@@ -144,6 +144,34 @@ export default function DelegateCallbackDialog({
       return;
     }
 
+    // Persister les coordonnées sur le compte (best-effort) pour pré-remplir les prochaines demandes
+    try {
+      if (customer?.id) {
+        const patch: Record<string, any> = {};
+        if (parsed.data.phone && parsed.data.phone !== customer.phone) patch.phone = parsed.data.phone;
+        if (parsed.data.postal_code && parsed.data.postal_code !== (customer as any).postal_code) patch.postal_code = parsed.data.postal_code;
+        if (parsed.data.company && parsed.data.company !== (customer as any).company_name) patch.company_name = parsed.data.company;
+        if (Object.keys(patch).length > 0) {
+          await supabase.from("customers").update(patch as any).eq("id", customer.id);
+        }
+      }
+      const meta = (user.user_metadata || {}) as any;
+      if (
+        parsed.data.first_name !== meta.first_name ||
+        parsed.data.last_name !== meta.last_name
+      ) {
+        await supabase.auth.updateUser({
+          data: {
+            ...meta,
+            first_name: parsed.data.first_name,
+            last_name: parsed.data.last_name,
+          },
+        });
+      }
+    } catch {
+      /* best-effort */
+    }
+
     // Notification email (best-effort) au délégué + vendeur
     try {
       const [{ data: dlg }, { data: vnd }] = await Promise.all([

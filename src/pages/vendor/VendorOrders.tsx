@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
@@ -480,7 +480,7 @@ export default function VendorOrders() {
                                 <Check size={12} className="mr-1" /> Accepter
                               </Button>
                             )}
-                            {canShip && (
+                            {canShip && remaining > 0 && (
                               <Button size="sm" variant="outline" className="text-[11px] h-7 px-2"
                                 onClick={() => setShipLine({ ...line, order })}>
                                 <Package size={12} className="mr-1" />
@@ -563,8 +563,10 @@ function ShipLineDialog({
   const [carrier, setCarrier] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // reset when line changes
-  if (line && qty === 0) setQty(remaining);
+  // Reset qty to remaining whenever the line changes (e.g. after revert/refetch)
+  useEffect(() => {
+    setQty(remaining);
+  }, [line?.id, remaining]);
 
   if (!line) return null;
 

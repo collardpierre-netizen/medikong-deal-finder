@@ -84,5 +84,6 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'order-line-accepted': orderLineAccepted,
   'order-line-shipped': orderLineShipped,
   'order-line-delivered': orderLineDelivered,
+  'vendor-delegate-callback': vendorDelegateCallback,
 }
 

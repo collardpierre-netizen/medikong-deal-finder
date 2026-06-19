@@ -155,9 +155,24 @@ export default function VendorDelegateCompact({ vendorId, variant = "card" }: Pr
                 Prendre RDV
               </a>
             )}
+            <button
+              type="button"
+              onClick={() => setCallbackOpen(true)}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-primary text-primary hover:bg-primary/5 text-[10px] font-semibold"
+            >
+              <PhoneCall size={10} />
+              Rappelez-moi
+            </button>
           </div>
         </div>
       </div>
+      <DelegateCallbackDialog
+        open={callbackOpen}
+        onOpenChange={setCallbackOpen}
+        delegateId={d.id}
+        vendorId={vendorId}
+        delegateName={`${d.first_name} ${d.last_name}`}
+      />
     </div>
   );
 }

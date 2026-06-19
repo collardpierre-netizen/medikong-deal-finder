@@ -2998,6 +2998,142 @@ export type Database = {
           },
         ]
       }
+      delegate_callback_requests: {
+        Row: {
+          auth_user_id: string | null
+          buyer_profile: string | null
+          country_code: string | null
+          created_at: string
+          customer_id: string | null
+          delegate_id: string
+          handled_at: string | null
+          id: string
+          message: string | null
+          postal_code: string | null
+          preferred_language: string | null
+          preferred_slot: string | null
+          requester_company: string | null
+          requester_email: string
+          requester_first_name: string | null
+          requester_last_name: string | null
+          requester_phone: string
+          status: string
+          updated_at: string
+          vendor_id: string
+          vendor_notes: string | null
+        }
+        Insert: {
+          auth_user_id?: string | null
+          buyer_profile?: string | null
+          country_code?: string | null
+          created_at?: string
+          customer_id?: string | null
+          delegate_id: string
+          handled_at?: string | null
+          id?: string
+          message?: string | null
+          postal_code?: string | null
+          preferred_language?: string | null
+          preferred_slot?: string | null
+          requester_company?: string | null
+          requester_email: string
+          requester_first_name?: string | null
+          requester_last_name?: string | null
+          requester_phone: string
+          status?: string
+          updated_at?: string
+          vendor_id: string
+          vendor_notes?: string | null
+        }
+        Update: {
+          auth_user_id?: string | null
+          buyer_profile?: string | null
+          country_code?: string | null
+          created_at?: string
+          customer_id?: string | null
+          delegate_id?: string
+          handled_at?: string | null
+          id?: string
+          message?: string | null
+          postal_code?: string | null
+          preferred_language?: string | null
+          preferred_slot?: string | null
+          requester_company?: string | null
+          requester_email?: string
+          requester_first_name?: string | null
+          requester_last_name?: string | null
+          requester_phone?: string
+          status?: string
+          updated_at?: string
+          vendor_id?: string
+          vendor_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delegate_callback_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delegate_callback_requests_delegate_id_fkey"
+            columns: ["delegate_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_delegates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delegate_callback_requests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "delegate_callback_requests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "delegate_callback_requests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delegate_callback_requests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "delegate_callback_requests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "delegate_callback_requests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delegate_callback_requests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delegates: {
         Row: {
           bio: string | null

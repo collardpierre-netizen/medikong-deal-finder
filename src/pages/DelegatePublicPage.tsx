@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Helmet } from "react-helmet-async";
@@ -6,6 +6,7 @@ import { Layout } from "@/components/layout/Layout";
 import { PageTransition } from "@/components/shared/PageTransition";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import DelegateCallbackDialog from "@/components/vendor/DelegateCallbackDialog";
 import {
   Mail,
   Phone,
@@ -18,6 +19,7 @@ import {
   Briefcase,
   Star,
   Building2,
+  PhoneCall,
 } from "lucide-react";
 
 interface Delegate {
@@ -72,6 +74,7 @@ export default function DelegatePublicPage() {
   const { delegateId } = useParams<{ delegateId: string }>();
   const navigate = useNavigate();
   const { user, isVerifiedBuyer, loading: authLoading } = useAuth();
+  const [callbackOpen, setCallbackOpen] = useState(false);
 
   const { data: delegate, isLoading } = useQuery<Delegate | null>({
     queryKey: ["delegate-public", delegateId],
@@ -260,23 +263,36 @@ export default function DelegatePublicPage() {
               </div>
             )}
 
-            {/* CTA principal */}
-            {delegate.booking_url && (
-              <div className="px-6 sm:px-8 py-5 border-b border-border bg-accent/20">
-                <a
-                  href={delegate.booking_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity"
+            {/* CTAs principaux */}
+            <div className="px-6 sm:px-8 py-5 border-b border-border bg-accent/20">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-2">
+                {delegate.booking_url && (
+                  <a
+                    href={delegate.booking_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity"
+                  >
+                    <CalendarDays size={18} />
+                    Prendre rendez-vous
+                  </a>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setCallbackOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg border border-primary text-primary font-semibold hover:bg-primary/10 transition-colors"
                 >
-                  <CalendarDays size={18} />
-                  Prendre rendez-vous
-                </a>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Choisissez un créneau directement dans l'agenda du délégué.
-                </p>
+                  <PhoneCall size={18} />
+                  Rappelez-moi
+                </button>
               </div>
-            )}
+              <p className="text-xs text-muted-foreground mt-2">
+                {delegate.booking_url
+                  ? "Choisissez un créneau ou laissez vos coordonnées pour être rappelé."
+                  : "Laissez vos coordonnées, le délégué vous rappellera."}
+              </p>
+            </div>
+
 
             {/* Coordonnées */}
             <div className="px-6 sm:px-8 py-5 border-b border-border">
@@ -441,6 +457,13 @@ export default function DelegatePublicPage() {
           </div>
         </div>
       </PageTransition>
+      <DelegateCallbackDialog
+        open={callbackOpen}
+        onOpenChange={setCallbackOpen}
+        delegateId={delegate.id}
+        vendorId={delegate.vendor_id}
+        delegateName={fullName}
+      />
     </Layout>
   );
 }

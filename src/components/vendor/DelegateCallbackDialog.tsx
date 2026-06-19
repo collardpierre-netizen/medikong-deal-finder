@@ -152,7 +152,7 @@ export default function DelegateCallbackDialog({
         if (parsed.data.postal_code && parsed.data.postal_code !== (customer as any).postal_code) patch.postal_code = parsed.data.postal_code;
         if (parsed.data.company && parsed.data.company !== (customer as any).company_name) patch.company_name = parsed.data.company;
         if (Object.keys(patch).length > 0) {
-          await supabase.from("customers").update(patch).eq("id", customer.id);
+          await supabase.from("customers").update(patch as any).eq("id", customer.id);
         }
       }
       const meta = (user.user_metadata || {}) as any;

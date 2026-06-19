@@ -233,6 +233,19 @@ export default function VendorOrders() {
     onError: () => toast.error("Erreur lors de la mise à jour"),
   });
 
+  // Revert : remettre le statut d'une ligne sur une étape précédente
+  const revertStatus = useMutation({
+    mutationFn: async ({ lineId, to }: { lineId: string; to: string }) => {
+      const { error } = await (supabase as any).rpc("vendor_update_order_line_status", {
+        _line_id: lineId,
+        _status: to,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => { invalidate(); toast.success("Statut modifié"); setRevertConfirm(null); },
+    onError: (e: any) => toast.error(e?.message || "Erreur lors de la modification du statut"),
+  });
+
   // ----- Rendu -----
   if (isLoading) {
     return (

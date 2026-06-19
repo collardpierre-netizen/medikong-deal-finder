@@ -43,6 +43,7 @@ const sidebarSections: { label: string | null; items: SidebarItem[] }[] = [
       { key: "rfqInbox", icon: Inbox, path: "/vendor/rfq" },
       { key: "exclusivities", icon: ShieldCheck, path: "/vendor/exclusivities" },
       { key: "orders", icon: ShoppingCart, path: "/vendor/orders" },
+      { key: "leadsRappel", icon: PhoneCall, path: "/vendor/leads-rappel" },
     ],
   },
   {

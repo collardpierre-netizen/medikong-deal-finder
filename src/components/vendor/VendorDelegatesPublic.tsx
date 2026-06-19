@@ -36,6 +36,7 @@ interface Delegate {
 export default function VendorDelegatesPublic({ vendorId }: Props) {
   const { user, isVerifiedBuyer } = useAuth();
   const { currentCountry } = useCountry();
+  const [callbackFor, setCallbackFor] = useState<Delegate | null>(null);
 
   // Récupère le profil acheteur (customer_type) pour filtrer
   const { data: customer } = useQuery({

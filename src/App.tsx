@@ -195,6 +195,7 @@ const AuditAchatsConfirmationPage = lazyWithRetry(() => import("./pages/AuditAch
 const AuditsAdminPage = lazyWithRetry(() => import("./pages/admin/AuditsAdminPage"), "AuditsAdminPage");
 const AdminContractAudit = lazyWithRetry(() => import("./pages/admin/AdminContractAudit"), "AdminContractAudit");
 const AdminContractTemplate = lazyWithRetry(() => import("./pages/admin/AdminContractTemplate"), "AdminContractTemplate");
+const AdminEmailTemplates = lazyWithRetry(() => import("./pages/admin/AdminEmailTemplates"), "AdminEmailTemplates");
 const AdminDbBackups = lazyWithRetry(() => import("./pages/admin/AdminDbBackups"), "AdminDbBackups");
 const AdminBackupRlsAudit = lazyWithRetry(() => import("./pages/admin/AdminBackupRlsAudit"), "AdminBackupRlsAudit");
 const AdminRfqCreditsPage = lazyWithRetry(() => import("./pages/admin/AdminRfqCreditsPage"), "AdminRfqCreditsPage");
@@ -539,6 +540,7 @@ const App = () => (
               <Route path="audit-log" element={<LP><AdminAuditLog /></LP>} />
               <Route path="contract-audit" element={<LP><AdminContractAudit /></LP>} />
               <Route path="contract-template" element={<LP><AdminContractTemplate /></LP>} />
+              <Route path="email-templates" element={<LP><AdminEmailTemplates /></LP>} />
               <Route path="catalog-diagnostics" element={<LP><AdminCatalogDiagnostics /></LP>} />
               <Route path="search-debug" element={<LP><AdminSearchDebug /></LP>} />
               <Route path="offer-data-quality" element={<LP><AdminOfferDataQuality /></LP>} />

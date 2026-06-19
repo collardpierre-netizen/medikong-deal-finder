@@ -267,6 +267,15 @@ export default function VendorDelegatesPublic({ vendorId }: Props) {
       <div className="divide-y divide-border [&>*]:py-4 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0">
         {top.map((d) => renderDelegate(d))}
       </div>
+      {callbackFor && (
+        <DelegateCallbackDialog
+          open={!!callbackFor}
+          onOpenChange={(o) => !o && setCallbackFor(null)}
+          delegateId={callbackFor.id}
+          vendorId={vendorId}
+          delegateName={`${callbackFor.first_name} ${callbackFor.last_name}`}
+        />
+      )}
     </div>
   );
 }

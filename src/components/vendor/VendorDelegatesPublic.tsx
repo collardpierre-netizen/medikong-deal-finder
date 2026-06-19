@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCountry } from "@/contexts/CountryContext";
-import { Mail, Phone, CalendarDays, MapPin, User as UserIcon, Lock, Star } from "lucide-react";
+import { Mail, Phone, CalendarDays, MapPin, User as UserIcon, Lock, Star, PhoneCall } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import DelegateCallbackDialog from "./DelegateCallbackDialog";
 
 
 interface Props {

@@ -78,12 +78,41 @@ async function sendBuyerEmail(opts: {
   extraData?: Record<string, any>;
 }) {
   try {
-    const [{ data: cust }, { data: vend }] = await Promise.all([
+    const [{ data: cust }, { data: vend }, { data: orderRow }, { data: orderLinesRows }] = await Promise.all([
       supabase.from("customers").select("email").eq("id", opts.customerId).maybeSingle(),
       supabase.from("vendors").select("display_code, name").eq("id", opts.vendorId).maybeSingle(),
+      supabase.from("orders").select("total_amount_incl_vat, currency").eq("id", opts.orderId).maybeSingle(),
+      supabase
+        .from("order_lines")
+        .select("product_id, quantity, unit_price_incl_vat, line_total_incl_vat")
+        .eq("order_id", opts.orderId)
+        .eq("vendor_id", opts.vendorId),
     ]);
     const email = cust?.email;
     if (!email) return;
+
+    const productIds = [...new Set((orderLinesRows ?? []).map((l: any) => l.product_id))];
+    let productMap = new Map<string, string>();
+    if (productIds.length > 0) {
+      const { data: prods } = await supabase
+        .from("products")
+        .select("id, name")
+        .in("id", productIds);
+      productMap = new Map((prods ?? []).map((p: any) => [p.id, p.name as string]));
+    }
+
+    const lines = (orderLinesRows ?? []).map((l: any) => ({
+      name: productMap.get(l.product_id) || "Produit",
+      quantity: l.quantity,
+      unitPriceTtc: l.unit_price_incl_vat,
+      lineTotalTtc: l.line_total_incl_vat,
+    }));
+
+    const totalIncl =
+      (orderRow as any)?.total_amount_incl_vat ??
+      lines.reduce((s, l) => s + (Number(l.lineTotalTtc) || 0), 0);
+    const currency = (orderRow as any)?.currency || "EUR";
+
     const vendorLabel = getVendorPublicName({ display_code: vend?.display_code });
     await supabase.functions.invoke("send-transactional-email", {
       body: {
@@ -95,6 +124,9 @@ async function sendBuyerEmail(opts: {
           vendorLabel,
           productName: opts.productName,
           orderUrl: `${APP_ORIGIN}/commande/${opts.orderId}`,
+          lines,
+          totalIncl,
+          currency,
           ...(opts.extraData || {}),
         },
       },

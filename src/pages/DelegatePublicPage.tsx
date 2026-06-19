@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Helmet } from "react-helmet-async";
@@ -6,6 +6,7 @@ import { Layout } from "@/components/layout/Layout";
 import { PageTransition } from "@/components/shared/PageTransition";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import DelegateCallbackDialog from "@/components/vendor/DelegateCallbackDialog";
 import {
   Mail,
   Phone,
@@ -18,6 +19,7 @@ import {
   Briefcase,
   Star,
   Building2,
+  PhoneCall,
 } from "lucide-react";
 
 interface Delegate {

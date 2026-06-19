@@ -116,6 +116,7 @@ export default function VendorOrders() {
   // Modales
   const [shipLine, setShipLine] = useState<OrderWithLines["lines"][number] & { order: OrderWithLines } | null>(null);
   const [cancelLine, setCancelLine] = useState<OrderWithLines["lines"][number] & { order: OrderWithLines } | null>(null);
+  const [revertConfirm, setRevertConfirm] = useState<{ lineId: string; from: string; to: string } | null>(null);
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ["vendor-order-lines", vendorId],

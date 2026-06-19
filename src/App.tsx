@@ -597,6 +597,7 @@ const App = () => (
               <Route path="interests" element={<Navigate to="/vendor/notifications" replace />} />
               <Route path="offers" element={<LP><VendorOffers /></LP>} />
               <Route path="orders" element={<LP><VendorOrders /></LP>} />
+              <Route path="leads-rappel" element={<LP><VendorLeadsRappel /></LP>} />
               <Route path="opportunities" element={<LP><VendorOpportunities /></LP>} />
               <Route path="alerts" element={<LP><VendorMarketIntelHub /></LP>} />
               <Route path="competitor-alerts" element={<LP><VendorMarketIntelHub /></LP>} />

@@ -172,6 +172,7 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
                     item.key === "notificationsCenter" ? unreadNotifsCount :
                     item.key === "rfqInbox" ? vendorRfqCount :
                     item.key === "orders" ? vendorOrdersCount :
+                    item.key === "leadsRappel" ? (actionCenter?.sections.find((s) => s.key === "leadsRappel")?.count ?? 0) :
                     item.key === "myOffers" ? vendorChallengesCount : 0;
 
                   return (

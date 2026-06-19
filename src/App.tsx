@@ -285,6 +285,7 @@ const VendorInvoicesToCollect = lazyWithRetry(() => import("./pages/vendor/Vendo
 const VendorContractPage = lazyWithRetry(() => import("./pages/vendor/VendorContractPage"), "VendorContractPage");
 const VendorContractChangelogPage = lazyWithRetry(() => import("./pages/vendor/VendorContractChangelogPage"), "VendorContractChangelogPage");
 const VendorDocuments = lazyWithRetry(() => import("./pages/vendor/VendorDocuments"), "VendorDocuments");
+const VendorLeadsRappel = lazyWithRetry(() => import("./pages/vendor/VendorLeadsRappel"), "VendorLeadsRappel");
 
 // ReStock pages
 const RestockSiteLayout = lazyWithRetry(() => import("./components/restock/RestockSiteLayout"), "RestockSiteLayout");

@@ -356,19 +356,59 @@ Deno.serve(async (req) => {
   }
 
   // 4. Render React Email template to HTML and plain text
-  const html = await renderAsync(
+  let html = await renderAsync(
     React.createElement(template.component, templateData)
   )
-  const plainText = await renderAsync(
+  let plainText = await renderAsync(
     React.createElement(template.component, templateData),
     { plainText: true }
   )
 
   // Resolve subject — supports static string or dynamic function
-  const resolvedSubject =
+  let resolvedSubject =
     typeof template.subject === 'function'
       ? template.subject(templateData)
       : template.subject
+
+  // 4.b Admin override (admin → Email templates). If enabled, replace subject
+  // and/or HTML body. Supports {{key}} placeholders interpolated against templateData,
+  // and {{linesHtml}} as a convenience for rendering the lines array as a <ul>.
+  try {
+    const { data: override } = await supabase
+      .from('email_template_overrides')
+      .select('enabled, custom_subject, custom_body_html')
+      .eq('template_name', templateName)
+      .maybeSingle()
+    if (override?.enabled) {
+      const escape = (s: string) =>
+        s.replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]!))
+      const linesArr: any[] = Array.isArray((templateData as any).lines) ? (templateData as any).lines : []
+      const linesHtml = linesArr.length
+        ? `<ul style="padding-left:18px;margin:8px 0">${linesArr.map((l) =>
+            `<li>${escape(String(l.quantity ?? ''))}× ${escape(String(l.name ?? ''))}${
+              typeof l.lineTotalTtc === 'number' ? ` — ${l.lineTotalTtc.toFixed(2)} ${escape(String((templateData as any).currency ?? 'EUR'))}` : ''
+            }</li>`).join('')}</ul>`
+        : ''
+      const interp = (tpl: string) =>
+        tpl
+          .replace(/\{\{\s*linesHtml\s*\}\}/g, linesHtml)
+          .replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_m, k) => {
+            const v = (templateData as any)[k]
+            if (v === undefined || v === null) return ''
+            if (typeof v === 'object') return ''
+            return escape(String(v))
+          })
+      if (override.custom_subject && override.custom_subject.trim()) {
+        resolvedSubject = interp(override.custom_subject)
+      }
+      if (override.custom_body_html && override.custom_body_html.trim()) {
+        html = interp(override.custom_body_html)
+        plainText = html.replace(/<[^>]+>/g, '').replace(/\s+\n/g, '\n').trim()
+      }
+    }
+  } catch (overrideErr) {
+    console.warn('email override lookup failed (using default template)', overrideErr)
+  }
 
   // 5. Enqueue the pre-rendered email for async processing by the dispatcher.
   // The dispatcher (process-email-queue) handles sending, retries, and rate-limit backoff.

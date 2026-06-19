@@ -70,7 +70,9 @@ export function getProductImageSrc(url: string | undefined | null): string {
   return shouldProxyImage(normalizedUrl) ? buildProxyUrl(normalizedUrl) : normalizedUrl;
 }
 
-/** Call in onLoad to detect Qogita "No Image Available" placeholder (618×602 with Q logo) */
+/** Call in onLoad to detect Qogita "No Image Available" placeholder (618×602 or 620×620 with Q logo) */
 export function isQogitaPlaceholder(img: HTMLImageElement): boolean {
-  return img.naturalWidth === 618 && img.naturalHeight === 602;
+  const w = img.naturalWidth;
+  const h = img.naturalHeight;
+  return (w === 618 && h === 602) || (w === 620 && h === 620);
 }

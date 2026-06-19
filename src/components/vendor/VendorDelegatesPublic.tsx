@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCountry } from "@/contexts/CountryContext";
-import { Mail, Phone, CalendarDays, MapPin, User as UserIcon, Lock, Star } from "lucide-react";
+import { Mail, Phone, CalendarDays, MapPin, User as UserIcon, Lock, Star, PhoneCall } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import DelegateCallbackDialog from "./DelegateCallbackDialog";
 
 
 interface Props {
@@ -34,6 +36,7 @@ interface Delegate {
 export default function VendorDelegatesPublic({ vendorId }: Props) {
   const { user, isVerifiedBuyer } = useAuth();
   const { currentCountry } = useCountry();
+  const [callbackFor, setCallbackFor] = useState<Delegate | null>(null);
 
   // Récupère le profil acheteur (customer_type) pour filtrer
   const { data: customer } = useQuery({
@@ -210,6 +213,14 @@ export default function VendorDelegatesPublic({ vendorId }: Props) {
             <span className="truncate">Prendre rendez-vous</span>
           </a>
         )}
+        <button
+          type="button"
+          onClick={() => setCallbackFor(d)}
+          className="inline-flex items-center justify-center gap-1.5 px-3 py-2 border border-primary text-primary hover:bg-primary/5 rounded-md transition-colors text-xs font-semibold w-full sm:w-auto"
+        >
+          <PhoneCall size={14} className="shrink-0" />
+          <span className="truncate">Rappelez-moi</span>
+        </button>
         <Link
           to={`/delegue/${d.id}`}
           className="inline-flex items-center justify-center sm:justify-start gap-1 px-2.5 py-1.5 text-xs font-semibold text-primary hover:underline sm:ml-auto"
@@ -256,6 +267,15 @@ export default function VendorDelegatesPublic({ vendorId }: Props) {
       <div className="divide-y divide-border [&>*]:py-4 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0">
         {top.map((d) => renderDelegate(d))}
       </div>
+      {callbackFor && (
+        <DelegateCallbackDialog
+          open={!!callbackFor}
+          onOpenChange={(o) => !o && setCallbackFor(null)}
+          delegateId={callbackFor.id}
+          vendorId={vendorId}
+          delegateName={`${callbackFor.first_name} ${callbackFor.last_name}`}
+        />
+      )}
     </div>
   );
 }

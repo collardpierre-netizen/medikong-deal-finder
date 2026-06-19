@@ -44,6 +44,7 @@ import { template as p2pCounterOffer } from './p2p-counter-offer.tsx'
 import { template as orderLineAccepted } from './order-line-accepted.tsx'
 import { template as orderLineShipped } from './order-line-shipped.tsx'
 import { template as orderLineDelivered } from './order-line-delivered.tsx'
+import { template as vendorDelegateCallback } from './vendor-delegate-callback.tsx'
 
 
 
@@ -83,5 +84,6 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'order-line-accepted': orderLineAccepted,
   'order-line-shipped': orderLineShipped,
   'order-line-delivered': orderLineDelivered,
+  'vendor-delegate-callback': vendorDelegateCallback,
 }
 

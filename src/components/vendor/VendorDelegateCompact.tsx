@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCountry } from "@/contexts/CountryContext";
-import { Mail, Phone, CalendarDays, User as UserIcon, ExternalLink } from "lucide-react";
+import { Mail, Phone, CalendarDays, User as UserIcon, ExternalLink, PhoneCall } from "lucide-react";
 import { Link } from "react-router-dom";
+import DelegateCallbackDialog from "./DelegateCallbackDialog";
 
 interface Props {
   vendorId: string;
@@ -36,6 +38,7 @@ interface Delegate {
  * Conçue pour le panier et la fiche produit. Silencieux si pas vérifié ou aucun délégué.
  */
 export default function VendorDelegateCompact({ vendorId, variant = "card" }: Props) {
+  const [callbackOpen, setCallbackOpen] = useState(false);
   const { user, isVerifiedBuyer } = useAuth();
   const { currentCountry } = useCountry();
 
@@ -152,9 +155,24 @@ export default function VendorDelegateCompact({ vendorId, variant = "card" }: Pr
                 Prendre RDV
               </a>
             )}
+            <button
+              type="button"
+              onClick={() => setCallbackOpen(true)}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-primary text-primary hover:bg-primary/5 text-[10px] font-semibold"
+            >
+              <PhoneCall size={10} />
+              Rappelez-moi
+            </button>
           </div>
         </div>
       </div>
+      <DelegateCallbackDialog
+        open={callbackOpen}
+        onOpenChange={setCallbackOpen}
+        delegateId={d.id}
+        vendorId={vendorId}
+        delegateName={`${d.first_name} ${d.last_name}`}
+      />
     </div>
   );
 }

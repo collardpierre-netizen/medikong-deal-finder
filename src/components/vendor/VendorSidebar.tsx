@@ -3,7 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Package, Tag, ShoppingCart, Lightbulb, Bell, FileText, BarChart3, Trophy,
   DollarSign, Truck, HeartPulse, MessageSquare, GraduationCap, Settings, ChevronLeft, ChevronRight, Receipt,
-  AlertOctagon, BookOpen, PlusSquare, Inbox, FolderArchive, ShieldCheck,
+  AlertOctagon, BookOpen, PlusSquare, Inbox, FolderArchive, ShieldCheck, PhoneCall,
 } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
@@ -43,6 +43,7 @@ const sidebarSections: { label: string | null; items: SidebarItem[] }[] = [
       { key: "rfqInbox", icon: Inbox, path: "/vendor/rfq" },
       { key: "exclusivities", icon: ShieldCheck, path: "/vendor/exclusivities" },
       { key: "orders", icon: ShoppingCart, path: "/vendor/orders" },
+      { key: "leadsRappel", icon: PhoneCall, path: "/vendor/leads-rappel" },
     ],
   },
   {
@@ -171,6 +172,7 @@ export function VendorSidebar({ onNavigate }: VendorSidebarProps) {
                     item.key === "notificationsCenter" ? unreadNotifsCount :
                     item.key === "rfqInbox" ? vendorRfqCount :
                     item.key === "orders" ? vendorOrdersCount :
+                    item.key === "leadsRappel" ? (actionCenter?.sections.find((s) => s.key === "leadsRappel")?.count ?? 0) :
                     item.key === "myOffers" ? vendorChallengesCount : 0;
 
                   return (

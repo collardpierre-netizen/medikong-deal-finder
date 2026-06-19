@@ -285,6 +285,7 @@ const VendorInvoicesToCollect = lazyWithRetry(() => import("./pages/vendor/Vendo
 const VendorContractPage = lazyWithRetry(() => import("./pages/vendor/VendorContractPage"), "VendorContractPage");
 const VendorContractChangelogPage = lazyWithRetry(() => import("./pages/vendor/VendorContractChangelogPage"), "VendorContractChangelogPage");
 const VendorDocuments = lazyWithRetry(() => import("./pages/vendor/VendorDocuments"), "VendorDocuments");
+const VendorLeadsRappel = lazyWithRetry(() => import("./pages/vendor/VendorLeadsRappel"), "VendorLeadsRappel");
 
 // ReStock pages
 const RestockSiteLayout = lazyWithRetry(() => import("./components/restock/RestockSiteLayout"), "RestockSiteLayout");
@@ -596,6 +597,7 @@ const App = () => (
               <Route path="interests" element={<Navigate to="/vendor/notifications" replace />} />
               <Route path="offers" element={<LP><VendorOffers /></LP>} />
               <Route path="orders" element={<LP><VendorOrders /></LP>} />
+              <Route path="leads-rappel" element={<LP><VendorLeadsRappel /></LP>} />
               <Route path="opportunities" element={<LP><VendorOpportunities /></LP>} />
               <Route path="alerts" element={<LP><VendorMarketIntelHub /></LP>} />
               <Route path="competitor-alerts" element={<LP><VendorMarketIntelHub /></LP>} />

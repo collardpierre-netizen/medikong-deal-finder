@@ -114,7 +114,7 @@ export default function DelegateCallbackDialog({
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase
+    const { data: inserted, error } = await supabase
       .from("delegate_callback_requests" as any)
       .insert({
         delegate_id: delegateId,
@@ -131,7 +131,9 @@ export default function DelegateCallbackDialog({
         postal_code: parsed.data.postal_code || null,
         preferred_slot: parsed.data.preferred_slot || null,
         message: parsed.data.message || null,
-      });
+      })
+      .select("id")
+      .maybeSingle();
     setSubmitting(false);
     if (error) {
       toast({
@@ -140,6 +142,46 @@ export default function DelegateCallbackDialog({
         variant: "destructive",
       });
       return;
+    }
+
+    // Notification email (best-effort) au délégué + vendeur
+    try {
+      const [{ data: dlg }, { data: vnd }] = await Promise.all([
+        supabase.from("vendor_delegates" as any).select("email, first_name, last_name").eq("id", delegateId).maybeSingle(),
+        supabase.from("vendors").select("email, contact_email, name").eq("id", vendorId).maybeSingle(),
+      ]);
+      const recipients = Array.from(new Set([
+        (dlg as any)?.email,
+        (vnd as any)?.contact_email,
+        (vnd as any)?.email,
+      ].filter(Boolean)));
+      const templateData = {
+        delegateName: dlg ? `${(dlg as any).first_name} ${(dlg as any).last_name}` : delegateName,
+        requesterName: `${parsed.data.first_name} ${parsed.data.last_name}`,
+        requesterCompany: parsed.data.company || undefined,
+        requesterEmail: parsed.data.email,
+        requesterPhone: parsed.data.phone,
+        buyerProfile: customer?.customer_type || undefined,
+        postalCode: parsed.data.postal_code || undefined,
+        countryCode: customer?.country_code || undefined,
+        preferredSlot: parsed.data.preferred_slot || undefined,
+        message: parsed.data.message || undefined,
+        ctaUrl: "https://medikong.pro/vendor/leads-rappel",
+      };
+      await Promise.all(
+        recipients.map((to) =>
+          supabase.functions.invoke("send-transactional-email", {
+            body: {
+              templateName: "vendor-delegate-callback",
+              recipientEmail: to,
+              idempotencyKey: `delegate-callback-${(inserted as any)?.id}-${to}`,
+              templateData,
+            },
+          })
+        )
+      );
+    } catch {
+      /* best-effort */
     }
     setDone(true);
     toast({

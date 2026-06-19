@@ -74,6 +74,7 @@ export default function DelegatePublicPage() {
   const { delegateId } = useParams<{ delegateId: string }>();
   const navigate = useNavigate();
   const { user, isVerifiedBuyer, loading: authLoading } = useAuth();
+  const [callbackOpen, setCallbackOpen] = useState(false);
 
   const { data: delegate, isLoading } = useQuery<Delegate | null>({
     queryKey: ["delegate-public", delegateId],

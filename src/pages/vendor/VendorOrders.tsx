@@ -563,8 +563,10 @@ function ShipLineDialog({
   const [carrier, setCarrier] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // reset when line changes
-  if (line && qty === 0) setQty(remaining);
+  // Reset qty to remaining whenever the line changes (e.g. after revert/refetch)
+  useEffect(() => {
+    setQty(remaining);
+  }, [line?.id, remaining]);
 
   if (!line) return null;
 

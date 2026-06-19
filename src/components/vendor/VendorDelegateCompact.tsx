@@ -38,6 +38,7 @@ interface Delegate {
  * Conçue pour le panier et la fiche produit. Silencieux si pas vérifié ou aucun délégué.
  */
 export default function VendorDelegateCompact({ vendorId, variant = "card" }: Props) {
+  const [callbackOpen, setCallbackOpen] = useState(false);
   const { user, isVerifiedBuyer } = useAuth();
   const { currentCountry } = useCountry();
 

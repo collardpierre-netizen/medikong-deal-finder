@@ -480,7 +480,7 @@ export default function VendorOrders() {
                                 <Check size={12} className="mr-1" /> Accepter
                               </Button>
                             )}
-                            {canShip && (
+                            {canShip && remaining > 0 && (
                               <Button size="sm" variant="outline" className="text-[11px] h-7 px-2"
                                 onClick={() => setShipLine({ ...line, order })}>
                                 <Package size={12} className="mr-1" />

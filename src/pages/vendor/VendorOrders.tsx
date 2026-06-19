@@ -5,12 +5,14 @@ import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VBadge } from "@/components/vendor/ui/VBadge";
 import { VEmptyState } from "@/components/vendor/ui/VEmptyState";
-import { ShoppingCart, PackageCheck, Loader2, ChevronDown, ChevronUp, Truck, ExternalLink, Package, X, Check } from "lucide-react";
+import { ShoppingCart, PackageCheck, Loader2, ChevronDown, ChevronUp, Truck, ExternalLink, Package, X, Check, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -114,6 +116,7 @@ export default function VendorOrders() {
   // Modales
   const [shipLine, setShipLine] = useState<OrderWithLines["lines"][number] & { order: OrderWithLines } | null>(null);
   const [cancelLine, setCancelLine] = useState<OrderWithLines["lines"][number] & { order: OrderWithLines } | null>(null);
+  const [revertConfirm, setRevertConfirm] = useState<{ lineId: string; from: string; to: string } | null>(null);
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ["vendor-order-lines", vendorId],
@@ -228,6 +231,19 @@ export default function VendorOrders() {
     },
     onSuccess: () => { invalidate(); toast.success("Marqué comme livré"); },
     onError: () => toast.error("Erreur lors de la mise à jour"),
+  });
+
+  // Revert : remettre le statut d'une ligne sur une étape précédente
+  const revertStatus = useMutation({
+    mutationFn: async ({ lineId, to }: { lineId: string; to: string }) => {
+      const { error } = await (supabase as any).rpc("vendor_update_order_line_status", {
+        _line_id: lineId,
+        _status: to,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => { invalidate(); toast.success("Statut modifié"); setRevertConfirm(null); },
+    onError: (e: any) => toast.error(e?.message || "Erreur lors de la modification du statut"),
   });
 
   // ----- Rendu -----
@@ -386,6 +402,36 @@ export default function VendorOrders() {
 
                           <div className="flex flex-col items-end gap-2 shrink-0">
                             <VBadge color={status.color}>{status.label}</VBadge>
+                            {(() => {
+                              const workflow = isQogita
+                                ? ["forwarded"]
+                                : ["processing", "shipped", "delivered"];
+                              const idx = workflow.indexOf(line.fulfillment_status);
+                              const previous = idx > 0 ? workflow.slice(0, idx) : [];
+                              if (previous.length === 0) return null;
+                              return (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <button className="text-[10px] text-muted-foreground hover:text-primary inline-flex items-center gap-1 underline underline-offset-2">
+                                      <Pencil size={10} /> Edit
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel className="text-[11px]">Revenir à…</DropdownMenuLabel>
+                                    {previous.map((s) => (
+                                      <DropdownMenuItem
+                                        key={s}
+                                        className="text-[12px]"
+                                        onSelect={() => setRevertConfirm({ lineId: line.id, from: line.fulfillment_status, to: s })}
+                                      >
+                                        {statusConfig[s]?.label || s}
+                                      </DropdownMenuItem>
+                                    ))}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              );
+                            })()}
+
 
                             {canForward && (
                               <Button size="sm" variant="outline" className="text-[11px] h-7 px-2"
@@ -436,6 +482,32 @@ export default function VendorOrders() {
 
       <ShipLineDialog line={shipLine} onClose={() => setShipLine(null)} onDone={invalidate} />
       <CancelLineDialog line={cancelLine} onClose={() => setCancelLine(null)} onDone={invalidate} />
+
+      <AlertDialog open={!!revertConfirm} onOpenChange={(o) => { if (!o) setRevertConfirm(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Modifier le statut de la commande ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Attention, vous changez le statut de cette commande
+              {revertConfirm ? <> de <strong>« {statusConfig[revertConfirm.from]?.label || revertConfirm.from} »</strong> vers <strong>« {statusConfig[revertConfirm.to]?.label || revertConfirm.to} »</strong></> : null}.
+              Cette démarche aura des conséquences sur tout le processus en cours et peut retarder votre recouvrement. Veuillez confirmer ce changement.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={revertStatus.isPending}>Non</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={revertStatus.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (revertConfirm) revertStatus.mutate({ lineId: revertConfirm.lineId, to: revertConfirm.to });
+              }}
+            >
+              {revertStatus.isPending ? <Loader2 size={14} className="animate-spin mr-1" /> : null}
+              Oui, confirmer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

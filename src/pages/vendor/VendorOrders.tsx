@@ -114,7 +114,12 @@ async function sendBuyerEmail(opts: {
     const currency = (orderRow as any)?.currency || "EUR";
 
     const vendorLabel = getVendorPublicName({ display_code: vend?.display_code });
-    await supabase.functions.invoke("send-transactional-email", {
+    console.log("[VendorOrders] sending buyer email", {
+      template: opts.templateName,
+      to: email,
+      orderNumber: opts.orderNumber,
+    });
+    const { data, error } = await supabase.functions.invoke("send-transactional-email", {
       body: {
         templateName: opts.templateName,
         recipientEmail: email,
@@ -131,8 +136,15 @@ async function sendBuyerEmail(opts: {
         },
       },
     });
+    if (error) {
+      console.error("[VendorOrders] email invoke error", error, data);
+      toast.error(`Email acheteur non envoyé (${opts.templateName}) — voir console`);
+      return;
+    }
+    console.log("[VendorOrders] email invoke ok", data);
   } catch (e) {
     console.error("[VendorOrders] email send failed", e);
+    toast.error(`Email acheteur non envoyé (${opts.templateName})`);
   }
 }
 

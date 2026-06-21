@@ -92,6 +92,7 @@ const OrderLineShippedEmail = ({
 
           {(carrierName || trackingNumber || trackingUrl) && (
             <Section style={trackingBox}>
+              <Text style={infoTitle}>Informations de livraison</Text>
               {carrierName && (
                 <Text style={infoLine}><strong>Transporteur :</strong> {carrierName}</Text>
               )}
@@ -100,7 +101,13 @@ const OrderLineShippedEmail = ({
               )}
               {trackingUrl && (
                 <Text style={infoLine}>
+                  <strong>Lien de suivi :</strong>{' '}
                   <a href={trackingUrl} style={link}>Suivre le colis →</a>
+                </Text>
+              )}
+              {!trackingUrl && trackingNumber && (
+                <Text style={small}>
+                  Conservez ce numéro pour suivre votre colis auprès du transporteur.
                 </Text>
               )}
             </Section>

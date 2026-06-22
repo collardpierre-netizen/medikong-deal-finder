@@ -1,55 +1,36 @@
-# Option A — Catalogue privé vendeur→vendeur
+## Diagnostic
 
-Objectif : permettre à un vendeur de publier des offres avec prix HTVA confidentiels, visibles uniquement par les acheteurs portant le profil `revendeur_pro`, sans duplication d'offre.
+- Le domaine email est bien vérifié : le problème ne vient pas du DNS ni de la capacité d’envoi.
+- Il n’y a aucune ligne récente dans le journal d’emails pour `order-line-accepted`, `order-line-shipped` ou `order-line-delivered`.
+- Il n’y a aucune requête récente vers la fonction d’envoi email lors du test sur `MK-2026-24395`.
+- La commande existe bien, avec client, email client, vendeur Noralphar, statut `delivered`, numéro de suivi `3232323` et URL `http://www.dhl.com`.
+- Cause probable confirmée par le code : la page vendeur tente de lire directement `customers.email` depuis le navigateur vendeur. Or les règles d’accès protègent les emails clients : un vendeur ne peut pas lire la fiche client. Résultat : `cust?.email` est vide, le code fait `return` silencieusement, et aucun email n’est même déclenché.
 
-## 1. Migration DB
+## Fix proposé
 
-**a) Nouveau profil acheteur**
-- INSERT dans `buyer_profiles` : `id='revendeur_pro'`, `label='Revendeur professionnel'`, `display_order=5`, `description='Accès au catalogue B2B inter-vendeurs et aux prix revendeur'`.
+1. **Déplacer l’envoi des emails côté backend sécurisé**
+   - Créer une fonction backend dédiée aux notifications de statut de ligne de commande.
+   - Elle recevra uniquement l’ID de ligne, l’événement (`accepted`, `shipped`, `delivered`) et, pour l’expédition, les infos saisies par le vendeur : transporteur, numéro de suivi, URL de suivi.
+   - Elle vérifiera que l’utilisateur connecté est bien le vendeur propriétaire ou membre du compte vendeur concerné.
+   - Elle récupérera l’email client côté backend, sans jamais l’exposer au navigateur vendeur.
 
-**b) Rattacher un acheteur au profil**
-- Ajouter colonne `customers.buyer_profile_id text NULL REFERENCES public.buyer_profiles(id)` + index.
-- Le profil reste assignable uniquement par un admin (RLS existante sur `customers`).
+2. **Modifier la page vendeur**
+   - Remplacer le helper actuel qui lit `customers.email` côté frontend.
+   - Après chaque changement de statut réussi :
+     - `Accepter` déclenche l’email “commande en préparation”.
+     - `Confirmer l’expédition` déclenche l’email “commande expédiée”, avec transporteur, numéro de suivi et URL.
+     - `Marquer livré` déclenche l’email “commande livrée”.
+   - Si l’envoi échoue, afficher une erreur claire au vendeur au lieu de prétendre “acheteur notifié”.
 
-**c) RPC `current_buyer_profile_id()`**
-- SECURITY DEFINER, retourne `customers.buyer_profile_id` pour `auth.uid()`, NULL si absent. Utilisée par le front pour le gating `/pro` et par la résolution serveur des prix.
+3. **Fiabiliser l’idempotence sans bloquer les retests**
+   - Utiliser une clé d’envoi liée à l’événement réel de statut, mais permettre un nouvel envoi après un retour arrière puis une nouvelle progression du statut.
+   - Cela évite les doublons accidentels tout en permettant exactement le scénario de test que tu viens de faire.
 
-**d) RPC `list_reseller_offers(_country text, _limit int, _offset int)`**
-- SECURITY DEFINER, gate strict : si `current_buyer_profile_id() <> 'revendeur_pro'` → renvoie zéro ligne.
-- Sélectionne les offres ayant une `vendor_exclusivities` active `mode='hide'` + `'revendeur_pro' = ANY(buyer_profile_ids)`.
-- Applique `resolve_offer_price_for_profile(offer_id, 'revendeur_pro')` pour le prix affiché + source.
-- Retourne `offer_id, product_id, vendor_id, price_excl_vat, price_source, moq, mov_amount, stock_quantity, country_code`.
+4. **Vérifier la chaîne complète**
+   - Tester un appel backend sur la commande `MK-2026-24395` ou une commande de test.
+   - Vérifier que le journal d’emails reçoit bien une ligne `pending`, puis `sent`.
+   - Ensuite refaire ensemble le test vendeur : retour en préparation → expédiée → livrée.
 
-**e) Bonus serveur (cohérence)** : extension légère de la policy de lecture publique sur `offers` — si l'offre cible une exclusivité `mode='hide'` avec `buyer_profile_ids` non vide ET que `current_buyer_profile_id()` n'est pas dans cette liste → masquée du SELECT public. Évite que `useProducts` / `useSearchProducts` remontent l'offre côté grand public.
+## Résultat attendu
 
-## 2. Front — page `/pro`
-
-**a) Hook `useCurrentBuyerProfile()`**
-- `src/hooks/useCurrentBuyerProfile.ts` — appelle la RPC, cache react-query 5 min.
-
-**b) Page `/pro` (`src/pages/ProPage.tsx`)**
-- Garde : si pas de session OU profil ≠ `revendeur_pro` → carte "Accès réservé aux revendeurs vérifiés" + CTA contact.
-- Si OK : grille produits (réutilise `CatalogProductCard`) alimentée par `list_reseller_offers`, filtres pays/marque/recherche basique.
-- Badge "Prix revendeur" sur les cards (composant `ResellerPriceBadge` minimal).
-
-**c) Route** : ajout dans `src/App.tsx` (`<Route path="/pro" element={<ProPage />} />`, lazy import).
-
-**d) Lien navigation** : entrée discrète "Espace revendeur" dans `Navbar` visible uniquement si `useCurrentBuyerProfile()` matche.
-
-## 3. Côté vendeur (zéro changement UI cette itération)
-
-L'UI vendeur existante (`vendor_exclusivities`, `offer_buyer_profile_prices`, `vendor_profile_defaults`) couvre déjà la saisie : le vendeur crée une exclusivité `hide` ciblant `revendeur_pro` + un prix par profil sur ses offres concernées. Aucun nouveau formulaire ce coup-ci — ce sera un Lot 2 si tu veux une expérience guidée.
-
-## 4. Hors scope (à valider séparément)
-- UI d'assignation `revendeur_pro` côté admin (peut se faire ensuite ; pour l'instant assignation SQL/admin manuelle).
-- Onboarding dédié revendeur.
-- Notifications "nouvelle offre revendeur" pour les comptes pro.
-
-## Détails techniques
-
-Tables touchées (création/altération) : `buyer_profiles` (INSERT), `customers` (ADD COLUMN). Tables lues : `vendor_exclusivities`, `offer_buyer_profile_prices`, `vendor_profile_defaults`, `offers`, `products`.
-
-Fichiers front créés : `src/hooks/useCurrentBuyerProfile.ts`, `src/pages/ProPage.tsx`, `src/components/pro/ResellerPriceBadge.tsx`.
-Fichiers front modifiés : `src/App.tsx` (route), `src/components/layout/Navbar.tsx` (entrée conditionnelle).
-
-Sécurité : toute la résolution prix/visibilité passe par RPC SECURITY DEFINER + policy RLS sur `offers` ; aucun prix revendeur ne fuite côté client si le profil n'est pas accordé.
+Après ce fix, le vendeur pourra continuer à changer les statuts depuis `/vendor/orders`, mais l’email client sera envoyé par le backend sécurisé, avec les informations de livraison incluses dans le template d’expédition.

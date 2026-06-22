@@ -81,9 +81,9 @@ async function sendBuyerEmail(opts: {
     carrierName?: string | null;
     isPartial?: boolean;
   };
-}) {
+}): Promise<boolean> {
   try {
-    console.log("[VendorOrders] notify-order-status", { lineId: opts.lineId, event: opts.event });
+    console.log("[VendorOrders] notify-order-status →", { lineId: opts.lineId, event: opts.event });
     const { data, error } = await supabase.functions.invoke("notify-order-status", {
       body: {
         lineId: opts.lineId,
@@ -94,13 +94,20 @@ async function sendBuyerEmail(opts: {
     });
     if (error) {
       console.error("[VendorOrders] notify-order-status error", error, data);
-      toast.error(`Email acheteur non envoyé (${opts.templateLabel}) — voir console`);
-      return;
+      toast.error(`Email acheteur NON envoyé (${opts.templateLabel}) — ${error.message || "voir console"}`);
+      return false;
+    }
+    if (!data?.success) {
+      console.error("[VendorOrders] notify-order-status non-success", data);
+      toast.error(`Email acheteur NON envoyé (${opts.templateLabel}) — ${data?.error || "réponse invalide"}`);
+      return false;
     }
     console.log("[VendorOrders] notify-order-status ok", data);
-  } catch (e) {
+    return true;
+  } catch (e: any) {
     console.error("[VendorOrders] notify-order-status failed", e);
-    toast.error(`Email acheteur non envoyé (${opts.templateLabel})`);
+    toast.error(`Email acheteur NON envoyé (${opts.templateLabel}) — ${e?.message || "erreur réseau"}`);
+    return false;
   }
 }
 
@@ -197,13 +204,18 @@ export default function VendorOrders() {
         _status: "processing",
       });
       if (error) throw error;
-      await sendBuyerEmail({
+      const sent = await sendBuyerEmail({
         lineId: line.id,
         event: "accepted",
         templateLabel: "commande en préparation",
       });
+      return { sent };
     },
-    onSuccess: () => { invalidate(); toast.success("Ligne acceptée — l'acheteur est notifié"); },
+    onSuccess: ({ sent }) => {
+      invalidate();
+      if (sent) toast.success("Ligne acceptée — acheteur notifié par email");
+      else toast.warning("Ligne acceptée — mais email acheteur non envoyé");
+    },
     onError: () => toast.error("Erreur lors de l'acceptation"),
   });
 
@@ -215,13 +227,18 @@ export default function VendorOrders() {
         _status: "delivered",
       });
       if (error) throw error;
-      await sendBuyerEmail({
+      const sent = await sendBuyerEmail({
         lineId: line.id,
         event: "delivered",
         templateLabel: "commande livrée",
       });
+      return { sent };
     },
-    onSuccess: () => { invalidate(); toast.success("Marqué comme livré"); },
+    onSuccess: ({ sent }) => {
+      invalidate();
+      if (sent) toast.success("Marqué comme livré — acheteur notifié");
+      else toast.warning("Marqué comme livré — mais email acheteur non envoyé");
+    },
     onError: () => toast.error("Erreur lors de la mise à jour"),
   });
 
@@ -556,7 +573,7 @@ function ShipLineDialog({
 
       if (error) throw error;
 
-      await sendBuyerEmail({
+      const sent = await sendBuyerEmail({
         lineId: line.id,
         event: "shipped",
         templateLabel: "commande expédiée",
@@ -568,7 +585,11 @@ function ShipLineDialog({
         },
       });
 
-      toast.success(isFullyShipped ? "Ligne expédiée — acheteur notifié" : "Expédition partielle enregistrée — acheteur notifié");
+      if (sent) {
+        toast.success(isFullyShipped ? "Ligne expédiée — acheteur notifié" : "Expédition partielle enregistrée — acheteur notifié");
+      } else {
+        toast.warning(isFullyShipped ? "Ligne expédiée — mais email acheteur non envoyé" : "Expédition partielle enregistrée — mais email acheteur non envoyé");
+      }
       onDone();
       onClose();
       setQty(0);

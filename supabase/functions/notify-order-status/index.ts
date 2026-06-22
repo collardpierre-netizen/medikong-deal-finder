@@ -96,12 +96,16 @@ Deno.serve(async (req) => {
     return json({ error: 'Forbidden', reason: 'not_vendor_owner_or_member' }, 403)
   }
 
-  const { data: order } = await admin
+  const { data: order, error: orderErr } = await admin
     .from('orders')
-    .select('id, order_number, customer_id, total_amount_incl_vat, currency')
+    .select('id, order_number, customer_id, total_incl_vat')
     .eq('id', line.order_id)
     .maybeSingle()
-  if (!order) return json({ error: 'Order not found' }, 404)
+  if (orderErr) {
+    console.error('[notify-order-status] order lookup failed', orderErr)
+    return json({ error: 'Order lookup failed', reason: 'order_lookup_failed', detail: orderErr.message }, 500)
+  }
+  if (!order) return json({ error: 'Order not found', reason: 'order_missing' }, 404)
 
   const { data: customer } = await admin
     .from('customers')
@@ -131,8 +135,8 @@ Deno.serve(async (req) => {
     lineTotalTtc: Number(l.line_total_incl_vat),
   }))
   const productName = productMap.get(line.product_id) || 'un produit'
-  const totalIncl = (order as any).total_amount_incl_vat ?? lines.reduce((s, l) => s + (l.lineTotalTtc || 0), 0)
-  const currency = (order as any).currency || 'EUR'
+  const totalIncl = (order as any).total_incl_vat ?? lines.reduce((s, l) => s + (l.lineTotalTtc || 0), 0)
+  const currency = 'EUR'
 
   const vendorLabel = vendor.display_code
     ? `Fournisseur ${vendor.display_code}`

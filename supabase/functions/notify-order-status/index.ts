@@ -60,7 +60,10 @@ Deno.serve(async (req) => {
     .select('id, order_id, vendor_id, quantity, quantity_shipped, tracking_number, tracking_url, product_id, fulfillment_status, updated_at')
     .eq('id', lineId)
     .maybeSingle()
-  if (lineErr || !line) return json({ error: 'Line not found' }, 404)
+  if (lineErr || !line) {
+    console.warn('[notify-order-status] line not found', lineId, lineErr?.message)
+    return json({ error: 'Line not found', reason: 'line_missing' }, 404)
+  }
 
   // Authorize: user must be owner of vendor OR member of vendor account
   const { data: vendor } = await admin
@@ -68,7 +71,10 @@ Deno.serve(async (req) => {
     .select('id, auth_user_id, display_code, name')
     .eq('id', line.vendor_id)
     .maybeSingle()
-  if (!vendor) return json({ error: 'Vendor not found' }, 404)
+  if (!vendor) {
+    console.warn('[notify-order-status] vendor not found', line.vendor_id)
+    return json({ error: 'Vendor not found', reason: 'vendor_missing' }, 404)
+  }
 
   let authorized = vendor.auth_user_id === userId
   if (!authorized) {
@@ -85,7 +91,10 @@ Deno.serve(async (req) => {
     const { data: isAdmin } = await admin.rpc('is_admin', { _user_id: userId })
     if (isAdmin === true) authorized = true
   }
-  if (!authorized) return json({ error: 'Forbidden' }, 403)
+  if (!authorized) {
+    console.warn('[notify-order-status] forbidden', { userId, vendorId: line.vendor_id, vendorOwner: vendor.auth_user_id })
+    return json({ error: 'Forbidden', reason: 'not_vendor_owner_or_member' }, 403)
+  }
 
   const { data: order } = await admin
     .from('orders')

@@ -216,13 +216,9 @@ export default function VendorOrders() {
       });
       if (error) throw error;
       await sendBuyerEmail({
-        customerId: line.order.customer_id,
-        vendorId: line.vendor_id,
-        orderId: line.order.order_id,
-        orderNumber: line.order.order_number,
-        productName: line.product_name,
-        templateName: "order-line-delivered",
-        extraData: { quantity: line.quantity },
+        lineId: line.id,
+        event: "delivered",
+        templateLabel: "commande livrée",
       });
     },
     onSuccess: () => { invalidate(); toast.success("Marqué comme livré"); },
@@ -561,15 +557,10 @@ function ShipLineDialog({
       if (error) throw error;
 
       await sendBuyerEmail({
-        customerId: line.order.customer_id,
-        vendorId: line.vendor_id,
-        orderId: line.order.order_id,
-        orderNumber: line.order.order_number,
-        productName: line.product_name,
-        templateName: "order-line-shipped",
-        extraData: {
-          quantityShipped: newQtyShipped,
-          quantityOrdered: line.quantity,
+        lineId: line.id,
+        event: "shipped",
+        templateLabel: "commande expédiée",
+        shipped: {
           trackingNumber: trackingNumber.trim() || line.tracking_number || null,
           trackingUrl: trackingUrl.trim() || line.tracking_url || null,
           carrierName: carrier.trim() || null,
@@ -692,22 +683,9 @@ function CancelLineDialog({
       });
       if (error) throw error;
 
-      // Email acheteur (template existant order-line-refunded-customer)
-      await sendBuyerEmail({
-        customerId: line.order.customer_id,
-        vendorId: line.vendor_id,
-        orderId: line.order.order_id,
-        orderNumber: line.order.order_number,
-        productName: line.product_name,
-        templateName: "order-line-refunded-customer",
-        extraData: {
-          action: line.quantity_shipped && line.quantity_shipped > 0 ? "partial" : "cancel",
-          quantityRefunded: refundQty,
-          quantityOrdered: line.quantity,
-          refundAmountEur: refundAmount,
-          reason: reason.trim(),
-        },
-      });
+      // TODO: notification email d'annulation/remboursement à brancher dans notify-order-status
+      // (le helper actuel ne gère que accepted/shipped/delivered). L'admin reçoit déjà
+      // la notification de remboursement à traiter manuellement.
 
       toast.success("Ligne annulée — acheteur notifié, remboursement à traiter côté admin");
       onDone();

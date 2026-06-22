@@ -198,13 +198,9 @@ export default function VendorOrders() {
       });
       if (error) throw error;
       await sendBuyerEmail({
-        customerId: line.order.customer_id,
-        vendorId: line.vendor_id,
-        orderId: line.order.order_id,
-        orderNumber: line.order.order_number,
-        productName: line.product_name,
-        templateName: "order-line-accepted",
-        extraData: { quantity: line.quantity },
+        lineId: line.id,
+        event: "accepted",
+        templateLabel: "commande en préparation",
       });
     },
     onSuccess: () => { invalidate(); toast.success("Ligne acceptée — l'acheteur est notifié"); },

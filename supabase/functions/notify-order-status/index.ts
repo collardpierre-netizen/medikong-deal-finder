@@ -24,16 +24,22 @@ Deno.serve(async (req) => {
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
 
+  console.log('[notify-order-status] request received')
+
   const authHeader = req.headers.get('Authorization') ?? ''
   const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
   if (!bearer) {
-    return json({ error: 'Unauthorized' }, 401)
+    console.warn('[notify-order-status] missing bearer')
+    return json({ error: 'Unauthorized', reason: 'missing_bearer' }, 401)
   }
 
   // Validate user
   const authClient = createClient(supabaseUrl, anonKey)
   const { data: claims, error: claimsErr } = await authClient.auth.getClaims(bearer)
-  if (claimsErr || !claims?.claims?.sub) return json({ error: 'Unauthorized' }, 401)
+  if (claimsErr || !claims?.claims?.sub) {
+    console.warn('[notify-order-status] invalid claims', claimsErr?.message)
+    return json({ error: 'Unauthorized', reason: 'invalid_claims' }, 401)
+  }
   const userId = claims.claims.sub as string
 
   let body: any
@@ -41,6 +47,7 @@ Deno.serve(async (req) => {
 
   const lineId = String(body.lineId ?? '')
   const event = String(body.event ?? '') as EventName
+  console.log('[notify-order-status] payload', { userId, lineId, event })
   if (!lineId || !TEMPLATE_MAP[event]) {
     return json({ error: 'lineId and valid event required' }, 400)
   }
@@ -53,7 +60,10 @@ Deno.serve(async (req) => {
     .select('id, order_id, vendor_id, quantity, quantity_shipped, tracking_number, tracking_url, product_id, fulfillment_status, updated_at')
     .eq('id', lineId)
     .maybeSingle()
-  if (lineErr || !line) return json({ error: 'Line not found' }, 404)
+  if (lineErr || !line) {
+    console.warn('[notify-order-status] line not found', lineId, lineErr?.message)
+    return json({ error: 'Line not found', reason: 'line_missing' }, 404)
+  }
 
   // Authorize: user must be owner of vendor OR member of vendor account
   const { data: vendor } = await admin
@@ -61,7 +71,10 @@ Deno.serve(async (req) => {
     .select('id, auth_user_id, display_code, name')
     .eq('id', line.vendor_id)
     .maybeSingle()
-  if (!vendor) return json({ error: 'Vendor not found' }, 404)
+  if (!vendor) {
+    console.warn('[notify-order-status] vendor not found', line.vendor_id)
+    return json({ error: 'Vendor not found', reason: 'vendor_missing' }, 404)
+  }
 
   let authorized = vendor.auth_user_id === userId
   if (!authorized) {
@@ -78,7 +91,10 @@ Deno.serve(async (req) => {
     const { data: isAdmin } = await admin.rpc('is_admin', { _user_id: userId })
     if (isAdmin === true) authorized = true
   }
-  if (!authorized) return json({ error: 'Forbidden' }, 403)
+  if (!authorized) {
+    console.warn('[notify-order-status] forbidden', { userId, vendorId: line.vendor_id, vendorOwner: vendor.auth_user_id })
+    return json({ error: 'Forbidden', reason: 'not_vendor_owner_or_member' }, 403)
+  }
 
   const { data: order } = await admin
     .from('orders')
@@ -150,6 +166,12 @@ Deno.serve(async (req) => {
   const idemSuffix = event === 'shipped' ? `-${line.quantity_shipped ?? 0}` : ''
   const idempotencyKey = `order-line-${event}-${line.id}${idemSuffix}-${updatedAtStamp}`
 
+  console.log('[notify-order-status] invoking send-transactional-email', {
+    templateName: TEMPLATE_MAP[event],
+    recipientEmail,
+    idempotencyKey,
+  })
+
   const { data: sendData, error: sendErr } = await admin.functions.invoke('send-transactional-email', {
     body: {
       templateName: TEMPLATE_MAP[event],
@@ -159,9 +181,18 @@ Deno.serve(async (req) => {
     },
   })
   if (sendErr) {
-    console.error('[notify-order-status] send-transactional-email error', sendErr, sendData)
-    return json({ error: 'email_invoke_failed', detail: String(sendErr?.message || sendErr) }, 502)
+    let detail: any = sendErr?.message || String(sendErr)
+    try {
+      const ctx: any = (sendErr as any).context
+      if (ctx?.response) {
+        const txt = await ctx.response.clone().text()
+        detail = `${detail} | body=${txt.slice(0, 600)}`
+      }
+    } catch {}
+    console.error('[notify-order-status] send-transactional-email error', detail, sendData)
+    return json({ error: 'email_invoke_failed', detail }, 502)
   }
+  console.log('[notify-order-status] send-transactional-email ok', sendData)
 
   return json({ success: true, queued: true, recipient: recipientEmail })
 })

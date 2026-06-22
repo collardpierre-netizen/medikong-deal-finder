@@ -1,36 +1,42 @@
-## Diagnostic
+## Diagnostic confirmé
 
-- Le domaine email est bien vérifié : le problème ne vient pas du DNS ni de la capacité d’envoi.
-- Il n’y a aucune ligne récente dans le journal d’emails pour `order-line-accepted`, `order-line-shipped` ou `order-line-delivered`.
-- Il n’y a aucune requête récente vers la fonction d’envoi email lors du test sur `MK-2026-24395`.
-- La commande existe bien, avec client, email client, vendeur Noralphar, statut `delivered`, numéro de suivi `3232323` et URL `http://www.dhl.com`.
-- Cause probable confirmée par le code : la page vendeur tente de lire directement `customers.email` depuis le navigateur vendeur. Or les règles d’accès protègent les emails clients : un vendeur ne peut pas lire la fiche client. Résultat : `cust?.email` est vide, le code fait `return` silencieusement, et aucun email n’est même déclenché.
+- Le domaine d’envoi configuré pour le projet est `notify.medikong.pro` et il est vérifié.
+- Les emails qui fonctionnent déjà (création/validation de compte, récupération, inscriptions acheteur/vendeur) passent par la même infrastructure d’emails de l’application et arrivent bien jusqu’à la file d’envoi puis au statut `sent`.
+- Je n’ai trouvé aucune trace d’envoi pour les templates de statut commande : `order-line-accepted`, `order-line-shipped`, `order-line-delivered`.
+- La commande `MK-2026-24395` existe, l’email client existe, l’adresse n’est pas en suppression, et les infos de suivi sont bien présentes. Donc ce n’est pas un problème d’adresse client ni de délivrabilité.
+- Les files d’emails ne sont pas bloquées et il n’y a pas de message en échec/DLQ pour cette commande.
+- Cause la plus probable : le changement de statut vendeur ne déclenche pas réellement l’envoi sur le site publié `medikong.pro`. Le code actuellement publié ne contient pas l’appel au nouveau déclencheur email, alors que le code source de preview le contient. Autrement dit : les emails d’auth fonctionnent, mais les emails de statut commande ne sont jamais envoyés à la plateforme d’email.
+- Problème secondaire : l’interface vendeur peut afficher “acheteur notifié” même si l’appel email échoue, car l’erreur est absorbée côté écran vendeur.
+- Point de clarification : je n’ai pas trouvé d’intégration Resend directe utilisée par ces envois. Le libellé admin “Resend (API)” semble obsolète/misleading. Le système réel utilisé par les emails qui fonctionnent est l’infrastructure email Lovable configurée sur `notify.medikong.pro`. Le correctif doit donc utiliser cette même chaîne, pas ajouter une seconde plateforme.
 
-## Fix proposé
+## Plan de correction
 
-1. **Déplacer l’envoi des emails côté backend sécurisé**
-   - Créer une fonction backend dédiée aux notifications de statut de ligne de commande.
-   - Elle recevra uniquement l’ID de ligne, l’événement (`accepted`, `shipped`, `delivered`) et, pour l’expédition, les infos saisies par le vendeur : transporteur, numéro de suivi, URL de suivi.
-   - Elle vérifiera que l’utilisateur connecté est bien le vendeur propriétaire ou membre du compte vendeur concerné.
-   - Elle récupérera l’email client côté backend, sans jamais l’exposer au navigateur vendeur.
+1. **Sécuriser le déclencheur email des statuts commande**
+   - Garder l’envoi sur la même infrastructure que les emails de compte déjà fonctionnels.
+   - Confirmer que les événements vendeur `acceptée`, `expédiée`, `livrée` appellent tous le backend d’envoi.
+   - Inclure les données d’expédition dans l’email “expédiée” : transporteur, numéro de suivi, URL de suivi.
 
-2. **Modifier la page vendeur**
-   - Remplacer le helper actuel qui lit `customers.email` côté frontend.
-   - Après chaque changement de statut réussi :
-     - `Accepter` déclenche l’email “commande en préparation”.
-     - `Confirmer l’expédition` déclenche l’email “commande expédiée”, avec transporteur, numéro de suivi et URL.
-     - `Marquer livré` déclenche l’email “commande livrée”.
-   - Si l’envoi échoue, afficher une erreur claire au vendeur au lieu de prétendre “acheteur notifié”.
+2. **Corriger les faux positifs côté vendeur**
+   - Faire remonter les erreurs d’envoi au lieu de les masquer.
+   - Remplacer les messages “acheteur notifié” par un succès uniquement si l’email a vraiment été mis en file.
+   - Si le statut est bien changé mais l’email échoue, afficher clairement : “statut mis à jour, email non envoyé”.
 
-3. **Fiabiliser l’idempotence sans bloquer les retests**
-   - Utiliser une clé d’envoi liée à l’événement réel de statut, mais permettre un nouvel envoi après un retour arrière puis une nouvelle progression du statut.
-   - Cela évite les doublons accidentels tout en permettant exactement le scénario de test que tu viens de faire.
+3. **Rendre les retests après retour en arrière fiables**
+   - Ajuster la clé d’idempotence : un aller-retour “livrée → préparation → expédiée/livrée” doit pouvoir renvoyer un nouvel email.
+   - Éviter en même temps les doublons accidentels lors d’un double-clic ou retry réseau.
 
-4. **Vérifier la chaîne complète**
-   - Tester un appel backend sur la commande `MK-2026-24395` ou une commande de test.
-   - Vérifier que le journal d’emails reçoit bien une ligne `pending`, puis `sent`.
-   - Ensuite refaire ensemble le test vendeur : retour en préparation → expédiée → livrée.
+4. **Réconcilier l’infrastructure email si nécessaire**
+   - Restaurer la ligne de configuration manquante de la file email via le mécanisme officiel d’infrastructure email, sans recréer manuellement les tables.
+   - Garder la file et le cron existants, qui sont déjà en place.
 
-## Résultat attendu
+5. **Déployer les fonctions backend concernées**
+   - Déployer le déclencheur de notification de statut commande.
+   - Déployer l’envoi email si le template ou la logique d’envoi change.
 
-Après ce fix, le vendeur pourra continuer à changer les statuts depuis `/vendor/orders`, mais l’email client sera envoyé par le backend sécurisé, avec les informations de livraison incluses dans le template d’expédition.
+6. **Vérifier sans supposer**
+   - Après correction, refaire un test contrôlé sur `MK-2026-24395` ou une commande de test.
+   - Vérifier que les lignes `order-line-shipped` et `order-line-delivered` apparaissent en `pending`, puis `sent`.
+   - Vérifier que le client reçoit bien l’email.
+
+7. **Publication**
+   - Comme ton test se fait sur `medikong.pro`, il faudra publier la version corrigée pour que le site live utilise le nouveau déclencheur. Sans publication, le preview peut être corrigé mais le live continuera à ne rien déclencher.

@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
   // Fetch line + order + customer + vendor
   const { data: line, error: lineErr } = await admin
     .from('order_lines')
-    .select('id, order_id, vendor_id, quantity, quantity_shipped, tracking_number, tracking_url, product_id')
+    .select('id, order_id, vendor_id, quantity, quantity_shipped, tracking_number, tracking_url, product_id, fulfillment_status, updated_at')
     .eq('id', lineId)
     .maybeSingle()
   if (lineErr || !line) return json({ error: 'Line not found' }, 404)
@@ -144,9 +144,11 @@ Deno.serve(async (req) => {
     templateData.isPartial = !!body.isPartial
   }
 
-  // Idempotency: line + event + current quantity_shipped (so a revert+resend works naturally)
+  // Idempotency key includes updated_at so a revert + re-trigger sends a fresh email,
+  // while a true duplicate call (double-click, retry) collapses into one.
+  const updatedAtStamp = line.updated_at ? new Date(line.updated_at).getTime() : Date.now()
   const idemSuffix = event === 'shipped' ? `-${line.quantity_shipped ?? 0}` : ''
-  const idempotencyKey = `order-line-${event}-${line.id}${idemSuffix}`
+  const idempotencyKey = `order-line-${event}-${line.id}${idemSuffix}-${updatedAtStamp}`
 
   const { data: sendData, error: sendErr } = await admin.functions.invoke('send-transactional-email', {
     body: {

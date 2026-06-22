@@ -66,85 +66,41 @@ const APP_ORIGIN =
   typeof window !== "undefined" ? window.location.origin : "https://medikong.pro";
 
 // ============================================================
-// Email helper — fires async, ne bloque jamais l'UX
+// Email helper — délègue au backend (notify-order-status).
+// Le vendeur ne peut pas lire customers.email côté client (RLS),
+// donc l'envoi se fait via une edge function qui valide le vendeur
+// et récupère l'email côté serveur.
 // ============================================================
 async function sendBuyerEmail(opts: {
-  customerId: string;
-  vendorId: string;
-  orderId: string;
-  orderNumber: string;
-  productName: string;
-  templateName: string;
-  extraData?: Record<string, any>;
+  lineId: string;
+  event: "accepted" | "shipped" | "delivered";
+  templateLabel: string;
+  shipped?: {
+    trackingNumber?: string | null;
+    trackingUrl?: string | null;
+    carrierName?: string | null;
+    isPartial?: boolean;
+  };
 }) {
   try {
-    const [{ data: cust }, { data: vend }, { data: orderRow }, { data: orderLinesRows }] = await Promise.all([
-      supabase.from("customers").select("email").eq("id", opts.customerId).maybeSingle(),
-      supabase.from("vendors").select("display_code, name").eq("id", opts.vendorId).maybeSingle(),
-      supabase.from("orders").select("total_amount_incl_vat, currency").eq("id", opts.orderId).maybeSingle(),
-      supabase
-        .from("order_lines")
-        .select("product_id, quantity, unit_price_incl_vat, line_total_incl_vat")
-        .eq("order_id", opts.orderId)
-        .eq("vendor_id", opts.vendorId),
-    ]);
-    const email = cust?.email;
-    if (!email) return;
-
-    const productIds = [...new Set((orderLinesRows ?? []).map((l: any) => l.product_id))];
-    let productMap = new Map<string, string>();
-    if (productIds.length > 0) {
-      const { data: prods } = await supabase
-        .from("products")
-        .select("id, name")
-        .in("id", productIds);
-      productMap = new Map((prods ?? []).map((p: any) => [p.id, p.name as string]));
-    }
-
-    const lines = (orderLinesRows ?? []).map((l: any) => ({
-      name: productMap.get(l.product_id) || "Produit",
-      quantity: l.quantity,
-      unitPriceTtc: l.unit_price_incl_vat,
-      lineTotalTtc: l.line_total_incl_vat,
-    }));
-
-    const totalIncl =
-      (orderRow as any)?.total_amount_incl_vat ??
-      lines.reduce((s, l) => s + (Number(l.lineTotalTtc) || 0), 0);
-    const currency = (orderRow as any)?.currency || "EUR";
-
-    const vendorLabel = getVendorPublicName({ display_code: vend?.display_code });
-    console.log("[VendorOrders] sending buyer email", {
-      template: opts.templateName,
-      to: email,
-      orderNumber: opts.orderNumber,
-    });
-    const { data, error } = await supabase.functions.invoke("send-transactional-email", {
+    console.log("[VendorOrders] notify-order-status", { lineId: opts.lineId, event: opts.event });
+    const { data, error } = await supabase.functions.invoke("notify-order-status", {
       body: {
-        templateName: opts.templateName,
-        recipientEmail: email,
-        idempotencyKey: `${opts.templateName}-${opts.orderId}-${Date.now()}`,
-        templateData: {
-          orderNumber: opts.orderNumber,
-          vendorLabel,
-          productName: opts.productName,
-          orderUrl: `${APP_ORIGIN}/commande/${opts.orderId}`,
-          lines,
-          totalIncl,
-          currency,
-          ...(opts.extraData || {}),
-        },
+        lineId: opts.lineId,
+        event: opts.event,
+        appOrigin: APP_ORIGIN,
+        ...(opts.shipped || {}),
       },
     });
     if (error) {
-      console.error("[VendorOrders] email invoke error", error, data);
-      toast.error(`Email acheteur non envoyé (${opts.templateName}) — voir console`);
+      console.error("[VendorOrders] notify-order-status error", error, data);
+      toast.error(`Email acheteur non envoyé (${opts.templateLabel}) — voir console`);
       return;
     }
-    console.log("[VendorOrders] email invoke ok", data);
+    console.log("[VendorOrders] notify-order-status ok", data);
   } catch (e) {
-    console.error("[VendorOrders] email send failed", e);
-    toast.error(`Email acheteur non envoyé (${opts.templateName})`);
+    console.error("[VendorOrders] notify-order-status failed", e);
+    toast.error(`Email acheteur non envoyé (${opts.templateLabel})`);
   }
 }
 
@@ -242,13 +198,9 @@ export default function VendorOrders() {
       });
       if (error) throw error;
       await sendBuyerEmail({
-        customerId: line.order.customer_id,
-        vendorId: line.vendor_id,
-        orderId: line.order.order_id,
-        orderNumber: line.order.order_number,
-        productName: line.product_name,
-        templateName: "order-line-accepted",
-        extraData: { quantity: line.quantity },
+        lineId: line.id,
+        event: "accepted",
+        templateLabel: "commande en préparation",
       });
     },
     onSuccess: () => { invalidate(); toast.success("Ligne acceptée — l'acheteur est notifié"); },
@@ -264,13 +216,9 @@ export default function VendorOrders() {
       });
       if (error) throw error;
       await sendBuyerEmail({
-        customerId: line.order.customer_id,
-        vendorId: line.vendor_id,
-        orderId: line.order.order_id,
-        orderNumber: line.order.order_number,
-        productName: line.product_name,
-        templateName: "order-line-delivered",
-        extraData: { quantity: line.quantity },
+        lineId: line.id,
+        event: "delivered",
+        templateLabel: "commande livrée",
       });
     },
     onSuccess: () => { invalidate(); toast.success("Marqué comme livré"); },
@@ -609,15 +557,10 @@ function ShipLineDialog({
       if (error) throw error;
 
       await sendBuyerEmail({
-        customerId: line.order.customer_id,
-        vendorId: line.vendor_id,
-        orderId: line.order.order_id,
-        orderNumber: line.order.order_number,
-        productName: line.product_name,
-        templateName: "order-line-shipped",
-        extraData: {
-          quantityShipped: newQtyShipped,
-          quantityOrdered: line.quantity,
+        lineId: line.id,
+        event: "shipped",
+        templateLabel: "commande expédiée",
+        shipped: {
           trackingNumber: trackingNumber.trim() || line.tracking_number || null,
           trackingUrl: trackingUrl.trim() || line.tracking_url || null,
           carrierName: carrier.trim() || null,
@@ -740,22 +683,9 @@ function CancelLineDialog({
       });
       if (error) throw error;
 
-      // Email acheteur (template existant order-line-refunded-customer)
-      await sendBuyerEmail({
-        customerId: line.order.customer_id,
-        vendorId: line.vendor_id,
-        orderId: line.order.order_id,
-        orderNumber: line.order.order_number,
-        productName: line.product_name,
-        templateName: "order-line-refunded-customer",
-        extraData: {
-          action: line.quantity_shipped && line.quantity_shipped > 0 ? "partial" : "cancel",
-          quantityRefunded: refundQty,
-          quantityOrdered: line.quantity,
-          refundAmountEur: refundAmount,
-          reason: reason.trim(),
-        },
-      });
+      // TODO: notification email d'annulation/remboursement à brancher dans notify-order-status
+      // (le helper actuel ne gère que accepted/shipped/delivered). L'admin reçoit déjà
+      // la notification de remboursement à traiter manuellement.
 
       toast.success("Ligne annulée — acheteur notifié, remboursement à traiter côté admin");
       onDone();

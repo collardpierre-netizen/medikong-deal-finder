@@ -24,16 +24,22 @@ Deno.serve(async (req) => {
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
 
+  console.log('[notify-order-status] request received')
+
   const authHeader = req.headers.get('Authorization') ?? ''
   const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
   if (!bearer) {
-    return json({ error: 'Unauthorized' }, 401)
+    console.warn('[notify-order-status] missing bearer')
+    return json({ error: 'Unauthorized', reason: 'missing_bearer' }, 401)
   }
 
   // Validate user
   const authClient = createClient(supabaseUrl, anonKey)
   const { data: claims, error: claimsErr } = await authClient.auth.getClaims(bearer)
-  if (claimsErr || !claims?.claims?.sub) return json({ error: 'Unauthorized' }, 401)
+  if (claimsErr || !claims?.claims?.sub) {
+    console.warn('[notify-order-status] invalid claims', claimsErr?.message)
+    return json({ error: 'Unauthorized', reason: 'invalid_claims' }, 401)
+  }
   const userId = claims.claims.sub as string
 
   let body: any
@@ -41,6 +47,7 @@ Deno.serve(async (req) => {
 
   const lineId = String(body.lineId ?? '')
   const event = String(body.event ?? '') as EventName
+  console.log('[notify-order-status] payload', { userId, lineId, event })
   if (!lineId || !TEMPLATE_MAP[event]) {
     return json({ error: 'lineId and valid event required' }, 400)
   }

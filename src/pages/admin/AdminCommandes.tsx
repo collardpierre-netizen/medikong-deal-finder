@@ -74,6 +74,8 @@ const AdminCommandes = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [hideTest, setHideTest] = useState(true);
+  const [period, setPeriod] = useState<PeriodKey>("30d");
+  const [onlyWithCommission, setOnlyWithCommission] = useState(false);
   const [purgeOpen, setPurgeOpen] = useState(false);
   const [purging, setPurging] = useState(false);
   const [purgePreview, setPurgePreview] = useState<null | {

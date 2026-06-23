@@ -462,11 +462,66 @@ const AdminCommandeManuelle = () => {
         subtitle="Saisie admin — alimente la GMV"
       />
 
-      <div className="mb-4">
+      <div className="mb-4 flex items-center justify-between gap-2 flex-wrap">
         <Link to="/admin/commandes" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft size={14} /> Retour aux commandes
         </Link>
+        <div className="flex items-center gap-2">
+          {draftId && (
+            <span className="text-xs px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+              Brouillon en cours · {draftId.slice(0, 8)}
+            </span>
+          )}
+          <Dialog open={draftsOpen} onOpenChange={(o) => { setDraftsOpen(o); if (o) void refetchDrafts(); }}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline">
+                <FolderOpen size={14} className="mr-1" /> Brouillons ({drafts.length})
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Brouillons de commande manuelle</DialogTitle>
+              </DialogHeader>
+              {drafts.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-6 text-center">Aucun brouillon enregistré.</p>
+              ) : (
+                <div className="max-h-[60vh] overflow-auto border rounded">
+                  <table className="w-full text-xs">
+                    <thead className="bg-muted/40 sticky top-0">
+                      <tr>
+                        <th className="text-left px-2 py-1">N°</th>
+                        <th className="text-left px-2 py-1">Acheteur</th>
+                        <th className="text-right px-2 py-1">Lignes</th>
+                        <th className="text-left px-2 py-1">Modifié</th>
+                        <th className="px-2 py-1"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {drafts.map((d: any) => (
+                        <tr key={d.id} className="border-t">
+                          <td className="px-2 py-1 font-mono">{d.order_number}</td>
+                          <td className="px-2 py-1">{d.customer_label}</td>
+                          <td className="px-2 py-1 text-right">{d.line_count}</td>
+                          <td className="px-2 py-1">{new Date(d.updated_at).toLocaleString("fr-BE")}</td>
+                          <td className="px-2 py-1 text-right">
+                            <Button size="sm" variant="outline" onClick={() => loadDraft(d.id)}>
+                              Ouvrir
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDraftsOpen(false)}>Fermer</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Left: meta */}

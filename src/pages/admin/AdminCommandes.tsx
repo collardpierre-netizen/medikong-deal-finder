@@ -77,6 +77,7 @@ const AdminCommandes = () => {
   const [hideTest, setHideTest] = useState(true);
   const [period, setPeriod] = useState<PeriodKey>("30d");
   const [onlyWithCommission, setOnlyWithCommission] = useState(false);
+  const [forecastFilter, setForecastFilter] = useState<"all" | "real" | "forecast">("all");
   const [purgeOpen, setPurgeOpen] = useState(false);
   const [purging, setPurging] = useState(false);
   const [purgePreview, setPurgePreview] = useState<null | {

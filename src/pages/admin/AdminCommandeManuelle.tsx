@@ -357,6 +357,8 @@ const AdminCommandeManuelle = () => {
       payment_method: paymentMethod,
       payment_status: paymentStatus,
       admin_notes: adminNotes || null,
+      encoding_at: encodingAt || null,
+      is_forecast: isForecast,
       lines: lines.map((l) => ({
         id: l.id,
         mode: l.mode,

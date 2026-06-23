@@ -71,6 +71,9 @@ function NotificationItem({ n, onMarkRead }: { n: AdminNotif; onMarkRead: (id: s
             {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: fr })}
           </span>
           <div className="flex items-center gap-2">
+            <Button variant="link" size="sm" className="h-auto p-0 text-xs" asChild>
+              <Link to={`/admin/notifications/${n.id}`} onClick={() => unread && onMarkRead(n.id)}>Détails</Link>
+            </Button>
             {n.cta_url && (
               <Button variant="link" size="sm" className="h-auto p-0 text-xs" asChild>
                 <Link to={n.cta_url} onClick={() => unread && onMarkRead(n.id)}>Voir →</Link>

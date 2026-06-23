@@ -22146,6 +22146,22 @@ export type Database = {
             }
             Returns: string
           }
+      admin_notifications_get: {
+        Args: { _id: string }
+        Returns: {
+          body: string
+          created_at: string
+          cta_url: string
+          id: string
+          payload: Json
+          read_at: string
+          severity: string
+          source_id: string
+          source_type: string
+          title: string
+          type: string
+        }[]
+      }
       admin_notifications_list: {
         Args: { _limit?: number; _only_unread?: boolean }
         Returns: {

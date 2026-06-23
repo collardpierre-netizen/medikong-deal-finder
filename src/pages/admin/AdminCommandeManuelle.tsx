@@ -16,7 +16,13 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { UserPlus } from "lucide-react";
+import { UserPlus, CheckCircle2, AlertTriangle } from "lucide-react";
+import {
+  lineMetrics as computeLineMetrics,
+  computeOrderTotals,
+  checkCoherence,
+  type ManualLineInput,
+} from "@/lib/manual-order-metrics";
 
 type LineMode = "offer" | "free";
 
@@ -40,24 +46,8 @@ interface ManualLine {
   commission_amount: string; // €/unité
 }
 
-function lineMetrics(l: ManualLine) {
-  const qty = Number(l.quantity) || 0;
-  const sell = Number(l.unit_price_excl_vat) || 0;
-  const costNum = l.unit_cost_excl_vat === "" ? null : Number(l.unit_cost_excl_vat);
-  const hasCost = costNum !== null && Number.isFinite(costNum);
-  const ca = sell * qty;
-  const cost = hasCost ? (costNum as number) * qty : 0;
-  const gross = hasCost ? ca - cost : 0;
-  const rate = l.commission_rate === "" ? null : Number(l.commission_rate);
-  const amt = l.commission_amount === "" ? null : Number(l.commission_amount);
-  let commission = 0;
-  if (amt !== null && Number.isFinite(amt)) commission = amt * qty;
-  else if (rate !== null && Number.isFinite(rate)) commission = (ca * rate) / 100;
-  commission = Math.max(0, commission);
-  const netVendor = ca - commission;
-  const netMargin = hasCost ? ca - cost - commission : 0;
-  return { ca, cost, gross, commission, netVendor, netMargin, hasCost };
-}
+// Wrapper local pour préserver l'API d'origine (ManualLine UI → ManualLineInput).
+const lineMetrics = (l: ManualLine) => computeLineMetrics(l as ManualLineInput);
 
 
 const ORDER_STATUSES = [
@@ -184,29 +174,9 @@ const AdminCommandeManuelle = () => {
     },
   });
 
-  const totals = useMemo(() => {
-    let excl = 0;
-    let incl = 0;
-    let cost = 0;
-    let commission = 0;
-    let hasAnyCost = false;
-    for (const l of lines) {
-      const m = lineMetrics(l);
-      const lineIncl = m.ca * (1 + (l.vat_rate || 0) / 100);
-      excl += m.ca;
-      incl += lineIncl;
-      if (m.hasCost) { cost += m.cost; hasAnyCost = true; }
-      commission += m.commission;
-    }
-    return {
-      excl, incl, vat: incl - excl,
-      cost, hasAnyCost,
-      commission,
-      gross: hasAnyCost ? excl - cost : 0,
-      netVendor: excl - commission,
-      netMargin: hasAnyCost ? excl - cost - commission : 0,
-    };
-  }, [lines]);
+  const totals = useMemo(() => computeOrderTotals(lines as ManualLineInput[]), [lines]);
+  const coherence = useMemo(() => checkCoherence(lines as ManualLineInput[]), [lines]);
+
 
   // récap par vendeur (à partir des métriques par ligne)
   const vendorBreakdown = useMemo(() => {
@@ -543,7 +513,39 @@ const AdminCommandeManuelle = () => {
               <span className="font-semibold">Total TTC</span>
               <span className="font-bold">{totals.incl.toFixed(2)} €</span>
             </div>
+            <div
+
+              role="status"
+              aria-live="polite"
+              className={`mt-3 flex items-start gap-2 text-xs rounded-md px-2 py-1.5 border ${
+                coherence.ok
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                  : "bg-rose-50 border-rose-200 text-rose-700"
+              }`}
+            >
+              {coherence.ok ? (
+                <>
+                  <CheckCircle2 size={14} className="mt-0.5 shrink-0" />
+                  <span>
+                    Contrôle de cohérence OK — CA HTVA = commission + net vendeur
+                    {totals.hasAnyCost ? ", marge brute = marge nette + commission" : ""},
+                    TTC = HTVA + TVA. Arrondis 2 décimales au centime.
+                  </span>
+                </>
+              ) : (
+                <>
+                  <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                  <div>
+                    <div className="font-semibold mb-0.5">Incohérence détectée :</div>
+                    <ul className="list-disc list-inside space-y-0.5">
+                      {coherence.issues.map((msg, i) => <li key={i}>{msg}</li>)}
+                    </ul>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
+
 
 
           <div className="flex justify-end gap-2">

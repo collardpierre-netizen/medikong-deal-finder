@@ -282,8 +282,9 @@ const AdminCommandeManuelle = () => {
       if (!l.vendor_id) return toast.error("Sélectionne le vendeur pour chaque ligne");
       if (l.mode === "free" && !l.manual_label?.trim())
         return toast.error("Libellé manquant sur une ligne libre");
-      if (l.mode === "offer" && !l.offer_id)
-        return toast.error("Sélectionne une offre pour chaque ligne 'offre'");
+      if (l.mode === "offer" && !l.offer_id && !l.product_id)
+        return toast.error("Sélectionne une offre ou un produit pour chaque ligne 'offre'");
+
       if (!(l.quantity > 0)) return toast.error("Quantité invalide");
       if (!(l.unit_price_excl_vat >= 0)) return toast.error("Prix HTVA invalide");
     }

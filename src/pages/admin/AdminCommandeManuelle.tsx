@@ -473,6 +473,53 @@ const AdminCommandeManuelle = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftFromUrl]);
 
+  // Duplication d'une commande existante via ?duplicate=<orderId>
+  const duplicateFromUrl = searchParams.get("duplicate");
+  useEffect(() => {
+    if (!duplicateFromUrl || duplicatedFrom === duplicateFromUrl) return;
+    (async () => {
+      try {
+        const { data, error } = await supabase.rpc("admin_duplicate_order_payload", { _order_id: duplicateFromUrl });
+        if (error) throw error;
+        const p = data as any;
+        if (!p) throw new Error("commande introuvable");
+        setDuplicatedFrom(duplicateFromUrl);
+        setCustomerId(p.customer_id ?? "");
+        setStatus(p.status ?? "confirmed");
+        setPaymentMethod(p.payment_method ?? "invoice");
+        setPaymentStatus(p.payment_status ?? "paid");
+        setAdminNotes(
+          (p.admin_notes ? p.admin_notes + "\n" : "") +
+          `[Dupliquée depuis ${p.source_order_number ?? duplicateFromUrl}]`
+        );
+        setEncodingAt("");
+        setIsForecast(false);
+        setLines(Array.isArray(p.lines) ? p.lines.map((l: any) => ({
+          id: l.id ?? nid(),
+          mode: l.mode ?? "offer",
+          vendor_id: l.vendor_id ?? "",
+          offer_id: l.offer_id ?? undefined,
+          product_id: l.product_id ?? undefined,
+          offer_label: l.offer_label ?? undefined,
+          manual_label: l.manual_label ?? undefined,
+          quantity: Number(l.quantity) || 1,
+          unit_price_excl_vat: Number(l.unit_price_excl_vat) || 0,
+          vat_rate: Number(l.vat_rate ?? 21),
+          unit_cost_excl_vat: l.unit_cost_excl_vat ?? "",
+          commission_rate: l.commission_rate ?? "",
+          commission_amount: l.commission_amount ?? "",
+          commission_basis: l.commission_basis === "margin" ? "margin" : "ca",
+        })) : []);
+        toast.success(`Commande ${p.source_order_number ?? ""} dupliquée — éditez puis créez`);
+      } catch (e: any) {
+        toast.error("Échec duplication : " + (e?.message ?? String(e)));
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [duplicateFromUrl]);
+
+
+
 
   return (
     <div>

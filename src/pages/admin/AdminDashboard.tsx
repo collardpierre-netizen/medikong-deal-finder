@@ -5,6 +5,7 @@ import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useDashboardStats, useVendors, useOrders } from "@/hooks/useAdminData";
 import GmvEvolutionChart from "@/components/admin/GmvEvolutionChart";
+import { fmtEur } from "@/lib/format-currency";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {

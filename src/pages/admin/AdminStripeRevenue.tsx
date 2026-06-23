@@ -75,10 +75,10 @@ export default function AdminStripeRevenue() {
       <AdminTopBar title="Revenue & Marges" subtitle="Suivi de la performance financière Stripe Connect" />
 
       <div className="grid grid-cols-4 gap-4 mb-6">
-        <StatCard icon={DollarSign} label="GMV Total" value={`${(totalGMV / 100).toFixed(2)} €`} color="#1B5BDA" />
-        <StatCard icon={Percent} label="Commission brute" value={`${(totalCommission / 100).toFixed(2)} €`} color="#059669" />
-        <StatCard icon={CreditCard} label="Frais Stripe (est.)" value={`${(stripeFees / 100).toFixed(2)} €`} color="#D97706" />
-        <StatCard icon={TrendingUp} label="Marge nette" value={`${(netMargin / 100).toFixed(2)} €`} color={netMargin >= 0 ? "#059669" : "#EF4343"} />
+        <StatCard icon={DollarSign} label="GMV Total" value={`${fmtEurFromCents(totalGMV)} EUR`} color="#1B5BDA" />
+        <StatCard icon={Percent} label="Commission brute" value={`${fmtEurFromCents(totalCommission)} EUR`} color="#059669" />
+        <StatCard icon={CreditCard} label="Frais Stripe (est.)" value={`${fmtEurFromCents(stripeFees)} EUR`} color="#D97706" />
+        <StatCard icon={TrendingUp} label="Marge nette" value={`${fmtEurFromCents(netMargin)} EUR`} color={netMargin >= 0 ? "#059669" : "#EF4343"} />
       </div>
 
       {chartData.length > 0 && (
@@ -90,7 +90,7 @@ export default function AdminStripeRevenue() {
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#8B95A5" }} />
               <YAxis tick={{ fontSize: 11, fill: "#8B95A5" }} />
               <Tooltip
-                formatter={(value: number) => `${value.toFixed(2)} €`}
+                formatter={(value: number) => `${fmtEur(value)} EUR`}
                 contentStyle={{ fontSize: 12 }}
               />
               <Bar dataKey="gmv" name="GMV" fill="#1B5BDA" radius={[4, 4, 0, 0]} />

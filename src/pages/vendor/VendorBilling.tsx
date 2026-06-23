@@ -252,5 +252,5 @@ export default function VendorBilling() {
 
 function centsToEur(cents: number | null): string {
   if (!cents) return "0,00 €";
-  return `${(cents / 100).toFixed(2).replace(".", ",")} €`;
+  return `${((cents / 100)).toLocaleString("fr-BE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 }

@@ -187,21 +187,43 @@ const AdminCommandeManuelle = () => {
   const totals = useMemo(() => {
     let excl = 0;
     let incl = 0;
+    let cost = 0;
+    let commission = 0;
+    let hasAnyCost = false;
     for (const l of lines) {
-      const lineExcl = (l.unit_price_excl_vat || 0) * (l.quantity || 0);
-      const lineIncl = lineExcl * (1 + (l.vat_rate || 0) / 100);
-      excl += lineExcl;
+      const m = lineMetrics(l);
+      const lineIncl = m.ca * (1 + (l.vat_rate || 0) / 100);
+      excl += m.ca;
       incl += lineIncl;
+      if (m.hasCost) { cost += m.cost; hasAnyCost = true; }
+      commission += m.commission;
     }
-    return { excl, incl, vat: incl - excl };
+    return {
+      excl, incl, vat: incl - excl,
+      cost, hasAnyCost,
+      commission,
+      gross: hasAnyCost ? excl - cost : 0,
+      netVendor: excl - commission,
+      netMargin: hasAnyCost ? excl - cost - commission : 0,
+    };
   }, [lines]);
 
-  // group by vendor for commission
-  const vendorIdsInLines = useMemo(() => {
-    const s = new Set<string>();
-    lines.forEach((l) => l.vendor_id && s.add(l.vendor_id));
-    return Array.from(s);
+  // récap par vendeur (à partir des métriques par ligne)
+  const vendorBreakdown = useMemo(() => {
+    const map = new Map<string, { ca: number; cost: number; commission: number; netVendor: number; hasCost: boolean }>();
+    for (const l of lines) {
+      if (!l.vendor_id) continue;
+      const m = lineMetrics(l);
+      const prev = map.get(l.vendor_id) ?? { ca: 0, cost: 0, commission: 0, netVendor: 0, hasCost: false };
+      prev.ca += m.ca;
+      if (m.hasCost) { prev.cost += m.cost; prev.hasCost = true; }
+      prev.commission += m.commission;
+      prev.netVendor += m.ca - m.commission;
+      map.set(l.vendor_id, prev);
+    }
+    return Array.from(map.entries());
   }, [lines]);
+
 
   function addLine(mode: LineMode) {
     setLines((prev) => [

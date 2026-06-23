@@ -396,21 +396,50 @@ Deno.test({
         assertEquals(found.mode, "free", `mode ligne ${exp.manual_label}`);
       }
 
-      // Total HT recalculable depuis le payload doit matcher la commande source
-      const sumHt = data.lines.reduce(
-        (acc: number, l: any) =>
-          acc + Number(l.quantity) * Number(l.unit_price_excl_vat),
-        0,
+      // ─────────────────────────────────────────────────────────────
+      // Totaux HT / TVA / TTC : recalculés depuis le payload dupliqué
+      // doivent matcher EXACTEMENT ceux de la commande source.
+      // ─────────────────────────────────────────────────────────────
+      const round2 = (n: number) => Math.round(n * 100) / 100;
+
+      const dupHt = round2(
+        data.lines.reduce(
+          (acc: number, l: any) =>
+            acc + Number(l.quantity) * Number(l.unit_price_excl_vat),
+          0,
+        ),
       );
-      const expectedHt = f.lines.reduce(
-        (acc, l) => acc + l.quantity * l.unit_price_excl_vat,
-        0,
+      const dupVat = round2(
+        data.lines.reduce(
+          (acc: number, l: any) =>
+            acc +
+            Number(l.quantity) *
+              Number(l.unit_price_excl_vat) *
+              (Number(l.vat_rate) / 100),
+          0,
+        ),
       );
-      assertEquals(
-        +sumHt.toFixed(2),
-        +expectedHt.toFixed(2),
-        "somme HT recalculée depuis le payload = somme HT source",
-      );
+      const dupTtc = round2(dupHt + dupVat);
+
+      // Référence : on relit la commande source en base
+      const { data: srcOrder, error: srcErr } = await f.admin
+        .from("orders")
+        .select("subtotal_excl_vat, vat_amount, total_incl_vat")
+        .eq("id", f.orderId)
+        .single();
+      assertEquals(srcErr, null, `relecture commande source: ${srcErr?.message}`);
+      assertExists(srcOrder, "commande source relue");
+
+      const srcHt = round2(Number(srcOrder.subtotal_excl_vat));
+      const srcVat = round2(Number(srcOrder.vat_amount));
+      const srcTtc = round2(Number(srcOrder.total_incl_vat));
+
+      assertEquals(dupHt, srcHt, `total HT dupliqué (${dupHt}) ≠ source (${srcHt})`);
+      assertEquals(dupVat, srcVat, `total TVA dupliqué (${dupVat}) ≠ source (${srcVat})`);
+      assertEquals(dupTtc, srcTtc, `total TTC dupliqué (${dupTtc}) ≠ source (${srcTtc})`);
+
+      // Cohérence interne : HT + TVA = TTC (au centime près)
+      assertEquals(round2(dupHt + dupVat), dupTtc, "HT + TVA = TTC (dupliqué)");
     } finally {
       await teardown(f);
     }

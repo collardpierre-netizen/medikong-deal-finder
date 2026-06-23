@@ -251,6 +251,9 @@ async function setup(): Promise<Fixture> {
         manual_label: insertedB.manual_label,
       },
     ],
+    effectiveStatus,
+    effectivePaymentMethod,
+    effectivePaymentStatus,
     cleanupCustomer: true,
   };
 }

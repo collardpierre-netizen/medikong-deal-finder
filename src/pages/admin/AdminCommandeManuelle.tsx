@@ -417,6 +417,7 @@ const AdminCommandeManuelle = () => {
         unit_cost_excl_vat: l.unit_cost_excl_vat ?? "",
         commission_rate: l.commission_rate ?? "",
         commission_amount: l.commission_amount ?? "",
+        commission_basis: l.commission_basis === "margin" ? "margin" : "ca",
       })) : []);
       setSearchParams((sp) => { sp.set("draft", id); return sp; }, { replace: true });
       setDraftsOpen(false);

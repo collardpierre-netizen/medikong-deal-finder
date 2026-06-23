@@ -85,15 +85,24 @@ const AdminCommandeManuelle = () => {
   const [qcName, setQcName] = useState("");
   const [qcEmail, setQcEmail] = useState("");
   const [qcCountry, setQcCountry] = useState("BE");
+  const [qcAddressLine1, setQcAddressLine1] = useState("");
+  const [qcCity, setQcCity] = useState("");
+  const [qcPostalCode, setQcPostalCode] = useState("");
   const [qcSubmitting, setQcSubmitting] = useState(false);
 
   async function quickCreateCustomer() {
     const name = qcName.trim();
     const email = qcEmail.trim().toLowerCase();
     const country = qcCountry.trim().toUpperCase() || "BE";
+    const addressLine1 = qcAddressLine1.trim();
+    const city = qcCity.trim();
+    const postalCode = qcPostalCode.trim();
     if (!name) return toast.error("Nom requis");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("Email invalide");
     if (!/^[A-Z]{2}$/.test(country)) return toast.error("Code pays ISO 2 lettres (ex. BE, FR, LU)");
+    if (!addressLine1) return toast.error("Adresse ligne 1 requise");
+    if (!city) return toast.error("Ville requise");
+    if (!postalCode) return toast.error("Code postal requis");
     setQcSubmitting(true);
     try {
       const { data, error } = await supabase
@@ -102,10 +111,9 @@ const AdminCommandeManuelle = () => {
           company_name: name,
           email,
           country_code: country,
-          // NOT NULL placeholders — à compléter ensuite dans la fiche client si besoin
-          address_line1: "—",
-          city: "—",
-          postal_code: "—",
+          address_line1: addressLine1,
+          city,
+          postal_code: postalCode,
         })
         .select("id, company_name, email, country_code")
         .single();
@@ -116,6 +124,7 @@ const AdminCommandeManuelle = () => {
       await queryClient.invalidateQueries({ queryKey: ["admin-manual-order-customers"] });
       setQcOpen(false);
       setQcName(""); setQcEmail(""); setQcCountry("BE");
+      setQcAddressLine1(""); setQcCity(""); setQcPostalCode("");
     } catch (e: any) {
       toast.error("Échec création : " + (e?.message ?? String(e)));
     } finally {
@@ -318,9 +327,20 @@ const AdminCommandeManuelle = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Les champs adresse (rue, ville, CP) sont remplis avec « — » et restent à compléter ensuite dans la fiche client si besoin.
-                    </p>
+                    <div>
+                      <Label className="text-xs">Adresse ligne 1</Label>
+                      <Input value={qcAddressLine1} onChange={(e) => setQcAddressLine1(e.target.value)} maxLength={255} placeholder="Ex. Rue de la Procession 23" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Ville</Label>
+                        <Input value={qcCity} onChange={(e) => setQcCity(e.target.value)} maxLength={100} placeholder="Ex. Ath" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Code postal</Label>
+                        <Input value={qcPostalCode} onChange={(e) => setQcPostalCode(e.target.value)} maxLength={20} placeholder="Ex. 7822" />
+                      </div>
+                    </div>
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setQcOpen(false)}>Annuler</Button>

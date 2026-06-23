@@ -84,7 +84,7 @@ const AdminDashboard = () => {
   const pendingBuyersList = pendingBuyers.data || [];
   const totalPending = pendingVendorsList.length + pendingBuyersList.length;
 
-  const fmt = (n: number) => n.toLocaleString("fr-BE");
+  const fmt = (n: number) => withDotThousands(n.toLocaleString("fr-BE"));
   const timeAgo = (d: string) => {
     const diff = Date.now() - new Date(d).getTime();
     const h = Math.floor(diff / 3600000);

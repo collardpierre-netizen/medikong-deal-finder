@@ -417,6 +417,11 @@ const AdminCommandes = () => {
                                     Test
                                   </span>
                                 )}
+                                {o.isForecast && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide" style={{ backgroundColor: "#EDE9FE", color: "#6D28D9" }} title="Commande prévisionnelle">
+                                    <CalendarClock size={9} /> Prévisionnel
+                                  </span>
+                                )}
                               </div>
                               <span className="text-[10px]" style={{ color: "#8B95A5" }}>{o.date}</span>
                             </td>

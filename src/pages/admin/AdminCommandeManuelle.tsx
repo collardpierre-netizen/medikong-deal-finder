@@ -512,8 +512,38 @@ const AdminCommandeManuelle = () => {
             <div className="flex justify-between text-base mt-2 pt-2 border-t">
               <span className="font-semibold">Total TTC</span>
               <span className="font-bold">{totals.incl.toFixed(2)} €</span>
+            <div
+              role="status"
+              aria-live="polite"
+              className={`mt-3 flex items-start gap-2 text-xs rounded-md px-2 py-1.5 border ${
+                coherence.ok
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                  : "bg-rose-50 border-rose-200 text-rose-700"
+              }`}
+            >
+              {coherence.ok ? (
+                <>
+                  <CheckCircle2 size={14} className="mt-0.5 shrink-0" />
+                  <span>
+                    Contrôle de cohérence OK — CA HTVA = commission + net vendeur
+                    {totals.hasAnyCost ? ", marge brute = marge nette + commission" : ""},
+                    TTC = HTVA + TVA. Arrondis 2 décimales au centime.
+                  </span>
+                </>
+              ) : (
+                <>
+                  <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                  <div>
+                    <div className="font-semibold mb-0.5">Incohérence détectée :</div>
+                    <ul className="list-disc list-inside space-y-0.5">
+                      {coherence.issues.map((msg, i) => <li key={i}>{msg}</li>)}
+                    </ul>
+                  </div>
+                </>
+              )}
             </div>
           </div>
+
 
 
           <div className="flex justify-end gap-2">

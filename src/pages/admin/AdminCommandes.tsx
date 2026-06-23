@@ -13,9 +13,18 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  ShoppingCart, TrendingUp, Clock, CreditCard, Truck,
+  ShoppingCart, TrendingUp, Clock, CreditCard, Truck, Percent,
   Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle,
 } from "lucide-react";
+
+type PeriodKey = "7d" | "30d" | "90d" | "12m" | "all";
+const PERIODS: { key: PeriodKey; label: string; days: number | null }[] = [
+  { key: "7d", label: "7 j", days: 7 },
+  { key: "30d", label: "30 j", days: 30 },
+  { key: "90d", label: "90 j", days: 90 },
+  { key: "12m", label: "12 mois", days: 365 },
+  { key: "all", label: "Tout", days: null },
+];
 
 const buyerColors: Record<string, { bg: string; text: string }> = {
   Pharmacie: { bg: "#EFF6FF", text: "#1B5BDA" },

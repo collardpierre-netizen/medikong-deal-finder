@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import {
   XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Area, AreaChart,
+  ResponsiveContainer,
 } from "recharts";
 
 const AdminDashboard = () => {

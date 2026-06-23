@@ -45,6 +45,8 @@ interface ManualLine {
   unit_cost_excl_vat: string; // €/unité HTVA
   commission_rate: string; // %
   commission_amount: string; // €/unité
+  /** Base du % de commission : "ca" (CA HTVA, défaut) ou "margin" (marge brute = CA − coût) */
+  commission_basis: "ca" | "margin";
 }
 
 // Wrapper local pour préserver l'API d'origine (ManualLine UI → ManualLineInput).

@@ -27,8 +27,8 @@ const AdminAnalytics = () => {
       <div className="grid grid-cols-5 gap-4 mb-6">
         <KpiCard icon={Users} label="Acheteurs actifs" value={String(totalCustomers)} iconColor="#1B5BDA" iconBg="#EFF6FF" />
         <KpiCard icon={ShoppingCart} label="Commandes" value={String(totalOrders)} iconColor="#7C3AED" iconBg="#F3F0FF" />
-        <KpiCard icon={TrendingUp} label="GMV total" value={`${fmt(gmv)} €`} iconColor="#059669" iconBg="#ECFDF5" />
-        <KpiCard icon={Target} label="Panier moyen" value={`${fmt(avgBasket)} €`} iconColor="#F59E0B" iconBg="#FFFBEB" />
+        <KpiCard icon={TrendingUp} label="GMV total" value={`${fmtEur(gmv)} EUR`} iconColor="#059669" iconBg="#ECFDF5" />
+        <KpiCard icon={Target} label="Panier moyen" value={`${fmtEur(avgBasket)} EUR`} iconColor="#F59E0B" iconBg="#FFFBEB" />
         <KpiCard icon={Search} label="Recherches / jour" value="—" iconColor="#8B95A5" iconBg="#F8FAFC" />
       </div>
 

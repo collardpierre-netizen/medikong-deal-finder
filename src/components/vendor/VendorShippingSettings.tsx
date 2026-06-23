@@ -64,8 +64,8 @@ export default function VendorShippingSettings({ vendorId, currentMode, marginPe
   const { data: credentials } = useQuery({
     queryKey: ["vendor-sendcloud-credentials", vendorId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vendor_sendcloud_status_v" as any)
+      const { data, error } = await (supabase as any)
+        .from("vendor_sendcloud_status_v")
         .select("id, vendor_id, is_connected, last_verified_at, has_public_key, has_secret_key")
         .eq("vendor_id", vendorId)
         .maybeSingle();

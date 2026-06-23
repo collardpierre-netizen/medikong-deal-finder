@@ -46,6 +46,7 @@ const statusFilters = [
   { key: "all", label: "Toutes" },
   { key: "pending", label: "En attente" },
   { key: "confirmed", label: "Confirmées" },
+  { key: "processing", label: "En cours" },
   { key: "shipped", label: "Expédiées" },
   { key: "delivered", label: "Livrées" },
   { key: "cancelled", label: "Annulées" },
@@ -118,7 +119,7 @@ const AdminCommandes = () => {
       commissionPct: amountHT > 0 ? (commissionEur / amountHT) * 100 : 0,
       paymentTerms: o.payment_method || "invoice",
       dueDate: o.payment_due_date ? new Date(o.payment_due_date).toLocaleDateString("fr-BE") : "—",
-      status: o.status as "pending" | "confirmed" | "shipped" | "delivered" | "cancelled",
+      status: o.status as "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled",
       isTest: Boolean((o as any).is_test),
       hiddenFromList: Boolean((o as any).hidden_from_list),
       createdAtRaw: o.created_at,
@@ -188,13 +189,13 @@ const AdminCommandes = () => {
 
   const timeline = displayOrders.slice(0, 6).map(o => ({
     time: new Date().toLocaleTimeString("fr-BE", { hour: "2-digit", minute: "2-digit" }),
-    event: `${o.status === "pending" ? "Nouvelle commande" : o.status === "confirmed" ? "Commande confirmée" : o.status === "shipped" ? "Expédition" : o.status === "delivered" ? "Livraison confirmée" : "Annulation"} ${o.id}`,
+    event: `${o.status === "pending" ? "Nouvelle commande" : o.status === "confirmed" ? "Commande confirmée" : o.status === "processing" ? "En cours" : o.status === "shipped" ? "Expédition" : o.status === "delivered" ? "Livraison confirmée" : "Annulation"} ${o.id}`,
     detail: `${o.buyer} — ${fmt(o.ttc)} EUR TTC`,
     type: o.status,
   }));
 
   const timelineColors: Record<string, string> = {
-    confirmed: "#1B5BDA", shipped: "#7C3AED", pending: "#F59E0B", delivered: "#059669", cancelled: "#EF4343",
+    confirmed: "#059669", processing: "#1B5BDA", shipped: "#7C3AED", pending: "#F59E0B", delivered: "#059669", cancelled: "#EF4343",
   };
 
   const buyerTypeMap = new Map<string, { orders: number; gmv: number }>();
@@ -298,7 +299,7 @@ const AdminCommandes = () => {
       <div className="grid grid-cols-6 gap-3 mb-5">
         <KpiCard icon={TrendingUp} label="GMV total" value={`${fmt(gmvDay)} EUR`} evolution={{ value: 12.4, label: "vs mois dernier" }} />
         <KpiCard icon={ShoppingCart} label="Commandes" value={String(displayOrders.length)} evolution={{ value: 8.2, label: "vs mois dernier" }} iconColor="#7C3AED" iconBg="#F5F3FF" />
-        <KpiCard icon={CreditCard} label="Panier moyen" value={`${avgBasket} EUR`} iconColor="#059669" iconBg="#F0FDF4" />
+        <KpiCard icon={CreditCard} label="Panier moyen" value={`${fmt(avgBasket)} EUR`} iconColor="#059669" iconBg="#F0FDF4" />
         <KpiCard icon={Percent} label="Commission totale" value={`${fmt(commissionTotal)} EUR`} evolution={{ value: Number(commissionPctGlobal.toFixed(2)), label: "% du CA HT" }} iconColor="#10B981" iconBg="#ECFDF5" />
         <KpiCard icon={Clock} label="En attente" value={String(countByStatus("pending"))} iconColor="#F59E0B" iconBg="#FFFBEB" />
         <KpiCard icon={Truck} label="En livraison" value={String(countByStatus("shipped"))} iconColor="#E70866" iconBg="#FDF2F8" />
@@ -580,7 +581,7 @@ const AdminCommandes = () => {
                   </div>
                   <div>
                     <span className="text-[11px]" style={{ color: "#8B95A5" }}>Panier moyen</span>
-                    <p className="text-[14px] font-bold" style={{ color: "#1D2530" }}>{bp.avgBasket} EUR</p>
+                    <p className="text-[14px] font-bold" style={{ color: "#1D2530" }}>{fmt(bp.avgBasket)} EUR</p>
                   </div>
                 </div>
               </div>
@@ -595,7 +596,7 @@ const AdminCommandes = () => {
           <p className="text-[12px]" style={{ color: "#8B95A5" }}>Données agrégées depuis les commandes en base.</p>
           <div className="mt-4 grid grid-cols-4 gap-4">
             {[
-              { range: "0-30 jours", color: "#059669", amount: displayOrders.filter(o => o.status === "pending" || o.status === "confirmed").reduce((a, o) => a + o.ttc, 0) },
+              { range: "0-30 jours", color: "#059669", amount: displayOrders.filter(o => o.status === "pending" || o.status === "confirmed" || o.status === "processing").reduce((a, o) => a + o.ttc, 0) },
               { range: "31-60 jours", color: "#1B5BDA", amount: displayOrders.filter(o => o.status === "shipped").reduce((a, o) => a + o.ttc, 0) },
               { range: "Livré", color: "#059669", amount: displayOrders.filter(o => o.status === "delivered").reduce((a, o) => a + o.ttc, 0) },
               { range: "Annulé", color: "#EF4343", amount: displayOrders.filter(o => o.status === "cancelled").reduce((a, o) => a + o.ttc, 0) },

@@ -96,7 +96,7 @@ const AdminCommandeManuelle = () => {
   const [paymentStatus, setPaymentStatus] = useState("paid");
   const [adminNotes, setAdminNotes] = useState("");
   const [lines, setLines] = useState<ManualLine[]>([]);
-  const [commissions, setCommissions] = useState<Record<string, CommissionInput>>({});
+  
   const [submitting, setSubmitting] = useState(false);
 
   // Quick-create customer modal

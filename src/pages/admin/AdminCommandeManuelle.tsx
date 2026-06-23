@@ -707,7 +707,33 @@ const AdminCommandeManuelle = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="pt-2 border-t" style={{ borderColor: "#E2E8F0" }}>
+              <Label className="text-xs flex items-center gap-1">
+                <CalendarClock size={12} /> Date d'encodage
+              </Label>
+              <Input
+                type="datetime-local"
+                value={encodingAt}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setEncodingAt(v);
+                  if (v && new Date(v).getTime() > Date.now()) setIsForecast(true);
+                }}
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Vide = maintenant. Une date future tague automatiquement la commande comme prévisionnelle.
+              </p>
+            </div>
+            <label className="flex items-center gap-2 text-xs cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isForecast}
+                onChange={(e) => setIsForecast(e.target.checked)}
+              />
+              <span className="font-medium">Marquer comme commande prévisionnelle</span>
+            </label>
           </div>
+
 
           <div className="bg-white rounded-lg border p-4 space-y-3" style={{ borderColor: "#E2E8F0" }}>
             <h3 className="font-semibold text-sm">Notes admin</h3>

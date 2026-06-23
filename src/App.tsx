@@ -145,6 +145,7 @@ const AdminProduits = lazyWithRetry(() => import("./pages/admin/AdminProduits"),
 const AdminProduitDetail = lazyWithRetry(() => import("./pages/admin/AdminProduitDetail"), "AdminProduitDetail");
 const AdminSchemasPIM = lazyWithRetry(() => import("./pages/admin/AdminSchemasPIM"), "AdminSchemasPIM");
 const AdminCommandes = lazyWithRetry(() => import("./pages/admin/AdminCommandes"), "AdminCommandes");
+const AdminCommandeManuelle = lazyWithRetry(() => import("./pages/admin/AdminCommandeManuelle"), "AdminCommandeManuelle");
 const AdminFinances = lazyWithRetry(() => import("./pages/admin/AdminFinances"), "AdminFinances");
 const AdminLitiges = lazyWithRetry(() => import("./pages/admin/AdminLitiges"), "AdminLitiges");
 const AdminCommandesEnRetard = lazyWithRetry(() => import("./pages/admin/AdminCommandesEnRetard"), "AdminCommandesEnRetard");
@@ -491,6 +492,7 @@ const App = () => (
               <Route path="fabricants" element={<LP><AdminFabricants /></LP>} />
               <Route path="schemas-pim" element={<LP><AdminSchemasPIM /></LP>} />
               <Route path="commandes" element={<LP><AdminCommandes /></LP>} />
+              <Route path="commandes/nouvelle" element={<LP><AdminCommandeManuelle /></LP>} />
               <Route path="commandes-en-retard" element={<LP><AdminCommandesEnRetard /></LP>} />
               <Route path="notifications" element={<LP><AdminNotifications /></LP>} />
               <Route path="litiges" element={<LP><AdminLitiges /></LP>} />

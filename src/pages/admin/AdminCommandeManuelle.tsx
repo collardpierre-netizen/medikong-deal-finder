@@ -512,7 +512,9 @@ const AdminCommandeManuelle = () => {
             <div className="flex justify-between text-base mt-2 pt-2 border-t">
               <span className="font-semibold">Total TTC</span>
               <span className="font-bold">{totals.incl.toFixed(2)} €</span>
+            </div>
             <div
+
               role="status"
               aria-live="polite"
               className={`mt-3 flex items-start gap-2 text-xs rounded-md px-2 py-1.5 border ${

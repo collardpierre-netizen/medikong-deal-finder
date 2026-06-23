@@ -676,6 +676,67 @@ function LineRow({
           />
         </div>
       </div>
+
+      <div className="grid grid-cols-3 gap-2 pt-1 border-t" style={{ borderColor: "#E2E8F0" }}>
+        <div>
+          <Label className="text-xs">Prix d'achat HTVA €/u.</Label>
+          <Input
+            type="number" step="0.0001" min="0"
+            placeholder="optionnel"
+            value={line.unit_cost_excl_vat}
+            onChange={(e) => onPatch({ unit_cost_excl_vat: e.target.value })}
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Commission %</Label>
+          <Input
+            type="number" step="0.01" min="0" max="100"
+            placeholder="ex. 12"
+            value={line.commission_rate}
+            disabled={line.commission_amount !== ""}
+            onChange={(e) => onPatch({ commission_rate: e.target.value })}
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Commission €/u. (fixe)</Label>
+          <Input
+            type="number" step="0.01" min="0"
+            placeholder="ex. 1.50"
+            value={line.commission_amount}
+            disabled={line.commission_rate !== ""}
+            onChange={(e) => onPatch({ commission_amount: e.target.value })}
+          />
+        </div>
+      </div>
+
+      {(() => {
+        const m = lineMetrics(line);
+        return (
+          <div className="grid grid-cols-5 gap-2 text-xs bg-muted/40 rounded p-2">
+            <div>
+              <div className="text-muted-foreground">CA HTVA</div>
+              <div className="font-semibold">{m.ca.toFixed(2)} €</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Marge brute</div>
+              <div className="font-semibold">{m.hasCost ? `${m.gross.toFixed(2)} €` : "—"}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Commission MK</div>
+              <div className="font-semibold text-emerald-600">{m.commission.toFixed(2)} €</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Net vendeur</div>
+              <div className="font-semibold">{m.netVendor.toFixed(2)} €</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Marge nette</div>
+              <div className="font-semibold">{m.hasCost ? `${m.netMargin.toFixed(2)} €` : "—"}</div>
+            </div>
+          </div>
+        );
+      })()}
+
     </div>
   );
 }

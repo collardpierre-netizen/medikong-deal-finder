@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import {
   XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Line, LineChart,
+  ResponsiveContainer, Line, ComposedChart, Legend,
 } from "recharts";
+import { CalendarClock } from "lucide-react";
 
 type Period = "day" | "week" | "month";
 
@@ -10,6 +11,7 @@ interface OrderLike {
   created_at: string;
   total_incl_vat?: number | string | null;
   status?: string | null;
+  is_forecast?: boolean | null;
 }
 
 interface Props {
@@ -80,22 +82,39 @@ const formatEuro = (v: number) => {
   return `€${Math.round(v)}`;
 };
 
+const fmtFull = (v: number) =>
+  `€${Number(v).toLocaleString("fr-BE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 export default function GmvEvolutionChart({ title, orders }: Props) {
   const [period, setPeriod] = useState<Period>("month");
+  const [includeForecast, setIncludeForecast] = useState(false);
+
+  const forecastCount = useMemo(
+    () => orders.filter(o => o.is_forecast).length,
+    [orders],
+  );
 
   const data = useMemo(() => {
     const buckets = buildBuckets(period);
-    const map = new Map(buckets.map(b => [b.key, { ...b, gmv: 0 }]));
+    const map = new Map(buckets.map(b => [b.key, { ...b, gmv: 0, forecast: 0 }]));
     for (const o of orders) {
       if (o.status && EXCLUDED_STATUSES.has(o.status)) continue;
+      if (!includeForecast && o.is_forecast) continue;
       const d = new Date(o.created_at);
       if (Number.isNaN(d.getTime())) continue;
       const key = bucketKeyFor(d, period);
       const row = map.get(key);
-      if (row) row.gmv += Number(o.total_incl_vat) || 0;
+      if (!row) continue;
+      const amount = Number(o.total_incl_vat) || 0;
+      row.gmv += amount;
+      if (o.is_forecast) row.forecast += amount;
     }
-    return Array.from(map.values());
-  }, [orders, period]);
+    let cum = 0;
+    return Array.from(map.values()).map(r => {
+      cum += r.gmv;
+      return { ...r, cumulative: cum };
+    });
+  }, [orders, period, includeForecast]);
 
   const total = data.reduce((s, r) => s + r.gmv, 0);
   const hasData = total > 0;
@@ -108,34 +127,54 @@ export default function GmvEvolutionChart({ title, orders }: Props) {
 
   return (
     <div className="p-5 rounded-[10px] animate-fade-in" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <h3 className="text-[14px] font-semibold" style={{ color: "#1D2530" }}>{title}</h3>
-        <div className="inline-flex rounded-md p-0.5" style={{ backgroundColor: "#F1F5F9" }}>
-          {periods.map(p => {
-            const active = p.key === period;
-            return (
-              <button
-                key={p.key}
-                type="button"
-                onClick={() => setPeriod(p.key)}
-                className="px-2.5 py-1 text-[11px] font-medium rounded-[5px] transition-all duration-200"
-                style={{
-                  backgroundColor: active ? "#fff" : "transparent",
-                  color: active ? "#1B5BDA" : "#616B7C",
-                  boxShadow: active ? "0 1px 2px rgba(15,23,42,0.08)" : "none",
-                }}
-              >
-                {p.label}
-              </button>
-            );
-          })}
+        <div className="flex items-center gap-2">
+          <label
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium cursor-pointer select-none transition-colors"
+            style={{
+              backgroundColor: includeForecast ? "#EDE9FE" : "#fff",
+              color: includeForecast ? "#6D28D9" : "#616B7C",
+              border: `1px solid ${includeForecast ? "#DDD6FE" : "#E2E8F0"}`,
+            }}
+            title="Inclure les commandes prévisionnelles (tag « Prévisionnel »)"
+          >
+            <input
+              type="checkbox"
+              className="accent-violet-600"
+              checked={includeForecast}
+              onChange={(e) => setIncludeForecast(e.target.checked)}
+            />
+            <CalendarClock size={12} />
+            Prévisionnel{forecastCount ? ` (${forecastCount})` : ""}
+          </label>
+          <div className="inline-flex rounded-md p-0.5" style={{ backgroundColor: "#F1F5F9" }}>
+            {periods.map(p => {
+              const active = p.key === period;
+              return (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => setPeriod(p.key)}
+                  className="px-2.5 py-1 text-[11px] font-medium rounded-[5px] transition-all duration-200"
+                  style={{
+                    backgroundColor: active ? "#fff" : "transparent",
+                    color: active ? "#1B5BDA" : "#616B7C",
+                    boxShadow: active ? "0 1px 2px rgba(15,23,42,0.08)" : "none",
+                  }}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
       {hasData ? (
-        <div key={period} className="animate-fade-in">
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={data} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
+        <div key={`${period}-${includeForecast}`} className="animate-fade-in">
+          <ResponsiveContainer width="100%" height={240}>
+            <ComposedChart data={data} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="gmvLineGrad" x1="0" y1="0" x2="1" y2="0">
                   <stop offset="0%" stopColor="#1B5BDA" stopOpacity={0.7} />
@@ -152,20 +191,36 @@ export default function GmvEvolutionChart({ title, orders }: Props) {
                 minTickGap={24}
               />
               <YAxis
+                yAxisId="left"
                 tick={{ fontSize: 11, fill: "#8B95A5" }}
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={formatEuro}
                 width={56}
               />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                tick={{ fontSize: 11, fill: "#10B981" }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={formatEuro}
+                width={56}
+              />
               <Tooltip
-                formatter={(value: number) => [`€${Number(value).toLocaleString("fr-BE", { minimumFractionDigits: 2 })}`, "GMV"]}
+                formatter={(value: number, name: string) => [fmtFull(Number(value)), name]}
                 contentStyle={{ borderRadius: 8, border: "1px solid #E2E8F0", fontSize: 12 }}
                 cursor={{ stroke: "#1B5BDA", strokeDasharray: "3 3", strokeOpacity: 0.4 }}
               />
+              <Legend
+                wrapperStyle={{ fontSize: 11 }}
+                iconType="plainline"
+              />
               <Line
+                yAxisId="left"
                 type="monotone"
                 dataKey="gmv"
+                name="GMV période"
                 stroke="url(#gmvLineGrad)"
                 strokeWidth={2.5}
                 dot={{ r: 3, stroke: "#1B5BDA", strokeWidth: 2, fill: "#fff" }}
@@ -174,11 +229,25 @@ export default function GmvEvolutionChart({ title, orders }: Props) {
                 animationDuration={650}
                 animationEasing="ease-out"
               />
-            </LineChart>
+              <Line
+                yAxisId="right"
+                type="monotone"
+                dataKey="cumulative"
+                name="GMV cumulée"
+                stroke="#10B981"
+                strokeWidth={2}
+                strokeDasharray="4 3"
+                dot={false}
+                activeDot={{ r: 4, stroke: "#10B981", strokeWidth: 2, fill: "#fff" }}
+                isAnimationActive
+                animationDuration={700}
+                animationEasing="ease-out"
+              />
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       ) : (
-        <div className="flex items-center justify-center h-[220px] text-[12px]" style={{ color: "#8B95A5" }}>
+        <div className="flex items-center justify-center h-[240px] text-[12px]" style={{ color: "#8B95A5" }}>
           Aucune donnée GMV sur cette période
         </div>
       )}

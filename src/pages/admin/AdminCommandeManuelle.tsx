@@ -533,6 +533,16 @@ const AdminCommandeManuelle = () => {
           <ArrowLeft size={14} /> Retour aux commandes
         </Link>
         <div className="flex items-center gap-2">
+          {duplicatedFrom && (
+            <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-sky-50 text-sky-700 border border-sky-200">
+              <Copy size={12} /> Dupliquée — éditez puis créez
+            </span>
+          )}
+          {(isForecast || (encodingAt && new Date(encodingAt).getTime() > Date.now())) && (
+            <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-violet-50 text-violet-700 border border-violet-200">
+              <CalendarClock size={12} /> Prévisionnel
+            </span>
+          )}
           {draftId && (
             <span className="text-xs px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
               Brouillon en cours · {draftId.slice(0, 8)}

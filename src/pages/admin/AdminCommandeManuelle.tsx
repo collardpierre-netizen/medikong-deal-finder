@@ -80,6 +80,7 @@ function nid() {
 const AdminCommandeManuelle = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [customerId, setCustomerId] = useState<string>("");
   const [customerSearch, setCustomerSearch] = useState("");
   const [status, setStatus] = useState("confirmed");
@@ -87,8 +88,12 @@ const AdminCommandeManuelle = () => {
   const [paymentStatus, setPaymentStatus] = useState("paid");
   const [adminNotes, setAdminNotes] = useState("");
   const [lines, setLines] = useState<ManualLine[]>([]);
-  
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [draftsOpen, setDraftsOpen] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+
   const [submitting, setSubmitting] = useState(false);
+
 
   // Quick-create customer modal
   const [qcOpen, setQcOpen] = useState(false);

@@ -1,4 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { decryptSecret } from "../_shared/secret-crypto.ts";
+
+const ENC_KEY = Deno.env.get("SENDCLOUD_ENC_KEY") ?? "";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

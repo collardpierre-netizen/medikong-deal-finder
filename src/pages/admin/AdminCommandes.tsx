@@ -480,14 +480,24 @@ const AdminCommandes = () => {
                             <td className="px-3 py-3 text-[11px]" style={{ color: "#616B7C" }}>{o.paymentTerms}</td>
                             <td className="px-3 py-3"><StatusBadge status={o.status} /></td>
                             <td className="px-3 py-3 text-right">
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: o.rawId, number: o.id }); }}
-                                title="Archiver cette commande (soft-delete)"
-                                className="p-1.5 rounded hover:bg-red-50"
-                                style={{ color: "#B91C1C" }}
-                              >
-                                <Trash2 size={14} />
-                              </button>
+                              <div className="inline-flex items-center gap-1">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); navigate(`/admin/commandes/nouvelle?duplicate=${o.rawId}`); }}
+                                  title="Dupliquer cette commande"
+                                  className="p-1.5 rounded hover:bg-sky-50"
+                                  style={{ color: "#0369A1" }}
+                                >
+                                  <Copy size={14} />
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: o.rawId, number: o.id }); }}
+                                  title="Archiver cette commande (soft-delete)"
+                                  className="p-1.5 rounded hover:bg-red-50"
+                                  style={{ color: "#B91C1C" }}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                           {isExpanded && o.lines.length > 0 && (

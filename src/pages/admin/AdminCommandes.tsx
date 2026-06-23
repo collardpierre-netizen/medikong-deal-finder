@@ -189,13 +189,13 @@ const AdminCommandes = () => {
 
   const timeline = displayOrders.slice(0, 6).map(o => ({
     time: new Date().toLocaleTimeString("fr-BE", { hour: "2-digit", minute: "2-digit" }),
-    event: `${o.status === "pending" ? "Nouvelle commande" : o.status === "confirmed" ? "Commande confirmée" : o.status === "shipped" ? "Expédition" : o.status === "delivered" ? "Livraison confirmée" : "Annulation"} ${o.id}`,
+    event: `${o.status === "pending" ? "Nouvelle commande" : o.status === "confirmed" ? "Commande confirmée" : o.status === "processing" ? "En cours" : o.status === "shipped" ? "Expédition" : o.status === "delivered" ? "Livraison confirmée" : "Annulation"} ${o.id}`,
     detail: `${o.buyer} — ${fmt(o.ttc)} EUR TTC`,
     type: o.status,
   }));
 
   const timelineColors: Record<string, string> = {
-    confirmed: "#1B5BDA", shipped: "#7C3AED", pending: "#F59E0B", delivered: "#059669", cancelled: "#EF4343",
+    confirmed: "#059669", processing: "#1B5BDA", shipped: "#7C3AED", pending: "#F59E0B", delivered: "#059669", cancelled: "#EF4343",
   };
 
   const buyerTypeMap = new Map<string, { orders: number; gmv: number }>();

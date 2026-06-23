@@ -361,6 +361,26 @@ const AdminCommandes = () => {
               <input type="checkbox" checked={onlyWithCommission} onChange={(e) => setOnlyWithCommission(e.target.checked)} />
               Avec commission
             </label>
+            <div className="flex items-center rounded-md overflow-hidden" style={{ border: "1px solid #E2E8F0", backgroundColor: "#fff" }} title="Filtrer les commandes prévisionnelles (date d'encodage future ou tag manuel)">
+              {([
+                { key: "all" as const, label: "Toutes" },
+                { key: "real" as const, label: "Réelles" },
+                { key: "forecast" as const, label: `Prévisionnelles${forecastCount ? ` (${forecastCount})` : ""}` },
+              ]).map((opt) => (
+                <button
+                  key={opt.key}
+                  onClick={() => setForecastFilter(opt.key)}
+                  className="px-3 py-2 text-[12px] font-medium inline-flex items-center gap-1 transition-colors"
+                  style={{
+                    backgroundColor: forecastFilter === opt.key ? "#EDE9FE" : "transparent",
+                    color: forecastFilter === opt.key ? "#6D28D9" : "#616B7C",
+                  }}
+                >
+                  {opt.key === "forecast" && <CalendarClock size={12} />}
+                  {opt.label}
+                </button>
+              ))}
+            </div>
             <button className="flex items-center gap-2 px-3 py-2 rounded-md text-[13px] font-medium" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#616B7C" }}><Filter size={14} /> Filtres</button>
           </div>
 

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Save, FileText, FolderOpen } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, FileText, FolderOpen, CalendarClock, Copy } from "lucide-react";
 
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import { fmtEur } from "@/lib/format-currency";

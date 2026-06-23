@@ -34,12 +34,31 @@ interface ManualLine {
   quantity: number;
   unit_price_excl_vat: number;
   vat_rate: number; // percent
+  // marge / commission (par ligne, optionnel)
+  unit_cost_excl_vat: string; // €/unité HTVA
+  commission_rate: string; // %
+  commission_amount: string; // €/unité
 }
 
-interface CommissionInput {
-  rate: string; // %
-  amount: string; // EUR
+function lineMetrics(l: ManualLine) {
+  const qty = Number(l.quantity) || 0;
+  const sell = Number(l.unit_price_excl_vat) || 0;
+  const costNum = l.unit_cost_excl_vat === "" ? null : Number(l.unit_cost_excl_vat);
+  const hasCost = costNum !== null && Number.isFinite(costNum);
+  const ca = sell * qty;
+  const cost = hasCost ? (costNum as number) * qty : 0;
+  const gross = hasCost ? ca - cost : 0;
+  const rate = l.commission_rate === "" ? null : Number(l.commission_rate);
+  const amt = l.commission_amount === "" ? null : Number(l.commission_amount);
+  let commission = 0;
+  if (amt !== null && Number.isFinite(amt)) commission = amt * qty;
+  else if (rate !== null && Number.isFinite(rate)) commission = (ca * rate) / 100;
+  commission = Math.max(0, commission);
+  const netVendor = ca - commission;
+  const netMargin = hasCost ? ca - cost - commission : 0;
+  return { ca, cost, gross, commission, netVendor, netMargin, hasCost };
 }
+
 
 const ORDER_STATUSES = [
   { value: "pending", label: "En attente" },
@@ -77,7 +96,7 @@ const AdminCommandeManuelle = () => {
   const [paymentStatus, setPaymentStatus] = useState("paid");
   const [adminNotes, setAdminNotes] = useState("");
   const [lines, setLines] = useState<ManualLine[]>([]);
-  const [commissions, setCommissions] = useState<Record<string, CommissionInput>>({});
+  
   const [submitting, setSubmitting] = useState(false);
 
   // Quick-create customer modal
@@ -168,21 +187,43 @@ const AdminCommandeManuelle = () => {
   const totals = useMemo(() => {
     let excl = 0;
     let incl = 0;
+    let cost = 0;
+    let commission = 0;
+    let hasAnyCost = false;
     for (const l of lines) {
-      const lineExcl = (l.unit_price_excl_vat || 0) * (l.quantity || 0);
-      const lineIncl = lineExcl * (1 + (l.vat_rate || 0) / 100);
-      excl += lineExcl;
+      const m = lineMetrics(l);
+      const lineIncl = m.ca * (1 + (l.vat_rate || 0) / 100);
+      excl += m.ca;
       incl += lineIncl;
+      if (m.hasCost) { cost += m.cost; hasAnyCost = true; }
+      commission += m.commission;
     }
-    return { excl, incl, vat: incl - excl };
+    return {
+      excl, incl, vat: incl - excl,
+      cost, hasAnyCost,
+      commission,
+      gross: hasAnyCost ? excl - cost : 0,
+      netVendor: excl - commission,
+      netMargin: hasAnyCost ? excl - cost - commission : 0,
+    };
   }, [lines]);
 
-  // group by vendor for commission
-  const vendorIdsInLines = useMemo(() => {
-    const s = new Set<string>();
-    lines.forEach((l) => l.vendor_id && s.add(l.vendor_id));
-    return Array.from(s);
+  // récap par vendeur (à partir des métriques par ligne)
+  const vendorBreakdown = useMemo(() => {
+    const map = new Map<string, { ca: number; cost: number; commission: number; netVendor: number; hasCost: boolean }>();
+    for (const l of lines) {
+      if (!l.vendor_id) continue;
+      const m = lineMetrics(l);
+      const prev = map.get(l.vendor_id) ?? { ca: 0, cost: 0, commission: 0, netVendor: 0, hasCost: false };
+      prev.ca += m.ca;
+      if (m.hasCost) { prev.cost += m.cost; prev.hasCost = true; }
+      prev.commission += m.commission;
+      prev.netVendor += m.ca - m.commission;
+      map.set(l.vendor_id, prev);
+    }
+    return Array.from(map.entries());
   }, [lines]);
+
 
   function addLine(mode: LineMode) {
     setLines((prev) => [
@@ -194,9 +235,13 @@ const AdminCommandeManuelle = () => {
         quantity: 1,
         unit_price_excl_vat: 0,
         vat_rate: 21,
+        unit_cost_excl_vat: "",
+        commission_rate: "",
+        commission_amount: "",
       },
     ]);
   }
+
 
   function patchLine(id: string, patch: Partial<ManualLine>) {
     setLines((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
@@ -251,14 +296,12 @@ const AdminCommandeManuelle = () => {
         quantity: l.quantity,
         unit_price_excl_vat: l.unit_price_excl_vat,
         vat_rate: l.vat_rate,
+        unit_cost_excl_vat: l.unit_cost_excl_vat || "",
+        commission_rate: l.commission_rate || "",
+        commission_amount: l.commission_amount || "",
       })),
-      commissions: Object.fromEntries(
-        Object.entries(commissions).map(([vid, c]) => [
-          vid,
-          { rate: c.rate || "", amount: c.amount || "" },
-        ]),
-      ),
     };
+
 
     setSubmitting(true);
     try {
@@ -437,54 +480,71 @@ const AdminCommandeManuelle = () => {
             ))}
           </div>
 
-          {vendorIdsInLines.length > 0 && (
-            <div className="bg-white rounded-lg border p-4 space-y-3" style={{ borderColor: "#E2E8F0" }}>
-              <h3 className="font-semibold text-sm">Commission (optionnelle, par vendeur)</h3>
+          {vendorBreakdown.length > 0 && (
+            <div className="bg-white rounded-lg border p-4 space-y-2" style={{ borderColor: "#E2E8F0" }}>
+              <h3 className="font-semibold text-sm">Récap par vendeur</h3>
               <p className="text-xs text-muted-foreground">
-                Laisse vide pour ne pas calculer de commission sur cette commande manuelle. Renseigne <b>taux %</b> OU <b>montant fixe</b>.
+                Commission et net vendeur calculés à partir des valeurs saisies par ligne (taux % OU montant fixe par unité).
               </p>
-              {vendorIdsInLines.map((vid) => {
-                const v = (vendors as any[]).find((x) => x.id === vid);
-                const c = commissions[vid] ?? { rate: "", amount: "" };
-                return (
-                  <div key={vid} className="grid grid-cols-3 gap-2 items-end">
-                    <div className="col-span-1 text-sm">{v?.name ?? v?.company_name ?? vid.slice(0, 8)}</div>
-                    <div>
-                      <Label className="text-xs">Taux %</Label>
-                      <Input
-                        type="number" step="0.01" min="0" max="100"
-                        value={c.rate}
-                        onChange={(e) => setCommissions((prev) => ({ ...prev, [vid]: { ...c, rate: e.target.value } }))}
-                      />
+              <div className="text-xs">
+                <div className="grid grid-cols-5 gap-2 font-medium text-muted-foreground border-b pb-1">
+                  <div>Vendeur</div>
+                  <div className="text-right">CA HTVA</div>
+                  <div className="text-right">Coût achat</div>
+                  <div className="text-right">Commission MK</div>
+                  <div className="text-right">Net vendeur</div>
+                </div>
+                {vendorBreakdown.map(([vid, b]) => {
+                  const v = (vendors as any[]).find((x) => x.id === vid);
+                  return (
+                    <div key={vid} className="grid grid-cols-5 gap-2 py-1 border-b last:border-0">
+                      <div className="truncate">{v?.name ?? v?.company_name ?? vid.slice(0, 8)}</div>
+                      <div className="text-right">{b.ca.toFixed(2)} €</div>
+                      <div className="text-right">{b.hasCost ? `${b.cost.toFixed(2)} €` : "—"}</div>
+                      <div className="text-right">{b.commission.toFixed(2)} €</div>
+                      <div className="text-right font-semibold">{b.netVendor.toFixed(2)} €</div>
                     </div>
-                    <div>
-                      <Label className="text-xs">Montant fixe €</Label>
-                      <Input
-                        type="number" step="0.01" min="0"
-                        value={c.amount}
-                        onChange={(e) => setCommissions((prev) => ({ ...prev, [vid]: { ...c, amount: e.target.value } }))}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           )}
 
-          <div className="bg-white rounded-lg border p-4" style={{ borderColor: "#E2E8F0" }}>
+          <div className="bg-white rounded-lg border p-4 space-y-1" style={{ borderColor: "#E2E8F0" }}>
             <div className="flex justify-between text-sm">
-              <span>Sous-total HTVA</span>
+              <span>CA HTVA</span>
               <span className="font-semibold">{totals.excl.toFixed(2)} €</span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-sm text-muted-foreground">
               <span>TVA</span>
               <span>{totals.vat.toFixed(2)} €</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Coût achat total</span>
+              <span>{totals.hasAnyCost ? `${totals.cost.toFixed(2)} €` : "—"}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Marge brute</span>
+              <span>{totals.hasAnyCost ? `${totals.gross.toFixed(2)} €` : "—"}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Commission MediKong</span>
+              <span className="text-emerald-600 font-semibold">{totals.commission.toFixed(2)} €</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Net vendeur (HTVA)</span>
+              <span className="font-semibold">{totals.netVendor.toFixed(2)} €</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Marge nette vendeur</span>
+              <span>{totals.hasAnyCost ? `${totals.netMargin.toFixed(2)} €` : "—"}</span>
             </div>
             <div className="flex justify-between text-base mt-2 pt-2 border-t">
               <span className="font-semibold">Total TTC</span>
               <span className="font-bold">{totals.incl.toFixed(2)} €</span>
             </div>
           </div>
+
 
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => navigate("/admin/commandes")}>Annuler</Button>
@@ -616,6 +676,67 @@ function LineRow({
           />
         </div>
       </div>
+
+      <div className="grid grid-cols-3 gap-2 pt-1 border-t" style={{ borderColor: "#E2E8F0" }}>
+        <div>
+          <Label className="text-xs">Prix d'achat HTVA €/u.</Label>
+          <Input
+            type="number" step="0.0001" min="0"
+            placeholder="optionnel"
+            value={line.unit_cost_excl_vat}
+            onChange={(e) => onPatch({ unit_cost_excl_vat: e.target.value })}
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Commission %</Label>
+          <Input
+            type="number" step="0.01" min="0" max="100"
+            placeholder="ex. 12"
+            value={line.commission_rate}
+            disabled={line.commission_amount !== ""}
+            onChange={(e) => onPatch({ commission_rate: e.target.value })}
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Commission €/u. (fixe)</Label>
+          <Input
+            type="number" step="0.01" min="0"
+            placeholder="ex. 1.50"
+            value={line.commission_amount}
+            disabled={line.commission_rate !== ""}
+            onChange={(e) => onPatch({ commission_amount: e.target.value })}
+          />
+        </div>
+      </div>
+
+      {(() => {
+        const m = lineMetrics(line);
+        return (
+          <div className="grid grid-cols-5 gap-2 text-xs bg-muted/40 rounded p-2">
+            <div>
+              <div className="text-muted-foreground">CA HTVA</div>
+              <div className="font-semibold">{m.ca.toFixed(2)} €</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Marge brute</div>
+              <div className="font-semibold">{m.hasCost ? `${m.gross.toFixed(2)} €` : "—"}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Commission MK</div>
+              <div className="font-semibold text-emerald-600">{m.commission.toFixed(2)} €</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Net vendeur</div>
+              <div className="font-semibold">{m.netVendor.toFixed(2)} €</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Marge nette</div>
+              <div className="font-semibold">{m.hasCost ? `${m.netMargin.toFixed(2)} €` : "—"}</div>
+            </div>
+          </div>
+        );
+      })()}
+
     </div>
   );
 }

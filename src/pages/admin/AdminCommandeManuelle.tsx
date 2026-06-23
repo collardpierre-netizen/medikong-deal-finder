@@ -480,54 +480,71 @@ const AdminCommandeManuelle = () => {
             ))}
           </div>
 
-          {vendorIdsInLines.length > 0 && (
-            <div className="bg-white rounded-lg border p-4 space-y-3" style={{ borderColor: "#E2E8F0" }}>
-              <h3 className="font-semibold text-sm">Commission (optionnelle, par vendeur)</h3>
+          {vendorBreakdown.length > 0 && (
+            <div className="bg-white rounded-lg border p-4 space-y-2" style={{ borderColor: "#E2E8F0" }}>
+              <h3 className="font-semibold text-sm">Récap par vendeur</h3>
               <p className="text-xs text-muted-foreground">
-                Laisse vide pour ne pas calculer de commission sur cette commande manuelle. Renseigne <b>taux %</b> OU <b>montant fixe</b>.
+                Commission et net vendeur calculés à partir des valeurs saisies par ligne (taux % OU montant fixe par unité).
               </p>
-              {vendorIdsInLines.map((vid) => {
-                const v = (vendors as any[]).find((x) => x.id === vid);
-                const c = commissions[vid] ?? { rate: "", amount: "" };
-                return (
-                  <div key={vid} className="grid grid-cols-3 gap-2 items-end">
-                    <div className="col-span-1 text-sm">{v?.name ?? v?.company_name ?? vid.slice(0, 8)}</div>
-                    <div>
-                      <Label className="text-xs">Taux %</Label>
-                      <Input
-                        type="number" step="0.01" min="0" max="100"
-                        value={c.rate}
-                        onChange={(e) => setCommissions((prev) => ({ ...prev, [vid]: { ...c, rate: e.target.value } }))}
-                      />
+              <div className="text-xs">
+                <div className="grid grid-cols-5 gap-2 font-medium text-muted-foreground border-b pb-1">
+                  <div>Vendeur</div>
+                  <div className="text-right">CA HTVA</div>
+                  <div className="text-right">Coût achat</div>
+                  <div className="text-right">Commission MK</div>
+                  <div className="text-right">Net vendeur</div>
+                </div>
+                {vendorBreakdown.map(([vid, b]) => {
+                  const v = (vendors as any[]).find((x) => x.id === vid);
+                  return (
+                    <div key={vid} className="grid grid-cols-5 gap-2 py-1 border-b last:border-0">
+                      <div className="truncate">{v?.name ?? v?.company_name ?? vid.slice(0, 8)}</div>
+                      <div className="text-right">{b.ca.toFixed(2)} €</div>
+                      <div className="text-right">{b.hasCost ? `${b.cost.toFixed(2)} €` : "—"}</div>
+                      <div className="text-right">{b.commission.toFixed(2)} €</div>
+                      <div className="text-right font-semibold">{b.netVendor.toFixed(2)} €</div>
                     </div>
-                    <div>
-                      <Label className="text-xs">Montant fixe €</Label>
-                      <Input
-                        type="number" step="0.01" min="0"
-                        value={c.amount}
-                        onChange={(e) => setCommissions((prev) => ({ ...prev, [vid]: { ...c, amount: e.target.value } }))}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           )}
 
-          <div className="bg-white rounded-lg border p-4" style={{ borderColor: "#E2E8F0" }}>
+          <div className="bg-white rounded-lg border p-4 space-y-1" style={{ borderColor: "#E2E8F0" }}>
             <div className="flex justify-between text-sm">
-              <span>Sous-total HTVA</span>
+              <span>CA HTVA</span>
               <span className="font-semibold">{totals.excl.toFixed(2)} €</span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-sm text-muted-foreground">
               <span>TVA</span>
               <span>{totals.vat.toFixed(2)} €</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Coût achat total</span>
+              <span>{totals.hasAnyCost ? `${totals.cost.toFixed(2)} €` : "—"}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Marge brute</span>
+              <span>{totals.hasAnyCost ? `${totals.gross.toFixed(2)} €` : "—"}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Commission MediKong</span>
+              <span className="text-emerald-600 font-semibold">{totals.commission.toFixed(2)} €</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Net vendeur (HTVA)</span>
+              <span className="font-semibold">{totals.netVendor.toFixed(2)} €</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Marge nette vendeur</span>
+              <span>{totals.hasAnyCost ? `${totals.netMargin.toFixed(2)} €` : "—"}</span>
             </div>
             <div className="flex justify-between text-base mt-2 pt-2 border-t">
               <span className="font-semibold">Total TTC</span>
               <span className="font-bold">{totals.incl.toFixed(2)} €</span>
             </div>
           </div>
+
 
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => navigate("/admin/commandes")}>Annuler</Button>

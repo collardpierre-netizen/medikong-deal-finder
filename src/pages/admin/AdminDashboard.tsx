@@ -6,7 +6,7 @@ import StatusBadge from "@/components/admin/StatusBadge";
 import { useDashboardStats, useVendors, useOrders } from "@/hooks/useAdminData";
 import GmvEvolutionChart from "@/components/admin/GmvEvolutionChart";
 import OrdersStatusPieChart from "@/components/admin/OrdersStatusPieChart";
-import { fmtEur } from "@/lib/format-currency";
+import { fmtEur, withDotThousands } from "@/lib/format-currency";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -84,7 +84,7 @@ const AdminDashboard = () => {
   const pendingBuyersList = pendingBuyers.data || [];
   const totalPending = pendingVendorsList.length + pendingBuyersList.length;
 
-  const fmt = (n: number) => n.toLocaleString("fr-BE");
+  const fmt = (n: number) => withDotThousands(n.toLocaleString("fr-BE"));
   const timeAgo = (d: string) => {
     const diff = Date.now() - new Date(d).getTime();
     const h = Math.floor(diff / 3600000);
@@ -135,7 +135,7 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-5 gap-4 mb-6">
         <KpiCard icon={DollarSign} label={t("gmvMonth")} value={`${fmtEur(stats.gmv)} EUR`} iconColor="#1B5BDA" iconBg="#EFF6FF" />
         <KpiCard icon={ShoppingCart} label={t("ordersMonth")} value={fmt(stats.totalOrders)} iconColor="#7C3AED" iconBg="#F5F3FF" />
-        <KpiCard icon={Store} label={t("activeSellers")} value={String(stats.activeVendors)} iconColor="#059669" iconBg="#F0FDF4" />
+        <KpiCard icon={Store} label={t("activeSellers")} value={fmt(stats.activeVendors)} iconColor="#059669" iconBg="#F0FDF4" />
         <KpiCard icon={Package} label={t("catalogProducts")} value={fmt(stats.totalProducts)} iconColor="#F59E0B" iconBg="#FFFBEB" />
         <KpiCard icon={AlertTriangle} label={t("disputeRate")} value={`${stats.disputeRate}%`} iconColor="#EF4343" iconBg="#FEF2F2" />
       </div>

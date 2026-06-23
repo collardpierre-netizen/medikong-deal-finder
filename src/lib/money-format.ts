@@ -19,6 +19,9 @@ export type CurrencyCode = "EUR" | string;
 
 const NBSP = "\u00A0";
 
+const withDotThousands = (value: string): string =>
+  value.replace(/(?<=\d)[\u00A0\u202F ](?=\d{3}(\D|$))/g, ".");
+
 /** Mapping langue UI (i18next) → locale Intl. */
 export function resolveMoneyLocale(uiLanguage: string | undefined | null): MoneyLocale {
   const lang = (uiLanguage || "fr").toLowerCase().split("-")[0];
@@ -50,17 +53,17 @@ export function formatMoney(amount: number | null | undefined, opts: FormatMoney
   const fractionDigits = opts.fractionDigits ?? 2;
 
   if (withSymbol) {
-    return new Intl.NumberFormat(locale, {
+    return withDotThousands(new Intl.NumberFormat(locale, {
       style: "currency",
       currency,
       minimumFractionDigits: fractionDigits,
       maximumFractionDigits: fractionDigits,
-    }).format(v);
+    }).format(v));
   }
-  return new Intl.NumberFormat(locale, {
+  return withDotThousands(new Intl.NumberFormat(locale, {
     minimumFractionDigits: fractionDigits,
     maximumFractionDigits: fractionDigits,
-  }).format(v);
+  }).format(v));
 }
 
 /** Raccourci pour les valeurs stockées en cents (standard MediKong). */

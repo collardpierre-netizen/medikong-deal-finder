@@ -1,15 +1,18 @@
 /**
  * Format a number as a Belgian-French currency string (no symbol).
- * Always uses thousands separator + 2 decimals.
- * Example: 21388 -> "21 388,00"
+ * Always uses dot thousands separator + 2 decimals.
+ * Example: 21388 -> "21.388,00"
  */
+export const withDotThousands = (value: string): string =>
+  value.replace(/(?<=\d)[\u00A0\u202F ](?=\d{3}(\D|$))/g, ".");
+
 export const fmtEur = (n: number | null | undefined): string => {
   const v = Number(n);
   if (!Number.isFinite(v)) return "0,00";
-  return v.toLocaleString("fr-BE", {
+  return withDotThousands(v.toLocaleString("fr-BE", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  });
+  }));
 };
 
 /** Same as fmtEur but appends " EUR". */

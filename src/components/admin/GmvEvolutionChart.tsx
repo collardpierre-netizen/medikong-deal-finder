@@ -4,6 +4,7 @@ import {
   ResponsiveContainer, Line, ComposedChart, Legend,
 } from "recharts";
 import { CalendarClock } from "lucide-react";
+import { fmtEur } from "@/lib/format-currency";
 
 type Period = "day" | "week" | "month";
 
@@ -82,8 +83,7 @@ const formatEuro = (v: number) => {
   return `€${Math.round(v)}`;
 };
 
-const fmtFull = (v: number) =>
-  `€${Number(v).toLocaleString("fr-BE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmtFull = (v: number) => `€${fmtEur(v)}`;
 
 export default function GmvEvolutionChart({ title, orders }: Props) {
   const [period, setPeriod] = useState<Period>("month");

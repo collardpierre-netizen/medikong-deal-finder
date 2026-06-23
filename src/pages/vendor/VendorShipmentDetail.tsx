@@ -279,5 +279,5 @@ function InfoRow({ label, value, mono }: { label: string; value: string; mono?: 
 
 function centsToEur(cents: number | null): string {
   if (!cents) return "—";
-  return `${(cents / 100).toFixed(2)} €`;
+  return `${(cents / 100).toLocaleString("fr-BE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 }

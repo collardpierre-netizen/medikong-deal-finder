@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { getVendorPublicName } from "@/lib/vendor-display";
 
+import { fmtEur } from "@/lib/format-currency";
 interface OrderLine {
   id: string;
   order_id: string;
@@ -331,7 +332,7 @@ export default function VendorOrders() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-bold text-foreground">€{totalHT.toFixed(2)} HT</span>
+                  <span className="text-sm font-bold text-foreground">{fmtEur(totalHT)}&nbsp;€ HT</span>
                   {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                 </div>
               </button>
@@ -371,7 +372,7 @@ export default function VendorOrders() {
                             <div className="text-[11px] text-muted-foreground mt-0.5">
                               Qté: {line.quantity}
                               {line.quantity_shipped ? <> · Expédié : {line.quantity_shipped}/{line.quantity}</> : null}
-                              {" · "}€{line.unit_price_excl_vat.toFixed(2)} HT/u · Total: €{line.line_total_excl_vat.toFixed(2)} HT
+                              {" · "}{fmtEur(line.unit_price_excl_vat)}&nbsp;€ HT/u · Total: {fmtEur(line.line_total_excl_vat)}&nbsp;€ HT
                             </div>
 
                             {line.tracking_number && (
@@ -403,7 +404,7 @@ export default function VendorOrders() {
                                   <div>Réf. offre : <span className="font-mono text-foreground">{line.qogita_offer_qid}</span></div>
                                 )}
                                 {line.cost_price != null && (
-                                  <div>Prix d'achat : <span className="font-semibold text-foreground">€{line.cost_price.toFixed(2)}</span></div>
+                                  <div>Prix d'achat : <span className="font-semibold text-foreground">{fmtEur(line.cost_price)}&nbsp;€</span></div>
                                 )}
                               </div>
                             )}
@@ -726,7 +727,7 @@ function CancelLineDialog({
         <DialogHeader>
           <DialogTitle>Annuler / refuser la ligne</DialogTitle>
           <DialogDescription className="text-[12px]">
-            {line.product_name} — Quantité à rembourser : <strong>{refundQty}</strong> ({refundAmount.toFixed(2)} € TTC)
+            {line.product_name} — Quantité à rembourser : <strong>{refundQty}</strong> ({fmtEur(refundAmount)}&nbsp;€ TTC)
           </DialogDescription>
         </DialogHeader>
 

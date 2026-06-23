@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
+import { fmtEurFromCents } from "@/lib/format-currency";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VBtn } from "@/components/vendor/ui/VBtn";
 import { VBadge } from "@/components/vendor/ui/VBadge";
@@ -236,12 +237,12 @@ export default function VendorShipments() {
                       </td>
                       {showCost && (
                         <td className="py-2.5 px-3 text-right text-[#1D2530]">
-                          {s.cost_total_cents ? `${(s.cost_total_cents / 100).toFixed(2)} €` : "—"}
+                          {s.cost_total_cents ? `${fmtEurFromCents(s.cost_total_cents)} €` : "—"}
                         </td>
                       )}
                       {showMargin && (
                         <td className="py-2.5 px-3 text-right text-[#8B95A5]">
-                          {s.cost_margin_cents ? `${(s.cost_margin_cents / 100).toFixed(2)} €` : "—"}
+                          {s.cost_margin_cents ? `${fmtEurFromCents(s.cost_margin_cents)} €` : "—"}
                         </td>
                       )}
                       <td className="py-2.5 px-3 text-right text-[#8B95A5]">
@@ -302,8 +303,8 @@ export default function VendorShipments() {
               <Row label="Suivi" value={detailShipment.tracking_number ?? "—"} />
               <Row label="Poids" value={detailShipment.weight_grams ? `${detailShipment.weight_grams} g` : "—"} />
               <Row label="Mode" value={detailShipment.shipping_mode_used} />
-              {showCost && <Row label="Coût total" value={detailShipment.cost_total_cents ? `${(detailShipment.cost_total_cents / 100).toFixed(2)} €` : "—"} />}
-              {showMargin && <Row label="Marge" value={detailShipment.cost_margin_cents ? `${(detailShipment.cost_margin_cents / 100).toFixed(2)} €` : "—"} />}
+              {showCost && <Row label="Coût total" value={detailShipment.cost_total_cents ? `${fmtEurFromCents(detailShipment.cost_total_cents)} €` : "—"} />}
+              {showMargin && <Row label="Marge" value={detailShipment.cost_margin_cents ? `${fmtEurFromCents(detailShipment.cost_margin_cents)} €` : "—"} />}
               <Row label="Créé le" value={format(new Date(detailShipment.created_at), "d MMMM yyyy HH:mm", { locale: fr })} />
               {detailShipment.label_url && (
                 <div className="pt-2">

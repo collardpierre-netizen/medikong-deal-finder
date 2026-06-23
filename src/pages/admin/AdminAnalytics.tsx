@@ -7,7 +7,7 @@ import {
   TrendingUp, Database,
 } from "lucide-react";
 
-const fmt = (n: number) => n.toLocaleString("fr-BE", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+import { fmtEur } from "@/lib/format-currency";
 
 const AdminAnalytics = () => {
   const { data: orders = [] } = useOrders();
@@ -16,7 +16,7 @@ const AdminAnalytics = () => {
   const totalOrders = orders.length;
   const totalCustomers = customers.length;
   const gmv = orders.reduce((a, o) => a + (Number(o.total_incl_vat) || 0), 0);
-  const avgBasket = totalOrders > 0 ? Math.round(gmv / totalOrders) : 0;
+  const avgBasket = totalOrders > 0 ? gmv / totalOrders : 0;
 
   const hasData = totalOrders > 0 || totalCustomers > 0;
 
@@ -27,8 +27,8 @@ const AdminAnalytics = () => {
       <div className="grid grid-cols-5 gap-4 mb-6">
         <KpiCard icon={Users} label="Acheteurs actifs" value={String(totalCustomers)} iconColor="#1B5BDA" iconBg="#EFF6FF" />
         <KpiCard icon={ShoppingCart} label="Commandes" value={String(totalOrders)} iconColor="#7C3AED" iconBg="#F3F0FF" />
-        <KpiCard icon={TrendingUp} label="GMV total" value={`${fmt(gmv)} €`} iconColor="#059669" iconBg="#ECFDF5" />
-        <KpiCard icon={Target} label="Panier moyen" value={`${fmt(avgBasket)} €`} iconColor="#F59E0B" iconBg="#FFFBEB" />
+        <KpiCard icon={TrendingUp} label="GMV total" value={`${fmtEur(gmv)} EUR`} iconColor="#059669" iconBg="#ECFDF5" />
+        <KpiCard icon={Target} label="Panier moyen" value={`${fmtEur(avgBasket)} EUR`} iconColor="#F59E0B" iconBg="#FFFBEB" />
         <KpiCard icon={Search} label="Recherches / jour" value="—" iconColor="#8B95A5" iconBg="#F8FAFC" />
       </div>
 

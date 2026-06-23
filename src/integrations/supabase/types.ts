@@ -8051,6 +8051,7 @@ export type Database = {
           estimated_delivery_date: string | null
           hidden_from_list: boolean
           id: string
+          is_forecast: boolean
           is_test: boolean
           notes: string | null
           order_number: string
@@ -8083,6 +8084,7 @@ export type Database = {
           estimated_delivery_date?: string | null
           hidden_from_list?: boolean
           id?: string
+          is_forecast?: boolean
           is_test?: boolean
           notes?: string | null
           order_number: string
@@ -8115,6 +8117,7 @@ export type Database = {
           estimated_delivery_date?: string | null
           hidden_from_list?: boolean
           id?: string
+          is_forecast?: boolean
           is_test?: boolean
           notes?: string | null
           order_number?: string
@@ -22017,6 +22020,10 @@ export type Database = {
       admin_delete_manual_order_draft: {
         Args: { _id: string }
         Returns: undefined
+      }
+      admin_duplicate_order_payload: {
+        Args: { _order_id: string }
+        Returns: Json
       }
       admin_email_deliverability_kpis: {
         Args: never

@@ -12,6 +12,8 @@
  *   totals.* = somme exacte des lineMetrics arrondies
  */
 
+export type CommissionBasis = "ca" | "margin";
+
 export interface ManualLineInput {
   quantity: number;
   /** PU HTVA (€) */
@@ -20,10 +22,17 @@ export interface ManualLineInput {
   vat_rate?: number;
   /** PU achat HTVA (€) — string vide / null = inconnu */
   unit_cost_excl_vat?: string | number | null;
-  /** Commission en % du CA HTVA — exclusif avec commission_amount */
+  /** Commission en % — base définie par `commission_basis` (exclusif avec commission_amount) */
   commission_rate?: string | number | null;
   /** Commission en € par unité vendue — exclusif avec commission_rate */
   commission_amount?: string | number | null;
+  /**
+   * Base de calcul du % de commission :
+   *  - "ca" (défaut) : % appliqué sur le CA HTVA
+   *  - "margin"      : % appliqué sur la marge brute (CA − coût). Fallback sur "ca" si coût inconnu.
+   * Sans effet quand on utilise `commission_amount` (€/unité fixe).
+   */
+  commission_basis?: CommissionBasis | null;
 }
 
 export interface LineMetrics {

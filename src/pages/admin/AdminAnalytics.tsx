@@ -7,7 +7,7 @@ import {
   TrendingUp, Database,
 } from "lucide-react";
 
-const fmt = (n: number) => n.toLocaleString("fr-BE", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+import { fmtEur } from "@/lib/format-currency";
 
 const AdminAnalytics = () => {
   const { data: orders = [] } = useOrders();

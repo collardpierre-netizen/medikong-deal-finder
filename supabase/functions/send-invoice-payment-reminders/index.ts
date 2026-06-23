@@ -3,6 +3,7 @@
 //   J+M for each M in remind_days_after_due (configurable per vendor)
 // Also flips PENDING -> OVERDUE for past-due invoices.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireCronOrService } from "../_shared/cron-or-admin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

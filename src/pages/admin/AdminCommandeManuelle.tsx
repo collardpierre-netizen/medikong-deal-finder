@@ -16,7 +16,13 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { UserPlus } from "lucide-react";
+import { UserPlus, CheckCircle2, AlertTriangle } from "lucide-react";
+import {
+  lineMetrics as computeLineMetrics,
+  computeOrderTotals,
+  checkCoherence,
+  type ManualLineInput,
+} from "@/lib/manual-order-metrics";
 
 type LineMode = "offer" | "free";
 
@@ -40,24 +46,8 @@ interface ManualLine {
   commission_amount: string; // €/unité
 }
 
-function lineMetrics(l: ManualLine) {
-  const qty = Number(l.quantity) || 0;
-  const sell = Number(l.unit_price_excl_vat) || 0;
-  const costNum = l.unit_cost_excl_vat === "" ? null : Number(l.unit_cost_excl_vat);
-  const hasCost = costNum !== null && Number.isFinite(costNum);
-  const ca = sell * qty;
-  const cost = hasCost ? (costNum as number) * qty : 0;
-  const gross = hasCost ? ca - cost : 0;
-  const rate = l.commission_rate === "" ? null : Number(l.commission_rate);
-  const amt = l.commission_amount === "" ? null : Number(l.commission_amount);
-  let commission = 0;
-  if (amt !== null && Number.isFinite(amt)) commission = amt * qty;
-  else if (rate !== null && Number.isFinite(rate)) commission = (ca * rate) / 100;
-  commission = Math.max(0, commission);
-  const netVendor = ca - commission;
-  const netMargin = hasCost ? ca - cost - commission : 0;
-  return { ca, cost, gross, commission, netVendor, netMargin, hasCost };
-}
+// Wrapper local pour préserver l'API d'origine (ManualLine UI → ManualLineInput).
+const lineMetrics = (l: ManualLine) => computeLineMetrics(l as ManualLineInput);
 
 
 const ORDER_STATUSES = [

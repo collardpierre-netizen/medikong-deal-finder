@@ -150,9 +150,13 @@ const AdminCommandes = () => {
   const filtered = displayOrders.filter((o) => {
     if (statusFilter !== "all" && o.status !== statusFilter) return false;
     if (onlyWithCommission && !(o.commissionEur > 0)) return false;
+    if (forecastFilter === "real" && o.isForecast) return false;
+    if (forecastFilter === "forecast" && !o.isForecast) return false;
     if (search && !o.id.toLowerCase().includes(search.toLowerCase()) && !o.buyer.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
+
+  const forecastCount = displayOrders.filter(o => o.isForecast).length;
 
   const countByStatus = (s: string) => s === "all" ? displayOrders.length : displayOrders.filter((o) => o.status === s).length;
 

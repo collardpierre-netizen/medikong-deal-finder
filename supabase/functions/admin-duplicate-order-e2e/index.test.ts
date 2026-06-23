@@ -344,9 +344,9 @@ Deno.test({
       assertEquals(data.source_order_id, f.orderId, "source_order_id");
       assertExists(data.source_order_number, "source_order_number présent");
       assertEquals(data.customer_id, f.customerId, "customer_id transféré");
-      assertEquals(data.status, "confirmed", "status transféré");
-      assertEquals(data.payment_method, "invoice", "payment_method transféré");
-      assertEquals(data.payment_status, "pending", "payment_status transféré");
+      assertEquals(data.status, f.effectiveStatus, "status transféré");
+      assertEquals(data.payment_method, f.effectivePaymentMethod, "payment_method transféré");
+      assertEquals(data.payment_status, f.effectivePaymentStatus, "payment_status transféré");
       assert(
         typeof data.admin_notes === "string" && data.admin_notes.includes("E2E"),
         "admin_notes transférées",

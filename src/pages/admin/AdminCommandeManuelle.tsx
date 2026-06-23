@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Save, FileText, FolderOpen } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, FileText, FolderOpen, CalendarClock, Copy } from "lucide-react";
 
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import { fmtEur } from "@/lib/format-currency";
@@ -94,6 +94,10 @@ const AdminCommandeManuelle = () => {
   const [draftId, setDraftId] = useState<string | null>(null);
   const [draftsOpen, setDraftsOpen] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
+  // Date d'encodage (datetime-local). Vide = now() côté serveur. Si dans le futur → tag prévisionnel auto.
+  const [encodingAt, setEncodingAt] = useState<string>("");
+  const [isForecast, setIsForecast] = useState<boolean>(false);
+  const [duplicatedFrom, setDuplicatedFrom] = useState<string | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -299,12 +303,16 @@ const AdminCommandeManuelle = () => {
       if (!(l.unit_price_excl_vat >= 0)) return toast.error("Prix HTVA invalide");
     }
 
+    const encodingIso = encodingAt ? new Date(encodingAt).toISOString() : null;
+    const futureEncoding = encodingIso ? new Date(encodingIso).getTime() > Date.now() : false;
     const payload = {
       customer_id: customerId,
       status,
       payment_method: paymentMethod,
       payment_status: paymentStatus,
       admin_notes: adminNotes || null,
+      created_at: encodingIso,
+      is_forecast: isForecast || futureEncoding,
       lines: lines.map((l) => ({
         vendor_id: l.vendor_id,
         offer_id: l.mode === "offer" ? l.offer_id : null,
@@ -349,6 +357,8 @@ const AdminCommandeManuelle = () => {
       payment_method: paymentMethod,
       payment_status: paymentStatus,
       admin_notes: adminNotes || null,
+      encoding_at: encodingAt || null,
+      is_forecast: isForecast,
       lines: lines.map((l) => ({
         id: l.id,
         mode: l.mode,
@@ -404,6 +414,8 @@ const AdminCommandeManuelle = () => {
       setPaymentMethod(p.payment_method ?? "invoice");
       setPaymentStatus(p.payment_status ?? "paid");
       setAdminNotes(p.admin_notes ?? "");
+      setEncodingAt(p.encoding_at ?? "");
+      setIsForecast(Boolean(p.is_forecast));
       setLines(Array.isArray(p.lines) ? p.lines.map((l: any) => ({
         id: l.id ?? nid(),
         mode: l.mode ?? "offer",
@@ -461,6 +473,53 @@ const AdminCommandeManuelle = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftFromUrl]);
 
+  // Duplication d'une commande existante via ?duplicate=<orderId>
+  const duplicateFromUrl = searchParams.get("duplicate");
+  useEffect(() => {
+    if (!duplicateFromUrl || duplicatedFrom === duplicateFromUrl) return;
+    (async () => {
+      try {
+        const { data, error } = await supabase.rpc("admin_duplicate_order_payload", { _order_id: duplicateFromUrl });
+        if (error) throw error;
+        const p = data as any;
+        if (!p) throw new Error("commande introuvable");
+        setDuplicatedFrom(duplicateFromUrl);
+        setCustomerId(p.customer_id ?? "");
+        setStatus(p.status ?? "confirmed");
+        setPaymentMethod(p.payment_method ?? "invoice");
+        setPaymentStatus(p.payment_status ?? "paid");
+        setAdminNotes(
+          (p.admin_notes ? p.admin_notes + "\n" : "") +
+          `[Dupliquée depuis ${p.source_order_number ?? duplicateFromUrl}]`
+        );
+        setEncodingAt("");
+        setIsForecast(false);
+        setLines(Array.isArray(p.lines) ? p.lines.map((l: any) => ({
+          id: l.id ?? nid(),
+          mode: l.mode ?? "offer",
+          vendor_id: l.vendor_id ?? "",
+          offer_id: l.offer_id ?? undefined,
+          product_id: l.product_id ?? undefined,
+          offer_label: l.offer_label ?? undefined,
+          manual_label: l.manual_label ?? undefined,
+          quantity: Number(l.quantity) || 1,
+          unit_price_excl_vat: Number(l.unit_price_excl_vat) || 0,
+          vat_rate: Number(l.vat_rate ?? 21),
+          unit_cost_excl_vat: l.unit_cost_excl_vat ?? "",
+          commission_rate: l.commission_rate ?? "",
+          commission_amount: l.commission_amount ?? "",
+          commission_basis: l.commission_basis === "margin" ? "margin" : "ca",
+        })) : []);
+        toast.success(`Commande ${p.source_order_number ?? ""} dupliquée — éditez puis créez`);
+      } catch (e: any) {
+        toast.error("Échec duplication : " + (e?.message ?? String(e)));
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [duplicateFromUrl]);
+
+
+
 
   return (
     <div>
@@ -474,6 +533,16 @@ const AdminCommandeManuelle = () => {
           <ArrowLeft size={14} /> Retour aux commandes
         </Link>
         <div className="flex items-center gap-2">
+          {duplicatedFrom && (
+            <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-sky-50 text-sky-700 border border-sky-200">
+              <Copy size={12} /> Dupliquée — éditez puis créez
+            </span>
+          )}
+          {(isForecast || (encodingAt && new Date(encodingAt).getTime() > Date.now())) && (
+            <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-violet-50 text-violet-700 border border-violet-200">
+              <CalendarClock size={12} /> Prévisionnel
+            </span>
+          )}
           {draftId && (
             <span className="text-xs px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
               Brouillon en cours · {draftId.slice(0, 8)}
@@ -638,7 +707,33 @@ const AdminCommandeManuelle = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="pt-2 border-t" style={{ borderColor: "#E2E8F0" }}>
+              <Label className="text-xs flex items-center gap-1">
+                <CalendarClock size={12} /> Date d'encodage
+              </Label>
+              <Input
+                type="datetime-local"
+                value={encodingAt}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setEncodingAt(v);
+                  if (v && new Date(v).getTime() > Date.now()) setIsForecast(true);
+                }}
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Vide = maintenant. Une date future tague automatiquement la commande comme prévisionnelle.
+              </p>
+            </div>
+            <label className="flex items-center gap-2 text-xs cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isForecast}
+                onChange={(e) => setIsForecast(e.target.checked)}
+              />
+              <span className="font-medium">Marquer comme commande prévisionnelle</span>
+            </label>
           </div>
+
 
           <div className="bg-white rounded-lg border p-4 space-y-3" style={{ borderColor: "#E2E8F0" }}>
             <h3 className="font-semibold text-sm">Notes admin</h3>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
@@ -14,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   ShoppingCart, TrendingUp, Clock, CreditCard, Truck, Percent,
-  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle,
+  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle, CalendarClock, Copy,
 } from "lucide-react";
 
 type PeriodKey = "7d" | "30d" | "90d" | "12m" | "all";
@@ -56,6 +57,7 @@ const fmt = (n: number) => n.toLocaleString("fr-BE", { minimumFractionDigits: 2,
 
 const AdminCommandes = () => {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const { data: ordersData = [], isLoading } = useOrders();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"list" | "timeline" | "aging" | "buyers" | "sla">("list");
@@ -77,6 +79,7 @@ const AdminCommandes = () => {
   const [hideTest, setHideTest] = useState(true);
   const [period, setPeriod] = useState<PeriodKey>("30d");
   const [onlyWithCommission, setOnlyWithCommission] = useState(false);
+  const [forecastFilter, setForecastFilter] = useState<"all" | "real" | "forecast">("all");
   const [purgeOpen, setPurgeOpen] = useState(false);
   const [purging, setPurging] = useState(false);
   const [purgePreview, setPurgePreview] = useState<null | {
@@ -121,6 +124,7 @@ const AdminCommandes = () => {
       dueDate: o.payment_due_date ? new Date(o.payment_due_date).toLocaleDateString("fr-BE") : "—",
       status: o.status as "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled",
       isTest: Boolean((o as any).is_test),
+      isForecast: Boolean((o as any).is_forecast),
       hiddenFromList: Boolean((o as any).hidden_from_list),
       createdAtRaw: o.created_at,
       date: new Date(o.created_at).toLocaleDateString("fr-BE"),
@@ -148,9 +152,13 @@ const AdminCommandes = () => {
   const filtered = displayOrders.filter((o) => {
     if (statusFilter !== "all" && o.status !== statusFilter) return false;
     if (onlyWithCommission && !(o.commissionEur > 0)) return false;
+    if (forecastFilter === "real" && o.isForecast) return false;
+    if (forecastFilter === "forecast" && !o.isForecast) return false;
     if (search && !o.id.toLowerCase().includes(search.toLowerCase()) && !o.buyer.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
+
+  const forecastCount = displayOrders.filter(o => o.isForecast).length;
 
   const countByStatus = (s: string) => s === "all" ? displayOrders.length : displayOrders.filter((o) => o.status === s).length;
 
@@ -353,6 +361,26 @@ const AdminCommandes = () => {
               <input type="checkbox" checked={onlyWithCommission} onChange={(e) => setOnlyWithCommission(e.target.checked)} />
               Avec commission
             </label>
+            <div className="flex items-center rounded-md overflow-hidden" style={{ border: "1px solid #E2E8F0", backgroundColor: "#fff" }} title="Filtrer les commandes prévisionnelles (date d'encodage future ou tag manuel)">
+              {([
+                { key: "all" as const, label: "Toutes" },
+                { key: "real" as const, label: "Réelles" },
+                { key: "forecast" as const, label: `Prévisionnelles${forecastCount ? ` (${forecastCount})` : ""}` },
+              ]).map((opt) => (
+                <button
+                  key={opt.key}
+                  onClick={() => setForecastFilter(opt.key)}
+                  className="px-3 py-2 text-[12px] font-medium inline-flex items-center gap-1 transition-colors"
+                  style={{
+                    backgroundColor: forecastFilter === opt.key ? "#EDE9FE" : "transparent",
+                    color: forecastFilter === opt.key ? "#6D28D9" : "#616B7C",
+                  }}
+                >
+                  {opt.key === "forecast" && <CalendarClock size={12} />}
+                  {opt.label}
+                </button>
+              ))}
+            </div>
             <button className="flex items-center gap-2 px-3 py-2 rounded-md text-[13px] font-medium" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#616B7C" }}><Filter size={14} /> Filtres</button>
           </div>
 
@@ -387,6 +415,11 @@ const AdminCommandes = () => {
                                 {o.isTest && (
                                   <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>
                                     Test
+                                  </span>
+                                )}
+                                {o.isForecast && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide" style={{ backgroundColor: "#EDE9FE", color: "#6D28D9" }} title="Commande prévisionnelle">
+                                    <CalendarClock size={9} /> Prévisionnel
                                   </span>
                                 )}
                               </div>
@@ -447,14 +480,24 @@ const AdminCommandes = () => {
                             <td className="px-3 py-3 text-[11px]" style={{ color: "#616B7C" }}>{o.paymentTerms}</td>
                             <td className="px-3 py-3"><StatusBadge status={o.status} /></td>
                             <td className="px-3 py-3 text-right">
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: o.rawId, number: o.id }); }}
-                                title="Archiver cette commande (soft-delete)"
-                                className="p-1.5 rounded hover:bg-red-50"
-                                style={{ color: "#B91C1C" }}
-                              >
-                                <Trash2 size={14} />
-                              </button>
+                              <div className="inline-flex items-center gap-1">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); navigate(`/admin/commandes/nouvelle?duplicate=${o.rawId}`); }}
+                                  title="Dupliquer cette commande"
+                                  className="p-1.5 rounded hover:bg-sky-50"
+                                  style={{ color: "#0369A1" }}
+                                >
+                                  <Copy size={14} />
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: o.rawId, number: o.id }); }}
+                                  title="Archiver cette commande (soft-delete)"
+                                  className="p-1.5 rounded hover:bg-red-50"
+                                  style={{ color: "#B91C1C" }}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                           {isExpanded && o.lines.length > 0 && (

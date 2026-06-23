@@ -672,7 +672,7 @@ const AdminCommandes = () => {
                       Prévisualisation : <strong>{purgePreview.targets_count}</strong> commande
                       {purgePreview.targets_count > 1 ? "s" : ""} test seront supprimées
                       {typeof purgePreview.total_incl_vat === "number" && (
-                        <> (total TTC <strong>{Number(purgePreview.total_incl_vat).toLocaleString("fr-BE", { minimumFractionDigits: 2 })} €</strong>)</>
+                        <> (total TTC <strong>{fmt(purgePreview.total_incl_vat)} €</strong>)</>
                       )}
                       .
                     </div>
@@ -687,7 +687,7 @@ const AdminCommandes = () => {
                               <tr key={t.id} className="border-t border-border">
                                 <td className="px-2 py-1 font-mono">{t.order_number}</td>
                                 <td className="px-2 py-1">{t.status}</td>
-                                <td className="px-2 py-1 text-right">{Number(t.total_incl_vat).toLocaleString("fr-BE", { minimumFractionDigits: 2 })}</td>
+                                <td className="px-2 py-1 text-right">{fmt(t.total_incl_vat)}</td>
                                 <td className="px-2 py-1">{new Date(t.created_at).toLocaleDateString("fr-BE")}</td>
                               </tr>
                             ))}

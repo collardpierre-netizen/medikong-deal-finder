@@ -458,7 +458,7 @@ const AdminCommandes = () => {
                           </tr>
                           {isExpanded && o.lines.length > 0 && (
                             <tr key={`${o.rawId}-lines`}>
-                              <td colSpan={13} className="px-0 py-0">
+                              <td colSpan={14} className="px-0 py-0">
                                 <div className="mx-4 mb-3 rounded-lg overflow-hidden" style={{ border: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
                                   <table className="w-full text-left">
                                     <thead>

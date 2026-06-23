@@ -89,32 +89,64 @@ const AdminCommandes = () => {
   const REQUIRED_TOKEN = "PURGE TEST ORDERS";
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
-  const orders = ordersData.map(o => ({
-    id: o.order_number,
-    rawId: o.id,
-    refPO: "—",
-    buyer: (o.customers as any)?.company_name || "—",
-    buyerType: (o.customers as any)?.customer_type || "pharmacy",
-    seller: "—",
-    amountHT: Number(o.subtotal_excl_vat) || 0,
-    tva: Number(o.vat_amount) || 0,
-    ttc: Number(o.total_incl_vat) || 0,
-    paymentTerms: o.payment_method || "invoice",
-    dueDate: o.payment_due_date ? new Date(o.payment_due_date).toLocaleDateString("fr-BE") : "—",
-    status: o.status as "pending" | "confirmed" | "shipped" | "delivered" | "cancelled",
-    isTest: Boolean((o as any).is_test),
-    hiddenFromList: Boolean((o as any).hidden_from_list),
-    date: new Date(o.created_at).toLocaleDateString("fr-BE"),
-    lines: ((o as any).order_lines || []) as any[],
-  }));
+  const orders = ordersData.map(o => {
+    const subs = ((o as any).sub_orders || []) as Array<{
+      commission_amount_override: number | null;
+      commission_rate_override: number | null;
+      subtotal_incl_vat: number | null;
+    }>;
+    const commissionEur = subs.reduce((acc, s) => {
+      const amt = Number(s.commission_amount_override);
+      if (Number.isFinite(amt) && amt > 0) return acc + amt;
+      const rate = Number(s.commission_rate_override);
+      const sub = Number(s.subtotal_incl_vat) || 0;
+      if (Number.isFinite(rate) && rate > 0 && sub > 0) return acc + (sub * rate) / 100;
+      return acc;
+    }, 0);
+    const amountHT = Number(o.subtotal_excl_vat) || 0;
+    return {
+      id: o.order_number,
+      rawId: o.id,
+      refPO: "—",
+      buyer: (o.customers as any)?.company_name || "—",
+      buyerType: (o.customers as any)?.customer_type || "pharmacy",
+      seller: "—",
+      amountHT,
+      tva: Number(o.vat_amount) || 0,
+      ttc: Number(o.total_incl_vat) || 0,
+      commissionEur,
+      commissionPct: amountHT > 0 ? (commissionEur / amountHT) * 100 : 0,
+      paymentTerms: o.payment_method || "invoice",
+      dueDate: o.payment_due_date ? new Date(o.payment_due_date).toLocaleDateString("fr-BE") : "—",
+      status: o.status as "pending" | "confirmed" | "shipped" | "delivered" | "cancelled",
+      isTest: Boolean((o as any).is_test),
+      hiddenFromList: Boolean((o as any).hidden_from_list),
+      createdAtRaw: o.created_at,
+      date: new Date(o.created_at).toLocaleDateString("fr-BE"),
+      lines: ((o as any).order_lines || []) as any[],
+    };
+  });
 
-  const visibleOrders = hideDeleted ? orders.filter(o => !o.hiddenFromList) : orders;
+  // --- Filtre période (sur created_at) appliqué avant toute dérivation ---
+  const periodCutoff = (() => {
+    const days = PERIODS.find(p => p.key === period)?.days;
+    if (!days) return null;
+    const d = new Date();
+    d.setDate(d.getDate() - days);
+    return d.getTime();
+  })();
+  const periodOrders = periodCutoff === null
+    ? orders
+    : orders.filter(o => o.createdAtRaw && new Date(o.createdAtRaw).getTime() >= periodCutoff);
+
+  const visibleOrders = hideDeleted ? periodOrders.filter(o => !o.hiddenFromList) : periodOrders;
   const displayOrders = hideTest ? visibleOrders.filter(o => !o.isTest) : visibleOrders;
   const testCount = visibleOrders.filter(o => o.isTest).length;
-  const deletedCount = orders.filter(o => o.hiddenFromList).length;
+  const deletedCount = periodOrders.filter(o => o.hiddenFromList).length;
 
   const filtered = displayOrders.filter((o) => {
     if (statusFilter !== "all" && o.status !== statusFilter) return false;
+    if (onlyWithCommission && !(o.commissionEur > 0)) return false;
     if (search && !o.id.toLowerCase().includes(search.toLowerCase()) && !o.buyer.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });

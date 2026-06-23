@@ -954,6 +954,25 @@ function LineRow({
             disabled={line.commission_amount !== ""}
             onChange={(e) => onPatch({ commission_rate: e.target.value })}
           />
+          <div className="flex items-center gap-1 mt-1 text-[11px]">
+            <span className="text-muted-foreground">Base :</span>
+            <button
+              type="button"
+              onClick={() => onPatch({ commission_basis: "ca" })}
+              className={`px-2 py-0.5 rounded border ${line.commission_basis !== "margin" ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground"}`}
+              title="Commission % appliquée sur le CA HTVA"
+            >
+              CA HTVA
+            </button>
+            <button
+              type="button"
+              onClick={() => onPatch({ commission_basis: "margin" })}
+              className={`px-2 py-0.5 rounded border ${line.commission_basis === "margin" ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground"}`}
+              title="Commission % appliquée sur la marge brute (CA − coût d'achat). Fallback CA si coût inconnu."
+            >
+              Marge brute
+            </button>
+          </div>
         </div>
         <div>
           <Label className="text-xs">Commission €/u. (fixe)</Label>

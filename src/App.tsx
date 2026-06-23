@@ -495,6 +495,7 @@ const App = () => (
               <Route path="commandes/nouvelle" element={<LP><AdminCommandeManuelle /></LP>} />
               <Route path="commandes-en-retard" element={<LP><AdminCommandesEnRetard /></LP>} />
               <Route path="notifications" element={<LP><AdminNotifications /></LP>} />
+              <Route path="notifications/:id" element={<LP><AdminNotificationDetail /></LP>} />
               <Route path="litiges" element={<LP><AdminLitiges /></LP>} />
               <Route path="finances" element={<LP><AdminFinances /></LP>} />
               <Route path="veille-prix" element={<LP><AdminVeillePrix /></LP>} />

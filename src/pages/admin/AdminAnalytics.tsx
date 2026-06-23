@@ -16,7 +16,7 @@ const AdminAnalytics = () => {
   const totalOrders = orders.length;
   const totalCustomers = customers.length;
   const gmv = orders.reduce((a, o) => a + (Number(o.total_incl_vat) || 0), 0);
-  const avgBasket = totalOrders > 0 ? Math.round(gmv / totalOrders) : 0;
+  const avgBasket = totalOrders > 0 ? gmv / totalOrders : 0;
 
   const hasData = totalOrders > 0 || totalCustomers > 0;
 

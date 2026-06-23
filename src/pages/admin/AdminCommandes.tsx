@@ -57,6 +57,7 @@ const fmt = (n: number) => n.toLocaleString("fr-BE", { minimumFractionDigits: 2,
 
 const AdminCommandes = () => {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const { data: ordersData = [], isLoading } = useOrders();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"list" | "timeline" | "aging" | "buyers" | "sla">("list");

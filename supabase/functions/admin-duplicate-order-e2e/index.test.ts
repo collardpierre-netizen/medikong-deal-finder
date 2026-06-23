@@ -131,10 +131,12 @@ async function setup(): Promise<Fixture> {
   const { data: newCust, error: custErr } = await admin
     .from("customers")
     .insert({
-      user_id: adminCreated.user.id,
-      first_name: "Dup",
-      last_name: "Order E2E",
+      auth_user_id: adminCreated.user.id,
+      company_name: `Dup Order E2E ${stamp}`,
       email: `dup-cust+${stamp}@medikong.test`,
+      address_line1: "Rue Test 1",
+      city: "Bruxelles",
+      postal_code: "1000",
       country_code: "BE",
     })
     .select("id")

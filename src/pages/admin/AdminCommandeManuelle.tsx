@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Plus, Trash2, Save, FileText, FolderOpen } from "lucide-react";
 
 import AdminTopBar from "@/components/admin/AdminTopBar";
+import { fmtEur } from "@/lib/format-currency";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

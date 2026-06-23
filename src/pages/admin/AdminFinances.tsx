@@ -1,6 +1,7 @@
 import { useState } from "react";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
+import StatusBadge from "@/components/admin/StatusBadge";
 import { useI18n } from "@/contexts/I18nContext";
 import { useInvoices, useVendors } from "@/hooks/useAdminData";
 import {

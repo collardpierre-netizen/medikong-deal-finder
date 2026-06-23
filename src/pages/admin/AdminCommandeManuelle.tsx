@@ -94,6 +94,10 @@ const AdminCommandeManuelle = () => {
   const [draftId, setDraftId] = useState<string | null>(null);
   const [draftsOpen, setDraftsOpen] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
+  // Date d'encodage (datetime-local). Vide = now() côté serveur. Si dans le futur → tag prévisionnel auto.
+  const [encodingAt, setEncodingAt] = useState<string>("");
+  const [isForecast, setIsForecast] = useState<boolean>(false);
+  const [duplicatedFrom, setDuplicatedFrom] = useState<string | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
 

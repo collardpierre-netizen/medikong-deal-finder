@@ -274,14 +274,12 @@ const AdminCommandeManuelle = () => {
         quantity: l.quantity,
         unit_price_excl_vat: l.unit_price_excl_vat,
         vat_rate: l.vat_rate,
+        unit_cost_excl_vat: l.unit_cost_excl_vat || "",
+        commission_rate: l.commission_rate || "",
+        commission_amount: l.commission_amount || "",
       })),
-      commissions: Object.fromEntries(
-        Object.entries(commissions).map(([vid, c]) => [
-          vid,
-          { rate: c.rate || "", amount: c.amount || "" },
-        ]),
-      ),
     };
+
 
     setSubmitting(true);
     try {

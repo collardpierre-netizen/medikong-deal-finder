@@ -47,6 +47,7 @@ const sections: NavSection[] = [
       { labelKey: "pimSchemas", path: "/admin/schemas-pim", icon: SlidersHorizontal },
       // Entrée "productPrices" supprimée — édition prix par offre via /vendor/offers (offer_buyer_profile_prices)
       { labelKey: "orders", path: "/admin/commandes", icon: ShoppingCart },
+      { label: "Nouvelle commande manuelle", path: "/admin/commandes/nouvelle", icon: Plus },
       { label: "Commandes en retard", path: "/admin/commandes-en-retard", icon: AlertTriangle },
       { labelKey: "disputes", path: "/admin/litiges", icon: AlertCircle },
       { labelKey: "finances", path: "/admin/finances", icon: DollarSign },

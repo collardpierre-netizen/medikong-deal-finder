@@ -299,7 +299,7 @@ const AdminCommandes = () => {
       <div className="grid grid-cols-6 gap-3 mb-5">
         <KpiCard icon={TrendingUp} label="GMV total" value={`${fmt(gmvDay)} EUR`} evolution={{ value: 12.4, label: "vs mois dernier" }} />
         <KpiCard icon={ShoppingCart} label="Commandes" value={String(displayOrders.length)} evolution={{ value: 8.2, label: "vs mois dernier" }} iconColor="#7C3AED" iconBg="#F5F3FF" />
-        <KpiCard icon={CreditCard} label="Panier moyen" value={`${avgBasket} EUR`} iconColor="#059669" iconBg="#F0FDF4" />
+        <KpiCard icon={CreditCard} label="Panier moyen" value={`${fmt(avgBasket)} EUR`} iconColor="#059669" iconBg="#F0FDF4" />
         <KpiCard icon={Percent} label="Commission totale" value={`${fmt(commissionTotal)} EUR`} evolution={{ value: Number(commissionPctGlobal.toFixed(2)), label: "% du CA HT" }} iconColor="#10B981" iconBg="#ECFDF5" />
         <KpiCard icon={Clock} label="En attente" value={String(countByStatus("pending"))} iconColor="#F59E0B" iconBg="#FFFBEB" />
         <KpiCard icon={Truck} label="En livraison" value={String(countByStatus("shipped"))} iconColor="#E70866" iconBg="#FDF2F8" />

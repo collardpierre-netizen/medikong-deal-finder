@@ -5,6 +5,7 @@ import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useDashboardStats, useVendors, useOrders } from "@/hooks/useAdminData";
 import GmvEvolutionChart from "@/components/admin/GmvEvolutionChart";
+import OrdersStatusPieChart from "@/components/admin/OrdersStatusPieChart";
 import { fmtEur } from "@/lib/format-currency";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -247,6 +248,9 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-2 gap-4">
         {/* GMV Chart */}
         <GmvEvolutionChart title={t("gmvEvolution")} orders={(ordersQuery.data || []) as any} />
+
+        <OrdersStatusPieChart title="Répartition des commandes par statut" orders={(ordersQuery.data || []) as any} />
+
 
         {/* Recent Orders */}
         <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>

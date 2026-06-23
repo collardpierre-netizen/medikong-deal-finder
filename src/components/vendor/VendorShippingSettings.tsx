@@ -246,22 +246,26 @@ export default function VendorShippingSettings({ vendorId, currentMode, marginPe
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Clé publique Sendcloud</Label>
+                <Label className="text-xs font-medium">
+                  Clé publique Sendcloud {credentials?.has_public_key && <span className="text-emerald-600">· enregistrée</span>}
+                </Label>
                 <Input
-                  value={publicKey || credentials?.sendcloud_public_key || ""}
+                  value={publicKey}
                   onChange={(e) => setPublicKey(e.target.value)}
-                  placeholder="Votre clé publique..."
+                  placeholder={credentials?.has_public_key ? "•••••• (re-saisir pour modifier)" : "Votre clé publique..."}
                   className="text-sm"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Clé secrète Sendcloud</Label>
+                <Label className="text-xs font-medium">
+                  Clé secrète Sendcloud {credentials?.has_secret_key && <span className="text-emerald-600">· enregistrée</span>}
+                </Label>
                 <div className="relative">
                   <Input
                     type={showSecret ? "text" : "password"}
-                    value={secretKey || credentials?.sendcloud_secret_key || ""}
+                    value={secretKey}
                     onChange={(e) => setSecretKey(e.target.value)}
-                    placeholder="Votre clé secrète..."
+                    placeholder={credentials?.has_secret_key ? "•••••• (re-saisir pour modifier)" : "Votre clé secrète..."}
                     className="text-sm pr-10"
                   />
                   <button
@@ -274,6 +278,7 @@ export default function VendorShippingSettings({ vendorId, currentMode, marginPe
                 </div>
               </div>
             </div>
+
 
             <div className="flex items-center gap-3">
               <VBtn

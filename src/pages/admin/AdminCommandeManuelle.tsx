@@ -303,12 +303,16 @@ const AdminCommandeManuelle = () => {
       if (!(l.unit_price_excl_vat >= 0)) return toast.error("Prix HTVA invalide");
     }
 
+    const encodingIso = encodingAt ? new Date(encodingAt).toISOString() : null;
+    const futureEncoding = encodingIso ? new Date(encodingIso).getTime() > Date.now() : false;
     const payload = {
       customer_id: customerId,
       status,
       payment_method: paymentMethod,
       payment_status: paymentStatus,
       admin_notes: adminNotes || null,
+      created_at: encodingIso,
+      is_forecast: isForecast || futureEncoding,
       lines: lines.map((l) => ({
         vendor_id: l.vendor_id,
         offer_id: l.mode === "offer" ? l.offer_id : null,

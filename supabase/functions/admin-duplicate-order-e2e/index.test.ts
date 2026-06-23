@@ -57,6 +57,9 @@ interface Fixture {
     vat_rate: number;
     manual_label: string | null;
   }>;
+  effectiveStatus: string;
+  effectivePaymentMethod: string;
+  effectivePaymentStatus: string;
   cleanupCustomer: boolean;
 }
 

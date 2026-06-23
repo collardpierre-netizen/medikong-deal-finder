@@ -327,9 +327,20 @@ const AdminCommandeManuelle = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Les champs adresse (rue, ville, CP) sont remplis avec « — » et restent à compléter ensuite dans la fiche client si besoin.
-                    </p>
+                    <div>
+                      <Label className="text-xs">Adresse ligne 1</Label>
+                      <Input value={qcAddressLine1} onChange={(e) => setQcAddressLine1(e.target.value)} maxLength={255} placeholder="Ex. Rue de la Procession 23" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Ville</Label>
+                        <Input value={qcCity} onChange={(e) => setQcCity(e.target.value)} maxLength={100} placeholder="Ex. Ath" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Code postal</Label>
+                        <Input value={qcPostalCode} onChange={(e) => setQcPostalCode(e.target.value)} maxLength={20} placeholder="Ex. 7822" />
+                      </div>
+                    </div>
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setQcOpen(false)}>Annuler</Button>

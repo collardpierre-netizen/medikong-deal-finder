@@ -119,7 +119,7 @@ const AdminCommandes = () => {
       commissionPct: amountHT > 0 ? (commissionEur / amountHT) * 100 : 0,
       paymentTerms: o.payment_method || "invoice",
       dueDate: o.payment_due_date ? new Date(o.payment_due_date).toLocaleDateString("fr-BE") : "—",
-      status: o.status as "pending" | "confirmed" | "shipped" | "delivered" | "cancelled",
+      status: o.status as "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled",
       isTest: Boolean((o as any).is_test),
       hiddenFromList: Boolean((o as any).hidden_from_list),
       createdAtRaw: o.created_at,

@@ -414,6 +414,8 @@ const AdminCommandeManuelle = () => {
       setPaymentMethod(p.payment_method ?? "invoice");
       setPaymentStatus(p.payment_status ?? "paid");
       setAdminNotes(p.admin_notes ?? "");
+      setEncodingAt(p.encoding_at ?? "");
+      setIsForecast(Boolean(p.is_forecast));
       setLines(Array.isArray(p.lines) ? p.lines.map((l: any) => ({
         id: l.id ?? nid(),
         mode: l.mode ?? "offer",

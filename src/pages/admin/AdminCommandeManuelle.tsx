@@ -323,6 +323,10 @@ const AdminCommandeManuelle = () => {
       });
       if (error) throw error;
       const result = data as any;
+      // Si on finalisait un brouillon, on le supprime
+      if (draftId) {
+        await supabase.rpc("admin_delete_manual_order_draft", { _id: draftId });
+      }
       toast.success(`Commande ${result?.order_number ?? ""} créée`);
       navigate("/admin/commandes");
     } catch (e: any) {
@@ -331,6 +335,125 @@ const AdminCommandeManuelle = () => {
       setSubmitting(false);
     }
   }
+
+  // ---- Brouillons ----
+  function buildDraftPayload() {
+    return {
+      customer_id: customerId || null,
+      status,
+      payment_method: paymentMethod,
+      payment_status: paymentStatus,
+      admin_notes: adminNotes || null,
+      lines: lines.map((l) => ({
+        id: l.id,
+        mode: l.mode,
+        vendor_id: l.vendor_id,
+        offer_id: l.offer_id ?? null,
+        product_id: l.product_id ?? null,
+        offer_label: l.offer_label ?? null,
+        manual_label: l.manual_label ?? null,
+        quantity: l.quantity,
+        unit_price_excl_vat: l.unit_price_excl_vat,
+        vat_rate: l.vat_rate,
+        unit_cost_excl_vat: l.unit_cost_excl_vat,
+        commission_rate: l.commission_rate,
+        commission_amount: l.commission_amount,
+      })),
+    };
+  }
+
+  async function saveDraft() {
+    if (!customerId && !draftId) {
+      toast.error("Choisis un acheteur avant d'enregistrer le brouillon");
+      return;
+    }
+    setSavingDraft(true);
+    try {
+      const { data, error } = await supabase.rpc("admin_save_manual_order_draft", {
+        _draft_id: draftId,
+        _payload: buildDraftPayload() as any,
+      });
+      if (error) throw error;
+      const id = data as string;
+      setDraftId(id);
+      setSearchParams((sp) => { sp.set("draft", id); return sp; }, { replace: true });
+      await queryClient.invalidateQueries({ queryKey: ["admin-manual-order-drafts"] });
+      toast.success("Brouillon enregistré");
+    } catch (e: any) {
+      toast.error("Échec enregistrement : " + (e?.message ?? String(e)));
+    } finally {
+      setSavingDraft(false);
+    }
+  }
+
+  async function loadDraft(id: string) {
+    try {
+      const { data, error } = await supabase.rpc("admin_load_manual_order_draft", { _id: id });
+      if (error) throw error;
+      const p = data as any;
+      if (!p) throw new Error("brouillon vide");
+      setDraftId(id);
+      setCustomerId(p.customer_id ?? "");
+      setStatus(p.status ?? "confirmed");
+      setPaymentMethod(p.payment_method ?? "invoice");
+      setPaymentStatus(p.payment_status ?? "paid");
+      setAdminNotes(p.admin_notes ?? "");
+      setLines(Array.isArray(p.lines) ? p.lines.map((l: any) => ({
+        id: l.id ?? nid(),
+        mode: l.mode ?? "offer",
+        vendor_id: l.vendor_id ?? "",
+        offer_id: l.offer_id ?? undefined,
+        product_id: l.product_id ?? undefined,
+        offer_label: l.offer_label ?? undefined,
+        manual_label: l.manual_label ?? undefined,
+        quantity: Number(l.quantity) || 1,
+        unit_price_excl_vat: Number(l.unit_price_excl_vat) || 0,
+        vat_rate: Number(l.vat_rate ?? 21),
+        unit_cost_excl_vat: l.unit_cost_excl_vat ?? "",
+        commission_rate: l.commission_rate ?? "",
+        commission_amount: l.commission_amount ?? "",
+      })) : []);
+      setSearchParams((sp) => { sp.set("draft", id); return sp; }, { replace: true });
+      setDraftsOpen(false);
+      toast.success("Brouillon chargé");
+    } catch (e: any) {
+      toast.error("Échec chargement : " + (e?.message ?? String(e)));
+    }
+  }
+
+  async function discardDraft() {
+    if (!draftId) return;
+    if (!confirm("Supprimer définitivement ce brouillon ?")) return;
+    try {
+      const { error } = await supabase.rpc("admin_delete_manual_order_draft", { _id: draftId });
+      if (error) throw error;
+      setDraftId(null);
+      setSearchParams((sp) => { sp.delete("draft"); return sp; }, { replace: true });
+      await queryClient.invalidateQueries({ queryKey: ["admin-manual-order-drafts"] });
+      toast.success("Brouillon supprimé");
+    } catch (e: any) {
+      toast.error("Échec suppression : " + (e?.message ?? String(e)));
+    }
+  }
+
+  const { data: drafts = [], refetch: refetchDrafts } = useQuery({
+    queryKey: ["admin-manual-order-drafts"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_list_manual_order_drafts");
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  // Charge automatiquement le brouillon passé en query string (?draft=<id>)
+  const draftFromUrl = searchParams.get("draft");
+  useEffect(() => {
+    if (draftFromUrl && draftFromUrl !== draftId) {
+      void loadDraft(draftFromUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftFromUrl]);
+
 
   return (
     <div>

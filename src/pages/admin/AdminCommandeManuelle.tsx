@@ -213,9 +213,13 @@ const AdminCommandeManuelle = () => {
         quantity: 1,
         unit_price_excl_vat: 0,
         vat_rate: 21,
+        unit_cost_excl_vat: "",
+        commission_rate: "",
+        commission_amount: "",
       },
     ]);
   }
+
 
   function patchLine(id: string, patch: Partial<ManualLine>) {
     setLines((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));

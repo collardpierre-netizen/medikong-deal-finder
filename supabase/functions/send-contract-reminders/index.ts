@@ -4,6 +4,7 @@
 // Idempotent par jour grâce à idempotencyKey = `contract-reminder-{vendor}-L{N}-{YYYY-MM-DD}`.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+import { requireCronOrService } from '../_shared/cron-or-admin.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

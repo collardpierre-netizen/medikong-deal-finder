@@ -222,16 +222,52 @@ const AdminCommandeManuelle = () => {
   }
 
   async function searchOffers(line: ManualLine, term: string) {
-    // simple lookup by product name; returns first 10 active offers
-    if (!term || term.length < 2) return [] as any[];
-    const { data } = await supabase
+    // Recherche par nom de produit OU par code-barres (EAN/GTIN) / CNK.
+    // On retourne aussi les produits sans offre liée, pour permettre à l'admin
+    // de créer une ligne sur un produit existant en DB même si aucun vendeur
+    // n'a encore d'offre dessus.
+    const t = term.trim();
+    if (!t || t.length < 2) return [] as any[];
+    const digits = /^\d{6,}$/.test(t);
+
+    // 1) Offres actives matchant nom OU gtin/cnk du produit
+    const offersQuery = supabase
       .from("offers")
-      .select("id, vendor_id, product_id, base_price_excl_vat, products!inner(name)")
+      .select("id, vendor_id, product_id, base_price_excl_vat, products!inner(id, name, gtin, cnk_code)")
       .eq("is_active", true)
-      .ilike("products.name", `%${term}%`)
       .limit(10);
-    return data ?? [];
+    const offersResult = digits
+      ? await offersQuery.or(`gtin.eq.${t},cnk_code.eq.${t}`, { foreignTable: "products" })
+      : await offersQuery.ilike("products.name", `%${t}%`);
+    const offers = offersResult.data ?? [];
+
+    // 2) Produits matchant (par EAN/CNK exact si digits, sinon par nom)
+    const productsQ = supabase
+      .from("products")
+      .select("id, name, gtin, cnk_code")
+      .eq("is_active", true)
+      .limit(10);
+    const productsResult = digits
+      ? await productsQ.or(`gtin.eq.${t},cnk_code.eq.${t}`)
+      : await productsQ.ilike("name", `%${t}%`);
+    const products = productsResult.data ?? [];
+
+    // Fusion : on garde toutes les offres, puis on ajoute les produits sans offre
+    // sous forme d'entrée "produit seul" (offer_id absent).
+    const offerProductIds = new Set(offers.map((o: any) => o.product_id));
+    const productOnly = products
+      .filter((p: any) => !offerProductIds.has(p.id))
+      .map((p: any) => ({
+        id: null, // pas d'offre
+        vendor_id: null,
+        product_id: p.id,
+        base_price_excl_vat: null,
+        products: p,
+        __productOnly: true as const,
+      }));
+    return [...offers, ...productOnly];
   }
+
 
   async function submit() {
     if (!customerId) {
@@ -246,8 +282,9 @@ const AdminCommandeManuelle = () => {
       if (!l.vendor_id) return toast.error("Sélectionne le vendeur pour chaque ligne");
       if (l.mode === "free" && !l.manual_label?.trim())
         return toast.error("Libellé manquant sur une ligne libre");
-      if (l.mode === "offer" && !l.offer_id)
-        return toast.error("Sélectionne une offre pour chaque ligne 'offre'");
+      if (l.mode === "offer" && !l.offer_id && !l.product_id)
+        return toast.error("Sélectionne une offre ou un produit pour chaque ligne 'offre'");
+
       if (!(l.quantity > 0)) return toast.error("Quantité invalide");
       if (!(l.unit_price_excl_vat >= 0)) return toast.error("Prix HTVA invalide");
     }
@@ -600,9 +637,9 @@ function LineRow({
 
         {line.mode === "offer" ? (
           <div>
-            <Label className="text-xs">Offre (recherche produit)</Label>
+            <Label className="text-xs">Offre / produit (nom ou EAN/CNK)</Label>
             <Input
-              placeholder="Tape le nom d'un produit…"
+              placeholder="Nom, code-barres EAN ou CNK…"
               value={offerSearch}
               onChange={async (e) => {
                 const v = e.target.value;
@@ -611,37 +648,56 @@ function LineRow({
                 setOfferResults(r);
               }}
             />
-            {offerResults.length > 0 && !line.offer_id && (
-              <div className="mt-1 max-h-40 overflow-auto border rounded">
-                {offerResults.map((o) => (
-                  <button
-                    key={o.id}
-                    type="button"
-                    className="block w-full text-left text-xs px-2 py-1 hover:bg-muted"
-                    onClick={() => {
-                      onPatch({
-                        offer_id: o.id,
-                        product_id: o.product_id,
-                        vendor_id: line.vendor_id || o.vendor_id,
-                        unit_price_excl_vat: Number(o.base_price_excl_vat ?? 0),
-                        offer_label: o.products?.name,
-                      });
-                      setOfferResults([]);
-                      setOfferSearch(o.products?.name ?? "");
-                    }}
-                  >
-                    {o.products?.name} — {Number(o.base_price_excl_vat ?? 0).toFixed(2)} €
-                  </button>
-                ))}
+            {offerResults.length > 0 && !line.offer_id && !line.product_id && (
+              <div className="mt-1 max-h-56 overflow-auto border rounded">
+                {offerResults.map((o, idx) => {
+                  const productOnly = o.__productOnly === true;
+                  const price = Number(o.base_price_excl_vat ?? 0);
+                  const code = o.products?.gtin || o.products?.cnk_code || "";
+                  return (
+                    <button
+                      key={o.id ?? `p-${o.product_id ?? idx}`}
+                      type="button"
+                      className="block w-full text-left text-xs px-2 py-1 hover:bg-muted border-b last:border-0"
+                      onClick={() => {
+                        onPatch({
+                          offer_id: o.id ?? undefined,
+                          product_id: o.product_id,
+                          vendor_id: line.vendor_id || o.vendor_id || "",
+                          unit_price_excl_vat: productOnly ? line.unit_price_excl_vat : price,
+                          offer_label: o.products?.name,
+                        });
+                        setOfferResults([]);
+                        setOfferSearch(o.products?.name ?? "");
+                      }}
+                    >
+                      <div className="font-medium">{o.products?.name ?? "—"}</div>
+                      <div className="text-muted-foreground flex justify-between gap-2">
+                        <span>{code ? `EAN/CNK ${code}` : "—"}</span>
+                        <span>
+                          {productOnly
+                            ? "Produit DB (aucune offre) — cliquer pour lier"
+                            : `${price.toFixed(2)} €`}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             )}
-            {line.offer_id && (
+            {offerSearch.trim().length >= 2 && offerResults.length === 0 && !line.product_id && (
               <div className="mt-1 text-xs text-muted-foreground">
-                Offre liée : {line.offer_label} ·{" "}
+                Aucun résultat. Vérifie l'orthographe ou l'EAN/CNK, ou utilise « Ligne libre ».
+              </div>
+            )}
+            {(line.offer_id || line.product_id) && (
+              <div className="mt-1 text-xs text-muted-foreground">
+                {line.offer_id ? "Offre liée" : "Produit lié (sans offre)"} : {line.offer_label} ·{" "}
                 <button type="button" className="underline" onClick={() => { onPatch({ offer_id: undefined, product_id: undefined, offer_label: undefined }); setOfferSearch(""); }}>changer</button>
               </div>
             )}
           </div>
+
         ) : (
           <div>
             <Label className="text-xs">Libellé</Label>

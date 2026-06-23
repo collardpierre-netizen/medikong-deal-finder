@@ -69,6 +69,7 @@ function nid() {
 
 const AdminCommandeManuelle = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [customerId, setCustomerId] = useState<string>("");
   const [customerSearch, setCustomerSearch] = useState("");
   const [status, setStatus] = useState("confirmed");
@@ -78,6 +79,49 @@ const AdminCommandeManuelle = () => {
   const [lines, setLines] = useState<ManualLine[]>([]);
   const [commissions, setCommissions] = useState<Record<string, CommissionInput>>({});
   const [submitting, setSubmitting] = useState(false);
+
+  // Quick-create customer modal
+  const [qcOpen, setQcOpen] = useState(false);
+  const [qcName, setQcName] = useState("");
+  const [qcEmail, setQcEmail] = useState("");
+  const [qcCountry, setQcCountry] = useState("BE");
+  const [qcSubmitting, setQcSubmitting] = useState(false);
+
+  async function quickCreateCustomer() {
+    const name = qcName.trim();
+    const email = qcEmail.trim().toLowerCase();
+    const country = qcCountry.trim().toUpperCase() || "BE";
+    if (!name) return toast.error("Nom requis");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("Email invalide");
+    if (!/^[A-Z]{2}$/.test(country)) return toast.error("Code pays ISO 2 lettres (ex. BE, FR, LU)");
+    setQcSubmitting(true);
+    try {
+      const { data, error } = await supabase
+        .from("customers")
+        .insert({
+          company_name: name,
+          email,
+          country_code: country,
+          // NOT NULL placeholders — à compléter ensuite dans la fiche client si besoin
+          address_line1: "—",
+          city: "—",
+          postal_code: "—",
+        })
+        .select("id, company_name, email, country_code")
+        .single();
+      if (error) throw error;
+      toast.success(`Customer « ${data.company_name} » créé`);
+      setCustomerId(data.id);
+      setCustomerSearch(data.company_name);
+      await queryClient.invalidateQueries({ queryKey: ["admin-manual-order-customers"] });
+      setQcOpen(false);
+      setQcName(""); setQcEmail(""); setQcCountry("BE");
+    } catch (e: any) {
+      toast.error("Échec création : " + (e?.message ?? String(e)));
+    } finally {
+      setQcSubmitting(false);
+    }
+  }
 
   // Customers (search by company_name / email)
   const { data: customers = [] } = useQuery({

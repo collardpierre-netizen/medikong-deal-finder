@@ -249,6 +249,9 @@ const AdminDashboard = () => {
         {/* GMV Chart */}
         <GmvEvolutionChart title={t("gmvEvolution")} orders={(ordersQuery.data || []) as any} />
 
+        <OrdersStatusPieChart title="Répartition des commandes par statut" orders={(ordersQuery.data || []) as any} />
+
+
         {/* Recent Orders */}
         <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
           <h3 className="text-[14px] font-semibold mb-4" style={{ color: "#1D2530" }}>{t("recentOrders")}</h3>

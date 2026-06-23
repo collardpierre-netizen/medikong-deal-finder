@@ -904,7 +904,7 @@ function LineRow({
   onRemove: () => void;
   searchOffers: (line: ManualLine, term: string) => Promise<any[]>;
 }) {
-  const [offerSearch, setOfferSearch] = useState("");
+  const [offerSearch, setOfferSearch] = useState(line.offer_label ?? "");
   const [offerResults, setOfferResults] = useState<any[]>([]);
 
   return (

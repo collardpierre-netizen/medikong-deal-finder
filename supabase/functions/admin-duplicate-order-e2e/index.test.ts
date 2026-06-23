@@ -213,6 +213,17 @@ async function setup(): Promise<Fixture> {
   const insertedA = await insertLine(lineA);
   const insertedB = await insertLine(lineB);
 
+  // Relire le statut effectif (triggers peuvent l'avoir modifié, ex.
+  // 'confirmed' → 'processing' à l'insertion de lignes)
+  const { data: persistedOrder } = await admin
+    .from("orders")
+    .select("status, payment_method, payment_status")
+    .eq("id", newOrder.id)
+    .single();
+  const effectiveStatus = persistedOrder?.status ?? "confirmed";
+  const effectivePaymentMethod = persistedOrder?.payment_method ?? "invoice";
+  const effectivePaymentStatus = persistedOrder?.payment_status ?? "pending";
+
   return {
     admin,
     anon,

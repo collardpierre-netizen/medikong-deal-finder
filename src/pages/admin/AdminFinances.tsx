@@ -112,12 +112,10 @@ const AdminFinances = () => {
                     <td className="px-4 py-3 text-[12px] font-bold font-mono" style={{ color: "#059669" }}>{fmt(Number(inv.amount_ttc || 0))} EUR</td>
                     <td className="px-4 py-3 text-[11px]" style={{ color: "#8B95A5" }}>{inv.due_date ? new Date(inv.due_date).toLocaleDateString("fr-BE") : "—"}</td>
                     <td className="px-4 py-3">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{
-                        backgroundColor: inv.status === "paid" ? "#F0FDF4" : inv.status === "overdue" ? "#FEF2F2" : "#FFFBEB",
-                        color: inv.status === "paid" ? "#059669" : inv.status === "overdue" ? "#EF4343" : "#D97706",
-                      }}>
-                        {inv.status === "paid" ? "Payée" : inv.status === "overdue" ? "En retard" : inv.status === "draft" ? "Brouillon" : "En attente"}
-                      </span>
+                      <StatusBadge
+                        status={inv.status === "paid" ? "paid" : inv.status === "overdue" ? "cancelled" : inv.status === "draft" ? "pending" : "pending"}
+                        label={inv.status === "paid" ? "Payée" : inv.status === "overdue" ? "En retard" : inv.status === "draft" ? "Brouillon" : "En attente"}
+                      />
                     </td>
                   </tr>
                 ))}

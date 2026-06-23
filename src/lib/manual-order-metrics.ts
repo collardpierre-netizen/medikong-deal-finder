@@ -88,12 +88,14 @@ export function lineMetrics(l: ManualLineInput): LineMetrics {
 
   const rate = toNum(l.commission_rate);
   const amt = toNum(l.commission_amount);
+  const basis: CommissionBasis = l.commission_basis === "margin" ? "margin" : "ca";
   let commissionC = 0;
   if (Number.isFinite(amt) && amt >= 0) {
     commissionC = toCents(amt) * qty;
   } else if (Number.isFinite(rate) && rate >= 0) {
-    // commission = round(ca * rate / 100), calcul en cents
-    commissionC = Math.round((caC * rate) / 100);
+    // Base = marge brute si demandé ET coût connu, sinon CA HTVA (fallback sûr).
+    const baseC = basis === "margin" && hasCost ? caC - costTotalC : caC;
+    commissionC = Math.round((baseC * rate) / 100);
   }
   if (commissionC < 0) commissionC = 0;
 

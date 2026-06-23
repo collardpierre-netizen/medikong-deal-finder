@@ -72,7 +72,7 @@ const AdminDashboard = () => {
       id: o.order_number,
       buyer: (o.customers as any)?.company_name || "—",
       seller,
-      amount: `€ ${Number(o.total_incl_vat || 0).toLocaleString("fr-BE", { minimumFractionDigits: 2 })}`,
+      amount: `${fmtEur(Number(o.total_incl_vat || 0))} EUR`,
       status: o.status,
       date: new Date(o.created_at).toLocaleDateString("fr-BE", { day: "2-digit", month: "2-digit" }),
     };

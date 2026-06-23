@@ -7555,9 +7555,10 @@ export type Database = {
           line_margin: number | null
           line_total_excl_vat: number
           line_total_incl_vat: number
-          offer_id: string
+          manual_label: string | null
+          offer_id: string | null
           order_id: string
-          product_id: string
+          product_id: string | null
           qogita_offer_qid: string | null
           qogita_order_status: string
           qogita_seller_fid: string | null
@@ -7584,9 +7585,10 @@ export type Database = {
           line_margin?: number | null
           line_total_excl_vat: number
           line_total_incl_vat: number
-          offer_id: string
+          manual_label?: string | null
+          offer_id?: string | null
           order_id: string
-          product_id: string
+          product_id?: string | null
           qogita_offer_qid?: string | null
           qogita_order_status?: string
           qogita_seller_fid?: string | null
@@ -7613,9 +7615,10 @@ export type Database = {
           line_margin?: number | null
           line_total_excl_vat?: number
           line_total_incl_vat?: number
-          offer_id?: string
+          manual_label?: string | null
+          offer_id?: string | null
           order_id?: string
-          product_id?: string
+          product_id?: string | null
           qogita_offer_qid?: string | null
           qogita_order_status?: string
           qogita_seller_fid?: string | null
@@ -8039,6 +8042,7 @@ export type Database = {
           api_key_id: string | null
           billing_address: Json
           created_at: string
+          created_by_admin: string | null
           customer_id: string
           deleted_at: string | null
           deleted_by: string | null
@@ -8069,6 +8073,7 @@ export type Database = {
           api_key_id?: string | null
           billing_address?: Json
           created_at?: string
+          created_by_admin?: string | null
           customer_id: string
           deleted_at?: string | null
           deleted_by?: string | null
@@ -8099,6 +8104,7 @@ export type Database = {
           api_key_id?: string | null
           billing_address?: Json
           created_at?: string
+          created_by_admin?: string | null
           customer_id?: string
           deleted_at?: string | null
           deleted_by?: string | null
@@ -14083,6 +14089,8 @@ export type Database = {
       }
       sub_orders: {
         Row: {
+          commission_amount_override: number | null
+          commission_rate_override: number | null
           cost_total: number | null
           created_at: string
           estimated_delivery_date: string | null
@@ -14123,6 +14131,8 @@ export type Database = {
           vendor_id: string
         }
         Insert: {
+          commission_amount_override?: number | null
+          commission_rate_override?: number | null
           cost_total?: number | null
           created_at?: string
           estimated_delivery_date?: string | null
@@ -14163,6 +14173,8 @@ export type Database = {
           vendor_id: string
         }
         Update: {
+          commission_amount_override?: number | null
+          commission_rate_override?: number | null
           cost_total?: number | null
           created_at?: string
           estimated_delivery_date?: string | null
@@ -21918,6 +21930,7 @@ export type Database = {
           slug: string
         }[]
       }
+      admin_create_manual_order: { Args: { _payload: Json }; Returns: Json }
       admin_email_deliverability_kpis: {
         Args: never
         Returns: {
@@ -23951,9 +23964,10 @@ export type Database = {
           line_margin: number | null
           line_total_excl_vat: number
           line_total_incl_vat: number
-          offer_id: string
+          manual_label: string | null
+          offer_id: string | null
           order_id: string
-          product_id: string
+          product_id: string | null
           qogita_offer_qid: string | null
           qogita_order_status: string
           qogita_seller_fid: string | null
@@ -24049,7 +24063,7 @@ export type Database = {
       media_visibility: "public" | "authenticated" | "premium"
       notification_channel: "in_app" | "email" | "push"
       notification_sender: "system" | "superadmin"
-      order_source: "web" | "api"
+      order_source: "web" | "api" | "manual_admin"
       order_status:
         | "draft"
         | "pending"
@@ -24407,7 +24421,7 @@ export const Constants = {
       media_visibility: ["public", "authenticated", "premium"],
       notification_channel: ["in_app", "email", "push"],
       notification_sender: ["system", "superadmin"],
-      order_source: ["web", "api"],
+      order_source: ["web", "api", "manual_admin"],
       order_status: [
         "draft",
         "pending",

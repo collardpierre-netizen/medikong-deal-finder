@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Save } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, FileText, FolderOpen } from "lucide-react";
+
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,6 +80,7 @@ function nid() {
 const AdminCommandeManuelle = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [customerId, setCustomerId] = useState<string>("");
   const [customerSearch, setCustomerSearch] = useState("");
   const [status, setStatus] = useState("confirmed");
@@ -86,8 +88,12 @@ const AdminCommandeManuelle = () => {
   const [paymentStatus, setPaymentStatus] = useState("paid");
   const [adminNotes, setAdminNotes] = useState("");
   const [lines, setLines] = useState<ManualLine[]>([]);
-  
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [draftsOpen, setDraftsOpen] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+
   const [submitting, setSubmitting] = useState(false);
+
 
   // Quick-create customer modal
   const [qcOpen, setQcOpen] = useState(false);
@@ -317,6 +323,10 @@ const AdminCommandeManuelle = () => {
       });
       if (error) throw error;
       const result = data as any;
+      // Si on finalisait un brouillon, on le supprime
+      if (draftId) {
+        await supabase.rpc("admin_delete_manual_order_draft", { _id: draftId });
+      }
       toast.success(`Commande ${result?.order_number ?? ""} créée`);
       navigate("/admin/commandes");
     } catch (e: any) {
@@ -326,6 +336,125 @@ const AdminCommandeManuelle = () => {
     }
   }
 
+  // ---- Brouillons ----
+  function buildDraftPayload() {
+    return {
+      customer_id: customerId || null,
+      status,
+      payment_method: paymentMethod,
+      payment_status: paymentStatus,
+      admin_notes: adminNotes || null,
+      lines: lines.map((l) => ({
+        id: l.id,
+        mode: l.mode,
+        vendor_id: l.vendor_id,
+        offer_id: l.offer_id ?? null,
+        product_id: l.product_id ?? null,
+        offer_label: l.offer_label ?? null,
+        manual_label: l.manual_label ?? null,
+        quantity: l.quantity,
+        unit_price_excl_vat: l.unit_price_excl_vat,
+        vat_rate: l.vat_rate,
+        unit_cost_excl_vat: l.unit_cost_excl_vat,
+        commission_rate: l.commission_rate,
+        commission_amount: l.commission_amount,
+      })),
+    };
+  }
+
+  async function saveDraft() {
+    if (!customerId && !draftId) {
+      toast.error("Choisis un acheteur avant d'enregistrer le brouillon");
+      return;
+    }
+    setSavingDraft(true);
+    try {
+      const { data, error } = await supabase.rpc("admin_save_manual_order_draft", {
+        _draft_id: draftId,
+        _payload: buildDraftPayload() as any,
+      });
+      if (error) throw error;
+      const id = data as string;
+      setDraftId(id);
+      setSearchParams((sp) => { sp.set("draft", id); return sp; }, { replace: true });
+      await queryClient.invalidateQueries({ queryKey: ["admin-manual-order-drafts"] });
+      toast.success("Brouillon enregistré");
+    } catch (e: any) {
+      toast.error("Échec enregistrement : " + (e?.message ?? String(e)));
+    } finally {
+      setSavingDraft(false);
+    }
+  }
+
+  async function loadDraft(id: string) {
+    try {
+      const { data, error } = await supabase.rpc("admin_load_manual_order_draft", { _id: id });
+      if (error) throw error;
+      const p = data as any;
+      if (!p) throw new Error("brouillon vide");
+      setDraftId(id);
+      setCustomerId(p.customer_id ?? "");
+      setStatus(p.status ?? "confirmed");
+      setPaymentMethod(p.payment_method ?? "invoice");
+      setPaymentStatus(p.payment_status ?? "paid");
+      setAdminNotes(p.admin_notes ?? "");
+      setLines(Array.isArray(p.lines) ? p.lines.map((l: any) => ({
+        id: l.id ?? nid(),
+        mode: l.mode ?? "offer",
+        vendor_id: l.vendor_id ?? "",
+        offer_id: l.offer_id ?? undefined,
+        product_id: l.product_id ?? undefined,
+        offer_label: l.offer_label ?? undefined,
+        manual_label: l.manual_label ?? undefined,
+        quantity: Number(l.quantity) || 1,
+        unit_price_excl_vat: Number(l.unit_price_excl_vat) || 0,
+        vat_rate: Number(l.vat_rate ?? 21),
+        unit_cost_excl_vat: l.unit_cost_excl_vat ?? "",
+        commission_rate: l.commission_rate ?? "",
+        commission_amount: l.commission_amount ?? "",
+      })) : []);
+      setSearchParams((sp) => { sp.set("draft", id); return sp; }, { replace: true });
+      setDraftsOpen(false);
+      toast.success("Brouillon chargé");
+    } catch (e: any) {
+      toast.error("Échec chargement : " + (e?.message ?? String(e)));
+    }
+  }
+
+  async function discardDraft() {
+    if (!draftId) return;
+    if (!confirm("Supprimer définitivement ce brouillon ?")) return;
+    try {
+      const { error } = await supabase.rpc("admin_delete_manual_order_draft", { _id: draftId });
+      if (error) throw error;
+      setDraftId(null);
+      setSearchParams((sp) => { sp.delete("draft"); return sp; }, { replace: true });
+      await queryClient.invalidateQueries({ queryKey: ["admin-manual-order-drafts"] });
+      toast.success("Brouillon supprimé");
+    } catch (e: any) {
+      toast.error("Échec suppression : " + (e?.message ?? String(e)));
+    }
+  }
+
+  const { data: drafts = [], refetch: refetchDrafts } = useQuery({
+    queryKey: ["admin-manual-order-drafts"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_list_manual_order_drafts");
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  // Charge automatiquement le brouillon passé en query string (?draft=<id>)
+  const draftFromUrl = searchParams.get("draft");
+  useEffect(() => {
+    if (draftFromUrl && draftFromUrl !== draftId) {
+      void loadDraft(draftFromUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftFromUrl]);
+
+
   return (
     <div>
       <AdminTopBar
@@ -333,11 +462,66 @@ const AdminCommandeManuelle = () => {
         subtitle="Saisie admin — alimente la GMV"
       />
 
-      <div className="mb-4">
+      <div className="mb-4 flex items-center justify-between gap-2 flex-wrap">
         <Link to="/admin/commandes" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft size={14} /> Retour aux commandes
         </Link>
+        <div className="flex items-center gap-2">
+          {draftId && (
+            <span className="text-xs px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+              Brouillon en cours · {draftId.slice(0, 8)}
+            </span>
+          )}
+          <Dialog open={draftsOpen} onOpenChange={(o) => { setDraftsOpen(o); if (o) void refetchDrafts(); }}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline">
+                <FolderOpen size={14} className="mr-1" /> Brouillons ({drafts.length})
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Brouillons de commande manuelle</DialogTitle>
+              </DialogHeader>
+              {drafts.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-6 text-center">Aucun brouillon enregistré.</p>
+              ) : (
+                <div className="max-h-[60vh] overflow-auto border rounded">
+                  <table className="w-full text-xs">
+                    <thead className="bg-muted/40 sticky top-0">
+                      <tr>
+                        <th className="text-left px-2 py-1">N°</th>
+                        <th className="text-left px-2 py-1">Acheteur</th>
+                        <th className="text-right px-2 py-1">Lignes</th>
+                        <th className="text-left px-2 py-1">Modifié</th>
+                        <th className="px-2 py-1"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {drafts.map((d: any) => (
+                        <tr key={d.id} className="border-t">
+                          <td className="px-2 py-1 font-mono">{d.order_number}</td>
+                          <td className="px-2 py-1">{d.customer_label}</td>
+                          <td className="px-2 py-1 text-right">{d.line_count}</td>
+                          <td className="px-2 py-1">{new Date(d.updated_at).toLocaleString("fr-BE")}</td>
+                          <td className="px-2 py-1 text-right">
+                            <Button size="sm" variant="outline" onClick={() => loadDraft(d.id)}>
+                              Ouvrir
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDraftsOpen(false)}>Fermer</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Left: meta */}
@@ -585,13 +769,23 @@ const AdminCommandeManuelle = () => {
 
 
 
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 flex-wrap">
             <Button variant="outline" onClick={() => navigate("/admin/commandes")}>Annuler</Button>
+            {draftId && (
+              <Button variant="outline" onClick={discardDraft} className="text-rose-600 border-rose-200 hover:bg-rose-50">
+                <Trash2 size={14} className="mr-1" /> Supprimer brouillon
+              </Button>
+            )}
+            <Button variant="outline" onClick={saveDraft} disabled={savingDraft}>
+              <FileText size={14} className="mr-1" />
+              {savingDraft ? "Enregistrement…" : draftId ? "Mettre à jour brouillon" : "Enregistrer brouillon"}
+            </Button>
             <Button onClick={submit} disabled={submitting}>
               <Save size={14} className="mr-1" />
-              {submitting ? "Création…" : "Créer la commande"}
+              {submitting ? "Création…" : draftId ? "Finaliser la commande" : "Créer la commande"}
             </Button>
           </div>
+
         </div>
       </div>
     </div>

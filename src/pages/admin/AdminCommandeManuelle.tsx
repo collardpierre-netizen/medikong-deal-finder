@@ -222,16 +222,52 @@ const AdminCommandeManuelle = () => {
   }
 
   async function searchOffers(line: ManualLine, term: string) {
-    // simple lookup by product name; returns first 10 active offers
-    if (!term || term.length < 2) return [] as any[];
-    const { data } = await supabase
+    // Recherche par nom de produit OU par code-barres (EAN/GTIN) / CNK.
+    // On retourne aussi les produits sans offre liée, pour permettre à l'admin
+    // de créer une ligne sur un produit existant en DB même si aucun vendeur
+    // n'a encore d'offre dessus.
+    const t = term.trim();
+    if (!t || t.length < 2) return [] as any[];
+    const digits = /^\d{6,}$/.test(t);
+
+    // 1) Offres actives matchant nom OU gtin/cnk du produit
+    const offersQuery = supabase
       .from("offers")
-      .select("id, vendor_id, product_id, base_price_excl_vat, products!inner(name)")
+      .select("id, vendor_id, product_id, base_price_excl_vat, products!inner(id, name, gtin, cnk_code)")
       .eq("is_active", true)
-      .ilike("products.name", `%${term}%`)
       .limit(10);
-    return data ?? [];
+    const offersResult = digits
+      ? await offersQuery.or(`gtin.eq.${t},cnk_code.eq.${t}`, { foreignTable: "products" })
+      : await offersQuery.ilike("products.name", `%${t}%`);
+    const offers = offersResult.data ?? [];
+
+    // 2) Produits matchant (par EAN/CNK exact si digits, sinon par nom)
+    const productsQ = supabase
+      .from("products")
+      .select("id, name, gtin, cnk_code")
+      .eq("is_active", true)
+      .limit(10);
+    const productsResult = digits
+      ? await productsQ.or(`gtin.eq.${t},cnk_code.eq.${t}`)
+      : await productsQ.ilike("name", `%${t}%`);
+    const products = productsResult.data ?? [];
+
+    // Fusion : on garde toutes les offres, puis on ajoute les produits sans offre
+    // sous forme d'entrée "produit seul" (offer_id absent).
+    const offerProductIds = new Set(offers.map((o: any) => o.product_id));
+    const productOnly = products
+      .filter((p: any) => !offerProductIds.has(p.id))
+      .map((p: any) => ({
+        id: null, // pas d'offre
+        vendor_id: null,
+        product_id: p.id,
+        base_price_excl_vat: null,
+        products: p,
+        __productOnly: true as const,
+      }));
+    return [...offers, ...productOnly];
   }
+
 
   async function submit() {
     if (!customerId) {

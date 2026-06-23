@@ -216,6 +216,7 @@ const AdminCommandeManuelle = () => {
         unit_cost_excl_vat: "",
         commission_rate: "",
         commission_amount: "",
+        commission_basis: "ca",
       },
     ]);
   }

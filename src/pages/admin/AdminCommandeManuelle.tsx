@@ -45,6 +45,8 @@ interface ManualLine {
   unit_cost_excl_vat: string; // €/unité HTVA
   commission_rate: string; // %
   commission_amount: string; // €/unité
+  /** Base du % de commission : "ca" (CA HTVA, défaut) ou "margin" (marge brute = CA − coût) */
+  commission_basis: "ca" | "margin";
 }
 
 // Wrapper local pour préserver l'API d'origine (ManualLine UI → ManualLineInput).
@@ -214,6 +216,7 @@ const AdminCommandeManuelle = () => {
         unit_cost_excl_vat: "",
         commission_rate: "",
         commission_amount: "",
+        commission_basis: "ca",
       },
     ]);
   }
@@ -312,6 +315,7 @@ const AdminCommandeManuelle = () => {
         unit_cost_excl_vat: l.unit_cost_excl_vat || "",
         commission_rate: l.commission_rate || "",
         commission_amount: l.commission_amount || "",
+        commission_basis: l.commission_basis ?? "ca",
       })),
     };
 
@@ -358,6 +362,7 @@ const AdminCommandeManuelle = () => {
         unit_cost_excl_vat: l.unit_cost_excl_vat,
         commission_rate: l.commission_rate,
         commission_amount: l.commission_amount,
+        commission_basis: l.commission_basis,
       })),
     };
   }
@@ -412,6 +417,7 @@ const AdminCommandeManuelle = () => {
         unit_cost_excl_vat: l.unit_cost_excl_vat ?? "",
         commission_rate: l.commission_rate ?? "",
         commission_amount: l.commission_amount ?? "",
+        commission_basis: l.commission_basis === "margin" ? "margin" : "ca",
       })) : []);
       setSearchParams((sp) => { sp.set("draft", id); return sp; }, { replace: true });
       setDraftsOpen(false);
@@ -948,6 +954,25 @@ function LineRow({
             disabled={line.commission_amount !== ""}
             onChange={(e) => onPatch({ commission_rate: e.target.value })}
           />
+          <div className="flex items-center gap-1 mt-1 text-[11px]">
+            <span className="text-muted-foreground">Base :</span>
+            <button
+              type="button"
+              onClick={() => onPatch({ commission_basis: "ca" })}
+              className={`px-2 py-0.5 rounded border ${line.commission_basis !== "margin" ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground"}`}
+              title="Commission % appliquée sur le CA HTVA"
+            >
+              CA HTVA
+            </button>
+            <button
+              type="button"
+              onClick={() => onPatch({ commission_basis: "margin" })}
+              className={`px-2 py-0.5 rounded border ${line.commission_basis === "margin" ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground"}`}
+              title="Commission % appliquée sur la marge brute (CA − coût d'achat). Fallback CA si coût inconnu."
+            >
+              Marge brute
+            </button>
+          </div>
         </div>
         <div>
           <Label className="text-xs">Commission €/u. (fixe)</Label>

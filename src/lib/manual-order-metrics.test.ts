@@ -59,6 +59,29 @@ describe("manual-order-metrics — lineMetrics", () => {
     expect(m.netVendor).toBe(10);
   });
 
+  it("commission % sur marge brute (basis='margin') avec coût connu", () => {
+    const m = lineMetrics(line({
+      quantity: 108, unit_price_excl_vat: 2.62, unit_cost_excl_vat: 1.84,
+      commission_rate: 50, commission_basis: "margin", vat_rate: 21,
+    }));
+    // CA=282.96, coût=198.72, marge brute=84.24, commission=50%*84.24=42.12
+    expect(m.ca).toBe(282.96);
+    expect(m.cost).toBe(198.72);
+    expect(m.gross).toBe(84.24);
+    expect(m.commission).toBe(42.12);
+    expect(m.netVendor).toBe(240.84);
+    expect(m.netMargin).toBe(42.12);
+  });
+
+  it("basis='margin' sans coût → fallback sur CA HTVA", () => {
+    const m = lineMetrics(line({
+      quantity: 10, unit_price_excl_vat: 5, commission_rate: 20,
+      commission_basis: "margin",
+    }));
+    expect(m.commission).toBe(10); // 20% * 50€
+    expect(m.hasCost).toBe(false);
+  });
+
   it("CA TTC = HTVA * (1 + TVA/100), arrondi 2 décimales", () => {
     const m = lineMetrics(line({
       quantity: 1, unit_price_excl_vat: 100, vat_rate: 6,

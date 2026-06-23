@@ -46,6 +46,7 @@ const statusFilters = [
   { key: "all", label: "Toutes" },
   { key: "pending", label: "En attente" },
   { key: "confirmed", label: "Confirmées" },
+  { key: "processing", label: "En cours" },
   { key: "shipped", label: "Expédiées" },
   { key: "delivered", label: "Livrées" },
   { key: "cancelled", label: "Annulées" },

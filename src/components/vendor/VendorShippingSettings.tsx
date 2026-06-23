@@ -64,13 +64,20 @@ export default function VendorShippingSettings({ vendorId, currentMode, marginPe
   const { data: credentials } = useQuery({
     queryKey: ["vendor-sendcloud-credentials", vendorId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vendor_sendcloud_credentials")
-        .select("*")
+      const { data, error } = await (supabase as any)
+        .from("vendor_sendcloud_status_v")
+        .select("id, vendor_id, is_connected, last_verified_at, has_public_key, has_secret_key")
         .eq("vendor_id", vendorId)
         .maybeSingle();
       if (error) throw error;
-      return data;
+      return data as {
+        id: string;
+        vendor_id: string;
+        is_connected: boolean | null;
+        last_verified_at: string | null;
+        has_public_key: boolean | null;
+        has_secret_key: boolean | null;
+      } | null;
     },
     enabled: currentMode === "own_sendcloud",
   });
@@ -94,18 +101,19 @@ export default function VendorShippingSettings({ vendorId, currentMode, marginPe
 
   const saveCredentialsMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
-        .from("vendor_sendcloud_credentials")
-        .upsert({
-          vendor_id: vendorId,
-          sendcloud_public_key: publicKey,
-          sendcloud_secret_key: secretKey,
-          is_connected: false,
-        } as any, { onConflict: "vendor_id" });
-      if (error) throw error;
+      if (!publicKey || !secretKey) {
+        throw new Error("Renseignez la clé publique ET la clé secrète Sendcloud.");
+      }
+      const res = await supabase.functions.invoke("vendor-sendcloud-credentials", {
+        body: { action: "save", vendor_id: vendorId, public_key: publicKey, secret_key: secretKey },
+      });
+      if (res.error) throw res.error;
+      if (!res.data?.success) throw new Error(res.data?.error || "Échec d'enregistrement");
     },
     onSuccess: () => {
-      toast.success("Identifiants enregistrés");
+      toast.success("Identifiants enregistrés (chiffrés côté serveur)");
+      setPublicKey("");
+      setSecretKey("");
       qc.invalidateQueries({ queryKey: ["vendor-sendcloud-credentials", vendorId] });
     },
     onError: (err: any) => toast.error(err.message),
@@ -114,21 +122,19 @@ export default function VendorShippingSettings({ vendorId, currentMode, marginPe
   const testConnection = async () => {
     setTesting(true);
     try {
+      // Si l'utilisateur a tapé de nouvelles clés, on les teste directement.
+      // Sinon on demande au serveur d'utiliser les clés chiffrées en base.
+      const hasNewKeys = !!(publicKey && secretKey);
       const res = await supabase.functions.invoke("sendcloud-api", {
         body: {
           action: "test_connection",
           vendor_id: vendorId,
-          public_key: publicKey || credentials?.sendcloud_public_key,
-          secret_key: secretKey || credentials?.sendcloud_secret_key,
+          ...(hasNewKeys ? { public_key: publicKey, secret_key: secretKey } : {}),
         },
       });
       if (res.error) throw res.error;
       if (res.data?.success) {
         toast.success("Connexion Sendcloud vérifiée ✓");
-        await supabase
-          .from("vendor_sendcloud_credentials")
-          .update({ is_connected: true, last_verified_at: new Date().toISOString() } as any)
-          .eq("vendor_id", vendorId);
         qc.invalidateQueries({ queryKey: ["vendor-sendcloud-credentials", vendorId] });
       } else {
         toast.error(res.data?.error || "Échec de connexion Sendcloud");
@@ -139,6 +145,7 @@ export default function VendorShippingSettings({ vendorId, currentMode, marginPe
       setTesting(false);
     }
   };
+
 
   const handleModeSelect = (mode: ShippingMode) => {
     if (mode === currentMode) return;
@@ -239,22 +246,26 @@ export default function VendorShippingSettings({ vendorId, currentMode, marginPe
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Clé publique Sendcloud</Label>
+                <Label className="text-xs font-medium">
+                  Clé publique Sendcloud {credentials?.has_public_key && <span className="text-emerald-600">· enregistrée</span>}
+                </Label>
                 <Input
-                  value={publicKey || credentials?.sendcloud_public_key || ""}
+                  value={publicKey}
                   onChange={(e) => setPublicKey(e.target.value)}
-                  placeholder="Votre clé publique..."
+                  placeholder={credentials?.has_public_key ? "•••••• (re-saisir pour modifier)" : "Votre clé publique..."}
                   className="text-sm"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Clé secrète Sendcloud</Label>
+                <Label className="text-xs font-medium">
+                  Clé secrète Sendcloud {credentials?.has_secret_key && <span className="text-emerald-600">· enregistrée</span>}
+                </Label>
                 <div className="relative">
                   <Input
                     type={showSecret ? "text" : "password"}
-                    value={secretKey || credentials?.sendcloud_secret_key || ""}
+                    value={secretKey}
                     onChange={(e) => setSecretKey(e.target.value)}
-                    placeholder="Votre clé secrète..."
+                    placeholder={credentials?.has_secret_key ? "•••••• (re-saisir pour modifier)" : "Votre clé secrète..."}
                     className="text-sm pr-10"
                   />
                   <button
@@ -267,6 +278,7 @@ export default function VendorShippingSettings({ vendorId, currentMode, marginPe
                 </div>
               </div>
             </div>
+
 
             <div className="flex items-center gap-3">
               <VBtn

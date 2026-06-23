@@ -4,6 +4,7 @@
 // Idempotent par jour grâce à idempotencyKey = `contract-reminder-{vendor}-L{N}-{YYYY-MM-DD}`.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+import { requireCronOrService } from '../_shared/cron-or-admin.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -46,6 +47,14 @@ function pickLevel(daysSince: number): ReminderPlan | null {
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
+  }
+
+  const guard = await requireCronOrService(req, { allowAdmin: true })
+  if (!guard.ok) {
+    return new Response(JSON.stringify({ error: guard.error }), {
+      status: guard.status,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!

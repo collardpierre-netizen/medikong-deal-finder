@@ -18611,8 +18611,8 @@ export type Database = {
           id: string
           is_connected: boolean
           last_verified_at: string | null
-          sendcloud_public_key: string
-          sendcloud_secret_key: string
+          public_key_cipher: string | null
+          secret_key_cipher: string | null
           vendor_id: string
         }
         Insert: {
@@ -18620,8 +18620,8 @@ export type Database = {
           id?: string
           is_connected?: boolean
           last_verified_at?: string | null
-          sendcloud_public_key?: string
-          sendcloud_secret_key?: string
+          public_key_cipher?: string | null
+          secret_key_cipher?: string | null
           vendor_id: string
         }
         Update: {
@@ -18629,8 +18629,8 @@ export type Database = {
           id?: string
           is_connected?: boolean
           last_verified_at?: string | null
-          sendcloud_public_key?: string
-          sendcloud_secret_key?: string
+          public_key_cipher?: string | null
+          secret_key_cipher?: string | null
           vendor_id?: string
         }
         Relationships: [
@@ -21612,6 +21612,86 @@ export type Database = {
           vendor_id: string | null
         }
         Relationships: []
+      }
+      vendor_sendcloud_status_v: {
+        Row: {
+          created_at: string | null
+          has_public_key: boolean | null
+          has_secret_key: boolean | null
+          id: string | null
+          is_connected: boolean | null
+          last_verified_at: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          has_public_key?: never
+          has_secret_key?: never
+          id?: string | null
+          is_connected?: boolean | null
+          last_verified_at?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          has_public_key?: never
+          has_secret_key?: never
+          id?: string | null
+          is_connected?: boolean | null
+          last_verified_at?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_sendcloud_credentials_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_sendcloud_credentials_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_sendcloud_credentials_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_sendcloud_credentials_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_sendcloud_credentials_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_sendcloud_credentials_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_sendcloud_credentials_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vendor_top_brands_mv: {
         Row: {

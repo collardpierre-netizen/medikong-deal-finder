@@ -12,6 +12,7 @@
 //  - pas de doublon (UNIQUE rfq_id+vendor_id+wave_number)
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { requireCronOrService } from "../_shared/cron-or-admin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -50,6 +51,16 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const guard = await requireCronOrService(req, { allowAdmin: true });
+  if (!guard.ok) {
+    return new Response(JSON.stringify({ error: guard.error }), {
+      status: guard.status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+
 
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 

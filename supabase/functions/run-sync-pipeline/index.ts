@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { requireCronOrService } from "../_shared/cron-or-admin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -360,7 +361,17 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const guard = await requireCronOrService(req, { allowAdmin: true });
+  if (!guard.ok) {
+    return new Response(JSON.stringify({ error: guard.error }), {
+      status: guard.status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+
 
   try {
     const body = await req.json().catch(() => ({}));

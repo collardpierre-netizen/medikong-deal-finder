@@ -3,6 +3,7 @@
 //   J+M for each M in remind_days_after_due (configurable per vendor)
 // Also flips PENDING -> OVERDUE for past-due invoices.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireCronOrService } from "../_shared/cron-or-admin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,6 +25,16 @@ function fmtDate(d: string | Date): string {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  const guard = await requireCronOrService(req, { allowAdmin: true });
+  if (!guard.ok) {
+    return new Response(JSON.stringify({ error: guard.error }), {
+      status: guard.status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,

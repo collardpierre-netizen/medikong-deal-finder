@@ -176,13 +176,19 @@ export default function VendorOnboardingWizard() {
 
       // 2. Mode-specific setup
       if (shippingMode === "own_sendcloud") {
-        await supabase.from("vendor_sendcloud_credentials").insert({
-          vendor_id: vendorId,
-          sendcloud_public_key: scKeys.public_key,
-          sendcloud_secret_key: scKeys.secret_key,
-          is_connected: testResult === "success",
-        } as any);
+        const saveRes = await supabase.functions.invoke("vendor-sendcloud-credentials", {
+          body: {
+            action: "save",
+            vendor_id: vendorId,
+            public_key: scKeys.public_key,
+            secret_key: scKeys.secret_key,
+            mark_connected: testResult === "success",
+          },
+        });
+        if (saveRes.error) throw saveRes.error;
+        if (!saveRes.data?.success) throw new Error(saveRes.data?.error || "Échec d'enregistrement des identifiants Sendcloud");
       }
+
 
       if (shippingMode === "medikong_whitelabel") {
         // Save shipping address

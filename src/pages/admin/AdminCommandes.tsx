@@ -17,6 +17,7 @@ import {
   ShoppingCart, TrendingUp, Clock, CreditCard, Truck, Percent,
   Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle, CalendarClock, Copy,
 } from "lucide-react";
+import { fmtEur } from "@/lib/format-currency";
 
 type PeriodKey = "7d" | "30d" | "90d" | "12m" | "all";
 const PERIODS: { key: PeriodKey; label: string; days: number | null }[] = [
@@ -53,7 +54,7 @@ const statusFilters = [
   { key: "cancelled", label: "Annulées" },
 ];
 
-const fmt = (n: number) => n.toLocaleString("fr-BE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmt = fmtEur;
 
 const AdminCommandes = () => {
   const { t } = useI18n();

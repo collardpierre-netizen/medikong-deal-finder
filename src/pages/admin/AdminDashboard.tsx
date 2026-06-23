@@ -135,7 +135,7 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-5 gap-4 mb-6">
         <KpiCard icon={DollarSign} label={t("gmvMonth")} value={`${fmtEur(stats.gmv)} EUR`} iconColor="#1B5BDA" iconBg="#EFF6FF" />
         <KpiCard icon={ShoppingCart} label={t("ordersMonth")} value={fmt(stats.totalOrders)} iconColor="#7C3AED" iconBg="#F5F3FF" />
-        <KpiCard icon={Store} label={t("activeSellers")} value={String(stats.activeVendors)} iconColor="#059669" iconBg="#F0FDF4" />
+        <KpiCard icon={Store} label={t("activeSellers")} value={fmt(stats.activeVendors)} iconColor="#059669" iconBg="#F0FDF4" />
         <KpiCard icon={Package} label={t("catalogProducts")} value={fmt(stats.totalProducts)} iconColor="#F59E0B" iconBg="#FFFBEB" />
         <KpiCard icon={AlertTriangle} label={t("disputeRate")} value={`${stats.disputeRate}%`} iconColor="#EF4343" iconBg="#FEF2F2" />
       </div>

@@ -34,12 +34,31 @@ interface ManualLine {
   quantity: number;
   unit_price_excl_vat: number;
   vat_rate: number; // percent
+  // marge / commission (par ligne, optionnel)
+  unit_cost_excl_vat: string; // €/unité HTVA
+  commission_rate: string; // %
+  commission_amount: string; // €/unité
 }
 
-interface CommissionInput {
-  rate: string; // %
-  amount: string; // EUR
+function lineMetrics(l: ManualLine) {
+  const qty = Number(l.quantity) || 0;
+  const sell = Number(l.unit_price_excl_vat) || 0;
+  const costNum = l.unit_cost_excl_vat === "" ? null : Number(l.unit_cost_excl_vat);
+  const hasCost = costNum !== null && Number.isFinite(costNum);
+  const ca = sell * qty;
+  const cost = hasCost ? (costNum as number) * qty : 0;
+  const gross = hasCost ? ca - cost : 0;
+  const rate = l.commission_rate === "" ? null : Number(l.commission_rate);
+  const amt = l.commission_amount === "" ? null : Number(l.commission_amount);
+  let commission = 0;
+  if (amt !== null && Number.isFinite(amt)) commission = amt * qty;
+  else if (rate !== null && Number.isFinite(rate)) commission = (ca * rate) / 100;
+  commission = Math.max(0, commission);
+  const netVendor = ca - commission;
+  const netMargin = hasCost ? ca - cost - commission : 0;
+  return { ca, cost, gross, commission, netVendor, netMargin, hasCost };
 }
+
 
 const ORDER_STATUSES = [
   { value: "pending", label: "En attente" },

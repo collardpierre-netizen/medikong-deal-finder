@@ -4,16 +4,13 @@ import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useDashboardStats, useVendors, useOrders } from "@/hooks/useAdminData";
+import GmvEvolutionChart from "@/components/admin/GmvEvolutionChart";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   DollarSign, ShoppingCart, Store, Package, AlertTriangle,
   TrendingUp, Info, UserCheck, Users, ChevronRight, Clock, Truck, Percent,
 } from "lucide-react";
-import {
-  XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Area, AreaChart,
-} from "recharts";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -248,33 +245,7 @@ const AdminDashboard = () => {
 
       <div className="grid grid-cols-2 gap-4">
         {/* GMV Chart */}
-        <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
-          <h3 className="text-[14px] font-semibold mb-4" style={{ color: "#1D2530" }}>{t("gmvEvolution")}</h3>
-          {stats.gmv > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={[{ month: "Ce mois", gmv: stats.gmv }]}>
-                <defs>
-                  <linearGradient id="gmvGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#1B5BDA" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#1B5BDA" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#8B95A5" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "#8B95A5" }} axisLine={false} tickLine={false} tickFormatter={(v) => {
-                  if (v >= 1_000_000) return `€${(v / 1_000_000).toFixed(1)}M`;
-                  if (v >= 1_000) return `€${(v / 1_000).toFixed(1)}k`;
-                  return `€${Math.round(v)}`;
-                }} />
-
-                <Tooltip formatter={(value: number) => [`€${value.toLocaleString()}`, "GMV"]} contentStyle={{ borderRadius: 8, border: "1px solid #E2E8F0", fontSize: 12 }} />
-                <Area type="monotone" dataKey="gmv" stroke="#1B5BDA" strokeWidth={2.5} fill="url(#gmvGrad)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (
-            <EmptyState message="Aucune donnée GMV — lancez la synchronisation Qogita et passez des commandes" />
-          )}
-        </div>
+        <GmvEvolutionChart title={t("gmvEvolution")} orders={(ordersQuery.data || []) as any} />
 
         {/* Recent Orders */}
         <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>

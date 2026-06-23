@@ -346,6 +346,12 @@ const AdminCommandes = () => {
                 </span>
               )}
             </label>
+            <label className="flex items-center gap-2 px-3 py-2 rounded-md text-[12px] font-medium cursor-pointer select-none"
+              style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#616B7C" }}
+              title="N'afficher que les commandes avec une commission > 0 €">
+              <input type="checkbox" checked={onlyWithCommission} onChange={(e) => setOnlyWithCommission(e.target.checked)} />
+              Avec commission
+            </label>
             <button className="flex items-center gap-2 px-3 py-2 rounded-md text-[13px] font-medium" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#616B7C" }}><Filter size={14} /> Filtres</button>
           </div>
 

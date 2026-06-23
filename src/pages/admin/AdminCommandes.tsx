@@ -13,9 +13,18 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  ShoppingCart, TrendingUp, Clock, CreditCard, Truck,
+  ShoppingCart, TrendingUp, Clock, CreditCard, Truck, Percent,
   Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle,
 } from "lucide-react";
+
+type PeriodKey = "7d" | "30d" | "90d" | "12m" | "all";
+const PERIODS: { key: PeriodKey; label: string; days: number | null }[] = [
+  { key: "7d", label: "7 j", days: 7 },
+  { key: "30d", label: "30 j", days: 30 },
+  { key: "90d", label: "90 j", days: 90 },
+  { key: "12m", label: "12 mois", days: 365 },
+  { key: "all", label: "Tout", days: null },
+];
 
 const buyerColors: Record<string, { bg: string; text: string }> = {
   Pharmacie: { bg: "#EFF6FF", text: "#1B5BDA" },
@@ -65,6 +74,8 @@ const AdminCommandes = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [hideTest, setHideTest] = useState(true);
+  const [period, setPeriod] = useState<PeriodKey>("30d");
+  const [onlyWithCommission, setOnlyWithCommission] = useState(false);
   const [purgeOpen, setPurgeOpen] = useState(false);
   const [purging, setPurging] = useState(false);
   const [purgePreview, setPurgePreview] = useState<null | {
@@ -78,32 +89,64 @@ const AdminCommandes = () => {
   const REQUIRED_TOKEN = "PURGE TEST ORDERS";
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
-  const orders = ordersData.map(o => ({
-    id: o.order_number,
-    rawId: o.id,
-    refPO: "—",
-    buyer: (o.customers as any)?.company_name || "—",
-    buyerType: (o.customers as any)?.customer_type || "pharmacy",
-    seller: "—",
-    amountHT: Number(o.subtotal_excl_vat) || 0,
-    tva: Number(o.vat_amount) || 0,
-    ttc: Number(o.total_incl_vat) || 0,
-    paymentTerms: o.payment_method || "invoice",
-    dueDate: o.payment_due_date ? new Date(o.payment_due_date).toLocaleDateString("fr-BE") : "—",
-    status: o.status as "pending" | "confirmed" | "shipped" | "delivered" | "cancelled",
-    isTest: Boolean((o as any).is_test),
-    hiddenFromList: Boolean((o as any).hidden_from_list),
-    date: new Date(o.created_at).toLocaleDateString("fr-BE"),
-    lines: ((o as any).order_lines || []) as any[],
-  }));
+  const orders = ordersData.map(o => {
+    const subs = ((o as any).sub_orders || []) as Array<{
+      commission_amount_override: number | null;
+      commission_rate_override: number | null;
+      subtotal_incl_vat: number | null;
+    }>;
+    const commissionEur = subs.reduce((acc, s) => {
+      const amt = Number(s.commission_amount_override);
+      if (Number.isFinite(amt) && amt > 0) return acc + amt;
+      const rate = Number(s.commission_rate_override);
+      const sub = Number(s.subtotal_incl_vat) || 0;
+      if (Number.isFinite(rate) && rate > 0 && sub > 0) return acc + (sub * rate) / 100;
+      return acc;
+    }, 0);
+    const amountHT = Number(o.subtotal_excl_vat) || 0;
+    return {
+      id: o.order_number,
+      rawId: o.id,
+      refPO: "—",
+      buyer: (o.customers as any)?.company_name || "—",
+      buyerType: (o.customers as any)?.customer_type || "pharmacy",
+      seller: "—",
+      amountHT,
+      tva: Number(o.vat_amount) || 0,
+      ttc: Number(o.total_incl_vat) || 0,
+      commissionEur,
+      commissionPct: amountHT > 0 ? (commissionEur / amountHT) * 100 : 0,
+      paymentTerms: o.payment_method || "invoice",
+      dueDate: o.payment_due_date ? new Date(o.payment_due_date).toLocaleDateString("fr-BE") : "—",
+      status: o.status as "pending" | "confirmed" | "shipped" | "delivered" | "cancelled",
+      isTest: Boolean((o as any).is_test),
+      hiddenFromList: Boolean((o as any).hidden_from_list),
+      createdAtRaw: o.created_at,
+      date: new Date(o.created_at).toLocaleDateString("fr-BE"),
+      lines: ((o as any).order_lines || []) as any[],
+    };
+  });
 
-  const visibleOrders = hideDeleted ? orders.filter(o => !o.hiddenFromList) : orders;
+  // --- Filtre période (sur created_at) appliqué avant toute dérivation ---
+  const periodCutoff = (() => {
+    const days = PERIODS.find(p => p.key === period)?.days;
+    if (!days) return null;
+    const d = new Date();
+    d.setDate(d.getDate() - days);
+    return d.getTime();
+  })();
+  const periodOrders = periodCutoff === null
+    ? orders
+    : orders.filter(o => o.createdAtRaw && new Date(o.createdAtRaw).getTime() >= periodCutoff);
+
+  const visibleOrders = hideDeleted ? periodOrders.filter(o => !o.hiddenFromList) : periodOrders;
   const displayOrders = hideTest ? visibleOrders.filter(o => !o.isTest) : visibleOrders;
   const testCount = visibleOrders.filter(o => o.isTest).length;
-  const deletedCount = orders.filter(o => o.hiddenFromList).length;
+  const deletedCount = periodOrders.filter(o => o.hiddenFromList).length;
 
   const filtered = displayOrders.filter((o) => {
     if (statusFilter !== "all" && o.status !== statusFilter) return false;
+    if (onlyWithCommission && !(o.commissionEur > 0)) return false;
     if (search && !o.id.toLowerCase().includes(search.toLowerCase()) && !o.buyer.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
@@ -112,6 +155,8 @@ const AdminCommandes = () => {
 
   const gmvDay = displayOrders.reduce((a, o) => a + o.amountHT, 0);
   const avgBasket = displayOrders.length > 0 ? Math.round(gmvDay / displayOrders.length) : 0;
+  const commissionTotal = displayOrders.reduce((a, o) => a + o.commissionEur, 0);
+  const commissionPctGlobal = gmvDay > 0 ? (commissionTotal / gmvDay) * 100 : 0;
 
   const tabs = [
     { key: "list" as const, label: "Liste" },
@@ -236,10 +281,25 @@ const AdminCommandes = () => {
         </div>
       } />
 
-      <div className="grid grid-cols-5 gap-3 mb-5">
+      {/* Sélecteur de période — applique à tous les KPIs et toutes les vues */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-1 p-1 rounded-lg" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+          <span className="px-2 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>Période</span>
+          {PERIODS.map(p => (
+            <button key={p.key} onClick={() => setPeriod(p.key)}
+              className="px-3 py-1.5 rounded-md text-[12px] font-semibold transition-colors"
+              style={{ backgroundColor: period === p.key ? "#1B5BDA" : "transparent", color: period === p.key ? "#fff" : "#616B7C" }}>
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-6 gap-3 mb-5">
         <KpiCard icon={TrendingUp} label="GMV total" value={`${fmt(gmvDay)} EUR`} evolution={{ value: 12.4, label: "vs mois dernier" }} />
         <KpiCard icon={ShoppingCart} label="Commandes" value={String(displayOrders.length)} evolution={{ value: 8.2, label: "vs mois dernier" }} iconColor="#7C3AED" iconBg="#F5F3FF" />
         <KpiCard icon={CreditCard} label="Panier moyen" value={`${avgBasket} EUR`} iconColor="#059669" iconBg="#F0FDF4" />
+        <KpiCard icon={Percent} label="Commission totale" value={`${fmt(commissionTotal)} EUR`} evolution={{ value: Number(commissionPctGlobal.toFixed(2)), label: "% du CA HT" }} iconColor="#10B981" iconBg="#ECFDF5" />
         <KpiCard icon={Clock} label="En attente" value={String(countByStatus("pending"))} iconColor="#F59E0B" iconBg="#FFFBEB" />
         <KpiCard icon={Truck} label="En livraison" value={String(countByStatus("shipped"))} iconColor="#E70866" iconBg="#FDF2F8" />
       </div>
@@ -286,6 +346,12 @@ const AdminCommandes = () => {
                 </span>
               )}
             </label>
+            <label className="flex items-center gap-2 px-3 py-2 rounded-md text-[12px] font-medium cursor-pointer select-none"
+              style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#616B7C" }}
+              title="N'afficher que les commandes avec une commission > 0 €">
+              <input type="checkbox" checked={onlyWithCommission} onChange={(e) => setOnlyWithCommission(e.target.checked)} />
+              Avec commission
+            </label>
             <button className="flex items-center gap-2 px-3 py-2 rounded-md text-[13px] font-medium" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#616B7C" }}><Filter size={14} /> Filtres</button>
           </div>
 
@@ -296,7 +362,7 @@ const AdminCommandes = () => {
                   <thead>
                     <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
                       <th className="px-2 py-3 w-8"></th>
-                      {["ID / Réf PO", "Acheteur", "Type", "Lignes", "Vendeurs", "EAN/CNK", "HT", "TVA", "TTC", "Paiement", "Statut", ""].map((h) => (
+                      {["ID / Réf PO", "Acheteur", "Type", "Lignes", "Vendeurs", "EAN/CNK", "HT", "TVA", "TTC", "Commission", "Paiement", "Statut", ""].map((h) => (
                         <th key={h} className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                       ))}
                     </tr>
@@ -367,6 +433,16 @@ const AdminCommandes = () => {
                             <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#1D2530" }}>{fmt(o.amountHT)}</td>
                             <td className="px-3 py-3 text-[11px] font-mono" style={{ color: "#8B95A5" }}>{fmt(o.tva)}</td>
                             <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#059669" }}>{fmt(o.ttc)}</td>
+                            <td className="px-3 py-3 font-mono" title={o.commissionEur > 0 ? `${o.commissionPct.toFixed(2)} % du CA HT` : "Aucune commission enregistrée"}>
+                              {o.commissionEur > 0 ? (
+                                <div className="leading-tight">
+                                  <div className="text-[12px] font-bold" style={{ color: "#10B981" }}>{fmt(o.commissionEur)}</div>
+                                  <div className="text-[10px]" style={{ color: "#8B95A5" }}>{o.commissionPct.toFixed(2)} %</div>
+                                </div>
+                              ) : (
+                                <span className="text-[11px]" style={{ color: "#CBD5E1" }}>—</span>
+                              )}
+                            </td>
                             <td className="px-3 py-3 text-[11px]" style={{ color: "#616B7C" }}>{o.paymentTerms}</td>
                             <td className="px-3 py-3"><StatusBadge status={o.status} /></td>
                             <td className="px-3 py-3 text-right">
@@ -382,7 +458,7 @@ const AdminCommandes = () => {
                           </tr>
                           {isExpanded && o.lines.length > 0 && (
                             <tr key={`${o.rawId}-lines`}>
-                              <td colSpan={13} className="px-0 py-0">
+                              <td colSpan={14} className="px-0 py-0">
                                 <div className="mx-4 mb-3 rounded-lg overflow-hidden" style={{ border: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
                                   <table className="w-full text-left">
                                     <thead>

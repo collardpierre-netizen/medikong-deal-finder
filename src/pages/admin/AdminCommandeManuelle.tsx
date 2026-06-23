@@ -11,7 +11,12 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
+} from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { UserPlus } from "lucide-react";
 
 type LineMode = "offer" | "free";
 
@@ -64,6 +69,7 @@ function nid() {
 
 const AdminCommandeManuelle = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [customerId, setCustomerId] = useState<string>("");
   const [customerSearch, setCustomerSearch] = useState("");
   const [status, setStatus] = useState("confirmed");
@@ -73,6 +79,49 @@ const AdminCommandeManuelle = () => {
   const [lines, setLines] = useState<ManualLine[]>([]);
   const [commissions, setCommissions] = useState<Record<string, CommissionInput>>({});
   const [submitting, setSubmitting] = useState(false);
+
+  // Quick-create customer modal
+  const [qcOpen, setQcOpen] = useState(false);
+  const [qcName, setQcName] = useState("");
+  const [qcEmail, setQcEmail] = useState("");
+  const [qcCountry, setQcCountry] = useState("BE");
+  const [qcSubmitting, setQcSubmitting] = useState(false);
+
+  async function quickCreateCustomer() {
+    const name = qcName.trim();
+    const email = qcEmail.trim().toLowerCase();
+    const country = qcCountry.trim().toUpperCase() || "BE";
+    if (!name) return toast.error("Nom requis");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("Email invalide");
+    if (!/^[A-Z]{2}$/.test(country)) return toast.error("Code pays ISO 2 lettres (ex. BE, FR, LU)");
+    setQcSubmitting(true);
+    try {
+      const { data, error } = await supabase
+        .from("customers")
+        .insert({
+          company_name: name,
+          email,
+          country_code: country,
+          // NOT NULL placeholders — à compléter ensuite dans la fiche client si besoin
+          address_line1: "—",
+          city: "—",
+          postal_code: "—",
+        })
+        .select("id, company_name, email, country_code")
+        .single();
+      if (error) throw error;
+      toast.success(`Customer « ${data.company_name} » créé`);
+      setCustomerId(data.id);
+      setCustomerSearch(data.company_name);
+      await queryClient.invalidateQueries({ queryKey: ["admin-manual-order-customers"] });
+      setQcOpen(false);
+      setQcName(""); setQcEmail(""); setQcCountry("BE");
+    } catch (e: any) {
+      toast.error("Échec création : " + (e?.message ?? String(e)));
+    } finally {
+      setQcSubmitting(false);
+    }
+  }
 
   // Customers (search by company_name / email)
   const { data: customers = [] } = useQuery({
@@ -235,7 +284,53 @@ const AdminCommandeManuelle = () => {
         {/* Left: meta */}
         <div className="space-y-4">
           <div className="bg-white rounded-lg border p-4 space-y-3" style={{ borderColor: "#E2E8F0" }}>
-            <h3 className="font-semibold text-sm">Acheteur</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-sm">Acheteur</h3>
+              <Dialog open={qcOpen} onOpenChange={setQcOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    <UserPlus size={14} className="mr-1" /> Créer à la volée
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Créer un customer rapide</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs">Nom / Raison sociale</Label>
+                      <Input value={qcName} onChange={(e) => setQcName(e.target.value)} maxLength={200} placeholder="Ex. Pharmacie Dupont SRL" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Email</Label>
+                      <Input type="email" value={qcEmail} onChange={(e) => setQcEmail(e.target.value)} maxLength={255} placeholder="contact@exemple.be" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Pays (ISO 2)</Label>
+                      <Select value={qcCountry} onValueChange={setQcCountry}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="BE">BE — Belgique</SelectItem>
+                          <SelectItem value="FR">FR — France</SelectItem>
+                          <SelectItem value="LU">LU — Luxembourg</SelectItem>
+                          <SelectItem value="NL">NL — Pays-Bas</SelectItem>
+                          <SelectItem value="DE">DE — Allemagne</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Les champs adresse (rue, ville, CP) sont remplis avec « — » et restent à compléter ensuite dans la fiche client si besoin.
+                    </p>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setQcOpen(false)}>Annuler</Button>
+                    <Button onClick={quickCreateCustomer} disabled={qcSubmitting}>
+                      {qcSubmitting ? "Création…" : "Créer"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
             <Input
               placeholder="Rechercher (nom, email)…"
               value={customerSearch}

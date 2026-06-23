@@ -174,29 +174,9 @@ const AdminCommandeManuelle = () => {
     },
   });
 
-  const totals = useMemo(() => {
-    let excl = 0;
-    let incl = 0;
-    let cost = 0;
-    let commission = 0;
-    let hasAnyCost = false;
-    for (const l of lines) {
-      const m = lineMetrics(l);
-      const lineIncl = m.ca * (1 + (l.vat_rate || 0) / 100);
-      excl += m.ca;
-      incl += lineIncl;
-      if (m.hasCost) { cost += m.cost; hasAnyCost = true; }
-      commission += m.commission;
-    }
-    return {
-      excl, incl, vat: incl - excl,
-      cost, hasAnyCost,
-      commission,
-      gross: hasAnyCost ? excl - cost : 0,
-      netVendor: excl - commission,
-      netMargin: hasAnyCost ? excl - cost - commission : 0,
-    };
-  }, [lines]);
+  const totals = useMemo(() => computeOrderTotals(lines as ManualLineInput[]), [lines]);
+  const coherence = useMemo(() => checkCoherence(lines as ManualLineInput[]), [lines]);
+
 
   // récap par vendeur (à partir des métriques par ligne)
   const vendorBreakdown = useMemo(() => {

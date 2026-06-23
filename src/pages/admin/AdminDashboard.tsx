@@ -132,7 +132,7 @@ const AdminDashboard = () => {
       <AdminTopBar title={t("dashboard")} subtitle="Vue d'ensemble de la plateforme MediKong.pro" />
 
       <div className="grid grid-cols-5 gap-4 mb-6">
-        <KpiCard icon={DollarSign} label={t("gmvMonth")} value={`€${fmt(stats.gmv)}`} iconColor="#1B5BDA" iconBg="#EFF6FF" />
+        <KpiCard icon={DollarSign} label={t("gmvMonth")} value={`${fmtEur(stats.gmv)} EUR`} iconColor="#1B5BDA" iconBg="#EFF6FF" />
         <KpiCard icon={ShoppingCart} label={t("ordersMonth")} value={fmt(stats.totalOrders)} iconColor="#7C3AED" iconBg="#F5F3FF" />
         <KpiCard icon={Store} label={t("activeSellers")} value={String(stats.activeVendors)} iconColor="#059669" iconBg="#F0FDF4" />
         <KpiCard icon={Package} label={t("catalogProducts")} value={fmt(stats.totalProducts)} iconColor="#F59E0B" iconBg="#FFFBEB" />
@@ -143,7 +143,7 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-4 gap-4 mb-6">
         <KpiCard icon={Truck} label="Expéditions totales" value={String(ss?.totalShipments ?? 0)} iconColor="#1B5BDA" iconBg="#EFF6FF" />
         <KpiCard icon={Store} label="Vendeurs par mode" value={`WL: ${ss?.modes?.medikong_whitelabel ?? 0} | SC: ${ss?.modes?.own_sendcloud ?? 0} | M: ${ss?.modes?.no_shipping ?? 0}`} iconColor="#7C3AED" iconBg="#F5F3FF" />
-        <KpiCard icon={DollarSign} label="Revenu marge WL" value={`€${fmt(ss?.totalMarginRevenue ?? 0)}`} iconColor="#059669" iconBg="#F0FDF4" />
+        <KpiCard icon={DollarSign} label="Revenu marge WL" value={`${fmtEur(ss?.totalMarginRevenue ?? 0)} EUR`} iconColor="#059669" iconBg="#F0FDF4" />
         <KpiCard icon={Percent} label="Marge moyenne" value={`${ss?.avgMargin ?? 0}%`} iconColor="#F59E0B" iconBg="#FFFBEB" />
       </div>
 

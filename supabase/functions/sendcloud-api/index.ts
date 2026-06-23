@@ -200,10 +200,39 @@ Deno.serve(async (req) => {
   try {
     const body: ApiRequest = await req.json();
 
-    // Handle test_connection action (uses vendor's own keys)
+    // Handle test_connection action.
+    // - If public_key + secret_key are passed (new keys being typed by the vendor),
+    //   we test those directly without ever persisting them.
+    // - Otherwise, we load the vendor's encrypted keys from DB, decrypt them
+    //   server-side and test. Cleartext keys never reach the client.
     if (body.action === "test_connection") {
-      const pk = body.public_key;
-      const sk = body.secret_key;
+      let pk = body.public_key;
+      let sk = body.secret_key;
+      if ((!pk || !sk) && body.vendor_id) {
+        if (!ENC_KEY) {
+          return new Response(JSON.stringify({ success: false, error: "Encryption key not configured" }), {
+            status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        const { data: row } = await supabase
+          .from("vendor_sendcloud_credentials")
+          .select("public_key_cipher, secret_key_cipher")
+          .eq("vendor_id", body.vendor_id)
+          .maybeSingle();
+        if (!row?.public_key_cipher || !row?.secret_key_cipher) {
+          return new Response(JSON.stringify({ success: false, error: "No stored Sendcloud credentials" }), {
+            status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        try {
+          pk = await decryptSecret(row.public_key_cipher as string, ENC_KEY);
+          sk = await decryptSecret(row.secret_key_cipher as string, ENC_KEY);
+        } catch (e) {
+          return new Response(JSON.stringify({ success: false, error: `Decryption failed: ${(e as Error).message}` }), {
+            status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
       if (!pk || !sk) {
         return new Response(JSON.stringify({ success: false, error: "Missing Sendcloud keys" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -215,11 +244,24 @@ Deno.serve(async (req) => {
         headers: { Authorization: testAuth, "Content-Type": "application/json" },
       });
       const testData = await testRes.json();
+
+      // Persist the verification status for stored credentials.
+      if (body.vendor_id) {
+        await supabase
+          .from("vendor_sendcloud_credentials")
+          .update({
+            is_connected: testRes.ok,
+            last_verified_at: testRes.ok ? new Date().toISOString() : null,
+          } as any)
+          .eq("vendor_id", body.vendor_id);
+      }
+
       return new Response(JSON.stringify({ success: testRes.ok, data: testData }), {
         status: testRes.ok ? 200 : 502,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
 
     const { operation, payload = {} } = body;
     if (!operation) {

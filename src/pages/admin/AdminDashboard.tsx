@@ -11,10 +11,6 @@ import {
   DollarSign, ShoppingCart, Store, Package, AlertTriangle,
   TrendingUp, Info, UserCheck, Users, ChevronRight, Clock, Truck, Percent,
 } from "lucide-react";
-import {
-  XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer,
-} from "recharts";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();

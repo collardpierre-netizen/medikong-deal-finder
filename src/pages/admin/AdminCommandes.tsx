@@ -581,7 +581,7 @@ const AdminCommandes = () => {
                   </div>
                   <div>
                     <span className="text-[11px]" style={{ color: "#8B95A5" }}>Panier moyen</span>
-                    <p className="text-[14px] font-bold" style={{ color: "#1D2530" }}>{bp.avgBasket} EUR</p>
+                    <p className="text-[14px] font-bold" style={{ color: "#1D2530" }}>{fmt(bp.avgBasket)} EUR</p>
                   </div>
                 </div>
               </div>

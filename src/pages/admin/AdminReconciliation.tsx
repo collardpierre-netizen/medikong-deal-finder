@@ -177,7 +177,7 @@ const AdminReconciliation = () => {
   const totalBase = drafts.reduce((s, d) => s + d.base_cost, 0);
   const totalMargin = drafts.reduce((s, d) => s + d.margin_amount, 0);
   const totalInvoiced = drafts.reduce((s, d) => s + d.total, 0);
-  const fmt = (n: number) => `€${n.toLocaleString("fr-BE", { minimumFractionDigits: 2 })}`;
+  const fmt = (n: number) => `${n.toLocaleString("fr-BE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EUR`;
 
   return (
     <div>

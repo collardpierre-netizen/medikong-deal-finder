@@ -8047,6 +8047,7 @@ export type Database = {
           deleted_at: string | null
           deleted_by: string | null
           deleted_reason: string | null
+          draft_payload: Json | null
           estimated_delivery_date: string | null
           hidden_from_list: boolean
           id: string
@@ -8078,6 +8079,7 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           deleted_reason?: string | null
+          draft_payload?: Json | null
           estimated_delivery_date?: string | null
           hidden_from_list?: boolean
           id?: string
@@ -8109,6 +8111,7 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           deleted_reason?: string | null
+          draft_payload?: Json | null
           estimated_delivery_date?: string | null
           hidden_from_list?: boolean
           id?: string
@@ -21931,6 +21934,10 @@ export type Database = {
         }[]
       }
       admin_create_manual_order: { Args: { _payload: Json }; Returns: Json }
+      admin_delete_manual_order_draft: {
+        Args: { _id: string }
+        Returns: undefined
+      }
       admin_email_deliverability_kpis: {
         Args: never
         Returns: {
@@ -21972,6 +21979,20 @@ export type Database = {
           variant: string
         }[]
       }
+      admin_list_manual_order_drafts: {
+        Args: never
+        Returns: {
+          admin_notes: string
+          created_at: string
+          created_by_admin: string
+          customer_id: string
+          customer_label: string
+          id: string
+          line_count: number
+          order_number: string
+          updated_at: string
+        }[]
+      }
       admin_list_pending_invitations: {
         Args: never
         Returns: {
@@ -22007,6 +22028,7 @@ export type Database = {
           vendor_name: string
         }[]
       }
+      admin_load_manual_order_draft: { Args: { _id: string }; Returns: Json }
       admin_log_price_challenge:
         | {
             Args: {
@@ -22303,6 +22325,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      admin_save_manual_order_draft: {
+        Args: { _draft_id: string; _payload: Json }
+        Returns: string
       }
       admin_search_brands_fuzzy: {
         Args: { _limit?: number; _q: string }

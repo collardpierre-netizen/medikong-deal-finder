@@ -85,7 +85,7 @@ export const useOrders = () =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, was_forecast, forecast_created_at, forecast_converted_at, forecast_snapshot, customers(company_name, customer_type), order_lines(id, product_id, offer_id, vendor_id, quantity, unit_price_excl_vat, unit_price_incl_vat, vat_rate, line_total_excl_vat, line_total_incl_vat, qogita_offer_qid, qogita_seller_fid, qogita_order_status, fulfillment_status, products(name, gtin, cnk_code, sku, image_url), vendors(company_name, slug), offers(delivery_days)), sub_orders(commission_rate_override, commission_amount_override, subtotal_incl_vat)")
+        .select("*, was_forecast, forecast_created_at, forecast_converted_at, forecast_snapshot, customers(company_name, customer_type), order_lines(id, product_id, offer_id, vendor_id, quantity, unit_price_excl_vat, unit_price_incl_vat, vat_rate, line_total_excl_vat, line_total_incl_vat, cost_price, line_cost, line_margin, qogita_offer_qid, qogita_seller_fid, qogita_order_status, fulfillment_status, products(name, gtin, cnk_code, sku, image_url), vendors(company_name, slug), offers(delivery_days)), sub_orders(commission_rate_override, commission_amount_override, subtotal_incl_vat)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -268,6 +268,17 @@ export const useDashboardStats = () => {
   const totalOrders = billableOrders.length;
   const gmv = billableOrders.reduce((sum: number, o: any) => sum + (Number(o.total_incl_vat) || 0), 0);
 
+  // Marge HTVA (réelle) = somme des line_margin sur lignes des commandes facturables
+  const sumLines = (ordersList: any[], field: "line_margin" | "line_total_excl_vat") =>
+    ordersList.reduce((sum: number, o: any) => {
+      const lines = (o.order_lines ?? []) as any[];
+      return sum + lines.reduce((s, l) => s + (Number(l?.[field]) || 0), 0);
+    }, 0);
+
+  const gmvExclVat = sumLines(billableOrders, "line_total_excl_vat");
+  const gmvMargin = sumLines(billableOrders, "line_margin");
+  const gmvMarginPct = gmvExclVat > 0 ? (gmvMargin / gmvExclVat) * 100 : 0;
+
   // Agrégat prévisionnel (inclut converties / annulées dès qu'elles ont été prévisionnelles)
   const forecastOrders = allOrders.filter((o: any) => o.was_forecast || o.is_forecast);
   const forecastGmv = forecastOrders.reduce((sum: number, o: any) => {
@@ -275,14 +286,21 @@ export const useDashboardStats = () => {
     if (Number.isFinite(snap) && snap > 0) return sum + snap;
     return sum + (Number(o.total_incl_vat) || 0);
   }, 0);
+  const forecastExclVat = sumLines(forecastOrders, "line_total_excl_vat");
+  const forecastMargin = sumLines(forecastOrders, "line_margin");
+  const forecastMarginPct = forecastExclVat > 0 ? (forecastMargin / forecastExclVat) * 100 : 0;
 
   return {
     activeVendors: countsQuery.data?.activeVendors ?? 0,
     totalProducts: countsQuery.data?.totalProducts ?? 0,
     totalOrders,
     gmv,
+    gmvMargin,
+    gmvMarginPct,
     forecastOrders: forecastOrders.length,
     forecastGmv,
+    forecastMargin,
+    forecastMarginPct,
     disputeRate: 0,
     isLoading: countsQuery.isLoading || orders.isLoading,
   };

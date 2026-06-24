@@ -160,25 +160,52 @@ const AdminDashboard = () => {
         </label>
       </div>
 
-      <div className="grid grid-cols-5 gap-4 mb-6">
-        <KpiCard
-          icon={DollarSign}
-          label={t("gmvMonth")}
-          value={`${fmtEur(stats.gmv + (includeForecast ? ((stats as any).forecastGmv || 0) : 0))} EUR`}
-          iconColor="#1B5BDA"
-          iconBg="#EFF6FF"
-        />
-        <KpiCard
-          icon={ShoppingCart}
-          label={t("ordersMonth")}
-          value={fmt(stats.totalOrders + (includeForecast ? ((stats as any).forecastOrders || 0) : 0))}
-          iconColor="#7C3AED"
-          iconBg="#F5F3FF"
-        />
-        <KpiCard icon={Store} label={t("activeSellers")} value={fmt(stats.activeVendors)} iconColor="#059669" iconBg="#F0FDF4" />
-        <KpiCard icon={Package} label={t("catalogProducts")} value={fmt(stats.totalProducts)} iconColor="#F59E0B" iconBg="#FFFBEB" />
-        <KpiCard icon={AlertTriangle} label={t("disputeRate")} value={`${stats.disputeRate}%`} iconColor="#EF4343" iconBg="#FEF2F2" />
-      </div>
+      {(() => {
+        const s: any = stats;
+        const gmvTotal = s.gmv + (includeForecast ? (s.forecastGmv || 0) : 0);
+        const marginTotal = (s.gmvMargin || 0) + (includeForecast ? (s.forecastMargin || 0) : 0);
+        // Pondération du % par CA HTVA = on recompose un dénominateur cohérent
+        // (gmv et forecastGmv sont TTC ; le % côté hook est calculé sur HTVA — on l'expose tel quel via moyenne pondérée approchée)
+        const realPct = s.gmvMarginPct || 0;
+        const fcstPct = s.forecastMarginPct || 0;
+        const pctTotal = includeForecast && (s.gmv + s.forecastGmv) > 0
+          ? ((realPct * s.gmv) + (fcstPct * s.forecastGmv)) / (s.gmv + s.forecastGmv)
+          : realPct;
+        return (
+          <div className="grid grid-cols-6 gap-4 mb-6">
+            <KpiCard
+              icon={DollarSign}
+              label={t("gmvMonth")}
+              value={`${fmtEur(gmvTotal)} EUR`}
+              iconColor="#1B5BDA"
+              iconBg="#EFF6FF"
+            />
+            <KpiCard
+              icon={TrendingUp}
+              label={includeForecast ? "Marge brute (incl. prév.)" : "Marge brute"}
+              value={`${fmtEur(marginTotal)} EUR`}
+              iconColor="#059669"
+              iconBg="#ECFDF5"
+            />
+            <KpiCard
+              icon={Percent}
+              label="Marge %"
+              value={`${pctTotal.toFixed(1)}%`}
+              iconColor="#059669"
+              iconBg="#ECFDF5"
+            />
+            <KpiCard
+              icon={ShoppingCart}
+              label={t("ordersMonth")}
+              value={fmt(stats.totalOrders + (includeForecast ? (s.forecastOrders || 0) : 0))}
+              iconColor="#7C3AED"
+              iconBg="#F5F3FF"
+            />
+            <KpiCard icon={Store} label={t("activeSellers")} value={fmt(stats.activeVendors)} iconColor="#059669" iconBg="#F0FDF4" />
+            <KpiCard icon={Package} label={t("catalogProducts")} value={fmt(stats.totalProducts)} iconColor="#F59E0B" iconBg="#FFFBEB" />
+          </div>
+        );
+      })()}
 
       {/* Shipping KPIs */}
       <div className="grid grid-cols-4 gap-4 mb-6">

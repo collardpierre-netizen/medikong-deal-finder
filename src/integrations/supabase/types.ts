@@ -22513,6 +22513,10 @@ export type Database = {
         }[]
       }
       admin_create_manual_order: { Args: { _payload: Json }; Returns: Json }
+      admin_create_quote_from_payload: {
+        Args: { _payload: Json }
+        Returns: Json
+      }
       admin_delete_manual_order_draft: {
         Args: { _id: string }
         Returns: undefined

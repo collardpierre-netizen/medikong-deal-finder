@@ -341,6 +341,13 @@ const AdminCommandeManuelle = () => {
         await supabase.rpc("admin_delete_manual_order_draft", { _id: draftId });
       }
       toast.success(`Commande ${result?.order_number ?? ""} créée`);
+      // Invalide les caches Dashboard + Commandes pour que la nouvelle commande
+      // (réelle OU prévisionnelle) apparaisse immédiatement après la redirection.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin-orders"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: ["vendor-dashboard-kpis"] }),
+      ]);
       navigate("/admin/commandes");
     } catch (e: any) {
       toast.error("Échec : " + (e?.message ?? String(e)));

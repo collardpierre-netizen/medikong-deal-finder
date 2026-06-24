@@ -575,9 +575,55 @@ const AdminCommandeManuelle = () => {
   return (
     <div>
       <AdminTopBar
-        title="Nouvelle commande manuelle"
-        subtitle="Saisie admin — alimente la GMV"
+        title={docMode === "quote" ? "Nouveau devis" : "Nouvelle commande manuelle"}
+        subtitle={docMode === "quote" ? "Saisie admin — génère un devis avec lien public 7 j" : "Saisie admin — alimente la GMV"}
       />
+
+      <div className="mb-3 inline-flex rounded-lg border bg-white p-1" style={{ borderColor: "#E2E8F0" }}>
+        <button
+          type="button"
+          onClick={() => setDocMode("order")}
+          className={`px-4 py-1.5 text-sm rounded-md font-medium transition ${docMode === "order" ? "text-white" : "text-slate-600 hover:text-slate-900"}`}
+          style={docMode === "order" ? { backgroundColor: "#1C58D9" } : {}}
+        >
+          Bon de commande
+        </button>
+        <button
+          type="button"
+          onClick={() => setDocMode("quote")}
+          className={`px-4 py-1.5 text-sm rounded-md font-medium transition ${docMode === "quote" ? "text-white" : "text-slate-600 hover:text-slate-900"}`}
+          style={docMode === "quote" ? { backgroundColor: "#1C58D9" } : {}}
+        >
+          Devis
+        </button>
+      </div>
+
+      {docMode === "quote" && (
+        <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-3 bg-blue-50/40 border border-blue-100 rounded-lg p-3">
+          <div>
+            <Label className="text-xs">Validité (jours)</Label>
+            <Input
+              type="number"
+              min={1}
+              max={90}
+              value={quoteValidityDays}
+              onChange={(e) => setQuoteValidityDays(Math.max(1, Math.min(90, Number(e.target.value) || 7)))}
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Message à l'acheteur (visible sur le devis)</Label>
+            <Textarea
+              value={quoteNotesCustomer}
+              onChange={(e) => setQuoteNotesCustomer(e.target.value)}
+              placeholder="ex : Merci pour votre demande, voici notre proposition…"
+              rows={2}
+              className="mt-1"
+            />
+          </div>
+        </div>
+      )}
+
 
       <div className="mb-4 flex items-center justify-between gap-2 flex-wrap">
         <Link to="/admin/commandes" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">

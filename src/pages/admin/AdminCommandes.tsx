@@ -138,13 +138,16 @@ const AdminCommandes = () => {
   });
 
   // --- Filtre période (sur created_at) appliqué avant toute dérivation ---
-  const periodCutoff = (() => {
+  const periodStartDate = (() => {
     const days = PERIODS.find(p => p.key === period)?.days;
     if (!days) return null;
     const d = new Date();
     d.setDate(d.getDate() - days);
-    return d.getTime();
+    d.setHours(0, 0, 0, 0);
+    return d;
   })();
+  const periodEndDate = new Date();
+  const periodCutoff = periodStartDate ? periodStartDate.getTime() : null;
   const periodOrders = periodCutoff === null
     ? orders
     : orders.filter(o => o.createdAtRaw && new Date(o.createdAtRaw).getTime() >= periodCutoff);

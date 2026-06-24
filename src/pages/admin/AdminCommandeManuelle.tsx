@@ -340,18 +340,53 @@ const AdminCommandeManuelle = () => {
 
     setSubmitting(true);
     try {
+      if (docMode === "quote") {
+        // Branche Devis : header single-vendor (= vendor de la 1re ligne)
+        const vendorIds = Array.from(new Set(lines.map(l => l.vendor_id).filter(Boolean)));
+        if (vendorIds.length !== 1) {
+          toast.error("Un devis doit cibler un seul vendeur. Toutes les lignes doivent partager le même vendeur.");
+          setSubmitting(false);
+          return;
+        }
+        const quotePayload = {
+          vendor_id: vendorIds[0],
+          customer_id: customerId,
+          payment_method: paymentMethod,
+          currency_code: "EUR",
+          validity_days: quoteValidityDays,
+          notes_internal: adminNotes || null,
+          notes_customer: quoteNotesCustomer || null,
+          lines: lines.map((l) => ({
+            product_id: l.mode === "offer" ? l.product_id : null,
+            offer_id: l.mode === "offer" ? l.offer_id : null,
+            label: l.mode === "free" ? l.manual_label : (l.product_label || l.manual_label || "Article"),
+            qty: Number(l.quantity) || 1,
+            unit_price_ht_cents: Math.round((Number(l.unit_price_excl_vat) || 0) * 100),
+            vat_rate: Number(l.vat_rate) || 21,
+            unit_cost_ht_cents: l.unit_cost_excl_vat ? Math.round(Number(l.unit_cost_excl_vat) * 100) : null,
+          })),
+        };
+        const { data, error } = await supabase.rpc("admin_create_quote_from_payload" as any, {
+          _payload: quotePayload as any,
+        });
+        if (error) throw error;
+        const result = data as any;
+        if (draftId) await supabase.rpc("admin_delete_manual_order_draft", { _id: draftId });
+        toast.success("Devis créé");
+        await queryClient.invalidateQueries({ queryKey: ["admin-quotes"] });
+        navigate(`/admin/devis/${result?.quote_id}`);
+        return;
+      }
+
       const { data, error } = await supabase.rpc("admin_create_manual_order", {
         _payload: payload as any,
       });
       if (error) throw error;
       const result = data as any;
-      // Si on finalisait un brouillon, on le supprime
       if (draftId) {
         await supabase.rpc("admin_delete_manual_order_draft", { _id: draftId });
       }
       toast.success(`Commande ${result?.order_number ?? ""} créée`);
-      // Invalide les caches Dashboard + Commandes pour que la nouvelle commande
-      // (réelle OU prévisionnelle) apparaisse immédiatement après la redirection.
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-orders"] }),
         queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] }),

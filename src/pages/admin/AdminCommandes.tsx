@@ -105,13 +105,15 @@ const AdminCommandes = () => {
   const REQUIRED_TOKEN = "PURGE TEST ORDERS";
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
-  const orders = ordersData.map(o => {
-    const subs = ((o as any).sub_orders || []) as Array<{
+  const vendorLabelById = new Map((vendorsData as any[]).map(v => [v.id, v.company_name || v.name || v.id]));
+
+  const readStoredCommission = (raw: any) => {
+    const subs = ((raw as any).sub_orders || []) as Array<{
       commission_amount_override: number | null;
       commission_rate_override: number | null;
       subtotal_incl_vat: number | null;
     }>;
-    const commissionEur = subs.reduce((acc, s) => {
+    return subs.reduce((acc, s) => {
       const amt = Number(s.commission_amount_override);
       if (Number.isFinite(amt) && amt > 0) return acc + amt;
       const rate = Number(s.commission_rate_override);
@@ -119,7 +121,22 @@ const AdminCommandes = () => {
       if (Number.isFinite(rate) && rate > 0 && sub > 0) return acc + (sub * rate) / 100;
       return acc;
     }, 0);
+  };
+
+  const storedCommissionByOrderNumber = new Map(ordersData.map((raw: any) => [raw.order_number, readStoredCommission(raw)]));
+
+  const orders = ordersData.map(o => {
+    const draftPayload = (o as any).draft_payload as any;
+    const draftLines = o.status === "draft" && Array.isArray(draftPayload?.lines) ? draftPayload.lines : [];
+    const persistedLines = ((o as any).order_lines || []) as any[];
+    const lines = persistedLines.length > 0 ? persistedLines : draftLines;
+    const draftTotals = draftLines.length > 0 ? computeOrderTotals(draftLines) : null;
+    const storedCommission = readStoredCommission(o);
+    const sourceOrderNumber = String((o as any).admin_notes || "").match(/Dupliquée depuis ([^\]\n]+)/)?.[1]?.trim();
+    const sourceCommission = sourceOrderNumber ? Number(storedCommissionByOrderNumber.get(sourceOrderNumber)) || 0 : 0;
+    const commissionEur = storedCommission > 0 ? storedCommission : draftTotals ? draftTotals.commission : sourceCommission;
     const amountHT = Number(o.subtotal_excl_vat) || 0;
+    const effectiveHT = draftTotals ? draftTotals.excl : amountHT;
     return {
       id: o.order_number,
       rawId: o.id,
@@ -127,11 +144,12 @@ const AdminCommandes = () => {
       buyer: (o.customers as any)?.company_name || "—",
       buyerType: (o.customers as any)?.customer_type || "pharmacy",
       seller: "—",
-      amountHT,
-      tva: Number(o.vat_amount) || 0,
-      ttc: Number(o.total_incl_vat) || 0,
+      amountHT: effectiveHT,
+      tva: draftTotals ? draftTotals.vat : Number(o.vat_amount) || 0,
+      ttc: draftTotals ? draftTotals.incl : Number(o.total_incl_vat) || 0,
       commissionEur,
-      commissionPct: amountHT > 0 ? (commissionEur / amountHT) * 100 : 0,
+      commissionPct: effectiveHT > 0 ? (commissionEur / effectiveHT) * 100 : 0,
+      commissionSource: storedCommission > 0 ? "stored" : draftTotals ? "draft" : sourceCommission > 0 ? "source" : "none",
       paymentTerms: o.payment_method || "invoice",
       dueDate: o.payment_due_date ? new Date(o.payment_due_date).toLocaleDateString("fr-BE") : "—",
       status: o.status as "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled",
@@ -144,7 +162,7 @@ const AdminCommandes = () => {
       hiddenFromList: Boolean((o as any).hidden_from_list),
       createdAtRaw: o.created_at,
       date: new Date(o.created_at).toLocaleDateString("fr-BE"),
-      lines: ((o as any).order_lines || []) as any[],
+      lines,
     };
   });
 

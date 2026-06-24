@@ -100,6 +100,9 @@ const AdminCommandeManuelle = () => {
   const [duplicatedFrom, setDuplicatedFrom] = useState<string | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
+  const [docMode, setDocMode] = useState<"order" | "quote">("order");
+  const [quoteValidityDays, setQuoteValidityDays] = useState<number>(7);
+  const [quoteNotesCustomer, setQuoteNotesCustomer] = useState<string>("");
 
 
   // Quick-create customer modal

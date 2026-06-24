@@ -93,12 +93,20 @@ export function useVendorMov(vendorIds: string[]) {
     // For real vendors, resolve from vendor_profile_defaults
     if (!vendorDefaults || !customer) return DEFAULT_MOV;
 
+    // Une valeur n'est considérée "encodée" que si elle est strictement > 0.
+    // Sinon on retombe sur DEFAULT_MOV (500€) — sinon un vendeur sans MOV
+    // configuré (NULL ou 0) ferait sauter le garde-fou marketplace.
+    const pickMov = (raw: unknown): number | null => {
+      const n = Number(raw);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    };
+
     // Highest priority: per-buyer override (vendor × buyer_account)
     const buyerOverride = (buyerOverrides || []).find((o: any) => o.vendor_id === vendorId);
-    if (buyerOverride && buyerOverride.default_mov != null) {
-      return Number(buyerOverride.default_mov) || 0;
+    if (buyerOverride) {
+      const v = pickMov(buyerOverride.default_mov);
+      if (v != null) return v;
     }
-
 
     const profileType = customer.customer_type || "pharmacy";
     const countryCode = customer.country_code || "BE";
@@ -107,23 +115,27 @@ export function useVendorMov(vendorIds: string[]) {
     const exact = vendorDefaults.find(
       (d: any) => d.vendor_id === vendorId && d.profile_type === profileType && d.country_code === countryCode
     );
-    if (exact) return Number(exact.default_mov) || 0;
+    const exactMov = exact ? pickMov(exact.default_mov) : null;
+    if (exactMov != null) return exactMov;
 
     // Try vendor + profile (any country)
     const profileMatch = vendorDefaults.find(
       (d: any) => d.vendor_id === vendorId && d.profile_type === profileType
     );
-    if (profileMatch) return Number(profileMatch.default_mov) || 0;
+    const profileMov = profileMatch ? pickMov(profileMatch.default_mov) : null;
+    if (profileMov != null) return profileMov;
 
     // Try vendor default (any profile for this country)
     const countryMatch = vendorDefaults.find(
       (d: any) => d.vendor_id === vendorId && d.country_code === countryCode
     );
-    if (countryMatch) return Number(countryMatch.default_mov) || 0;
+    const countryMov = countryMatch ? pickMov(countryMatch.default_mov) : null;
+    if (countryMov != null) return countryMov;
 
     // Any rule for this vendor
     const anyRule = vendorDefaults.find((d: any) => d.vendor_id === vendorId);
-    if (anyRule) return Number(anyRule.default_mov) || 0;
+    const anyMov = anyRule ? pickMov(anyRule.default_mov) : null;
+    if (anyMov != null) return anyMov;
 
     return DEFAULT_MOV;
   };

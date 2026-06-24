@@ -10672,6 +10672,320 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_lines: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          offer_id: string | null
+          product_id: string | null
+          qty: number
+          quote_id: string
+          sort_order: number
+          total_ht_cents: number
+          total_ttc_cents: number
+          unit_cost_ht_cents: number | null
+          unit_price_ht_cents: number
+          updated_at: string
+          vat_rate: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          offer_id?: string | null
+          product_id?: string | null
+          qty: number
+          quote_id: string
+          sort_order?: number
+          total_ht_cents?: number
+          total_ttc_cents?: number
+          unit_cost_ht_cents?: number | null
+          unit_price_ht_cents: number
+          updated_at?: string
+          vat_rate?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          offer_id?: string | null
+          product_id?: string | null
+          qty?: number
+          quote_id?: string
+          sort_order?: number
+          total_ht_cents?: number
+          total_ttc_cents?: number
+          unit_cost_ht_cents?: number | null
+          unit_price_ht_cents?: number
+          updated_at?: string
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_lines_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["mk_best_offer_id"]
+          },
+          {
+            foreignKeyName: "quote_lines_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_offer_prices_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "quote_lines_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_lines_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_with_exclusivity_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "quote_lines_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "public_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "quote_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "quote_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "quote_lines_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          accepted_at: string | null
+          accepted_ip: string | null
+          converted_at: string | null
+          created_at: string
+          created_by_user_id: string | null
+          currency_code: string
+          customer_id: string
+          declined_at: string | null
+          id: string
+          notes_customer: string | null
+          notes_internal: string | null
+          order_id: string | null
+          paid_at: string | null
+          payment_method: Database["public"]["Enums"]["quote_payment_method"]
+          pdf_storage_path: string | null
+          public_token: string | null
+          quote_number: string
+          sent_at: string | null
+          status: Database["public"]["Enums"]["quote_status"]
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string | null
+          token_expires_at: string | null
+          total_ht_cents: number
+          total_ttc_cents: number
+          total_tva_cents: number
+          updated_at: string
+          vendor_id: string
+          viewed_at: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_ip?: string | null
+          converted_at?: string | null
+          created_at?: string
+          created_by_user_id?: string | null
+          currency_code?: string
+          customer_id: string
+          declined_at?: string | null
+          id?: string
+          notes_customer?: string | null
+          notes_internal?: string | null
+          order_id?: string | null
+          paid_at?: string | null
+          payment_method?: Database["public"]["Enums"]["quote_payment_method"]
+          pdf_storage_path?: string | null
+          public_token?: string | null
+          quote_number?: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["quote_status"]
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          token_expires_at?: string | null
+          total_ht_cents?: number
+          total_ttc_cents?: number
+          total_tva_cents?: number
+          updated_at?: string
+          vendor_id: string
+          viewed_at?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_ip?: string | null
+          converted_at?: string | null
+          created_at?: string
+          created_by_user_id?: string | null
+          currency_code?: string
+          customer_id?: string
+          declined_at?: string | null
+          id?: string
+          notes_customer?: string | null
+          notes_internal?: string | null
+          order_id?: string | null
+          paid_at?: string | null
+          payment_method?: Database["public"]["Enums"]["quote_payment_method"]
+          pdf_storage_path?: string | null
+          public_token?: string | null
+          quote_number?: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["quote_status"]
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          token_expires_at?: string | null
+          total_ht_cents?: number
+          total_ttc_cents?: number
+          total_tva_cents?: number
+          updated_at?: string
+          vendor_id?: string
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "quotes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_with_forecast_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders_visible_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "quotes_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "quotes_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "quotes_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "quotes_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recent_activity: {
         Row: {
           activity_type: string
@@ -22864,6 +23178,7 @@ export type Database = {
         Returns: Json
       }
       consume_qogita_tokens: { Args: { _amount: number }; Returns: Json }
+      convert_quote_to_order: { Args: { _quote_id: string }; Returns: Json }
       count_products_per_category: {
         Args: never
         Returns: {
@@ -23025,6 +23340,7 @@ export type Database = {
         Returns: Json
       }
       force_switch_to_paid: { Args: { _sub_id: string }; Returns: undefined }
+      generate_quote_number: { Args: never; Returns: string }
       get_action_center: { Args: { _scope: string }; Returns: Json }
       get_active_contract_template: {
         Args: { _type?: string }
@@ -23081,6 +23397,7 @@ export type Database = {
           suggested_category_id: string
         }[]
       }
+      get_quote_by_token: { Args: { _token: string }; Returns: Json }
       get_recent_import_runs: {
         Args: { _limit?: number }
         Returns: {
@@ -23359,6 +23676,7 @@ export type Database = {
         Returns: undefined
       }
       mark_overdue_vendor_invoices: { Args: never; Returns: number }
+      mark_quote_paid: { Args: { _quote_id: string }; Returns: Json }
       match_import_lines: {
         Args: { _lines: Json }
         Returns: {
@@ -23522,6 +23840,10 @@ export type Database = {
         }
         Returns: Json
       }
+      quote_public_action: {
+        Args: { _action: string; _ip?: string; _token: string }
+        Returns: Json
+      }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
@@ -23534,6 +23856,10 @@ export type Database = {
       recompute_brand_top20_with_log: { Args: never; Returns: string }
       recompute_buyer_volume: {
         Args: { _buyer_id: string }
+        Returns: undefined
+      }
+      recompute_quote_totals: {
+        Args: { _quote_id: string }
         Returns: undefined
       }
       recompute_rfq_response_ranks: {
@@ -24415,6 +24741,14 @@ export type Database = {
         | "failed"
         | "needs_review"
         | "skipped_guardrail"
+      quote_payment_method: "invoice" | "stripe"
+      quote_status:
+        | "draft"
+        | "sent"
+        | "accepted"
+        | "paid"
+        | "declined"
+        | "converted"
       reshipment_status_enum:
         | "not_applicable"
         | "awaiting_reception"
@@ -24777,6 +25111,15 @@ export const Constants = {
         "failed",
         "needs_review",
         "skipped_guardrail",
+      ],
+      quote_payment_method: ["invoice", "stripe"],
+      quote_status: [
+        "draft",
+        "sent",
+        "accepted",
+        "paid",
+        "declined",
+        "converted",
       ],
       reshipment_status_enum: [
         "not_applicable",

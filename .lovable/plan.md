@@ -1,86 +1,125 @@
 ## Objectif
 
-Permettre aux KPIs et graphiques (admin + vendeur + exports) d'agréger les commandes prévisionnelles **de façon persistante**, même si la commande est ensuite annulée, modifiée ou convertie en commande réelle.
+Permettre à l'admin **et au vendeur** de créer une commande au statut **Devis**, de l'envoyer au client par lien partageable + PDF, puis de la transformer en **Bon de commande** une fois acceptée et payée (facture ou Stripe).
 
-## Modèle de données (1 migration)
+## Cycle de vie
 
-Sur `public.orders` :
-- `was_forecast boolean NOT NULL DEFAULT false` — flag immuable, vrai dès qu'une commande a été créée en prévisionnel (utilisé pour l'historique).
-- `forecast_created_at timestamptz` — date d'origine prévisionnelle.
-- `forecast_converted_at timestamptz` — date de conversion en réel (si applicable).
-- `forecast_snapshot jsonb` — snapshot figé `{total_incl_vat, subtotal_excl_vat, vat_amount, customer_id, vendor_ids[], lines:[{product_id, qty, unit_price_incl_vat, vendor_id}], created_at}` pris à la création prévisionnelle ; ne bouge plus jamais, même si la commande est modifiée ou annulée.
+```
+draft → sent → accepted → paid → order
+                  ↓
+              declined
+```
 
-Triggers / RPC :
-- `BEFORE INSERT OR UPDATE` : si `is_forecast=true` et `was_forecast=false`, set `was_forecast=true` + `forecast_created_at=now()` + remplit `forecast_snapshot` (si null). Le flag `was_forecast` ne peut jamais redevenir false (garde-fou).
-- Nouvelle RPC `admin_convert_forecast_to_real(_order_id uuid, _notes text)` (SECURITY DEFINER, admin only) :
-  - exige `is_forecast=true`
-  - set `is_forecast=false`, `forecast_converted_at=now()`, `status='confirmed'` (configurable plus tard), `admin_notes` annoté
-  - audit_log
-  - retourne la commande mise à jour
-- `admin_create_manual_order` (existant) : déjà tient compte de `is_forecast` ; ajout : alimenter `forecast_snapshot` à la création via le trigger.
+- `draft` : créé, modifiable, lien non actif
+- `sent` : token public généré, lien partageable, PDF v1 figé, email envoyé au client
+- `accepted` : client a cliqué "Accepter" sur la page publique (IP + timestamp horodatés)
+- `paid` : paiement reçu (admin marque payée si facture, OU webhook Stripe)
+- `order` : conversion auto en bon de commande dès `paid` → apparaît dans `/admin/commandes`
+- `declined` : client refuse via le lien (terminal)
 
-## Backend (vues + sécurité)
+## Choix paiement
 
-Vue helper `admin_orders_with_forecast_v` (security_invoker) projetant pour chaque commande :
-- `effective_total_incl_vat` = `total_incl_vat` (réel) **ou** `forecast_snapshot.total_incl_vat` (si annulé/modifié alors qu'elle était prévisionnelle)
-- `forecast_total_incl_vat` = montant pris dans le snapshot (toujours)
-- `is_forecast`, `was_forecast`, `forecast_status` ('active' | 'converted' | 'cancelled')
-- exposée à `authenticated`, RLS via `is_admin()`.
+À la création (admin/vendeur), radio obligatoire :
+- **Paiement par facture** : page publique affiche "Une facture sera émise après acceptation"
+- **Paiement Stripe** : page publique affiche bouton "Payer maintenant" (Stripe Checkout, EUR, TVA calculée). Paiement réussi → passe directement `accepted` puis `paid`.
+
+## Lien public
+
+- URL : `/devis/<token>` (token 48 chars, `gen_random_bytes`)
+- **Pas d'auth** requise
+- Affiche : entête vendeur (logo + coordonnées), entête client, lignes (produit, qté, PU HTVA, TVA, total), totaux HTVA/TVAC, mode de paiement, conditions, boutons "Accepter / Refuser" + "Télécharger PDF"
+- Une fois `accepted` ou `declined`, boutons disparaissent, bandeau de statut
+
+## PDF
+
+- Edge function `generate-quote-pdf` (pdf-lib ou puppeteer-less template)
+- Stocké bucket privé `quote-pdfs`, URL signée 1h pour admin/vendeur
+- Page publique régénère à la volée pour le client
+- Mêmes coordonnées légales que factures MediKong (Balooh SRL, BE 1005.771.323)
+
+## Données
+
+### Table `quotes`
+- `id`, `order_id` (FK orders, set à la conversion), `vendor_id`, `customer_id`, `created_by_user_id`
+- `quote_number` (séquence `Q-2026-0001`)
+- `status` enum (`draft|sent|accepted|paid|declined|converted`)
+- `payment_method` (`invoice|stripe`)
+- `public_token` (unique, 48 chars), `token_expires_at` (90j)
+- `accepted_at`, `accepted_ip`, `declined_at`, `paid_at`, `converted_at`
+- `stripe_session_id`, `stripe_payment_intent_id`
+- `total_ht_cents`, `total_tva_cents`, `total_ttc_cents`, `currency_code`
+- `pdf_storage_path`
+- `notes_internal`, `notes_customer`
+- `created_at`, `updated_at`
+
+### Table `quote_lines`
+- `id`, `quote_id`, `product_id` (nullable), `offer_id` (nullable), `label`, `qty`
+- `unit_price_ht_cents`, `vat_rate`, `total_ht_cents`, `total_ttc_cents`
+- `unit_cost_ht_cents` (interne — marge)
+
+### RLS + GRANTs
+- `quotes` / `quote_lines` :
+  - admins (SELECT/INSERT/UPDATE/DELETE via `is_admin()`)
+  - vendeur (SELECT/INSERT/UPDATE sur `vendor_id = current_vendor_id()`)
+  - lecture publique uniquement via RPC `get_quote_by_token(_token)` (security definer) — pas de policy `anon` directe
+- GRANTs : `authenticated` + `service_role` ; pas d'`anon`
+
+## Backend
+
+### Edge functions
+- `generate-quote-pdf` : génère + upload PDF, retourne URL signée
+- `quote-create-stripe-session` : crée Checkout Session (mode payment), success_url = `/devis/<token>?paid=1`
+- `quote-stripe-webhook` : `checkout.session.completed` → quote `paid` + conversion auto en order
+- `quote-public-action` : POST `{token, action: 'accept'|'decline'}` (no JWT, rate-limit IP)
+- `send-quote-email` : envoi email au client avec lien + PDF en pièce jointe
+
+### RPCs
+- `get_quote_by_token(_token)` : lecture publique sécurisée (vérifie expiration + statut)
+- `convert_quote_to_order(_quote_id)` : crée `orders` + `order_lines` depuis le devis, set `quotes.order_id` + `status='converted'`
+- `mark_quote_paid(_quote_id)` : admin marque facture payée → trigger conversion
+
+### Stripe
+- Réutilise le Stripe existant du projet (Stripe Connect pour les vendeurs marketplace). 
+- **V1** : paiement direct sur compte MediKong (option b du choix bloquant précédent — plus simple, MediKong refacture le vendeur via la mécanique d'order_transfers existante).
+- Devise EUR uniquement.
 
 ## Frontend
 
-**1. Formulaire `/admin/commandes/nouvelle`** — déjà prêt (toggle existant). Aucun changement fonctionnel hormis aide texte qui précise que la prévisionnelle nourrit les graphiques.
+### Admin
+- `/admin/commande-manuelle` : ajout toggle **"Type de document"** (Bon de commande direct | **Devis**) + radio paiement (Facture | Stripe). Si Devis coché → crée une `quote` au lieu d'une `order`.
+- Nouvelle page `/admin/devis` : tableau filtrable (statut, vendeur, client, total TTC, date). Actions : Voir / Télécharger PDF / Copier lien public / Renvoyer email / Marquer payé (si invoice + accepted) / Convertir manuellement.
+- Détail `/admin/devis/:id` : preview + timeline (créé → envoyé → vu → accepté → payé → converti) + actions.
 
-**2. Fiche commande (`AdminCommandes` + drawer / page détail)**
-- Badge "Prévisionnel" (déjà là), badge supplémentaire "Convertie le …" si `forecast_converted_at`.
-- Bouton **"Convertir en commande réelle"** sur les commandes `is_forecast=true` → appelle `admin_convert_forecast_to_real`, refresh React Query.
+### Vendeur
+- Nouvelle page `/vendor/devis` (liste filtrée sur son `vendor_id`)
+- Nouvelle page `/vendor/devis/nouveau` (formulaire simplifié — customer picker limité à ses clients connus + création rapide)
+- Entrée sidebar dans section "Commandes"
 
-**3. Dashboard admin global (`AdminDashboard` + `useDashboardStats`)**
-- Ajout d'un toggle global `includeForecast` (state local de la page, propagé en props à `GmvEvolutionChart` et lu par les KPIs).
-- KPIs GMV / Commandes : lisent `was_forecast OR is_forecast` pour la part prévisionnelle. Quand le toggle est OFF, on exclut comme aujourd'hui. Quand ON, on additionne sur `effective_total_incl_vat`.
-- `GmvEvolutionChart` : 
-  - ajout d'une **série « Prévisionnel »** distincte (`Line` violet `#7C3AED` pointillée) en plus de la GMV réelle.
-  - se base sur `was_forecast` (donc inclus aussi les converties/annulées qui étaient prévisionnelles) et utilise `forecast_snapshot.total_incl_vat` pour la valeur figée.
-  - le toggle « Inclure prévisionnel » contrôle uniquement l'ajout au total GMV cumulé et à la série principale, la série « Prévisionnel » reste visible en permanence.
+### Public
+- `/devis/:token` : page standalone (sans nav admin), responsive, brandée MediKong + branding vendeur
+- Composants : `QuoteHeader`, `QuoteLinesTable`, `QuoteTotals`, `PaymentBlock` (CTA Stripe ou mention facture), `AcceptDeclineBlock`, `DownloadPdfButton`
 
-**4. Dashboard vendeur (`VendorDashboard` + `useVendorDashboardKpis`)**
-- Hook : requête additionnelle sur `orders` joinées à `order_lines` (filtre `vendor_id=current vendor`, `was_forecast=true OR is_forecast=true`) → calcule `forecastRevenueCents` & `forecastOrders` du mois en cours.
-- UI : nouvelle `VStat` "CA prévisionnel" (icône `CalendarClock`, couleur `#7C3AED`) sub "ce mois + converti".
+## Hors scope V1
 
-**5. Exports (`AdminCommandes` export XLSX + rapports financiers)**
-- Ajout colonnes : `Prévisionnel?`, `Snapshot prévisionnel HT`, `Snapshot prévisionnel TTC`, `Converti le`, `Statut prévisionnel`.
+- Pas de signature électronique avancée (juste accept timestamp + IP)
+- Pas de relances automatiques (cron possible plus tard)
+- Pas de devis multi-vendeurs (1 devis = 1 vendeur)
+- Pas de versioning : modif après `sent` bloquée, sauf "Renvoyer en draft" qui invalide le token
+- Pas d'export comptable spécifique
 
-## Périmètre hors scope
+## Étapes d'implémentation (ordre)
 
-- Pas de touche au workflow de paiement, à la facturation, ni à l'envoi de notifications vendeur.
-- Pas d'edition libre du flag is_forecast après création (seul le bouton "Convertir" sert).
-- Conversion réelle → réelle ou rollback : non géré (one-way, comme demandé).
+1. **Migration DB** : tables `quotes`, `quote_lines`, séquence numéro, RPCs `get_quote_by_token` + `convert_quote_to_order` + `mark_quote_paid`, RLS + GRANTs
+2. **Bucket Storage** `quote-pdfs` (privé) + RLS
+3. **Edge function** `generate-quote-pdf` + template
+4. **Page publique** `/devis/:token` (read-only + accept/decline)
+5. **Adaptation `AdminCommandeManuelle`** (toggle Devis + envoi)
+6. **Page `/admin/devis`** (liste + détail + actions)
+7. **Pages vendeur** `/vendor/devis` + `/vendor/devis/nouveau`
+8. **Intégration Stripe** Checkout + webhook
+9. **Conversion auto** `paid → order` (déjà couverte par RPC ; vérification end-to-end)
+10. **Email** `send-quote-email` (lien + PDF)
 
-## Détails techniques
+---
 
-| Élément | Type | Détail |
-|---|---|---|
-| `orders.was_forecast` | colonne | bool, index partiel `WHERE was_forecast = true` |
-| `orders.forecast_snapshot` | jsonb | rempli par trigger `BEFORE INSERT OR UPDATE` |
-| `admin_convert_forecast_to_real` | RPC | SECURITY DEFINER, gated `is_admin()`, audit_log |
-| `admin_orders_with_forecast_v` | view | security_invoker = true |
-| `useOrders` | hook | `select` étendu pour ramener `was_forecast`, `forecast_snapshot`, `forecast_converted_at` |
-| `GmvEvolutionChart` | component | nouvelle prop `data` agrège réel + snapshot, série Prévisionnel toujours visible |
-| `useVendorDashboardKpis` | hook | requête supplémentaire `orders → order_lines.vendor_id` filtrée mois courant |
-| Export XLSX | `AdminCommandes` | ajout colonnes prévisionnel |
-
-## Validation
-
-- `bunx tsgo --noEmit`
-- Migration ; conversion via bouton + vérif que l'ordre apparait toujours dans le graphique « Prévisionnel » après conversion ou annulation manuelle.
-
-## Fichiers touchés
-
-- `supabase/migrations/<ts>_forecast_history.sql` (nouveau)
-- `src/hooks/useAdminData.ts` (useOrders select + useDashboardStats)
-- `src/hooks/useVendorDashboardKpis.ts`
-- `src/components/admin/GmvEvolutionChart.tsx`
-- `src/pages/admin/AdminDashboard.tsx` (toggle global)
-- `src/pages/admin/AdminCommandes.tsx` (badge converti + bouton convertir + colonnes export)
-- `src/pages/vendor/VendorDashboard.tsx` (VStat CA prévisionnel)
-- `src/integrations/supabase/types.ts` (auto)
+C'est un module conséquent (~10 étapes, 2 nouvelles tables, 4-5 edge functions, 5-6 nouvelles pages). Confirme et je commence par l'étape 1 (migration DB).

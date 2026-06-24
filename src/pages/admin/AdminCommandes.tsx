@@ -518,19 +518,14 @@ const AdminCommandes = () => {
                               })()}
                             </td>
                             <td className="px-3 py-3">
-                              {(() => {
-                                const codes = (o.lines || [])
-                                  .map((l: any) => l.products?.gtin || l.products?.cnk_code || l.products?.sku)
-                                  .filter(Boolean);
-                                if (codes.length === 0) return <span className="text-[11px]" style={{ color: "#8B95A5" }}>—</span>;
-                                const shown = codes.slice(0, 2).join(", ");
-                                const extra = codes.length > 2 ? ` +${codes.length - 2}` : "";
-                                return (
-                                  <span className="text-[10px] font-mono" style={{ color: "#616B7C" }} title={codes.join(", ")}>
-                                    {shown}{extra}
-                                  </span>
-                                );
-                              })()}
+                              <span className="text-[12px] font-bold font-mono" style={{ color: "#1D2530" }}>
+                                {(() => {
+                                  const ids = (o.lines || [])
+                                    .map((l: any) => l.product_id || l.id)
+                                    .filter(Boolean);
+                                  return ids.length === 0 ? "—" : new Set(ids).size;
+                                })()}
+                              </span>
                             </td>
                             <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#1D2530" }}>{fmt(o.amountHT)}</td>
                             <td className="px-3 py-3 text-[11px] font-mono" style={{ color: "#8B95A5" }}>{fmt(o.tva)}</td>

@@ -138,13 +138,16 @@ const AdminCommandes = () => {
   });
 
   // --- Filtre période (sur created_at) appliqué avant toute dérivation ---
-  const periodCutoff = (() => {
+  const periodStartDate = (() => {
     const days = PERIODS.find(p => p.key === period)?.days;
     if (!days) return null;
     const d = new Date();
     d.setDate(d.getDate() - days);
-    return d.getTime();
+    d.setHours(0, 0, 0, 0);
+    return d;
   })();
+  const periodEndDate = new Date();
+  const periodCutoff = periodStartDate ? periodStartDate.getTime() : null;
   const periodOrders = periodCutoff === null
     ? orders
     : orders.filter(o => o.createdAtRaw && new Date(o.createdAtRaw).getTime() >= periodCutoff);
@@ -360,6 +363,12 @@ const AdminCommandes = () => {
             </button>
           ))}
         </div>
+        <div className="flex items-center gap-1.5 text-[12px] font-medium" style={{ color: "#616B7C" }}>
+          <CalendarClock size={14} style={{ color: "#8B95A5" }} />
+          {periodStartDate
+            ? `Du ${periodStartDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })} au ${periodEndDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}`
+            : `Jusqu'au ${periodEndDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}`}
+        </div>
       </div>
 
       <div className="grid grid-cols-6 gap-3 mb-5">
@@ -440,6 +449,15 @@ const AdminCommandes = () => {
               ))}
             </div>
             <button className="flex items-center gap-2 px-3 py-2 rounded-md text-[13px] font-medium" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#616B7C" }}><Filter size={14} /> Filtres</button>
+          </div>
+
+          <div className="flex items-center gap-1.5 mb-2 text-[12px]" style={{ color: "#8B95A5" }}>
+            <CalendarClock size={13} />
+            {periodStartDate
+              ? `Période filtrée : ${periodStartDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })} – ${periodEndDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}`
+              : `Période filtrée : jusqu'au ${periodEndDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}`}
+            <span className="mx-1">·</span>
+            <span className="font-semibold" style={{ color: "#1D2530" }}>{filtered.length} résultat(s)</span>
           </div>
 
           <div className="rounded-[10px] overflow-hidden" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>

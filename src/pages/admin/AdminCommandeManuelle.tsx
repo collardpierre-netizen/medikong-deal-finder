@@ -792,10 +792,10 @@ const AdminCommandeManuelle = () => {
                   return (
                     <div key={vid} className="grid grid-cols-5 gap-2 py-1 border-b last:border-0">
                       <div className="truncate">{v?.name ?? v?.company_name ?? vid.slice(0, 8)}</div>
-                      <div className="text-right">{fmtEur(b.ca)}&nbsp;€</div>
-                      <div className="text-right">{b.hasCost ? `${fmtEur(b.cost)}&nbsp;€` : "—"}</div>
-                      <div className="text-right">{fmtEur(b.commission)}&nbsp;€</div>
-                      <div className="text-right font-semibold">{fmtEur(b.netVendor)}&nbsp;€</div>
+                      <div className="text-right">{fmtEur(b.ca)}\u00a0€</div>
+                      <div className="text-right">{b.hasCost ? `${fmtEur(b.cost)}\u00a0€` : "—"}</div>
+                      <div className="text-right">{fmtEur(b.commission)}\u00a0€</div>
+                      <div className="text-right font-semibold">{fmtEur(b.netVendor)}\u00a0€</div>
                     </div>
                   );
                 })}
@@ -806,35 +806,35 @@ const AdminCommandeManuelle = () => {
           <div className="bg-white rounded-lg border p-4 space-y-1" style={{ borderColor: "#E2E8F0" }}>
             <div className="flex justify-between text-sm">
               <span>CA HTVA</span>
-              <span className="font-semibold">{fmtEur(totals.excl)}&nbsp;€</span>
+              <span className="font-semibold">{fmtEur(totals.excl)}\u00a0€</span>
             </div>
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>TVA</span>
-              <span>{fmtEur(totals.vat)}&nbsp;€</span>
+              <span>{fmtEur(totals.vat)}\u00a0€</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>Coût achat total</span>
-              <span>{totals.hasAnyCost ? `${fmtEur(totals.cost)}&nbsp;€` : "—"}</span>
+              <span>{totals.hasAnyCost ? `${fmtEur(totals.cost)}\u00a0€` : "—"}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>Marge brute</span>
-              <span>{totals.hasAnyCost ? `${fmtEur(totals.gross)}&nbsp;€` : "—"}</span>
+              <span>{totals.hasAnyCost ? `${fmtEur(totals.gross)}\u00a0€` : "—"}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>Commission MediKong</span>
-              <span className="text-emerald-600 font-semibold">{fmtEur(totals.commission)}&nbsp;€</span>
+              <span className="text-emerald-600 font-semibold">{fmtEur(totals.commission)}\u00a0€</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>Net vendeur (HTVA)</span>
-              <span className="font-semibold">{fmtEur(totals.netVendor)}&nbsp;€</span>
+              <span className="font-semibold">{fmtEur(totals.netVendor)}\u00a0€</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>Marge nette vendeur</span>
-              <span>{totals.hasAnyCost ? `${fmtEur(totals.netMargin)}&nbsp;€` : "—"}</span>
+              <span>{totals.hasAnyCost ? `${fmtEur(totals.netMargin)}\u00a0€` : "—"}</span>
             </div>
             <div className="flex justify-between text-base mt-2 pt-2 border-t">
               <span className="font-semibold">Total TTC</span>
-              <span className="font-bold">{fmtEur(totals.incl)}&nbsp;€</span>
+              <span className="font-bold">{fmtEur(totals.incl)}\u00a0€</span>
             </div>
             <div
 
@@ -973,7 +973,7 @@ function LineRow({
                         <span>
                           {productOnly
                             ? "Produit DB (aucune offre) — cliquer pour lier"
-                            : `${fmtEur(price)}&nbsp;€`}
+                            : `${fmtEur(price)}\u00a0€`}
                         </span>
                       </div>
                     </button>
@@ -1088,23 +1088,23 @@ function LineRow({
           <div className="grid grid-cols-5 gap-2 text-xs bg-muted/40 rounded p-2">
             <div>
               <div className="text-muted-foreground">CA HTVA</div>
-              <div className="font-semibold">{fmtEur(m.ca)}&nbsp;€</div>
+              <div className="font-semibold">{fmtEur(m.ca)}\u00a0€</div>
             </div>
             <div>
               <div className="text-muted-foreground">Marge brute</div>
-              <div className="font-semibold">{m.hasCost ? `${fmtEur(m.gross)}&nbsp;€` : "—"}</div>
+              <div className="font-semibold">{m.hasCost ? `${fmtEur(m.gross)}\u00a0€` : "—"}</div>
             </div>
             <div>
               <div className="text-muted-foreground">Commission MK</div>
-              <div className="font-semibold text-emerald-600">{fmtEur(m.commission)}&nbsp;€</div>
+              <div className="font-semibold text-emerald-600">{fmtEur(m.commission)}\u00a0€</div>
             </div>
             <div>
               <div className="text-muted-foreground">Net vendeur</div>
-              <div className="font-semibold">{fmtEur(m.netVendor)}&nbsp;€</div>
+              <div className="font-semibold">{fmtEur(m.netVendor)}\u00a0€</div>
             </div>
             <div>
               <div className="text-muted-foreground">Marge nette</div>
-              <div className="font-semibold">{m.hasCost ? `${fmtEur(m.netMargin)}&nbsp;€` : "—"}</div>
+              <div className="font-semibold">{m.hasCost ? `${fmtEur(m.netMargin)}\u00a0€` : "—"}</div>
             </div>
           </div>
         );

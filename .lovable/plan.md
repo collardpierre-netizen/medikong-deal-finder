@@ -1,76 +1,86 @@
 ## Objectif
 
-Uniformiser sur les pages **admin (Dashboard, Finances, Commissions, Stripe, Analytics, Commandes manuelles, Litiges, Logistique, Onboarding, Reconciliation)** et **vendor (Dashboard, Orders, Finance, Billing, InvoicePayments, Logistics, Analytics)** :
+Permettre aux KPIs et graphiques (admin + vendeur + exports) d'agréger les commandes prévisionnelles **de façon persistante**, même si la commande est ensuite annulée, modifiée ou convertie en commande réelle.
 
-1. **Statuts commandes / sub-commandes** : libellés, couleurs et filtres cohérents avec `/admin/commandes`
-2. **Affichage des montants en €** : séparateurs de milliers + 2 décimales partout, même format
+## Modèle de données (1 migration)
 
-Aucune modification de logique métier, RPC, schéma DB ou autres pages que celles listées.
+Sur `public.orders` :
+- `was_forecast boolean NOT NULL DEFAULT false` — flag immuable, vrai dès qu'une commande a été créée en prévisionnel (utilisé pour l'historique).
+- `forecast_created_at timestamptz` — date d'origine prévisionnelle.
+- `forecast_converted_at timestamptz` — date de conversion en réel (si applicable).
+- `forecast_snapshot jsonb` — snapshot figé `{total_incl_vat, subtotal_excl_vat, vat_amount, customer_id, vendor_ids[], lines:[{product_id, qty, unit_price_incl_vat, vendor_id}], created_at}` pris à la création prévisionnelle ; ne bouge plus jamais, même si la commande est modifiée ou annulée.
 
----
+Triggers / RPC :
+- `BEFORE INSERT OR UPDATE` : si `is_forecast=true` et `was_forecast=false`, set `was_forecast=true` + `forecast_created_at=now()` + remplit `forecast_snapshot` (si null). Le flag `was_forecast` ne peut jamais redevenir false (garde-fou).
+- Nouvelle RPC `admin_convert_forecast_to_real(_order_id uuid, _notes text)` (SECURITY DEFINER, admin only) :
+  - exige `is_forecast=true`
+  - set `is_forecast=false`, `forecast_converted_at=now()`, `status='confirmed'` (configurable plus tard), `admin_notes` annoté
+  - audit_log
+  - retourne la commande mise à jour
+- `admin_create_manual_order` (existant) : déjà tient compte de `is_forecast` ; ajout : alimenter `forecast_snapshot` à la création via le trigger.
 
-## Référentiel cible (source de vérité)
+## Backend (vues + sécurité)
 
-Statut commande (table `orders.status`) — déjà câblé dans `StatusBadge` :
+Vue helper `admin_orders_with_forecast_v` (security_invoker) projetant pour chaque commande :
+- `effective_total_incl_vat` = `total_incl_vat` (réel) **ou** `forecast_snapshot.total_incl_vat` (si annulé/modifié alors qu'elle était prévisionnelle)
+- `forecast_total_incl_vat` = montant pris dans le snapshot (toujours)
+- `is_forecast`, `was_forecast`, `forecast_status` ('active' | 'converted' | 'cancelled')
+- exposée à `authenticated`, RLS via `is_admin()`.
 
-| clé DB        | libellé FR    | couleur dot |
-|---------------|---------------|-------------|
-| `pending`     | En attente    | ambre       |
-| `confirmed`   | Confirmée     | vert        |
-| `processing`  | En cours      | bleu        |
-| `shipped`     | Expédié       | violet      |
-| `delivered`   | Livré         | vert        |
-| `cancelled`   | Annulé        | rouge       |
+## Frontend
 
-Filtres tabs commandes (clé `statusFilters` dans `/admin/commandes`) → réplique identique partout où une liste de commandes est filtrée par statut.
+**1. Formulaire `/admin/commandes/nouvelle`** — déjà prêt (toggle existant). Aucun changement fonctionnel hormis aide texte qui précise que la prévisionnelle nourrit les graphiques.
 
-Formatage € (helper unique déjà utilisé `fmt = n.toLocaleString("fr-BE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })` → suffixé par ` EUR` ou `&nbsp;€`). Plus aucun `${n} EUR` brut, plus aucun `Math.round(n)` pour des montants.
+**2. Fiche commande (`AdminCommandes` + drawer / page détail)**
+- Badge "Prévisionnel" (déjà là), badge supplémentaire "Convertie le …" si `forecast_converted_at`.
+- Bouton **"Convertir en commande réelle"** sur les commandes `is_forecast=true` → appelle `admin_convert_forecast_to_real`, refresh React Query.
 
----
+**3. Dashboard admin global (`AdminDashboard` + `useDashboardStats`)**
+- Ajout d'un toggle global `includeForecast` (state local de la page, propagé en props à `GmvEvolutionChart` et lu par les KPIs).
+- KPIs GMV / Commandes : lisent `was_forecast OR is_forecast` pour la part prévisionnelle. Quand le toggle est OFF, on exclut comme aujourd'hui. Quand ON, on additionne sur `effective_total_incl_vat`.
+- `GmvEvolutionChart` : 
+  - ajout d'une **série « Prévisionnel »** distincte (`Line` violet `#7C3AED` pointillée) en plus de la GMV réelle.
+  - se base sur `was_forecast` (donc inclus aussi les converties/annulées qui étaient prévisionnelles) et utilise `forecast_snapshot.total_incl_vat` pour la valeur figée.
+  - le toggle « Inclure prévisionnel » contrôle uniquement l'ajout au total GMV cumulé et à la série principale, la série « Prévisionnel » reste visible en permanence.
 
-## Périmètre & travaux par page
+**4. Dashboard vendeur (`VendorDashboard` + `useVendorDashboardKpis`)**
+- Hook : requête additionnelle sur `orders` joinées à `order_lines` (filtre `vendor_id=current vendor`, `was_forecast=true OR is_forecast=true`) → calcule `forecastRevenueCents` & `forecastOrders` du mois en cours.
+- UI : nouvelle `VStat` "CA prévisionnel" (icône `CalendarClock`, couleur `#7C3AED`) sub "ce mois + converti".
 
-### Admin
+**5. Exports (`AdminCommandes` export XLSX + rapports financiers)**
+- Ajout colonnes : `Prévisionnel?`, `Snapshot prévisionnel HT`, `Snapshot prévisionnel TTC`, `Converti le`, `Statut prévisionnel`.
 
-- **AdminDashboard** — vérifier les KPI cards (GMV, panier moyen, commissions) → passer par `fmt`. StatusBadge déjà OK.
-- **AdminFinances** — montants encaissés / à encaisser / commissions / balance vendeurs : `fmt`. Statuts de paiement → mapping uniforme (`paid`, `pending`, `overdue`).
-- **AdminCommissions** + **AdminCommissionOverridesPage** — colonnes montant & taux → `fmt` ; statut override = badge cohérent.
-- **AdminStripeRevenue / AdminQogitaConnection (Stripe section)** — montants Stripe en cents → conversion + `fmt`. Statuts transferts (`paid`, `pending`, `failed`).
-- **AdminAnalytics** — chiffres KPI (GMV, AOV, commission) → `fmt`. Aucun statut.
-- **AdminCommandeManuelle** — totaux ligne / panier → `fmt` (déjà partiellement fait).
-- **AdminCommandesEnRetard** + **AdminLitiges** + **AdminReconciliation** — colonnes montant + statut commande → référentiel cible.
-- **AdminOnboarding** — statuts vendeur (KYC `pending_review` / `accepted` / `approved` / `rejected`) : libellés normalisés via un mini-map dédié (pas mélangé aux statuts commandes).
-- **AdminLogistique** — statuts expédition (`pending` / `shipped` / `in_transit` / `delivered` / `returned`) : map dédiée, mêmes couleurs que ci-dessus.
+## Périmètre hors scope
 
-### Vendor
+- Pas de touche au workflow de paiement, à la facturation, ni à l'envoi de notifications vendeur.
+- Pas d'edition libre du flag is_forecast après création (seul le bouton "Convertir" sert).
+- Conversion réelle → réelle ou rollback : non géré (one-way, comme demandé).
 
-- **VendorDashboard / VendorAnalytics** — KPI € → `fmt`.
-- **VendorOrders** — filtres + badge statut = référentiel cible.
-- **VendorFinance / VendorBilling / VendorInvoicePayments / VendorInvoicesToCollect** — montants € → `fmt` ; statuts facture (`paid` / `pending` / `overdue`) cohérents.
-- **VendorLogistics / VendorShipments / VendorShipmentDetail** — statuts expédition (map livraison ci-dessus).
+## Détails techniques
 
----
+| Élément | Type | Détail |
+|---|---|---|
+| `orders.was_forecast` | colonne | bool, index partiel `WHERE was_forecast = true` |
+| `orders.forecast_snapshot` | jsonb | rempli par trigger `BEFORE INSERT OR UPDATE` |
+| `admin_convert_forecast_to_real` | RPC | SECURITY DEFINER, gated `is_admin()`, audit_log |
+| `admin_orders_with_forecast_v` | view | security_invoker = true |
+| `useOrders` | hook | `select` étendu pour ramener `was_forecast`, `forecast_snapshot`, `forecast_converted_at` |
+| `GmvEvolutionChart` | component | nouvelle prop `data` agrège réel + snapshot, série Prévisionnel toujours visible |
+| `useVendorDashboardKpis` | hook | requête supplémentaire `orders → order_lines.vendor_id` filtrée mois courant |
+| Export XLSX | `AdminCommandes` | ajout colonnes prévisionnel |
 
-## Approche technique
+## Validation
 
-1. **Centraliser le helper de format €** dans `src/lib/format-currency.ts` (export `fmtEur(n)` qui retourne `"1 234,56"`), réutilisé par toutes les pages. Ne casse rien : le `fmt` local actuel reste comportementalement identique.
-2. **Étendre `StatusBadge`** (`src/components/admin/StatusBadge.tsx`) avec un nouveau preset `orderStatusMap` exportable (clés DB → libellé), ré-utilisé par les pages admin + vendor au lieu de redéfinir leurs propres maps. Aucun changement visuel du badge en lui-même.
-3. **Onglets de filtres commandes** : extraire `ORDER_STATUS_FILTERS` (déjà ajouté implicitement dans `/admin/commandes`) dans `src/lib/order-status.ts` et l'importer dans VendorOrders / autres listes.
-4. Faire les remplacements page par page : `${n} EUR` → `${fmtEur(n)} EUR`, `Math.round(...)` montants → `fmtEur`, badges custom → `<StatusBadge status={...} />`, listes de filtres → import partagé.
-5. Pages non listées (Marques, Produits, Catégories, etc.) : **non touchées**.
+- `bunx tsgo --noEmit`
+- Migration ; conversion via bouton + vérif que l'ordre apparait toujours dans le graphique « Prévisionnel » après conversion ou annulation manuelle.
 
----
+## Fichiers touchés
 
-## Vérifications
-
-- `bunx tsgo --noEmit` à la fin (typecheck).
-- Captures avant/après pour : AdminDashboard, AdminFinances, AdminCommissions, VendorOrders, VendorFinance.
-- Rapport écrit listant exactement les fichiers modifiés et chaque remplacement, sans toucher à autre chose (respect du scope strict).
-
----
-
-## Hors scope (à confirmer si tu veux l'inclure plus tard)
-
-- Statuts RFQ, KYC, paiement Stripe, abonnements vendeurs → **non touchés** dans ce passage, car ils ont leur propre cycle de vie. Dis-moi si tu veux que je les inclue aussi.
-- Pages publiques acheteur (`/compte/commandes`, etc.) → non touchées sauf demande explicite.
-- Aucun changement DB / RPC / edge function.
+- `supabase/migrations/<ts>_forecast_history.sql` (nouveau)
+- `src/hooks/useAdminData.ts` (useOrders select + useDashboardStats)
+- `src/hooks/useVendorDashboardKpis.ts`
+- `src/components/admin/GmvEvolutionChart.tsx`
+- `src/pages/admin/AdminDashboard.tsx` (toggle global)
+- `src/pages/admin/AdminCommandes.tsx` (badge converti + bouton convertir + colonnes export)
+- `src/pages/vendor/VendorDashboard.tsx` (VStat CA prévisionnel)
+- `src/integrations/supabase/types.ts` (auto)

@@ -13,11 +13,16 @@ interface OrderLike {
   total_incl_vat?: number | string | null;
   status?: string | null;
   is_forecast?: boolean | null;
+  was_forecast?: boolean | null;
+  forecast_created_at?: string | null;
+  forecast_snapshot?: { total_incl_vat?: number | string | null; created_at?: string | null } | null;
 }
 
 interface Props {
   title: string;
   orders: OrderLike[];
+  includeForecast?: boolean;
+  onIncludeForecastChange?: (v: boolean) => void;
 }
 
 const EXCLUDED_STATUSES = new Set(["cancelled", "refused", "rejected"]);
@@ -85,12 +90,17 @@ const formatEuro = (v: number) => {
 
 const fmtFull = (v: number) => `€${fmtEur(v)}`;
 
-export default function GmvEvolutionChart({ title, orders }: Props) {
+export default function GmvEvolutionChart({ title, orders, includeForecast: includeForecastProp, onIncludeForecastChange }: Props) {
   const [period, setPeriod] = useState<Period>("month");
-  const [includeForecast, setIncludeForecast] = useState(false);
+  const [includeForecastLocal, setIncludeForecastLocal] = useState(false);
+  const includeForecast = includeForecastProp ?? includeForecastLocal;
+  const setIncludeForecast = (v: boolean) => {
+    if (onIncludeForecastChange) onIncludeForecastChange(v);
+    else setIncludeForecastLocal(v);
+  };
 
   const forecastCount = useMemo(
-    () => orders.filter(o => o.is_forecast).length,
+    () => orders.filter(o => o.is_forecast || o.was_forecast).length,
     [orders],
   );
 
@@ -98,16 +108,30 @@ export default function GmvEvolutionChart({ title, orders }: Props) {
     const buckets = buildBuckets(period);
     const map = new Map(buckets.map(b => [b.key, { ...b, gmv: 0, forecast: 0 }]));
     for (const o of orders) {
-      if (o.status && EXCLUDED_STATUSES.has(o.status)) continue;
-      if (!includeForecast && o.is_forecast) continue;
       const d = new Date(o.created_at);
       if (Number.isNaN(d.getTime())) continue;
       const key = bucketKeyFor(d, period);
       const row = map.get(key);
       if (!row) continue;
+
+      // Prévisionnel : on s'appuie sur was_forecast (inclut converties / annulées) et la valeur figée du snapshot.
+      // Date du bucket = date d'origine prévisionnelle si dispo, sinon created_at.
+      const isHistoricallyForecast = !!(o.is_forecast || o.was_forecast);
+      if (isHistoricallyForecast) {
+        const forecastDateStr = o.forecast_created_at || (o.forecast_snapshot?.created_at as string | undefined) || o.created_at;
+        const fd = new Date(forecastDateStr);
+        const fKey = Number.isNaN(fd.getTime()) ? key : bucketKeyFor(fd, period);
+        const fRow = map.get(fKey);
+        const snap = Number(o.forecast_snapshot?.total_incl_vat);
+        const fAmount = Number.isFinite(snap) && snap > 0 ? snap : (Number(o.total_incl_vat) || 0);
+        if (fRow) fRow.forecast += fAmount;
+      }
+
+      // GMV réelle : exclut commandes en statut annulé et exclut les prévisionnelles actives (sauf si toggle inclure)
+      if (o.status && EXCLUDED_STATUSES.has(o.status)) continue;
+      if (o.is_forecast && !includeForecast) continue;
       const amount = Number(o.total_incl_vat) || 0;
       row.gmv += amount;
-      if (o.is_forecast) row.forecast += amount;
     }
     let cum = 0;
     return Array.from(map.values()).map(r => {
@@ -117,7 +141,8 @@ export default function GmvEvolutionChart({ title, orders }: Props) {
   }, [orders, period, includeForecast]);
 
   const total = data.reduce((s, r) => s + r.gmv, 0);
-  const hasData = total > 0;
+  const totalForecast = data.reduce((s, r) => s + r.forecast, 0);
+  const hasData = total > 0 || totalForecast > 0;
 
   const periods: { key: Period; label: string }[] = [
     { key: "day", label: "Jour" },
@@ -225,6 +250,20 @@ export default function GmvEvolutionChart({ title, orders }: Props) {
                 strokeWidth={2.5}
                 dot={{ r: 3, stroke: "#1B5BDA", strokeWidth: 2, fill: "#fff" }}
                 activeDot={{ r: 5, stroke: "#1B5BDA", strokeWidth: 2, fill: "#fff" }}
+                isAnimationActive
+                animationDuration={650}
+                animationEasing="ease-out"
+              />
+              <Line
+                yAxisId="left"
+                type="monotone"
+                dataKey="forecast"
+                name="Prévisionnel"
+                stroke="#7C3AED"
+                strokeWidth={2}
+                strokeDasharray="5 4"
+                dot={{ r: 2.5, stroke: "#7C3AED", strokeWidth: 2, fill: "#fff" }}
+                activeDot={{ r: 4, stroke: "#7C3AED", strokeWidth: 2, fill: "#fff" }}
                 isAnimationActive
                 animationDuration={650}
                 animationEasing="ease-out"

@@ -85,7 +85,7 @@ export const useOrders = () =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, customers(company_name, customer_type), order_lines(id, product_id, offer_id, vendor_id, quantity, unit_price_excl_vat, unit_price_incl_vat, vat_rate, line_total_excl_vat, line_total_incl_vat, qogita_offer_qid, qogita_seller_fid, qogita_order_status, fulfillment_status, products(name, gtin, cnk_code, sku, image_url), vendors(company_name, slug), offers(delivery_days)), sub_orders(commission_rate_override, commission_amount_override, subtotal_incl_vat)")
+        .select("*, was_forecast, forecast_created_at, forecast_converted_at, forecast_snapshot, customers(company_name, customer_type), order_lines(id, product_id, offer_id, vendor_id, quantity, unit_price_excl_vat, unit_price_incl_vat, vat_rate, line_total_excl_vat, line_total_incl_vat, qogita_offer_qid, qogita_seller_fid, qogita_order_status, fulfillment_status, products(name, gtin, cnk_code, sku, image_url), vendors(company_name, slug), offers(delivery_days)), sub_orders(commission_rate_override, commission_amount_override, subtotal_incl_vat)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -263,15 +263,26 @@ export const useDashboardStats = () => {
 
   // Exclure les commandes annulées/refusées du GMV et du total
   const EXCLUDED_STATUSES = new Set(["cancelled", "canceled", "refunded", "failed", "rejected"]);
-  const billableOrders = orders.data?.filter((o: any) => !EXCLUDED_STATUSES.has(String(o.status ?? "").toLowerCase())) ?? [];
+  const allOrders = orders.data ?? [];
+  const billableOrders = allOrders.filter((o: any) => !EXCLUDED_STATUSES.has(String(o.status ?? "").toLowerCase()) && !o.is_forecast);
   const totalOrders = billableOrders.length;
   const gmv = billableOrders.reduce((sum: number, o: any) => sum + (Number(o.total_incl_vat) || 0), 0);
+
+  // Agrégat prévisionnel (inclut converties / annulées dès qu'elles ont été prévisionnelles)
+  const forecastOrders = allOrders.filter((o: any) => o.was_forecast || o.is_forecast);
+  const forecastGmv = forecastOrders.reduce((sum: number, o: any) => {
+    const snap = Number(o.forecast_snapshot?.total_incl_vat);
+    if (Number.isFinite(snap) && snap > 0) return sum + snap;
+    return sum + (Number(o.total_incl_vat) || 0);
+  }, 0);
 
   return {
     activeVendors: countsQuery.data?.activeVendors ?? 0,
     totalProducts: countsQuery.data?.totalProducts ?? 0,
     totalOrders,
     gmv,
+    forecastOrders: forecastOrders.length,
+    forecastGmv,
     disputeRate: 0,
     isLoading: countsQuery.isLoading || orders.isLoading,
   };

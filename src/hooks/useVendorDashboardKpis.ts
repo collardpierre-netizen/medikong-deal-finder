@@ -30,10 +30,27 @@ export function useVendorDashboardKpis(vendorId: string | undefined) {
         )
         .reduce((sum, r: any) => sum + Number(r.subtotal_incl_vat ?? 0), 0);
 
+      // CA prévisionnel — agrège la part vendeur des commandes prévisionnelles (actives, converties ou annulées)
+      // créées ce mois-ci, à partir des lignes order_lines vendor_id = ce vendeur.
+      const { data: forecastLines } = await supabase
+        .from("order_lines")
+        .select("line_total_incl_vat, orders!inner(id, created_at, is_forecast, was_forecast, forecast_created_at)")
+        .eq("vendor_id", vendorId!)
+        .or("is_forecast.eq.true,was_forecast.eq.true", { foreignTable: "orders" })
+        .gte("orders.created_at", startOfMonth.toISOString());
+
+      const forecastRevenueCents = (forecastLines ?? []).reduce(
+        (sum, l: any) => sum + Number(l.line_total_incl_vat ?? 0),
+        0,
+      );
+      const forecastOrders = new Set((forecastLines ?? []).map((l: any) => l.orders?.id).filter(Boolean)).size;
+
       return {
         activeOffers: activeOffers ?? 0,
         monthOrders: monthOrders ?? 0,
         revenueCents,
+        forecastRevenueCents,
+        forecastOrders,
       };
     },
   });

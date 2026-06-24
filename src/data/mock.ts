@@ -30,7 +30,11 @@ export const competitors: { name: string; price: number; status: string; date: s
 export const universes: string[] = [];
 
 export function formatPrice(price: number): string {
-  return price.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // Format fr-FR puis on force le séparateur des milliers à "." (Intl renvoie
+  // une espace fine insécable qui ne s'affiche pas toujours dans nos cartes).
+  return price
+    .toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    .replace(/[\s\u00A0\u202F]/g, ".");
 }
 
 // Icon map for product placeholders

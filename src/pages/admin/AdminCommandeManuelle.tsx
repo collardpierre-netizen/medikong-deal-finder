@@ -848,7 +848,12 @@ const AdminCommandeManuelle = () => {
               <span>{totals.hasAnyCost ? `${fmtEur(totals.gross)} €` : "—"}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span>Commission MediKong</span>
+              <span>
+                Commission MediKong
+                {totals.excl > 0 && (
+                  <span className="text-muted-foreground ml-1">({((totals.commission / totals.excl) * 100).toFixed(1)}% du CA)</span>
+                )}
+              </span>
               <span className="text-emerald-600 font-semibold">{fmtEur(totals.commission)} €</span>
             </div>
             <div className="flex justify-between text-sm">

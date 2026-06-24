@@ -100,6 +100,9 @@ const AdminCommandeManuelle = () => {
   const [duplicatedFrom, setDuplicatedFrom] = useState<string | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
+  const [docMode, setDocMode] = useState<"order" | "quote">("order");
+  const [quoteValidityDays, setQuoteValidityDays] = useState<number>(7);
+  const [quoteNotesCustomer, setQuoteNotesCustomer] = useState<string>("");
 
 
   // Quick-create customer modal
@@ -337,18 +340,53 @@ const AdminCommandeManuelle = () => {
 
     setSubmitting(true);
     try {
+      if (docMode === "quote") {
+        // Branche Devis : header single-vendor (= vendor de la 1re ligne)
+        const vendorIds = Array.from(new Set(lines.map(l => l.vendor_id).filter(Boolean)));
+        if (vendorIds.length !== 1) {
+          toast.error("Un devis doit cibler un seul vendeur. Toutes les lignes doivent partager le même vendeur.");
+          setSubmitting(false);
+          return;
+        }
+        const quotePayload = {
+          vendor_id: vendorIds[0],
+          customer_id: customerId,
+          payment_method: paymentMethod,
+          currency_code: "EUR",
+          validity_days: quoteValidityDays,
+          notes_internal: adminNotes || null,
+          notes_customer: quoteNotesCustomer || null,
+          lines: lines.map((l) => ({
+            product_id: l.mode === "offer" ? l.product_id : null,
+            offer_id: l.mode === "offer" ? l.offer_id : null,
+            label: l.mode === "free" ? (l.manual_label || "Article") : (l.offer_label || l.manual_label || "Article"),
+            qty: Number(l.quantity) || 1,
+            unit_price_ht_cents: Math.round((Number(l.unit_price_excl_vat) || 0) * 100),
+            vat_rate: Number(l.vat_rate) || 21,
+            unit_cost_ht_cents: l.unit_cost_excl_vat ? Math.round(Number(l.unit_cost_excl_vat) * 100) : null,
+          })),
+        };
+        const { data, error } = await supabase.rpc("admin_create_quote_from_payload" as any, {
+          _payload: quotePayload as any,
+        });
+        if (error) throw error;
+        const result = data as any;
+        if (draftId) await supabase.rpc("admin_delete_manual_order_draft", { _id: draftId });
+        toast.success("Devis créé");
+        await queryClient.invalidateQueries({ queryKey: ["admin-quotes"] });
+        navigate(`/admin/devis/${result?.quote_id}`);
+        return;
+      }
+
       const { data, error } = await supabase.rpc("admin_create_manual_order", {
         _payload: payload as any,
       });
       if (error) throw error;
       const result = data as any;
-      // Si on finalisait un brouillon, on le supprime
       if (draftId) {
         await supabase.rpc("admin_delete_manual_order_draft", { _id: draftId });
       }
       toast.success(`Commande ${result?.order_number ?? ""} créée`);
-      // Invalide les caches Dashboard + Commandes pour que la nouvelle commande
-      // (réelle OU prévisionnelle) apparaisse immédiatement après la redirection.
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-orders"] }),
         queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] }),
@@ -537,9 +575,55 @@ const AdminCommandeManuelle = () => {
   return (
     <div>
       <AdminTopBar
-        title="Nouvelle commande manuelle"
-        subtitle="Saisie admin — alimente la GMV"
+        title={docMode === "quote" ? "Nouveau devis" : "Nouvelle commande manuelle"}
+        subtitle={docMode === "quote" ? "Saisie admin — génère un devis avec lien public 7 j" : "Saisie admin — alimente la GMV"}
       />
+
+      <div className="mb-3 inline-flex rounded-lg border bg-white p-1" style={{ borderColor: "#E2E8F0" }}>
+        <button
+          type="button"
+          onClick={() => setDocMode("order")}
+          className={`px-4 py-1.5 text-sm rounded-md font-medium transition ${docMode === "order" ? "text-white" : "text-slate-600 hover:text-slate-900"}`}
+          style={docMode === "order" ? { backgroundColor: "#1C58D9" } : {}}
+        >
+          Bon de commande
+        </button>
+        <button
+          type="button"
+          onClick={() => setDocMode("quote")}
+          className={`px-4 py-1.5 text-sm rounded-md font-medium transition ${docMode === "quote" ? "text-white" : "text-slate-600 hover:text-slate-900"}`}
+          style={docMode === "quote" ? { backgroundColor: "#1C58D9" } : {}}
+        >
+          Devis
+        </button>
+      </div>
+
+      {docMode === "quote" && (
+        <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-3 bg-blue-50/40 border border-blue-100 rounded-lg p-3">
+          <div>
+            <Label className="text-xs">Validité (jours)</Label>
+            <Input
+              type="number"
+              min={1}
+              max={90}
+              value={quoteValidityDays}
+              onChange={(e) => setQuoteValidityDays(Math.max(1, Math.min(90, Number(e.target.value) || 7)))}
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Message à l'acheteur (visible sur le devis)</Label>
+            <Textarea
+              value={quoteNotesCustomer}
+              onChange={(e) => setQuoteNotesCustomer(e.target.value)}
+              placeholder="ex : Merci pour votre demande, voici notre proposition…"
+              rows={2}
+              className="mt-1"
+            />
+          </div>
+        </div>
+      )}
+
 
       <div className="mb-4 flex items-center justify-between gap-2 flex-wrap">
         <Link to="/admin/commandes" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">

@@ -924,7 +924,34 @@ const AdminCommandes = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={!!hardDeleteTarget} onOpenChange={(o) => { if (!o) setHardDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Flame size={18} className="text-red-700" />
+              Suppression définitive — {hardDeleteTarget?.number}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est <b>irréversible</b>. La commande, ses lignes, sous-commandes, transferts et factures liées seront <b>définitivement supprimés</b> de la base.
+              <br /><br />
+              Autorisé uniquement pour les commandes <b>annulées, brouillons ou test</b>. Statut actuel : <b>{hardDeleteTarget?.status}</b>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={hardDeleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleHardDelete(); }}
+              disabled={hardDeleting}
+              className="bg-red-800 hover:bg-red-900"
+            >
+              {hardDeleting ? "Suppression..." : "Supprimer définitivement"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+
   );
 };
 

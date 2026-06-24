@@ -152,7 +152,7 @@ const AdminCommandes = () => {
       commissionSource: storedCommission > 0 ? "stored" : draftTotals ? "draft" : sourceCommission > 0 ? "source" : "none",
       paymentTerms: o.payment_method || "invoice",
       dueDate: o.payment_due_date ? new Date(o.payment_due_date).toLocaleDateString("fr-BE") : "—",
-      status: o.status as "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled",
+      status: o.status as "draft" | "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled",
       isTest: Boolean((o as any).is_test),
       isForecast: Boolean((o as any).is_forecast),
       wasForecast: Boolean((o as any).was_forecast),

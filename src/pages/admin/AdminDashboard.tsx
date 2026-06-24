@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useI18n } from "@/contexts/I18nContext";
 import { useNavigate } from "react-router-dom";
 import AdminTopBar from "@/components/admin/AdminTopBar";
@@ -18,6 +19,7 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const { t } = useI18n();
   const stats = useDashboardStats();
+  const [includeForecast, setIncludeForecast] = useState(false);
 
   const pendingVendors = useQuery({
     queryKey: ["pending-vendors"],
@@ -132,9 +134,47 @@ const AdminDashboard = () => {
     <div>
       <AdminTopBar title={t("dashboard")} subtitle="Vue d'ensemble de la plateforme MediKong.pro" />
 
+      <div className="flex items-center justify-between mb-3">
+        <div />
+        <label
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium cursor-pointer select-none transition-colors"
+          style={{
+            backgroundColor: includeForecast ? "#EDE9FE" : "#fff",
+            color: includeForecast ? "#6D28D9" : "#616B7C",
+            border: `1px solid ${includeForecast ? "#DDD6FE" : "#E2E8F0"}`,
+          }}
+          title="Inclure les commandes prévisionnelles dans les KPIs et le graphique GMV"
+        >
+          <input
+            type="checkbox"
+            className="accent-violet-600"
+            checked={includeForecast}
+            onChange={(e) => setIncludeForecast(e.target.checked)}
+          />
+          Inclure le prévisionnel
+          {(stats as any).forecastOrders ? (
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ backgroundColor: "#DDD6FE", color: "#5B21B6" }}>
+              {(stats as any).forecastOrders}
+            </span>
+          ) : null}
+        </label>
+      </div>
+
       <div className="grid grid-cols-5 gap-4 mb-6">
-        <KpiCard icon={DollarSign} label={t("gmvMonth")} value={`${fmtEur(stats.gmv)} EUR`} iconColor="#1B5BDA" iconBg="#EFF6FF" />
-        <KpiCard icon={ShoppingCart} label={t("ordersMonth")} value={fmt(stats.totalOrders)} iconColor="#7C3AED" iconBg="#F5F3FF" />
+        <KpiCard
+          icon={DollarSign}
+          label={t("gmvMonth")}
+          value={`${fmtEur(stats.gmv + (includeForecast ? ((stats as any).forecastGmv || 0) : 0))} EUR`}
+          iconColor="#1B5BDA"
+          iconBg="#EFF6FF"
+        />
+        <KpiCard
+          icon={ShoppingCart}
+          label={t("ordersMonth")}
+          value={fmt(stats.totalOrders + (includeForecast ? ((stats as any).forecastOrders || 0) : 0))}
+          iconColor="#7C3AED"
+          iconBg="#F5F3FF"
+        />
         <KpiCard icon={Store} label={t("activeSellers")} value={fmt(stats.activeVendors)} iconColor="#059669" iconBg="#F0FDF4" />
         <KpiCard icon={Package} label={t("catalogProducts")} value={fmt(stats.totalProducts)} iconColor="#F59E0B" iconBg="#FFFBEB" />
         <KpiCard icon={AlertTriangle} label={t("disputeRate")} value={`${stats.disputeRate}%`} iconColor="#EF4343" iconBg="#FEF2F2" />
@@ -247,7 +287,7 @@ const AdminDashboard = () => {
 
       <div className="grid grid-cols-2 gap-4">
         {/* GMV Chart */}
-        <GmvEvolutionChart title={t("gmvEvolution")} orders={(ordersQuery.data || []) as any} />
+        <GmvEvolutionChart title={t("gmvEvolution")} orders={(ordersQuery.data || []) as any} includeForecast={includeForecast} onIncludeForecastChange={setIncludeForecast} />
 
         <OrdersStatusPieChart title="Répartition des commandes par statut" orders={(ordersQuery.data || []) as any} />
 

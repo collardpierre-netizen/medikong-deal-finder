@@ -7288,6 +7288,13 @@ export type Database = {
             foreignKeyName: "order_invoices_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "admin_orders_with_forecast_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -7440,6 +7447,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "admin_orders_sla_overview_v"
             referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_with_forecast_v"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "order_items_order_id_fkey"
@@ -7681,6 +7695,13 @@ export type Database = {
             foreignKeyName: "order_lines_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "admin_orders_with_forecast_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -7836,6 +7857,13 @@ export type Database = {
             foreignKeyName: "order_transfers_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "admin_orders_with_forecast_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_transfers_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -7961,6 +7989,13 @@ export type Database = {
             foreignKeyName: "order_vendor_sla_alerts_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "admin_orders_with_forecast_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_vendor_sla_alerts_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -8049,6 +8084,9 @@ export type Database = {
           deleted_reason: string | null
           draft_payload: Json | null
           estimated_delivery_date: string | null
+          forecast_converted_at: string | null
+          forecast_created_at: string | null
+          forecast_snapshot: Json | null
           hidden_from_list: boolean
           id: string
           is_forecast: boolean
@@ -8069,6 +8107,7 @@ export type Database = {
           total_margin: number | null
           updated_at: string
           vat_amount: number
+          was_forecast: boolean
         }
         Insert: {
           admin_notes?: string | null
@@ -8082,6 +8121,9 @@ export type Database = {
           deleted_reason?: string | null
           draft_payload?: Json | null
           estimated_delivery_date?: string | null
+          forecast_converted_at?: string | null
+          forecast_created_at?: string | null
+          forecast_snapshot?: Json | null
           hidden_from_list?: boolean
           id?: string
           is_forecast?: boolean
@@ -8102,6 +8144,7 @@ export type Database = {
           total_margin?: number | null
           updated_at?: string
           vat_amount?: number
+          was_forecast?: boolean
         }
         Update: {
           admin_notes?: string | null
@@ -8115,6 +8158,9 @@ export type Database = {
           deleted_reason?: string | null
           draft_payload?: Json | null
           estimated_delivery_date?: string | null
+          forecast_converted_at?: string | null
+          forecast_created_at?: string | null
+          forecast_snapshot?: Json | null
           hidden_from_list?: boolean
           id?: string
           is_forecast?: boolean
@@ -8135,6 +8181,7 @@ export type Database = {
           total_margin?: number | null
           updated_at?: string
           vat_amount?: number
+          was_forecast?: boolean
         }
         Relationships: [
           {
@@ -14232,6 +14279,13 @@ export type Database = {
             foreignKeyName: "sub_orders_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "admin_orders_with_forecast_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sub_orders_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -17669,6 +17723,13 @@ export type Database = {
             foreignKeyName: "vendor_order_tokens_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "admin_orders_with_forecast_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_order_tokens_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -19286,6 +19347,74 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_orders_with_forecast_v: {
+        Row: {
+          created_at: string | null
+          customer_id: string | null
+          effective_total_incl_vat: number | null
+          forecast_converted_at: string | null
+          forecast_created_at: string | null
+          forecast_snapshot: Json | null
+          forecast_status: string | null
+          forecast_total_incl_vat: number | null
+          id: string | null
+          is_forecast: boolean | null
+          order_number: string | null
+          status: Database["public"]["Enums"]["order_status"] | null
+          subtotal_excl_vat: number | null
+          total_incl_vat: number | null
+          updated_at: string | null
+          vat_amount: number | null
+          was_forecast: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_id?: string | null
+          effective_total_incl_vat?: never
+          forecast_converted_at?: string | null
+          forecast_created_at?: string | null
+          forecast_snapshot?: Json | null
+          forecast_status?: never
+          forecast_total_incl_vat?: never
+          id?: string | null
+          is_forecast?: boolean | null
+          order_number?: string | null
+          status?: Database["public"]["Enums"]["order_status"] | null
+          subtotal_excl_vat?: number | null
+          total_incl_vat?: number | null
+          updated_at?: string | null
+          vat_amount?: number | null
+          was_forecast?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_id?: string | null
+          effective_total_incl_vat?: never
+          forecast_converted_at?: string | null
+          forecast_created_at?: string | null
+          forecast_snapshot?: Json | null
+          forecast_status?: never
+          forecast_total_incl_vat?: never
+          id?: string | null
+          is_forecast?: boolean | null
+          order_number?: string | null
+          status?: Database["public"]["Enums"]["order_status"] | null
+          subtotal_excl_vat?: number | null
+          total_incl_vat?: number | null
+          updated_at?: string | null
+          vat_amount?: number | null
+          was_forecast?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_price_cockpit_mv: {
         Row: {
           brand_id: string | null
@@ -19694,6 +19823,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "admin_orders_sla_overview_v"
             referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_with_forecast_v"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "order_lines_order_id_fkey"
@@ -21999,6 +22135,52 @@ export type Database = {
       admin_claim_product_submission: {
         Args: { _submission_id: string }
         Returns: undefined
+      }
+      admin_convert_forecast_to_real: {
+        Args: { _notes?: string; _order_id: string }
+        Returns: {
+          admin_notes: string | null
+          api_key_id: string | null
+          billing_address: Json
+          created_at: string
+          created_by_admin: string | null
+          customer_id: string
+          deleted_at: string | null
+          deleted_by: string | null
+          deleted_reason: string | null
+          draft_payload: Json | null
+          estimated_delivery_date: string | null
+          forecast_converted_at: string | null
+          forecast_created_at: string | null
+          forecast_snapshot: Json | null
+          hidden_from_list: boolean
+          id: string
+          is_forecast: boolean
+          is_test: boolean
+          notes: string | null
+          order_number: string
+          payment_due_date: string | null
+          payment_method: Database["public"]["Enums"]["payment_method_enum"]
+          payment_status: Database["public"]["Enums"]["payment_status_enum"]
+          shipping_address: Json
+          source: Database["public"]["Enums"]["order_source"]
+          status: Database["public"]["Enums"]["order_status"]
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string | null
+          subtotal_excl_vat: number
+          total_cost: number | null
+          total_incl_vat: number
+          total_margin: number | null
+          updated_at: string
+          vat_amount: number
+          was_forecast: boolean
+        }
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       admin_create_category_and_map: {
         Args: {

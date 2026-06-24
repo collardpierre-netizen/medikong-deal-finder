@@ -126,6 +126,10 @@ const AdminCommandes = () => {
       status: o.status as "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled",
       isTest: Boolean((o as any).is_test),
       isForecast: Boolean((o as any).is_forecast),
+      wasForecast: Boolean((o as any).was_forecast),
+      forecastConvertedAt: (o as any).forecast_converted_at as string | null,
+      forecastCreatedAt: (o as any).forecast_created_at as string | null,
+      forecastSnapshot: (o as any).forecast_snapshot as any,
       hiddenFromList: Boolean((o as any).hidden_from_list),
       createdAtRaw: o.created_at,
       date: new Date(o.created_at).toLocaleDateString("fr-BE"),
@@ -195,6 +199,59 @@ const AdminCommandes = () => {
       setDeleting(false);
     }
   };
+
+  const [convertingId, setConvertingId] = useState<string | null>(null);
+  const handleConvertForecast = async (orderId: string, orderNumber: string) => {
+    setConvertingId(orderId);
+    try {
+      const { error } = await supabase.rpc("admin_convert_forecast_to_real" as any, {
+        _order_id: orderId,
+        _notes: null,
+      });
+      if (error) throw error;
+      toast.success(`Commande ${orderNumber} convertie en commande réelle`);
+      await queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+    } catch (e: any) {
+      toast.error(e?.message || "Échec de la conversion");
+    } finally {
+      setConvertingId(null);
+    }
+  };
+
+  const handleExportCsv = () => {
+    const rows = [
+      ["Numéro", "Date", "Acheteur", "Type", "HT", "TVA", "TTC", "Statut", "Paiement", "Prévisionnel actif", "Anciennement prévisionnel", "Snapshot TTC", "Snapshot date", "Converti le"],
+      ...filtered.map(o => [
+        o.id,
+        o.date,
+        o.buyer,
+        o.buyerType,
+        o.amountHT.toFixed(2),
+        o.tva.toFixed(2),
+        o.ttc.toFixed(2),
+        o.status,
+        o.paymentTerms,
+        o.isForecast ? "oui" : "non",
+        o.wasForecast ? "oui" : "non",
+        o.forecastSnapshot?.total_incl_vat != null ? Number(o.forecastSnapshot.total_incl_vat).toFixed(2) : "",
+        o.forecastCreatedAt ? new Date(o.forecastCreatedAt).toLocaleDateString("fr-BE") : "",
+        o.forecastConvertedAt ? new Date(o.forecastConvertedAt).toLocaleDateString("fr-BE") : "",
+      ]),
+    ];
+    const csv = rows.map(r => r.map(cell => {
+      const s = String(cell ?? "");
+      return s.includes(";") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
+    }).join(";")).join("\n");
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `commandes-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`${filtered.length} commande(s) exportée(s)`);
+  };
+
 
   const timeline = displayOrders.slice(0, 6).map(o => ({
     time: new Date().toLocaleTimeString("fr-BE", { hour: "2-digit", minute: "2-digit" }),
@@ -285,7 +342,7 @@ const AdminCommandes = () => {
               <Trash2 size={14} /> Purger commandes test ({testCount})
             </button>
           )}
-          <button className="flex items-center gap-2 px-4 py-2 rounded-md text-[13px] font-bold text-white" style={{ backgroundColor: "#1B5BDA" }}>
+          <button onClick={handleExportCsv} className="flex items-center gap-2 px-4 py-2 rounded-md text-[13px] font-bold text-white" style={{ backgroundColor: "#1B5BDA" }}>
             <Download size={15} /> Export CSV
           </button>
         </div>
@@ -423,6 +480,16 @@ const AdminCommandes = () => {
                                     <CalendarClock size={9} /> Prévisionnel
                                   </span>
                                 )}
+                                {!o.isForecast && o.wasForecast && o.forecastConvertedAt && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide" style={{ backgroundColor: "#DCFCE7", color: "#15803D" }} title={`Convertie depuis prévisionnel le ${new Date(o.forecastConvertedAt).toLocaleDateString("fr-BE")}`}>
+                                    <CalendarClock size={9} /> Convertie
+                                  </span>
+                                )}
+                                {!o.isForecast && o.wasForecast && !o.forecastConvertedAt && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide" style={{ backgroundColor: "#F1F5F9", color: "#475569" }} title="Anciennement prévisionnelle (modifiée ou annulée)">
+                                    <CalendarClock size={9} /> Ex-prév.
+                                  </span>
+                                )}
                               </div>
                               <span className="text-[10px]" style={{ color: "#8B95A5" }}>{o.date}</span>
                             </td>
@@ -482,6 +549,17 @@ const AdminCommandes = () => {
                             <td className="px-3 py-3"><StatusBadge status={o.status} /></td>
                             <td className="px-3 py-3 text-right">
                               <div className="inline-flex items-center gap-1">
+                                {o.isForecast && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleConvertForecast(o.rawId, o.id); }}
+                                    disabled={convertingId === o.rawId}
+                                    title="Convertir cette commande prévisionnelle en commande réelle (statut confirmée)"
+                                    className="p-1.5 rounded hover:bg-violet-50 disabled:opacity-50"
+                                    style={{ color: "#6D28D9" }}
+                                  >
+                                    <CalendarClock size={14} />
+                                  </button>
+                                )}
                                 <button
                                   onClick={(e) => { e.stopPropagation(); navigate(`/admin/commandes/nouvelle?duplicate=${o.rawId}`); }}
                                   title="Dupliquer cette commande"

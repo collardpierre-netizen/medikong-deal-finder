@@ -23,6 +23,8 @@ export default function VendorDashboard() {
   const activeOffers = kpis?.activeOffers ?? 0;
   const monthOrders = kpis?.monthOrders ?? 0;
   const revenueEur = (kpis?.revenueCents ?? 0) / 100;
+  const forecastRevenueEur = ((kpis as any)?.forecastRevenueCents ?? 0) / 100;
+  const forecastOrders = (kpis as any)?.forecastOrders ?? 0;
 
   return (
     <div className="space-y-5">
@@ -65,6 +67,18 @@ export default function VendorDashboard() {
             />
             <VStat label="Taux Buy Box" value="—" icon="Trophy" color="#F59E0B" sub="pas de données" />
           </div>
+
+          {(forecastRevenueEur > 0 || forecastOrders > 0) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <VStat
+                label="CA prévisionnel"
+                value={forecastRevenueEur > 0 ? formatMoney(forecastRevenueEur, { fractionDigits: 0 }) : "0 EUR"}
+                icon="CalendarClock"
+                color="#7C3AED"
+                sub={`${forecastOrders} commande${forecastOrders > 1 ? "s" : ""} (actives + converties)`}
+              />
+            </div>
+          )}
 
           {/* Shipping section — adapts to vendor's shipping mode */}
           {vendor && (

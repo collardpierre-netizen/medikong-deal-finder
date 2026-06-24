@@ -15,9 +15,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   ShoppingCart, TrendingUp, Clock, CreditCard, Truck, Percent,
-  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle, CalendarClock, Copy,
+  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle, CalendarClock, Copy, Pencil,
 } from "lucide-react";
 import { fmtEur } from "@/lib/format-currency";
+import { computeOrderTotals } from "@/lib/manual-order-metrics";
 
 type PeriodKey = "7d" | "30d" | "90d" | "12m" | "all";
 const PERIODS: { key: PeriodKey; label: string; days: number | null }[] = [
@@ -61,6 +62,16 @@ const AdminCommandes = () => {
   const navigate = useNavigate();
   const { data: ordersData = [], isLoading } = useOrders();
   const queryClient = useQueryClient();
+  const { data: vendorsData = [] } = useQuery({
+    queryKey: ["admin-order-vendor-labels"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendors")
+        .select("id, name, company_name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
   const [activeTab, setActiveTab] = useState<"list" | "timeline" | "aging" | "buyers" | "sla">("list");
   const [hideDeleted, setHideDeleted] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; number: string } | null>(null);
@@ -94,13 +105,15 @@ const AdminCommandes = () => {
   const REQUIRED_TOKEN = "PURGE TEST ORDERS";
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
-  const orders = ordersData.map(o => {
-    const subs = ((o as any).sub_orders || []) as Array<{
+  const vendorLabelById = new Map((vendorsData as any[]).map(v => [v.id, v.company_name || v.name || v.id]));
+
+  const readStoredCommission = (raw: any) => {
+    const subs = ((raw as any).sub_orders || []) as Array<{
       commission_amount_override: number | null;
       commission_rate_override: number | null;
       subtotal_incl_vat: number | null;
     }>;
-    const commissionEur = subs.reduce((acc, s) => {
+    return subs.reduce((acc, s) => {
       const amt = Number(s.commission_amount_override);
       if (Number.isFinite(amt) && amt > 0) return acc + amt;
       const rate = Number(s.commission_rate_override);
@@ -108,7 +121,22 @@ const AdminCommandes = () => {
       if (Number.isFinite(rate) && rate > 0 && sub > 0) return acc + (sub * rate) / 100;
       return acc;
     }, 0);
+  };
+
+  const storedCommissionByOrderNumber = new Map(ordersData.map((raw: any) => [raw.order_number, readStoredCommission(raw)]));
+
+  const orders = ordersData.map(o => {
+    const draftPayload = (o as any).draft_payload as any;
+    const draftLines = o.status === "draft" && Array.isArray(draftPayload?.lines) ? draftPayload.lines : [];
+    const persistedLines = ((o as any).order_lines || []) as any[];
+    const lines = persistedLines.length > 0 ? persistedLines : draftLines;
+    const draftTotals = draftLines.length > 0 ? computeOrderTotals(draftLines) : null;
+    const storedCommission = readStoredCommission(o);
+    const sourceOrderNumber = String((o as any).admin_notes || "").match(/Dupliquée depuis ([^\]\n]+)/)?.[1]?.trim();
+    const sourceCommission = sourceOrderNumber ? Number(storedCommissionByOrderNumber.get(sourceOrderNumber)) || 0 : 0;
+    const commissionEur = storedCommission > 0 ? storedCommission : draftTotals ? draftTotals.commission : sourceCommission;
     const amountHT = Number(o.subtotal_excl_vat) || 0;
+    const effectiveHT = draftTotals ? draftTotals.excl : amountHT;
     return {
       id: o.order_number,
       rawId: o.id,
@@ -116,14 +144,15 @@ const AdminCommandes = () => {
       buyer: (o.customers as any)?.company_name || "—",
       buyerType: (o.customers as any)?.customer_type || "pharmacy",
       seller: "—",
-      amountHT,
-      tva: Number(o.vat_amount) || 0,
-      ttc: Number(o.total_incl_vat) || 0,
+      amountHT: effectiveHT,
+      tva: draftTotals ? draftTotals.vat : Number(o.vat_amount) || 0,
+      ttc: draftTotals ? draftTotals.incl : Number(o.total_incl_vat) || 0,
       commissionEur,
-      commissionPct: amountHT > 0 ? (commissionEur / amountHT) * 100 : 0,
+      commissionPct: effectiveHT > 0 ? (commissionEur / effectiveHT) * 100 : 0,
+      commissionSource: storedCommission > 0 ? "stored" : draftTotals ? "draft" : sourceCommission > 0 ? "source" : "none",
       paymentTerms: o.payment_method || "invoice",
       dueDate: o.payment_due_date ? new Date(o.payment_due_date).toLocaleDateString("fr-BE") : "—",
-      status: o.status as "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled",
+      status: o.status as "draft" | "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled",
       isTest: Boolean((o as any).is_test),
       isForecast: Boolean((o as any).is_forecast),
       wasForecast: Boolean((o as any).was_forecast),
@@ -133,7 +162,7 @@ const AdminCommandes = () => {
       hiddenFromList: Boolean((o as any).hidden_from_list),
       createdAtRaw: o.created_at,
       date: new Date(o.created_at).toLocaleDateString("fr-BE"),
-      lines: ((o as any).order_lines || []) as any[],
+      lines,
     };
   });
 
@@ -524,7 +553,7 @@ const AdminCommandes = () => {
                             </td>
                             <td className="px-3 py-3">
                               {(() => {
-                                const names = Array.from(new Set((o.lines || []).map((l: any) => l.vendors?.company_name || l.qogita_seller_fid).filter(Boolean)));
+                                const names = Array.from(new Set((o.lines || []).map((l: any) => l.vendors?.company_name || (l.vendor_id ? vendorLabelById.get(l.vendor_id) : null) || l.qogita_seller_fid).filter(Boolean)));
                                 if (names.length === 0) return <span className="text-[11px]" style={{ color: "#8B95A5" }}>—</span>;
                                 const shown = names.slice(0, 2).join(", ");
                                 const extra = names.length > 2 ? ` +${names.length - 2}` : "";
@@ -548,7 +577,7 @@ const AdminCommandes = () => {
                             <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#1D2530" }}>{fmt(o.amountHT)}</td>
                             <td className="px-3 py-3 text-[11px] font-mono" style={{ color: "#8B95A5" }}>{fmt(o.tva)}</td>
                             <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#059669" }}>{fmt(o.ttc)}</td>
-                            <td className="px-3 py-3 font-mono" title={o.commissionEur > 0 ? `${o.commissionPct.toFixed(2)} % du CA HT` : "Aucune commission enregistrée"}>
+                            <td className="px-3 py-3 font-mono" title={o.commissionEur > 0 ? `${o.commissionPct.toFixed(2)} % du CA HT${o.commissionSource === "source" ? " · repris de la commande source" : o.commissionSource === "draft" ? " · calculé depuis le brouillon" : ""}` : "Aucune commission enregistrée"}>
                               {o.commissionEur > 0 ? (
                                 <div className="leading-tight">
                                   <div className="text-[12px] font-bold" style={{ color: "#10B981" }}>{fmt(o.commissionEur)}</div>
@@ -562,6 +591,19 @@ const AdminCommandes = () => {
                             <td className="px-3 py-3"><StatusBadge status={o.status} /></td>
                             <td className="px-3 py-3 text-right">
                               <div className="inline-flex items-center gap-1">
+                                {(o.status === "draft" || o.isForecast) && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(o.status === "draft" ? `/admin/commandes/nouvelle?draft=${o.rawId}` : `/admin/commandes/nouvelle?duplicate=${o.rawId}`);
+                                    }}
+                                    title={o.status === "draft" ? "Ouvrir et modifier ce brouillon" : "Charger cette prévisionnelle dans le formulaire"}
+                                    className="p-1.5 rounded hover:bg-amber-50"
+                                    style={{ color: "#D97706" }}
+                                  >
+                                    <Pencil size={14} />
+                                  </button>
+                                )}
                                 {o.isForecast && (
                                   <button
                                     onClick={(e) => { e.stopPropagation(); handleConvertForecast(o.rawId, o.id); }}
@@ -606,12 +648,15 @@ const AdminCommandes = () => {
                                     </thead>
                                     <tbody>
                                       {o.lines.map((line: any) => {
-                                        const productName = line.products?.name || "—";
-                                        const vendorName = line.vendors?.company_name || line.qogita_seller_fid || "—";
+                                        const productName = line.products?.name || line.offer_label || line.manual_label || "—";
+                                        const vendorName = line.vendors?.company_name || (line.vendor_id ? vendorLabelById.get(line.vendor_id) : null) || line.qogita_seller_fid || "—";
                                         const deliveryDays = line.offers?.delivery_days;
                                         const deliveryLabel = deliveryDays ? `${deliveryDays}j` : "5-10j ouvrables";
                                         const qogitaStatus = line.qogita_order_status || "pending";
                                         const statusColor = qogitaStatus === "confirmed" ? "#059669" : qogitaStatus === "shipped" ? "#7C3AED" : "#F59E0B";
+                                        const lineQty = Number(line.quantity) || 0;
+                                        const lineUnit = Number(line.unit_price_excl_vat) || 0;
+                                        const lineTotal = Number(line.line_total_excl_vat ?? lineUnit * lineQty) || 0;
                                         return (
                                           <tr key={line.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
                                             <td className="px-3 py-2">
@@ -632,7 +677,7 @@ const AdminCommandes = () => {
                                             </td>
                                             <td className="px-3 py-2 text-[11px] font-bold" style={{ color: "#1D2530" }}>{line.quantity}</td>
                                             <td className="px-3 py-2 text-[11px] font-mono" style={{ color: "#1D2530" }}>{fmt(Number(line.unit_price_excl_vat))}&nbsp;€</td>
-                                            <td className="px-3 py-2 text-[11px] font-bold font-mono" style={{ color: "#1D2530" }}>{fmt(Number(line.line_total_excl_vat))}&nbsp;€</td>
+                                            <td className="px-3 py-2 text-[11px] font-bold font-mono" style={{ color: "#1D2530" }}>{fmt(lineTotal)}&nbsp;€</td>
                                             <td className="px-3 py-2">
                                               {line.qogita_offer_qid ? (
                                                 <span className="text-[10px] font-mono px-1.5 py-0.5 rounded" style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA" }}>{line.qogita_offer_qid}</span>

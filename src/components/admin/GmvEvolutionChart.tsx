@@ -216,17 +216,7 @@ export default function GmvEvolutionChart({ title, orders, includeForecast: incl
                 minTickGap={24}
               />
               <YAxis
-                yAxisId="left"
                 tick={{ fontSize: 11, fill: "#8B95A5" }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={formatEuro}
-                width={56}
-              />
-              <YAxis
-                yAxisId="right"
-                orientation="right"
-                tick={{ fontSize: 11, fill: "#10B981" }}
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={formatEuro}

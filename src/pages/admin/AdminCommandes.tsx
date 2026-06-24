@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   ShoppingCart, TrendingUp, Clock, CreditCard, Truck, Percent,
-  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle, CalendarClock, Copy, Pencil,
+  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle, CalendarClock, Copy, Pencil, Flame,
 } from "lucide-react";
 import { fmtEur } from "@/lib/format-currency";
 import { computeOrderTotals } from "@/lib/manual-order-metrics";
@@ -231,6 +231,24 @@ const AdminCommandes = () => {
       toast.error(e?.message || "Échec de la suppression");
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleHardDelete = async () => {
+    if (!hardDeleteTarget) return;
+    setHardDeleting(true);
+    try {
+      const { error } = await supabase.rpc("admin_hard_delete_order" as any, {
+        _order_id: hardDeleteTarget.id,
+      });
+      if (error) throw error;
+      toast.success(`Commande ${hardDeleteTarget.number} supprimée définitivement`);
+      await queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      setHardDeleteTarget(null);
+    } catch (e: any) {
+      toast.error(e?.message || "Échec de la suppression définitive");
+    } finally {
+      setHardDeleting(false);
     }
   };
 
@@ -633,6 +651,16 @@ const AdminCommandes = () => {
                                 >
                                   <Trash2 size={14} />
                                 </button>
+                                {(o.status === "cancelled" || o.status === "draft" || (o as any).isTest) && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setHardDeleteTarget({ id: o.rawId, number: o.id, status: o.status }); }}
+                                    title="Supprimer définitivement (irréversible)"
+                                    className="p-1.5 rounded hover:bg-red-100"
+                                    style={{ color: "#7F1D1D" }}
+                                  >
+                                    <Flame size={14} />
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </tr>

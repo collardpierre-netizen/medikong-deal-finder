@@ -359,7 +359,7 @@ const AdminCommandeManuelle = () => {
           lines: lines.map((l) => ({
             product_id: l.mode === "offer" ? l.product_id : null,
             offer_id: l.mode === "offer" ? l.offer_id : null,
-            label: l.mode === "free" ? l.manual_label : (l.product_label || l.manual_label || "Article"),
+            label: l.mode === "free" ? (l.manual_label || "Article") : (l.offer_label || l.manual_label || "Article"),
             qty: Number(l.quantity) || 1,
             unit_price_ht_cents: Math.round((Number(l.unit_price_excl_vat) || 0) * 100),
             vat_rate: Number(l.vat_rate) || 21,

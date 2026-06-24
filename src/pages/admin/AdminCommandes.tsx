@@ -648,12 +648,15 @@ const AdminCommandes = () => {
                                     </thead>
                                     <tbody>
                                       {o.lines.map((line: any) => {
-                                        const productName = line.products?.name || "—";
-                                        const vendorName = line.vendors?.company_name || line.qogita_seller_fid || "—";
+                                        const productName = line.products?.name || line.offer_label || line.manual_label || "—";
+                                        const vendorName = line.vendors?.company_name || (line.vendor_id ? vendorLabelById.get(line.vendor_id) : null) || line.qogita_seller_fid || "—";
                                         const deliveryDays = line.offers?.delivery_days;
                                         const deliveryLabel = deliveryDays ? `${deliveryDays}j` : "5-10j ouvrables";
                                         const qogitaStatus = line.qogita_order_status || "pending";
                                         const statusColor = qogitaStatus === "confirmed" ? "#059669" : qogitaStatus === "shipped" ? "#7C3AED" : "#F59E0B";
+                                        const lineQty = Number(line.quantity) || 0;
+                                        const lineUnit = Number(line.unit_price_excl_vat) || 0;
+                                        const lineTotal = Number(line.line_total_excl_vat ?? lineUnit * lineQty) || 0;
                                         return (
                                           <tr key={line.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
                                             <td className="px-3 py-2">
@@ -674,7 +677,7 @@ const AdminCommandes = () => {
                                             </td>
                                             <td className="px-3 py-2 text-[11px] font-bold" style={{ color: "#1D2530" }}>{line.quantity}</td>
                                             <td className="px-3 py-2 text-[11px] font-mono" style={{ color: "#1D2530" }}>{fmt(Number(line.unit_price_excl_vat))}&nbsp;€</td>
-                                            <td className="px-3 py-2 text-[11px] font-bold font-mono" style={{ color: "#1D2530" }}>{fmt(Number(line.line_total_excl_vat))}&nbsp;€</td>
+                                            <td className="px-3 py-2 text-[11px] font-bold font-mono" style={{ color: "#1D2530" }}>{fmt(lineTotal)}&nbsp;€</td>
                                             <td className="px-3 py-2">
                                               {line.qogita_offer_qid ? (
                                                 <span className="text-[10px] font-mono px-1.5 py-0.5 rounded" style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA" }}>{line.qogita_offer_qid}</span>

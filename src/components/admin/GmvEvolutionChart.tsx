@@ -232,7 +232,6 @@ export default function GmvEvolutionChart({ title, orders, includeForecast: incl
                 iconType="plainline"
               />
               <Line
-                yAxisId="left"
                 type="monotone"
                 dataKey="gmv"
                 name="GMV période"
@@ -245,7 +244,6 @@ export default function GmvEvolutionChart({ title, orders, includeForecast: incl
                 animationEasing="ease-out"
               />
               <Line
-                yAxisId="left"
                 type="monotone"
                 dataKey="forecast"
                 name="Prévisionnel"
@@ -259,7 +257,6 @@ export default function GmvEvolutionChart({ title, orders, includeForecast: incl
                 animationEasing="ease-out"
               />
               <Line
-                yAxisId="right"
                 type="monotone"
                 dataKey="cumulative"
                 name="GMV cumulée"

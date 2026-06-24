@@ -23,7 +23,11 @@ export default function VendorDashboard() {
   const activeOffers = kpis?.activeOffers ?? 0;
   const monthOrders = kpis?.monthOrders ?? 0;
   const revenueEur = (kpis?.revenueCents ?? 0) / 100;
+  const marginEur = ((kpis as any)?.marginCents ?? 0) / 100;
+  const marginPct = (kpis as any)?.marginPct ?? 0;
   const forecastRevenueEur = ((kpis as any)?.forecastRevenueCents ?? 0) / 100;
+  const forecastMarginEur = ((kpis as any)?.forecastMarginCents ?? 0) / 100;
+  const forecastMarginPct = ((kpis as any)?.forecastMarginPct ?? 0);
   const forecastOrders = (kpis as any)?.forecastOrders ?? 0;
 
   return (
@@ -52,20 +56,26 @@ export default function VendorDashboard() {
               sub={revenueEur > 0 ? "ce mois" : "aucune vente"}
             />
             <VStat
+              label="Marge brute"
+              value={marginEur !== 0 ? formatMoney(marginEur, { fractionDigits: 0 }) : "—"}
+              icon="TrendingUp"
+              color="#059669"
+              sub={marginEur !== 0 ? `${marginPct.toFixed(1)}% du CA HTVA` : "prix d'achat manquant"}
+            />
+            <VStat
               label="Commandes"
               value={String(monthOrders)}
               icon="ShoppingCart"
-              color="#059669"
+              color="#7C3AED"
               sub="ce mois"
             />
             <VStat
               label="Offres actives"
               value={String(activeOffers)}
               icon="Tag"
-              color="#7C3AED"
+              color="#F59E0B"
               sub={activeOffers > 0 ? `${activeOffers} en ligne` : "aucune offre"}
             />
-            <VStat label="Taux Buy Box" value="—" icon="Trophy" color="#F59E0B" sub="pas de données" />
           </div>
 
           {(forecastRevenueEur > 0 || forecastOrders > 0) && (
@@ -76,6 +86,13 @@ export default function VendorDashboard() {
                 icon="CalendarClock"
                 color="#7C3AED"
                 sub={`${forecastOrders} commande${forecastOrders > 1 ? "s" : ""} (actives + converties)`}
+              />
+              <VStat
+                label="Marge prévisionnelle"
+                value={forecastMarginEur !== 0 ? formatMoney(forecastMarginEur, { fractionDigits: 0 }) : "—"}
+                icon="TrendingUp"
+                color="#7C3AED"
+                sub={forecastMarginEur !== 0 ? `${forecastMarginPct.toFixed(1)}% du CA HTVA` : "prix d'achat manquant"}
               />
             </div>
           )}

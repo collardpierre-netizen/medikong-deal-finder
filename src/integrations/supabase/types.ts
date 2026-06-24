@@ -22553,6 +22553,7 @@ export type Database = {
           similarity: number
         }[]
       }
+      admin_hard_delete_order: { Args: { _order_id: string }; Returns: Json }
       admin_home_showcase_kpis: {
         Args: { _days?: number }
         Returns: {

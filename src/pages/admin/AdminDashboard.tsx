@@ -57,7 +57,9 @@ const AdminDashboard = () => {
       commission: Number(v.commission_rate) || 0,
     }));
 
-  const recentOrders = (ordersQuery.data || []).slice(0, 6).map(o => {
+  const recentOrders = (ordersQuery.data || [])
+    .filter((o: any) => !o.hidden_from_list && !o.deleted_at)
+    .slice(0, 6).map(o => {
     const lines = ((o as any).order_lines || []) as Array<{ vendor_id: string | null; vendors?: { company_name?: string | null; slug?: string | null } | null }>;
     const seenIds = new Set<string>();
     const names: string[] = [];

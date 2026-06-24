@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   ShoppingCart, TrendingUp, Clock, CreditCard, Truck, Percent,
-  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle, CalendarClock, Copy, Pencil,
+  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle, CalendarClock, Copy, Pencil, Flame,
 } from "lucide-react";
 import { fmtEur } from "@/lib/format-currency";
 import { computeOrderTotals } from "@/lib/manual-order-metrics";
@@ -77,6 +77,8 @@ const AdminCommandes = () => {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; number: string } | null>(null);
   const [deleteReason, setDeleteReason] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [hardDeleteTarget, setHardDeleteTarget] = useState<{ id: string; number: string; status: string } | null>(null);
+  const [hardDeleting, setHardDeleting] = useState(false);
 
   const { data: slaCount } = useQuery({
     queryKey: ["admin-sla-count"],
@@ -229,6 +231,24 @@ const AdminCommandes = () => {
       toast.error(e?.message || "Échec de la suppression");
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleHardDelete = async () => {
+    if (!hardDeleteTarget) return;
+    setHardDeleting(true);
+    try {
+      const { error } = await supabase.rpc("admin_hard_delete_order" as any, {
+        _order_id: hardDeleteTarget.id,
+      });
+      if (error) throw error;
+      toast.success(`Commande ${hardDeleteTarget.number} supprimée définitivement`);
+      await queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      setHardDeleteTarget(null);
+    } catch (e: any) {
+      toast.error(e?.message || "Échec de la suppression définitive");
+    } finally {
+      setHardDeleting(false);
     }
   };
 
@@ -631,6 +651,16 @@ const AdminCommandes = () => {
                                 >
                                   <Trash2 size={14} />
                                 </button>
+                                {(o.status === "cancelled" || o.status === "draft" || (o as any).isTest) && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setHardDeleteTarget({ id: o.rawId, number: o.id, status: o.status }); }}
+                                    title="Supprimer définitivement (irréversible)"
+                                    className="p-1.5 rounded hover:bg-red-100"
+                                    style={{ color: "#7F1D1D" }}
+                                  >
+                                    <Flame size={14} />
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -894,7 +924,34 @@ const AdminCommandes = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={!!hardDeleteTarget} onOpenChange={(o) => { if (!o) setHardDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Flame size={18} className="text-red-700" />
+              Suppression définitive — {hardDeleteTarget?.number}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est <b>irréversible</b>. La commande, ses lignes, sous-commandes, transferts et factures liées seront <b>définitivement supprimés</b> de la base.
+              <br /><br />
+              Autorisé uniquement pour les commandes <b>annulées, brouillons ou test</b>. Statut actuel : <b>{hardDeleteTarget?.status}</b>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={hardDeleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleHardDelete(); }}
+              disabled={hardDeleting}
+              className="bg-red-800 hover:bg-red-900"
+            >
+              {hardDeleting ? "Suppression..." : "Supprimer définitivement"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+
   );
 };
 

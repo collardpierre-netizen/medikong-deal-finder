@@ -77,6 +77,8 @@ const AdminCommandes = () => {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; number: string } | null>(null);
   const [deleteReason, setDeleteReason] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [hardDeleteTarget, setHardDeleteTarget] = useState<{ id: string; number: string; status: string } | null>(null);
+  const [hardDeleting, setHardDeleting] = useState(false);
 
   const { data: slaCount } = useQuery({
     queryKey: ["admin-sla-count"],

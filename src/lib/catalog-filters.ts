@@ -28,13 +28,16 @@ export const HIDDEN_CATEGORY_KEYWORDS: string[] = [
  * Exemple appliqué à un query builder Supabase :
  *   query = applyHiddenCategoryFilter(query);
  */
-export function applyHiddenCategoryFilter<T extends { not: (...args: any[]) => T }>(
+export function applyHiddenCategoryFilter<T extends { not: (...args: any[]) => T; or: (...args: any[]) => T }>(
   query: T,
 ): T {
   let q = query;
   for (const kw of HIDDEN_CATEGORY_KEYWORDS) {
-    // category_name NOT ILIKE %kw% (les NULL passent — ils ne matchent pas)
-    q = q.not("category_name", "ilike", `%${kw}%`);
+    // Important : `NOT ILIKE` renvoie NULL quand `category_name` est NULL, ce
+    // que PostgREST traite comme "exclu". On garde donc explicitement les
+    // produits sans catégorie (category_name IS NULL) en plus de ceux qui ne
+    // matchent pas le mot-clé.
+    q = q.or(`category_name.is.null,category_name.not.ilike.%${kw}%`);
   }
   return q;
 }

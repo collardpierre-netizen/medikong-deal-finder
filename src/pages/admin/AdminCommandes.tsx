@@ -553,7 +553,7 @@ const AdminCommandes = () => {
                             </td>
                             <td className="px-3 py-3">
                               {(() => {
-                                const names = Array.from(new Set((o.lines || []).map((l: any) => l.vendors?.company_name || l.qogita_seller_fid).filter(Boolean)));
+                                const names = Array.from(new Set((o.lines || []).map((l: any) => l.vendors?.company_name || (l.vendor_id ? vendorLabelById.get(l.vendor_id) : null) || l.qogita_seller_fid).filter(Boolean)));
                                 if (names.length === 0) return <span className="text-[11px]" style={{ color: "#8B95A5" }}>—</span>;
                                 const shown = names.slice(0, 2).join(", ");
                                 const extra = names.length > 2 ? ` +${names.length - 2}` : "";
@@ -577,7 +577,7 @@ const AdminCommandes = () => {
                             <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#1D2530" }}>{fmt(o.amountHT)}</td>
                             <td className="px-3 py-3 text-[11px] font-mono" style={{ color: "#8B95A5" }}>{fmt(o.tva)}</td>
                             <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#059669" }}>{fmt(o.ttc)}</td>
-                            <td className="px-3 py-3 font-mono" title={o.commissionEur > 0 ? `${o.commissionPct.toFixed(2)} % du CA HT` : "Aucune commission enregistrée"}>
+                            <td className="px-3 py-3 font-mono" title={o.commissionEur > 0 ? `${o.commissionPct.toFixed(2)} % du CA HT${o.commissionSource === "source" ? " · repris de la commande source" : o.commissionSource === "draft" ? " · calculé depuis le brouillon" : ""}` : "Aucune commission enregistrée"}>
                               {o.commissionEur > 0 ? (
                                 <div className="leading-tight">
                                   <div className="text-[12px] font-bold" style={{ color: "#10B981" }}>{fmt(o.commissionEur)}</div>
@@ -591,6 +591,19 @@ const AdminCommandes = () => {
                             <td className="px-3 py-3"><StatusBadge status={o.status} /></td>
                             <td className="px-3 py-3 text-right">
                               <div className="inline-flex items-center gap-1">
+                                {(o.status === "draft" || o.isForecast) && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(o.status === "draft" ? `/admin/commandes/nouvelle?draft=${o.rawId}` : `/admin/commandes/nouvelle?duplicate=${o.rawId}`);
+                                    }}
+                                    title={o.status === "draft" ? "Ouvrir et modifier ce brouillon" : "Charger cette prévisionnelle dans le formulaire"}
+                                    className="p-1.5 rounded hover:bg-amber-50"
+                                    style={{ color: "#D97706" }}
+                                  >
+                                    <Pencil size={14} />
+                                  </button>
+                                )}
                                 {o.isForecast && (
                                   <button
                                     onClick={(e) => { e.stopPropagation(); handleConvertForecast(o.rawId, o.id); }}

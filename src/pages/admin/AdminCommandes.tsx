@@ -15,9 +15,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   ShoppingCart, TrendingUp, Clock, CreditCard, Truck, Percent,
-  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle, CalendarClock, Copy,
+  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle, CalendarClock, Copy, Pencil,
 } from "lucide-react";
 import { fmtEur } from "@/lib/format-currency";
+import { computeOrderTotals } from "@/lib/manual-order-metrics";
 
 type PeriodKey = "7d" | "30d" | "90d" | "12m" | "all";
 const PERIODS: { key: PeriodKey; label: string; days: number | null }[] = [
@@ -61,6 +62,16 @@ const AdminCommandes = () => {
   const navigate = useNavigate();
   const { data: ordersData = [], isLoading } = useOrders();
   const queryClient = useQueryClient();
+  const { data: vendorsData = [] } = useQuery({
+    queryKey: ["admin-order-vendor-labels"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendors")
+        .select("id, name, company_name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
   const [activeTab, setActiveTab] = useState<"list" | "timeline" | "aging" | "buyers" | "sla">("list");
   const [hideDeleted, setHideDeleted] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; number: string } | null>(null);

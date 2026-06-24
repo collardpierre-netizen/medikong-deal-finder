@@ -12,7 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   DollarSign, ShoppingCart, Store, Package, AlertTriangle,
-  TrendingUp, Info, UserCheck, Users, ChevronRight, Clock, Truck, Percent,
+  TrendingUp, Info, UserCheck, Users, ChevronRight, Clock, Truck, Percent, CalendarClock,
 } from "lucide-react";
 
 const AdminDashboard = () => {
@@ -59,8 +59,8 @@ const AdminDashboard = () => {
 
   const recentOrders = (ordersQuery.data || [])
     .filter((o: any) => !o.hidden_from_list && !o.deleted_at)
-    .slice(0, 6).map(o => {
-    const lines = ((o as any).order_lines || []) as Array<{ vendor_id: string | null; vendors?: { company_name?: string | null; slug?: string | null } | null }>;
+    .slice(0, 6).map((o: any) => {
+    const lines = (o.order_lines || []) as Array<{ vendor_id: string | null; line_total_incl_vat?: number | null; unit_price_incl_vat?: number | null; quantity?: number | null; vendors?: { company_name?: string | null; slug?: string | null } | null }>;
     const seenIds = new Set<string>();
     const names: string[] = [];
     for (const l of lines) {
@@ -74,12 +74,18 @@ const AdminDashboard = () => {
     if (names.length === 1) seller = names[0];
     else if (names.length > 1) seller = `${names[0]} +${names.length - 1}`;
     else if (seenIds.size > 0) seller = `${seenIds.size} vendeur${seenIds.size > 1 ? "s" : ""}`;
+    // Pour les brouillons / commandes sans total figé, on calcule depuis les lignes
+    let amountNum = Number(o.total_incl_vat || 0);
+    if (!amountNum && lines.length > 0) {
+      amountNum = lines.reduce((sum, l) => sum + Number(l.line_total_incl_vat ?? (Number(l.unit_price_incl_vat || 0) * Number(l.quantity || 0))), 0);
+    }
     return {
       id: o.order_number,
       buyer: (o.customers as any)?.company_name || "—",
       seller,
-      amount: `${fmtEur(Number(o.total_incl_vat || 0))} EUR`,
+      amount: `${fmtEur(amountNum)} EUR`,
       status: o.status,
+      isForecast: Boolean(o.is_forecast),
       date: new Date(o.created_at).toLocaleDateString("fr-BE", { day: "2-digit", month: "2-digit" }),
     };
   });
@@ -341,7 +347,16 @@ const AdminDashboard = () => {
                       <td className="py-2 text-[12px] pr-3" style={{ color: "#1D2530" }}>{o.buyer}</td>
                       <td className="py-2 text-[12px] pr-3" style={{ color: "#616B7C" }}>{o.seller}</td>
                       <td className="py-2 text-[12px] font-semibold pr-3" style={{ color: "#1D2530" }}>{o.amount}</td>
-                      <td className="py-2 pr-3"><StatusBadge status={o.status} /></td>
+                      <td className="py-2 pr-3">
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <StatusBadge status={o.status} />
+                          {o.isForecast && (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide" style={{ backgroundColor: "#EDE9FE", color: "#6D28D9" }} title="Commande prévisionnelle">
+                              <CalendarClock size={9} /> Prévisionnel
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="py-2 text-[11px]" style={{ color: "#8B95A5" }}>{o.date}</td>
                     </tr>
                   ))}

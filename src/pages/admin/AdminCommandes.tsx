@@ -363,6 +363,12 @@ const AdminCommandes = () => {
             </button>
           ))}
         </div>
+        <div className="flex items-center gap-1.5 text-[12px] font-medium" style={{ color: "#616B7C" }}>
+          <CalendarClock size={14} style={{ color: "#8B95A5" }} />
+          {periodStartDate
+            ? `Du ${periodStartDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })} au ${periodEndDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}`
+            : `Jusqu'au ${periodEndDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}`}
+        </div>
       </div>
 
       <div className="grid grid-cols-6 gap-3 mb-5">

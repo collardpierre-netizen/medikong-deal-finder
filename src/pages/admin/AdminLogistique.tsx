@@ -1,7 +1,8 @@
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
 import { useOrders } from "@/hooks/useAdminData";
-import { Truck, Package, AlertTriangle, RotateCcw, Database } from "lucide-react";
+import { Truck, Package, AlertTriangle, RotateCcw, Database, CalendarClock } from "lucide-react";
+import { fmtEur } from "@/lib/format-currency";
 
 const AdminLogistique = () => {
   const { data: orders = [] } = useOrders();
@@ -33,15 +34,48 @@ const AdminLogistique = () => {
         <div className="bg-white rounded-lg border p-5" style={{ borderColor: "#E2E8F0" }}>
           <h3 className="text-[14px] font-semibold mb-4" style={{ color: "#1D2530" }}>Commandes récentes</h3>
           <div className="space-y-2">
-            {orders.slice(0, 10).map(o => (
-              <div key={o.id} className="flex items-center gap-4 px-4 py-3 rounded-lg" style={{ backgroundColor: "#F8FAFC" }}>
-                <span className="text-[11px] font-mono font-bold" style={{ color: "#1B5BDA" }}>{o.order_number}</span>
-                <span className="text-[12px] flex-1" style={{ color: "#1D2530" }}>{o.status}</span>
-                <span className="text-[11px]" style={{ color: "#8B95A5" }}>
-                  {new Date(o.created_at).toLocaleDateString("fr-BE")}
-                </span>
-              </div>
-            ))}
+            {orders.slice(0, 10).map((o: any) => {
+              const draftLines = Array.isArray(o.draft_payload?.lines) ? o.draft_payload.lines : [];
+              const persistedLines = (o.order_lines || []) as any[];
+              const lines = persistedLines.length > 0 ? persistedLines : draftLines;
+              // Vendeurs (dédupliqués)
+              const seen = new Set<string>();
+              const names: string[] = [];
+              for (const l of lines) {
+                const key = l.vendor_id || l.vendors?.slug || l.vendors?.company_name;
+                if (!key || seen.has(key)) continue;
+                seen.add(key);
+                const name = l.vendors?.company_name?.trim();
+                if (name) names.push(name);
+              }
+              let seller = "—";
+              if (names.length === 1) seller = names[0];
+              else if (names.length > 1) seller = `${names[0]} +${names.length - 1}`;
+              else if (seen.size > 0) seller = `${seen.size} vendeur${seen.size > 1 ? "s" : ""}`;
+              // Montant TTC (fallback depuis les lignes si total non figé)
+              let amountNum = Number(o.total_incl_vat || 0);
+              if (!amountNum && lines.length > 0) {
+                amountNum = lines.reduce((sum: number, l: any) =>
+                  sum + Number(l.line_total_incl_vat ?? (Number(l.unit_price_incl_vat || l.unit_price_excl_vat || 0) * Number(l.quantity || 0) * (1 + Number(l.vat_rate || 0) / 100))),
+                0);
+              }
+              return (
+                <div key={o.id} className="flex items-center gap-4 px-4 py-3 rounded-lg" style={{ backgroundColor: "#F8FAFC" }}>
+                  <span className="text-[11px] font-mono font-bold w-[180px]" style={{ color: "#1B5BDA" }}>{o.order_number}</span>
+                  <span className="text-[12px] w-[120px]" style={{ color: "#1D2530" }}>{o.status}</span>
+                  {o.is_forecast && (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide" style={{ backgroundColor: "#EDE9FE", color: "#6D28D9" }} title="Commande prévisionnelle">
+                      <CalendarClock size={9} /> Prévisionnel
+                    </span>
+                  )}
+                  <span className="text-[12px] flex-1 truncate" style={{ color: "#616B7C" }} title={seller}>{seller}</span>
+                  <span className="text-[12px] font-bold font-mono" style={{ color: "#1D2530" }}>{fmtEur(amountNum)} EUR</span>
+                  <span className="text-[11px] w-[90px] text-right" style={{ color: "#8B95A5" }}>
+                    {new Date(o.created_at).toLocaleDateString("fr-BE")}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

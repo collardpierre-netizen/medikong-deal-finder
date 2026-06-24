@@ -812,14 +812,19 @@ const AdminCommandeManuelle = () => {
                 {vendorBreakdown.map(([vid, b]) => {
                   const v = (vendors as any[]).find((x) => x.id === vid);
                   return (
-                    <div key={vid} className="grid grid-cols-5 gap-2 py-1 border-b last:border-0">
-                      <div className="truncate">{v?.name ?? v?.company_name ?? vid.slice(0, 8)}</div>
-                      <div className="text-right">{fmtEur(b.ca)} €</div>
-                      <div className="text-right">{b.hasCost ? `${fmtEur(b.cost)} €` : "—"}</div>
-                      <div className="text-right">{fmtEur(b.commission)} €</div>
-                      <div className="text-right font-semibold">{fmtEur(b.netVendor)} €</div>
-                    </div>
-                  );
+                     <div key={vid} className="grid grid-cols-5 gap-2 py-1 border-b last:border-0">
+                       <div className="truncate">{v?.name ?? v?.company_name ?? vid.slice(0, 8)}</div>
+                       <div className="text-right">{fmtEur(b.ca)} €</div>
+                       <div className="text-right">{b.hasCost ? `${fmtEur(b.cost)} €` : "—"}</div>
+                       <div className="text-right">
+                         {fmtEur(b.commission)} €
+                         {b.ca > 0 && (
+                           <span className="text-muted-foreground ml-1">({((b.commission / b.ca) * 100).toFixed(1)}%)</span>
+                         )}
+                       </div>
+                       <div className="text-right font-semibold">{fmtEur(b.netVendor)} €</div>
+                     </div>
+                   );
                 })}
               </div>
             </div>

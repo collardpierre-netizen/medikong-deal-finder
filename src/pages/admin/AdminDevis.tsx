@@ -71,11 +71,11 @@ const AdminDevis = () => {
       <AdminTopBar title="Devis" subtitle="Suivi des devis envoyés aux acheteurs" />
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
-        <KpiCard label="Total devis" value={String(kpis.total)} icon={<FileText size={16} />} />
-        <KpiCard label="Envoyés" value={String(kpis.sent)} icon={<Send size={16} />} />
-        <KpiCard label="Acceptés" value={String(kpis.accepted)} icon={<CheckCircle2 size={16} />} />
-        <KpiCard label="Taux d'acceptation" value={`${kpis.acceptanceRate}%`} icon={<ArrowRightCircle size={16} />} />
-        <KpiCard label="Valeur cumulée TTC" value={`${fmtEur(kpis.totalValueTtc / 100)} €`} icon={<Clock size={16} />} />
+        <KpiCard label="Total devis" value={String(kpis.total)} icon={FileText} />
+        <KpiCard label="Envoyés" value={String(kpis.sent)} icon={Send} />
+        <KpiCard label="Acceptés" value={String(kpis.accepted)} icon={CheckCircle2} />
+        <KpiCard label="Taux d'acceptation" value={`${kpis.acceptanceRate}%`} icon={ArrowRightCircle} />
+        <KpiCard label="Valeur cumulée TTC" value={`${fmtEur(kpis.totalValueTtc / 100)} €`} icon={Clock} />
       </div>
 
       <div className="flex items-center gap-2 flex-wrap mb-3">

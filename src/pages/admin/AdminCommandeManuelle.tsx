@@ -662,8 +662,17 @@ const AdminCommandeManuelle = () => {
                       <div>
                         <Label className="text-xs">Code postal</Label>
                         <Input value={qcPostalCode} onChange={(e) => setQcPostalCode(e.target.value)} maxLength={20} placeholder="Ex. 7822" />
-                      </div>
                     </div>
+                    <div>
+                      <Label className="text-xs">N° TVA (optionnel)</Label>
+                      <Input
+                        value={qcVatNumber}
+                        onChange={(e) => setQcVatNumber(e.target.value)}
+                        maxLength={20}
+                        placeholder="Ex. BE0123456789"
+                      />
+                    </div>
+                  </div>
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setQcOpen(false)}>Annuler</Button>

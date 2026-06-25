@@ -25,6 +25,8 @@ const AdminCommandeDetail = () => {
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pinInput, setPinInput] = useState<string>("");
+  const [expiresInput, setExpiresInput] = useState<string>("");
 
   const { data: order, isLoading } = useQuery({
     queryKey: ["admin-order", id],

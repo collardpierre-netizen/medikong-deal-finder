@@ -103,10 +103,10 @@ Deno.serve(async (req) => {
 
     const currency = "EUR";
 
-    // Totaux (en € depuis numeric)
-    const totalHt = Number(order.subtotal_excl_vat) || 0;
-    const totalTva = Number(order.vat_amount) || 0;
-    const totalTtc = Number(order.total_incl_vat) || 0;
+    // Totaux (en €) — utilise les valeurs hydratées si la commande est encore en draft
+    const totalHt = computedSubtotalHt;
+    const totalTva = computedVat;
+    const totalTtc = computedTtc;
 
     // ─── PDF ───────────────────────────────────────────────────────────
     const doc = new jsPDF({ unit: "mm", format: "a4" });

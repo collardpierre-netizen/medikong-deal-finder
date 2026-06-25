@@ -449,32 +449,68 @@ const AdminDashboard = () => {
           )}
         </div>
 
-        {/* Top Sellers */}
+        {/* Top vendeurs (en cours + prévisionnel) */}
         <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
-          <h3 className="text-[14px] font-semibold mb-4" style={{ color: "#1D2530" }}>{t("topSellers")}</h3>
-          {topSellers.length > 0 ? (
+          <h3 className="text-[14px] font-semibold mb-1" style={{ color: "#1D2530" }}>Top vendeurs</h3>
+          <p className="text-[11px] mb-4" style={{ color: "#8B95A5" }}>CA TTC sur commandes en cours + prévisionnelles</p>
+          {topVendors.length > 0 ? (
             <div className="space-y-3">
-              {topSellers.map((s, i) => (
-                <div key={s.name} className="flex items-center gap-3">
+              {topVendors.map((s, i) => (
+                <div key={s.id} className="flex items-center gap-3">
                   <span className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0" style={{ backgroundColor: i < 3 ? "#1B5BDA" : "#8B95A5" }}>
                     {i + 1}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[13px] font-medium" style={{ color: "#1D2530" }}>{s.name}</span>
-                      <span className="text-[12px] font-semibold" style={{ color: "#1B5BDA" }}>{s.commission}%</span>
+                    <div className="flex items-center justify-between mb-1 gap-2">
+                      <span className="text-[13px] font-medium truncate" style={{ color: "#1D2530" }}>{s.name}</span>
+                      <span className="text-[12px] font-semibold whitespace-nowrap" style={{ color: "#1B5BDA" }}>
+                        {fmtEur(s.amount)} EUR <span className="text-[11px]" style={{ color: "#8B95A5" }}>· {s.pct.toFixed(1)}%</span>
+                      </span>
                     </div>
                     <div className="h-2 rounded-full" style={{ backgroundColor: "#F1F5F9" }}>
-                      <div className="h-2 rounded-full transition-all" style={{ width: `${Math.min(s.commission * 5, 100)}%`, backgroundColor: i < 3 ? "#1B5BDA" : "#8B95A5" }} />
+                      <div className="h-2 rounded-full transition-all" style={{ width: `${Math.min(s.pct, 100)}%`, backgroundColor: i < 3 ? "#1B5BDA" : "#8B95A5" }} />
                     </div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <EmptyState message="Aucun vendeur actif — ajoutez des vendeurs via le menu Gestion" />
+            <EmptyState message="Aucune commande en cours ou prévisionnelle" />
           )}
         </div>
+
+        {/* Répartition par catégorie parent */}
+        <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+          <h3 className="text-[14px] font-semibold mb-1" style={{ color: "#1D2530" }}>Catégories vendues</h3>
+          <p className="text-[11px] mb-4" style={{ color: "#8B95A5" }}>Répartition CA TTC par catégorie parent (en cours + prévisionnel)</p>
+          {categoryBreakdown.length > 0 ? (
+            <div style={{ width: "100%", height: 260 }}>
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie
+                    data={categoryBreakdown}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={90}
+                    label={(e: any) => `${e.name} (${((e.percent || 0) * 100).toFixed(0)}%)`}
+                    labelLine={false}
+                  >
+                    {categoryBreakdown.map((_, i) => (
+                      <Cell key={i} fill={CATEGORY_COLORS[i % CATEGORY_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <RTooltip formatter={(v: any) => `${fmtEur(Number(v))} EUR`} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <EmptyState message="Aucune ligne avec catégorie résolue" />
+          )}
+        </div>
+
 
         {/* Alerts */}
         <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>

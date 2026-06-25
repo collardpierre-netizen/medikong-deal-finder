@@ -256,7 +256,7 @@ function PriceTiersEditor({ offerId, basePrice, vatRate }: { offerId: string | n
     queryKey: ["offer-price-tiers", offerId],
     queryFn: async () => {
       if (!offerId) return [];
-      const { data } = await supabase.from("offer_price_tiers").select("*").eq("offer_id", offerId).order("tier_index");
+      const { data } = await supabase.from("offer_price_tiers").select("id, offer_id, tier_index, mov_threshold, mov_currency, price_excl_vat, price_incl_vat, is_active, mov_progress, created_at").eq("offer_id", offerId).order("tier_index");
       return data || [];
     },
     enabled: !!offerId,

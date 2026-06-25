@@ -218,6 +218,31 @@ Deno.serve(async (req) => {
     doc.text("Total TTC", totX - 50, y + 1.5, { align: "right" });
     doc.text(fmtEur(Math.round(totalTtc * 100), currency), totX, y + 1.5, { align: "right" });
 
+    y += 14;
+
+    // Bank info (fournisseur principal avec IBAN)
+    const vendorWithBank = (lines || [])
+      .map((l: any) => l.vendors)
+      .find((v: any) => v && (v.iban || v.bank_name));
+
+    if (vendorWithBank) {
+      if (y > 250) { doc.addPage(); y = 20; }
+      doc.setFillColor(245, 247, 250);
+      doc.rect(15, y, pageW - 30, 28, "F");
+      doc.setFontSize(10);
+      doc.setTextColor(30, 37, 47);
+      doc.text(`Informations de paiement — ${vendorWithBank.company_name || vendorWithBank.name || "Fournisseur"}`, 18, y + 6);
+      doc.setFontSize(9);
+      doc.setTextColor(80);
+      let by = y + 12;
+      if (vendorWithBank.bank_name) { doc.text(`Banque : ${vendorWithBank.bank_name}`, 18, by); by += 5; }
+      if (vendorWithBank.iban) { doc.text(`IBAN : ${vendorWithBank.iban}`, 18, by); by += 5; }
+      if (vendorWithBank.bic) { doc.text(`BIC : ${vendorWithBank.bic}`, 18, by); by += 5; }
+      doc.text(`Communication : ${order.order_number}`, pageW - 18, y + 12, { align: "right" });
+      if (vendorWithBank.vat_number) doc.text(`TVA : ${vendorWithBank.vat_number}`, pageW - 18, y + 17, { align: "right" });
+      y += 32;
+    }
+
     // Footer
     doc.setFontSize(8);
     doc.setTextColor(150);

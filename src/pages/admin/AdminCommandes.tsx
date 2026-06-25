@@ -667,11 +667,6 @@ const AdminCommandes = () => {
                             <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#1D2530" }}>{fmt(o.amountHT)}</td>
                             <td className="px-3 py-3 text-[11px] font-mono" style={{ color: "#8B95A5" }}>{fmt(o.tva)}</td>
                             <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#059669" }}>{fmt(o.ttc)}</td>
-                            <AdminCommandesCommissionCell
-                              commissionEur={o.commissionEur}
-                              commissionPct={o.commissionPct}
-                              commissionSource={o.commissionSource as any}
-                            />
                             <td
                               className="px-3 py-3 font-mono"
                               title={

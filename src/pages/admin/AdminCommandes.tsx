@@ -640,7 +640,7 @@ const AdminCommandes = () => {
                             <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#1D2530" }}>{fmt(o.amountHT)}</td>
                             <td className="px-3 py-3 text-[11px] font-mono" style={{ color: "#8B95A5" }}>{fmt(o.tva)}</td>
                             <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#059669" }}>{fmt(o.ttc)}</td>
-                            <td className="px-3 py-3 font-mono" title={o.commissionEur > 0 ? `${o.commissionPct.toFixed(2)} % du CA HT${o.commissionSource === "source" ? " · repris de la commande source" : o.commissionSource === "draft" ? " · calculé depuis le brouillon" : ""}` : "Aucune commission enregistrée"}>
+                            <td className="px-3 py-3 font-mono" title={o.commissionEur > 0 ? `${o.commissionPct.toFixed(2)} % du CA HT${o.commissionSource === "stored" ? " · override enregistré" : o.commissionSource === "draft" ? " · calculé depuis le brouillon" : o.commissionSource === "computed" ? " · recalculée depuis les lignes × commission vendeur" : ""}` : "Aucune commission enregistrée"}>
                               {o.commissionEur > 0 ? (
                                 <div className="leading-tight">
                                   <div className="text-[12px] font-bold" style={{ color: "#10B981" }}>{fmt(o.commissionEur)}</div>

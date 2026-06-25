@@ -167,6 +167,23 @@ const AdminCommandes = () => {
 
     const amountHT = Number(o.subtotal_excl_vat) || 0;
     const effectiveHT = draftTotals ? draftTotals.excl : amountHT;
+
+    // Marge brute = CA HT - coût d'achat HT (par ligne, agrégé)
+    let costTotal = 0;
+    let hasAnyCost = false;
+    for (const l of lines as any[]) {
+      const qty = Number(l.quantity) || 0;
+      // order_lines.cost_price (€/u) OU draft lines.unit_cost_excl_vat
+      const unitCost = Number(l.cost_price ?? l.unit_cost_excl_vat) || 0;
+      if (qty > 0 && unitCost > 0) {
+        costTotal += qty * unitCost;
+        hasAnyCost = true;
+      }
+    }
+    const grossMarginEur = hasAnyCost ? effectiveHT - costTotal : 0;
+    const grossMarginPct = hasAnyCost && effectiveHT > 0 ? (grossMarginEur / effectiveHT) * 100 : 0;
+    const netMarginEur = hasAnyCost ? grossMarginEur - commissionEur : 0;
+
     return {
       id: o.order_number,
       rawId: o.id,
@@ -180,6 +197,11 @@ const AdminCommandes = () => {
       commissionEur,
       commissionPct: effectiveHT > 0 ? (commissionEur / effectiveHT) * 100 : 0,
       commissionSource: stored.explicit ? "stored" : draftTotals ? "draft" : fallbackCommission > 0 ? "computed" : "none",
+      grossMarginEur,
+      grossMarginPct,
+      netMarginEur,
+      hasCost: hasAnyCost,
+      costTotal,
       paymentTerms: o.payment_method || "invoice",
       dueDate: o.payment_due_date ? new Date(o.payment_due_date).toLocaleDateString("fr-BE") : "—",
       status: o.status as "draft" | "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled",

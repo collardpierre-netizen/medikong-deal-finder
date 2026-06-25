@@ -236,42 +236,43 @@ Deno.serve(async (req) => {
     // En-tête tableau
     const COLS = {
       article: M + 2,
-      vendor: M + 70,
-      qty: M + 105,
-      puHt: M + 125,
-      vat: M + 142,
-      puTtc: M + 157,
+      articleWidth: 60,
+      vendor: M + 66,
+      vendorWidth: 30,
+      qty: M + 102,
+      puHt: M + 124,
+      vat: M + 140,
+      puTtc: M + 162,
       total: pageW - M - 2,
     };
 
     doc.setFillColor(...NAVY);
-    doc.rect(M, y, pageW - 2 * M, 8, "F");
+    doc.rect(M, y, pageW - 2 * M, 7, "F");
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8.5);
+    doc.setFontSize(7);
     doc.setTextColor(255, 255, 255);
-    doc.text("ARTICLE", COLS.article, y + 5.5);
-    doc.text("FOURNISSEUR", COLS.vendor, y + 5.5);
-    doc.text("QTÉ", COLS.qty, y + 5.5, { align: "right" });
-    doc.text("PU HT", COLS.puHt, y + 5.5, { align: "right" });
-    doc.text("TVA", COLS.vat, y + 5.5, { align: "right" });
-    doc.text("PU TTC", COLS.puTtc, y + 5.5, { align: "right" });
-    doc.text("TOTAL HT", COLS.total, y + 5.5, { align: "right" });
-    y += 8;
+    doc.text("ARTICLE", COLS.article, y + 4.7);
+    doc.text("FOURNISSEUR", COLS.vendor, y + 4.7);
+    doc.text("QTÉ", COLS.qty, y + 4.7, { align: "right" });
+    doc.text("PU HT", COLS.puHt, y + 4.7, { align: "right" });
+    doc.text("TVA", COLS.vat, y + 4.7, { align: "right" });
+    doc.text("PU TTC", COLS.puTtc, y + 4.7, { align: "right" });
+    doc.text("TOTAL HT", COLS.total, y + 4.7, { align: "right" });
+    y += 7;
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
+    doc.setFontSize(7.5);
     let rowIdx = 0;
     for (const l of (lines || [])) {
-      const label = doc.splitTextToSize(String(l.manual_label || l.products?.name || "—"), 65);
-      const vendor = doc.splitTextToSize(String(l.vendors?.company_name || l.vendors?.name || l.qogita_seller_fid || "—"), 32);
-      const rowH = Math.max(7, Math.max(label.length, vendor.length) * 4 + 3);
+      const label = doc.splitTextToSize(String(l.manual_label || l.products?.name || "—"), COLS.articleWidth);
+      const vendor = doc.splitTextToSize(String(l.vendors?.company_name || l.vendors?.name || l.qogita_seller_fid || "—"), COLS.vendorWidth);
+      const rowH = Math.max(6, Math.max(label.length, vendor.length) * 3.4 + 2.5);
 
       if (y + rowH > pageH - 50) {
         doc.addPage();
         y = 20;
       }
 
-      // Zébrage
       if (rowIdx % 2 === 0) {
         doc.setFillColor(...SOFT);
         doc.rect(M, y, pageW - 2 * M, rowH, "F");
@@ -282,19 +283,19 @@ Deno.serve(async (req) => {
       const puTtc = puHt * (1 + vatR / 100);
 
       doc.setTextColor(...NAVY);
-      doc.text(label, COLS.article, y + 4);
+      doc.text(label, COLS.article, y + 3.5);
       doc.setTextColor(80, 80, 80);
-      doc.text(vendor, COLS.vendor, y + 4);
+      doc.text(vendor, COLS.vendor, y + 3.5);
       doc.setTextColor(...NAVY);
-      doc.text(String(l.quantity || 0), COLS.qty, y + 4, { align: "right" });
-      doc.text(fmtEur(Math.round(puHt * 100), currency), COLS.puHt, y + 4, { align: "right" });
+      doc.text(String(l.quantity || 0), COLS.qty, y + 3.5, { align: "right" });
+      doc.text(fmtEur(Math.round(puHt * 100), currency), COLS.puHt, y + 3.5, { align: "right" });
       doc.setTextColor(...MUTED);
-      doc.text(`${vatR.toFixed(0)}%`, COLS.vat, y + 4, { align: "right" });
+      doc.text(`${vatR.toFixed(0)}%`, COLS.vat, y + 3.5, { align: "right" });
       doc.setTextColor(80, 80, 80);
-      doc.text(fmtEur(Math.round(puTtc * 100), currency), COLS.puTtc, y + 4, { align: "right" });
+      doc.text(fmtEur(Math.round(puTtc * 100), currency), COLS.puTtc, y + 3.5, { align: "right" });
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...NAVY);
-      doc.text(fmtEur(Math.round(Number(l.line_total_excl_vat || 0) * 100), currency), COLS.total, y + 4, { align: "right" });
+      doc.text(fmtEur(Math.round(Number(l.line_total_excl_vat || 0) * 100), currency), COLS.total, y + 3.5, { align: "right" });
       doc.setFont("helvetica", "normal");
 
       y += rowH;

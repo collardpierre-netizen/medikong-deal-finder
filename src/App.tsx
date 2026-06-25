@@ -194,6 +194,7 @@ const AdminProfils = lazyWithRetry(() => import("./pages/admin/AdminProfils"), "
 const AdminParametres = lazyWithRetry(() => import("./pages/admin/AdminParametres"), "AdminParametres");
 const AdminLogs = lazyWithRetry(() => import("./pages/admin/AdminLogs"), "AdminLogs");
 const AdminUsers = lazyWithRetry(() => import("./pages/admin/AdminUsers"), "AdminUsers");
+const AdminCustomers = lazyWithRetry(() => import("./pages/admin/AdminCustomers"), "AdminCustomers");
 const AdminAccountInvitations = lazyWithRetry(() => import("./pages/admin/AdminAccountInvitations"), "AdminAccountInvitations");
 const AdminVendorOwnerAlignment = lazyWithRetry(() => import("./pages/admin/AdminVendorOwnerAlignment"), "AdminVendorOwnerAlignment");
 const AdminAuditLog = lazyWithRetry(() => import("./pages/admin/AdminAuditLog"), "AdminAuditLog");

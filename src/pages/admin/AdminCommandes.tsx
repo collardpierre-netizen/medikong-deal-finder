@@ -173,9 +173,18 @@ const AdminCommandes = () => {
     let hasAnyCost = false;
     for (const l of lines as any[]) {
       const qty = Number(l.quantity) || 0;
+      // order_lines.line_cost = total coût HT déjà persisté ; fallback sur coût unitaire.
+      const lineCostRaw = l.line_cost;
+      const lineCost = Number(lineCostRaw);
+      if (lineCostRaw !== null && lineCostRaw !== undefined && Number.isFinite(lineCost) && lineCost >= 0) {
+        costTotal += lineCost;
+        hasAnyCost = true;
+        continue;
+      }
       // order_lines.cost_price (€/u) OU draft lines.unit_cost_excl_vat
-      const unitCost = Number(l.cost_price ?? l.unit_cost_excl_vat) || 0;
-      if (qty > 0 && unitCost > 0) {
+      const unitCostRaw = l.cost_price ?? l.unit_cost_excl_vat;
+      const unitCost = Number(unitCostRaw);
+      if (unitCostRaw !== null && unitCostRaw !== undefined && qty > 0 && Number.isFinite(unitCost) && unitCost >= 0) {
         costTotal += qty * unitCost;
         hasAnyCost = true;
       }

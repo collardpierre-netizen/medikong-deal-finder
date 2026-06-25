@@ -106,8 +106,9 @@ async function getQogitaToken(sb: any): Promise<{ token: string; baseUrl: string
   (rows || []).forEach((r: any) => { cfg[r.key] = r.value; });
 
   const email = cfg.qogita_email;
-  const password = cfg.qogita_password;
+  const password = await maybeDecrypt(cfg.qogita_password);
   if (!email || !password) throw new Error("Qogita credentials missing (set qogita_email & qogita_password in config)");
+
 
   const baseUrl = cfg.base_url || "https://api.qogita.com";
   const res = await fetch(`${baseUrl}/auth/login/`, {

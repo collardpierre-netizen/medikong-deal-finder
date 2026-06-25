@@ -310,6 +310,41 @@ const AdminCommandeDetail = () => {
             )}
           </div>
 
+          {publicUrl && (
+            <div className="bg-white border rounded-lg p-4 space-y-3" style={{ borderColor: "#E2E8F0" }}>
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Lock size={14} /> Protection du lien public
+              </div>
+              <div>
+                <label className="text-xs text-slate-500 block mb-1">Code PIN (4 à 8 chiffres, vide = désactivé)</label>
+                <Input
+                  value={pinInput}
+                  onChange={(e) => setPinInput(e.target.value.replace(/[^0-9]/g, "").slice(0, 8))}
+                  placeholder="ex : 482915"
+                  inputMode="numeric"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-slate-500 block mb-1">Expiration (vide = jamais)</label>
+                <Input
+                  type="date"
+                  value={expiresInput}
+                  onChange={(e) => setExpiresInput(e.target.value)}
+                />
+              </div>
+              <Button onClick={savePublicAccess} disabled={busy !== null} className="w-full" style={{ backgroundColor: "#1C58D9", color: "#fff" }}>
+                {busy === "ACCESS" ? "Enregistrement…" : "Enregistrer la protection"}
+              </Button>
+              <div className="text-[11px] text-slate-500">
+                {(order as any).public_access_pin ? "🔒 PIN actif" : "⚠️ Aucun PIN — lien accessible avec le token seul"}
+                {(order as any).public_access_expires_at && (
+                  <> · Expire le {new Date((order as any).public_access_expires_at).toLocaleDateString("fr-BE")}</>
+                )}
+              </div>
+            </div>
+          )}
+
+
           {order.admin_notes && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-900">
               <div className="font-semibold mb-1">Note interne</div>

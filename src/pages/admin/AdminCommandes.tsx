@@ -663,6 +663,23 @@ const AdminCommandes = () => {
                               commissionPct={o.commissionPct}
                               commissionSource={o.commissionSource as any}
                             />
+                            <td
+                              className="px-3 py-3 font-mono"
+                              title={
+                                o.hasCost
+                                  ? `Marge brute = CA HT (${fmt(o.amountHT)}) − coût d'achat (${fmt(o.costTotal)})${o.commissionEur > 0 ? `\nMarge nette estimée (− commission) : ${fmt(o.netMarginEur)} EUR` : ""}`
+                                  : "Aucun prix d'achat renseigné sur les lignes — marge non calculable"
+                              }
+                            >
+                              {o.hasCost ? (
+                                <div className="leading-tight">
+                                  <div className="text-[12px] font-bold" style={{ color: o.grossMarginEur >= 0 ? "#0E7490" : "#EF4444" }}>{fmt(o.grossMarginEur)}</div>
+                                  <div className="text-[10px]" style={{ color: "#8B95A5" }}>{o.grossMarginPct.toFixed(2)} %</div>
+                                </div>
+                              ) : (
+                                <span className="text-[11px]" style={{ color: "#CBD5E1" }}>—</span>
+                              )}
+                            </td>
                             <td className="px-3 py-3 text-[11px]" style={{ color: "#616B7C" }}>{o.paymentTerms}</td>
                             <td className="px-3 py-3"><StatusBadge status={o.status} /></td>
                             <td className="px-3 py-3 text-right">

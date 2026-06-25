@@ -57,17 +57,21 @@ const AdminDashboard = () => {
       commission: Number(v.commission_rate) || 0,
     }));
 
+  const vendorLabelById = new Map((vendorsQuery.data || []).map((v: any) => [v.id, v.company_name || v.name]));
+
   const recentOrders = (ordersQuery.data || [])
     .filter((o: any) => !o.hidden_from_list && !o.deleted_at)
     .slice(0, 6).map((o: any) => {
-    const lines = (o.order_lines || []) as Array<{ vendor_id: string | null; line_total_incl_vat?: number | null; unit_price_incl_vat?: number | null; quantity?: number | null; vendors?: { company_name?: string | null; slug?: string | null } | null }>;
+    const persistedLines = (o.order_lines || []) as Array<{ vendor_id: string | null; line_total_incl_vat?: number | null; unit_price_incl_vat?: number | null; quantity?: number | null; vendors?: { company_name?: string | null; slug?: string | null } | null }>;
+    const draftLines = (o.status === "draft" && Array.isArray(o.draft_payload?.lines)) ? o.draft_payload.lines as Array<{ vendor_id?: string | null; line_total_incl_vat?: number | null; unit_price_incl_vat?: number | null; quantity?: number | null }> : [];
+    const lines = persistedLines.length > 0 ? persistedLines : draftLines;
     const seenIds = new Set<string>();
     const names: string[] = [];
-    for (const l of lines) {
+    for (const l of lines as any[]) {
       const key = l.vendor_id || l.vendors?.slug || l.vendors?.company_name;
       if (!key || seenIds.has(key)) continue;
       seenIds.add(key);
-      const name = l.vendors?.company_name?.trim();
+      const name = (l.vendors?.company_name?.trim?.() || vendorLabelById.get(l.vendor_id)) as string | undefined;
       if (name) names.push(name);
     }
     let seller = "—";
@@ -77,7 +81,7 @@ const AdminDashboard = () => {
     // Pour les brouillons / commandes sans total figé, on calcule depuis les lignes
     let amountNum = Number(o.total_incl_vat || 0);
     if (!amountNum && lines.length > 0) {
-      amountNum = lines.reduce((sum, l) => sum + Number(l.line_total_incl_vat ?? (Number(l.unit_price_incl_vat || 0) * Number(l.quantity || 0))), 0);
+      amountNum = (lines as any[]).reduce((sum, l) => sum + Number(l.line_total_incl_vat ?? (Number(l.unit_price_incl_vat || 0) * Number(l.quantity || 0))), 0);
     }
     return {
       id: o.order_number,

@@ -301,10 +301,15 @@ const AdminCommandeDetail = () => {
                 </Button>
               </a>
             )}
-            {order.status === "draft" && (
-              <Link to={`/admin/commandes/nouvelle?draft=${order.id}`} className="block">
+            {order.status !== "cancelled" && order.status !== "refunded" && (
+              <Link
+                to={order.status === "draft"
+                  ? `/admin/commandes/nouvelle?draft=${order.id}`
+                  : `/admin/commandes/nouvelle?edit=${order.id}`}
+                className="block"
+              >
                 <Button className="w-full justify-start" variant="outline">
-                  <Pencil size={14} className="mr-2" /> Modifier le brouillon
+                  <Pencil size={14} className="mr-2" /> {order.status === "draft" ? "Modifier le brouillon" : "Modifier la commande"}
                 </Button>
               </Link>
             )}

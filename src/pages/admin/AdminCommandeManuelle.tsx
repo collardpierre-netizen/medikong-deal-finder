@@ -98,6 +98,7 @@ const AdminCommandeManuelle = () => {
   const [encodingAt, setEncodingAt] = useState<string>("");
   const [isForecast, setIsForecast] = useState<boolean>(false);
   const [duplicatedFrom, setDuplicatedFrom] = useState<string | null>(null);
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [docMode, setDocMode] = useState<"order" | "quote">("order");
@@ -378,21 +379,21 @@ const AdminCommandeManuelle = () => {
         return;
       }
 
-      const { data, error } = await supabase.rpc("admin_create_manual_order", {
-        _payload: payload as any,
-      });
+      const { data, error } = editingOrderId
+        ? await supabase.rpc("admin_update_manual_order" as any, { _order_id: editingOrderId, _payload: payload as any })
+        : await supabase.rpc("admin_create_manual_order", { _payload: payload as any });
       if (error) throw error;
       const result = data as any;
       if (draftId) {
         await supabase.rpc("admin_delete_manual_order_draft", { _id: draftId });
       }
-      toast.success(`Commande ${result?.order_number ?? ""} créée`);
+      toast.success(editingOrderId ? "Commande mise à jour" : `Commande ${result?.order_number ?? ""} créée`);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-orders"] }),
         queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] }),
         queryClient.invalidateQueries({ queryKey: ["vendor-dashboard-kpis"] }),
       ]);
-      navigate("/admin/commandes");
+      navigate(editingOrderId ? `/admin/commandes/${editingOrderId}` : "/admin/commandes");
     } catch (e: any) {
       toast.error("Échec : " + (e?.message ?? String(e)));
     } finally {
@@ -569,14 +570,57 @@ const AdminCommandeManuelle = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [duplicateFromUrl]);
 
+  // Édition en place d'une commande existante via ?edit=<orderId>
+  const editFromUrl = searchParams.get("edit");
+  useEffect(() => {
+    if (!editFromUrl || editingOrderId === editFromUrl) return;
+    (async () => {
+      try {
+        const { data, error } = await supabase.rpc("admin_load_order_for_edit" as any, { _order_id: editFromUrl });
+        if (error) throw error;
+        const p = data as any;
+        if (!p) throw new Error("commande introuvable");
+        setEditingOrderId(editFromUrl);
+        setCustomerId(p.customer_id ?? "");
+        setStatus(p.status ?? "confirmed");
+        setPaymentMethod(p.payment_method ?? "invoice");
+        setPaymentStatus(p.payment_status ?? "paid");
+        setAdminNotes(p.admin_notes ?? "");
+        setEncodingAt(p.encoding_at ?? "");
+        setIsForecast(Boolean(p.is_forecast));
+        setLines(Array.isArray(p.lines) ? p.lines.map((l: any) => ({
+          id: l.id ?? nid(),
+          mode: l.mode ?? "offer",
+          vendor_id: l.vendor_id ?? "",
+          offer_id: l.offer_id ?? undefined,
+          product_id: l.product_id ?? undefined,
+          offer_label: l.offer_label ?? undefined,
+          manual_label: l.manual_label ?? undefined,
+          quantity: Number(l.quantity) || 1,
+          unit_price_excl_vat: Number(l.unit_price_excl_vat) || 0,
+          vat_rate: Number(l.vat_rate ?? 21),
+          unit_cost_excl_vat: l.unit_cost_excl_vat ?? "",
+          commission_rate: l.commission_rate ?? "",
+          commission_amount: l.commission_amount ?? "",
+          commission_basis: l.commission_basis === "margin" ? "margin" : "ca",
+        })) : []);
+        toast.success("Commande chargée en édition");
+      } catch (e: any) {
+        toast.error("Échec chargement : " + (e?.message ?? String(e)));
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editFromUrl]);
+
+
 
 
 
   return (
     <div>
       <AdminTopBar
-        title={docMode === "quote" ? "Nouveau devis" : "Nouvelle commande manuelle"}
-        subtitle={docMode === "quote" ? "Saisie admin — génère un devis avec lien public 7 j" : "Saisie admin — alimente la GMV"}
+        title={editingOrderId ? "Édition de commande" : docMode === "quote" ? "Nouveau devis" : "Nouvelle commande manuelle"}
+        subtitle={editingOrderId ? "Modification en place — les lignes et totaux seront recalculés" : docMode === "quote" ? "Saisie admin — génère un devis avec lien public 7 j" : "Saisie admin — alimente la GMV"}
       />
 
       <div className="mb-3 inline-flex rounded-lg border bg-white p-1" style={{ borderColor: "#E2E8F0" }}>

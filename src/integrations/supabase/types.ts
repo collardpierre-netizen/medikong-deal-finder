@@ -22642,6 +22642,7 @@ export type Database = {
         }[]
       }
       admin_load_manual_order_draft: { Args: { _id: string }; Returns: Json }
+      admin_load_order_for_edit: { Args: { _order_id: string }; Returns: Json }
       admin_log_price_challenge:
         | {
             Args: {
@@ -23064,6 +23065,10 @@ export type Database = {
           product_count: number
           raw_label: string
         }[]
+      }
+      admin_update_manual_order: {
+        Args: { _order_id: string; _payload: Json }
+        Returns: Json
       }
       apply_category_aliases: {
         Args: never

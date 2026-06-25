@@ -255,6 +255,9 @@ const AdminCommandes = () => {
   const avgBasket = displayOrders.length > 0 ? Math.round(gmvDay / displayOrders.length) : 0;
   const commissionTotal = displayOrders.reduce((a, o) => a + o.commissionEur, 0);
   const commissionPctGlobal = gmvDay > 0 ? (commissionTotal / gmvDay) * 100 : 0;
+  const grossMarginTotal = displayOrders.reduce((a, o) => a + (o.hasCost ? o.grossMarginEur : 0), 0);
+  const grossMarginCaBase = displayOrders.reduce((a, o) => a + (o.hasCost ? o.amountHT : 0), 0);
+  const grossMarginPctGlobal = grossMarginCaBase > 0 ? (grossMarginTotal / grossMarginCaBase) * 100 : 0;
 
   const tabs = [
     { key: "list" as const, label: "Liste" },

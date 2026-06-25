@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Save, FileText, FolderOpen, CalendarClock, Copy } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, FileText, FolderOpen, CalendarClock, Copy, Pencil, ExternalLink } from "lucide-react";
 
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import { fmtEur } from "@/lib/format-currency";
@@ -99,6 +99,8 @@ const AdminCommandeManuelle = () => {
   const [isForecast, setIsForecast] = useState<boolean>(false);
   const [duplicatedFrom, setDuplicatedFrom] = useState<string | null>(null);
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+  const [shippingAddressId, setShippingAddressId] = useState<string>("");
+
 
   const [submitting, setSubmitting] = useState(false);
   const [docMode, setDocMode] = useState<"order" | "quote">("order");
@@ -182,6 +184,33 @@ const AdminCommandeManuelle = () => {
       return data ?? [];
     },
   });
+
+  // Adresses de livraison du customer sélectionné
+  const { data: shippingAddresses = [] } = useQuery({
+    queryKey: ["admin-manual-order-shipping-addresses", customerId],
+    enabled: !!customerId,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("customer_shipping_addresses")
+        .select("id, label, address_l1, address_l2, postal_code, city, country_code, is_default")
+        .eq("customer_id", customerId)
+        .order("is_default", { ascending: false })
+        .order("label", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; label: string; address_l1: string; address_l2: string | null; postal_code: string | null; city: string | null; country_code: string; is_default: boolean }>;
+    },
+  });
+
+  // Auto-sélectionne l'adresse par défaut quand on change de customer (sauf si déjà fixée en mode édition)
+  useEffect(() => {
+    if (!customerId) { setShippingAddressId(""); return; }
+    if (shippingAddressId && shippingAddresses.some((a) => a.id === shippingAddressId)) return;
+    const def = shippingAddresses.find((a) => a.is_default);
+    setShippingAddressId(def?.id ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customerId, shippingAddresses.length]);
+
+
 
   // Vendors (active)
   const { data: vendors = [] } = useQuery({
@@ -384,10 +413,32 @@ const AdminCommandeManuelle = () => {
         : await supabase.rpc("admin_create_manual_order", { _payload: payload as any });
       if (error) throw error;
       const result = data as any;
+      const persistedOrderId: string | null = editingOrderId || result?.order_id || null;
+      // Persist shipping address (snapshot + FK) — best-effort, n'échoue pas la commande
+      if (persistedOrderId) {
+        try {
+          const addr = shippingAddressId ? shippingAddresses.find((a) => a.id === shippingAddressId) : null;
+          const snapshot = addr ? {
+            label: addr.label,
+            address_l1: addr.address_l1,
+            address_l2: addr.address_l2,
+            postal_code: addr.postal_code,
+            city: addr.city,
+            country_code: addr.country_code,
+          } : null;
+          await (supabase as any)
+            .from("orders")
+            .update({ shipping_address_id: shippingAddressId || null, shipping_address: snapshot })
+            .eq("id", persistedOrderId);
+        } catch (e) {
+          console.warn("Échec MAJ adresse de livraison", e);
+        }
+      }
       if (draftId) {
         await supabase.rpc("admin_delete_manual_order_draft", { _id: draftId });
       }
       toast.success(editingOrderId ? "Commande mise à jour" : `Commande ${result?.order_number ?? ""} créée`);
+
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-orders"] }),
         queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] }),
@@ -588,6 +639,16 @@ const AdminCommandeManuelle = () => {
         setAdminNotes(p.admin_notes ?? "");
         setEncodingAt(p.encoding_at ?? "");
         setIsForecast(Boolean(p.is_forecast));
+        // Charge l'adresse de livraison rattachée (si présente)
+        try {
+          const { data: ord } = await (supabase as any)
+            .from("orders")
+            .select("shipping_address_id")
+            .eq("id", editFromUrl)
+            .maybeSingle();
+          if (ord?.shipping_address_id) setShippingAddressId(ord.shipping_address_id);
+        } catch { /* noop */ }
+
         setLines(Array.isArray(p.lines) ? p.lines.map((l: any) => ({
           id: l.id ?? nid(),
           mode: l.mode ?? "offer",
@@ -746,6 +807,20 @@ const AdminCommandeManuelle = () => {
           <div className="bg-white rounded-lg border p-4 space-y-3" style={{ borderColor: "#E2E8F0" }}>
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-sm">Acheteur</h3>
+              <div className="flex items-center gap-2">
+                {customerId && (
+                  <a
+                    href={`/admin/customers?id=${customerId}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="Éditer la fiche customer (nouvel onglet)"
+                    className="inline-flex items-center gap-1 text-xs px-2 py-1 border rounded-md hover:bg-slate-50"
+                    style={{ borderColor: "#E2E8F0" }}
+                  >
+                    <Pencil size={12} /> Éditer la fiche <ExternalLink size={10} />
+                  </a>
+                )}
+
               <Dialog open={qcOpen} onOpenChange={setQcOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm" variant="outline">
@@ -810,6 +885,7 @@ const AdminCommandeManuelle = () => {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+              </div>
             </div>
             <Input
               placeholder="Rechercher (nom, email)…"
@@ -826,7 +902,42 @@ const AdminCommandeManuelle = () => {
                 ))}
               </SelectContent>
             </Select>
+
+            {customerId && (
+              <div className="pt-2 border-t" style={{ borderColor: "#E2E8F0" }}>
+                <div className="flex items-center justify-between mb-1">
+                  <Label className="text-xs">Adresse de livraison</Label>
+                  <a
+                    href={`/admin/customers?id=${customerId}#shipping`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[11px] underline text-slate-500 hover:text-slate-700"
+                    title="Gérer les adresses de livraison du customer"
+                  >
+                    Gérer les sites
+                  </a>
+                </div>
+                {shippingAddresses.length === 0 ? (
+                  <p className="text-[11px] text-slate-500">
+                    Aucun site de livraison enregistré. <a className="underline" href={`/admin/customers?id=${customerId}#shipping`} target="_blank" rel="noreferrer">En ajouter</a>.
+                  </p>
+                ) : (
+                  <Select value={shippingAddressId || "__none__"} onValueChange={(v) => setShippingAddressId(v === "__none__" ? "" : v)}>
+                    <SelectTrigger><SelectValue placeholder="Choisir une adresse" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">— Aucune (livraison non précisée) —</SelectItem>
+                      {shippingAddresses.map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.label}{a.is_default ? " ⭐" : ""} · {a.postal_code ?? ""} {a.city ?? ""} ({a.country_code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            )}
           </div>
+
 
           <div className="bg-white rounded-lg border p-4 space-y-3" style={{ borderColor: "#E2E8F0" }}>
             <h3 className="font-semibold text-sm">Statut & paiement</h3>

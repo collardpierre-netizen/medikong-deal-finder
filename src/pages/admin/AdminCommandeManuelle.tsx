@@ -1187,18 +1187,24 @@ const AdminCommandeManuelle = () => {
 
           <div className="flex justify-end gap-2 flex-wrap">
             <Button variant="outline" onClick={() => navigate("/admin/commandes")}>Annuler</Button>
-            {draftId && (
+            {!editingOrderId && draftId && (
               <Button variant="outline" onClick={discardDraft} className="text-rose-600 border-rose-200 hover:bg-rose-50">
                 <Trash2 size={14} className="mr-1" /> Supprimer brouillon
               </Button>
             )}
-            <Button variant="outline" onClick={saveDraft} disabled={savingDraft}>
-              <FileText size={14} className="mr-1" />
-              {savingDraft ? "Enregistrement…" : draftId ? "Mettre à jour brouillon" : "Enregistrer brouillon"}
-            </Button>
+            {!editingOrderId && (
+              <Button variant="outline" onClick={saveDraft} disabled={savingDraft}>
+                <FileText size={14} className="mr-1" />
+                {savingDraft ? "Enregistrement…" : draftId ? "Mettre à jour brouillon" : "Enregistrer brouillon"}
+              </Button>
+            )}
             <Button onClick={submit} disabled={submitting}>
               <Save size={14} className="mr-1" />
-              {submitting ? "Création…" : draftId ? "Finaliser la commande" : "Créer la commande"}
+              {submitting
+                ? (editingOrderId ? "Mise à jour…" : "Création…")
+                : editingOrderId
+                  ? "Mettre à jour la commande"
+                  : draftId ? "Finaliser la commande" : "Créer la commande"}
             </Button>
           </div>
 

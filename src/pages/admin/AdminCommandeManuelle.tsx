@@ -912,39 +912,74 @@ const AdminCommandeManuelle = () => {
             </Select>
 
             {customerId && (
-              <div className="pt-2 border-t" style={{ borderColor: "#E2E8F0" }}>
-                <div className="flex items-center justify-between mb-1">
-                  <Label className="text-xs">Adresse de livraison</Label>
-                  <a
-                    href={`/admin/customers?id=${customerId}#shipping`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[11px] underline text-slate-500 hover:text-slate-700"
-                    title="Gérer les adresses de livraison du customer"
-                  >
-                    Gérer les sites
-                  </a>
-                </div>
-                {shippingAddresses.length === 0 ? (
-                  <p className="text-[11px] text-slate-500">
-                    Aucun site de livraison enregistré. <a className="underline" href={`/admin/customers?id=${customerId}#shipping`} target="_blank" rel="noreferrer">En ajouter</a>.
-                  </p>
-                ) : (
-                  <Select value={shippingAddressId || "__none__"} onValueChange={(v) => setShippingAddressId(v === "__none__" ? "" : v)}>
-                    <SelectTrigger><SelectValue placeholder="Choisir une adresse" /></SelectTrigger>
+              <div className="pt-2 border-t space-y-3" style={{ borderColor: "#E2E8F0" }}>
+                <div>
+                  <Label className="text-xs">Mode logistique</Label>
+                  <Select value={fulfillmentMode} onValueChange={(v) => setFulfillmentMode(v as "pickup" | "delivery")}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__none__">— Aucune (livraison non précisée) —</SelectItem>
-                      {shippingAddresses.map((a) => (
-                        <SelectItem key={a.id} value={a.id}>
-                          {a.label}{a.is_default ? " ⭐" : ""} · {a.postal_code ?? ""} {a.city ?? ""} ({a.country_code})
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="delivery">📦 Livraison</SelectItem>
+                      <SelectItem value="pickup">🏬 Picking (retrait sur place)</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                {fulfillmentMode === "delivery" && (
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <Label className="text-xs">Adresse de livraison</Label>
+                      <a
+                        href={`/admin/customers?id=${customerId}#shipping`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] underline text-slate-500 hover:text-slate-700"
+                        title="Gérer les adresses de livraison du customer"
+                      >
+                        Gérer les sites
+                      </a>
+                    </div>
+                    {shippingAddresses.length === 0 ? (
+                      <p className="text-[11px] text-slate-500">
+                        Aucun site de livraison enregistré. <a className="underline" href={`/admin/customers?id=${customerId}#shipping`} target="_blank" rel="noreferrer">En ajouter</a>.
+                      </p>
+                    ) : (
+                      <Select value={shippingAddressId || "__none__"} onValueChange={(v) => setShippingAddressId(v === "__none__" ? "" : v)}>
+                        <SelectTrigger><SelectValue placeholder="Choisir une adresse" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">— Aucune (livraison non précisée) —</SelectItem>
+                          {shippingAddresses.map((a) => (
+                            <SelectItem key={a.id} value={a.id}>
+                              {a.label}{a.is_default ? " ⭐" : ""} · {a.postal_code ?? ""} {a.city ?? ""} ({a.country_code})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                    {shippingAddressId && (() => {
+                      const a = shippingAddresses.find((x) => x.id === shippingAddressId);
+                      if (!a) return null;
+                      return (
+                        <div className="mt-2 p-2 rounded bg-slate-50 text-[11px] text-slate-700 leading-snug">
+                          <div className="font-medium text-slate-900">{a.label}</div>
+                          <div>{a.address_l1}</div>
+                          {a.address_l2 && <div>{a.address_l2}</div>}
+                          <div>{a.postal_code} {a.city} ({a.country_code})</div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {fulfillmentMode === "pickup" && (
+                  <p className="text-[11px] text-slate-500 italic">
+                    Pas d'adresse — l'acheteur retire la marchandise sur place.
+                  </p>
                 )}
               </div>
             )}
           </div>
+
+
 
 
           <div className="bg-white rounded-lg border p-4 space-y-3" style={{ borderColor: "#E2E8F0" }}>

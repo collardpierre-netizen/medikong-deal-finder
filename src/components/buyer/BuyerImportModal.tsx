@@ -268,6 +268,7 @@ export function BuyerImportModal({ open, onOpenChange, initialJobId = null }: Pr
   const { addToCart } = useCart();
   const { user } = useAuth();
   const [saveToAccount, setSaveToAccount] = useState(true);
+  const [aggregateDuplicates, setAggregateDuplicates] = useState(true);
   const [savedCount, setSavedCount] = useState<number | null>(null);
 
   const reset = useCallback(() => {
@@ -417,7 +418,7 @@ export function BuyerImportModal({ open, onOpenChange, initialJobId = null }: Pr
         return;
       }
 
-      // Détection doublons GTIN/CNK dans le fichier — bloquant
+      // Détection doublons GTIN/CNK dans le fichier
       const seenEan = new Map<string, number[]>();
       const seenCnk = new Map<string, number[]>();
       lines.forEach((l, idx) => {
@@ -435,35 +436,70 @@ export function BuyerImportModal({ open, onOpenChange, initialJobId = null }: Pr
       const dupCnk = Array.from(seenCnk.entries()).filter(([, rows]) => rows.length > 1);
       const dupCount = dupEan.length + dupCnk.length;
 
-      if (dupCount > 0) {
-        // Construit un CSV à télécharger
-        const header = "type,code,duplicate_rows";
-        const escape = (v: string) => `"${(v ?? "").replace(/"/g, '""')}"`;
-        const body = [
-          ...dupEan.map(([code, rows]) => ["EAN", escape(code), escape(rows.join("|"))].join(",")),
-          ...dupCnk.map(([code, rows]) => ["CNK", escape(code), escape(rows.join("|"))].join(",")),
-        ].join("\n");
-        const blob = new Blob([header + "\n" + body], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `doublons-import-${new Date().toISOString().slice(0, 10)}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
+      let workingLines = lines;
 
-        toast.error(
-          `Import bloqué : ${dupCount} code(s) en double détecté(s) (${dupEan.length} EAN, ${dupCnk.length} CNK). Un fichier CSV listant les doublons a été téléchargé.`,
-          { duration: 8000 }
-        );
-        setPhase("instructions");
-        setProgress({ current: 0, total: 0, startTime: 0 });
-        return;
+      if (dupCount > 0) {
+        if (aggregateDuplicates) {
+          // Agrégation : regrouper par EAN (puis CNK si pas d'EAN), sommer quantités, garder prix min > 0
+          const groups = new Map<string, ImportLine[]>();
+          const order: string[] = [];
+          lines.forEach((l, idx) => {
+            const key = l.ean ? `E:${l.ean}` : l.cnk ? `C:${l.cnk}` : `I:${idx}`;
+            if (!groups.has(key)) {
+              groups.set(key, []);
+              order.push(key);
+            }
+            groups.get(key)!.push(l);
+          });
+          const merged: ImportLine[] = order.map((key) => {
+            const grp = groups.get(key)!;
+            if (grp.length === 1) return grp[0];
+            const totalQty = grp.reduce((s, x) => s + (Number(x.quantity) || 0), 0);
+            const positivePrices = grp.map((x) => x.currentPrice).filter((p): p is number => typeof p === "number" && p > 0);
+            const minPrice = positivePrices.length > 0 ? Math.min(...positivePrices) : grp[0].currentPrice;
+            return {
+              ...grp[0],
+              quantity: totalQty > 0 ? totalQty : grp[0].quantity,
+              currentPrice: minPrice,
+            };
+          });
+          const collapsed = lines.length - merged.length;
+          workingLines = merged;
+          toast.success(
+            `Agrégation : ${collapsed} ligne(s) regroupée(s) sur ${dupCount} code(s) en double (quantités sommées, prix min conservé).`,
+            { duration: 6000 }
+          );
+        } else {
+          // Mode bloquant : CSV des doublons
+          const header = "type,code,duplicate_rows";
+          const escape = (v: string) => `"${(v ?? "").replace(/"/g, '""')}"`;
+          const body = [
+            ...dupEan.map(([code, rows]) => ["EAN", escape(code), escape(rows.join("|"))].join(",")),
+            ...dupCnk.map(([code, rows]) => ["CNK", escape(code), escape(rows.join("|"))].join(",")),
+          ].join("\n");
+          const blob = new Blob([header + "\n" + body], { type: "text/csv;charset=utf-8;" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `doublons-import-${new Date().toISOString().slice(0, 10)}.csv`;
+          a.click();
+          URL.revokeObjectURL(url);
+
+          toast.error(
+            `Import bloqué : ${dupCount} code(s) en double détecté(s) (${dupEan.length} EAN, ${dupCnk.length} CNK). Un fichier CSV listant les doublons a été téléchargé. Activez l'agrégation pour fusionner automatiquement.`,
+            { duration: 8000 }
+          );
+          setPhase("instructions");
+          setProgress({ current: 0, total: 0, startTime: 0 });
+          return;
+        }
       }
 
-      setProgress({ current: 0, total: lines.length, startTime: Date.now() });
+
+      setProgress({ current: 0, total: workingLines.length, startTime: Date.now() });
       await waitForUiPaint();
 
-      const payload: ImportPayloadLine[] = lines.map((line, index) => ({
+      const payload: ImportPayloadLine[] = workingLines.map((line, index) => ({
         index,
         ean: line.ean ?? null,
         cnk: line.cnk ?? null,
@@ -919,6 +955,23 @@ export function BuyerImportModal({ open, onOpenChange, initialJobId = null }: Pr
                 <div className="font-medium text-foreground">Enregistrer mes prix dans mon compte</div>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Vos prix d'achat seront sauvegardés dans <span className="font-medium">Mes Prix</span> pour la veille concurrentielle automatique. Aucune ligne existante ne sera supprimée — seuls les prix correspondants sont mis à jour.
+                </p>
+              </div>
+            </label>
+          )}
+
+          {/* Aggregate duplicates toggle */}
+          {phase !== "results" && (
+            <label className="flex items-start gap-2 text-sm bg-muted/40 border border-border rounded-lg px-3 py-2.5 cursor-pointer hover:bg-muted/60 transition">
+              <Checkbox
+                checked={aggregateDuplicates}
+                onCheckedChange={(c) => setAggregateDuplicates(c === true)}
+                className="mt-0.5"
+              />
+              <div className="flex-1">
+                <div className="font-medium text-foreground">Agréger les lignes en double (EAN / CNK)</div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Si plusieurs lignes partagent le même code, leurs <span className="font-medium">quantités sont sommées</span> et le <span className="font-medium">prix minimum</span> est conservé. Décochez pour bloquer l'import et obtenir un CSV des doublons.
                 </p>
               </div>
             </label>

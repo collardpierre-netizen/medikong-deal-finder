@@ -63,7 +63,7 @@ const AdminCommandeDetail = () => {
             vat_rate: vat,
             line_total_excl_vat: totalHt,
             manual_label: l.manual_label || l.offer_label,
-            products: productMap.get(l.product_id) || null,
+            products: productMap.get(l.product_id) || (l.gtin || l.cnk_code ? { name: l.manual_label || l.offer_label, gtin: l.gtin, cnk_code: l.cnk_code } : null),
             vendors: vendorMap.get(l.vendor_id) || null,
           };
         });

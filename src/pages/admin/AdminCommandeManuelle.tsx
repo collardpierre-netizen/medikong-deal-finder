@@ -648,10 +648,13 @@ const AdminCommandeManuelle = () => {
         try {
           const { data: ord } = await (supabase as any)
             .from("orders")
-            .select("shipping_address_id")
+            .select("shipping_address_id, fulfillment_mode")
             .eq("id", editFromUrl)
             .maybeSingle();
           if (ord?.shipping_address_id) setShippingAddressId(ord.shipping_address_id);
+          if (ord?.fulfillment_mode === "pickup" || ord?.fulfillment_mode === "delivery") {
+            setFulfillmentMode(ord.fulfillment_mode);
+          }
         } catch { /* noop */ }
 
         setLines(Array.isArray(p.lines) ? p.lines.map((l: any) => ({

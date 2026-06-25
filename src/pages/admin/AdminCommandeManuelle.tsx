@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -96,7 +96,9 @@ const AdminCommandeManuelle = () => {
   const [paymentStatus, setPaymentStatus] = useState("paid");
   const [adminNotes, setAdminNotes] = useState("");
   const [lines, setLines] = useState<ManualLine[]>([]);
-  const [draftId, setDraftId] = useState<string | null>(null);
+  const [draftId, _setDraftId] = useState<string | null>(null);
+  const draftIdRef = useRef<string | null>(null);
+  const setDraftId = (id: string | null) => { draftIdRef.current = id; _setDraftId(id); };
   const [draftsOpen, setDraftsOpen] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
   // Date d'encodage (datetime-local). Vide = now() côté serveur. Si dans le futur → tag prévisionnel auto.
@@ -482,32 +484,38 @@ const AdminCommandeManuelle = () => {
   }
 
   async function saveDraft() {
-    if (!customerId && !draftId) {
+    if (savingDraft) return; // garde anti double-clic
+    const currentDraftId = draftIdRef.current; // évite la fenêtre de course React state
+    if (!customerId && !currentDraftId) {
       toast.error("Choisis un acheteur avant d'enregistrer le brouillon");
       return;
     }
     setSavingDraft(true);
     try {
       const { data, error } = await supabase.rpc("admin_save_manual_order_draft", {
-        _draft_id: draftId,
+        _draft_id: currentDraftId,
         _payload: buildDraftPayload() as any,
       });
       if (error) throw error;
       const id = data as string;
       setDraftId(id);
-      setSearchParams((sp) => { sp.set("draft", id); return sp; }, { replace: true });
+      // Met à jour l'URL avec ?draft=<id> de façon robuste (nouvelle URLSearchParams)
+      const next = new URLSearchParams(searchParams);
+      next.set("draft", id);
+      setSearchParams(next, { replace: true });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-manual-order-drafts"] }),
         queryClient.invalidateQueries({ queryKey: ["admin-orders"] }),
         queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] }),
       ]);
-      toast.success("Brouillon enregistré");
+      toast.success(currentDraftId ? "Brouillon mis à jour" : "Brouillon enregistré");
     } catch (e: any) {
       toast.error("Échec enregistrement : " + (e?.message ?? String(e)));
     } finally {
       setSavingDraft(false);
     }
   }
+
 
   async function loadDraft(id: string) {
     try {

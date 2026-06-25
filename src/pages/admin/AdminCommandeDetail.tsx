@@ -87,6 +87,9 @@ const AdminCommandeDetail = () => {
   if (isLoading) return <div className="p-6 text-slate-500">Chargement…</div>;
   if (!order) return <div className="p-6 text-slate-500">Commande introuvable. <Link to="/admin/commandes" className="text-sky-600">Retour</Link></div>;
 
+  // Sync inputs when order loads
+
+
   const lines = order.order_lines || [];
   // Vendor bank info (take first line vendor with bank info)
   const vendorWithBank = lines.map((l: any) => l.vendors).find((v: any) => v && (v.iban || v.bank_name));

@@ -13686,6 +13686,7 @@ export type Database = {
           total_lines: number | null
           updated_at: string
           user_agent: string | null
+          user_id: string | null
           vat_number: string | null
         }
         Insert: {
@@ -13713,6 +13714,7 @@ export type Database = {
           total_lines?: number | null
           updated_at?: string
           user_agent?: string | null
+          user_id?: string | null
           vat_number?: string | null
         }
         Update: {
@@ -13740,6 +13742,7 @@ export type Database = {
           total_lines?: number | null
           updated_at?: string
           user_agent?: string | null
+          user_id?: string | null
           vat_number?: string | null
         }
         Relationships: []

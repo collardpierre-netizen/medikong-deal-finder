@@ -1,6 +1,8 @@
 // Teste les credentials Qogita actuellement stockés dans qogita_config
 // et enregistre le résultat dans qogita_connection_tests (historique).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { requireAdminOrService } from "../_shared/admin-or-service.ts";
+import { maybeDecrypt } from "../_shared/qogita-creds.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,30 +21,16 @@ function maskEmail(email: string | null | undefined): string | null {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  const guard = await requireAdminOrService(req);
+  if (!guard.ok) {
+    return new Response(JSON.stringify({ error: guard.error }), { status: guard.status, headers: corsHeaders });
+  }
+  const testedBy: string | null = guard.via === "admin" ? (guard.userId ?? null) : null;
+
   const sb = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
-
-  // Identifier l'utilisateur appelant et vérifier qu'il est admin
-  let testedBy: string | null = null;
-  try {
-    const authHeader = req.headers.get("Authorization") ?? "";
-    const jwt = authHeader.replace("Bearer ", "");
-    if (jwt) {
-      const { data: userData } = await sb.auth.getUser(jwt);
-      const uid = userData?.user?.id ?? null;
-      if (uid) {
-        const { data: isAdmin } = await sb.rpc("is_admin", { _user_id: uid });
-        if (!isAdmin) {
-          return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: corsHeaders });
-        }
-        testedBy = uid;
-      }
-    }
-  } catch {
-    // continue
-  }
 
   const startedAt = Date.now();
   let success = false;
@@ -62,7 +50,7 @@ Deno.serve(async (req) => {
     (rows || []).forEach((r: any) => { cfg[r.key] = { value: r.value, updated_at: r.updated_at }; });
 
     email = cfg.qogita_email?.value ?? null;
-    const password = cfg.qogita_password?.value ?? null;
+    const password = await maybeDecrypt(cfg.qogita_password?.value ?? null);
     const baseUrl = cfg.base_url?.value ?? "https://api.qogita.com";
     configUpdatedAt = cfg.qogita_password?.updated_at ?? cfg.qogita_email?.updated_at ?? null;
 

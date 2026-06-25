@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireAdminOrService } from "../_shared/admin-or-service.ts";
+import { maybeDecrypt } from "../_shared/qogita-creds.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,16 +16,20 @@ async function getQogitaToken(): Promise<string> {
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
-  const { data } = await sb.from("qogita_config").select("qogita_email, qogita_password").eq("id", 1).single();
-  if (!data?.qogita_email || !data?.qogita_password) throw new Error("Qogita credentials not configured");
+  const { data: rows } = await sb.from("qogita_config").select("key, value").in("key", ["qogita_email", "qogita_password"]);
+  const cfg: Record<string, string> = {};
+  (rows || []).forEach((r: any) => { cfg[r.key] = r.value; });
+  const email = cfg.qogita_email;
+  const password = await maybeDecrypt(cfg.qogita_password);
+  if (!email || !password) throw new Error("Qogita credentials not configured");
 
   const res = await fetch(`${QOGITA_API}/auth/login/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: data.qogita_email, password: data.qogita_password }),
+    body: JSON.stringify({ email, password }),
   });
   const auth = await res.json();
-  if (!auth.accessToken) throw new Error("Auth failed: " + JSON.stringify(auth));
+  if (!auth.accessToken) throw new Error("Auth failed");
   return auth.accessToken;
 }
 
@@ -31,6 +37,12 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const guard = await requireAdminOrService(req);
+  if (!guard.ok) {
+    return new Response(JSON.stringify({ error: guard.error }), { status: guard.status, headers: corsHeaders });
+  }
+
 
   try {
     const { gtin, fid, slug } = await req.json().catch(() => ({

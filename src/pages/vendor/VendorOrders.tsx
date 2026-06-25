@@ -187,6 +187,7 @@ export default function VendorOrders() {
 
     const refreshVendorOrders = () => {
       queryClient.invalidateQueries({ queryKey: vendorOrdersQueryKey });
+      queryClient.invalidateQueries({ queryKey: ["action-center", "vendor"] });
     };
 
     const channel = supabase

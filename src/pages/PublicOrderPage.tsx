@@ -187,6 +187,26 @@ const PublicOrderPage = () => {
             {(order.customer?.postal_code || order.customer?.city) && <div className="text-xs text-slate-500">{order.customer?.postal_code} {order.customer?.city}</div>}
             {order.customer?.vat_number && <div className="text-xs text-slate-500">TVA : {order.customer.vat_number}</div>}
             {order.customer?.email && <div className="text-xs text-slate-500">{order.customer.email}</div>}
+
+            {(order as any).fulfillment_mode && (
+              <div className="mt-3 pt-3 border-t" style={{ borderColor: "#E2E8F0" }}>
+                <div className="text-[11px] uppercase text-slate-400 font-semibold mb-1">Mode logistique</div>
+                <div className="text-sm font-medium">
+                  {(order as any).fulfillment_mode === "pickup" ? "🏬 Picking — retrait sur place" : "📦 Livraison"}
+                </div>
+                {(order as any).fulfillment_mode === "delivery" && (order as any).shipping_address && (
+                  <div className="mt-1 text-xs text-slate-600 leading-snug">
+                    {(order as any).shipping_address.label && <div className="font-medium text-slate-800">{(order as any).shipping_address.label}</div>}
+                    {(order as any).shipping_address.address_l1 && <div>{(order as any).shipping_address.address_l1}</div>}
+                    {(order as any).shipping_address.address_l2 && <div>{(order as any).shipping_address.address_l2}</div>}
+                    <div>
+                      {(order as any).shipping_address.postal_code} {(order as any).shipping_address.city}
+                      {(order as any).shipping_address.country_code ? ` (${(order as any).shipping_address.country_code})` : ""}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <div>
             <div className="text-[11px] uppercase text-slate-400 font-semibold mb-1">Paiement</div>

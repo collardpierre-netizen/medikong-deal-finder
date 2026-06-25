@@ -340,6 +340,9 @@ export default function AdminProductSubmissions() {
   const [tab, setTab] = useState<SubmissionStatus | "all">("submitted");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Submission | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [importing, setImporting] = useState(false);
+  const qc = useQueryClient();
 
   const { data: submissions = [], isLoading } = useQuery({
     queryKey: ["admin-product-submissions", tab],

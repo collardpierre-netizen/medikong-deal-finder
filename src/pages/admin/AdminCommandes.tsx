@@ -194,7 +194,7 @@ const AdminCommandes = () => {
       ttc: draftTotals ? draftTotals.incl : Number(o.total_incl_vat) || 0,
       commissionEur,
       commissionPct: effectiveHT > 0 ? (commissionEur / effectiveHT) * 100 : 0,
-      commissionSource: stored.explicit ? "stored" : draftTotals ? "draft" : "none",
+      commissionSource: stored.explicit ? "stored" : draftTotals ? "draft" : fallbackCommission > 0 ? "computed" : "none",
       paymentTerms: o.payment_method || "invoice",
       dueDate: o.payment_due_date ? new Date(o.payment_due_date).toLocaleDateString("fr-BE") : "—",
       status: o.status as "draft" | "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled",

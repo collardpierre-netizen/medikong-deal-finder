@@ -60,10 +60,46 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "order not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { data: lines } = await adminClient
+    let { data: lines } = await adminClient
       .from("order_lines")
-      .select("*, products(name), vendors(company_name, name, vat_number, address)")
+      .select("*, products(name), vendors(company_name, name, vat_number, address_line1, bank_name, iban, bic)")
       .eq("order_id", orderId);
+
+    // Fallback : commande draft / prévisionnelle → lignes dans draft_payload
+    let computedSubtotalHt = Number(order.subtotal_excl_vat) || 0;
+    let computedVat = Number(order.vat_amount) || 0;
+    let computedTtc = Number(order.total_incl_vat) || 0;
+
+    if ((!lines || lines.length === 0) && Array.isArray((order as any).draft_payload?.lines)) {
+      const draftLines = (order as any).draft_payload.lines as any[];
+      const productIds = Array.from(new Set(draftLines.map((l) => l.product_id).filter(Boolean)));
+      const vendorIds = Array.from(new Set(draftLines.map((l) => l.vendor_id).filter(Boolean)));
+      const [{ data: prods }, { data: vends }] = await Promise.all([
+        productIds.length ? adminClient.from("products").select("id, name").in("id", productIds) : Promise.resolve({ data: [] as any[] }),
+        vendorIds.length ? adminClient.from("vendors").select("id, name, company_name, vat_number, address_line1, bank_name, iban, bic").in("id", vendorIds) : Promise.resolve({ data: [] as any[] }),
+      ]);
+      const prodMap = new Map((prods || []).map((p: any) => [p.id, p]));
+      const vendMap = new Map((vends || []).map((v: any) => [v.id, v]));
+      lines = draftLines.map((l: any) => {
+        const qty = Number(l.quantity) || 0;
+        const unit = Number(l.unit_price_excl_vat) || 0;
+        const vatR = Number(l.vat_rate) || 0;
+        const ht = qty * unit;
+        return {
+          quantity: qty,
+          unit_price_excl_vat: unit,
+          vat_rate: vatR,
+          line_total_excl_vat: ht,
+          manual_label: l.offer_label || l.manual_label,
+          products: prodMap.get(l.product_id) || null,
+          vendors: vendMap.get(l.vendor_id) || null,
+        } as any;
+      });
+      computedSubtotalHt = lines.reduce((a: number, l: any) => a + l.line_total_excl_vat, 0);
+      computedVat = lines.reduce((a: number, l: any) => a + (l.line_total_excl_vat * (l.vat_rate || 0)) / 100, 0);
+      computedTtc = computedSubtotalHt + computedVat;
+    }
+
 
     const currency = "EUR";
 

@@ -429,7 +429,11 @@ const AdminCommandeManuelle = () => {
           } : null;
           await (supabase as any)
             .from("orders")
-            .update({ shipping_address_id: shippingAddressId || null, shipping_address: snapshot })
+            .update({
+              shipping_address_id: fulfillmentMode === "delivery" ? (shippingAddressId || null) : null,
+              shipping_address: fulfillmentMode === "delivery" ? snapshot : null,
+              fulfillment_mode: fulfillmentMode,
+            })
             .eq("id", persistedOrderId);
         } catch (e) {
           console.warn("Échec MAJ adresse de livraison", e);

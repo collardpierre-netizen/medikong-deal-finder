@@ -91,6 +91,23 @@ const AdminCommandes = () => {
     },
     refetchInterval: 60_000,
   });
+
+  // Cohérence commission ↔ CA HT ↔ marge HT (RPC serveur, source de vérité)
+  const { data: coherenceData = [] } = useQuery({
+    queryKey: ["admin-orders-coherence"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_check_orders_coherence" as any, { _order_ids: null });
+      if (error) throw error;
+      return (data as Array<{
+        order_id: string;
+        coherence: "OK" | "COMMISSION_GT_CA" | "COMMISSION_GT_MARGE" | "NEGATIVE";
+        issue: string | null;
+        ca_ht: number; cost_ht: number; marge_ht: number | null; commission: number; commission_pct: number | null;
+      }>) ?? [];
+    },
+    staleTime: 60_000,
+  });
+  const coherenceById = new Map(coherenceData.map(c => [c.order_id, c]));
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [hideTest, setHideTest] = useState(true);

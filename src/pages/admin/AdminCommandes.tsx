@@ -708,6 +708,28 @@ const AdminCommandes = () => {
                                 <div className="text-[10px]" style={{ color: "#8B95A5" }}>{o.commissionPct.toFixed(2)} %</div>
                               </div>
                             </td>
+                            {(() => {
+                              const c = coherenceById.get(o.rawId);
+                              const status = c?.coherence ?? "OK";
+                              const isOk = status === "OK";
+                              const label = isOk ? "OK" : status === "COMMISSION_GT_CA" ? "Com > CA" : status === "COMMISSION_GT_MARGE" ? "Com > marge" : "Négative";
+                              const title = isOk
+                                ? `Cohérence OK · CA HT ${fmt(c?.ca_ht ?? o.amountHT)} · Marge HT ${c?.marge_ht != null ? fmt(c.marge_ht) : "—"} · Commission ${fmt(c?.commission ?? o.commissionEur)}${c?.commission_pct != null ? ` (${c.commission_pct.toFixed(2)} %)` : ""}`
+                                : `${c?.issue ?? "Incohérence détectée"} · CA HT ${fmt(c?.ca_ht ?? 0)} · Marge HT ${c?.marge_ht != null ? fmt(c.marge_ht) : "—"} · Commission ${fmt(c?.commission ?? 0)}`;
+                              return (
+                                <td className="px-3 py-3">
+                                  <span
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide"
+                                    style={isOk
+                                      ? { backgroundColor: "#ECFDF5", color: "#047857" }
+                                      : { backgroundColor: "#FEF2F2", color: "#B91C1C" }}
+                                    title={title}
+                                  >
+                                    {isOk ? "✓" : <AlertTriangle size={10} />} {label}
+                                  </span>
+                                </td>
+                              );
+                            })()}
                             <td className="px-3 py-3 text-[11px]" style={{ color: "#616B7C" }}>{o.paymentTerms}</td>
                             <td className="px-3 py-3"><StatusBadge status={o.status} /></td>
                             <td className="px-3 py-3 text-right">

@@ -11418,6 +11418,13 @@ export type Database = {
             referencedRelation: "restock_transactions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "restock_invoices_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "restock_transactions_seller_v"
+            referencedColumns: ["id"]
+          },
         ]
       }
       restock_offers: {
@@ -11626,6 +11633,13 @@ export type Database = {
             referencedRelation: "restock_transactions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "restock_pickup_events_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "restock_transactions_seller_v"
+            referencedColumns: ["id"]
+          },
         ]
       }
       restock_questions: {
@@ -11720,6 +11734,13 @@ export type Database = {
             columns: ["transaction_id"]
             isOneToOne: false
             referencedRelation: "restock_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restock_ratings_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "restock_transactions_seller_v"
             referencedColumns: ["id"]
           },
         ]
@@ -12240,6 +12261,13 @@ export type Database = {
             columns: ["transaction_id"]
             isOneToOne: false
             referencedRelation: "restock_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restock_shipments_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "restock_transactions_seller_v"
             referencedColumns: ["id"]
           },
         ]
@@ -21768,6 +21796,164 @@ export type Database = {
             columns: ["drop_id"]
             isOneToOne: false
             referencedRelation: "restock_drops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restock_transactions_seller_v: {
+        Row: {
+          billing_same_as_shipping: boolean | null
+          buyer_city: string | null
+          buyer_company: string | null
+          buyer_country: string | null
+          buyer_id: string | null
+          buyer_name: string | null
+          buyer_postal_code: string | null
+          buyer_street: string | null
+          cancelled_reason: string | null
+          commission_amount: number | null
+          commission_rate: number | null
+          created_at: string | null
+          delivered_at: string | null
+          delivery_mode: string | null
+          delivery_notes: string | null
+          dispute_reason: string | null
+          escrow_released_at: string | null
+          final_price: number | null
+          id: string | null
+          invoice_buyer_id: string | null
+          invoice_seller_id: string | null
+          offer_id: string | null
+          paid_at: string | null
+          penalty_applied: boolean | null
+          pickup_confirmation_method: string | null
+          pickup_confirmed_at: string | null
+          pickup_confirmed_by: string | null
+          pickup_deadline_at: string | null
+          quantity: number | null
+          seller_id: string | null
+          seller_pickup_address: string | null
+          seller_pickup_city: string | null
+          seller_pickup_instructions: string | null
+          seller_pickup_phone: string | null
+          sendcloud_parcel_id: string | null
+          shipping_cost: number | null
+          status: string | null
+          tracking_number: string | null
+          tracking_url: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          billing_same_as_shipping?: boolean | null
+          buyer_city?: string | null
+          buyer_company?: string | null
+          buyer_country?: string | null
+          buyer_id?: string | null
+          buyer_name?: string | null
+          buyer_postal_code?: string | null
+          buyer_street?: string | null
+          cancelled_reason?: string | null
+          commission_amount?: number | null
+          commission_rate?: number | null
+          created_at?: string | null
+          delivered_at?: string | null
+          delivery_mode?: string | null
+          delivery_notes?: string | null
+          dispute_reason?: string | null
+          escrow_released_at?: string | null
+          final_price?: number | null
+          id?: string | null
+          invoice_buyer_id?: string | null
+          invoice_seller_id?: string | null
+          offer_id?: string | null
+          paid_at?: string | null
+          penalty_applied?: boolean | null
+          pickup_confirmation_method?: string | null
+          pickup_confirmed_at?: string | null
+          pickup_confirmed_by?: string | null
+          pickup_deadline_at?: string | null
+          quantity?: number | null
+          seller_id?: string | null
+          seller_pickup_address?: string | null
+          seller_pickup_city?: string | null
+          seller_pickup_instructions?: string | null
+          seller_pickup_phone?: string | null
+          sendcloud_parcel_id?: string | null
+          shipping_cost?: number | null
+          status?: string | null
+          tracking_number?: string | null
+          tracking_url?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          billing_same_as_shipping?: boolean | null
+          buyer_city?: string | null
+          buyer_company?: string | null
+          buyer_country?: string | null
+          buyer_id?: string | null
+          buyer_name?: string | null
+          buyer_postal_code?: string | null
+          buyer_street?: string | null
+          cancelled_reason?: string | null
+          commission_amount?: number | null
+          commission_rate?: number | null
+          created_at?: string | null
+          delivered_at?: string | null
+          delivery_mode?: string | null
+          delivery_notes?: string | null
+          dispute_reason?: string | null
+          escrow_released_at?: string | null
+          final_price?: number | null
+          id?: string | null
+          invoice_buyer_id?: string | null
+          invoice_seller_id?: string | null
+          offer_id?: string | null
+          paid_at?: string | null
+          penalty_applied?: boolean | null
+          pickup_confirmation_method?: string | null
+          pickup_confirmed_at?: string | null
+          pickup_confirmed_by?: string | null
+          pickup_deadline_at?: string | null
+          quantity?: number | null
+          seller_id?: string | null
+          seller_pickup_address?: string | null
+          seller_pickup_city?: string | null
+          seller_pickup_instructions?: string | null
+          seller_pickup_phone?: string | null
+          sendcloud_parcel_id?: string | null
+          shipping_cost?: number | null
+          status?: string | null
+          tracking_number?: string | null
+          tracking_url?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restock_transactions_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "restock_buyers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restock_transactions_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "restock_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restock_transactions_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "restock_offers_with_delta"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restock_transactions_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "restock_public_offers_view"
             referencedColumns: ["id"]
           },
         ]

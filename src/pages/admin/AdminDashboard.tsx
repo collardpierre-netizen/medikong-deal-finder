@@ -50,15 +50,91 @@ const AdminDashboard = () => {
   const vendorsQuery = useVendors();
   const ordersQuery = useOrders();
 
-  const topSellers = (vendorsQuery.data || [])
-    .filter(v => v.is_active)
-    .slice(0, 5)
-    .map(v => ({
-      name: v.company_name || v.name,
-      commission: Number(v.commission_rate) || 0,
-    }));
-
   const vendorLabelById = new Map((vendorsQuery.data || []).map((v: any) => [v.id, v.company_name || v.name]));
+
+  // Catégories (pour répartition par catégorie parent)
+  const categoriesQuery = useQuery({
+    queryKey: ["admin-dashboard-categories-tree"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("categories").select("id, name, name_fr, parent_id");
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 5 * 60_000,
+  });
+
+  const rootCategoryById = useMemo(() => {
+    const byId = new Map<string, { id: string; name: string; parent_id: string | null }>();
+    for (const c of (categoriesQuery.data || []) as any[]) {
+      byId.set(c.id, { id: c.id, name: c.name_fr || c.name || "—", parent_id: c.parent_id });
+    }
+    const rootOf = new Map<string, { id: string; name: string }>();
+    for (const [id] of byId) {
+      let cur = byId.get(id);
+      const seen = new Set<string>();
+      while (cur?.parent_id && byId.has(cur.parent_id) && !seen.has(cur.id)) {
+        seen.add(cur.id);
+        cur = byId.get(cur.parent_id)!;
+      }
+      if (cur) rootOf.set(id, { id: cur.id, name: cur.name });
+    }
+    return rootOf;
+  }, [categoriesQuery.data]);
+
+  // Commandes "en cours" + prévisionnelles
+  const isActiveOrForecast = (o: any) =>
+    !o.hidden_from_list && !o.deleted_at && (
+      Boolean(o.is_forecast) || ["pending", "confirmed", "processing", "shipped"].includes(o.status)
+    );
+
+  const topVendors = useMemo(() => {
+    const totals = new Map<string, number>();
+    for (const o of (ordersQuery.data || []) as any[]) {
+      if (!isActiveOrForecast(o)) continue;
+      const persisted = (o.order_lines || []) as any[];
+      const draft = o.status === "draft" && Array.isArray(o.draft_payload?.lines) ? o.draft_payload.lines : [];
+      const lines = persisted.length > 0 ? persisted : draft;
+      for (const l of lines as any[]) {
+        const vid = l.vendor_id;
+        if (!vid) continue;
+        const amt = Number(l.line_total_incl_vat ?? (Number(l.unit_price_incl_vat || 0) * Number(l.quantity || 0))) || 0;
+        totals.set(vid, (totals.get(vid) || 0) + amt);
+      }
+    }
+    const total = Array.from(totals.values()).reduce((a, b) => a + b, 0);
+    return Array.from(totals.entries())
+      .map(([id, amount]) => ({
+        id,
+        name: vendorLabelById.get(id) || `Vendeur ${id.slice(0, 6)}`,
+        amount,
+        pct: total > 0 ? (amount / total) * 100 : 0,
+      }))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 5);
+  }, [ordersQuery.data, vendorLabelById]);
+
+  const categoryBreakdown = useMemo(() => {
+    const totals = new Map<string, { name: string; amount: number }>();
+    for (const o of (ordersQuery.data || []) as any[]) {
+      if (!isActiveOrForecast(o)) continue;
+      const lines = (o.order_lines || []) as any[];
+      for (const l of lines) {
+        const pcid = l.products?.primary_category_id;
+        if (!pcid) continue;
+        const root = rootCategoryById.get(pcid);
+        if (!root) continue;
+        const amt = Number(l.line_total_incl_vat ?? (Number(l.unit_price_incl_vat || 0) * Number(l.quantity || 0))) || 0;
+        const cur = totals.get(root.id) || { name: root.name, amount: 0 };
+        cur.amount += amt;
+        totals.set(root.id, cur);
+      }
+    }
+    return Array.from(totals.entries())
+      .map(([id, v]) => ({ id, name: v.name, value: Math.round(v.amount * 100) / 100 }))
+      .sort((a, b) => b.value - a.value);
+  }, [ordersQuery.data, rootCategoryById]);
+
+  const CATEGORY_COLORS = ["#1B5BDA", "#7C3AED", "#059669", "#F59E0B", "#EF4444", "#0EA5E9", "#EC4899", "#14B8A6", "#8B5CF6", "#F97316"];
 
   const recentOrders = (ordersQuery.data || [])
     .filter((o: any) => !o.hidden_from_list && !o.deleted_at)

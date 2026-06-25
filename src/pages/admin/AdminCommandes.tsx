@@ -19,7 +19,8 @@ import {
 } from "lucide-react";
 import { fmtEur } from "@/lib/format-currency";
 import { computeOrderTotals } from "@/lib/manual-order-metrics";
-import { computeMargin, type VendorCommissionConfig } from "@/lib/vendorMargin";
+import { type VendorCommissionConfig } from "@/lib/vendorMargin";
+import { computeCommissionFromLines as computeCommissionFromLinesPure } from "@/lib/order-commission-fallback";
 
 type PeriodKey = "7d" | "30d" | "90d" | "12m" | "all";
 const PERIODS: { key: PeriodKey; label: string; days: number | null }[] = [
@@ -119,25 +120,8 @@ const AdminCommandes = () => {
   );
 
   /** Fallback : recalcule la commission depuis order_lines + vendors.commission_* */
-  const computeCommissionFromLines = (lines: any[]): number => {
-    if (!Array.isArray(lines) || lines.length === 0) return 0;
-    let total = 0;
-    for (const l of lines) {
-      const vendorId = l.vendor_id as string | null | undefined;
-      if (!vendorId) continue;
-      const cfg = vendorCommissionById.get(vendorId);
-      if (!cfg) continue;
-      const qty = Number(l.quantity) || 0;
-      const unitSell = Number(l.unit_price_excl_vat) || 0;
-      const unitCost = Number(l.cost_price) || 0;
-      if (qty <= 0 || unitSell <= 0) continue;
-      const lineSell = unitSell * qty;
-      const lineCost = unitCost * qty;
-      const b = computeMargin(lineSell, lineCost > 0 ? lineCost : null, cfg);
-      total += b.commission;
-    }
-    return total;
-  };
+  const computeCommissionFromLines = (lines: any[]): number =>
+    computeCommissionFromLinesPure(lines, vendorCommissionById);
 
   const readStoredCommission = (raw: any): { value: number; explicit: boolean } => {
     const subs = ((raw as any).sub_orders || []) as Array<{

@@ -853,6 +853,7 @@ const AdminCommandeManuelle = () => {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+              </div>
             </div>
             <Input
               placeholder="Rechercher (nom, email)…"
@@ -869,7 +870,42 @@ const AdminCommandeManuelle = () => {
                 ))}
               </SelectContent>
             </Select>
+
+            {customerId && (
+              <div className="pt-2 border-t" style={{ borderColor: "#E2E8F0" }}>
+                <div className="flex items-center justify-between mb-1">
+                  <Label className="text-xs">Adresse de livraison</Label>
+                  <a
+                    href={`/admin/customers?id=${customerId}#shipping`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[11px] underline text-slate-500 hover:text-slate-700"
+                    title="Gérer les adresses de livraison du customer"
+                  >
+                    Gérer les sites
+                  </a>
+                </div>
+                {shippingAddresses.length === 0 ? (
+                  <p className="text-[11px] text-slate-500">
+                    Aucun site de livraison enregistré. <a className="underline" href={`/admin/customers?id=${customerId}#shipping`} target="_blank" rel="noreferrer">En ajouter</a>.
+                  </p>
+                ) : (
+                  <Select value={shippingAddressId || "__none__"} onValueChange={(v) => setShippingAddressId(v === "__none__" ? "" : v)}>
+                    <SelectTrigger><SelectValue placeholder="Choisir une adresse" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">— Aucune (livraison non précisée) —</SelectItem>
+                      {shippingAddresses.map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.label}{a.is_default ? " ⭐" : ""} · {a.postal_code ?? ""} {a.city ?? ""} ({a.country_code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            )}
           </div>
+
 
           <div className="bg-white rounded-lg border p-4 space-y-3" style={{ borderColor: "#E2E8F0" }}>
             <h3 className="font-semibold text-sm">Statut & paiement</h3>

@@ -150,6 +150,7 @@ const AdminCommandeDetail = lazyWithRetry(() => import("./pages/admin/AdminComma
 const AdminDevis = lazyWithRetry(() => import("./pages/admin/AdminDevis"), "AdminDevis");
 const AdminDevisDetail = lazyWithRetry(() => import("./pages/admin/AdminDevisDetail"), "AdminDevisDetail");
 const PublicQuotePage = lazyWithRetry(() => import("./pages/PublicQuotePage"), "PublicQuotePage");
+const PublicOrderPage = lazyWithRetry(() => import("./pages/PublicOrderPage"), "PublicOrderPage");
 const AdminFinances = lazyWithRetry(() => import("./pages/admin/AdminFinances"), "AdminFinances");
 const AdminLitiges = lazyWithRetry(() => import("./pages/admin/AdminLitiges"), "AdminLitiges");
 const AdminCommandesEnRetard = lazyWithRetry(() => import("./pages/admin/AdminCommandesEnRetard"), "AdminCommandesEnRetard");
@@ -380,6 +381,7 @@ const App = () => (
             <Route path="/compte/offres-recues" element={<LP><OffresRecuesPage /></LP>} />
             <Route path="/rfq/externe/:token" element={<LP><RfqExternalResponsePage /></LP>} />
             <Route path="/devis/:token" element={<LP><PublicQuotePage /></LP>} />
+            <Route path="/commande/lien/:token" element={<LP><PublicOrderPage /></LP>} />
             <Route path="/compte/imports" element={<LP><ImportHistoryPage /></LP>} />
             <Route path="/espace-pharmacie/abonnement" element={<LP><PharmacieAbonnementPage /></LP>} />
             <Route path="/checkout" element={<LP><CheckoutPage /></LP>} />

@@ -1352,7 +1352,7 @@ export default function VendorOffers() {
       if (offerIds.length === 0) return [];
       const { data } = await supabase
         .from("offer_price_tiers")
-        .select("*")
+        .select("id, offer_id, tier_index, mov_threshold, mov_currency, price_excl_vat, price_incl_vat, is_active, mov_progress, created_at")
         .in("offer_id", offerIds)
         .order("tier_index", { ascending: true });
       return data || [];

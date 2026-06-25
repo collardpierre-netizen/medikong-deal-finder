@@ -39,6 +39,8 @@ interface ManualLine {
   offer_id?: string;
   product_id?: string;
   offer_label?: string;
+  gtin?: string;
+  cnk_code?: string;
   // free mode
   manual_label?: string;
   // common

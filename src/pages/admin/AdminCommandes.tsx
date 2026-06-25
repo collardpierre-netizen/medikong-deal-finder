@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { fmtEur } from "@/lib/format-currency";
 import { computeOrderTotals } from "@/lib/manual-order-metrics";
+import { computeMargin, type VendorCommissionConfig } from "@/lib/vendorMargin";
 
 type PeriodKey = "7d" | "30d" | "90d" | "12m" | "all";
 const PERIODS: { key: PeriodKey; label: string; days: number | null }[] = [
@@ -67,7 +68,7 @@ const AdminCommandes = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vendors")
-        .select("id, name, company_name");
+        .select("id, name, company_name, commission_model, commission_rate, margin_split_pct, fixed_commission_amount");
       if (error) throw error;
       return data ?? [];
     },
@@ -108,6 +109,35 @@ const AdminCommandes = () => {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
   const vendorLabelById = new Map((vendorsData as any[]).map(v => [v.id, v.company_name || v.name || v.id]));
+  const vendorCommissionById = new Map<string, VendorCommissionConfig>(
+    (vendorsData as any[]).map(v => [v.id, {
+      commission_model: (v.commission_model as any) ?? "flat_percentage",
+      commission_rate: v.commission_rate as number | null,
+      margin_split_pct: v.margin_split_pct as number | null,
+      fixed_commission_amount: v.fixed_commission_amount as number | null,
+    }]),
+  );
+
+  /** Fallback : recalcule la commission depuis order_lines + vendors.commission_* */
+  const computeCommissionFromLines = (lines: any[]): number => {
+    if (!Array.isArray(lines) || lines.length === 0) return 0;
+    let total = 0;
+    for (const l of lines) {
+      const vendorId = l.vendor_id as string | null | undefined;
+      if (!vendorId) continue;
+      const cfg = vendorCommissionById.get(vendorId);
+      if (!cfg) continue;
+      const qty = Number(l.quantity) || 0;
+      const unitSell = Number(l.unit_price_excl_vat) || 0;
+      const unitCost = Number(l.cost_price) || 0;
+      if (qty <= 0 || unitSell <= 0) continue;
+      const lineSell = unitSell * qty;
+      const lineCost = unitCost * qty;
+      const b = computeMargin(lineSell, lineCost > 0 ? lineCost : null, cfg);
+      total += b.commission;
+    }
+    return total;
+  };
 
   const readStoredCommission = (raw: any): { value: number; explicit: boolean } => {
     const subs = ((raw as any).sub_orders || []) as Array<{
@@ -140,7 +170,15 @@ const AdminCommandes = () => {
     const lines = persistedLines.length > 0 ? persistedLines : draftLines;
     const draftTotals = draftLines.length > 0 ? computeOrderTotals(draftLines) : null;
     const stored = readStoredCommission(o);
-    const commissionEur = stored.explicit ? stored.value : draftTotals ? draftTotals.commission : 0;
+    // Fallback : ni override stocké, ni draft → recalcul depuis order_lines + vendors.commission_*
+    const fallbackCommission = !stored.explicit && !draftTotals && persistedLines.length > 0
+      ? computeCommissionFromLines(persistedLines)
+      : 0;
+    const commissionEur = stored.explicit
+      ? stored.value
+      : draftTotals
+        ? draftTotals.commission
+        : fallbackCommission;
 
     const amountHT = Number(o.subtotal_excl_vat) || 0;
     const effectiveHT = draftTotals ? draftTotals.excl : amountHT;
@@ -156,7 +194,7 @@ const AdminCommandes = () => {
       ttc: draftTotals ? draftTotals.incl : Number(o.total_incl_vat) || 0,
       commissionEur,
       commissionPct: effectiveHT > 0 ? (commissionEur / effectiveHT) * 100 : 0,
-      commissionSource: stored.explicit ? "stored" : draftTotals ? "draft" : "none",
+      commissionSource: stored.explicit ? "stored" : draftTotals ? "draft" : fallbackCommission > 0 ? "computed" : "none",
       paymentTerms: o.payment_method || "invoice",
       dueDate: o.payment_due_date ? new Date(o.payment_due_date).toLocaleDateString("fr-BE") : "—",
       status: o.status as "draft" | "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled",
@@ -602,7 +640,7 @@ const AdminCommandes = () => {
                             <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#1D2530" }}>{fmt(o.amountHT)}</td>
                             <td className="px-3 py-3 text-[11px] font-mono" style={{ color: "#8B95A5" }}>{fmt(o.tva)}</td>
                             <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#059669" }}>{fmt(o.ttc)}</td>
-                            <td className="px-3 py-3 font-mono" title={o.commissionEur > 0 ? `${o.commissionPct.toFixed(2)} % du CA HT${o.commissionSource === "source" ? " · repris de la commande source" : o.commissionSource === "draft" ? " · calculé depuis le brouillon" : ""}` : "Aucune commission enregistrée"}>
+                            <td className="px-3 py-3 font-mono" title={o.commissionEur > 0 ? `${o.commissionPct.toFixed(2)} % du CA HT${o.commissionSource === "stored" ? " · override enregistré" : o.commissionSource === "draft" ? " · calculé depuis le brouillon" : o.commissionSource === "computed" ? " · recalculée depuis les lignes × commission vendeur" : ""}` : "Aucune commission enregistrée"}>
                               {o.commissionEur > 0 ? (
                                 <div className="leading-tight">
                                   <div className="text-[12px] font-bold" style={{ color: "#10B981" }}>{fmt(o.commissionEur)}</div>

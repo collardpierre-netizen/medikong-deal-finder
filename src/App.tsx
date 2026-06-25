@@ -194,6 +194,7 @@ const AdminProfils = lazyWithRetry(() => import("./pages/admin/AdminProfils"), "
 const AdminParametres = lazyWithRetry(() => import("./pages/admin/AdminParametres"), "AdminParametres");
 const AdminLogs = lazyWithRetry(() => import("./pages/admin/AdminLogs"), "AdminLogs");
 const AdminUsers = lazyWithRetry(() => import("./pages/admin/AdminUsers"), "AdminUsers");
+const AdminCustomers = lazyWithRetry(() => import("./pages/admin/AdminCustomers"), "AdminCustomers");
 const AdminAccountInvitations = lazyWithRetry(() => import("./pages/admin/AdminAccountInvitations"), "AdminAccountInvitations");
 const AdminVendorOwnerAlignment = lazyWithRetry(() => import("./pages/admin/AdminVendorOwnerAlignment"), "AdminVendorOwnerAlignment");
 const AdminAuditLog = lazyWithRetry(() => import("./pages/admin/AdminAuditLog"), "AdminAuditLog");
@@ -549,6 +550,7 @@ const App = () => (
               <Route path="parametres" element={<LP><AdminParametres /></LP>} />
               <Route path="logs" element={<LP><AdminLogs /></LP>} />
               <Route path="users" element={<LP><AdminUsers /></LP>} />
+              <Route path="customers" element={<LP><AdminCustomers /></LP>} />
               <Route path="account-invitations" element={<LP><AdminAccountInvitations /></LP>} />
               <Route path="vendor-owner-alignment" element={<LP><AdminVendorOwnerAlignment /></LP>} />
               <Route path="audit-log" element={<LP><AdminAuditLog /></LP>} />

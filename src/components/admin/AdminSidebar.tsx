@@ -50,6 +50,7 @@ const sections: NavSection[] = [
       { label: "Nouvelle commande manuelle", path: "/admin/commandes/nouvelle", icon: Plus },
       { label: "Devis", path: "/admin/devis", icon: FileText },
       { label: "Commandes en retard", path: "/admin/commandes-en-retard", icon: AlertTriangle },
+      { label: "Customers", path: "/admin/customers", icon: Users },
       { labelKey: "disputes", path: "/admin/litiges", icon: AlertCircle },
       { labelKey: "finances", path: "/admin/finances", icon: DollarSign },
       { labelKey: "commissions", path: "/admin/commissions", icon: Percent },

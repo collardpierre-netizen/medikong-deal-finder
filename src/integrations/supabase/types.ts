@@ -8155,6 +8155,7 @@ export type Database = {
           deleted_at: string | null
           deleted_by: string | null
           deleted_reason: string | null
+          draft_fingerprint: string | null
           draft_payload: Json | null
           estimated_delivery_date: string | null
           forecast_converted_at: string | null
@@ -8199,6 +8200,7 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           deleted_reason?: string | null
+          draft_fingerprint?: string | null
           draft_payload?: Json | null
           estimated_delivery_date?: string | null
           forecast_converted_at?: string | null
@@ -8243,6 +8245,7 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           deleted_reason?: string | null
+          draft_fingerprint?: string | null
           draft_payload?: Json | null
           estimated_delivery_date?: string | null
           forecast_converted_at?: string | null
@@ -22778,6 +22781,7 @@ export type Database = {
           deleted_at: string | null
           deleted_by: string | null
           deleted_reason: string | null
+          draft_fingerprint: string | null
           draft_payload: Json | null
           estimated_delivery_date: string | null
           forecast_converted_at: string | null

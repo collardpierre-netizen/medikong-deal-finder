@@ -201,10 +201,30 @@ const AdminCommandeDetail = () => {
                 {order.payment_due_date && <div className="text-xs text-slate-500">Échéance : {new Date(order.payment_due_date).toLocaleDateString("fr-BE")}</div>}
               </div>
             </div>
+            {(order as any).fulfillment_mode && (
+              <div className="mb-3 p-3 rounded border bg-slate-50" style={{ borderColor: "#E2E8F0" }}>
+                <div className="text-[11px] uppercase text-slate-400 font-semibold mb-1">Mode logistique</div>
+                <div className="font-medium text-sm">
+                  {(order as any).fulfillment_mode === "pickup" ? "🏬 Picking — retrait sur place" : "📦 Livraison"}
+                </div>
+                {(order as any).fulfillment_mode === "delivery" && (order as any).shipping_address && (
+                  <div className="mt-2 text-xs text-slate-600 leading-snug">
+                    {(order as any).shipping_address.label && <div className="font-medium text-slate-800">{(order as any).shipping_address.label}</div>}
+                    {(order as any).shipping_address.address_l1 && <div>{(order as any).shipping_address.address_l1}</div>}
+                    {(order as any).shipping_address.address_l2 && <div>{(order as any).shipping_address.address_l2}</div>}
+                    <div>
+                      {(order as any).shipping_address.postal_code} {(order as any).shipping_address.city}
+                      {(order as any).shipping_address.country_code ? ` (${(order as any).shipping_address.country_code})` : ""}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             {order.notes && (
               <div className="bg-blue-50/60 border-l-2 border-blue-400 px-3 py-2 rounded text-sm italic text-slate-700">{order.notes}</div>
             )}
           </div>
+
 
           <div className="bg-white border rounded-lg overflow-hidden" style={{ borderColor: "#E2E8F0" }}>
             <table className="w-full text-sm">

@@ -116,7 +116,8 @@ Deno.serve(async (req) => {
 
     // Header — logo MediKong
     try {
-      doc.addImage(MEDIKONG_LOGO_PNG_BASE64, "PNG", 15, y - 2, 42, 14);
+      // Logo natif 400×250 (ratio 1.6) — préserver les proportions
+      doc.addImage(MEDIKONG_LOGO_PNG_BASE64, "PNG", 15, y - 4, 36, 22.5);
     } catch (_) { /* logo failure non bloquant */ }
 
     doc.setFontSize(16);

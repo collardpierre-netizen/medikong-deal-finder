@@ -473,11 +473,19 @@ const AdminCommandes = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-6 gap-3 mb-5">
+      <div className="grid grid-cols-7 gap-3 mb-5">
         <KpiCard icon={TrendingUp} label={`GMV total (${PERIODS.find(p => p.key === period)?.label})`} value={`${fmt(gmvDay)} EUR`} />
         <KpiCard icon={ShoppingCart} label="Commandes" value={String(displayOrders.length)} iconColor="#7C3AED" iconBg="#F5F3FF" />
         <KpiCard icon={CreditCard} label="Panier moyen" value={`${fmt(avgBasket)} EUR`} iconColor="#059669" iconBg="#F0FDF4" />
         <KpiCard icon={Percent} label="Commission totale" value={`${fmt(commissionTotal)} EUR`} evolution={{ value: Number(commissionPctGlobal.toFixed(2)), label: "% du CA HT" }} iconColor="#10B981" iconBg="#ECFDF5" />
+        <KpiCard
+          icon={TrendingUp}
+          label="Marge brute"
+          value={grossMarginCaBase > 0 ? `${fmt(grossMarginTotal)} EUR` : "—"}
+          evolution={grossMarginCaBase > 0 ? { value: Number(grossMarginPctGlobal.toFixed(2)), label: "% du CA HT (avec coût)" } : undefined}
+          iconColor="#0E7490"
+          iconBg="#ECFEFF"
+        />
         <KpiCard icon={Clock} label="En attente" value={String(countByStatus("pending"))} iconColor="#F59E0B" iconBg="#FFFBEB" />
         <KpiCard icon={Truck} label="En livraison" value={String(countByStatus("shipped"))} iconColor="#E70866" iconBg="#FDF2F8" />
       </div>

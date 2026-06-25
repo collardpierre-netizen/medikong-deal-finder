@@ -23759,6 +23759,10 @@ export type Database = {
           is_showcase_dimmed: boolean
         }[]
       }
+      offer_is_hidden_by_exclusivity: {
+        Args: { _product_id: string; _vendor_id: string }
+        Returns: boolean
+      }
       override_volume_threshold: {
         Args: { _new_threshold: number; _sub_id: string }
         Returns: undefined

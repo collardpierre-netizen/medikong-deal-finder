@@ -280,7 +280,7 @@ export function useProductOffers(productId: string | undefined) {
           ? supabase.from("discount_tiers").select("*").in("offer_id", offerIds).order("mov_amount", { ascending: true })
           : Promise.resolve({ data: [] }),
         offerIds.length > 0
-          ? supabase.from("offer_price_tiers").select("*").in("offer_id", offerIds).order("tier_index", { ascending: true })
+          ? supabase.from("offer_price_tiers").select("id, offer_id, tier_index, mov_threshold, mov_currency, price_excl_vat, price_incl_vat, is_active, mov_progress, created_at").in("offer_id", offerIds).order("tier_index", { ascending: true })
           : Promise.resolve({ data: [] }),
         vendorIds.length > 0
           ? supabase.from("vendor_visibility_rules" as any).select("vendor_id, country_code, customer_type, show_real_name, priority").in("vendor_id", vendorIds)

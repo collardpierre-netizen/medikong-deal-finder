@@ -2840,6 +2840,68 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_shipping_addresses: {
+        Row: {
+          address_l1: string
+          address_l2: string | null
+          city: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          country_code: string
+          created_at: string
+          customer_id: string
+          id: string
+          is_default: boolean
+          label: string
+          notes: string | null
+          postal_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          address_l1: string
+          address_l2?: string | null
+          city?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          country_code?: string
+          created_at?: string
+          customer_id: string
+          id?: string
+          is_default?: boolean
+          label: string
+          notes?: string | null
+          postal_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address_l1?: string
+          address_l2?: string | null
+          city?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          country_code?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          notes?: string | null
+          postal_code?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_shipping_addresses_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address_line1: string
@@ -8100,6 +8162,7 @@ export type Database = {
           public_access_pin: string | null
           public_token: string | null
           shipping_address: Json
+          shipping_address_id: string | null
           source: Database["public"]["Enums"]["order_source"]
           status: Database["public"]["Enums"]["order_status"]
           stripe_payment_intent_id: string | null
@@ -8140,6 +8203,7 @@ export type Database = {
           public_access_pin?: string | null
           public_token?: string | null
           shipping_address?: Json
+          shipping_address_id?: string | null
           source?: Database["public"]["Enums"]["order_source"]
           status?: Database["public"]["Enums"]["order_status"]
           stripe_payment_intent_id?: string | null
@@ -8180,6 +8244,7 @@ export type Database = {
           public_access_pin?: string | null
           public_token?: string | null
           shipping_address?: Json
+          shipping_address_id?: string | null
           source?: Database["public"]["Enums"]["order_source"]
           status?: Database["public"]["Enums"]["order_status"]
           stripe_payment_intent_id?: string | null
@@ -8205,6 +8270,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_shipping_address_id_fkey"
+            columns: ["shipping_address_id"]
+            isOneToOne: false
+            referencedRelation: "customer_shipping_addresses"
             referencedColumns: ["id"]
           },
         ]
@@ -22498,6 +22570,7 @@ export type Database = {
           public_access_pin: string | null
           public_token: string | null
           shipping_address: Json
+          shipping_address_id: string | null
           source: Database["public"]["Enums"]["order_source"]
           status: Database["public"]["Enums"]["order_status"]
           stripe_payment_intent_id: string | null

@@ -96,7 +96,9 @@ const AdminCommandeManuelle = () => {
   const [paymentStatus, setPaymentStatus] = useState("paid");
   const [adminNotes, setAdminNotes] = useState("");
   const [lines, setLines] = useState<ManualLine[]>([]);
-  const [draftId, setDraftId] = useState<string | null>(null);
+  const [draftId, _setDraftId] = useState<string | null>(null);
+  const draftIdRef = useRef<string | null>(null);
+  const setDraftId = (id: string | null) => { draftIdRef.current = id; _setDraftId(id); };
   const [draftsOpen, setDraftsOpen] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
   // Date d'encodage (datetime-local). Vide = now() côté serveur. Si dans le futur → tag prévisionnel auto.

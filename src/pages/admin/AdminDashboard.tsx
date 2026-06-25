@@ -16,6 +16,31 @@ import {
   TrendingUp, Info, UserCheck, Users, ChevronRight, Clock, Truck, Percent, CalendarClock,
 } from "lucide-react";
 
+const toAmount = (value: unknown) => {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  if (typeof value === "string") {
+    const normalized = value.trim().replace(/\s/g, "").replace(",", ".");
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+};
+
+const getLineTotalInclVat = (line: any) => {
+  const explicitIncl = toAmount(line?.line_total_incl_vat);
+  if (explicitIncl > 0) return explicitIncl;
+
+  const qty = toAmount(line?.quantity);
+  const unitIncl = toAmount(line?.unit_price_incl_vat);
+  if (qty > 0 && unitIncl > 0) return qty * unitIncl;
+
+  const explicitExcl = toAmount(line?.line_total_excl_vat);
+  const unitExcl = toAmount(line?.unit_price_excl_vat);
+  const vatRate = toAmount(line?.vat_rate);
+  const exclTotal = explicitExcl > 0 ? explicitExcl : qty * unitExcl;
+  return exclTotal > 0 ? exclTotal * (1 + vatRate / 100) : 0;
+};
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { t } = useI18n();
@@ -97,7 +122,7 @@ const AdminDashboard = () => {
       for (const l of lines as any[]) {
         const vid = l.vendor_id;
         if (!vid) continue;
-        const amt = Number(l.line_total_incl_vat ?? (Number(l.unit_price_incl_vat || 0) * Number(l.quantity || 0))) || 0;
+        const amt = getLineTotalInclVat(l);
         totals.set(vid, (totals.get(vid) || 0) + amt);
       }
     }
@@ -123,7 +148,7 @@ const AdminDashboard = () => {
         if (!pcid) continue;
         const root = rootCategoryById.get(pcid);
         if (!root) continue;
-        const amt = Number(l.line_total_incl_vat ?? (Number(l.unit_price_incl_vat || 0) * Number(l.quantity || 0))) || 0;
+        const amt = getLineTotalInclVat(l);
         const cur = totals.get(root.id) || { name: root.name, amount: 0 };
         cur.amount += amt;
         totals.set(root.id, cur);
@@ -158,7 +183,7 @@ const AdminDashboard = () => {
     // Pour les brouillons / commandes sans total figé, on calcule depuis les lignes
     let amountNum = Number(o.total_incl_vat || 0);
     if (!amountNum && lines.length > 0) {
-      amountNum = (lines as any[]).reduce((sum, l) => sum + Number(l.line_total_incl_vat ?? (Number(l.unit_price_incl_vat || 0) * Number(l.quantity || 0))), 0);
+      amountNum = (lines as any[]).reduce((sum, l) => sum + getLineTotalInclVat(l), 0);
     }
     return {
       id: o.order_number,

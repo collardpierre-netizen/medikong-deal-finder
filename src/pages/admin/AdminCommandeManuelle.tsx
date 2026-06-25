@@ -489,7 +489,11 @@ const AdminCommandeManuelle = () => {
       const id = data as string;
       setDraftId(id);
       setSearchParams((sp) => { sp.set("draft", id); return sp; }, { replace: true });
-      await queryClient.invalidateQueries({ queryKey: ["admin-manual-order-drafts"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin-manual-order-drafts"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-orders"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] }),
+      ]);
       toast.success("Brouillon enregistré");
     } catch (e: any) {
       toast.error("Échec enregistrement : " + (e?.message ?? String(e)));

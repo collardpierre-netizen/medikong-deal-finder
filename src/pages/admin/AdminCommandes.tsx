@@ -109,6 +109,35 @@ const AdminCommandes = () => {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
   const vendorLabelById = new Map((vendorsData as any[]).map(v => [v.id, v.company_name || v.name || v.id]));
+  const vendorCommissionById = new Map<string, VendorCommissionConfig>(
+    (vendorsData as any[]).map(v => [v.id, {
+      commission_model: (v.commission_model as any) ?? "flat_percentage",
+      commission_rate: v.commission_rate as number | null,
+      margin_split_pct: v.margin_split_pct as number | null,
+      fixed_commission_amount: v.fixed_commission_amount as number | null,
+    }]),
+  );
+
+  /** Fallback : recalcule la commission depuis order_lines + vendors.commission_* */
+  const computeCommissionFromLines = (lines: any[]): number => {
+    if (!Array.isArray(lines) || lines.length === 0) return 0;
+    let total = 0;
+    for (const l of lines) {
+      const vendorId = l.vendor_id as string | null | undefined;
+      if (!vendorId) continue;
+      const cfg = vendorCommissionById.get(vendorId);
+      if (!cfg) continue;
+      const qty = Number(l.quantity) || 0;
+      const unitSell = Number(l.unit_price_excl_vat) || 0;
+      const unitCost = Number(l.cost_price) || 0;
+      if (qty <= 0 || unitSell <= 0) continue;
+      const lineSell = unitSell * qty;
+      const lineCost = unitCost * qty;
+      const b = computeMargin(lineSell, lineCost > 0 ? lineCost : null, cfg);
+      total += b.commission;
+    }
+    return total;
+  };
 
   const readStoredCommission = (raw: any): { value: number; explicit: boolean } => {
     const subs = ((raw as any).sub_orders || []) as Array<{

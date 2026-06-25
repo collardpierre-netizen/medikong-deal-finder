@@ -93,8 +93,7 @@ describe("computeCommissionFromLines (fallback /admin/commandes)", () => {
 
   it("accepte les valeurs numériques sous forme string (payload DB)", () => {
     const total = computeCommissionFromLines(
-      // @ts-expect-error simulate jsonb payload
-      [{ vendor_id: "v-flat", quantity: "3", unit_price_excl_vat: "20", cost_price: "10" }],
+      [{ vendor_id: "v-flat", quantity: "3" as any, unit_price_excl_vat: "20" as any, cost_price: "10" as any }],
       vendors,
     );
     expect(total).toBeCloseTo(6, 5); // 10% × 60

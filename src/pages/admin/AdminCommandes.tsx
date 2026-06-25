@@ -738,9 +738,9 @@ const AdminCommandes = () => {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      navigate(o.status === "draft" ? `/admin/commandes/nouvelle?draft=${o.rawId}` : `/admin/commandes/nouvelle?duplicate=${o.rawId}`);
+                                      navigate(o.status === "draft" ? `/admin/commandes/nouvelle?draft=${o.rawId}` : `/admin/commandes/nouvelle?edit=${o.rawId}`);
                                     }}
-                                    title={o.status === "draft" ? "Ouvrir et modifier ce brouillon" : "Charger cette prévisionnelle dans le formulaire"}
+                                    title={o.status === "draft" ? "Ouvrir et modifier ce brouillon" : "Modifier cette commande prévisionnelle"}
                                     className="p-1.5 rounded hover:bg-amber-50"
                                     style={{ color: "#D97706" }}
                                   >

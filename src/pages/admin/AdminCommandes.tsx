@@ -91,6 +91,23 @@ const AdminCommandes = () => {
     },
     refetchInterval: 60_000,
   });
+
+  // Cohérence commission ↔ CA HT ↔ marge HT (RPC serveur, source de vérité)
+  const { data: coherenceData = [] } = useQuery({
+    queryKey: ["admin-orders-coherence"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_check_orders_coherence" as any, { _order_ids: null });
+      if (error) throw error;
+      return (data as Array<{
+        order_id: string;
+        coherence: "OK" | "COMMISSION_GT_CA" | "COMMISSION_GT_MARGE" | "NEGATIVE";
+        issue: string | null;
+        ca_ht: number; cost_ht: number; marge_ht: number | null; commission: number; commission_pct: number | null;
+      }>) ?? [];
+    },
+    staleTime: 60_000,
+  });
+  const coherenceById = new Map(coherenceData.map(c => [c.order_id, c]));
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [hideTest, setHideTest] = useState(true);
@@ -587,7 +604,7 @@ const AdminCommandes = () => {
                   <thead>
                     <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
                       <th className="px-2 py-3 w-8"></th>
-                      {["ID / Réf PO", "Acheteur", "Type", "Lignes", "Vendeurs", "Lignes uniques", "HT", "TVA", "TTC", "Marge HT", "Commission", "Paiement", "Statut", ""].map((h) => (
+                      {["ID / Réf PO", "Acheteur", "Type", "Lignes", "Vendeurs", "Lignes uniques", "HT", "TVA", "TTC", "Marge HT", "Commission", "Cohérence", "Paiement", "Statut", ""].map((h) => (
                         <th key={h} className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                       ))}
                     </tr>
@@ -691,6 +708,28 @@ const AdminCommandes = () => {
                                 <div className="text-[10px]" style={{ color: "#8B95A5" }}>{o.commissionPct.toFixed(2)} %</div>
                               </div>
                             </td>
+                            {(() => {
+                              const c = coherenceById.get(o.rawId);
+                              const status = c?.coherence ?? "OK";
+                              const isOk = status === "OK";
+                              const label = isOk ? "OK" : status === "COMMISSION_GT_CA" ? "Com > CA" : status === "COMMISSION_GT_MARGE" ? "Com > marge" : "Négative";
+                              const title = isOk
+                                ? `Cohérence OK · CA HT ${fmt(c?.ca_ht ?? o.amountHT)} · Marge HT ${c?.marge_ht != null ? fmt(c.marge_ht) : "—"} · Commission ${fmt(c?.commission ?? o.commissionEur)}${c?.commission_pct != null ? ` (${c.commission_pct.toFixed(2)} %)` : ""}`
+                                : `${c?.issue ?? "Incohérence détectée"} · CA HT ${fmt(c?.ca_ht ?? 0)} · Marge HT ${c?.marge_ht != null ? fmt(c.marge_ht) : "—"} · Commission ${fmt(c?.commission ?? 0)}`;
+                              return (
+                                <td className="px-3 py-3">
+                                  <span
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide"
+                                    style={isOk
+                                      ? { backgroundColor: "#ECFDF5", color: "#047857" }
+                                      : { backgroundColor: "#FEF2F2", color: "#B91C1C" }}
+                                    title={title}
+                                  >
+                                    {isOk ? "✓" : <AlertTriangle size={10} />} {label}
+                                  </span>
+                                </td>
+                              );
+                            })()}
                             <td className="px-3 py-3 text-[11px]" style={{ color: "#616B7C" }}>{o.paymentTerms}</td>
                             <td className="px-3 py-3"><StatusBadge status={o.status} /></td>
                             <td className="px-3 py-3 text-right">
@@ -787,7 +826,7 @@ const AdminCommandes = () => {
                           </tr>
                           {isExpanded && o.lines.length > 0 && (
                             <tr key={`${o.rawId}-lines`}>
-                              <td colSpan={14} className="px-0 py-0">
+                              <td colSpan={15} className="px-0 py-0">
                                 <div className="mx-4 mb-3 rounded-lg overflow-hidden" style={{ border: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
                                   <table className="w-full text-left">
                                     <thead>
@@ -856,7 +895,7 @@ const AdminCommandes = () => {
                           )}
                           {isExpanded && o.lines.length === 0 && (
                             <tr key={`${o.rawId}-empty`}>
-                              <td colSpan={14} className="px-6 py-4 text-center text-[12px]" style={{ color: "#8B95A5" }}>
+                              <td colSpan={15} className="px-6 py-4 text-center text-[12px]" style={{ color: "#8B95A5" }}>
                                 Aucune ligne de commande enregistrée.
                               </td>
                             </tr>

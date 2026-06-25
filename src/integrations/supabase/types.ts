@@ -8096,6 +8096,8 @@ export type Database = {
           payment_due_date: string | null
           payment_method: Database["public"]["Enums"]["payment_method_enum"]
           payment_status: Database["public"]["Enums"]["payment_status_enum"]
+          public_access_expires_at: string | null
+          public_access_pin: string | null
           public_token: string | null
           shipping_address: Json
           source: Database["public"]["Enums"]["order_source"]
@@ -8134,6 +8136,8 @@ export type Database = {
           payment_due_date?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method_enum"]
           payment_status?: Database["public"]["Enums"]["payment_status_enum"]
+          public_access_expires_at?: string | null
+          public_access_pin?: string | null
           public_token?: string | null
           shipping_address?: Json
           source?: Database["public"]["Enums"]["order_source"]
@@ -8172,6 +8176,8 @@ export type Database = {
           payment_due_date?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method_enum"]
           payment_status?: Database["public"]["Enums"]["payment_status_enum"]
+          public_access_expires_at?: string | null
+          public_access_pin?: string | null
           public_token?: string | null
           shipping_address?: Json
           source?: Database["public"]["Enums"]["order_source"]
@@ -22488,6 +22494,8 @@ export type Database = {
           payment_due_date: string | null
           payment_method: Database["public"]["Enums"]["payment_method_enum"]
           payment_status: Database["public"]["Enums"]["payment_status_enum"]
+          public_access_expires_at: string | null
+          public_access_pin: string | null
           public_token: string | null
           shipping_address: Json
           source: Database["public"]["Enums"]["order_source"]
@@ -23030,6 +23038,10 @@ export type Database = {
           target_type: string
           total_count: number
         }[]
+      }
+      admin_set_order_public_access: {
+        Args: { _expires_at?: string; _order_id: string; _pin?: string }
+        Returns: undefined
       }
       admin_sla_open_alerts_count: {
         Args: never
@@ -23803,7 +23815,9 @@ export type Database = {
         Args: { _country_code?: string }
         Returns: number
       }
-      public_get_order_by_token: { Args: { _token: string }; Returns: Json }
+      public_get_order_by_token:
+        | { Args: { _token: string }; Returns: Json }
+        | { Args: { _pin?: string; _token: string }; Returns: Json }
       public_search_brands_fuzzy: {
         Args: { _limit?: number; _q: string }
         Returns: {

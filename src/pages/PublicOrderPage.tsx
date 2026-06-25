@@ -4,7 +4,9 @@ import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtEur } from "@/lib/format-currency";
 import medikongLogo from "@/assets/medikong-logo.png";
-import { Loader2 } from "lucide-react";
+import { Loader2, Lock } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 type OrderData = {
   id: string;
@@ -31,6 +33,7 @@ type OrderData = {
     vendor_name?: string | null;
   }>;
   vendor_bank?: any;
+  public_access_expires_at?: string | null;
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -49,23 +52,94 @@ const PublicOrderPage = () => {
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [requiresPin, setRequiresPin] = useState(false);
+  const [invalidPin, setInvalidPin] = useState(false);
+  const [expired, setExpired] = useState(false);
+  const [pin, setPin] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const fetchOrder = async (pinValue?: string) => {
+    if (!token) {
+      setError("Lien invalide");
+      setLoading(false);
+      return;
+    }
+    const { data, error: rpcErr } = await supabase.rpc("public_get_order_by_token" as any, {
+      _token: token,
+      _pin: pinValue || null,
+    });
+    if (rpcErr) {
+      setError(rpcErr.message);
+    } else if (!data) {
+      setError("Commande introuvable.");
+    } else {
+      const d = data as any;
+      if (d.expired) {
+        setExpired(true);
+      } else if (d.requires_pin) {
+        setRequiresPin(true);
+        setInvalidPin(!!d.invalid_pin);
+      } else {
+        setOrder(d as OrderData);
+        setRequiresPin(false);
+        setInvalidPin(false);
+      }
+    }
+    setLoading(false);
+    setSubmitting(false);
+  };
 
   useEffect(() => {
-    (async () => {
-      if (!token) {
-        setError("Lien invalide");
-        setLoading(false);
-        return;
-      }
-      const { data, error: rpcErr } = await supabase.rpc("public_get_order_by_token" as any, { _token: token });
-      if (rpcErr) setError(rpcErr.message);
-      else if (!data) setError("Commande introuvable.");
-      else setOrder(data as any);
-      setLoading(false);
-    })();
+    fetchOrder();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
+  const submitPin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setInvalidPin(false);
+    await fetchOrder(pin);
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-mk-blue" /></div>;
+
+  if (expired) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
+        <div className="max-w-md bg-white border border-slate-200 rounded-lg p-8 text-center">
+          <div className="text-2xl font-bold text-slate-900 mb-2">Lien expiré</div>
+          <p className="text-sm text-slate-500">Ce lien n'est plus valide. Contactez votre interlocuteur MediKong pour obtenir un nouveau lien.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (requiresPin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
+        <Helmet><meta name="robots" content="noindex,nofollow" /></Helmet>
+        <form onSubmit={submitPin} className="max-w-sm w-full bg-white border border-slate-200 rounded-lg p-8 space-y-4">
+          <div className="flex items-center gap-2 text-mk-blue">
+            <Lock size={18} /> <span className="font-semibold">Accès protégé</span>
+          </div>
+          <p className="text-sm text-slate-500">Saisissez le code d'accès communiqué par votre interlocuteur MediKong.</p>
+          <Input
+            autoFocus
+            value={pin}
+            onChange={(e) => setPin(e.target.value.replace(/[^0-9]/g, "").slice(0, 8))}
+            placeholder="Code PIN"
+            inputMode="numeric"
+            className="text-center tracking-widest text-lg"
+          />
+          {invalidPin && <div className="text-xs text-red-600">Code incorrect.</div>}
+          <Button type="submit" disabled={submitting || pin.length < 4} className="w-full" style={{ backgroundColor: "#1C58D9", color: "#fff" }}>
+            {submitting ? "Vérification…" : "Accéder à la commande"}
+          </Button>
+        </form>
+      </div>
+    );
+  }
+
   if (error || !order) return <div className="min-h-screen flex items-center justify-center text-slate-500">{error ?? "Introuvable"}</div>;
 
   return (
@@ -90,6 +164,9 @@ const PublicOrderPage = () => {
         <div className="mb-6">
           <div className="text-2xl font-bold text-mk-blue">BON DE COMMANDE</div>
           <div className="text-sm text-slate-500 mt-1">N° {order.order_number} · {new Date(order.created_at).toLocaleDateString("fr-BE")} · Statut : {STATUS_LABEL[order.status] ?? order.status}{order.is_forecast ? " · Prévisionnel" : ""}</div>
+          {order.public_access_expires_at && (
+            <div className="text-[11px] text-slate-400 mt-1">Lien valable jusqu'au {new Date(order.public_access_expires_at).toLocaleDateString("fr-BE")}</div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-6 mb-6">

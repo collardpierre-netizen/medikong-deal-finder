@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { fmtEur } from "@/lib/format-currency";
-import { ArrowLeft, FileDown, Pencil, Copy, Link2, ExternalLink } from "lucide-react";
+import { ArrowLeft, FileDown, Pencil, Copy, Link2, ExternalLink, Lock } from "lucide-react";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Brouillon",
@@ -24,6 +25,8 @@ const AdminCommandeDetail = () => {
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pinInput, setPinInput] = useState<string>("");
+  const [expiresInput, setExpiresInput] = useState<string>("");
 
   const { data: order, isLoading } = useQuery({
     queryKey: ["admin-order", id],
@@ -81,8 +84,19 @@ const AdminCommandeDetail = () => {
     enabled: !!id,
   });
 
+  useEffect(() => {
+    if (order) {
+      setPinInput((order as any).public_access_pin || "");
+      const exp = (order as any).public_access_expires_at;
+      setExpiresInput(exp ? new Date(exp).toISOString().slice(0, 10) : "");
+    }
+  }, [order]);
+
   if (isLoading) return <div className="p-6 text-slate-500">Chargement…</div>;
   if (!order) return <div className="p-6 text-slate-500">Commande introuvable. <Link to="/admin/commandes" className="text-sky-600">Retour</Link></div>;
+
+
+
 
   const lines = order.order_lines || [];
   // Vendor bank info (take first line vendor with bank info)
@@ -133,6 +147,32 @@ const AdminCommandeDetail = () => {
     navigator.clipboard.writeText(pdfUrl);
     toast.success("Lien PDF copié (valable 7 jours)");
   };
+
+  const savePublicAccess = async () => {
+    setBusy("ACCESS");
+    try {
+      const pin = pinInput.trim();
+      if (pin && !/^[0-9]{4,8}$/.test(pin)) {
+        toast.error("Le PIN doit faire 4 à 8 chiffres");
+        setBusy(null);
+        return;
+      }
+      const expiresAt = expiresInput ? new Date(expiresInput + "T23:59:59").toISOString() : null;
+      const { error } = await supabase.rpc("admin_set_order_public_access" as any, {
+        _order_id: id,
+        _pin: pin || null,
+        _expires_at: expiresAt,
+      });
+      if (error) throw error;
+      toast.success("Protection mise à jour");
+      await queryClient.invalidateQueries({ queryKey: ["admin-order", id] });
+    } catch (e: any) {
+      toast.error(e?.message || "Échec");
+    } finally {
+      setBusy(null);
+    }
+  };
+
 
   return (
     <div>
@@ -269,6 +309,41 @@ const AdminCommandeDetail = () => {
               </Link>
             )}
           </div>
+
+          {publicUrl && (
+            <div className="bg-white border rounded-lg p-4 space-y-3" style={{ borderColor: "#E2E8F0" }}>
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Lock size={14} /> Protection du lien public
+              </div>
+              <div>
+                <label className="text-xs text-slate-500 block mb-1">Code PIN (4 à 8 chiffres, vide = désactivé)</label>
+                <Input
+                  value={pinInput}
+                  onChange={(e) => setPinInput(e.target.value.replace(/[^0-9]/g, "").slice(0, 8))}
+                  placeholder="ex : 482915"
+                  inputMode="numeric"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-slate-500 block mb-1">Expiration (vide = jamais)</label>
+                <Input
+                  type="date"
+                  value={expiresInput}
+                  onChange={(e) => setExpiresInput(e.target.value)}
+                />
+              </div>
+              <Button onClick={savePublicAccess} disabled={busy !== null} className="w-full" style={{ backgroundColor: "#1C58D9", color: "#fff" }}>
+                {busy === "ACCESS" ? "Enregistrement…" : "Enregistrer la protection"}
+              </Button>
+              <div className="text-[11px] text-slate-500">
+                {(order as any).public_access_pin ? "🔒 PIN actif" : "⚠️ Aucun PIN — lien accessible avec le token seul"}
+                {(order as any).public_access_expires_at && (
+                  <> · Expire le {new Date((order as any).public_access_expires_at).toLocaleDateString("fr-BE")}</>
+                )}
+              </div>
+            </div>
+          )}
+
 
           {order.admin_notes && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-900">

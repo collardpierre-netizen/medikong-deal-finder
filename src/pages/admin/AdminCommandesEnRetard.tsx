@@ -100,7 +100,7 @@ export default function AdminCommandesEnRetard() {
               className="grid grid-cols-12 gap-2 px-4 py-3 border-t border-mk-line text-sm items-center hover:bg-mk-alt"
             >
               <span className="col-span-2 font-medium text-mk-navy">
-                <Link to={`/admin/commandes`} className="hover:underline">
+                <Link to={a.order_id ? `/admin/commandes/${a.order_id}` : `/admin/commandes`} className="hover:underline text-primary">
                   {a.orders?.order_number ?? "—"}
                 </Link>
               </span>

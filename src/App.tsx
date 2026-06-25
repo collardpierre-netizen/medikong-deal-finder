@@ -550,6 +550,7 @@ const App = () => (
               <Route path="parametres" element={<LP><AdminParametres /></LP>} />
               <Route path="logs" element={<LP><AdminLogs /></LP>} />
               <Route path="users" element={<LP><AdminUsers /></LP>} />
+              <Route path="customers" element={<LP><AdminCustomers /></LP>} />
               <Route path="account-invitations" element={<LP><AdminAccountInvitations /></LP>} />
               <Route path="vendor-owner-alignment" element={<LP><AdminVendorOwnerAlignment /></LP>} />
               <Route path="audit-log" element={<LP><AdminAuditLog /></LP>} />

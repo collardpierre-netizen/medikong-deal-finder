@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   ShoppingCart, TrendingUp, Clock, CreditCard, Truck, Percent,
-  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle, CalendarClock, Copy, Pencil, Flame,
+  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle, CalendarClock, Copy, Pencil, Flame, FileDown, Eye,
 } from "lucide-react";
 import { fmtEur } from "@/lib/format-currency";
 import { computeOrderTotals } from "@/lib/manual-order-metrics";
@@ -635,6 +635,33 @@ const AdminCommandes = () => {
                                     <CalendarClock size={14} />
                                   </button>
                                 )}
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); navigate(`/admin/commandes/${o.rawId}`); }}
+                                  title="Voir le détail de la commande"
+                                  className="p-1.5 rounded hover:bg-slate-100"
+                                  style={{ color: "#475569" }}
+                                >
+                                  <Eye size={14} />
+                                </button>
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    try {
+                                      const { data, error } = await supabase.functions.invoke("generate-order-pdf", { body: { order_id: o.rawId } });
+                                      if (error) throw error;
+                                      const url = (data as any)?.pdf_url;
+                                      if (url) window.open(url, "_blank");
+                                      toast.success("PDF généré");
+                                    } catch (err: any) {
+                                      toast.error(err?.message || "Échec génération PDF");
+                                    }
+                                  }}
+                                  title="Générer le bon de commande PDF"
+                                  className="p-1.5 rounded hover:bg-blue-50"
+                                  style={{ color: "#1C58D9" }}
+                                >
+                                  <FileDown size={14} />
+                                </button>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); navigate(`/admin/commandes/nouvelle?duplicate=${o.rawId}`); }}
                                   title="Dupliquer cette commande"

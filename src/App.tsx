@@ -146,6 +146,7 @@ const AdminProduitDetail = lazyWithRetry(() => import("./pages/admin/AdminProdui
 const AdminSchemasPIM = lazyWithRetry(() => import("./pages/admin/AdminSchemasPIM"), "AdminSchemasPIM");
 const AdminCommandes = lazyWithRetry(() => import("./pages/admin/AdminCommandes"), "AdminCommandes");
 const AdminCommandeManuelle = lazyWithRetry(() => import("./pages/admin/AdminCommandeManuelle"), "AdminCommandeManuelle");
+const AdminCommandeDetail = lazyWithRetry(() => import("./pages/admin/AdminCommandeDetail"), "AdminCommandeDetail");
 const AdminDevis = lazyWithRetry(() => import("./pages/admin/AdminDevis"), "AdminDevis");
 const AdminDevisDetail = lazyWithRetry(() => import("./pages/admin/AdminDevisDetail"), "AdminDevisDetail");
 const PublicQuotePage = lazyWithRetry(() => import("./pages/PublicQuotePage"), "PublicQuotePage");
@@ -498,6 +499,7 @@ const App = () => (
               <Route path="schemas-pim" element={<LP><AdminSchemasPIM /></LP>} />
               <Route path="commandes" element={<LP><AdminCommandes /></LP>} />
               <Route path="commandes/nouvelle" element={<LP><AdminCommandeManuelle /></LP>} />
+              <Route path="commandes/:id" element={<LP><AdminCommandeDetail /></LP>} />
               <Route path="devis" element={<LP><AdminDevis /></LP>} />
               <Route path="devis/:id" element={<LP><AdminDevisDetail /></LP>} />
               <Route path="commandes-en-retard" element={<LP><AdminCommandesEnRetard /></LP>} />

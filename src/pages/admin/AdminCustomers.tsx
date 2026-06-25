@@ -40,7 +40,7 @@ type ShippingAddress = {
 };
 
 const COUNTRIES = ["BE", "FR", "LU", "NL", "DE"];
-const TYPES = ["pharmacy", "parapharmacy", "hospital", "wholesaler", "other"];
+const TYPES = ["pharmacy", "hospital", "clinic", "lab", "other"];
 
 export default function AdminCustomers() {
   const qc = useQueryClient();

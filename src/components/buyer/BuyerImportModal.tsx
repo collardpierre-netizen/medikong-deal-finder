@@ -496,10 +496,10 @@ export function BuyerImportModal({ open, onOpenChange, initialJobId = null }: Pr
       }
 
 
-      setProgress({ current: 0, total: lines.length, startTime: Date.now() });
+      setProgress({ current: 0, total: workingLines.length, startTime: Date.now() });
       await waitForUiPaint();
 
-      const payload: ImportPayloadLine[] = lines.map((line, index) => ({
+      const payload: ImportPayloadLine[] = workingLines.map((line, index) => ({
         index,
         ean: line.ean ?? null,
         cnk: line.cnk ?? null,

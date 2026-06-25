@@ -1,0 +1,1 @@
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS fulfillment_mode text CHECK (fulfillment_mode IN ('pickup','delivery'));

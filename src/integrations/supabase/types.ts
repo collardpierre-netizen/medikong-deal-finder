@@ -8149,6 +8149,7 @@ export type Database = {
           forecast_converted_at: string | null
           forecast_created_at: string | null
           forecast_snapshot: Json | null
+          fulfillment_mode: string | null
           hidden_from_list: boolean
           id: string
           is_forecast: boolean
@@ -8190,6 +8191,7 @@ export type Database = {
           forecast_converted_at?: string | null
           forecast_created_at?: string | null
           forecast_snapshot?: Json | null
+          fulfillment_mode?: string | null
           hidden_from_list?: boolean
           id?: string
           is_forecast?: boolean
@@ -8231,6 +8233,7 @@ export type Database = {
           forecast_converted_at?: string | null
           forecast_created_at?: string | null
           forecast_snapshot?: Json | null
+          fulfillment_mode?: string | null
           hidden_from_list?: boolean
           id?: string
           is_forecast?: boolean
@@ -22557,6 +22560,7 @@ export type Database = {
           forecast_converted_at: string | null
           forecast_created_at: string | null
           forecast_snapshot: Json | null
+          fulfillment_mode: string | null
           hidden_from_list: boolean
           id: string
           is_forecast: boolean

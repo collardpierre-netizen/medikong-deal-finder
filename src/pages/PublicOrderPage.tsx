@@ -142,10 +142,13 @@ const PublicOrderPage = () => {
 
   if (error || !order) return <div className="min-h-screen flex items-center justify-center text-slate-500">{error ?? "Introuvable"}</div>;
 
+  const isQuote = order.status === "draft" || order.is_forecast;
+  const docTitle = isQuote ? "DEVIS" : "BON DE COMMANDE";
+
   return (
     <div className="min-h-screen bg-slate-50 py-10">
       <Helmet>
-        <title>Commande {order.order_number} — MediKong</title>
+        <title>{docTitle} {order.order_number} — MediKong</title>
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
 
@@ -162,7 +165,14 @@ const PublicOrderPage = () => {
         </div>
 
         <div className="mb-6">
-          <div className="text-2xl font-bold text-mk-blue">BON DE COMMANDE</div>
+          <div className="flex items-center gap-3">
+            <div className="text-2xl font-bold text-mk-blue">{docTitle}</div>
+            {isQuote && (
+              <span className="text-[11px] uppercase tracking-wider font-semibold bg-amber-100 text-amber-800 px-2 py-1 rounded">
+                Devis — non engageant
+              </span>
+            )}
+          </div>
           <div className="text-sm text-slate-500 mt-1">N° {order.order_number} · {new Date(order.created_at).toLocaleDateString("fr-BE")} · Statut : {STATUS_LABEL[order.status] ?? order.status}{order.is_forecast ? " · Prévisionnel" : ""}</div>
           {order.public_access_expires_at && (
             <div className="text-[11px] text-slate-400 mt-1">Lien valable jusqu'au {new Date(order.public_access_expires_at).toLocaleDateString("fr-BE")}</div>

@@ -210,6 +210,36 @@ Deno.serve(async (req) => {
 
     y += 38;
 
+    // Mode logistique (picking / livraison) + adresse de livraison si applicable
+    const fMode = (order as any).fulfillment_mode as ("pickup" | "delivery" | null | undefined);
+    if (fMode) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(...NAVY);
+      doc.text("MODE LOGISTIQUE", M, y);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(60, 60, 60);
+      doc.text(fMode === "pickup" ? "Picking — retrait sur place" : "Livraison", M + 38, y);
+      y += 5;
+      if (fMode === "delivery") {
+        const ship = (order as any).shipping_address as any;
+        if (ship) {
+          doc.setFontSize(8.5);
+          doc.setTextColor(80, 80, 80);
+          if (ship.label) { doc.text(`Site : ${ship.label}`, M, y); y += 4; }
+          if (ship.address_l1) { doc.text(String(ship.address_l1), M, y); y += 4; }
+          if (ship.address_l2) { doc.text(String(ship.address_l2), M, y); y += 4; }
+          if (ship.postal_code || ship.city) {
+            doc.text(`${ship.postal_code ?? ""} ${ship.city ?? ""} ${ship.country_code ? `(${ship.country_code})` : ""}`.trim(), M, y);
+            y += 4;
+          }
+        }
+      }
+      y += 3;
+    }
+
+
     // Lien public
     if (order.public_token) {
       doc.setFontSize(8);

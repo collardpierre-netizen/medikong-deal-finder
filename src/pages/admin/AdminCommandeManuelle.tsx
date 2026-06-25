@@ -619,8 +619,8 @@ const AdminCommandeManuelle = () => {
   return (
     <div>
       <AdminTopBar
-        title={docMode === "quote" ? "Nouveau devis" : "Nouvelle commande manuelle"}
-        subtitle={docMode === "quote" ? "Saisie admin — génère un devis avec lien public 7 j" : "Saisie admin — alimente la GMV"}
+        title={editingOrderId ? "Édition de commande" : docMode === "quote" ? "Nouveau devis" : "Nouvelle commande manuelle"}
+        subtitle={editingOrderId ? "Modification en place — les lignes et totaux seront recalculés" : docMode === "quote" ? "Saisie admin — génère un devis avec lien public 7 j" : "Saisie admin — alimente la GMV"}
       />
 
       <div className="mb-3 inline-flex rounded-lg border bg-white p-1" style={{ borderColor: "#E2E8F0" }}>

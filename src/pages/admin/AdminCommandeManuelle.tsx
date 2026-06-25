@@ -39,6 +39,8 @@ interface ManualLine {
   offer_id?: string;
   product_id?: string;
   offer_label?: string;
+  gtin?: string;
+  cnk_code?: string;
   // free mode
   manual_label?: string;
   // common
@@ -381,6 +383,8 @@ const AdminCommandeManuelle = () => {
         commission_rate: l.commission_rate || "",
         commission_amount: l.commission_amount || "",
         commission_basis: l.commission_basis ?? "ca",
+        gtin: l.gtin ?? null,
+        cnk_code: l.cnk_code ?? null,
       })),
     };
 
@@ -534,6 +538,8 @@ const AdminCommandeManuelle = () => {
         commission_rate: l.commission_rate ?? "",
         commission_amount: l.commission_amount ?? "",
         commission_basis: l.commission_basis === "margin" ? "margin" : "ca",
+        gtin: l.gtin ?? undefined,
+        cnk_code: l.cnk_code ?? undefined,
       })) : []);
       setSearchParams((sp) => { sp.set("draft", id); return sp; }, { replace: true });
       setDraftsOpen(false);
@@ -614,6 +620,8 @@ const AdminCommandeManuelle = () => {
           commission_rate: l.commission_rate ?? "",
           commission_amount: l.commission_amount ?? "",
           commission_basis: l.commission_basis === "margin" ? "margin" : "ca",
+          gtin: l.gtin ?? undefined,
+          cnk_code: l.cnk_code ?? undefined,
         })) : []);
         toast.success(`Commande ${p.source_order_number ?? ""} dupliquée — éditez puis créez`);
       } catch (e: any) {
@@ -669,6 +677,8 @@ const AdminCommandeManuelle = () => {
           commission_rate: l.commission_rate ?? "",
           commission_amount: l.commission_amount ?? "",
           commission_basis: l.commission_basis === "margin" ? "margin" : "ca",
+          gtin: l.gtin ?? undefined,
+          cnk_code: l.cnk_code ?? undefined,
         })) : []);
         toast.success("Commande chargée en édition");
       } catch (e: any) {
@@ -1277,6 +1287,8 @@ function LineRow({
                           vendor_id: line.vendor_id || o.vendor_id || "",
                           unit_price_excl_vat: productOnly ? line.unit_price_excl_vat : price,
                           offer_label: o.products?.name,
+                          gtin: o.products?.gtin ?? undefined,
+                          cnk_code: o.products?.cnk_code ?? undefined,
                         });
                         setOfferResults([]);
                         setOfferSearch(o.products?.name ?? "");
@@ -1303,8 +1315,16 @@ function LineRow({
             )}
             {(line.offer_id || line.product_id) && (
               <div className="mt-1 text-xs text-muted-foreground">
-                {line.offer_id ? "Offre liée" : "Produit lié (sans offre)"} : {line.offer_label} ·{" "}
-                <button type="button" className="underline" onClick={() => { onPatch({ offer_id: undefined, product_id: undefined, offer_label: undefined }); setOfferSearch(""); }}>changer</button>
+                {line.offer_id ? "Offre liée" : "Produit lié (sans offre)"} : {line.offer_label}
+                {(line.gtin || line.cnk_code) && (
+                  <span className="ml-1 text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                    {line.gtin ? `EAN ${line.gtin}` : ""}
+                    {line.gtin && line.cnk_code ? " · " : ""}
+                    {line.cnk_code ? `CNK ${line.cnk_code}` : ""}
+                  </span>
+                )}
+                {" "}·{" "}
+                <button type="button" className="underline" onClick={() => { onPatch({ offer_id: undefined, product_id: undefined, offer_label: undefined, gtin: undefined, cnk_code: undefined }); setOfferSearch(""); }}>changer</button>
               </div>
             )}
           </div>

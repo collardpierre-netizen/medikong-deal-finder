@@ -202,15 +202,15 @@ const AdminCommandeDetail = () => {
               </tbody>
               <tfoot>
                 <tr className="border-t bg-slate-50/40">
-                  <td colSpan={5} className="px-3 py-2 text-right text-slate-500">Total HT</td>
+                  <td colSpan={6} className="px-3 py-2 text-right text-slate-500">Total HT</td>
                   <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(order.subtotal_excl_vat) || 0)} €</td>
                 </tr>
                 <tr className="bg-slate-50/40">
-                  <td colSpan={5} className="px-3 py-2 text-right text-slate-500">TVA</td>
+                  <td colSpan={6} className="px-3 py-2 text-right text-slate-500">TVA</td>
                   <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(order.vat_amount) || 0)} €</td>
                 </tr>
                 <tr className="border-t" style={{ backgroundColor: "#1C58D9" }}>
-                  <td colSpan={5} className="px-3 py-3 text-right text-white font-semibold">Total TTC</td>
+                  <td colSpan={6} className="px-3 py-3 text-right text-white font-semibold">Total TTC</td>
                   <td className="px-3 py-3 text-right text-white font-bold text-base">{fmtEur(Number(order.total_incl_vat) || 0)} €</td>
                 </tr>
               </tfoot>

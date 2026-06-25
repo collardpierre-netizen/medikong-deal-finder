@@ -170,7 +170,15 @@ const AdminCommandes = () => {
     const lines = persistedLines.length > 0 ? persistedLines : draftLines;
     const draftTotals = draftLines.length > 0 ? computeOrderTotals(draftLines) : null;
     const stored = readStoredCommission(o);
-    const commissionEur = stored.explicit ? stored.value : draftTotals ? draftTotals.commission : 0;
+    // Fallback : ni override stocké, ni draft → recalcul depuis order_lines + vendors.commission_*
+    const fallbackCommission = !stored.explicit && !draftTotals && persistedLines.length > 0
+      ? computeCommissionFromLines(persistedLines)
+      : 0;
+    const commissionEur = stored.explicit
+      ? stored.value
+      : draftTotals
+        ? draftTotals.commission
+        : fallbackCommission;
 
     const amountHT = Number(o.subtotal_excl_vat) || 0;
     const effectiveHT = draftTotals ? draftTotals.excl : amountHT;

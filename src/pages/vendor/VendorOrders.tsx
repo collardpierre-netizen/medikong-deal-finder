@@ -144,7 +144,12 @@ export default function VendorOrders() {
       const productIds = [...new Set(lines.map(l => l.product_id))];
 
       const [ordersRes, productsRes] = await Promise.all([
-        supabase.from("orders").select("id, order_number, status, created_at, shipping_address, customer_id, hidden_from_list, deleted_at").in("id", orderIds).eq("hidden_from_list", false),
+        supabase
+          .from("orders")
+          .select("id, order_number, status, created_at, shipping_address, customer_id, hidden_from_list, deleted_at")
+          .in("id", orderIds)
+          .eq("hidden_from_list", false)
+          .is("deleted_at", null),
         supabase.from("products").select("id, name, image_url").in("id", productIds),
       ]);
 

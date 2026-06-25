@@ -60,11 +60,12 @@ async function getToken(sb: any) {
   const cfg: Record<string, string> = {};
   for (const r of (rows || [])) cfg[r.key] = r.value;
   if (!cfg.qogita_email || !cfg.qogita_password) throw new Error("Qogita credentials missing");
+  const password = await maybeDecrypt(cfg.qogita_password);
   const base = cfg.base_url || "https://api.qogita.com";
   const r = await fetch(`${base}/auth/login/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: cfg.qogita_email, password: cfg.qogita_password }),
+    body: JSON.stringify({ email: cfg.qogita_email, password }),
   });
   if (!r.ok) throw new Error(`Auth failed (${r.status})`);
   const { accessToken } = await r.json();

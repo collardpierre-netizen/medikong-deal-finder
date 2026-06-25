@@ -168,7 +168,7 @@ const AdminCommandes = () => {
     const amountHT = Number(o.subtotal_excl_vat) || 0;
     const effectiveHT = draftTotals ? draftTotals.excl : amountHT;
 
-    // Marge brute = CA HT - coût d'achat HT (par ligne, agrégé)
+    // Marge HT = CA HT - coût d'achat HT (par ligne, agrégé)
     let costTotal = 0;
     let hasAnyCost = false;
     const isProvided = (v: any) => v !== null && v !== undefined && v !== "";
@@ -490,7 +490,7 @@ const AdminCommandes = () => {
         <KpiCard icon={Percent} label="Commission totale" value={`${fmt(commissionTotal)} EUR`} evolution={{ value: Number(commissionPctGlobal.toFixed(2)), label: "% du CA HT" }} iconColor="#10B981" iconBg="#ECFDF5" />
         <KpiCard
           icon={TrendingUp}
-          label="Marge brute"
+          label="Marge HT"
           value={grossMarginCaBase > 0 ? `${fmt(grossMarginTotal)} EUR` : "—"}
           evolution={grossMarginCaBase > 0 ? { value: Number(grossMarginPctGlobal.toFixed(2)), label: "% du CA HT (avec coût)" } : undefined}
           iconColor="#0E7490"
@@ -587,7 +587,7 @@ const AdminCommandes = () => {
                   <thead>
                     <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
                       <th className="px-2 py-3 w-8"></th>
-                      {["ID / Réf PO", "Acheteur", "Type", "Lignes", "Vendeurs", "Lignes uniques", "HT", "TVA", "TTC", "Marge brute", "Paiement", "Statut", ""].map((h) => (
+                      {["ID / Réf PO", "Acheteur", "Type", "Lignes", "Vendeurs", "Lignes uniques", "HT", "TVA", "TTC", "Marge HT", "Commission", "Paiement", "Statut", ""].map((h) => (
                         <th key={h} className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                       ))}
                     </tr>

@@ -68,7 +68,7 @@ const AdminCommandes = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vendors")
-        .select("id, name, company_name");
+        .select("id, name, company_name, commission_model, commission_rate, margin_split_pct, fixed_commission_amount");
       if (error) throw error;
       return data ?? [];
     },

@@ -33,7 +33,7 @@ const AdminCommandeDetail = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, customer:customers(*), order_lines(*, products(name), vendors(company_name, name, vat_number, bank_name, iban, bic))")
+        .select("*, customer:customers(*), order_lines(*, products(name, gtin, cnk_code), vendors(company_name, name, vat_number, bank_name, iban, bic))")
         .eq("id", id!)
         .maybeSingle();
       if (error) throw error;

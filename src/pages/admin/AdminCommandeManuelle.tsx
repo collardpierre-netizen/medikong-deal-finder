@@ -98,6 +98,7 @@ const AdminCommandeManuelle = () => {
   const [encodingAt, setEncodingAt] = useState<string>("");
   const [isForecast, setIsForecast] = useState<boolean>(false);
   const [duplicatedFrom, setDuplicatedFrom] = useState<string | null>(null);
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [docMode, setDocMode] = useState<"order" | "quote">("order");

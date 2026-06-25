@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Clock, CheckCircle2, XCircle, RefreshCw, GitMerge, MessageSquare,
-  Search, Loader2, Inbox, AlertTriangle, ExternalLink,
+  Search, Loader2, Inbox, AlertTriangle, ExternalLink, Download, Upload,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 
 import { supabase } from "@/integrations/supabase/client";
 import { formatUpdatedAt, formatUpdatedAtFull } from "@/lib/format-date";
@@ -339,6 +340,9 @@ export default function AdminProductSubmissions() {
   const [tab, setTab] = useState<SubmissionStatus | "all">("submitted");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Submission | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [importing, setImporting] = useState(false);
+  const qc = useQueryClient();
 
   const { data: submissions = [], isLoading } = useQuery({
     queryKey: ["admin-product-submissions", tab],
@@ -394,6 +398,79 @@ export default function AdminProductSubmissions() {
     });
   }, [submissions, search]);
 
+  const EXPORT_FIELDS = [
+    "product_name", "brand_name", "manufacturer_name", "cnk_code", "gtin",
+    "description", "pack_size", "category_slug", "country_code",
+  ] as const;
+
+  function handleExport() {
+    const rows = filtered.map((s) => {
+      const p = s.proposed_payload ?? {};
+      const base: Record<string, any> = {
+        submission_id: s.id,
+        status: s.status,
+        vendor: s.vendor?.company_name || s.vendor?.name || s.vendor?.display_code || "",
+        created_at: s.created_at,
+      };
+      for (const f of EXPORT_FIELDS) {
+        base[f] = payloadValue(p, f) ?? "";
+      }
+      base.admin_notes = "";
+      return base;
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Soumissions");
+    const stamp = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `soumissions-produits-${tab}-${stamp}.xlsx`);
+    toast.success(`${rows.length} ligne(s) exportée(s)`);
+  }
+
+  async function handleImportFile(file: File) {
+    setImporting(true);
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: "" });
+      let updated = 0;
+      let skipped = 0;
+      const errors: string[] = [];
+      for (const row of rows) {
+        const id = String(row.submission_id || "").trim();
+        if (!id) { skipped++; continue; }
+        const { data: current, error: fetchErr } = await supabase
+          .from("product_submissions")
+          .select("proposed_payload")
+          .eq("id", id)
+          .maybeSingle();
+        if (fetchErr || !current) { errors.push(id); continue; }
+        const merged: Record<string, any> = { ...(current.proposed_payload as any ?? {}) };
+        for (const f of EXPORT_FIELDS) {
+          const v = row[f];
+          if (v !== undefined && v !== null && String(v).trim() !== "") {
+            merged[f] = typeof v === "string" ? v.trim() : v;
+          }
+        }
+        if (row.admin_notes && String(row.admin_notes).trim() !== "") {
+          merged._admin_notes = String(row.admin_notes).trim();
+        }
+        const { error: updErr } = await supabase
+          .from("product_submissions")
+          .update({ proposed_payload: merged })
+          .eq("id", id);
+        if (updErr) errors.push(id);
+        else updated++;
+      }
+      qc.invalidateQueries({ queryKey: ["admin-product-submissions"] });
+      toast.success(`${updated} soumission(s) mise(s) à jour${skipped ? `, ${skipped} ignorée(s)` : ""}${errors.length ? `, ${errors.length} en erreur` : ""}`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur lors de l'import");
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return (
     <TooltipProvider>
       <div className="container max-w-6xl py-6 space-y-5">
@@ -412,14 +489,33 @@ export default function AdminProductSubmissions() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <CardTitle className="text-base">File des soumissions</CardTitle>
-              <div className="relative w-72 max-w-full">
-                <Search className="h-4 w-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  className="pl-8 h-9"
-                  placeholder="Nom, CNK, GTIN, vendeur…"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button variant="outline" size="sm" onClick={handleExport} className="gap-1" disabled={filtered.length === 0}>
+                  <Download className="h-4 w-4" /> Export XLSX
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="gap-1" disabled={importing}>
+                  {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Import XLSX
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleImportFile(f);
+                    e.target.value = "";
+                  }}
                 />
+                <div className="relative w-72 max-w-full">
+                  <Search className="h-4 w-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    className="pl-8 h-9"
+                    placeholder="Nom, CNK, GTIN, vendeur…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
           </CardHeader>

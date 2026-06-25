@@ -413,10 +413,32 @@ const AdminCommandeManuelle = () => {
         : await supabase.rpc("admin_create_manual_order", { _payload: payload as any });
       if (error) throw error;
       const result = data as any;
+      const persistedOrderId: string | null = editingOrderId || result?.order_id || null;
+      // Persist shipping address (snapshot + FK) — best-effort, n'échoue pas la commande
+      if (persistedOrderId) {
+        try {
+          const addr = shippingAddressId ? shippingAddresses.find((a) => a.id === shippingAddressId) : null;
+          const snapshot = addr ? {
+            label: addr.label,
+            address_l1: addr.address_l1,
+            address_l2: addr.address_l2,
+            postal_code: addr.postal_code,
+            city: addr.city,
+            country_code: addr.country_code,
+          } : null;
+          await (supabase as any)
+            .from("orders")
+            .update({ shipping_address_id: shippingAddressId || null, shipping_address: snapshot })
+            .eq("id", persistedOrderId);
+        } catch (e) {
+          console.warn("Échec MAJ adresse de livraison", e);
+        }
+      }
       if (draftId) {
         await supabase.rpc("admin_delete_manual_order_draft", { _id: draftId });
       }
       toast.success(editingOrderId ? "Commande mise à jour" : `Commande ${result?.order_number ?? ""} créée`);
+
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-orders"] }),
         queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] }),

@@ -142,7 +142,7 @@ Deno.serve(async (req) => {
     if (order.public_token) {
       doc.setFontSize(8);
       doc.setTextColor(120);
-      doc.text(`Lien : https://medikong.pro/commande/${order.public_token}`, pageW - 15, y + 28, { align: "right" });
+      doc.text(`Lien : https://medikong.pro/commande/lien/${order.public_token}`, pageW - 15, y + 28, { align: "right" });
     }
 
     y += 17;

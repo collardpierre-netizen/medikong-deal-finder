@@ -6,7 +6,7 @@ import AdminTopBar from "@/components/admin/AdminTopBar";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { fmtEur } from "@/lib/format-currency";
-import { ArrowLeft, FileDown, Pencil, Copy } from "lucide-react";
+import { ArrowLeft, FileDown, Pencil, Copy, Link2, ExternalLink } from "lucide-react";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Brouillon",
@@ -88,9 +88,13 @@ const AdminCommandeDetail = () => {
   // Vendor bank info (take first line vendor with bank info)
   const vendorWithBank = lines.map((l: any) => l.vendors).find((v: any) => v && (v.iban || v.bank_name));
 
+  const publicUrl = order.public_token ? `${window.location.origin}/commande/lien/${order.public_token}` : null;
+
   const generatePdf = async () => {
     setBusy("PDF");
     try {
+      // Génère le token public en même temps que le PDF (idempotent)
+      await supabase.rpc("admin_ensure_order_public_token" as any, { _order_id: id });
       const { data, error } = await supabase.functions.invoke("generate-order-pdf", { body: { order_id: id } });
       if (error) throw error;
       const url = (data as any)?.pdf_url;
@@ -102,6 +106,23 @@ const AdminCommandeDetail = () => {
       await queryClient.invalidateQueries({ queryKey: ["admin-order", id] });
     } catch (e: any) {
       toast.error(e?.message || "Échec génération PDF");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const ensurePublicLink = async () => {
+    setBusy("LINK");
+    try {
+      const { data, error } = await supabase.rpc("admin_ensure_order_public_token" as any, { _order_id: id });
+      if (error) throw error;
+      const token = data as unknown as string;
+      const url = `${window.location.origin}/commande/lien/${token}`;
+      await navigator.clipboard.writeText(url);
+      toast.success("Lien public copié");
+      await queryClient.invalidateQueries({ queryKey: ["admin-order", id] });
+    } catch (e: any) {
+      toast.error(e?.message || "Échec génération du lien");
     } finally {
       setBusy(null);
     }

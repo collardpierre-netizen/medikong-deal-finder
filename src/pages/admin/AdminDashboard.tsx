@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useI18n } from "@/contexts/I18nContext";
 import { useNavigate } from "react-router-dom";
 import AdminTopBar from "@/components/admin/AdminTopBar";
@@ -10,6 +10,7 @@ import OrdersStatusPieChart from "@/components/admin/OrdersStatusPieChart";
 import { fmtEur, withDotThousands } from "@/lib/format-currency";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer, Legend } from "recharts";
 import {
   DollarSign, ShoppingCart, Store, Package, AlertTriangle,
   TrendingUp, Info, UserCheck, Users, ChevronRight, Clock, Truck, Percent, CalendarClock,

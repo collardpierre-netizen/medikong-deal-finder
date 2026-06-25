@@ -109,20 +109,28 @@ const AdminCommandes = () => {
 
   const vendorLabelById = new Map((vendorsData as any[]).map(v => [v.id, v.company_name || v.name || v.id]));
 
-  const readStoredCommission = (raw: any) => {
+  const readStoredCommission = (raw: any): { value: number; explicit: boolean } => {
     const subs = ((raw as any).sub_orders || []) as Array<{
       commission_amount_override: number | null;
       commission_rate_override: number | null;
       subtotal_incl_vat: number | null;
     }>;
-    return subs.reduce((acc, s) => {
-      const amt = Number(s.commission_amount_override);
-      if (Number.isFinite(amt) && amt > 0) return acc + amt;
-      const rate = Number(s.commission_rate_override);
+    let explicit = false;
+    const value = subs.reduce((acc, s) => {
+      const amt = s.commission_amount_override;
+      if (amt !== null && amt !== undefined && Number.isFinite(Number(amt))) {
+        explicit = true;
+        return acc + Number(amt);
+      }
+      const rate = s.commission_rate_override;
       const sub = Number(s.subtotal_incl_vat) || 0;
-      if (Number.isFinite(rate) && rate > 0 && sub > 0) return acc + (sub * rate) / 100;
+      if (rate !== null && rate !== undefined && Number.isFinite(Number(rate))) {
+        explicit = true;
+        if (sub > 0) return acc + (sub * Number(rate)) / 100;
+      }
       return acc;
     }, 0);
+    return { value, explicit };
   };
 
   const storedCommissionByOrderNumber = new Map(ordersData.map((raw: any) => [raw.order_number, readStoredCommission(raw)]));
@@ -133,10 +141,12 @@ const AdminCommandes = () => {
     const persistedLines = ((o as any).order_lines || []) as any[];
     const lines = persistedLines.length > 0 ? persistedLines : draftLines;
     const draftTotals = draftLines.length > 0 ? computeOrderTotals(draftLines) : null;
-    const storedCommission = readStoredCommission(o);
+    const stored = readStoredCommission(o);
     const sourceOrderNumber = String((o as any).admin_notes || "").match(/Dupliquée depuis ([^\]\n]+)/)?.[1]?.trim();
-    const sourceCommission = sourceOrderNumber ? Number(storedCommissionByOrderNumber.get(sourceOrderNumber)) || 0 : 0;
-    const commissionEur = storedCommission > 0 ? storedCommission : draftTotals ? draftTotals.commission : sourceCommission;
+    const sourceStored = sourceOrderNumber ? storedCommissionByOrderNumber.get(sourceOrderNumber) : undefined;
+    const sourceCommission = sourceStored && !stored.explicit ? sourceStored.value : 0;
+    const commissionEur = stored.explicit ? stored.value : draftTotals ? draftTotals.commission : sourceCommission;
+
     const amountHT = Number(o.subtotal_excl_vat) || 0;
     const effectiveHT = draftTotals ? draftTotals.excl : amountHT;
     return {

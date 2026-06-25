@@ -167,6 +167,23 @@ const AdminCommandes = () => {
 
     const amountHT = Number(o.subtotal_excl_vat) || 0;
     const effectiveHT = draftTotals ? draftTotals.excl : amountHT;
+
+    // Marge brute = CA HT - coût d'achat HT (par ligne, agrégé)
+    let costTotal = 0;
+    let hasAnyCost = false;
+    for (const l of lines as any[]) {
+      const qty = Number(l.quantity) || 0;
+      // order_lines.cost_price (€/u) OU draft lines.unit_cost_excl_vat
+      const unitCost = Number(l.cost_price ?? l.unit_cost_excl_vat) || 0;
+      if (qty > 0 && unitCost > 0) {
+        costTotal += qty * unitCost;
+        hasAnyCost = true;
+      }
+    }
+    const grossMarginEur = hasAnyCost ? effectiveHT - costTotal : 0;
+    const grossMarginPct = hasAnyCost && effectiveHT > 0 ? (grossMarginEur / effectiveHT) * 100 : 0;
+    const netMarginEur = hasAnyCost ? grossMarginEur - commissionEur : 0;
+
     return {
       id: o.order_number,
       rawId: o.id,
@@ -180,6 +197,11 @@ const AdminCommandes = () => {
       commissionEur,
       commissionPct: effectiveHT > 0 ? (commissionEur / effectiveHT) * 100 : 0,
       commissionSource: stored.explicit ? "stored" : draftTotals ? "draft" : fallbackCommission > 0 ? "computed" : "none",
+      grossMarginEur,
+      grossMarginPct,
+      netMarginEur,
+      hasCost: hasAnyCost,
+      costTotal,
       paymentTerms: o.payment_method || "invoice",
       dueDate: o.payment_due_date ? new Date(o.payment_due_date).toLocaleDateString("fr-BE") : "—",
       status: o.status as "draft" | "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled",
@@ -233,6 +255,9 @@ const AdminCommandes = () => {
   const avgBasket = displayOrders.length > 0 ? Math.round(gmvDay / displayOrders.length) : 0;
   const commissionTotal = displayOrders.reduce((a, o) => a + o.commissionEur, 0);
   const commissionPctGlobal = gmvDay > 0 ? (commissionTotal / gmvDay) * 100 : 0;
+  const grossMarginTotal = displayOrders.reduce((a, o) => a + (o.hasCost ? o.grossMarginEur : 0), 0);
+  const grossMarginCaBase = displayOrders.reduce((a, o) => a + (o.hasCost ? o.amountHT : 0), 0);
+  const grossMarginPctGlobal = grossMarginCaBase > 0 ? (grossMarginTotal / grossMarginCaBase) * 100 : 0;
 
   const tabs = [
     { key: "list" as const, label: "Liste" },
@@ -448,11 +473,19 @@ const AdminCommandes = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-6 gap-3 mb-5">
+      <div className="grid grid-cols-7 gap-3 mb-5">
         <KpiCard icon={TrendingUp} label={`GMV total (${PERIODS.find(p => p.key === period)?.label})`} value={`${fmt(gmvDay)} EUR`} />
         <KpiCard icon={ShoppingCart} label="Commandes" value={String(displayOrders.length)} iconColor="#7C3AED" iconBg="#F5F3FF" />
         <KpiCard icon={CreditCard} label="Panier moyen" value={`${fmt(avgBasket)} EUR`} iconColor="#059669" iconBg="#F0FDF4" />
         <KpiCard icon={Percent} label="Commission totale" value={`${fmt(commissionTotal)} EUR`} evolution={{ value: Number(commissionPctGlobal.toFixed(2)), label: "% du CA HT" }} iconColor="#10B981" iconBg="#ECFDF5" />
+        <KpiCard
+          icon={TrendingUp}
+          label="Marge brute"
+          value={grossMarginCaBase > 0 ? `${fmt(grossMarginTotal)} EUR` : "—"}
+          evolution={grossMarginCaBase > 0 ? { value: Number(grossMarginPctGlobal.toFixed(2)), label: "% du CA HT (avec coût)" } : undefined}
+          iconColor="#0E7490"
+          iconBg="#ECFEFF"
+        />
         <KpiCard icon={Clock} label="En attente" value={String(countByStatus("pending"))} iconColor="#F59E0B" iconBg="#FFFBEB" />
         <KpiCard icon={Truck} label="En livraison" value={String(countByStatus("shipped"))} iconColor="#E70866" iconBg="#FDF2F8" />
       </div>
@@ -544,7 +577,7 @@ const AdminCommandes = () => {
                   <thead>
                     <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
                       <th className="px-2 py-3 w-8"></th>
-                      {["ID / Réf PO", "Acheteur", "Type", "Lignes", "Vendeurs", "Lignes uniques", "HT", "TVA", "TTC", "Commission", "Paiement", "Statut", ""].map((h) => (
+                      {["ID / Réf PO", "Acheteur", "Type", "Lignes", "Vendeurs", "Lignes uniques", "HT", "TVA", "TTC", "Commission", "Marge brute", "Paiement", "Statut", ""].map((h) => (
                         <th key={h} className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                       ))}
                     </tr>
@@ -630,6 +663,23 @@ const AdminCommandes = () => {
                               commissionPct={o.commissionPct}
                               commissionSource={o.commissionSource as any}
                             />
+                            <td
+                              className="px-3 py-3 font-mono"
+                              title={
+                                o.hasCost
+                                  ? `Marge brute = CA HT (${fmt(o.amountHT)}) − coût d'achat (${fmt(o.costTotal)})${o.commissionEur > 0 ? `\nMarge nette estimée (− commission) : ${fmt(o.netMarginEur)} EUR` : ""}`
+                                  : "Aucun prix d'achat renseigné sur les lignes — marge non calculable"
+                              }
+                            >
+                              {o.hasCost ? (
+                                <div className="leading-tight">
+                                  <div className="text-[12px] font-bold" style={{ color: o.grossMarginEur >= 0 ? "#0E7490" : "#EF4444" }}>{fmt(o.grossMarginEur)}</div>
+                                  <div className="text-[10px]" style={{ color: "#8B95A5" }}>{o.grossMarginPct.toFixed(2)} %</div>
+                                </div>
+                              ) : (
+                                <span className="text-[11px]" style={{ color: "#CBD5E1" }}>—</span>
+                              )}
+                            </td>
                             <td className="px-3 py-3 text-[11px]" style={{ color: "#616B7C" }}>{o.paymentTerms}</td>
                             <td className="px-3 py-3"><StatusBadge status={o.status} /></td>
                             <td className="px-3 py-3 text-right">

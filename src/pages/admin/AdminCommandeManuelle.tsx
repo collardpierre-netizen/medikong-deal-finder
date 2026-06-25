@@ -570,6 +570,49 @@ const AdminCommandeManuelle = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [duplicateFromUrl]);
 
+  // Édition en place d'une commande existante via ?edit=<orderId>
+  const editFromUrl = searchParams.get("edit");
+  useEffect(() => {
+    if (!editFromUrl || editingOrderId === editFromUrl) return;
+    (async () => {
+      try {
+        const { data, error } = await supabase.rpc("admin_load_order_for_edit" as any, { _order_id: editFromUrl });
+        if (error) throw error;
+        const p = data as any;
+        if (!p) throw new Error("commande introuvable");
+        setEditingOrderId(editFromUrl);
+        setCustomerId(p.customer_id ?? "");
+        setStatus(p.status ?? "confirmed");
+        setPaymentMethod(p.payment_method ?? "invoice");
+        setPaymentStatus(p.payment_status ?? "paid");
+        setAdminNotes(p.admin_notes ?? "");
+        setEncodingAt(p.encoding_at ?? "");
+        setIsForecast(Boolean(p.is_forecast));
+        setLines(Array.isArray(p.lines) ? p.lines.map((l: any) => ({
+          id: l.id ?? nid(),
+          mode: l.mode ?? "offer",
+          vendor_id: l.vendor_id ?? "",
+          offer_id: l.offer_id ?? undefined,
+          product_id: l.product_id ?? undefined,
+          offer_label: l.offer_label ?? undefined,
+          manual_label: l.manual_label ?? undefined,
+          quantity: Number(l.quantity) || 1,
+          unit_price_excl_vat: Number(l.unit_price_excl_vat) || 0,
+          vat_rate: Number(l.vat_rate ?? 21),
+          unit_cost_excl_vat: l.unit_cost_excl_vat ?? "",
+          commission_rate: l.commission_rate ?? "",
+          commission_amount: l.commission_amount ?? "",
+          commission_basis: l.commission_basis === "margin" ? "margin" : "ca",
+        })) : []);
+        toast.success("Commande chargée en édition");
+      } catch (e: any) {
+        toast.error("Échec chargement : " + (e?.message ?? String(e)));
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editFromUrl]);
+
+
 
 
 

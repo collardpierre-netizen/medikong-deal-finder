@@ -30,10 +30,52 @@ const AdminCommandeDetail = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, customer:customers(*), order_lines(*, products(name), vendors(company_name, name, vat_number))")
+        .select("*, customer:customers(*), order_lines(*, products(name), vendors(company_name, name, vat_number, bank_name, iban, bic))")
         .eq("id", id!)
         .maybeSingle();
       if (error) throw error;
+
+      const persisted = (data as any)?.order_lines || [];
+      const draftPayload = (data as any)?.draft_payload as any;
+      const draftLines = Array.isArray(draftPayload?.lines) ? draftPayload.lines : [];
+
+      if (persisted.length === 0 && draftLines.length > 0) {
+        const productIds = Array.from(new Set(draftLines.map((l: any) => l.product_id).filter(Boolean)));
+        const vendorIds = Array.from(new Set(draftLines.map((l: any) => l.vendor_id).filter(Boolean)));
+        const [{ data: prods }, { data: vends }] = await Promise.all([
+          productIds.length ? supabase.from("products").select("id, name").in("id", productIds) : Promise.resolve({ data: [] as any[] }),
+          vendorIds.length ? supabase.from("vendors").select("id, name, company_name, vat_number, bank_name, iban, bic").in("id", vendorIds) : Promise.resolve({ data: [] as any[] }),
+        ]);
+        const productMap = new Map((prods || []).map((p: any) => [p.id, p]));
+        const vendorMap = new Map((vends || []).map((v: any) => [v.id, v]));
+        const hydrated = draftLines.map((l: any, i: number) => {
+          const qty = Number(l.quantity) || 0;
+          const unit = Number(l.unit_price_excl_vat) || 0;
+          const vat = Number(l.vat_rate) || 0;
+          const totalHt = qty * unit;
+          return {
+            id: l.id || `draft-${i}`,
+            quantity: qty,
+            unit_price_excl_vat: unit,
+            vat_rate: vat,
+            line_total_excl_vat: totalHt,
+            manual_label: l.manual_label || l.offer_label,
+            products: productMap.get(l.product_id) || null,
+            vendors: vendorMap.get(l.vendor_id) || null,
+          };
+        });
+        const subtotal = hydrated.reduce((a: number, l: any) => a + l.line_total_excl_vat, 0);
+        const vat = hydrated.reduce((a: number, l: any) => a + (l.line_total_excl_vat * (l.vat_rate || 0)) / 100, 0);
+        return {
+          ...(data as any),
+          order_lines: hydrated,
+          subtotal_excl_vat: subtotal,
+          vat_amount: vat,
+          total_incl_vat: subtotal + vat,
+          _hydrated_from_draft: true,
+        };
+      }
+
       return data as any;
     },
     enabled: !!id,
@@ -43,6 +85,8 @@ const AdminCommandeDetail = () => {
   if (!order) return <div className="p-6 text-slate-500">Commande introuvable. <Link to="/admin/commandes" className="text-sky-600">Retour</Link></div>;
 
   const lines = order.order_lines || [];
+  // Vendor bank info (take first line vendor with bank info)
+  const vendorWithBank = lines.map((l: any) => l.vendors).find((v: any) => v && (v.iban || v.bank_name));
 
   const generatePdf = async () => {
     setBusy("PDF");

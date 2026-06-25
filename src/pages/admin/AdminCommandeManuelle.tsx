@@ -185,6 +185,33 @@ const AdminCommandeManuelle = () => {
     },
   });
 
+  // Adresses de livraison du customer sélectionné
+  const { data: shippingAddresses = [] } = useQuery({
+    queryKey: ["admin-manual-order-shipping-addresses", customerId],
+    enabled: !!customerId,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("customer_shipping_addresses")
+        .select("id, label, address_l1, address_l2, postal_code, city, country_code, is_default")
+        .eq("customer_id", customerId)
+        .order("is_default", { ascending: false })
+        .order("label", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; label: string; address_l1: string; address_l2: string | null; postal_code: string | null; city: string | null; country_code: string; is_default: boolean }>;
+    },
+  });
+
+  // Auto-sélectionne l'adresse par défaut quand on change de customer (sauf si déjà fixée en mode édition)
+  useEffect(() => {
+    if (!customerId) { setShippingAddressId(""); return; }
+    if (shippingAddressId && shippingAddresses.some((a) => a.id === shippingAddressId)) return;
+    const def = shippingAddresses.find((a) => a.is_default);
+    setShippingAddressId(def?.id ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customerId, shippingAddresses.length]);
+
+
+
   // Vendors (active)
   const { data: vendors = [] } = useQuery({
     queryKey: ["admin-manual-order-vendors"],

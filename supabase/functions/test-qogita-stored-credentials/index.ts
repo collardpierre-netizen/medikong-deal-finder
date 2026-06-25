@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     (rows || []).forEach((r: any) => { cfg[r.key] = { value: r.value, updated_at: r.updated_at }; });
 
     email = cfg.qogita_email?.value ?? null;
-    const password = cfg.qogita_password?.value ?? null;
+    const password = await maybeDecrypt(cfg.qogita_password?.value ?? null);
     const baseUrl = cfg.base_url?.value ?? "https://api.qogita.com";
     configUpdatedAt = cfg.qogita_password?.updated_at ?? cfg.qogita_email?.updated_at ?? null;
 

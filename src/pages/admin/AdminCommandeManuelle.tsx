@@ -1315,8 +1315,16 @@ function LineRow({
             )}
             {(line.offer_id || line.product_id) && (
               <div className="mt-1 text-xs text-muted-foreground">
-                {line.offer_id ? "Offre liée" : "Produit lié (sans offre)"} : {line.offer_label} ·{" "}
-                <button type="button" className="underline" onClick={() => { onPatch({ offer_id: undefined, product_id: undefined, offer_label: undefined }); setOfferSearch(""); }}>changer</button>
+                {line.offer_id ? "Offre liée" : "Produit lié (sans offre)"} : {line.offer_label}
+                {(line.gtin || line.cnk_code) && (
+                  <span className="ml-1 text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                    {line.gtin ? `EAN ${line.gtin}` : ""}
+                    {line.gtin && line.cnk_code ? " · " : ""}
+                    {line.cnk_code ? `CNK ${line.cnk_code}` : ""}
+                  </span>
+                )}
+                {" "}·{" "}
+                <button type="button" className="underline" onClick={() => { onPatch({ offer_id: undefined, product_id: undefined, offer_label: undefined, gtin: undefined, cnk_code: undefined }); setOfferSearch(""); }}>changer</button>
               </div>
             )}
           </div>

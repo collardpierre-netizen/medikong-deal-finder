@@ -13,6 +13,9 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -1235,15 +1238,13 @@ function LineRow({
       <div className="grid grid-cols-2 gap-2">
         <div>
           <Label className="text-xs">Vendeur</Label>
-          <Select value={line.vendor_id} onValueChange={(v) => onPatch({ vendor_id: v })}>
-            <SelectTrigger><SelectValue placeholder="Choisir un vendeur" /></SelectTrigger>
-            <SelectContent>
-              {vendors.map((v) => (
-                <SelectItem key={v.id} value={v.id}>{v.name ?? v.company_name ?? v.id.slice(0, 8)}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <VendorCombobox
+            vendors={vendors}
+            value={line.vendor_id}
+            onChange={(v) => onPatch({ vendor_id: v })}
+          />
         </div>
+
 
         {line.mode === "offer" ? (
           <div>
@@ -1428,4 +1429,60 @@ function LineRow({
   );
 }
 
+function VendorCombobox({
+  vendors,
+  value,
+  onChange,
+}: {
+  vendors: any[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = vendors.find((v) => v.id === value);
+  const label = selected ? (selected.name ?? selected.company_name ?? selected.id.slice(0, 8)) : "Choisir un vendeur";
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between font-normal"
+        >
+          <span className={selected ? "" : "text-muted-foreground"}>{label}</span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[320px] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Rechercher un vendeur…" />
+          <CommandList>
+            <CommandEmpty>Aucun vendeur trouvé.</CommandEmpty>
+            <CommandGroup>
+              {vendors.map((v) => {
+                const name = v.name ?? v.company_name ?? v.id.slice(0, 8);
+                return (
+                  <CommandItem
+                    key={v.id}
+                    value={name}
+                    onSelect={() => {
+                      onChange(v.id);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check className={`mr-2 h-4 w-4 ${value === v.id ? "opacity-100" : "opacity-0"}`} />
+                    {name}
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export default AdminCommandeManuelle;
+

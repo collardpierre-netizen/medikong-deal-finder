@@ -148,6 +148,32 @@ const AdminCommandeDetail = () => {
     toast.success("Lien PDF copié (valable 7 jours)");
   };
 
+  const savePublicAccess = async () => {
+    setBusy("ACCESS");
+    try {
+      const pin = pinInput.trim();
+      if (pin && !/^[0-9]{4,8}$/.test(pin)) {
+        toast.error("Le PIN doit faire 4 à 8 chiffres");
+        setBusy(null);
+        return;
+      }
+      const expiresAt = expiresInput ? new Date(expiresInput + "T23:59:59").toISOString() : null;
+      const { error } = await supabase.rpc("admin_set_order_public_access" as any, {
+        _order_id: id,
+        _pin: pin || null,
+        _expires_at: expiresAt,
+      });
+      if (error) throw error;
+      toast.success("Protection mise à jour");
+      await queryClient.invalidateQueries({ queryKey: ["admin-order", id] });
+    } catch (e: any) {
+      toast.error(e?.message || "Échec");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+
   return (
     <div>
       <AdminTopBar title={`Commande ${order.order_number}`} subtitle={`Statut : ${STATUS_LABEL[order.status] ?? order.status}`} />

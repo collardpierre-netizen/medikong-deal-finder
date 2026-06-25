@@ -379,21 +379,21 @@ const AdminCommandeManuelle = () => {
         return;
       }
 
-      const { data, error } = await supabase.rpc("admin_create_manual_order", {
-        _payload: payload as any,
-      });
+      const { data, error } = editingOrderId
+        ? await supabase.rpc("admin_update_manual_order" as any, { _order_id: editingOrderId, _payload: payload as any })
+        : await supabase.rpc("admin_create_manual_order", { _payload: payload as any });
       if (error) throw error;
       const result = data as any;
       if (draftId) {
         await supabase.rpc("admin_delete_manual_order_draft", { _id: draftId });
       }
-      toast.success(`Commande ${result?.order_number ?? ""} créée`);
+      toast.success(editingOrderId ? "Commande mise à jour" : `Commande ${result?.order_number ?? ""} créée`);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-orders"] }),
         queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] }),
         queryClient.invalidateQueries({ queryKey: ["vendor-dashboard-kpis"] }),
       ]);
-      navigate("/admin/commandes");
+      navigate(editingOrderId ? `/admin/commandes/${editingOrderId}` : "/admin/commandes");
     } catch (e: any) {
       toast.error("Échec : " + (e?.message ?? String(e)));
     } finally {

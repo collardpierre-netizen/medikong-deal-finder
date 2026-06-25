@@ -22734,6 +22734,23 @@ export type Database = {
         }[]
       }
       admin_category_mapping_dashboard: { Args: never; Returns: Json }
+      admin_check_orders_coherence: {
+        Args: { _order_ids?: string[] }
+        Returns: {
+          ca_ht: number
+          coherence: string
+          commission: number
+          commission_pct: number
+          cost_ht: number
+          has_cost: boolean
+          is_forecast: boolean
+          issue: string
+          marge_ht: number
+          order_id: string
+          order_number: string
+          status: string
+        }[]
+      }
       admin_claim_product_submission: {
         Args: { _submission_id: string }
         Returns: undefined

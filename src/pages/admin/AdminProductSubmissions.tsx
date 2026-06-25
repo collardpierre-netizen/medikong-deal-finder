@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Clock, CheckCircle2, XCircle, RefreshCw, GitMerge, MessageSquare,
-  Search, Loader2, Inbox, AlertTriangle, ExternalLink,
+  Search, Loader2, Inbox, AlertTriangle, ExternalLink, Download, Upload,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 
 import { supabase } from "@/integrations/supabase/client";
 import { formatUpdatedAt, formatUpdatedAtFull } from "@/lib/format-date";

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
@@ -119,7 +119,7 @@ export default function VendorOrders() {
   const vendorQuery = useCurrentVendor();
   const vendorId = vendorQuery.data?.id;
   const queryClient = useQueryClient();
-  const vendorOrdersQueryKey = ["vendor-order-lines", vendorId] as const;
+  const vendorOrdersQueryKey = useMemo(() => ["vendor-order-lines", vendorId] as const, [vendorId]);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
   // Modales
@@ -212,7 +212,7 @@ export default function VendorOrders() {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [queryClient, vendorId]);
+  }, [queryClient, vendorId, vendorOrdersQueryKey]);
 
   // ----- Mutations -----
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["vendor-order-lines"] });

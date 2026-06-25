@@ -146,6 +146,7 @@ const AdminProduitDetail = lazyWithRetry(() => import("./pages/admin/AdminProdui
 const AdminSchemasPIM = lazyWithRetry(() => import("./pages/admin/AdminSchemasPIM"), "AdminSchemasPIM");
 const AdminCommandes = lazyWithRetry(() => import("./pages/admin/AdminCommandes"), "AdminCommandes");
 const AdminCommandeManuelle = lazyWithRetry(() => import("./pages/admin/AdminCommandeManuelle"), "AdminCommandeManuelle");
+const AdminCommandeDetail = lazyWithRetry(() => import("./pages/admin/AdminCommandeDetail"), "AdminCommandeDetail");
 const AdminDevis = lazyWithRetry(() => import("./pages/admin/AdminDevis"), "AdminDevis");
 const AdminDevisDetail = lazyWithRetry(() => import("./pages/admin/AdminDevisDetail"), "AdminDevisDetail");
 const PublicQuotePage = lazyWithRetry(() => import("./pages/PublicQuotePage"), "PublicQuotePage");

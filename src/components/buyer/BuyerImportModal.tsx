@@ -960,6 +960,23 @@ export function BuyerImportModal({ open, onOpenChange, initialJobId = null }: Pr
             </label>
           )}
 
+          {/* Aggregate duplicates toggle */}
+          {phase !== "results" && (
+            <label className="flex items-start gap-2 text-sm bg-muted/40 border border-border rounded-lg px-3 py-2.5 cursor-pointer hover:bg-muted/60 transition">
+              <Checkbox
+                checked={aggregateDuplicates}
+                onCheckedChange={(c) => setAggregateDuplicates(c === true)}
+                className="mt-0.5"
+              />
+              <div className="flex-1">
+                <div className="font-medium text-foreground">Agréger les lignes en double (EAN / CNK)</div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Si plusieurs lignes partagent le même code, leurs <span className="font-medium">quantités sont sommées</span> et le <span className="font-medium">prix minimum</span> est conservé. Décochez pour bloquer l'import et obtenir un CSV des doublons.
+                </p>
+              </div>
+            </label>
+          )}
+
           {/* Saved-to-account confirmation banner */}
           {phase === "results" && savedCount !== null && savedCount > 0 && (
             <div className="flex items-center gap-2 text-sm bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-emerald-800">

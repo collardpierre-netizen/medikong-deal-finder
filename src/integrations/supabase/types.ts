@@ -19299,7 +19299,9 @@ export type Database = {
           address_line1: string | null
           auth_user_id: string | null
           auto_forward_to_qogita: boolean
+          bank_name: string | null
           bce_number: string | null
+          bic: string | null
           business_type: string | null
           can_manage_offers: boolean
           city: string | null
@@ -19319,6 +19321,7 @@ export type Database = {
           email: string | null
           facebook_url: string | null
           fixed_commission_amount: number | null
+          iban: string | null
           id: string
           instagram_url: string | null
           is_active: boolean
@@ -19382,7 +19385,9 @@ export type Database = {
           address_line1?: string | null
           auth_user_id?: string | null
           auto_forward_to_qogita?: boolean
+          bank_name?: string | null
           bce_number?: string | null
+          bic?: string | null
           business_type?: string | null
           can_manage_offers?: boolean
           city?: string | null
@@ -19402,6 +19407,7 @@ export type Database = {
           email?: string | null
           facebook_url?: string | null
           fixed_commission_amount?: number | null
+          iban?: string | null
           id?: string
           instagram_url?: string | null
           is_active?: boolean
@@ -19465,7 +19471,9 @@ export type Database = {
           address_line1?: string | null
           auth_user_id?: string | null
           auto_forward_to_qogita?: boolean
+          bank_name?: string | null
           bce_number?: string | null
+          bic?: string | null
           business_type?: string | null
           can_manage_offers?: boolean
           city?: string | null
@@ -19485,6 +19493,7 @@ export type Database = {
           email?: string | null
           facebook_url?: string | null
           fixed_commission_amount?: number | null
+          iban?: string | null
           id?: string
           instagram_url?: string | null
           is_active?: boolean

@@ -30,10 +30,52 @@ const AdminCommandeDetail = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, customer:customers(*), order_lines(*, products(name), vendors(company_name, name, vat_number))")
+        .select("*, customer:customers(*), order_lines(*, products(name), vendors(company_name, name, vat_number, bank_name, iban, bic))")
         .eq("id", id!)
         .maybeSingle();
       if (error) throw error;
+
+      const persisted = (data as any)?.order_lines || [];
+      const draftPayload = (data as any)?.draft_payload as any;
+      const draftLines = Array.isArray(draftPayload?.lines) ? draftPayload.lines : [];
+
+      if (persisted.length === 0 && draftLines.length > 0) {
+        const productIds = Array.from(new Set(draftLines.map((l: any) => l.product_id).filter(Boolean))) as string[];
+        const vendorIds = Array.from(new Set(draftLines.map((l: any) => l.vendor_id).filter(Boolean))) as string[];
+        const [{ data: prods }, { data: vends }] = await Promise.all([
+          productIds.length ? supabase.from("products").select("id, name").in("id", productIds) : Promise.resolve({ data: [] as any[] }),
+          vendorIds.length ? supabase.from("vendors").select("id, name, company_name, vat_number, bank_name, iban, bic").in("id", vendorIds) : Promise.resolve({ data: [] as any[] }),
+        ]);
+        const productMap = new Map((prods || []).map((p: any) => [p.id, p]));
+        const vendorMap = new Map((vends || []).map((v: any) => [v.id, v]));
+        const hydrated = draftLines.map((l: any, i: number) => {
+          const qty = Number(l.quantity) || 0;
+          const unit = Number(l.unit_price_excl_vat) || 0;
+          const vat = Number(l.vat_rate) || 0;
+          const totalHt = qty * unit;
+          return {
+            id: l.id || `draft-${i}`,
+            quantity: qty,
+            unit_price_excl_vat: unit,
+            vat_rate: vat,
+            line_total_excl_vat: totalHt,
+            manual_label: l.manual_label || l.offer_label,
+            products: productMap.get(l.product_id) || null,
+            vendors: vendorMap.get(l.vendor_id) || null,
+          };
+        });
+        const subtotal = hydrated.reduce((a: number, l: any) => a + l.line_total_excl_vat, 0);
+        const vat = hydrated.reduce((a: number, l: any) => a + (l.line_total_excl_vat * (l.vat_rate || 0)) / 100, 0);
+        return {
+          ...(data as any),
+          order_lines: hydrated,
+          subtotal_excl_vat: subtotal,
+          vat_amount: vat,
+          total_incl_vat: subtotal + vat,
+          _hydrated_from_draft: true,
+        };
+      }
+
       return data as any;
     },
     enabled: !!id,
@@ -43,6 +85,8 @@ const AdminCommandeDetail = () => {
   if (!order) return <div className="p-6 text-slate-500">Commande introuvable. <Link to="/admin/commandes" className="text-sky-600">Retour</Link></div>;
 
   const lines = order.order_lines || [];
+  // Vendor bank info (take first line vendor with bank info)
+  const vendorWithBank = lines.map((l: any) => l.vendors).find((v: any) => v && (v.iban || v.bank_name));
 
   const generatePdf = async () => {
     setBusy("PDF");
@@ -144,7 +188,29 @@ const AdminCommandeDetail = () => {
               </tfoot>
             </table>
           </div>
+
+          {vendorWithBank && (
+            <div className="bg-white border rounded-lg p-4" style={{ borderColor: "#E2E8F0" }}>
+              <div className="text-[11px] uppercase text-slate-400 font-semibold mb-2">Informations de paiement — {vendorWithBank.company_name || vendorWithBank.name}</div>
+              <div className="grid grid-cols-3 gap-3 text-sm">
+                {vendorWithBank.bank_name && (
+                  <div><div className="text-xs text-slate-500">Banque</div><div className="font-medium">{vendorWithBank.bank_name}</div></div>
+                )}
+                {vendorWithBank.iban && (
+                  <div className="col-span-2"><div className="text-xs text-slate-500">IBAN</div><div className="font-medium tracking-wide">{vendorWithBank.iban}</div></div>
+                )}
+                {vendorWithBank.bic && (
+                  <div><div className="text-xs text-slate-500">BIC</div><div className="font-medium">{vendorWithBank.bic}</div></div>
+                )}
+                {vendorWithBank.vat_number && (
+                  <div className="col-span-2"><div className="text-xs text-slate-500">TVA fournisseur</div><div className="font-medium">{vendorWithBank.vat_number}</div></div>
+                )}
+              </div>
+              <div className="mt-3 text-xs text-slate-500">Communication : <span className="font-mono">{order.order_number}</span></div>
+            </div>
+          )}
         </div>
+
 
         <div className="space-y-4">
           <div className="bg-white border rounded-lg p-4 space-y-2" style={{ borderColor: "#E2E8F0" }}>

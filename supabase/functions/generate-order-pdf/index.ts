@@ -60,17 +60,53 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "order not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { data: lines } = await adminClient
+    let { data: lines } = await adminClient
       .from("order_lines")
-      .select("*, products(name), vendors(company_name, name, vat_number, address)")
+      .select("*, products(name), vendors(company_name, name, vat_number, address_line1, bank_name, iban, bic)")
       .eq("order_id", orderId);
+
+    // Fallback : commande draft / prévisionnelle → lignes dans draft_payload
+    let computedSubtotalHt = Number(order.subtotal_excl_vat) || 0;
+    let computedVat = Number(order.vat_amount) || 0;
+    let computedTtc = Number(order.total_incl_vat) || 0;
+
+    if ((!lines || lines.length === 0) && Array.isArray((order as any).draft_payload?.lines)) {
+      const draftLines = (order as any).draft_payload.lines as any[];
+      const productIds = Array.from(new Set(draftLines.map((l) => l.product_id).filter(Boolean)));
+      const vendorIds = Array.from(new Set(draftLines.map((l) => l.vendor_id).filter(Boolean)));
+      const [{ data: prods }, { data: vends }] = await Promise.all([
+        productIds.length ? adminClient.from("products").select("id, name").in("id", productIds) : Promise.resolve({ data: [] as any[] }),
+        vendorIds.length ? adminClient.from("vendors").select("id, name, company_name, vat_number, address_line1, bank_name, iban, bic").in("id", vendorIds) : Promise.resolve({ data: [] as any[] }),
+      ]);
+      const prodMap = new Map((prods || []).map((p: any) => [p.id, p]));
+      const vendMap = new Map((vends || []).map((v: any) => [v.id, v]));
+      lines = draftLines.map((l: any) => {
+        const qty = Number(l.quantity) || 0;
+        const unit = Number(l.unit_price_excl_vat) || 0;
+        const vatR = Number(l.vat_rate) || 0;
+        const ht = qty * unit;
+        return {
+          quantity: qty,
+          unit_price_excl_vat: unit,
+          vat_rate: vatR,
+          line_total_excl_vat: ht,
+          manual_label: l.offer_label || l.manual_label,
+          products: prodMap.get(l.product_id) || null,
+          vendors: vendMap.get(l.vendor_id) || null,
+        } as any;
+      });
+      computedSubtotalHt = lines.reduce((a: number, l: any) => a + l.line_total_excl_vat, 0);
+      computedVat = lines.reduce((a: number, l: any) => a + (l.line_total_excl_vat * (l.vat_rate || 0)) / 100, 0);
+      computedTtc = computedSubtotalHt + computedVat;
+    }
+
 
     const currency = "EUR";
 
-    // Totaux (en € depuis numeric)
-    const totalHt = Number(order.subtotal_excl_vat) || 0;
-    const totalTva = Number(order.vat_amount) || 0;
-    const totalTtc = Number(order.total_incl_vat) || 0;
+    // Totaux (en €) — utilise les valeurs hydratées si la commande est encore en draft
+    const totalHt = computedSubtotalHt;
+    const totalTva = computedVat;
+    const totalTtc = computedTtc;
 
     // ─── PDF ───────────────────────────────────────────────────────────
     const doc = new jsPDF({ unit: "mm", format: "a4" });
@@ -181,6 +217,31 @@ Deno.serve(async (req) => {
     doc.setFontSize(12);
     doc.text("Total TTC", totX - 50, y + 1.5, { align: "right" });
     doc.text(fmtEur(Math.round(totalTtc * 100), currency), totX, y + 1.5, { align: "right" });
+
+    y += 14;
+
+    // Bank info (fournisseur principal avec IBAN)
+    const vendorWithBank = (lines || [])
+      .map((l: any) => l.vendors)
+      .find((v: any) => v && (v.iban || v.bank_name));
+
+    if (vendorWithBank) {
+      if (y > 250) { doc.addPage(); y = 20; }
+      doc.setFillColor(245, 247, 250);
+      doc.rect(15, y, pageW - 30, 28, "F");
+      doc.setFontSize(10);
+      doc.setTextColor(30, 37, 47);
+      doc.text(`Informations de paiement — ${vendorWithBank.company_name || vendorWithBank.name || "Fournisseur"}`, 18, y + 6);
+      doc.setFontSize(9);
+      doc.setTextColor(80);
+      let by = y + 12;
+      if (vendorWithBank.bank_name) { doc.text(`Banque : ${vendorWithBank.bank_name}`, 18, by); by += 5; }
+      if (vendorWithBank.iban) { doc.text(`IBAN : ${vendorWithBank.iban}`, 18, by); by += 5; }
+      if (vendorWithBank.bic) { doc.text(`BIC : ${vendorWithBank.bic}`, 18, by); by += 5; }
+      doc.text(`Communication : ${order.order_number}`, pageW - 18, y + 12, { align: "right" });
+      if (vendorWithBank.vat_number) doc.text(`TVA : ${vendorWithBank.vat_number}`, pageW - 18, y + 17, { align: "right" });
+      y += 32;
+    }
 
     // Footer
     doc.setFontSize(8);

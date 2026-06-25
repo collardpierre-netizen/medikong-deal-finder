@@ -2,6 +2,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { jsPDF } from "npm:jspdf@2.5.2";
+import { MEDIKONG_LOGO_PNG_BASE64 } from "../_shared/medikong-logo.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -113,15 +114,19 @@ Deno.serve(async (req) => {
     const pageW = 210;
     let y = 15;
 
-    // Header
-    doc.setFontSize(20);
+    // Header — logo MediKong
+    try {
+      doc.addImage(MEDIKONG_LOGO_PNG_BASE64, "PNG", 15, y - 2, 42, 14);
+    } catch (_) { /* logo failure non bloquant */ }
+
+    doc.setFontSize(16);
     doc.setTextColor(28, 88, 217);
-    doc.text("BON DE COMMANDE", 15, y);
+    doc.text("BON DE COMMANDE", 15, y + 22);
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`N° ${order.order_number}`, 15, y + 6);
-    doc.text(`Date : ${new Date(order.created_at).toLocaleDateString("fr-BE")}`, 15, y + 11);
-    doc.text(`Statut : ${order.status}`, 15, y + 16);
+    doc.text(`N° ${order.order_number}`, 15, y + 28);
+    doc.text(`Date : ${new Date(order.created_at).toLocaleDateString("fr-BE")}`, 15, y + 33);
+    doc.text(`Statut : ${order.status}`, 15, y + 38);
 
     // MediKong issuer (right)
     doc.setFontSize(11);
@@ -133,6 +138,14 @@ Deno.serve(async (req) => {
     doc.text("23 rue de la Procession", pageW - 15, y + 15, { align: "right" });
     doc.text("7822 Ath, Belgique", pageW - 15, y + 19, { align: "right" });
     doc.text("TVA : BE 1005.771.323", pageW - 15, y + 23, { align: "right" });
+
+    if (order.public_token) {
+      doc.setFontSize(8);
+      doc.setTextColor(120);
+      doc.text(`Lien : https://medikong.pro/commande/lien/${order.public_token}`, pageW - 15, y + 28, { align: "right" });
+    }
+
+    y += 17;
 
     y += 35;
 

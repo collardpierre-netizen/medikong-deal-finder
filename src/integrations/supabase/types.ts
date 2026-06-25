@@ -8096,6 +8096,7 @@ export type Database = {
           payment_due_date: string | null
           payment_method: Database["public"]["Enums"]["payment_method_enum"]
           payment_status: Database["public"]["Enums"]["payment_status_enum"]
+          public_token: string | null
           shipping_address: Json
           source: Database["public"]["Enums"]["order_source"]
           status: Database["public"]["Enums"]["order_status"]
@@ -8133,6 +8134,7 @@ export type Database = {
           payment_due_date?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method_enum"]
           payment_status?: Database["public"]["Enums"]["payment_status_enum"]
+          public_token?: string | null
           shipping_address?: Json
           source?: Database["public"]["Enums"]["order_source"]
           status?: Database["public"]["Enums"]["order_status"]
@@ -8170,6 +8172,7 @@ export type Database = {
           payment_due_date?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method_enum"]
           payment_status?: Database["public"]["Enums"]["payment_status_enum"]
+          public_token?: string | null
           shipping_address?: Json
           source?: Database["public"]["Enums"]["order_source"]
           status?: Database["public"]["Enums"]["order_status"]
@@ -22485,6 +22488,7 @@ export type Database = {
           payment_due_date: string | null
           payment_method: Database["public"]["Enums"]["payment_method_enum"]
           payment_status: Database["public"]["Enums"]["payment_status_enum"]
+          public_token: string | null
           shipping_address: Json
           source: Database["public"]["Enums"]["order_source"]
           status: Database["public"]["Enums"]["order_status"]
@@ -22548,6 +22552,10 @@ export type Database = {
           total: number
           window_days: number
         }[]
+      }
+      admin_ensure_order_public_token: {
+        Args: { _order_id: string }
+        Returns: string
       }
       admin_find_submission_duplicates: {
         Args: { _submission_id: string }
@@ -23791,6 +23799,7 @@ export type Database = {
         Args: { _country_code?: string }
         Returns: number
       }
+      public_get_order_by_token: { Args: { _token: string }; Returns: Json }
       public_search_brands_fuzzy: {
         Args: { _limit?: number; _q: string }
         Returns: {

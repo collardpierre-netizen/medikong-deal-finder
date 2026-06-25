@@ -1429,4 +1429,60 @@ function LineRow({
   );
 }
 
+function VendorCombobox({
+  vendors,
+  value,
+  onChange,
+}: {
+  vendors: any[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = vendors.find((v) => v.id === value);
+  const label = selected ? (selected.name ?? selected.company_name ?? selected.id.slice(0, 8)) : "Choisir un vendeur";
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between font-normal"
+        >
+          <span className={selected ? "" : "text-muted-foreground"}>{label}</span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[320px] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Rechercher un vendeur…" />
+          <CommandList>
+            <CommandEmpty>Aucun vendeur trouvé.</CommandEmpty>
+            <CommandGroup>
+              {vendors.map((v) => {
+                const name = v.name ?? v.company_name ?? v.id.slice(0, 8);
+                return (
+                  <CommandItem
+                    key={v.id}
+                    value={name}
+                    onSelect={() => {
+                      onChange(v.id);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check className={`mr-2 h-4 w-4 ${value === v.id ? "opacity-100" : "opacity-0"}`} />
+                    {name}
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export default AdminCommandeManuelle;
+

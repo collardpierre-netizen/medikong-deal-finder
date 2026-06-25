@@ -677,6 +677,8 @@ const AdminCommandeManuelle = () => {
           commission_rate: l.commission_rate ?? "",
           commission_amount: l.commission_amount ?? "",
           commission_basis: l.commission_basis === "margin" ? "margin" : "ca",
+          gtin: l.gtin ?? undefined,
+          cnk_code: l.cnk_code ?? undefined,
         })) : []);
         toast.success("Commande chargée en édition");
       } catch (e: any) {

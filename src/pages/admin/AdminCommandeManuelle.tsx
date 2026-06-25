@@ -100,6 +100,7 @@ const AdminCommandeManuelle = () => {
   const [duplicatedFrom, setDuplicatedFrom] = useState<string | null>(null);
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [shippingAddressId, setShippingAddressId] = useState<string>("");
+  const [fulfillmentMode, setFulfillmentMode] = useState<"pickup" | "delivery">("delivery");
 
 
   const [submitting, setSubmitting] = useState(false);

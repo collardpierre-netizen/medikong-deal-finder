@@ -268,6 +268,7 @@ export function BuyerImportModal({ open, onOpenChange, initialJobId = null }: Pr
   const { addToCart } = useCart();
   const { user } = useAuth();
   const [saveToAccount, setSaveToAccount] = useState(true);
+  const [aggregateDuplicates, setAggregateDuplicates] = useState(true);
   const [savedCount, setSavedCount] = useState<number | null>(null);
 
   const reset = useCallback(() => {

@@ -345,6 +345,16 @@ const AdminCommandeManuelle = () => {
 
     const encodingIso = encodingAt ? new Date(encodingAt).toISOString() : null;
     const futureEncoding = encodingIso ? new Date(encodingIso).getTime() > Date.now() : false;
+    const selectedShippingAddress = shippingAddressId ? shippingAddresses.find((a) => a.id === shippingAddressId) : null;
+    const shippingSnapshot = fulfillmentMode === "delivery" && selectedShippingAddress ? {
+      label: selectedShippingAddress.label,
+      address_l1: selectedShippingAddress.address_l1,
+      address_l2: selectedShippingAddress.address_l2,
+      postal_code: selectedShippingAddress.postal_code,
+      city: selectedShippingAddress.city,
+      country_code: selectedShippingAddress.country_code,
+    } : null;
+
     const payload = {
       customer_id: customerId,
       status,
@@ -353,6 +363,9 @@ const AdminCommandeManuelle = () => {
       admin_notes: adminNotes || null,
       created_at: encodingIso,
       is_forecast: isForecast || futureEncoding,
+      fulfillment_mode: fulfillmentMode,
+      shipping_address_id: fulfillmentMode === "delivery" ? (shippingAddressId || null) : null,
+      shipping_address: shippingSnapshot,
       lines: lines.map((l) => ({
         vendor_id: l.vendor_id,
         offer_id: l.mode === "offer" ? l.offer_id : null,
@@ -414,31 +427,6 @@ const AdminCommandeManuelle = () => {
         : await supabase.rpc("admin_create_manual_order", { _payload: payload as any });
       if (error) throw error;
       const result = data as any;
-      const persistedOrderId: string | null = editingOrderId || result?.order_id || null;
-      // Persist shipping address (snapshot + FK) — best-effort, n'échoue pas la commande
-      if (persistedOrderId) {
-        try {
-          const addr = shippingAddressId ? shippingAddresses.find((a) => a.id === shippingAddressId) : null;
-          const snapshot = addr ? {
-            label: addr.label,
-            address_l1: addr.address_l1,
-            address_l2: addr.address_l2,
-            postal_code: addr.postal_code,
-            city: addr.city,
-            country_code: addr.country_code,
-          } : null;
-          await (supabase as any)
-            .from("orders")
-            .update({
-              shipping_address_id: fulfillmentMode === "delivery" ? (shippingAddressId || null) : null,
-              shipping_address: fulfillmentMode === "delivery" ? snapshot : null,
-              fulfillment_mode: fulfillmentMode,
-            })
-            .eq("id", persistedOrderId);
-        } catch (e) {
-          console.warn("Échec MAJ adresse de livraison", e);
-        }
-      }
       if (draftId) {
         await supabase.rpc("admin_delete_manual_order_draft", { _id: draftId });
       }
@@ -602,6 +590,8 @@ const AdminCommandeManuelle = () => {
         );
         setEncodingAt("");
         setIsForecast(false);
+        setFulfillmentMode(p.fulfillment_mode === "pickup" ? "pickup" : "delivery");
+        setShippingAddressId(p.shipping_address_id ?? "");
         setLines(Array.isArray(p.lines) ? p.lines.map((l: any) => ({
           id: l.id ?? nid(),
           mode: l.mode ?? "offer",

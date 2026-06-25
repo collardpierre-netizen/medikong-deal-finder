@@ -129,9 +129,9 @@ Deno.serve(async (req) => {
 
     let y = 12;
 
-    // Logo (ratio natif 1.6)
+    // Logo recadré, ratio natif ≈ 4.8 — évite l'effet "écrasé" et agrandit la marque
     try {
-      doc.addImage(MEDIKONG_LOGO_PNG_BASE64, "PNG", M, y, 34, 21.25);
+      doc.addImage(MEDIKONG_LOGO_PNG_BASE64, "PNG", M, y + 5, 58, 12.1);
     } catch (_) { /* non bloquant */ }
 
     // Bloc émetteur (droite)

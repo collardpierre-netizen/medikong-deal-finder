@@ -620,6 +620,8 @@ const AdminCommandeManuelle = () => {
           commission_rate: l.commission_rate ?? "",
           commission_amount: l.commission_amount ?? "",
           commission_basis: l.commission_basis === "margin" ? "margin" : "ca",
+          gtin: l.gtin ?? undefined,
+          cnk_code: l.cnk_code ?? undefined,
         })) : []);
         toast.success(`Commande ${p.source_order_number ?? ""} dupliquée — éditez puis créez`);
       } catch (e: any) {

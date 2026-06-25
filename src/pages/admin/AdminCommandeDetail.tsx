@@ -84,10 +84,18 @@ const AdminCommandeDetail = () => {
     enabled: !!id,
   });
 
+  useEffect(() => {
+    if (order) {
+      setPinInput((order as any).public_access_pin || "");
+      const exp = (order as any).public_access_expires_at;
+      setExpiresInput(exp ? new Date(exp).toISOString().slice(0, 10) : "");
+    }
+  }, [order]);
+
   if (isLoading) return <div className="p-6 text-slate-500">Chargement…</div>;
   if (!order) return <div className="p-6 text-slate-500">Commande introuvable. <Link to="/admin/commandes" className="text-sky-600">Retour</Link></div>;
 
-  // Sync inputs when order loads
+
 
 
   const lines = order.order_lines || [];

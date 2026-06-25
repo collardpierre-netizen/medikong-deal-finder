@@ -1238,15 +1238,13 @@ function LineRow({
       <div className="grid grid-cols-2 gap-2">
         <div>
           <Label className="text-xs">Vendeur</Label>
-          <Select value={line.vendor_id} onValueChange={(v) => onPatch({ vendor_id: v })}>
-            <SelectTrigger><SelectValue placeholder="Choisir un vendeur" /></SelectTrigger>
-            <SelectContent>
-              {vendors.map((v) => (
-                <SelectItem key={v.id} value={v.id}>{v.name ?? v.company_name ?? v.id.slice(0, 8)}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <VendorCombobox
+            vendors={vendors}
+            value={line.vendor_id}
+            onChange={(v) => onPatch({ vendor_id: v })}
+          />
         </div>
+
 
         {line.mode === "offer" ? (
           <div>

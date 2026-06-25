@@ -168,7 +168,7 @@ const AdminCommandes = () => {
     const amountHT = Number(o.subtotal_excl_vat) || 0;
     const effectiveHT = draftTotals ? draftTotals.excl : amountHT;
 
-    // Marge brute = CA HT - coût d'achat HT (par ligne, agrégé)
+    // Marge HT = CA HT - coût d'achat HT (par ligne, agrégé)
     let costTotal = 0;
     let hasAnyCost = false;
     const isProvided = (v: any) => v !== null && v !== undefined && v !== "";
@@ -490,7 +490,7 @@ const AdminCommandes = () => {
         <KpiCard icon={Percent} label="Commission totale" value={`${fmt(commissionTotal)} EUR`} evolution={{ value: Number(commissionPctGlobal.toFixed(2)), label: "% du CA HT" }} iconColor="#10B981" iconBg="#ECFDF5" />
         <KpiCard
           icon={TrendingUp}
-          label="Marge brute"
+          label="Marge HT"
           value={grossMarginCaBase > 0 ? `${fmt(grossMarginTotal)} EUR` : "—"}
           evolution={grossMarginCaBase > 0 ? { value: Number(grossMarginPctGlobal.toFixed(2)), label: "% du CA HT (avec coût)" } : undefined}
           iconColor="#0E7490"
@@ -587,7 +587,7 @@ const AdminCommandes = () => {
                   <thead>
                     <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
                       <th className="px-2 py-3 w-8"></th>
-                      {["ID / Réf PO", "Acheteur", "Type", "Lignes", "Vendeurs", "Lignes uniques", "HT", "TVA", "TTC", "Marge brute", "Paiement", "Statut", ""].map((h) => (
+                      {["ID / Réf PO", "Acheteur", "Type", "Lignes", "Vendeurs", "Lignes uniques", "HT", "TVA", "TTC", "Marge HT", "Commission", "Paiement", "Statut", ""].map((h) => (
                         <th key={h} className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                       ))}
                     </tr>
@@ -672,7 +672,7 @@ const AdminCommandes = () => {
                               className="px-3 py-3 font-mono"
                               title={
                                 o.hasCost
-                                  ? `Marge brute = CA HT (${fmt(o.amountHT)}) − coût d'achat (${fmt(o.costTotal)})${o.commissionEur > 0 ? `\nMarge nette estimée (− commission) : ${fmt(o.netMarginEur)} EUR` : ""}`
+                                  ? `Marge HT = CA HT (${fmt(o.amountHT)}) − coût d'achat (${fmt(o.costTotal)})${o.commissionEur > 0 ? `\nMarge nette estimée (− commission) : ${fmt(o.netMarginEur)} EUR` : ""}`
                                   : "Aucun prix d'achat renseigné sur les lignes — marge non calculable"
                               }
                             >
@@ -684,6 +684,12 @@ const AdminCommandes = () => {
                               ) : (
                                 <span className="text-[11px]" style={{ color: "#CBD5E1" }}>—</span>
                               )}
+                            </td>
+                            <td className="px-3 py-3 font-mono">
+                              <div className="leading-tight" title={`Commission MediKong = ${fmt(o.commissionEur)} EUR (${o.commissionPct.toFixed(2)} % du CA HT)`}>
+                                <div className="text-[12px] font-bold" style={{ color: "#059669" }}>{fmt(o.commissionEur)}</div>
+                                <div className="text-[10px]" style={{ color: "#8B95A5" }}>{o.commissionPct.toFixed(2)} %</div>
+                              </div>
                             </td>
                             <td className="px-3 py-3 text-[11px]" style={{ color: "#616B7C" }}>{o.paymentTerms}</td>
                             <td className="px-3 py-3"><StatusBadge status={o.status} /></td>
@@ -781,7 +787,7 @@ const AdminCommandes = () => {
                           </tr>
                           {isExpanded && o.lines.length > 0 && (
                             <tr key={`${o.rawId}-lines`}>
-                              <td colSpan={13} className="px-0 py-0">
+                              <td colSpan={14} className="px-0 py-0">
                                 <div className="mx-4 mb-3 rounded-lg overflow-hidden" style={{ border: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
                                   <table className="w-full text-left">
                                     <thead>
@@ -850,7 +856,7 @@ const AdminCommandes = () => {
                           )}
                           {isExpanded && o.lines.length === 0 && (
                             <tr key={`${o.rawId}-empty`}>
-                              <td colSpan={12} className="px-6 py-4 text-center text-[12px]" style={{ color: "#8B95A5" }}>
+                              <td colSpan={14} className="px-6 py-4 text-center text-[12px]" style={{ color: "#8B95A5" }}>
                                 Aucune ligne de commande enregistrée.
                               </td>
                             </tr>

@@ -40,8 +40,8 @@ const AdminCommandeDetail = () => {
       const draftLines = Array.isArray(draftPayload?.lines) ? draftPayload.lines : [];
 
       if (persisted.length === 0 && draftLines.length > 0) {
-        const productIds = Array.from(new Set(draftLines.map((l: any) => l.product_id).filter(Boolean)));
-        const vendorIds = Array.from(new Set(draftLines.map((l: any) => l.vendor_id).filter(Boolean)));
+        const productIds = Array.from(new Set(draftLines.map((l: any) => l.product_id).filter(Boolean))) as string[];
+        const vendorIds = Array.from(new Set(draftLines.map((l: any) => l.vendor_id).filter(Boolean))) as string[];
         const [{ data: prods }, { data: vends }] = await Promise.all([
           productIds.length ? supabase.from("products").select("id, name").in("id", productIds) : Promise.resolve({ data: [] as any[] }),
           vendorIds.length ? supabase.from("vendors").select("id, name, company_name, vat_number, bank_name, iban, bic").in("id", vendorIds) : Promise.resolve({ data: [] as any[] }),

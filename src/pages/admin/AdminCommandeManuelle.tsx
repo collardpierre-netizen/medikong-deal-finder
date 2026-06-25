@@ -1287,6 +1287,8 @@ function LineRow({
                           vendor_id: line.vendor_id || o.vendor_id || "",
                           unit_price_excl_vat: productOnly ? line.unit_price_excl_vat : price,
                           offer_label: o.products?.name,
+                          gtin: o.products?.gtin ?? undefined,
+                          cnk_code: o.products?.cnk_code ?? undefined,
                         });
                         setOfferResults([]);
                         setOfferSearch(o.products?.name ?? "");

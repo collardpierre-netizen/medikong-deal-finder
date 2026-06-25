@@ -642,6 +642,14 @@ const AdminCommandes = () => {
                                   style={{ color: "#475569" }}
                                 >
                                   <Eye size={14} />
+                                 </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); navigate(`/admin/commandes/nouvelle?edit=${o.rawId}`); }}
+                                  title="Modifier la commande"
+                                  className="p-1.5 rounded hover:bg-amber-50"
+                                  style={{ color: "#B45309" }}
+                                >
+                                  <Pencil size={14} />
                                 </button>
                                 <button
                                   onClick={async (e) => {

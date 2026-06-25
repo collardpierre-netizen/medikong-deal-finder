@@ -489,14 +489,33 @@ export default function AdminProductSubmissions() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <CardTitle className="text-base">File des soumissions</CardTitle>
-              <div className="relative w-72 max-w-full">
-                <Search className="h-4 w-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  className="pl-8 h-9"
-                  placeholder="Nom, CNK, GTIN, vendeur…"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button variant="outline" size="sm" onClick={handleExport} className="gap-1" disabled={filtered.length === 0}>
+                  <Download className="h-4 w-4" /> Export XLSX
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="gap-1" disabled={importing}>
+                  {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Import XLSX
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleImportFile(f);
+                    e.target.value = "";
+                  }}
                 />
+                <div className="relative w-72 max-w-full">
+                  <Search className="h-4 w-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    className="pl-8 h-9"
+                    placeholder="Nom, CNK, GTIN, vendeur…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
           </CardHeader>

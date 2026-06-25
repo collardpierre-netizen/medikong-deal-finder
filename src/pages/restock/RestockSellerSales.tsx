@@ -82,7 +82,7 @@ export default function RestockSellerSales() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("restock_transactions")
-        .select("*, restock_offers!inner(designation, ean, cnk, grade)")
+        .select("id, offer_id, seller_id, buyer_id, status, quantity, final_price, commission_rate, commission_amount, shipping_cost, delivery_mode, created_at, updated_at, paid_at, delivered_at, escrow_released_at, pickup_deadline_at, pickup_confirmed_at, tracking_number, tracking_url, sendcloud_parcel_id, dispute_reason, penalty_applied, cancelled_reason, buyer_name, buyer_company, buyer_street, buyer_city, buyer_postal_code, buyer_country, pickup_handover_code, pickup_qr_token, seller_pickup_address, seller_pickup_city, seller_pickup_phone, restock_offers!inner(designation, ean, cnk, grade)")
         .eq("seller_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;

@@ -65,16 +65,31 @@ export default function VendorDelegateDetailDialog({
   const { data: delegates = [], isLoading } = useQuery<Delegate[]>({
     queryKey: ["vendor-delegates-detail", vendorId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vendor_delegates" as any)
-        .select("*")
-        .eq("vendor_id", vendorId)
-        .eq("is_active", true)
-        .order("display_order", { ascending: true });
+      const { data, error } = await supabase.rpc("list_vendor_delegates_public" as any, {
+        _vendor_id: vendorId,
+      });
       if (error) throw error;
       return (data || []) as unknown as Delegate[];
     },
     enabled: open && !!vendorId,
+  });
+
+  const chosenId = delegateId
+    ? delegateId
+    : (delegates[0]?.id ?? null);
+
+  const { data: contact } = useQuery<{ email: string | null; phone: string | null } | null>({
+    queryKey: ["vendor-delegate-contact", chosenId],
+    queryFn: async () => {
+      if (!chosenId) return null;
+      const { data, error } = await supabase.rpc("get_vendor_delegate_contact" as any, {
+        _id: chosenId,
+      });
+      if (error) return null;
+      const row = Array.isArray(data) ? data[0] : data;
+      return row ? { email: (row as any).email ?? null, phone: (row as any).phone ?? null } : null;
+    },
+    enabled: open && !!chosenId,
   });
 
   const buyerProfile = customer?.customer_type || null;
@@ -91,9 +106,12 @@ export default function VendorDelegateDetailDialog({
   };
 
   const ranked = [...delegates].sort((a, b) => score(b) - score(a));
-  const d = delegateId
+  const baseD = delegateId
     ? delegates.find((x) => x.id === delegateId) ?? ranked[0]
     : ranked[0];
+  const d = baseD
+    ? { ...baseD, email: contact?.email ?? baseD.email ?? null, phone: contact?.phone ?? baseD.phone ?? null }
+    : baseD;
 
   const isPrimary =
     !!d && !!buyerProfile && (d.primary_target_profiles || []).includes(buyerProfile);

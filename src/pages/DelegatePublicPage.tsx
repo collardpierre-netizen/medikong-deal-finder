@@ -80,14 +80,19 @@ export default function DelegatePublicPage() {
     queryKey: ["delegate-public", delegateId],
     queryFn: async () => {
       if (!delegateId) return null;
-      const { data, error } = await supabase
-        .from("vendor_delegates" as any)
-        .select("*")
-        .eq("id", delegateId)
-        .eq("is_active", true)
-        .maybeSingle();
-      if (error) throw error;
-      return (data as unknown as Delegate) || null;
+      const [{ data: pub, error: pubErr }, { data: contact }] = await Promise.all([
+        supabase.rpc("get_vendor_delegate_public" as any, { _id: delegateId }),
+        supabase.rpc("get_vendor_delegate_contact" as any, { _id: delegateId }),
+      ]);
+      if (pubErr) throw pubErr;
+      const row = Array.isArray(pub) ? pub[0] : pub;
+      if (!row) return null;
+      const c = Array.isArray(contact) ? contact[0] : contact;
+      return {
+        ...(row as any),
+        email: (c as any)?.email ?? null,
+        phone: (c as any)?.phone ?? null,
+      } as unknown as Delegate;
     },
     enabled: !!delegateId && isVerifiedBuyer,
   });

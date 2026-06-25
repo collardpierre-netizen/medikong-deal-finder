@@ -174,10 +174,11 @@ export default function DelegateCallbackDialog({
 
     // Notification email (best-effort) au délégué + vendeur
     try {
-      const [{ data: dlg }, { data: vnd }] = await Promise.all([
-        supabase.from("vendor_delegates" as any).select("email, first_name, last_name").eq("id", delegateId).maybeSingle(),
+      const [{ data: dlgRaw }, { data: vnd }] = await Promise.all([
+        supabase.rpc("get_vendor_delegate_contact" as any, { _id: delegateId }),
         supabase.from("vendors").select("email, contact_email, name").eq("id", vendorId).maybeSingle(),
       ]);
+      const dlg = Array.isArray(dlgRaw) ? dlgRaw[0] : dlgRaw;
       const recipients = Array.from(new Set([
         (dlg as any)?.email,
         (vnd as any)?.contact_email,

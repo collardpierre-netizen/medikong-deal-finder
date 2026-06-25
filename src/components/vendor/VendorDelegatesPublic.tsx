@@ -56,12 +56,9 @@ export default function VendorDelegatesPublic({ vendorId }: Props) {
   const { data: delegates = [], isLoading } = useQuery<Delegate[]>({
     queryKey: ["vendor-delegates-public", vendorId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vendor_delegates" as any)
-        .select("*")
-        .eq("vendor_id", vendorId)
-        .eq("is_active", true)
-        .order("display_order", { ascending: true });
+      const { data, error } = await supabase.rpc("list_vendor_delegates_public" as any, {
+        _vendor_id: vendorId,
+      });
       if (error) throw error;
       return (data || []) as unknown as Delegate[];
     },

@@ -48,7 +48,7 @@ export default function RestockBuyerDashboard() {
     queryFn: async () => {
       const { data } = await supabase
         .from("restock_transactions")
-        .select("*, restock_offers(designation, ean, cnk, grade)")
+        .select("id, offer_id, buyer_id, seller_id, status, quantity, final_price, commission_rate, commission_amount, shipping_cost, delivery_mode, created_at, updated_at, paid_at, delivered_at, escrow_released_at, tracking_number, tracking_url, dispute_reason, cancelled_reason, buyer_name, buyer_company, buyer_street, buyer_city, buyer_postal_code, buyer_country, restock_offers(designation, ean, cnk, grade)")
         .eq("buyer_id", buyerRecord!.id)
         .order("created_at", { ascending: false });
       return data || [];

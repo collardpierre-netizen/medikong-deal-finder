@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
@@ -119,6 +119,7 @@ export default function VendorOrders() {
   const vendorQuery = useCurrentVendor();
   const vendorId = vendorQuery.data?.id;
   const queryClient = useQueryClient();
+  const vendorOrdersQueryKey = useMemo(() => ["vendor-order-lines", vendorId] as const, [vendorId]);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
   // Modales
@@ -127,7 +128,7 @@ export default function VendorOrders() {
   const [revertConfirm, setRevertConfirm] = useState<{ lineId: string; from: string; to: string } | null>(null);
 
   const { data: orders, isLoading } = useQuery({
-    queryKey: ["vendor-order-lines", vendorId],
+    queryKey: vendorOrdersQueryKey,
     enabled: !!vendorId,
     queryFn: async () => {
       const { data: lines, error } = await supabase
@@ -143,7 +144,12 @@ export default function VendorOrders() {
       const productIds = [...new Set(lines.map(l => l.product_id))];
 
       const [ordersRes, productsRes] = await Promise.all([
-        supabase.from("orders").select("id, order_number, status, created_at, shipping_address, customer_id, hidden_from_list, deleted_at").in("id", orderIds).eq("hidden_from_list", false),
+        supabase
+          .from("orders")
+          .select("id, order_number, status, created_at, shipping_address, customer_id, hidden_from_list, deleted_at")
+          .in("id", orderIds)
+          .eq("hidden_from_list", false)
+          .is("deleted_at", null),
         supabase.from("products").select("id, name, image_url").in("id", productIds),
       ]);
 
@@ -180,6 +186,33 @@ export default function VendorOrders() {
       );
     },
   });
+
+  useEffect(() => {
+    if (!vendorId) return;
+
+    const refreshVendorOrders = () => {
+      queryClient.invalidateQueries({ queryKey: vendorOrdersQueryKey });
+      queryClient.invalidateQueries({ queryKey: ["action-center", "vendor"] });
+    };
+
+    const channel = supabase
+      .channel(`vendor-orders-${vendorId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders" },
+        refreshVendorOrders,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "order_lines", filter: `vendor_id=eq.${vendorId}` },
+        refreshVendorOrders,
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [queryClient, vendorId, vendorOrdersQueryKey]);
 
   // ----- Mutations -----
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["vendor-order-lines"] });

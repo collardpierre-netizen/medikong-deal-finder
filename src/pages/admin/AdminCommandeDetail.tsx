@@ -33,7 +33,7 @@ const AdminCommandeDetail = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, customer:customers(*), order_lines(*, products(name), vendors(company_name, name, vat_number, bank_name, iban, bic))")
+        .select("*, customer:customers(*), order_lines(*, products(name, gtin, cnk_code), vendors(company_name, name, vat_number, bank_name, iban, bic))")
         .eq("id", id!)
         .maybeSingle();
       if (error) throw error;
@@ -46,7 +46,7 @@ const AdminCommandeDetail = () => {
         const productIds = Array.from(new Set(draftLines.map((l: any) => l.product_id).filter(Boolean))) as string[];
         const vendorIds = Array.from(new Set(draftLines.map((l: any) => l.vendor_id).filter(Boolean))) as string[];
         const [{ data: prods }, { data: vends }] = await Promise.all([
-          productIds.length ? supabase.from("products").select("id, name").in("id", productIds) : Promise.resolve({ data: [] as any[] }),
+          productIds.length ? supabase.from("products").select("id, name, gtin, cnk_code").in("id", productIds) : Promise.resolve({ data: [] as any[] }),
           vendorIds.length ? supabase.from("vendors").select("id, name, company_name, vat_number, bank_name, iban, bic").in("id", vendorIds) : Promise.resolve({ data: [] as any[] }),
         ]);
         const productMap = new Map((prods || []).map((p: any) => [p.id, p]));
@@ -63,7 +63,7 @@ const AdminCommandeDetail = () => {
             vat_rate: vat,
             line_total_excl_vat: totalHt,
             manual_label: l.manual_label || l.offer_label,
-            products: productMap.get(l.product_id) || null,
+            products: productMap.get(l.product_id) || (l.gtin || l.cnk_code ? { name: l.manual_label || l.offer_label, gtin: l.gtin, cnk_code: l.cnk_code } : null),
             vendors: vendorMap.get(l.vendor_id) || null,
           };
         });
@@ -246,7 +246,19 @@ const AdminCommandeDetail = () => {
                   const puTtc = puHt * (1 + vatR / 100);
                   return (
                     <tr key={l.id} className="border-t">
-                      <td className="px-3 py-2">{l.manual_label || l.products?.name || "—"}</td>
+                      <td className="px-3 py-2">
+                        <div>{l.manual_label || l.products?.name || "—"}</div>
+                        {(l.products?.cnk_code || l.products?.gtin) && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {l.products?.cnk_code && (
+                              <span className="inline-flex items-center rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono text-slate-600">CNK {l.products.cnk_code}</span>
+                            )}
+                            {l.products?.gtin && (
+                              <span className="inline-flex items-center rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono text-slate-600">EAN {l.products.gtin}</span>
+                            )}
+                          </div>
+                        )}
+                      </td>
                       <td className="px-3 py-2 text-slate-600">{l.vendors?.company_name || l.vendors?.name || l.qogita_seller_fid || "—"}</td>
                       <td className="px-3 py-2 text-right">{l.quantity}</td>
                       <td className="px-3 py-2 text-right">{fmtEur(puHt)} €</td>

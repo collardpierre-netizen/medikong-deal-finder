@@ -639,6 +639,16 @@ const AdminCommandeManuelle = () => {
         setAdminNotes(p.admin_notes ?? "");
         setEncodingAt(p.encoding_at ?? "");
         setIsForecast(Boolean(p.is_forecast));
+        // Charge l'adresse de livraison rattachée (si présente)
+        try {
+          const { data: ord } = await (supabase as any)
+            .from("orders")
+            .select("shipping_address_id")
+            .eq("id", editFromUrl)
+            .maybeSingle();
+          if (ord?.shipping_address_id) setShippingAddressId(ord.shipping_address_id);
+        } catch { /* noop */ }
+
         setLines(Array.isArray(p.lines) ? p.lines.map((l: any) => ({
           id: l.id ?? nid(),
           mode: l.mode ?? "offer",

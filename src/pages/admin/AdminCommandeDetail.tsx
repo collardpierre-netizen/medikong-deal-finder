@@ -175,35 +175,42 @@ const AdminCommandeDetail = () => {
                   <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500">Qté</th>
                   <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500">PU HT</th>
                   <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500">TVA</th>
+                  <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500">PU TTC</th>
                   <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500">Total HT</th>
                 </tr>
               </thead>
               <tbody>
-                {lines.map((l: any) => (
-                  <tr key={l.id} className="border-t">
-                    <td className="px-3 py-2">{l.manual_label || l.products?.name || "—"}</td>
-                    <td className="px-3 py-2 text-slate-600">{l.vendors?.company_name || l.vendors?.name || l.qogita_seller_fid || "—"}</td>
-                    <td className="px-3 py-2 text-right">{l.quantity}</td>
-                    <td className="px-3 py-2 text-right">{fmtEur(Number(l.unit_price_excl_vat) || 0)} €</td>
-                    <td className="px-3 py-2 text-right">{Number(l.vat_rate ?? 0).toFixed(0)}%</td>
-                    <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(l.line_total_excl_vat) || 0)} €</td>
-                  </tr>
-                ))}
+                {lines.map((l: any) => {
+                  const puHt = Number(l.unit_price_excl_vat) || 0;
+                  const vatR = Number(l.vat_rate ?? 0);
+                  const puTtc = puHt * (1 + vatR / 100);
+                  return (
+                    <tr key={l.id} className="border-t">
+                      <td className="px-3 py-2">{l.manual_label || l.products?.name || "—"}</td>
+                      <td className="px-3 py-2 text-slate-600">{l.vendors?.company_name || l.vendors?.name || l.qogita_seller_fid || "—"}</td>
+                      <td className="px-3 py-2 text-right">{l.quantity}</td>
+                      <td className="px-3 py-2 text-right">{fmtEur(puHt)} €</td>
+                      <td className="px-3 py-2 text-right">{vatR.toFixed(0)}%</td>
+                      <td className="px-3 py-2 text-right text-slate-600">{fmtEur(puTtc)} €</td>
+                      <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(l.line_total_excl_vat) || 0)} €</td>
+                    </tr>
+                  );
+                })}
                 {lines.length === 0 && (
-                  <tr><td colSpan={6} className="px-3 py-6 text-center text-slate-400 text-sm">Aucune ligne</td></tr>
+                  <tr><td colSpan={7} className="px-3 py-6 text-center text-slate-400 text-sm">Aucune ligne</td></tr>
                 )}
               </tbody>
               <tfoot>
                 <tr className="border-t bg-slate-50/40">
-                  <td colSpan={5} className="px-3 py-2 text-right text-slate-500">Total HT</td>
+                  <td colSpan={6} className="px-3 py-2 text-right text-slate-500">Total HT</td>
                   <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(order.subtotal_excl_vat) || 0)} €</td>
                 </tr>
                 <tr className="bg-slate-50/40">
-                  <td colSpan={5} className="px-3 py-2 text-right text-slate-500">TVA</td>
+                  <td colSpan={6} className="px-3 py-2 text-right text-slate-500">TVA</td>
                   <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(order.vat_amount) || 0)} €</td>
                 </tr>
                 <tr className="border-t" style={{ backgroundColor: "#1C58D9" }}>
-                  <td colSpan={5} className="px-3 py-3 text-right text-white font-semibold">Total TTC</td>
+                  <td colSpan={6} className="px-3 py-3 text-right text-white font-semibold">Total TTC</td>
                   <td className="px-3 py-3 text-right text-white font-bold text-base">{fmtEur(Number(order.total_incl_vat) || 0)} €</td>
                 </tr>
               </tfoot>

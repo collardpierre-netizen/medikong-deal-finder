@@ -8141,6 +8141,8 @@ export type Database = {
           created_at: string
           created_by_admin: string | null
           customer_id: string
+          customer_validated_at: string | null
+          customer_validation_email: string | null
           deleted_at: string | null
           deleted_by: string | null
           deleted_reason: string | null
@@ -8183,6 +8185,8 @@ export type Database = {
           created_at?: string
           created_by_admin?: string | null
           customer_id: string
+          customer_validated_at?: string | null
+          customer_validation_email?: string | null
           deleted_at?: string | null
           deleted_by?: string | null
           deleted_reason?: string | null
@@ -8225,6 +8229,8 @@ export type Database = {
           created_at?: string
           created_by_admin?: string | null
           customer_id?: string
+          customer_validated_at?: string | null
+          customer_validation_email?: string | null
           deleted_at?: string | null
           deleted_by?: string | null
           deleted_reason?: string | null
@@ -22552,6 +22558,8 @@ export type Database = {
           created_at: string
           created_by_admin: string | null
           customer_id: string
+          customer_validated_at: string | null
+          customer_validation_email: string | null
           deleted_at: string | null
           deleted_by: string | null
           deleted_reason: string | null
@@ -23910,6 +23918,10 @@ export type Database = {
           similarity: number
           slug: string
         }[]
+      }
+      public_validate_order: {
+        Args: { _email?: string; _pin?: string; _token: string }
+        Returns: Json
       }
       public_verified_vendors_count: { Args: never; Returns: number }
       publish_contract_template: {

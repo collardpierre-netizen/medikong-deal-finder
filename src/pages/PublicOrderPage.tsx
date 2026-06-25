@@ -3,8 +3,8 @@ import { useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtEur } from "@/lib/format-currency";
-import medikongLogo from "@/assets/medikong-logo.png";
-import { Loader2, Lock } from "lucide-react";
+import medikongLogo from "@/assets/medikong-logo-cropped.png";
+import { CheckCircle2, Loader2, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -34,6 +34,8 @@ type OrderData = {
   }>;
   vendor_bank?: any;
   public_access_expires_at?: string | null;
+  customer_validated_at?: string | null;
+  customer_validation_email?: string | null;
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -57,6 +59,9 @@ const PublicOrderPage = () => {
   const [expired, setExpired] = useState(false);
   const [pin, setPin] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [validationEmail, setValidationEmail] = useState("");
+  const [validatingOrder, setValidatingOrder] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const fetchOrder = async (pinValue?: string) => {
     if (!token) {
@@ -99,6 +104,33 @@ const PublicOrderPage = () => {
     setSubmitting(true);
     setInvalidPin(false);
     await fetchOrder(pin);
+  };
+
+  const validateOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setValidationError(null);
+    const email = validationEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setValidationError("Email invalide.");
+      return;
+    }
+    setValidatingOrder(true);
+    const { data, error } = await supabase.rpc("public_validate_order" as any, {
+      _token: token,
+      _pin: pin || null,
+      _email: email,
+    });
+    if (error) {
+      setValidationError(error.message || "Validation impossible.");
+    } else {
+      setOrder((prev) => prev ? {
+        ...prev,
+        customer_validated_at: (data as any)?.validated_at || new Date().toISOString(),
+        customer_validation_email: email,
+        status: prev.status === "draft" || prev.status === "pending" ? "confirmed" : prev.status,
+      } : prev);
+    }
+    setValidatingOrder(false);
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-mk-blue" /></div>;
@@ -154,7 +186,7 @@ const PublicOrderPage = () => {
 
       <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-sm border border-slate-200 p-8">
         <div className="flex items-start justify-between mb-6">
-          <img src={medikongLogo} alt="MediKong" className="h-10" />
+          <img src={medikongLogo} alt="MediKong" className="h-12 sm:h-14 w-auto" />
           <div className="text-right text-xs text-slate-500">
             <div className="font-semibold text-slate-900">MediKong</div>
             <div>Balooh SRL</div>
@@ -266,6 +298,41 @@ const PublicOrderPage = () => {
             <div className="mt-3 text-xs text-slate-500">Communication : <span className="font-mono">{order.order_number}</span></div>
           </div>
         )}
+
+        <div className="mt-6 bg-blue-50 border border-blue-100 rounded-lg p-4">
+          {order.customer_validated_at ? (
+            <div className="flex items-start gap-2 text-sm text-emerald-700">
+              <CheckCircle2 size={18} className="mt-0.5" />
+              <div>
+                <div className="font-semibold">Commande validée</div>
+                <div className="text-xs text-slate-600">
+                  {new Date(order.customer_validated_at).toLocaleString("fr-BE")}
+                  {order.customer_validation_email ? ` · ${order.customer_validation_email}` : ""}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={validateOrder} className="space-y-3">
+              <div>
+                <div className="font-semibold text-slate-900">Valider la commande</div>
+                <div className="text-xs text-slate-500">Encodez votre email pour confirmer la validation.</div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Input
+                  type="email"
+                  value={validationEmail}
+                  onChange={(e) => setValidationEmail(e.target.value)}
+                  placeholder="email@entreprise.be"
+                  className="bg-white"
+                />
+                <Button type="submit" disabled={validatingOrder} style={{ backgroundColor: "#1C58D9", color: "#fff" }}>
+                  {validatingOrder ? "Validation…" : "Valider la commande"}
+                </Button>
+              </div>
+              {validationError && <div className="text-xs text-red-600">{validationError}</div>}
+            </form>
+          )}
+        </div>
 
         <div className="text-center text-xs text-slate-400 mt-8">Bon de commande émis via MediKong</div>
       </div>

@@ -775,6 +775,20 @@ const AdminCommandeManuelle = () => {
           <div className="bg-white rounded-lg border p-4 space-y-3" style={{ borderColor: "#E2E8F0" }}>
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-sm">Acheteur</h3>
+              <div className="flex items-center gap-2">
+                {customerId && (
+                  <a
+                    href={`/admin/customers?id=${customerId}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="Éditer la fiche customer (nouvel onglet)"
+                    className="inline-flex items-center gap-1 text-xs px-2 py-1 border rounded-md hover:bg-slate-50"
+                    style={{ borderColor: "#E2E8F0" }}
+                  >
+                    <Pencil size={12} /> Éditer la fiche <ExternalLink size={10} />
+                  </a>
+                )}
+
               <Dialog open={qcOpen} onOpenChange={setQcOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm" variant="outline">

@@ -383,6 +383,8 @@ const AdminCommandeManuelle = () => {
         commission_rate: l.commission_rate || "",
         commission_amount: l.commission_amount || "",
         commission_basis: l.commission_basis ?? "ca",
+        gtin: l.gtin ?? null,
+        cnk_code: l.cnk_code ?? null,
       })),
     };
 

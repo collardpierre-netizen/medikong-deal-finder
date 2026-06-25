@@ -586,7 +586,7 @@ const AdminCommandes = () => {
                   <thead>
                     <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
                       <th className="px-2 py-3 w-8"></th>
-                      {["ID / Réf PO", "Acheteur", "Type", "Lignes", "Vendeurs", "Lignes uniques", "HT", "TVA", "TTC", "Commission", "Marge brute", "Paiement", "Statut", ""].map((h) => (
+                      {["ID / Réf PO", "Acheteur", "Type", "Lignes", "Vendeurs", "Lignes uniques", "HT", "TVA", "TTC", "Marge brute", "Paiement", "Statut", ""].map((h) => (
                         <th key={h} className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                       ))}
                     </tr>
@@ -667,11 +667,6 @@ const AdminCommandes = () => {
                             <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#1D2530" }}>{fmt(o.amountHT)}</td>
                             <td className="px-3 py-3 text-[11px] font-mono" style={{ color: "#8B95A5" }}>{fmt(o.tva)}</td>
                             <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#059669" }}>{fmt(o.ttc)}</td>
-                            <AdminCommandesCommissionCell
-                              commissionEur={o.commissionEur}
-                              commissionPct={o.commissionPct}
-                              commissionSource={o.commissionSource as any}
-                            />
                             <td
                               className="px-3 py-3 font-mono"
                               title={
@@ -785,7 +780,7 @@ const AdminCommandes = () => {
                           </tr>
                           {isExpanded && o.lines.length > 0 && (
                             <tr key={`${o.rawId}-lines`}>
-                              <td colSpan={14} className="px-0 py-0">
+                              <td colSpan={13} className="px-0 py-0">
                                 <div className="mx-4 mb-3 rounded-lg overflow-hidden" style={{ border: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
                                   <table className="w-full text-left">
                                     <thead>
@@ -854,7 +849,7 @@ const AdminCommandes = () => {
                           )}
                           {isExpanded && o.lines.length === 0 && (
                             <tr key={`${o.rawId}-empty`}>
-                              <td colSpan={13} className="px-6 py-4 text-center text-[12px]" style={{ color: "#8B95A5" }}>
+                              <td colSpan={12} className="px-6 py-4 text-center text-[12px]" style={{ color: "#8B95A5" }}>
                                 Aucune ligne de commande enregistrée.
                               </td>
                             </tr>

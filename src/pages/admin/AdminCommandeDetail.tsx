@@ -241,8 +241,18 @@ const AdminCommandeDetail = () => {
             </Button>
             {pdfUrl && (
               <Button onClick={copyPdfLink} className="w-full justify-start" variant="outline">
-                <Copy size={14} className="mr-2" /> Copier le lien PDF
+                <Copy size={14} className="mr-2" /> Copier le lien PDF (7 jours)
               </Button>
+            )}
+            <Button onClick={ensurePublicLink} disabled={busy !== null} className="w-full justify-start" variant="outline">
+              <Link2 size={14} className="mr-2" /> {busy === "LINK" ? "…" : (publicUrl ? "Copier le lien public" : "Générer le lien public")}
+            </Button>
+            {publicUrl && (
+              <a href={publicUrl} target="_blank" rel="noreferrer" className="block">
+                <Button className="w-full justify-start" variant="ghost">
+                  <ExternalLink size={14} className="mr-2" /> Ouvrir la page publique
+                </Button>
+              </a>
             )}
             {order.status === "draft" && (
               <Link to={`/admin/commandes/nouvelle?draft=${order.id}`} className="block">

@@ -7623,6 +7623,9 @@ export type Database = {
         Row: {
           cancellation_reason: string | null
           cancelled_at: string | null
+          commission_amount: number | null
+          commission_basis: string | null
+          commission_rate: number | null
           cost_price: number | null
           fulfillment_status: Database["public"]["Enums"]["fulfillment_status"]
           fulfillment_type: Database["public"]["Enums"]["fulfillment_type"]
@@ -7653,6 +7656,9 @@ export type Database = {
         Insert: {
           cancellation_reason?: string | null
           cancelled_at?: string | null
+          commission_amount?: number | null
+          commission_basis?: string | null
+          commission_rate?: number | null
           cost_price?: number | null
           fulfillment_status?: Database["public"]["Enums"]["fulfillment_status"]
           fulfillment_type?: Database["public"]["Enums"]["fulfillment_type"]
@@ -7683,6 +7689,9 @@ export type Database = {
         Update: {
           cancellation_reason?: string | null
           cancelled_at?: string | null
+          commission_amount?: number | null
+          commission_basis?: string | null
+          commission_rate?: number | null
           cost_price?: number | null
           fulfillment_status?: Database["public"]["Enums"]["fulfillment_status"]
           fulfillment_type?: Database["public"]["Enums"]["fulfillment_type"]
@@ -24934,6 +24943,9 @@ export type Database = {
         Returns: {
           cancellation_reason: string | null
           cancelled_at: string | null
+          commission_amount: number | null
+          commission_basis: string | null
+          commission_rate: number | null
           cost_price: number | null
           fulfillment_status: Database["public"]["Enums"]["fulfillment_status"]
           fulfillment_type: Database["public"]["Enums"]["fulfillment_type"]

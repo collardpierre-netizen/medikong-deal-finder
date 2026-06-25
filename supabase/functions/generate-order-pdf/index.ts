@@ -112,155 +112,293 @@ Deno.serve(async (req) => {
     // ─── PDF ───────────────────────────────────────────────────────────
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     const pageW = 210;
-    let y = 15;
+    const pageH = 297;
+    const M = 15; // marge
 
-    // Header — logo MediKong
+    // Couleurs
+    const BRAND: [number, number, number] = [28, 88, 217]; // primary blue #1C58D9
+    const NAVY: [number, number, number] = [30, 37, 47];
+    const MUTED: [number, number, number] = [100, 116, 139];
+    const LINE: [number, number, number] = [226, 232, 240];
+    const SOFT: [number, number, number] = [248, 250, 252];
+
+    // ─── Header ────────────────────────────────────────────────────────
+    // Bandeau supérieur fin couleur marque
+    doc.setFillColor(...BRAND);
+    doc.rect(0, 0, pageW, 4, "F");
+
+    let y = 12;
+
+    // Logo (ratio natif 1.6)
     try {
-      // Logo natif 400×250 (ratio 1.6) — préserver les proportions
-      doc.addImage(MEDIKONG_LOGO_PNG_BASE64, "PNG", 15, y - 4, 36, 22.5);
-    } catch (_) { /* logo failure non bloquant */ }
+      doc.addImage(MEDIKONG_LOGO_PNG_BASE64, "PNG", M, y, 34, 21.25);
+    } catch (_) { /* non bloquant */ }
 
-    doc.setFontSize(16);
-    doc.setTextColor(28, 88, 217);
-    doc.text("BON DE COMMANDE", 15, y + 22);
+    // Bloc émetteur (droite)
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text(`N° ${order.order_number}`, 15, y + 28);
-    doc.text(`Date : ${new Date(order.created_at).toLocaleDateString("fr-BE")}`, 15, y + 33);
-    doc.text(`Statut : ${order.status}`, 15, y + 38);
-
-    // MediKong issuer (right)
-    doc.setFontSize(11);
-    doc.setTextColor(30, 37, 47);
-    doc.text("MediKong", pageW - 15, y + 6, { align: "right" });
-    doc.setFontSize(9);
-    doc.setTextColor(100);
-    doc.text("Balooh SRL", pageW - 15, y + 11, { align: "right" });
-    doc.text("23 rue de la Procession", pageW - 15, y + 15, { align: "right" });
-    doc.text("7822 Ath, Belgique", pageW - 15, y + 19, { align: "right" });
-    doc.text("TVA : BE 1005.771.323", pageW - 15, y + 23, { align: "right" });
-
-    if (order.public_token) {
-      doc.setFontSize(8);
-      doc.setTextColor(120);
-      doc.text(`Lien : https://medikong.pro/commande/lien/${order.public_token}`, pageW - 15, y + 28, { align: "right" });
-    }
-
-    y += 17;
-
-    y += 35;
-
-    // Customer
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text("Destinataire", 15, y);
-    doc.setFontSize(11);
-    doc.setTextColor(30, 37, 47);
-    doc.text(order.customer?.company_name || "—", 15, y + 5);
-    doc.setFontSize(9);
-    doc.setTextColor(80);
-    if (order.customer?.address_line1) doc.text(String(order.customer.address_line1), 15, y + 10);
-    if (order.customer?.postal_code || order.customer?.city) {
-      doc.text(`${order.customer?.postal_code ?? ""} ${order.customer?.city ?? ""}`.trim(), 15, y + 14);
-    }
-    if (order.customer?.vat_number) doc.text(`TVA : ${order.customer.vat_number}`, 15, y + 18);
-    if (order.customer?.email) doc.text(order.customer.email, 15, y + 22);
+    doc.setTextColor(...NAVY);
+    doc.text("MediKong", pageW - M, y + 3, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...MUTED);
+    doc.text("Balooh SRL", pageW - M, y + 7.5, { align: "right" });
+    doc.text("23 rue de la Procession", pageW - M, y + 11.5, { align: "right" });
+    doc.text("7822 Ath, Belgique", pageW - M, y + 15.5, { align: "right" });
+    doc.text("TVA : BE 1005.771.323", pageW - M, y + 19.5, { align: "right" });
+    doc.text("contact@medikong.pro", pageW - M, y + 23.5, { align: "right" });
 
     y += 30;
 
-    // Notes
-    if (order.notes) {
-      doc.setFontSize(9);
-      doc.setTextColor(80);
-      const noteLines = doc.splitTextToSize(String(order.notes), pageW - 30);
-      doc.text(noteLines, 15, y);
-      y += noteLines.length * 4 + 4;
+    // Séparateur
+    doc.setDrawColor(...LINE);
+    doc.setLineWidth(0.3);
+    doc.line(M, y, pageW - M, y);
+    y += 6;
+
+    // Titre + métadonnées (bloc gauche) / Destinataire (bloc droit)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.setTextColor(...BRAND);
+    doc.text("BON DE COMMANDE", M, y + 4);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...MUTED);
+    doc.text("N° de commande", M, y + 11);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10.5);
+    doc.setTextColor(...NAVY);
+    doc.text(String(order.order_number || "—"), M, y + 16);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...MUTED);
+    doc.text("Date", M, y + 22);
+    doc.setTextColor(...NAVY);
+    doc.text(new Date(order.created_at).toLocaleDateString("fr-BE"), M + 18, y + 22);
+
+    doc.setTextColor(...MUTED);
+    doc.text("Statut", M, y + 27);
+    doc.setTextColor(...NAVY);
+    doc.text(String(order.status || "—"), M + 18, y + 27);
+
+    // Destinataire (carte)
+    const cardX = pageW - M - 85;
+    const cardW = 85;
+    doc.setFillColor(...SOFT);
+    doc.setDrawColor(...LINE);
+    doc.roundedRect(cardX, y, cardW, 32, 1.5, 1.5, "FD");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...MUTED);
+    doc.text("DESTINATAIRE", cardX + 4, y + 5);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10.5);
+    doc.setTextColor(...NAVY);
+    doc.text(String(order.customer?.company_name || "—"), cardX + 4, y + 11);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(80, 80, 80);
+    let cy = y + 16;
+    if (order.customer?.address_line1) { doc.text(String(order.customer.address_line1), cardX + 4, cy); cy += 4; }
+    if (order.customer?.postal_code || order.customer?.city) {
+      doc.text(`${order.customer?.postal_code ?? ""} ${order.customer?.city ?? ""}`.trim(), cardX + 4, cy); cy += 4;
+    }
+    if (order.customer?.vat_number) { doc.text(`TVA : ${order.customer.vat_number}`, cardX + 4, cy); cy += 4; }
+    if (order.customer?.email) { doc.text(String(order.customer.email), cardX + 4, cy); cy += 4; }
+
+    y += 38;
+
+    // Lien public
+    if (order.public_token) {
+      doc.setFontSize(8);
+      doc.setTextColor(...MUTED);
+      doc.text(`Consulter en ligne : https://medikong.pro/commande/lien/${order.public_token}`, M, y);
+      y += 5;
     }
 
-    // Lines table header
-    doc.setDrawColor(226, 232, 240);
-    doc.setFillColor(248, 250, 252);
-    doc.rect(15, y, pageW - 30, 8, "F");
-    doc.setFontSize(9);
-    doc.setTextColor(100);
-    doc.text("Article", 17, y + 5.5);
-    doc.text("Fournisseur", 95, y + 5.5);
-    doc.text("Qté", 130, y + 5.5, { align: "right" });
-    doc.text("PU HT", 152, y + 5.5, { align: "right" });
-    doc.text("TVA", 167, y + 5.5, { align: "right" });
-    doc.text("Total HT", pageW - 17, y + 5.5, { align: "right" });
-    y += 10;
+    // Notes
+    if (order.notes) {
+      doc.setFillColor(239, 246, 255);
+      const noteLines = doc.splitTextToSize(String(order.notes), pageW - 2 * M - 6);
+      const noteH = noteLines.length * 4 + 6;
+      doc.rect(M, y, pageW - 2 * M, noteH, "F");
+      doc.setFontSize(9);
+      doc.setTextColor(...NAVY);
+      doc.text(noteLines, M + 3, y + 5);
+      y += noteH + 4;
+    } else {
+      y += 2;
+    }
 
-    doc.setTextColor(30, 37, 47);
+    // ─── Tableau lignes ────────────────────────────────────────────────
+    // En-tête tableau
+    const COLS = {
+      article: M + 2,
+      vendor: M + 70,
+      qty: M + 105,
+      puHt: M + 125,
+      vat: M + 142,
+      puTtc: M + 157,
+      total: pageW - M - 2,
+    };
+
+    doc.setFillColor(...NAVY);
+    doc.rect(M, y, pageW - 2 * M, 8, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(255, 255, 255);
+    doc.text("ARTICLE", COLS.article, y + 5.5);
+    doc.text("FOURNISSEUR", COLS.vendor, y + 5.5);
+    doc.text("QTÉ", COLS.qty, y + 5.5, { align: "right" });
+    doc.text("PU HT", COLS.puHt, y + 5.5, { align: "right" });
+    doc.text("TVA", COLS.vat, y + 5.5, { align: "right" });
+    doc.text("PU TTC", COLS.puTtc, y + 5.5, { align: "right" });
+    doc.text("TOTAL HT", COLS.total, y + 5.5, { align: "right" });
+    y += 8;
+
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
+    let rowIdx = 0;
     for (const l of (lines || [])) {
-      if (y > 260) {
+      const label = doc.splitTextToSize(String(l.manual_label || l.products?.name || "—"), 65);
+      const vendor = doc.splitTextToSize(String(l.vendors?.company_name || l.vendors?.name || l.qogita_seller_fid || "—"), 32);
+      const rowH = Math.max(7, Math.max(label.length, vendor.length) * 4 + 3);
+
+      if (y + rowH > pageH - 50) {
         doc.addPage();
         y = 20;
       }
-      const label = doc.splitTextToSize(String(l.manual_label || l.products?.name || "—"), 73);
-      const vendor = doc.splitTextToSize(String(l.vendors?.company_name || l.vendors?.name || l.qogita_seller_fid || "—"), 32);
-      doc.text(label, 17, y);
-      doc.text(vendor, 95, y);
-      doc.text(String(l.quantity || 0), 130, y, { align: "right" });
-      doc.text(fmtEur(Math.round(Number(l.unit_price_excl_vat || 0) * 100), currency), 152, y, { align: "right" });
-      doc.text(`${Number(l.vat_rate || 0).toFixed(0)}%`, 167, y, { align: "right" });
-      doc.text(fmtEur(Math.round(Number(l.line_total_excl_vat || 0) * 100), currency), pageW - 17, y, { align: "right" });
-      const rowH = Math.max(label.length, vendor.length) * 4 + 2;
-      y += Math.max(5, rowH);
-      doc.setDrawColor(241, 245, 249);
-      doc.line(15, y - 1, pageW - 15, y - 1);
+
+      // Zébrage
+      if (rowIdx % 2 === 0) {
+        doc.setFillColor(...SOFT);
+        doc.rect(M, y, pageW - 2 * M, rowH, "F");
+      }
+
+      const puHt = Number(l.unit_price_excl_vat) || 0;
+      const vatR = Number(l.vat_rate) || 0;
+      const puTtc = puHt * (1 + vatR / 100);
+
+      doc.setTextColor(...NAVY);
+      doc.text(label, COLS.article, y + 4);
+      doc.setTextColor(80, 80, 80);
+      doc.text(vendor, COLS.vendor, y + 4);
+      doc.setTextColor(...NAVY);
+      doc.text(String(l.quantity || 0), COLS.qty, y + 4, { align: "right" });
+      doc.text(fmtEur(Math.round(puHt * 100), currency), COLS.puHt, y + 4, { align: "right" });
+      doc.setTextColor(...MUTED);
+      doc.text(`${vatR.toFixed(0)}%`, COLS.vat, y + 4, { align: "right" });
+      doc.setTextColor(80, 80, 80);
+      doc.text(fmtEur(Math.round(puTtc * 100), currency), COLS.puTtc, y + 4, { align: "right" });
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...NAVY);
+      doc.text(fmtEur(Math.round(Number(l.line_total_excl_vat || 0) * 100), currency), COLS.total, y + 4, { align: "right" });
+      doc.setFont("helvetica", "normal");
+
+      y += rowH;
+      rowIdx += 1;
     }
 
-    y += 6;
-    if (y > 250) { doc.addPage(); y = 20; }
+    // Trait de fermeture du tableau
+    doc.setDrawColor(...LINE);
+    doc.line(M, y, pageW - M, y);
+    y += 8;
 
-    // Totals
-    const totX = pageW - 17;
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text("Total HT", totX - 50, y, { align: "right" });
-    doc.text(fmtEur(Math.round(totalHt * 100), currency), totX, y, { align: "right" });
-    y += 6;
-    doc.text("TVA", totX - 50, y, { align: "right" });
-    doc.text(fmtEur(Math.round(totalTva * 100), currency), totX, y, { align: "right" });
-    y += 7;
-    doc.setFillColor(28, 88, 217);
-    doc.rect(totX - 70, y - 5, 75, 9, "F");
+    if (y > pageH - 60) { doc.addPage(); y = 20; }
+
+    // ─── Totaux (carte droite) ─────────────────────────────────────────
+    const totBoxW = 80;
+    const totBoxX = pageW - M - totBoxW;
+    const totLabelX = totBoxX + 4;
+    const totValueX = totBoxX + totBoxW - 4;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...MUTED);
+    doc.text("Total HT", totLabelX, y);
+    doc.setTextColor(...NAVY);
+    doc.text(fmtEur(Math.round(totalHt * 100), currency), totValueX, y, { align: "right" });
+    y += 5.5;
+    doc.setTextColor(...MUTED);
+    doc.text("TVA", totLabelX, y);
+    doc.setTextColor(...NAVY);
+    doc.text(fmtEur(Math.round(totalTva * 100), currency), totValueX, y, { align: "right" });
+    y += 4;
+    doc.setDrawColor(...LINE);
+    doc.line(totBoxX, y, totBoxX + totBoxW, y);
+    y += 4;
+
+    doc.setFillColor(...BRAND);
+    doc.rect(totBoxX, y - 4, totBoxW, 11, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(12);
-    doc.text("Total TTC", totX - 50, y + 1.5, { align: "right" });
-    doc.text(fmtEur(Math.round(totalTtc * 100), currency), totX, y + 1.5, { align: "right" });
-
+    doc.text("Total TTC", totLabelX, y + 3);
+    doc.text(fmtEur(Math.round(totalTtc * 100), currency), totValueX, y + 3, { align: "right" });
     y += 14;
 
-    // Bank info (fournisseur principal avec IBAN)
+    // ─── Infos paiement ────────────────────────────────────────────────
     const vendorWithBank = (lines || [])
       .map((l: any) => l.vendors)
       .find((v: any) => v && (v.iban || v.bank_name));
 
     if (vendorWithBank) {
-      if (y > 250) { doc.addPage(); y = 20; }
-      doc.setFillColor(245, 247, 250);
-      doc.rect(15, y, pageW - 30, 28, "F");
-      doc.setFontSize(10);
-      doc.setTextColor(30, 37, 47);
-      doc.text(`Informations de paiement — ${vendorWithBank.company_name || vendorWithBank.name || "Fournisseur"}`, 18, y + 6);
+      if (y > pageH - 50) { doc.addPage(); y = 20; }
+      const bkH = 30;
+      doc.setFillColor(...SOFT);
+      doc.setDrawColor(...LINE);
+      doc.roundedRect(M, y, pageW - 2 * M, bkH, 1.5, 1.5, "FD");
+      // Accent
+      doc.setFillColor(...BRAND);
+      doc.rect(M, y, 1.5, bkH, "F");
+
+      doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
-      doc.setTextColor(80);
-      let by = y + 12;
-      if (vendorWithBank.bank_name) { doc.text(`Banque : ${vendorWithBank.bank_name}`, 18, by); by += 5; }
-      if (vendorWithBank.iban) { doc.text(`IBAN : ${vendorWithBank.iban}`, 18, by); by += 5; }
-      if (vendorWithBank.bic) { doc.text(`BIC : ${vendorWithBank.bic}`, 18, by); by += 5; }
-      doc.text(`Communication : ${order.order_number}`, pageW - 18, y + 12, { align: "right" });
-      if (vendorWithBank.vat_number) doc.text(`TVA : ${vendorWithBank.vat_number}`, pageW - 18, y + 17, { align: "right" });
-      y += 32;
+      doc.setTextColor(...MUTED);
+      doc.text("INFORMATIONS DE PAIEMENT", M + 5, y + 5);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(...NAVY);
+      doc.text(String(vendorWithBank.company_name || vendorWithBank.name || "Fournisseur"), M + 5, y + 11);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(80, 80, 80);
+      let by = y + 17;
+      if (vendorWithBank.bank_name) { doc.text(`Banque : ${vendorWithBank.bank_name}`, M + 5, by); by += 4.5; }
+      if (vendorWithBank.iban) { doc.text(`IBAN : ${vendorWithBank.iban}`, M + 5, by); by += 4.5; }
+      if (vendorWithBank.bic) { doc.text(`BIC : ${vendorWithBank.bic}`, M + 5, by); by += 4.5; }
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(...NAVY);
+      doc.text("Communication", pageW - M - 5, y + 11, { align: "right" });
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(80, 80, 80);
+      doc.text(String(order.order_number), pageW - M - 5, y + 16, { align: "right" });
+      if (vendorWithBank.vat_number) {
+        doc.text(`TVA fournisseur : ${vendorWithBank.vat_number}`, pageW - M - 5, y + 21, { align: "right" });
+      }
+
+      y += bkH + 4;
     }
 
-    // Footer
-    doc.setFontSize(8);
-    doc.setTextColor(150);
-    doc.text(`Bon de commande émis via MediKong — ${order.order_number}`, 15, 285);
+    // ─── Footer (toutes pages) ─────────────────────────────────────────
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let p = 1; p <= pageCount; p++) {
+      doc.setPage(p);
+      doc.setDrawColor(...LINE);
+      doc.line(M, pageH - 14, pageW - M, pageH - 14);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(...MUTED);
+      doc.text(`Bon de commande ${order.order_number}`, M, pageH - 9);
+      doc.text("MediKong — Balooh SRL · TVA BE 1005.771.323 · medikong.pro", pageW / 2, pageH - 9, { align: "center" });
+      doc.text(`Page ${p} / ${pageCount}`, pageW - M, pageH - 9, { align: "right" });
+    }
 
     // ─── Upload ────────────────────────────────────────────────────────
     const pdfBytes = doc.output("arraybuffer");

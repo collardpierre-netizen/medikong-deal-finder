@@ -229,18 +229,19 @@ export default function AdminCustomers() {
         {/* Detail / Edit */}
         <div className="space-y-4">
           <div className="bg-white rounded-xl border border-slate-200 p-5">
-            {!selected || !form ? (
-              <div className="text-sm text-slate-500">Sélectionnez un customer à gauche pour l'éditer.</div>
+            {(!selected && !isCreating) || !form ? (
+              <div className="text-sm text-slate-500">Sélectionnez un customer à gauche pour l'éditer, ou cliquez sur « Nouveau client » pour en créer un.</div>
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold text-slate-900">{selected.company_name}</h2>
-                    <p className="text-xs text-slate-500">ID : {selected.id}</p>
+                    <h2 className="text-lg font-semibold text-slate-900">{isCreating ? "Nouveau client" : selected?.company_name}</h2>
+                    {!isCreating && selected && <p className="text-xs text-slate-500">ID : {selected.id}</p>}
                   </div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => {
+                        setIsCreating(false);
                         setSelectedId(null);
                         setForm(null);
                         setSearchParams((sp) => { sp.delete("id"); return sp; }, { replace: true });
@@ -251,10 +252,10 @@ export default function AdminCustomers() {
                     </button>
                     <button
                       onClick={handleSave}
-                      disabled={updateMut.isPending}
+                      disabled={updateMut.isPending || createMut.isPending}
                       className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1.5"
                     >
-                      <Save size={14} /> {updateMut.isPending ? "Sauvegarde..." : "Sauvegarder"}
+                      <Save size={14} /> {createMut.isPending ? "Création..." : updateMut.isPending ? "Sauvegarde..." : isCreating ? "Créer" : "Sauvegarder"}
                     </button>
                   </div>
                 </div>

@@ -530,6 +530,54 @@ const AdminDevisEditer = () => {
           </div>
         </div>
       </div>
+
+      <Dialog open={qcOpen} onOpenChange={setQcOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Créer un client rapide</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">Nom / raison sociale *</Label>
+              <Input value={qcName} onChange={(e) => setQcName(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Email *</Label>
+                <Input type="email" value={qcEmail} onChange={(e) => setQcEmail(e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">N° TVA (optionnel)</Label>
+                <Input value={qcVatNumber} onChange={(e) => setQcVatNumber(e.target.value)} placeholder="BE0123456789" />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs">Adresse ligne 1 *</Label>
+              <Input value={qcAddressLine1} onChange={(e) => setQcAddressLine1(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs">CP *</Label>
+                <Input value={qcPostalCode} onChange={(e) => setQcPostalCode(e.target.value)} />
+              </div>
+              <div className="col-span-2">
+                <Label className="text-xs">Ville *</Label>
+                <Input value={qcCity} onChange={(e) => setQcCity(e.target.value)} />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs">Pays (ISO 2) *</Label>
+              <Input value={qcCountry} onChange={(e) => setQcCountry(e.target.value.toUpperCase())} maxLength={2} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQcOpen(false)} disabled={qcSubmitting}>Annuler</Button>
+            <Button onClick={quickCreateCustomer} disabled={qcSubmitting} style={{ backgroundColor: "#1C58D9", color: "#fff" }}>
+              {qcSubmitting ? "Création…" : "Créer le client"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

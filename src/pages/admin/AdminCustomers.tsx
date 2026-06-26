@@ -159,7 +159,7 @@ export default function AdminCustomers() {
       <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-4">
         {/* List */}
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <div className="p-3 border-b border-slate-200">
+          <div className="p-3 border-b border-slate-200 space-y-2">
             <div className="relative">
               <Search size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
               <input
@@ -169,6 +169,17 @@ export default function AdminCustomers() {
                 className="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/40"
               />
             </div>
+            <button
+              onClick={() => {
+                setIsCreating(true);
+                setSelectedId(null);
+                setForm(emptyCustomer());
+                setSearchParams((sp) => { sp.delete("id"); return sp; }, { replace: true });
+              }}
+              className="w-full px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center gap-1.5"
+            >
+              <Plus size={14} /> Nouveau client
+            </button>
           </div>
           <div className="max-h-[70vh] overflow-y-auto">
             {isLoading && <div className="p-4 text-sm text-slate-500">Chargement...</div>}

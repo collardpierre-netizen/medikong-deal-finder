@@ -20,8 +20,26 @@ const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }
 
 
 const AdminDevis = () => {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [dupBusy, setDupBusy] = useState<string | null>(null);
+
+  const duplicateQuote = async (quoteId: string) => {
+    setDupBusy(quoteId);
+    try {
+      const { data, error } = await supabase.rpc("admin_duplicate_quote" as any, { _quote_id: quoteId });
+      if (error) throw error;
+      toast.success("Devis dupliqué");
+      await queryClient.invalidateQueries({ queryKey: ["admin-quotes"] });
+      if (data) navigate(`/admin/devis/${data}`);
+    } catch (e: any) {
+      toast.error(e?.message || "Échec duplication");
+    } finally {
+      setDupBusy(null);
+    }
+  };
 
   const { data: quotes = [], isLoading } = useQuery({
     queryKey: ["admin-quotes"],

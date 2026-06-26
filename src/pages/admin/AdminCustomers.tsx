@@ -129,28 +129,49 @@ export default function AdminCustomers() {
     onError: (e: any) => toast.error(e?.message || "Échec de la mise à jour"),
   });
 
+  const createMut = useMutation({
+    mutationFn: async (payload: Partial<Customer>) => {
+      const { data, error } = await supabase.from("customers").insert(payload as any).select("*").single();
+      if (error) throw error;
+      return data as Customer;
+    },
+    onSuccess: (newCustomer) => {
+      toast.success("Client créé");
+      qc.invalidateQueries({ queryKey: ["admin-customers"] });
+      setIsCreating(false);
+      setSelectedId(newCustomer.id);
+      setForm({ ...newCustomer });
+      setSearchParams((sp) => { sp.set("id", newCustomer.id); return sp; }, { replace: true });
+    },
+    onError: (e: any) => toast.error(e?.message || "Échec de la création"),
+  });
+
   const handleSave = () => {
-    if (!form?.id) return;
+    if (!form) return;
     if (!form.company_name?.trim()) return toast.error("Raison sociale requise");
     if (!form.email?.trim()) return toast.error("Email requis");
     if (!form.address_line1?.trim() || !form.city?.trim() || !form.postal_code?.trim()) {
       return toast.error("Adresse, ville et code postal requis");
     }
-    updateMut.mutate({
-      id: form.id,
+    const payload = {
       company_name: form.company_name?.trim(),
       email: form.email?.trim().toLowerCase(),
-      customer_type: form.customer_type,
+      customer_type: form.customer_type || "pharmacy",
       vat_number: form.vat_number?.trim() || null,
       phone: form.phone?.trim() || null,
       address_line1: form.address_line1?.trim(),
       address_line2: form.address_line2?.trim() || null,
       city: form.city?.trim(),
       postal_code: form.postal_code?.trim(),
-      country_code: form.country_code,
+      country_code: form.country_code || "BE",
       is_verified: !!form.is_verified,
       is_professional: !!form.is_professional,
-    } as any);
+    };
+    if (isCreating) {
+      createMut.mutate(payload);
+    } else if (form.id) {
+      updateMut.mutate({ id: form.id, ...payload } as any);
+    }
   };
 
   return (

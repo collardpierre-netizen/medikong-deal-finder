@@ -205,7 +205,7 @@ const AdminDevisEditer = () => {
   const addLine = () => {
     setLines((prev) => [
       ...prev,
-      { label: "", qty: 1, unit_price_ht_cents: 0, vat_rate: 21 },
+      { label: "", qty: 1, unit_price_ht_cents: 0, vat_rate: 21, commission_rate: null },
     ]);
   };
   const removeLine = (i: number) => {

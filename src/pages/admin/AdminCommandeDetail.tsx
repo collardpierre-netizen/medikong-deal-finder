@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { fmtEur } from "@/lib/format-currency";
-import { ArrowLeft, FileDown, Pencil, Copy, Link2, ExternalLink, Lock } from "lucide-react";
+import { ArrowLeft, FileDown, Pencil, Copy, Link2, ExternalLink, Lock, Wallet } from "lucide-react";
+import { lineMetrics, type ManualLineInput } from "@/lib/manual-order-metrics";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Brouillon",

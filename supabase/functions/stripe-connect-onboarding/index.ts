@@ -113,8 +113,8 @@ Deno.serve(async (req) => {
       // Create Account Link
       const accountLink = await stripe.accountLinks.create({
         account: accountId,
-        refresh_url: `${origin}/vendor/stripe-onboarding/refresh?vendor_id=${vendor.id}`,
-        return_url: `${origin}/vendor/stripe-onboarding/success?vendor_id=${vendor.id}`,
+        refresh_url: `${safeOrigin}/vendor/stripe-onboarding/refresh?vendor_id=${vendor.id}`,
+        return_url: `${safeOrigin}/vendor/stripe-onboarding/success?vendor_id=${vendor.id}`,
         type: "account_onboarding",
       });
 
@@ -140,8 +140,8 @@ Deno.serve(async (req) => {
 
       const accountLink = await stripe.accountLinks.create({
         account: vendor.stripe_account_id,
-        refresh_url: `${origin}/vendor/stripe-onboarding/refresh?vendor_id=${vendor_id}`,
-        return_url: `${origin}/vendor/stripe-onboarding/success?vendor_id=${vendor_id}`,
+        refresh_url: `${safeOrigin}/vendor/stripe-onboarding/refresh?vendor_id=${vendor_id}`,
+        return_url: `${safeOrigin}/vendor/stripe-onboarding/success?vendor_id=${vendor_id}`,
         type: "account_onboarding",
       });
 

@@ -149,6 +149,23 @@ const AdminCommandeDetail = () => {
     }
   };
 
+  const generatePayoutPdf = async () => {
+    setBusy("PAYOUT");
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-vendor-payout-pdf", { body: { order_id: id } });
+      if (error) throw error;
+      const url = (data as any)?.pdf_url;
+      if (url) {
+        window.open(url, "_blank");
+        toast.success(`Décompte fournisseur généré (${(data as any)?.vendors || 1} vendeur·s)`);
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Échec génération décompte");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const ensurePublicLink = async () => {
     setBusy("LINK");
     try {

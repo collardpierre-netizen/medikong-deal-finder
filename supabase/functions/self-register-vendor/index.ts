@@ -72,14 +72,16 @@ Deno.serve(async (req) => {
     }
 
     // Conflit d'email avec un autre vendor ?
+    // SECURITY: ne renvoie AUCUNE info sur le vendeur existant (id, auth_user_id,
+    // nom) pour éviter qu'un utilisateur authentifié ne probe les emails et
+    // récupère les identifiants internes d'autres comptes.
     const { data: existingForEmail } = await supabaseAdmin
-      .from("vendors").select("id, auth_user_id, company_name, name")
+      .from("vendors").select("id")
       .ilike("email", safeEmail).maybeSingle();
     if (existingForEmail) {
       return jsonErr(
         "Un compte vendeur existe déjà avec cet email.",
         "vendor_email_already_exists",
-        { existing_vendor: existingForEmail },
       );
     }
 

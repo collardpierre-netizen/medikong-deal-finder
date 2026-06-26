@@ -38,6 +38,36 @@ Deno.serve(async (req) => {
 
     const { action, vendor_id, origin } = await req.json();
 
+    // SECURITY: valide l'origin contre une allowlist pour éviter un open redirect
+    // via Stripe (refresh_url/return_url).
+    const ALLOWED_ORIGINS = new Set([
+      "https://medikong.pro",
+      "https://www.medikong.pro",
+      "https://medikong-deal-finder.lovable.app",
+      "https://id-preview--97fdf6cf-d81a-4efc-89f1-0b5a6ebdfe7b.lovable.app",
+    ]);
+    const safeOrigin = typeof origin === "string" && ALLOWED_ORIGINS.has(origin)
+      ? origin
+      : "https://medikong.pro";
+
+    // SECURITY: vérifie que l'appelant est admin OU propriétaire du vendor_id.
+    const { data: isAdminRow } = await supabase.rpc("is_admin", { _user_id: caller.id });
+    const isAdmin = isAdminRow === true;
+    if (!isAdmin) {
+      const { data: ownerCheck } = await supabase
+        .from("vendors")
+        .select("id")
+        .eq("id", vendor_id)
+        .eq("auth_user_id", caller.id)
+        .maybeSingle();
+      if (!ownerCheck) {
+        return new Response(JSON.stringify({ error: "Non autorisé" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     if (action === "create-account") {
       // Get vendor info
       const { data: vendor, error: vendorErr } = await supabase
@@ -83,8 +113,8 @@ Deno.serve(async (req) => {
       // Create Account Link
       const accountLink = await stripe.accountLinks.create({
         account: accountId,
-        refresh_url: `${origin}/vendor/stripe-onboarding/refresh?vendor_id=${vendor.id}`,
-        return_url: `${origin}/vendor/stripe-onboarding/success?vendor_id=${vendor.id}`,
+        refresh_url: `${safeOrigin}/vendor/stripe-onboarding/refresh?vendor_id=${vendor.id}`,
+        return_url: `${safeOrigin}/vendor/stripe-onboarding/success?vendor_id=${vendor.id}`,
         type: "account_onboarding",
       });
 
@@ -110,8 +140,8 @@ Deno.serve(async (req) => {
 
       const accountLink = await stripe.accountLinks.create({
         account: vendor.stripe_account_id,
-        refresh_url: `${origin}/vendor/stripe-onboarding/refresh?vendor_id=${vendor_id}`,
-        return_url: `${origin}/vendor/stripe-onboarding/success?vendor_id=${vendor_id}`,
+        refresh_url: `${safeOrigin}/vendor/stripe-onboarding/refresh?vendor_id=${vendor_id}`,
+        return_url: `${safeOrigin}/vendor/stripe-onboarding/success?vendor_id=${vendor_id}`,
         type: "account_onboarding",
       });
 

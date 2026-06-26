@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtEur } from "@/lib/format-currency";
-import { FileText, Send, Clock, CheckCircle2, XCircle, ArrowRightCircle } from "lucide-react";
+import { FileText, Send, Clock, CheckCircle2, XCircle, ArrowRightCircle, Copy } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }> = {
   draft: { bg: "#F1F5F9", color: "#475569", label: "Brouillon" },
@@ -17,9 +18,28 @@ const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }
   converted: { bg: "#EDE9FE", color: "#6D28D9", label: "Converti" },
 };
 
+
 const AdminDevis = () => {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [dupBusy, setDupBusy] = useState<string | null>(null);
+
+  const duplicateQuote = async (quoteId: string) => {
+    setDupBusy(quoteId);
+    try {
+      const { data, error } = await supabase.rpc("admin_duplicate_quote" as any, { _quote_id: quoteId });
+      if (error) throw error;
+      toast.success("Devis dupliqué");
+      await queryClient.invalidateQueries({ queryKey: ["admin-quotes"] });
+      if (data) navigate(`/admin/devis/${data}`);
+    } catch (e: any) {
+      toast.error(e?.message || "Échec duplication");
+    } finally {
+      setDupBusy(null);
+    }
+  };
 
   const { data: quotes = [], isLoading } = useQuery({
     queryKey: ["admin-quotes"],
@@ -98,20 +118,20 @@ const AdminDevis = () => {
         <table className="w-full text-sm">
           <thead style={{ backgroundColor: "#F8FAFC" }}>
             <tr>
-              {["N°", "Acheteur", "Vendeur", "Total TTC", "Statut", "Envoyé", "Vu", "Date"].map((h) => (
-                <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
+              {["N°", "Acheteur", "Vendeur", "Total TTC", "Statut", "Envoyé", "Vu", "Date", ""].map((h, i) => (
+                <th key={`${h}-${i}`} className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
-              <tr><td colSpan={8} className="text-center text-slate-400 py-10">Chargement…</td></tr>
+              <tr><td colSpan={9} className="text-center text-slate-400 py-10">Chargement…</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={8} className="text-center text-slate-400 py-10">Aucun devis</td></tr>
+              <tr><td colSpan={9} className="text-center text-slate-400 py-10">Aucun devis</td></tr>
             ) : filtered.map((q) => {
               const s = STATUS_STYLES[q.status] ?? STATUS_STYLES.draft;
               return (
-                <tr key={q.id} className="border-t hover:bg-slate-50/50 cursor-pointer">
+                <tr key={q.id} className="border-t hover:bg-slate-50/50">
                   <td className="px-4 py-2.5">
                     <Link to={`/admin/devis/${q.id}`} className="font-medium text-sky-700 hover:underline">{q.quote_number}</Link>
                   </td>
@@ -124,6 +144,16 @@ const AdminDevis = () => {
                   <td className="px-4 py-2.5 text-slate-500 text-xs">{q.sent_at ? new Date(q.sent_at).toLocaleDateString("fr-BE") : "—"}</td>
                   <td className="px-4 py-2.5 text-slate-500 text-xs">{q.viewed_at ? new Date(q.viewed_at).toLocaleDateString("fr-BE") : "—"}</td>
                   <td className="px-4 py-2.5 text-slate-500 text-xs">{new Date(q.created_at).toLocaleDateString("fr-BE")}</td>
+                  <td className="px-4 py-2.5 text-right">
+                    <button
+                      onClick={() => duplicateQuote(q.id)}
+                      disabled={dupBusy === q.id}
+                      title="Dupliquer ce devis"
+                      className="inline-flex items-center justify-center w-7 h-7 rounded hover:bg-slate-100 text-slate-500 hover:text-sky-700 disabled:opacity-50"
+                    >
+                      <Copy size={14} />
+                    </button>
+                  </td>
                 </tr>
               );
             })}

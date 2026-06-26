@@ -47,7 +47,23 @@ export default function AdminCustomers() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(searchParams.get("id"));
+  const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState<Partial<Customer> | null>(null);
+
+  const emptyCustomer = (): Partial<Customer> => ({
+    company_name: "",
+    email: "",
+    customer_type: "pharmacy",
+    vat_number: "",
+    phone: "",
+    address_line1: "",
+    address_line2: "",
+    city: "",
+    postal_code: "",
+    country_code: "BE",
+    is_verified: false,
+    is_professional: true,
+  });
 
   const { data: customers = [], isLoading } = useQuery({
     queryKey: ["admin-customers"],

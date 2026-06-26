@@ -64,6 +64,10 @@ const AdminCommandeDetail = () => {
             vat_rate: vat,
             line_total_excl_vat: totalHt,
             manual_label: l.manual_label || l.offer_label,
+            unit_cost_excl_vat: l.unit_cost_excl_vat ?? null,
+            commission_rate: l.commission_rate ?? null,
+            commission_amount: l.commission_amount ?? null,
+            commission_basis: l.commission_basis ?? null,
             products: productMap.get(l.product_id) || (l.gtin || l.cnk_code ? { name: l.manual_label || l.offer_label, gtin: l.gtin, cnk_code: l.cnk_code } : null),
             vendors: vendorMap.get(l.vendor_id) || null,
           };

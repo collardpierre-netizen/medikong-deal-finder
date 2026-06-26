@@ -84,6 +84,25 @@ const AdminCommandeDetail = () => {
         };
       }
 
+      // Merge commission/cost info from draft_payload onto persisted lines (by product+vendor)
+      if (persisted.length > 0 && draftLines.length > 0) {
+        const draftIdx = new Map<string, any>();
+        for (const dl of draftLines) {
+          const key = `${dl.product_id || ""}|${dl.vendor_id || ""}|${dl.unit_price_excl_vat ?? ""}`;
+          if (!draftIdx.has(key)) draftIdx.set(key, dl);
+        }
+        for (const pl of persisted) {
+          const key = `${pl.product_id || ""}|${pl.vendor_id || ""}|${pl.unit_price_excl_vat ?? ""}`;
+          const dl = draftIdx.get(key);
+          if (dl) {
+            (pl as any).unit_cost_excl_vat = (pl as any).unit_cost_excl_vat ?? dl.unit_cost_excl_vat ?? null;
+            (pl as any).commission_rate = (pl as any).commission_rate ?? dl.commission_rate ?? null;
+            (pl as any).commission_amount = (pl as any).commission_amount ?? dl.commission_amount ?? null;
+            (pl as any).commission_basis = (pl as any).commission_basis ?? dl.commission_basis ?? null;
+          }
+        }
+      }
+
       return data as any;
     },
     enabled: !!id,

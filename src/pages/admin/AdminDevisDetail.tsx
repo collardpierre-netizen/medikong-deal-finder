@@ -130,10 +130,11 @@ const AdminDevisDetail = () => {
               <thead style={{ backgroundColor: "#F8FAFC" }}>
                 <tr>
                   <th className="text-left px-3 py-2 text-[11px] uppercase font-semibold text-slate-500">Article</th>
-                  <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500">Qté</th>
-                  <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500">PU HT</th>
-                  <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500">TVA</th>
-                  <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500">Total HT</th>
+                  <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500 w-20">Qté</th>
+                  <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500 w-32">PU HT</th>
+                  <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500 w-20">TVA</th>
+                  <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500 w-28">Total HT</th>
+                  {quote.status === "draft" && <th className="w-20"></th>}
                 </tr>
               </thead>
               <tbody>

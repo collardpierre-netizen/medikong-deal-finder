@@ -139,7 +139,12 @@ const AdminDevis = () => {
                   <td className="px-4 py-2.5">{q.vendor?.company_name || q.vendor?.name || "—"}</td>
                   <td className="px-4 py-2.5 font-medium">{fmtEur(Number(q.total_ttc_cents || 0) / 100)} €</td>
                   <td className="px-4 py-2.5">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium" style={{ backgroundColor: s.bg, color: s.color }}>{s.label}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium" style={{ backgroundColor: s.bg, color: s.color }}>{s.label}</span>
+                      {q.order_id && (q.status === 'sent' || q.status === 'accepted') ? (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-violet-50 text-violet-700 border border-violet-200" title="Cette demande figure dans le pipeline prévisionnel">📊 Pipeline</span>
+                      ) : null}
+                    </div>
                   </td>
                   <td className="px-4 py-2.5 text-slate-500 text-xs">{q.sent_at ? new Date(q.sent_at).toLocaleDateString("fr-BE") : "—"}</td>
                   <td className="px-4 py-2.5 text-slate-500 text-xs">{q.viewed_at ? new Date(q.viewed_at).toLocaleDateString("fr-BE") : "—"}</td>

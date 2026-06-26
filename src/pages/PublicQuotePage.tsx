@@ -117,13 +117,25 @@ const PublicQuotePage = () => {
 
       <div className="max-w-3xl mx-auto">
         <div className="bg-white border rounded-xl shadow-sm overflow-hidden" style={{ borderColor: "#E2E8F0" }}>
-          {/* Header */}
+          {/* MediKong brand header */}
+          <div className="px-6 py-5 border-b flex items-start justify-between gap-4" style={{ borderColor: "#E2E8F0" }}>
+            <img src={medikongLogo} alt="MediKong" className="h-12 sm:h-14 w-auto" />
+            <div className="text-right text-xs text-slate-500">
+              <div className="font-semibold text-slate-900">MediKong</div>
+              <div>Balooh SRL</div>
+              <div>23 rue de la Procession</div>
+              <div>7822 Ath, Belgique</div>
+              <div>TVA : BE 1005.771.323</div>
+            </div>
+          </div>
+
+          {/* Quote meta */}
           <div className="px-6 py-5 border-b flex items-start justify-between gap-4" style={{ borderColor: "#E2E8F0" }}>
             <div>
-              <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-400">Devis</div>
-              <h1 className="text-2xl font-bold mt-1" style={{ color: "#1E252F", letterSpacing: "-0.02em" }}>{quote.quote_number}</h1>
+              <div className="text-2xl font-bold" style={{ color: "#1C58D9", letterSpacing: "-0.02em" }}>DEVIS</div>
+              <div className="text-sm text-slate-500 mt-1">N° {quote.quote_number} · {quote.sent_at ? new Date(quote.sent_at).toLocaleDateString("fr-BE") : "—"}</div>
               {quote.token_expires_at && (
-                <div className="text-xs text-slate-500 mt-1">Valable jusqu'au {new Date(quote.token_expires_at).toLocaleDateString("fr-BE")}</div>
+                <div className="text-xs text-slate-400 mt-1">Valable jusqu'au {new Date(quote.token_expires_at).toLocaleDateString("fr-BE")}</div>
               )}
             </div>
             <div className="text-right">

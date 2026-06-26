@@ -327,7 +327,16 @@ const AdminDevisEditer = () => {
                 </select>
               </div>
               <div>
-                <Label>Client</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Client</Label>
+                  <button
+                    type="button"
+                    onClick={() => setQcOpen(true)}
+                    className="text-[11px] text-sky-700 hover:underline inline-flex items-center gap-1"
+                  >
+                    <UserPlus size={12} /> Nouveau client
+                  </button>
+                </div>
                 <Input
                   placeholder="Rechercher un client…"
                   value={customerSearch}

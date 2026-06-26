@@ -47,7 +47,23 @@ export default function AdminCustomers() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(searchParams.get("id"));
+  const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState<Partial<Customer> | null>(null);
+
+  const emptyCustomer = (): Partial<Customer> => ({
+    company_name: "",
+    email: "",
+    customer_type: "pharmacy",
+    vat_number: "",
+    phone: "",
+    address_line1: "",
+    address_line2: "",
+    city: "",
+    postal_code: "",
+    country_code: "BE",
+    is_verified: false,
+    is_professional: true,
+  });
 
   const { data: customers = [], isLoading } = useQuery({
     queryKey: ["admin-customers"],
@@ -94,6 +110,7 @@ export default function AdminCustomers() {
   const selected = customers.find((c) => c.id === selectedId) || null;
 
   const handleSelect = (c: Customer) => {
+    setIsCreating(false);
     setSelectedId(c.id);
     setForm({ ...c });
     setSearchParams((sp) => { sp.set("id", c.id); return sp; }, { replace: true });
@@ -112,28 +129,49 @@ export default function AdminCustomers() {
     onError: (e: any) => toast.error(e?.message || "Échec de la mise à jour"),
   });
 
+  const createMut = useMutation({
+    mutationFn: async (payload: Partial<Customer>) => {
+      const { data, error } = await supabase.from("customers").insert(payload as any).select("*").single();
+      if (error) throw error;
+      return data as Customer;
+    },
+    onSuccess: (newCustomer) => {
+      toast.success("Client créé");
+      qc.invalidateQueries({ queryKey: ["admin-customers"] });
+      setIsCreating(false);
+      setSelectedId(newCustomer.id);
+      setForm({ ...newCustomer });
+      setSearchParams((sp) => { sp.set("id", newCustomer.id); return sp; }, { replace: true });
+    },
+    onError: (e: any) => toast.error(e?.message || "Échec de la création"),
+  });
+
   const handleSave = () => {
-    if (!form?.id) return;
+    if (!form) return;
     if (!form.company_name?.trim()) return toast.error("Raison sociale requise");
     if (!form.email?.trim()) return toast.error("Email requis");
     if (!form.address_line1?.trim() || !form.city?.trim() || !form.postal_code?.trim()) {
       return toast.error("Adresse, ville et code postal requis");
     }
-    updateMut.mutate({
-      id: form.id,
+    const payload = {
       company_name: form.company_name?.trim(),
       email: form.email?.trim().toLowerCase(),
-      customer_type: form.customer_type,
+      customer_type: form.customer_type || "pharmacy",
       vat_number: form.vat_number?.trim() || null,
       phone: form.phone?.trim() || null,
       address_line1: form.address_line1?.trim(),
       address_line2: form.address_line2?.trim() || null,
       city: form.city?.trim(),
       postal_code: form.postal_code?.trim(),
-      country_code: form.country_code,
+      country_code: form.country_code || "BE",
       is_verified: !!form.is_verified,
       is_professional: !!form.is_professional,
-    } as any);
+    };
+    if (isCreating) {
+      createMut.mutate(payload);
+    } else if (form.id) {
+      updateMut.mutate({ id: form.id, ...payload } as any);
+    }
   };
 
   return (
@@ -143,7 +181,7 @@ export default function AdminCustomers() {
       <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-4">
         {/* List */}
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <div className="p-3 border-b border-slate-200">
+          <div className="p-3 border-b border-slate-200 space-y-2">
             <div className="relative">
               <Search size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
               <input
@@ -153,6 +191,17 @@ export default function AdminCustomers() {
                 className="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/40"
               />
             </div>
+            <button
+              onClick={() => {
+                setIsCreating(true);
+                setSelectedId(null);
+                setForm(emptyCustomer());
+                setSearchParams((sp) => { sp.delete("id"); return sp; }, { replace: true });
+              }}
+              className="w-full px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center gap-1.5"
+            >
+              <Plus size={14} /> Nouveau client
+            </button>
           </div>
           <div className="max-h-[70vh] overflow-y-auto">
             {isLoading && <div className="p-4 text-sm text-slate-500">Chargement...</div>}
@@ -180,18 +229,19 @@ export default function AdminCustomers() {
         {/* Detail / Edit */}
         <div className="space-y-4">
           <div className="bg-white rounded-xl border border-slate-200 p-5">
-            {!selected || !form ? (
-              <div className="text-sm text-slate-500">Sélectionnez un customer à gauche pour l'éditer.</div>
+            {(!selected && !isCreating) || !form ? (
+              <div className="text-sm text-slate-500">Sélectionnez un customer à gauche pour l'éditer, ou cliquez sur « Nouveau client » pour en créer un.</div>
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold text-slate-900">{selected.company_name}</h2>
-                    <p className="text-xs text-slate-500">ID : {selected.id}</p>
+                    <h2 className="text-lg font-semibold text-slate-900">{isCreating ? "Nouveau client" : selected?.company_name}</h2>
+                    {!isCreating && selected && <p className="text-xs text-slate-500">ID : {selected.id}</p>}
                   </div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => {
+                        setIsCreating(false);
                         setSelectedId(null);
                         setForm(null);
                         setSearchParams((sp) => { sp.delete("id"); return sp; }, { replace: true });
@@ -202,10 +252,10 @@ export default function AdminCustomers() {
                     </button>
                     <button
                       onClick={handleSave}
-                      disabled={updateMut.isPending}
+                      disabled={updateMut.isPending || createMut.isPending}
                       className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1.5"
                     >
-                      <Save size={14} /> {updateMut.isPending ? "Sauvegarde..." : "Sauvegarder"}
+                      <Save size={14} /> {createMut.isPending ? "Création..." : updateMut.isPending ? "Sauvegarde..." : isCreating ? "Créer" : "Sauvegarder"}
                     </button>
                   </div>
                 </div>

@@ -173,6 +173,13 @@ const AdminDevisDetail = () => {
         <div className="space-y-4">
           <div className="bg-white border rounded-lg p-4 space-y-2" style={{ borderColor: "#E2E8F0" }}>
             <div className="text-sm font-semibold mb-2">Actions</div>
+            {quote.status === "draft" && (
+              <Button asChild className="w-full justify-start" style={{ backgroundColor: "#1C58D9", color: "#fff" }}>
+                <Link to={`/admin/devis/${id}/editer`}>
+                  <Pencil size={14} className="mr-2" /> Éditer (client, vendeur, lignes…)
+                </Link>
+              </Button>
+            )}
             <Button onClick={regeneratePdf} disabled={busy !== null} className="w-full justify-start" variant="outline">
               <FileDown size={14} className="mr-2" /> {busy === "PDF" ? "Génération…" : "Générer / Re-générer le PDF"}
             </Button>

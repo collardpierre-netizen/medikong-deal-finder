@@ -161,6 +161,7 @@ const AdminDevisEditer = () => {
         unit_price_ht_cents: Number(l.unit_price_ht_cents || 0),
         vat_rate: Number(l.vat_rate || 21),
         unit_cost_ht_cents: l.unit_cost_ht_cents,
+        commission_rate: l.commission_rate != null ? Number(l.commission_rate) : null,
       }))
     );
   }, [quote]);

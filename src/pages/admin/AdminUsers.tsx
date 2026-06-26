@@ -169,16 +169,18 @@ export default function AdminUsers() {
     setBuyerDetail(null);
   }
 
-  async function handleValidate(userId: string | null) {
-    if (!userId) return;
+  async function handleValidate(_userId: string | null) {
+    // Validate by customer row id (works even when auth account isn't created yet)
+    const customerId = buyerDetail?.id || selectedUser?.id;
+    if (!customerId) { toast.error("Aucun client sélectionné"); return; }
     const { data: updated, error } = await supabase
       .from("customers")
       .update({ is_verified: true } as any)
-      .eq("auth_user_id", userId)
-      .eq("is_verified", false)
+      .eq("id", customerId)
       .select("id, email, company_name, is_verified")
       .maybeSingle();
     if (error) { toast.error("Erreur: " + error.message); return; }
+    if (!updated) { toast.error("Client introuvable ou déjà validé"); return; }
     toast.success("✅ Compte acheteur validé");
 
     // Notify buyer that their account is now verified (transactional)

@@ -402,6 +402,7 @@ const AdminDevisEditer = () => {
                   <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-20">Qté</th>
                   <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-32">PU HT (€)</th>
                   <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-20">TVA %</th>
+                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-24" title="Commission MediKong (% de la marge). Vide = utiliser le contrat vendeur.">Com %</th>
                   <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-28">Total HT</th>
                   <th className="w-10"></th>
                 </tr>
@@ -449,6 +450,21 @@ const AdminDevisEditer = () => {
                           step="0.5"
                           value={l.vat_rate}
                           onChange={(e) => updateLine(i, { vat_rate: Number(e.target.value) || 0 })}
+                          className="text-right"
+                        />
+                      </td>
+                      <td className="px-2 py-1">
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          step="0.5"
+                          placeholder="auto"
+                          value={l.commission_rate ?? ""}
+                          onChange={(e) => {
+                            const v = e.target.value.trim();
+                            updateLine(i, { commission_rate: v === "" ? null : Number(v) });
+                          }}
                           className="text-right"
                         />
                       </td>

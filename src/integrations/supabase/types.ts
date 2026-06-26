@@ -10776,6 +10776,9 @@ export type Database = {
       }
       quote_lines: {
         Row: {
+          commission_amount_cents: number | null
+          commission_basis: string | null
+          commission_rate: number | null
           created_at: string
           id: string
           label: string
@@ -10792,6 +10795,9 @@ export type Database = {
           vat_rate: number
         }
         Insert: {
+          commission_amount_cents?: number | null
+          commission_basis?: string | null
+          commission_rate?: number | null
           created_at?: string
           id?: string
           label: string
@@ -10808,6 +10814,9 @@ export type Database = {
           vat_rate?: number
         }
         Update: {
+          commission_amount_cents?: number | null
+          commission_basis?: string | null
+          commission_rate?: number | null
           created_at?: string
           id?: string
           label?: string
@@ -23553,6 +23562,9 @@ export type Database = {
       }
       admin_update_quote_line: {
         Args: {
+          _commission_amount_cents?: number
+          _commission_basis?: string
+          _commission_rate?: number
           _label?: string
           _line_id: string
           _qty: number

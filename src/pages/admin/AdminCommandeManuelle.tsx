@@ -322,7 +322,17 @@ const AdminCommandeManuelle = () => {
 
 
   function patchLine(id: string, patch: Partial<ManualLine>) {
-    setLines((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+    setLines((prev) => prev.map((l) => {
+      if (l.id !== id) return l;
+      const merged: ManualLine = { ...l, ...patch };
+      // Si on change de vendeur, on ré-applique le taux contractuel par défaut
+      // pour ne pas conserver le taux de l'ancien vendeur.
+      if (patch.vendor_id && patch.vendor_id !== l.vendor_id) {
+        const def = vendorCommissionDefaults(patch.vendor_id);
+        if (def) Object.assign(merged, def);
+      }
+      return merged;
+    }));
   }
 
   function removeLine(id: string) {

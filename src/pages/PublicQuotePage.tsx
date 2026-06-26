@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { fmtEur } from "@/lib/format-currency";
 import { CheckCircle2, XCircle, FileDown, Loader2 } from "lucide-react";
+import medikongLogo from "@/assets/medikong-logo-cropped.png";
 
 type QuoteData = {
   id: string;

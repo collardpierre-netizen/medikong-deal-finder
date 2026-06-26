@@ -138,13 +138,13 @@ const AdminDevisDetail = () => {
               </thead>
               <tbody>
                 {lines.map((l: any) => (
-                  <tr key={l.id} className="border-t">
-                    <td className="px-3 py-2">{l.label}</td>
-                    <td className="px-3 py-2 text-right">{l.qty}</td>
-                    <td className="px-3 py-2 text-right">{fmtEur(Number(l.unit_price_ht_cents) / 100)} €</td>
-                    <td className="px-3 py-2 text-right">{Number(l.vat_rate).toFixed(0)}%</td>
-                    <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(l.total_ht_cents) / 100)} €</td>
-                  </tr>
+                  <QuoteLineRow
+                    key={l.id}
+                    line={l}
+                    editable={quote.status === "draft"}
+                    canDelete={lines.length > 1}
+                    onChanged={refetch}
+                  />
                 ))}
               </tbody>
               <tfoot>

@@ -23017,6 +23017,7 @@ export type Database = {
         Args: { _id: string }
         Returns: undefined
       }
+      admin_delete_quote_line: { Args: { _line_id: string }; Returns: Json }
       admin_duplicate_order_payload: {
         Args: { _order_id: string }
         Returns: Json
@@ -23544,6 +23545,20 @@ export type Database = {
       }
       admin_update_manual_order: {
         Args: { _order_id: string; _payload: Json }
+        Returns: Json
+      }
+      admin_update_quote_from_payload: {
+        Args: { _payload: Json; _quote_id: string }
+        Returns: Json
+      }
+      admin_update_quote_line: {
+        Args: {
+          _label?: string
+          _line_id: string
+          _qty: number
+          _unit_price_ht_cents: number
+          _vat_rate: number
+        }
         Returns: Json
       }
       apply_category_aliases: {

@@ -6,7 +6,8 @@ import AdminTopBar from "@/components/admin/AdminTopBar";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { fmtEur } from "@/lib/format-currency";
-import { ArrowLeft, Send, FileDown, RefreshCw, ArrowRightCircle, Copy, Eye, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, Send, FileDown, RefreshCw, ArrowRightCircle, Copy, Eye, CheckCircle2, XCircle, Clock, Pencil, Trash2, Check, X } from "lucide-react";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Brouillon", sent: "Envoyé", accepted: "Accepté", declined: "Refusé", paid: "Payé", converted: "Converti",
@@ -129,35 +130,39 @@ const AdminDevisDetail = () => {
               <thead style={{ backgroundColor: "#F8FAFC" }}>
                 <tr>
                   <th className="text-left px-3 py-2 text-[11px] uppercase font-semibold text-slate-500">Article</th>
-                  <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500">Qté</th>
-                  <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500">PU HT</th>
-                  <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500">TVA</th>
-                  <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500">Total HT</th>
+                  <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500 w-20">Qté</th>
+                  <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500 w-32">PU HT</th>
+                  <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500 w-20">TVA</th>
+                  <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500 w-28">Total HT</th>
+                  {quote.status === "draft" && <th className="w-20"></th>}
                 </tr>
               </thead>
               <tbody>
                 {lines.map((l: any) => (
-                  <tr key={l.id} className="border-t">
-                    <td className="px-3 py-2">{l.label}</td>
-                    <td className="px-3 py-2 text-right">{l.qty}</td>
-                    <td className="px-3 py-2 text-right">{fmtEur(Number(l.unit_price_ht_cents) / 100)} €</td>
-                    <td className="px-3 py-2 text-right">{Number(l.vat_rate).toFixed(0)}%</td>
-                    <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(l.total_ht_cents) / 100)} €</td>
-                  </tr>
+                  <QuoteLineRow
+                    key={l.id}
+                    line={l}
+                    editable={quote.status === "draft"}
+                    canDelete={lines.length > 1}
+                    onChanged={refetch}
+                  />
                 ))}
               </tbody>
               <tfoot>
                 <tr className="border-t bg-slate-50/40">
                   <td colSpan={4} className="px-3 py-2 text-right text-slate-500">Total HT</td>
                   <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(quote.total_ht_cents) / 100)} €</td>
+                  {quote.status === "draft" && <td />}
                 </tr>
                 <tr className="bg-slate-50/40">
                   <td colSpan={4} className="px-3 py-2 text-right text-slate-500">TVA</td>
                   <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(quote.total_tva_cents) / 100)} €</td>
+                  {quote.status === "draft" && <td />}
                 </tr>
                 <tr className="border-t" style={{ backgroundColor: "#1C58D9" }}>
                   <td colSpan={4} className="px-3 py-3 text-right text-white font-semibold">Total TTC</td>
                   <td className="px-3 py-3 text-right text-white font-bold text-base">{fmtEur(Number(quote.total_ttc_cents) / 100)} €</td>
+                  {quote.status === "draft" && <td style={{ backgroundColor: "#1C58D9" }} />}
                 </tr>
               </tfoot>
             </table>
@@ -168,6 +173,13 @@ const AdminDevisDetail = () => {
         <div className="space-y-4">
           <div className="bg-white border rounded-lg p-4 space-y-2" style={{ borderColor: "#E2E8F0" }}>
             <div className="text-sm font-semibold mb-2">Actions</div>
+            {quote.status === "draft" && (
+              <Button asChild className="w-full justify-start" style={{ backgroundColor: "#1C58D9", color: "#fff" }}>
+                <Link to={`/admin/devis/${id}/editer`}>
+                  <Pencil size={14} className="mr-2" /> Éditer (client, vendeur, lignes…)
+                </Link>
+              </Button>
+            )}
             <Button onClick={regeneratePdf} disabled={busy !== null} className="w-full justify-start" variant="outline">
               <FileDown size={14} className="mr-2" /> {busy === "PDF" ? "Génération…" : "Générer / Re-générer le PDF"}
             </Button>
@@ -233,5 +245,122 @@ const TimelineRow = ({ icon, label, date }: { icon: React.ReactNode; label: stri
     <span className="text-slate-400">{date ? new Date(date).toLocaleString("fr-BE") : "—"}</span>
   </div>
 );
+
+function QuoteLineRow({ line, editable, canDelete, onChanged }: { line: any; editable: boolean; canDelete: boolean; onChanged: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [qty, setQty] = useState<number>(Number(line.qty || 1));
+  const [pu, setPu] = useState<string>((Number(line.unit_price_ht_cents || 0) / 100).toString());
+  const [vat, setVat] = useState<number>(Number(line.vat_rate || 21));
+  const [label, setLabel] = useState<string>(line.label || "");
+
+  const reset = () => {
+    setQty(Number(line.qty || 1));
+    setPu((Number(line.unit_price_ht_cents || 0) / 100).toString());
+    setVat(Number(line.vat_rate || 21));
+    setLabel(line.label || "");
+    setEditing(false);
+  };
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      const { error } = await supabase.rpc("admin_update_quote_line" as any, {
+        _line_id: line.id,
+        _qty: Math.max(1, Number(qty) || 1),
+        _unit_price_ht_cents: Math.round((Number(pu) || 0) * 100),
+        _vat_rate: Number(vat) || 0,
+        _label: label,
+      });
+      if (error) throw error;
+      toast.success("Ligne mise à jour");
+      setEditing(false);
+      onChanged();
+    } catch (e: any) {
+      toast.error(e?.message || "Échec");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async () => {
+    if (!confirm("Supprimer cette ligne ?")) return;
+    setBusy(true);
+    try {
+      const { error } = await supabase.rpc("admin_delete_quote_line" as any, { _line_id: line.id });
+      if (error) throw error;
+      toast.success("Ligne supprimée");
+      onChanged();
+    } catch (e: any) {
+      toast.error(e?.message || "Échec");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!editable) {
+    return (
+      <tr className="border-t">
+        <td className="px-3 py-2">{line.label}</td>
+        <td className="px-3 py-2 text-right">{line.qty}</td>
+        <td className="px-3 py-2 text-right">{fmtEur(Number(line.unit_price_ht_cents) / 100)} €</td>
+        <td className="px-3 py-2 text-right">{Number(line.vat_rate).toFixed(0)}%</td>
+        <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(line.total_ht_cents) / 100)} €</td>
+      </tr>
+    );
+  }
+
+  if (!editing) {
+    return (
+      <tr className="border-t group">
+        <td className="px-3 py-2">{line.label}</td>
+        <td className="px-3 py-2 text-right">{line.qty}</td>
+        <td className="px-3 py-2 text-right">{fmtEur(Number(line.unit_price_ht_cents) / 100)} €</td>
+        <td className="px-3 py-2 text-right">{Number(line.vat_rate).toFixed(0)}%</td>
+        <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(line.total_ht_cents) / 100)} €</td>
+        <td className="px-2 py-1">
+          <div className="flex gap-1 opacity-50 group-hover:opacity-100 transition">
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditing(true)} title="Éditer cette ligne">
+              <Pencil size={12} />
+            </Button>
+            <Button size="icon" variant="ghost" className="h-7 w-7 text-red-600" onClick={remove} disabled={busy || !canDelete} title={canDelete ? "Supprimer" : "Au moins 1 ligne requise"}>
+              <Trash2 size={12} />
+            </Button>
+          </div>
+        </td>
+      </tr>
+    );
+  }
+
+  return (
+    <tr className="border-t bg-blue-50/40">
+      <td className="px-2 py-1">
+        <Input value={label} onChange={(e) => setLabel(e.target.value)} className="h-8 text-sm" />
+      </td>
+      <td className="px-2 py-1">
+        <Input type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value) || 1)} className="h-8 text-sm text-right" />
+      </td>
+      <td className="px-2 py-1">
+        <Input type="number" step="0.01" min={0} value={pu} onChange={(e) => setPu(e.target.value)} className="h-8 text-sm text-right" />
+      </td>
+      <td className="px-2 py-1">
+        <Input type="number" min={0} max={100} step="0.5" value={vat} onChange={(e) => setVat(Number(e.target.value) || 0)} className="h-8 text-sm text-right" />
+      </td>
+      <td className="px-2 py-2 text-right text-xs text-slate-500">
+        {fmtEur((Number(qty) * Math.round((Number(pu) || 0) * 100)) / 100)} €
+      </td>
+      <td className="px-2 py-1">
+        <div className="flex gap-1">
+          <Button size="icon" variant="ghost" className="h-7 w-7 text-green-700" onClick={save} disabled={busy} title="Enregistrer">
+            <Check size={14} />
+          </Button>
+          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={reset} disabled={busy} title="Annuler">
+            <X size={14} />
+          </Button>
+        </div>
+      </td>
+    </tr>
+  );
+}
 
 export default AdminDevisDetail;

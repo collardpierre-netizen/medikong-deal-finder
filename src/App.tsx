@@ -149,6 +149,7 @@ const AdminCommandeManuelle = lazyWithRetry(() => import("./pages/admin/AdminCom
 const AdminCommandeDetail = lazyWithRetry(() => import("./pages/admin/AdminCommandeDetail"), "AdminCommandeDetail");
 const AdminDevis = lazyWithRetry(() => import("./pages/admin/AdminDevis"), "AdminDevis");
 const AdminDevisDetail = lazyWithRetry(() => import("./pages/admin/AdminDevisDetail"), "AdminDevisDetail");
+const AdminDevisEditer = lazyWithRetry(() => import("./pages/admin/AdminDevisEditer"), "AdminDevisEditer");
 const PublicQuotePage = lazyWithRetry(() => import("./pages/PublicQuotePage"), "PublicQuotePage");
 const PublicOrderPage = lazyWithRetry(() => import("./pages/PublicOrderPage"), "PublicOrderPage");
 const AdminFinances = lazyWithRetry(() => import("./pages/admin/AdminFinances"), "AdminFinances");
@@ -505,6 +506,7 @@ const App = () => (
               <Route path="commandes/:id" element={<LP><AdminCommandeDetail /></LP>} />
               <Route path="devis" element={<LP><AdminDevis /></LP>} />
               <Route path="devis/:id" element={<LP><AdminDevisDetail /></LP>} />
+              <Route path="devis/:id/editer" element={<LP><AdminDevisEditer /></LP>} />
               <Route path="commandes-en-retard" element={<LP><AdminCommandesEnRetard /></LP>} />
               <Route path="notifications" element={<LP><AdminNotifications /></LP>} />
               <Route path="notifications/:id" element={<LP><AdminNotificationDetail /></LP>} />

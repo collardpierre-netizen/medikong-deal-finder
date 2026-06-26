@@ -23,6 +23,7 @@ type Line = {
   unit_price_ht_cents: number;
   vat_rate: number;
   unit_cost_ht_cents?: number | null;
+  commission_rate?: number | null;
 };
 
 const AdminDevisEditer = () => {

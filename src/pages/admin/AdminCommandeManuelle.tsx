@@ -220,19 +220,66 @@ const AdminCommandeManuelle = () => {
 
 
 
-  // Vendors (active)
+  // Vendors (active) — inclut la config commission par défaut pour
+  // auto-appliquer le taux contractuel (ex: 50% de la marge) sur chaque
+  // ligne d'une commande / prévisionnelle.
   const { data: vendors = [] } = useQuery({
     queryKey: ["admin-manual-order-vendors"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vendors")
-        .select("id, name, company_name")
+        .select("id, name, company_name, commission_model, commission_rate, margin_split_pct, fixed_commission_amount")
         .order("name", { ascending: true })
         .limit(500);
       if (error) throw error;
       return data ?? [];
     },
   });
+
+  // Calcule le patch commission par défaut pour un vendeur donné.
+  // - margin_split  → rate = (100 - margin_split_pct) % sur la marge brute
+  // - flat_percentage → rate = commission_rate % sur le CA HTVA
+  // - fixed_amount    → amount = fixed_commission_amount €/unité
+  function vendorCommissionDefaults(vendorId: string): Partial<ManualLine> | null {
+    const v: any = vendors.find((x: any) => x.id === vendorId);
+    if (!v) return null;
+    const model = v.commission_model ?? "flat_percentage";
+    if (model === "margin_split") {
+      const pct = Number(v.margin_split_pct);
+      if (!Number.isFinite(pct)) return null;
+      const mkCut = Math.max(0, 100 - pct);
+      return { commission_rate: String(mkCut), commission_amount: "", commission_basis: "margin" };
+    }
+    if (model === "fixed_amount") {
+      const amt = Number(v.fixed_commission_amount);
+      if (!Number.isFinite(amt)) return null;
+      return { commission_rate: "", commission_amount: String(amt), commission_basis: "ca" };
+    }
+    // flat_percentage
+    const rate = Number(v.commission_rate);
+    if (!Number.isFinite(rate)) return null;
+    return { commission_rate: String(rate), commission_amount: "", commission_basis: "ca" };
+  }
+
+  // Auto-applique les défauts vendeur sur toute ligne sans commission encodée.
+  // Garantit qu'une prévisionnelle reste alignée sur le contrat (ex: 50% marge)
+  // après chaque édition (changement vendeur, ajout de ligne, import…).
+  useEffect(() => {
+    if (!vendors.length || !lines.length) return;
+    let dirty = false;
+    const next = lines.map((l) => {
+      if (!l.vendor_id) return l;
+      const hasRate = String(l.commission_rate ?? "").trim() !== "";
+      const hasAmt = String(l.commission_amount ?? "").trim() !== "";
+      if (hasRate || hasAmt) return l;
+      const def = vendorCommissionDefaults(l.vendor_id);
+      if (!def) return l;
+      dirty = true;
+      return { ...l, ...def };
+    });
+    if (dirty) setLines(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lines, vendors]);
 
   const totals = useMemo(() => computeOrderTotals(lines as ManualLineInput[]), [lines]);
   const coherence = useMemo(() => checkCoherence(lines as ManualLineInput[]), [lines]);

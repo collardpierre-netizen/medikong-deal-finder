@@ -246,4 +246,121 @@ const TimelineRow = ({ icon, label, date }: { icon: React.ReactNode; label: stri
   </div>
 );
 
+function QuoteLineRow({ line, editable, canDelete, onChanged }: { line: any; editable: boolean; canDelete: boolean; onChanged: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [qty, setQty] = useState<number>(Number(line.qty || 1));
+  const [pu, setPu] = useState<string>((Number(line.unit_price_ht_cents || 0) / 100).toString());
+  const [vat, setVat] = useState<number>(Number(line.vat_rate || 21));
+  const [label, setLabel] = useState<string>(line.label || "");
+
+  const reset = () => {
+    setQty(Number(line.qty || 1));
+    setPu((Number(line.unit_price_ht_cents || 0) / 100).toString());
+    setVat(Number(line.vat_rate || 21));
+    setLabel(line.label || "");
+    setEditing(false);
+  };
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      const { error } = await supabase.rpc("admin_update_quote_line" as any, {
+        _line_id: line.id,
+        _qty: Math.max(1, Number(qty) || 1),
+        _unit_price_ht_cents: Math.round((Number(pu) || 0) * 100),
+        _vat_rate: Number(vat) || 0,
+        _label: label,
+      });
+      if (error) throw error;
+      toast.success("Ligne mise à jour");
+      setEditing(false);
+      onChanged();
+    } catch (e: any) {
+      toast.error(e?.message || "Échec");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async () => {
+    if (!confirm("Supprimer cette ligne ?")) return;
+    setBusy(true);
+    try {
+      const { error } = await supabase.rpc("admin_delete_quote_line" as any, { _line_id: line.id });
+      if (error) throw error;
+      toast.success("Ligne supprimée");
+      onChanged();
+    } catch (e: any) {
+      toast.error(e?.message || "Échec");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!editable) {
+    return (
+      <tr className="border-t">
+        <td className="px-3 py-2">{line.label}</td>
+        <td className="px-3 py-2 text-right">{line.qty}</td>
+        <td className="px-3 py-2 text-right">{fmtEur(Number(line.unit_price_ht_cents) / 100)} €</td>
+        <td className="px-3 py-2 text-right">{Number(line.vat_rate).toFixed(0)}%</td>
+        <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(line.total_ht_cents) / 100)} €</td>
+      </tr>
+    );
+  }
+
+  if (!editing) {
+    return (
+      <tr className="border-t group">
+        <td className="px-3 py-2">{line.label}</td>
+        <td className="px-3 py-2 text-right">{line.qty}</td>
+        <td className="px-3 py-2 text-right">{fmtEur(Number(line.unit_price_ht_cents) / 100)} €</td>
+        <td className="px-3 py-2 text-right">{Number(line.vat_rate).toFixed(0)}%</td>
+        <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(line.total_ht_cents) / 100)} €</td>
+        <td className="px-2 py-1">
+          <div className="flex gap-1 opacity-50 group-hover:opacity-100 transition">
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditing(true)} title="Éditer cette ligne">
+              <Pencil size={12} />
+            </Button>
+            <Button size="icon" variant="ghost" className="h-7 w-7 text-red-600" onClick={remove} disabled={busy || !canDelete} title={canDelete ? "Supprimer" : "Au moins 1 ligne requise"}>
+              <Trash2 size={12} />
+            </Button>
+          </div>
+        </td>
+      </tr>
+    );
+  }
+
+  return (
+    <tr className="border-t bg-blue-50/40">
+      <td className="px-2 py-1">
+        <Input value={label} onChange={(e) => setLabel(e.target.value)} className="h-8 text-sm" />
+      </td>
+      <td className="px-2 py-1">
+        <Input type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value) || 1)} className="h-8 text-sm text-right" />
+      </td>
+      <td className="px-2 py-1">
+        <Input type="number" step="0.01" min={0} value={pu} onChange={(e) => setPu(e.target.value)} className="h-8 text-sm text-right" />
+      </td>
+      <td className="px-2 py-1">
+        <Input type="number" min={0} max={100} step="0.5" value={vat} onChange={(e) => setVat(Number(e.target.value) || 0)} className="h-8 text-sm text-right" />
+      </td>
+      <td className="px-2 py-2 text-right text-xs text-slate-500">
+        {fmtEur((Number(qty) * Math.round((Number(pu) || 0) * 100)) / 100)} €
+      </td>
+      <td className="px-2 py-1">
+        <div className="flex gap-1">
+          <Button size="icon" variant="ghost" className="h-7 w-7 text-green-700" onClick={save} disabled={busy} title="Enregistrer">
+            <Check size={14} />
+          </Button>
+          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={reset} disabled={busy} title="Annuler">
+            <X size={14} />
+          </Button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 export default AdminDevisDetail;

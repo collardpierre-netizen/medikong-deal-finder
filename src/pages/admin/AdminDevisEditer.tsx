@@ -486,17 +486,17 @@ const AdminDevisEditer = () => {
               </tbody>
               <tfoot className="bg-slate-50/40">
                 <tr className="border-t">
-                  <td colSpan={4} className="px-3 py-2 text-right text-slate-500">Total HT</td>
+                  <td colSpan={5} className="px-3 py-2 text-right text-slate-500">Total HT</td>
                   <td className="px-3 py-2 text-right font-medium">{fmtEur(totals.ht / 100)} €</td>
                   <td />
                 </tr>
                 <tr>
-                  <td colSpan={4} className="px-3 py-2 text-right text-slate-500">TVA</td>
+                  <td colSpan={5} className="px-3 py-2 text-right text-slate-500">TVA</td>
                   <td className="px-3 py-2 text-right font-medium">{fmtEur(totals.tva / 100)} €</td>
                   <td />
                 </tr>
                 <tr className="border-t bg-[#1C58D9] text-white">
-                  <td colSpan={4} className="px-3 py-2 text-right font-semibold">Total TTC</td>
+                  <td colSpan={5} className="px-3 py-2 text-right font-semibold">Total TTC</td>
                   <td className="px-3 py-2 text-right font-bold">{fmtEur(totals.ttc / 100)} €</td>
                   <td />
                 </tr>

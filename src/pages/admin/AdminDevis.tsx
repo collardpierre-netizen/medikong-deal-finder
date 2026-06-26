@@ -46,7 +46,7 @@ const AdminDevis = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("quotes")
-        .select("id, quote_number, status, total_ttc_cents, currency_code, created_at, sent_at, viewed_at, accepted_at, declined_at, token_expires_at, vendor:vendors(name, company_name), customer:customers(company_name, email)")
+        .select("id, quote_number, status, total_ttc_cents, currency_code, created_at, sent_at, viewed_at, accepted_at, declined_at, token_expires_at, order_id, vendor:vendors(name, company_name), customer:customers(company_name, email)")
         .order("created_at", { ascending: false })
         .limit(200);
       if (error) throw error;

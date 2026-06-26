@@ -110,6 +110,7 @@ export default function AdminCustomers() {
   const selected = customers.find((c) => c.id === selectedId) || null;
 
   const handleSelect = (c: Customer) => {
+    setIsCreating(false);
     setSelectedId(c.id);
     setForm({ ...c });
     setSearchParams((sp) => { sp.set("id", c.id); return sp; }, { replace: true });

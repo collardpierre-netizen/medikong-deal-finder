@@ -1,12 +1,22 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtEur } from "@/lib/format-currency";
-import { FileText, Send, Clock, CheckCircle2, XCircle, ArrowRightCircle } from "lucide-react";
+import { FileText, Send, Clock, CheckCircle2, XCircle, ArrowRightCircle, Copy } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+
+const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }> = {
+  draft: { bg: "#F1F5F9", color: "#475569", label: "Brouillon" },
+  sent: { bg: "#DBEAFE", color: "#1D4ED8", label: "Envoyé" },
+  accepted: { bg: "#DCFCE7", color: "#15803D", label: "Accepté" },
+  declined: { bg: "#FEE2E2", color: "#B91C1C", label: "Refusé" },
+  paid: { bg: "#FEF3C7", color: "#A16207", label: "Payé" },
+  converted: { bg: "#EDE9FE", color: "#6D28D9", label: "Converti" },
+};
 
 const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }> = {
   draft: { bg: "#F1F5F9", color: "#475569", label: "Brouillon" },

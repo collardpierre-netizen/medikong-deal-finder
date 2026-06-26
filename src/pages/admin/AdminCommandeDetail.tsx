@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { fmtEur } from "@/lib/format-currency";
-import { ArrowLeft, FileDown, Pencil, Copy, Link2, ExternalLink, Lock } from "lucide-react";
+import { ArrowLeft, FileDown, Pencil, Copy, Link2, ExternalLink, Lock, Wallet } from "lucide-react";
+import { lineMetrics, type ManualLineInput } from "@/lib/manual-order-metrics";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Brouillon",
@@ -63,6 +64,10 @@ const AdminCommandeDetail = () => {
             vat_rate: vat,
             line_total_excl_vat: totalHt,
             manual_label: l.manual_label || l.offer_label,
+            unit_cost_excl_vat: l.unit_cost_excl_vat ?? null,
+            commission_rate: l.commission_rate ?? null,
+            commission_amount: l.commission_amount ?? null,
+            commission_basis: l.commission_basis ?? null,
             products: productMap.get(l.product_id) || (l.gtin || l.cnk_code ? { name: l.manual_label || l.offer_label, gtin: l.gtin, cnk_code: l.cnk_code } : null),
             vendors: vendorMap.get(l.vendor_id) || null,
           };
@@ -77,6 +82,25 @@ const AdminCommandeDetail = () => {
           total_incl_vat: subtotal + vat,
           _hydrated_from_draft: true,
         };
+      }
+
+      // Merge commission/cost info from draft_payload onto persisted lines (by product+vendor)
+      if (persisted.length > 0 && draftLines.length > 0) {
+        const draftIdx = new Map<string, any>();
+        for (const dl of draftLines) {
+          const key = `${dl.product_id || ""}|${dl.vendor_id || ""}|${dl.unit_price_excl_vat ?? ""}`;
+          if (!draftIdx.has(key)) draftIdx.set(key, dl);
+        }
+        for (const pl of persisted) {
+          const key = `${pl.product_id || ""}|${pl.vendor_id || ""}|${pl.unit_price_excl_vat ?? ""}`;
+          const dl = draftIdx.get(key);
+          if (dl) {
+            (pl as any).unit_cost_excl_vat = (pl as any).unit_cost_excl_vat ?? dl.unit_cost_excl_vat ?? null;
+            (pl as any).commission_rate = (pl as any).commission_rate ?? dl.commission_rate ?? null;
+            (pl as any).commission_amount = (pl as any).commission_amount ?? dl.commission_amount ?? null;
+            (pl as any).commission_basis = (pl as any).commission_basis ?? dl.commission_basis ?? null;
+          }
+        }
       }
 
       return data as any;
@@ -288,6 +312,75 @@ const AdminCommandeDetail = () => {
               </tfoot>
             </table>
           </div>
+
+          {/* Détail Net Vendeur — ce que chaque fournisseur va toucher */}
+          {(() => {
+            const groups = new Map<string, { vendor: any; lines: any[]; ca: number; commission: number; net: number; cost: number; hasCost: boolean; margin: number }>();
+            for (const l of lines) {
+              const vid = l.vendors?.id || l.vendor_id || "__unknown__";
+              const m = lineMetrics({
+                quantity: l.quantity,
+                unit_price_excl_vat: l.unit_price_excl_vat,
+                vat_rate: l.vat_rate,
+                unit_cost_excl_vat: l.unit_cost_excl_vat,
+                commission_rate: l.commission_rate,
+                commission_amount: l.commission_amount,
+                commission_basis: l.commission_basis,
+              } as ManualLineInput);
+              const g = groups.get(vid) || { vendor: l.vendors, lines: [], ca: 0, commission: 0, net: 0, cost: 0, hasCost: false, margin: 0 };
+              g.lines.push({ ...l, _m: m });
+              g.ca += m.ca;
+              g.commission += m.commission;
+              g.net += m.netVendor;
+              if (m.hasCost) { g.hasCost = true; g.cost += m.cost; g.margin += m.netMargin; }
+              groups.set(vid, g);
+            }
+            if (groups.size === 0) return null;
+            const totalNet = Array.from(groups.values()).reduce((s, g) => s + g.net, 0);
+            const totalCom = Array.from(groups.values()).reduce((s, g) => s + g.commission, 0);
+            return (
+              <div className="bg-white border rounded-lg p-4" style={{ borderColor: "#E2E8F0" }}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Wallet size={16} className="text-emerald-600" />
+                    <div className="text-sm font-semibold">Détail net vendeur</div>
+                  </div>
+                  <div className="text-[11px] text-slate-500">À reverser : <span className="font-mono font-semibold text-emerald-700">{fmtEur(totalNet)} €</span> · Commission MediKong : <span className="font-mono text-slate-700">{fmtEur(totalCom)} €</span></div>
+                </div>
+                <div className="space-y-3">
+                  {Array.from(groups.entries()).map(([vid, g]) => {
+                    const pct = g.ca > 0 ? (g.commission / g.ca) * 100 : 0;
+                    return (
+                      <div key={vid} className="border rounded p-3" style={{ borderColor: "#E2E8F0" }}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="text-sm font-medium">{g.vendor?.company_name || g.vendor?.name || "Fournisseur"}</div>
+                          <div className="text-xs text-slate-500">{g.lines.length} ligne{g.lines.length > 1 ? "s" : ""}</div>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                          <div><div className="text-slate-500">CA HT</div><div className="font-mono font-semibold">{fmtEur(g.ca)} €</div></div>
+                          <div><div className="text-slate-500">Commission MK</div><div className="font-mono text-slate-700">{fmtEur(g.commission)} € <span className="text-[10px] text-slate-400">({pct.toFixed(1)}%)</span></div></div>
+                          {g.hasCost ? (
+                            <>
+                              <div><div className="text-slate-500">Coût HT</div><div className="font-mono text-slate-600">{fmtEur(g.cost)} €</div></div>
+                              <div><div className="text-slate-500">Marge nette vendeur</div><div className="font-mono text-emerald-700">{fmtEur(g.margin)} €</div></div>
+                            </>
+                          ) : (
+                            <div className="col-span-2 text-[11px] text-slate-400 italic self-end">Coût d'achat non renseigné</div>
+                          )}
+                        </div>
+                        <div className="mt-2 pt-2 border-t flex items-center justify-between" style={{ borderColor: "#F1F5F9" }}>
+                          <div className="text-xs text-slate-500">Net à reverser au vendeur (HT)</div>
+                          <div className="font-mono font-bold text-emerald-700">{fmtEur(g.net)} €</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
+
 
           {vendorWithBank && (
             <div className="bg-white border rounded-lg p-4" style={{ borderColor: "#E2E8F0" }}>

@@ -506,6 +506,7 @@ const App = () => (
               <Route path="commandes/:id" element={<LP><AdminCommandeDetail /></LP>} />
               <Route path="devis" element={<LP><AdminDevis /></LP>} />
               <Route path="devis/:id" element={<LP><AdminDevisDetail /></LP>} />
+              <Route path="devis/:id/editer" element={<LP><AdminDevisEditer /></LP>} />
               <Route path="commandes-en-retard" element={<LP><AdminCommandesEnRetard /></LP>} />
               <Route path="notifications" element={<LP><AdminNotifications /></LP>} />
               <Route path="notifications/:id" element={<LP><AdminNotificationDetail /></LP>} />

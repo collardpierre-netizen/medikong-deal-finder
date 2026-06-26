@@ -42,34 +42,53 @@ Deno.serve(async (req) => {
       return json({ success: false, error: "Invalid role" }, 400);
     }
 
-    // Authorization: bootstrap allowed only if no admin exists yet.
-    // Otherwise the caller MUST be an authenticated super_admin.
+    // Authorization:
+    //  - Caller must be an authenticated super_admin, OR
+    //  - During first-time bootstrap (no admin exists yet), the caller MUST
+    //    present a pre-shared BOOTSTRAP_SECRET via header `x-bootstrap-secret`.
+    //    Unauthenticated bootstrap without the secret is forbidden to prevent
+    //    a TOCTOU race where any caller becomes super_admin.
     const { count: adminCount, error: countErr } = await admin
       .from("admin_users")
       .select("id", { count: "exact", head: true })
       .eq("is_active", true);
     if (countErr) throw countErr;
 
-    if ((adminCount ?? 0) > 0) {
-      const authHeader = req.headers.get("Authorization") ?? "";
-      const token = authHeader.replace(/^Bearer\s+/i, "");
-      if (!token) return json({ success: false, error: "Unauthorized" }, 401);
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    let authorized = false;
 
+    if (token) {
       const userClient = createClient(supabaseUrl, anonKey, {
         global: { headers: { Authorization: `Bearer ${token}` } },
       });
-      const { data: userData, error: userErr } = await userClient.auth.getUser();
-      if (userErr || !userData?.user) {
-        return json({ success: false, error: "Unauthorized" }, 401);
+      const { data: userData } = await userClient.auth.getUser();
+      if (userData?.user) {
+        const { data: callerAdmin } = await admin
+          .from("admin_users")
+          .select("role, is_active")
+          .eq("user_id", userData.user.id)
+          .maybeSingle();
+        if (callerAdmin?.is_active && callerAdmin.role === "super_admin") {
+          authorized = true;
+        }
       }
-      const { data: callerAdmin } = await admin
-        .from("admin_users")
-        .select("role, is_active")
-        .eq("user_id", userData.user.id)
-        .maybeSingle();
-      if (!callerAdmin?.is_active || callerAdmin.role !== "super_admin") {
-        return json({ success: false, error: "Forbidden: super_admin required" }, 403);
+    }
+
+    if (!authorized) {
+      const bootstrapSecret = Deno.env.get("BOOTSTRAP_SECRET") ?? "";
+      const providedSecret = req.headers.get("x-bootstrap-secret") ?? "";
+      if (
+        (adminCount ?? 0) === 0 &&
+        bootstrapSecret.length >= 16 &&
+        providedSecret === bootstrapSecret
+      ) {
+        authorized = true;
       }
+    }
+
+    if (!authorized) {
+      return json({ success: false, error: "Forbidden: super_admin or valid bootstrap secret required" }, 403);
     }
 
     const { data: authData, error: authError } = await admin.auth.admin.createUser({

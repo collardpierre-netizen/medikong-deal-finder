@@ -18,14 +18,6 @@ const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }
   converted: { bg: "#EDE9FE", color: "#6D28D9", label: "Converti" },
 };
 
-const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }> = {
-  draft: { bg: "#F1F5F9", color: "#475569", label: "Brouillon" },
-  sent: { bg: "#DBEAFE", color: "#1D4ED8", label: "Envoyé" },
-  accepted: { bg: "#DCFCE7", color: "#15803D", label: "Accepté" },
-  declined: { bg: "#FEE2E2", color: "#B91C1C", label: "Refusé" },
-  paid: { bg: "#FEF3C7", color: "#A16207", label: "Payé" },
-  converted: { bg: "#EDE9FE", color: "#6D28D9", label: "Converti" },
-};
 
 const AdminDevis = () => {
   const [search, setSearch] = useState("");

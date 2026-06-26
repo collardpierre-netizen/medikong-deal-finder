@@ -25069,6 +25069,10 @@ export type Database = {
         Returns: string
       }
       subscription_run_daily_tick: { Args: never; Returns: Json }
+      sync_quote_to_forecast_order: {
+        Args: { _quote_id: string }
+        Returns: string
+      }
       unaccent: { Args: { "": string }; Returns: string }
       update_brand_product_counts: { Args: never; Returns: undefined }
       update_contract_template_draft: {

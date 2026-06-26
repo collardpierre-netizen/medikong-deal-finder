@@ -71,12 +71,28 @@ Deno.serve(async (req) => {
     })
   }
   if (bearer !== supabaseServiceKey) {
+    // Non-service-role callers must be an active admin.
+    // End-user-triggered emails MUST go through dedicated wrapper edge
+    // functions/RPCs that hard-code the template and recipient — never
+    // through this generic endpoint directly.
     try {
       const authClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY') ?? supabaseServiceKey)
       const { data: claimsData, error: claimsErr } = await authClient.auth.getClaims(bearer)
       if (claimsErr || !claimsData?.claims?.sub) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), {
           status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      const adminClient = createClient(supabaseUrl, supabaseServiceKey)
+      const { data: adminRow } = await adminClient
+        .from('admin_users')
+        .select('role, is_active')
+        .eq('user_id', claimsData.claims.sub)
+        .maybeSingle()
+      if (!adminRow?.is_active || !['super_admin', 'admin'].includes(adminRow.role)) {
+        return new Response(JSON.stringify({ error: 'Forbidden: admin or service role required' }), {
+          status: 403,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
       }

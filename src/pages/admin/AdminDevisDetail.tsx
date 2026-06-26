@@ -189,6 +189,9 @@ const AdminDevisDetail = () => {
             {publicUrl && (
               <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="block text-xs text-sky-600 hover:underline break-all">{publicUrl}</a>
             )}
+            <Button onClick={duplicate} disabled={busy !== null} className="w-full justify-start" variant="outline">
+              <Copy size={14} className="mr-2" /> {busy === "Duplication" ? "Duplication…" : "Dupliquer ce devis"}
+            </Button>
             {quote.status === "accepted" && (
               <Button onClick={convertToOrder} disabled={busy !== null} className="w-full justify-start bg-green-600 text-white hover:bg-green-700">
                 <ArrowRightCircle size={14} className="mr-2" /> {busy === "Conversion" ? "Conversion…" : "Convertir en commande"}

@@ -133,6 +133,7 @@ const AdminDevisDetail = () => {
                   <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500 w-20">Qté</th>
                   <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500 w-32">PU HT</th>
                   <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500 w-20">TVA</th>
+                  <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500 w-24" title="Commission MediKong (% marge). Vide = contrat vendeur.">Com %</th>
                   <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500 w-28">Total HT</th>
                   {quote.status === "draft" && <th className="w-20"></th>}
                 </tr>
@@ -150,17 +151,17 @@ const AdminDevisDetail = () => {
               </tbody>
               <tfoot>
                 <tr className="border-t bg-slate-50/40">
-                  <td colSpan={4} className="px-3 py-2 text-right text-slate-500">Total HT</td>
+                  <td colSpan={5} className="px-3 py-2 text-right text-slate-500">Total HT</td>
                   <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(quote.total_ht_cents) / 100)} €</td>
                   {quote.status === "draft" && <td />}
                 </tr>
                 <tr className="bg-slate-50/40">
-                  <td colSpan={4} className="px-3 py-2 text-right text-slate-500">TVA</td>
+                  <td colSpan={5} className="px-3 py-2 text-right text-slate-500">TVA</td>
                   <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(quote.total_tva_cents) / 100)} €</td>
                   {quote.status === "draft" && <td />}
                 </tr>
                 <tr className="border-t" style={{ backgroundColor: "#1C58D9" }}>
-                  <td colSpan={4} className="px-3 py-3 text-right text-white font-semibold">Total TTC</td>
+                  <td colSpan={5} className="px-3 py-3 text-right text-white font-semibold">Total TTC</td>
                   <td className="px-3 py-3 text-right text-white font-bold text-base">{fmtEur(Number(quote.total_ttc_cents) / 100)} €</td>
                   {quote.status === "draft" && <td style={{ backgroundColor: "#1C58D9" }} />}
                 </tr>
@@ -253,24 +254,31 @@ function QuoteLineRow({ line, editable, canDelete, onChanged }: { line: any; edi
   const [pu, setPu] = useState<string>((Number(line.unit_price_ht_cents || 0) / 100).toString());
   const [vat, setVat] = useState<number>(Number(line.vat_rate || 21));
   const [label, setLabel] = useState<string>(line.label || "");
+  const [com, setCom] = useState<string>(line.commission_rate != null ? String(line.commission_rate) : "");
 
   const reset = () => {
     setQty(Number(line.qty || 1));
     setPu((Number(line.unit_price_ht_cents || 0) / 100).toString());
     setVat(Number(line.vat_rate || 21));
     setLabel(line.label || "");
+    setCom(line.commission_rate != null ? String(line.commission_rate) : "");
     setEditing(false);
   };
 
   const save = async () => {
     setBusy(true);
     try {
+      const trimmedCom = com.trim();
+      const comRate = trimmedCom === "" ? null : Number(trimmedCom);
       const { error } = await supabase.rpc("admin_update_quote_line" as any, {
         _line_id: line.id,
         _qty: Math.max(1, Number(qty) || 1),
         _unit_price_ht_cents: Math.round((Number(pu) || 0) * 100),
         _vat_rate: Number(vat) || 0,
         _label: label,
+        _commission_rate: comRate,
+        _commission_amount_cents: null,
+        _commission_basis: comRate != null ? "margin" : null,
       });
       if (error) throw error;
       toast.success("Ligne mise à jour");
@@ -298,6 +306,10 @@ function QuoteLineRow({ line, editable, canDelete, onChanged }: { line: any; edi
     }
   };
 
+  const comDisplay = line.commission_rate != null
+    ? `${Number(line.commission_rate).toFixed(line.commission_rate % 1 === 0 ? 0 : 1)}%`
+    : <span className="text-slate-400 italic">auto</span>;
+
   if (!editable) {
     return (
       <tr className="border-t">
@@ -305,6 +317,7 @@ function QuoteLineRow({ line, editable, canDelete, onChanged }: { line: any; edi
         <td className="px-3 py-2 text-right">{line.qty}</td>
         <td className="px-3 py-2 text-right">{fmtEur(Number(line.unit_price_ht_cents) / 100)} €</td>
         <td className="px-3 py-2 text-right">{Number(line.vat_rate).toFixed(0)}%</td>
+        <td className="px-3 py-2 text-right">{comDisplay}</td>
         <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(line.total_ht_cents) / 100)} €</td>
       </tr>
     );
@@ -317,6 +330,7 @@ function QuoteLineRow({ line, editable, canDelete, onChanged }: { line: any; edi
         <td className="px-3 py-2 text-right">{line.qty}</td>
         <td className="px-3 py-2 text-right">{fmtEur(Number(line.unit_price_ht_cents) / 100)} €</td>
         <td className="px-3 py-2 text-right">{Number(line.vat_rate).toFixed(0)}%</td>
+        <td className="px-3 py-2 text-right">{comDisplay}</td>
         <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(line.total_ht_cents) / 100)} €</td>
         <td className="px-2 py-1">
           <div className="flex gap-1 opacity-50 group-hover:opacity-100 transition">
@@ -345,6 +359,9 @@ function QuoteLineRow({ line, editable, canDelete, onChanged }: { line: any; edi
       </td>
       <td className="px-2 py-1">
         <Input type="number" min={0} max={100} step="0.5" value={vat} onChange={(e) => setVat(Number(e.target.value) || 0)} className="h-8 text-sm text-right" />
+      </td>
+      <td className="px-2 py-1">
+        <Input type="number" min={0} max={100} step="0.5" placeholder="auto" value={com} onChange={(e) => setCom(e.target.value)} className="h-8 text-sm text-right" title="Vide = contrat vendeur" />
       </td>
       <td className="px-2 py-2 text-right text-xs text-slate-500">
         {fmtEur((Number(qty) * Math.round((Number(pu) || 0) * 100)) / 100)} €

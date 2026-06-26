@@ -118,20 +118,20 @@ const AdminDevis = () => {
         <table className="w-full text-sm">
           <thead style={{ backgroundColor: "#F8FAFC" }}>
             <tr>
-              {["N°", "Acheteur", "Vendeur", "Total TTC", "Statut", "Envoyé", "Vu", "Date"].map((h) => (
-                <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
+              {["N°", "Acheteur", "Vendeur", "Total TTC", "Statut", "Envoyé", "Vu", "Date", ""].map((h, i) => (
+                <th key={`${h}-${i}`} className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
-              <tr><td colSpan={8} className="text-center text-slate-400 py-10">Chargement…</td></tr>
+              <tr><td colSpan={9} className="text-center text-slate-400 py-10">Chargement…</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={8} className="text-center text-slate-400 py-10">Aucun devis</td></tr>
+              <tr><td colSpan={9} className="text-center text-slate-400 py-10">Aucun devis</td></tr>
             ) : filtered.map((q) => {
               const s = STATUS_STYLES[q.status] ?? STATUS_STYLES.draft;
               return (
-                <tr key={q.id} className="border-t hover:bg-slate-50/50 cursor-pointer">
+                <tr key={q.id} className="border-t hover:bg-slate-50/50">
                   <td className="px-4 py-2.5">
                     <Link to={`/admin/devis/${q.id}`} className="font-medium text-sky-700 hover:underline">{q.quote_number}</Link>
                   </td>
@@ -144,6 +144,16 @@ const AdminDevis = () => {
                   <td className="px-4 py-2.5 text-slate-500 text-xs">{q.sent_at ? new Date(q.sent_at).toLocaleDateString("fr-BE") : "—"}</td>
                   <td className="px-4 py-2.5 text-slate-500 text-xs">{q.viewed_at ? new Date(q.viewed_at).toLocaleDateString("fr-BE") : "—"}</td>
                   <td className="px-4 py-2.5 text-slate-500 text-xs">{new Date(q.created_at).toLocaleDateString("fr-BE")}</td>
+                  <td className="px-4 py-2.5 text-right">
+                    <button
+                      onClick={() => duplicateQuote(q.id)}
+                      disabled={dupBusy === q.id}
+                      title="Dupliquer ce devis"
+                      className="inline-flex items-center justify-center w-7 h-7 rounded hover:bg-slate-100 text-slate-500 hover:text-sky-700 disabled:opacity-50"
+                    >
+                      <Copy size={14} />
+                    </button>
+                  </td>
                 </tr>
               );
             })}

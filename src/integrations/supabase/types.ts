@@ -23021,6 +23021,7 @@ export type Database = {
         Args: { _order_id: string }
         Returns: Json
       }
+      admin_duplicate_quote: { Args: { _quote_id: string }; Returns: string }
       admin_email_deliverability_kpis: {
         Args: never
         Returns: {

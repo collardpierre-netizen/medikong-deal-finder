@@ -8,8 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Save } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, UserPlus } from "lucide-react";
 import { fmtEur } from "@/lib/format-currency";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
 
 type Line = {
   id?: string;
@@ -38,6 +41,64 @@ const AdminDevisEditer = () => {
 
   const [vendorSearch, setVendorSearch] = useState("");
   const [customerSearch, setCustomerSearch] = useState("");
+
+  // Quick-create customer
+  const [qcOpen, setQcOpen] = useState(false);
+  const [qcName, setQcName] = useState("");
+  const [qcEmail, setQcEmail] = useState("");
+  const [qcCountry, setQcCountry] = useState("BE");
+  const [qcAddressLine1, setQcAddressLine1] = useState("");
+  const [qcCity, setQcCity] = useState("");
+  const [qcPostalCode, setQcPostalCode] = useState("");
+  const [qcVatNumber, setQcVatNumber] = useState("");
+  const [qcSubmitting, setQcSubmitting] = useState(false);
+
+  async function quickCreateCustomer() {
+    const name = qcName.trim();
+    const email = qcEmail.trim().toLowerCase();
+    const country = qcCountry.trim().toUpperCase() || "BE";
+    const addressLine1 = qcAddressLine1.trim();
+    const city = qcCity.trim();
+    const postalCode = qcPostalCode.trim();
+    const vatNumber = qcVatNumber.trim().toUpperCase().replace(/\s+/g, "");
+    if (!name) return toast.error("Nom requis");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("Email invalide");
+    if (!/^[A-Z]{2}$/.test(country)) return toast.error("Code pays ISO 2 lettres (ex. BE, FR, LU)");
+    if (!addressLine1) return toast.error("Adresse ligne 1 requise");
+    if (!city) return toast.error("Ville requise");
+    if (!postalCode) return toast.error("Code postal requis");
+    if (vatNumber && !/^[A-Z]{2}[A-Z0-9]{2,15}$/.test(vatNumber)) {
+      return toast.error("N° TVA invalide (ex. BE0123456789)");
+    }
+    setQcSubmitting(true);
+    try {
+      const { data, error } = await supabase
+        .from("customers")
+        .insert({
+          company_name: name,
+          email,
+          country_code: country,
+          address_line1: addressLine1,
+          city,
+          postal_code: postalCode,
+          vat_number: vatNumber || null,
+        })
+        .select("id, company_name, email")
+        .single();
+      if (error) throw error;
+      toast.success(`Client « ${data.company_name} » créé`);
+      await queryClient.invalidateQueries({ queryKey: ["admin-customers-list"] });
+      setCustomerId(data.id);
+      setCustomerSearch(data.company_name);
+      setQcOpen(false);
+      setQcName(""); setQcEmail(""); setQcCountry("BE");
+      setQcAddressLine1(""); setQcCity(""); setQcPostalCode(""); setQcVatNumber("");
+    } catch (e: any) {
+      toast.error("Échec création : " + (e?.message ?? String(e)));
+    } finally {
+      setQcSubmitting(false);
+    }
+  }
 
   const { data: quote, isLoading } = useQuery({
     queryKey: ["admin-quote-edit", id],
@@ -266,7 +327,16 @@ const AdminDevisEditer = () => {
                 </select>
               </div>
               <div>
-                <Label>Client</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Client</Label>
+                  <button
+                    type="button"
+                    onClick={() => setQcOpen(true)}
+                    className="text-[11px] text-sky-700 hover:underline inline-flex items-center gap-1"
+                  >
+                    <UserPlus size={12} /> Nouveau client
+                  </button>
+                </div>
                 <Input
                   placeholder="Rechercher un client…"
                   value={customerSearch}
@@ -460,6 +530,54 @@ const AdminDevisEditer = () => {
           </div>
         </div>
       </div>
+
+      <Dialog open={qcOpen} onOpenChange={setQcOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Créer un client rapide</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">Nom / raison sociale *</Label>
+              <Input value={qcName} onChange={(e) => setQcName(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Email *</Label>
+                <Input type="email" value={qcEmail} onChange={(e) => setQcEmail(e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">N° TVA (optionnel)</Label>
+                <Input value={qcVatNumber} onChange={(e) => setQcVatNumber(e.target.value)} placeholder="BE0123456789" />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs">Adresse ligne 1 *</Label>
+              <Input value={qcAddressLine1} onChange={(e) => setQcAddressLine1(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs">CP *</Label>
+                <Input value={qcPostalCode} onChange={(e) => setQcPostalCode(e.target.value)} />
+              </div>
+              <div className="col-span-2">
+                <Label className="text-xs">Ville *</Label>
+                <Input value={qcCity} onChange={(e) => setQcCity(e.target.value)} />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs">Pays (ISO 2) *</Label>
+              <Input value={qcCountry} onChange={(e) => setQcCountry(e.target.value.toUpperCase())} maxLength={2} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQcOpen(false)} disabled={qcSubmitting}>Annuler</Button>
+            <Button onClick={quickCreateCustomer} disabled={qcSubmitting} style={{ backgroundColor: "#1C58D9", color: "#fff" }}>
+              {qcSubmitting ? "Création…" : "Créer le client"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

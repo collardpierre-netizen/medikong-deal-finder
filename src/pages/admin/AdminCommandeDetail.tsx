@@ -149,6 +149,23 @@ const AdminCommandeDetail = () => {
     }
   };
 
+  const generatePayoutPdf = async () => {
+    setBusy("PAYOUT");
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-vendor-payout-pdf", { body: { order_id: id } });
+      if (error) throw error;
+      const url = (data as any)?.pdf_url;
+      if (url) {
+        window.open(url, "_blank");
+        toast.success(`Décompte fournisseur généré (${(data as any)?.vendors || 1} vendeur·s)`);
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Échec génération décompte");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const ensurePublicLink = async () => {
     setBusy("LINK");
     try {
@@ -410,6 +427,9 @@ const AdminCommandeDetail = () => {
             <div className="text-sm font-semibold mb-2">Actions</div>
             <Button onClick={generatePdf} disabled={busy !== null} className="w-full justify-start" style={{ backgroundColor: "#1C58D9", color: "#fff" }}>
               <FileDown size={14} className="mr-2" /> {busy === "PDF" ? "Génération…" : "Générer le bon de commande PDF"}
+            </Button>
+            <Button onClick={generatePayoutPdf} disabled={busy !== null} className="w-full justify-start" style={{ backgroundColor: "#10B981", color: "#fff" }}>
+              <Wallet size={14} className="mr-2" /> {busy === "PAYOUT" ? "Génération…" : "Décompte fournisseur PDF"}
             </Button>
             {pdfUrl && (
               <Button onClick={copyPdfLink} className="w-full justify-start" variant="outline">

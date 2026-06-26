@@ -133,6 +133,7 @@ const AdminDevisDetail = () => {
                   <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500 w-20">Qté</th>
                   <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500 w-32">PU HT</th>
                   <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500 w-20">TVA</th>
+                  <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500 w-24" title="Commission MediKong (% marge). Vide = contrat vendeur.">Com %</th>
                   <th className="text-right px-3 py-2 text-[11px] uppercase font-semibold text-slate-500 w-28">Total HT</th>
                   {quote.status === "draft" && <th className="w-20"></th>}
                 </tr>
@@ -150,17 +151,17 @@ const AdminDevisDetail = () => {
               </tbody>
               <tfoot>
                 <tr className="border-t bg-slate-50/40">
-                  <td colSpan={4} className="px-3 py-2 text-right text-slate-500">Total HT</td>
+                  <td colSpan={5} className="px-3 py-2 text-right text-slate-500">Total HT</td>
                   <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(quote.total_ht_cents) / 100)} €</td>
                   {quote.status === "draft" && <td />}
                 </tr>
                 <tr className="bg-slate-50/40">
-                  <td colSpan={4} className="px-3 py-2 text-right text-slate-500">TVA</td>
+                  <td colSpan={5} className="px-3 py-2 text-right text-slate-500">TVA</td>
                   <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(quote.total_tva_cents) / 100)} €</td>
                   {quote.status === "draft" && <td />}
                 </tr>
                 <tr className="border-t" style={{ backgroundColor: "#1C58D9" }}>
-                  <td colSpan={4} className="px-3 py-3 text-right text-white font-semibold">Total TTC</td>
+                  <td colSpan={5} className="px-3 py-3 text-right text-white font-semibold">Total TTC</td>
                   <td className="px-3 py-3 text-right text-white font-bold text-base">{fmtEur(Number(quote.total_ttc_cents) / 100)} €</td>
                   {quote.status === "draft" && <td style={{ backgroundColor: "#1C58D9" }} />}
                 </tr>

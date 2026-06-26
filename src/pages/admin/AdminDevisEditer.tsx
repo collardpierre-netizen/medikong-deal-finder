@@ -42,6 +42,64 @@ const AdminDevisEditer = () => {
   const [vendorSearch, setVendorSearch] = useState("");
   const [customerSearch, setCustomerSearch] = useState("");
 
+  // Quick-create customer
+  const [qcOpen, setQcOpen] = useState(false);
+  const [qcName, setQcName] = useState("");
+  const [qcEmail, setQcEmail] = useState("");
+  const [qcCountry, setQcCountry] = useState("BE");
+  const [qcAddressLine1, setQcAddressLine1] = useState("");
+  const [qcCity, setQcCity] = useState("");
+  const [qcPostalCode, setQcPostalCode] = useState("");
+  const [qcVatNumber, setQcVatNumber] = useState("");
+  const [qcSubmitting, setQcSubmitting] = useState(false);
+
+  async function quickCreateCustomer() {
+    const name = qcName.trim();
+    const email = qcEmail.trim().toLowerCase();
+    const country = qcCountry.trim().toUpperCase() || "BE";
+    const addressLine1 = qcAddressLine1.trim();
+    const city = qcCity.trim();
+    const postalCode = qcPostalCode.trim();
+    const vatNumber = qcVatNumber.trim().toUpperCase().replace(/\s+/g, "");
+    if (!name) return toast.error("Nom requis");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("Email invalide");
+    if (!/^[A-Z]{2}$/.test(country)) return toast.error("Code pays ISO 2 lettres (ex. BE, FR, LU)");
+    if (!addressLine1) return toast.error("Adresse ligne 1 requise");
+    if (!city) return toast.error("Ville requise");
+    if (!postalCode) return toast.error("Code postal requis");
+    if (vatNumber && !/^[A-Z]{2}[A-Z0-9]{2,15}$/.test(vatNumber)) {
+      return toast.error("N° TVA invalide (ex. BE0123456789)");
+    }
+    setQcSubmitting(true);
+    try {
+      const { data, error } = await supabase
+        .from("customers")
+        .insert({
+          company_name: name,
+          email,
+          country_code: country,
+          address_line1: addressLine1,
+          city,
+          postal_code: postalCode,
+          vat_number: vatNumber || null,
+        })
+        .select("id, company_name, email")
+        .single();
+      if (error) throw error;
+      toast.success(`Client « ${data.company_name} » créé`);
+      await queryClient.invalidateQueries({ queryKey: ["admin-customers-list"] });
+      setCustomerId(data.id);
+      setCustomerSearch(data.company_name);
+      setQcOpen(false);
+      setQcName(""); setQcEmail(""); setQcCountry("BE");
+      setQcAddressLine1(""); setQcCity(""); setQcPostalCode(""); setQcVatNumber("");
+    } catch (e: any) {
+      toast.error("Échec création : " + (e?.message ?? String(e)));
+    } finally {
+      setQcSubmitting(false);
+    }
+  }
+
   const { data: quote, isLoading } = useQuery({
     queryKey: ["admin-quote-edit", id],
     queryFn: async () => {

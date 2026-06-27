@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
 
     let { data: lines } = await adminClient
       .from("order_lines")
-      .select("*, products(name), vendors(company_name, name, vat_number, address_line1, bank_name, iban, bic)")
+      .select("*, products(name, gtin, cnk_code), vendors(company_name, name, vat_number, address_line1, bank_name, iban, bic)")
       .eq("order_id", orderId);
 
     // Fallback : commande draft / prévisionnelle → lignes dans draft_payload
@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
       const productIds = Array.from(new Set(draftLines.map((l) => l.product_id).filter(Boolean)));
       const vendorIds = Array.from(new Set(draftLines.map((l) => l.vendor_id).filter(Boolean)));
       const [{ data: prods }, { data: vends }] = await Promise.all([
-        productIds.length ? adminClient.from("products").select("id, name").in("id", productIds) : Promise.resolve({ data: [] as any[] }),
+        productIds.length ? adminClient.from("products").select("id, name, gtin, cnk_code").in("id", productIds) : Promise.resolve({ data: [] as any[] }),
         vendorIds.length ? adminClient.from("vendors").select("id, name, company_name, vat_number, address_line1, bank_name, iban, bic").in("id", vendorIds) : Promise.resolve({ data: [] as any[] }),
       ]);
       const prodMap = new Map((prods || []).map((p: any) => [p.id, p]));
@@ -86,13 +86,15 @@ Deno.serve(async (req) => {
         const unit = Number(l.unit_price_excl_vat) || 0;
         const vatR = Number(l.vat_rate) || 0;
         const ht = qty * unit;
+        const prod = prodMap.get(l.product_id) || null;
         return {
           quantity: qty,
           unit_price_excl_vat: unit,
           vat_rate: vatR,
           line_total_excl_vat: ht,
           manual_label: l.offer_label || l.manual_label,
-          products: prodMap.get(l.product_id) || null,
+          cnk_code: l.cnk_code ?? (prod as any)?.cnk_code ?? null,
+          products: prod,
           vendors: vendMap.get(l.vendor_id) || null,
         } as any;
       });

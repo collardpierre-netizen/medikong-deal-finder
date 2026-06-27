@@ -234,7 +234,20 @@ export default function AdminCustomers() {
                   selectedId === c.id ? "bg-blue-50" : ""
                 }`}
               >
-                <div className="text-sm font-medium text-slate-900">{c.company_name}</div>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-sm font-medium text-slate-900 truncate">{c.company_name}</div>
+                  {c.customer_type && (
+                    <span
+                      className="text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0"
+                      style={{
+                        color: TYPE_COLOR[c.customer_type] || "#8B95A5",
+                        backgroundColor: (TYPE_COLOR[c.customer_type] || "#8B95A5") + "1A",
+                      }}
+                    >
+                      {TYPE_LABEL[c.customer_type] || c.customer_type}
+                    </span>
+                  )}
+                </div>
                 <div className="text-xs text-slate-500">
                   {c.email} · {c.country_code}
                 </div>

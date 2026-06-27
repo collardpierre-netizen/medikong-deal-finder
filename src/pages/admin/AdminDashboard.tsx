@@ -8,6 +8,7 @@ import { useDashboardStats, useVendors, useOrders } from "@/hooks/useAdminData";
 import GmvEvolutionChart from "@/components/admin/GmvEvolutionChart";
 import OrdersStatusPieChart from "@/components/admin/OrdersStatusPieChart";
 import { fmtEur, withDotThousands } from "@/lib/format-currency";
+import { CUSTOMER_TYPE_OPTIONS } from "./AdminCustomers";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer, Legend } from "recharts";

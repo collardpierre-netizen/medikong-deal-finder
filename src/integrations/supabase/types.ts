@@ -25372,6 +25372,7 @@ export type Database = {
         | "paid"
         | "declined"
         | "converted"
+        | "expired"
       reshipment_status_enum:
         | "not_applicable"
         | "awaiting_reception"
@@ -25743,6 +25744,7 @@ export const Constants = {
         "paid",
         "declined",
         "converted",
+        "expired",
       ],
       reshipment_status_enum: [
         "not_applicable",

@@ -291,7 +291,10 @@ Deno.serve(async (req) => {
       for (const l of g.lines) {
         const m = lineMetrics(l);
         const label = doc.splitTextToSize(String(l.manual_label || l.products?.name || "—"), COLS.articleWidth);
-        const rowH = Math.max(6, label.length * 3.4 + 2.5);
+        const cnk = (l as any).cnk_code || l.products?.cnk_code || null;
+        const codeLine = cnk ? `CNK ${cnk}` : null;
+        const extraLines = codeLine ? 1 : 0;
+        const rowH = Math.max(6, (label.length + extraLines) * 3.4 + 2.5);
         if (y + rowH > pageH - 70) { doc.addPage(); y = 20; }
         if (rowIdx % 2 === 0) {
           doc.setFillColor(...SOFT);
@@ -299,6 +302,13 @@ Deno.serve(async (req) => {
         }
         doc.setTextColor(...NAVY);
         doc.text(label, COLS.article, y + 3.5);
+        if (codeLine) {
+          doc.setFontSize(6.5);
+          doc.setTextColor(...MUTED);
+          doc.text(codeLine, COLS.article, y + 3.5 + label.length * 3.4);
+          doc.setFontSize(7.5);
+          doc.setTextColor(...NAVY);
+        }
         doc.text(String(m.qty), COLS.qty, y + 3.5, { align: "right" });
         doc.text(fmtEur(Math.round((Number(l.unit_price_excl_vat) || 0) * 100)), COLS.puHt, y + 3.5, { align: "right" });
         doc.text(fmtEur(m.caC), COLS.ca, y + 3.5, { align: "right" });

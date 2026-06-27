@@ -25293,7 +25293,18 @@ export type Database = {
         | "approved"
         | "rejected"
         | "expired"
-      customer_type: "pharmacy" | "hospital" | "clinic" | "lab" | "other"
+      customer_type:
+        | "pharmacy"
+        | "hospital"
+        | "clinic"
+        | "lab"
+        | "other"
+        | "wholesaler"
+        | "doctor"
+        | "nursing_home"
+        | "retail"
+        | "dentist"
+        | "veterinary"
       delegate_availability:
         | "available"
         | "busy"
@@ -25657,7 +25668,19 @@ export const Constants = {
         "rejected",
         "expired",
       ],
-      customer_type: ["pharmacy", "hospital", "clinic", "lab", "other"],
+      customer_type: [
+        "pharmacy",
+        "hospital",
+        "clinic",
+        "lab",
+        "other",
+        "wholesaler",
+        "doctor",
+        "nursing_home",
+        "retail",
+        "dentist",
+        "veterinary",
+      ],
       delegate_availability: [
         "available",
         "busy",

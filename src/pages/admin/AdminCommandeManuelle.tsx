@@ -432,9 +432,9 @@ const AdminCommandeManuelle = () => {
       shipping_address: shippingSnapshot,
       lines: lines.map((l) => ({
         vendor_id: l.vendor_id,
-        offer_id: l.mode === "offer" ? l.offer_id : null,
-        product_id: l.mode === "offer" ? l.product_id : null,
-        manual_label: l.mode === "free" ? l.manual_label : null,
+        offer_id: l.offer_id ?? null,
+        product_id: l.product_id ?? null,
+        manual_label: l.manual_label ?? l.offer_label ?? null,
         quantity: l.quantity,
         unit_price_excl_vat: l.unit_price_excl_vat,
         vat_rate: l.vat_rate,

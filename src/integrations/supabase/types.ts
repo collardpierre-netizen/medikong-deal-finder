@@ -23720,7 +23720,9 @@ export type Database = {
         Returns: Json
       }
       consume_qogita_tokens: { Args: { _amount: number }; Returns: Json }
-      convert_quote_to_order: { Args: { _quote_id: string }; Returns: Json }
+      convert_quote_to_order:
+        | { Args: { _quote_id: string }; Returns: Json }
+        | { Args: { _force?: boolean; _quote_id: string }; Returns: Json }
       count_products_per_category: {
         Args: never
         Returns: {

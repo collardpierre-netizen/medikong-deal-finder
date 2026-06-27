@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
 
     let { data: lines } = await adminClient
       .from("order_lines")
-      .select("*, products(name), vendors(company_name, name, vat_number, address_line1, bank_name, iban, bic)")
+      .select("*, products(name, gtin, cnk_code), vendors(company_name, name, vat_number, address_line1, bank_name, iban, bic)")
       .eq("order_id", orderId);
 
     // Fallback : commande draft / prévisionnelle → lignes dans draft_payload
@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
       const productIds = Array.from(new Set(draftLines.map((l) => l.product_id).filter(Boolean)));
       const vendorIds = Array.from(new Set(draftLines.map((l) => l.vendor_id).filter(Boolean)));
       const [{ data: prods }, { data: vends }] = await Promise.all([
-        productIds.length ? adminClient.from("products").select("id, name").in("id", productIds) : Promise.resolve({ data: [] as any[] }),
+        productIds.length ? adminClient.from("products").select("id, name, gtin, cnk_code").in("id", productIds) : Promise.resolve({ data: [] as any[] }),
         vendorIds.length ? adminClient.from("vendors").select("id, name, company_name, vat_number, address_line1, bank_name, iban, bic").in("id", vendorIds) : Promise.resolve({ data: [] as any[] }),
       ]);
       const prodMap = new Map((prods || []).map((p: any) => [p.id, p]));
@@ -86,13 +86,15 @@ Deno.serve(async (req) => {
         const unit = Number(l.unit_price_excl_vat) || 0;
         const vatR = Number(l.vat_rate) || 0;
         const ht = qty * unit;
+        const prod = prodMap.get(l.product_id) || null;
         return {
           quantity: qty,
           unit_price_excl_vat: unit,
           vat_rate: vatR,
           line_total_excl_vat: ht,
           manual_label: l.offer_label || l.manual_label,
-          products: prodMap.get(l.product_id) || null,
+          cnk_code: l.cnk_code ?? (prod as any)?.cnk_code ?? null,
+          products: prod,
           vendors: vendMap.get(l.vendor_id) || null,
         } as any;
       });
@@ -296,7 +298,10 @@ Deno.serve(async (req) => {
     for (const l of (lines || [])) {
       const label = doc.splitTextToSize(String(l.manual_label || l.products?.name || "—"), COLS.articleWidth);
       const vendor = doc.splitTextToSize(String(l.vendors?.company_name || l.vendors?.name || l.qogita_seller_fid || "—"), COLS.vendorWidth);
-      const rowH = Math.max(6, Math.max(label.length, vendor.length) * 3.4 + 2.5);
+      const cnk = (l as any).cnk_code || l.products?.cnk_code || null;
+      const codeLine = cnk ? `CNK ${cnk}` : null;
+      const extraLines = codeLine ? 1 : 0;
+      const rowH = Math.max(6, (Math.max(label.length, vendor.length) + extraLines) * 3.4 + 2.5);
 
       if (y + rowH > pageH - 50) {
         doc.addPage();
@@ -314,6 +319,12 @@ Deno.serve(async (req) => {
 
       doc.setTextColor(...NAVY);
       doc.text(label, COLS.article, y + 3.5);
+      if (codeLine) {
+        doc.setFontSize(6.5);
+        doc.setTextColor(...MUTED);
+        doc.text(codeLine, COLS.article, y + 3.5 + label.length * 3.4);
+        doc.setFontSize(7.5);
+      }
       doc.setTextColor(80, 80, 80);
       doc.text(vendor, COLS.vendor, y + 3.5);
       doc.setTextColor(...NAVY);

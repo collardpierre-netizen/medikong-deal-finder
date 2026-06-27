@@ -66,9 +66,10 @@ Deno.serve(async (req) => {
 
     const { data: lines } = await adminClient
       .from("quote_lines")
-      .select("*")
+      .select("*, products(cnk_code)")
       .eq("quote_id", quoteId)
       .order("sort_order", { ascending: true });
+
 
     const currency = quote.currency_code || "EUR";
 

@@ -76,6 +76,29 @@ const AdminDashboard = () => {
   const vendorsQuery = useVendors();
   const ordersQuery = useOrders();
 
+  // Répartition des clients par typologie (camembert dashboard)
+  const customersByTypeQuery = useQuery({
+    queryKey: ["admin-dashboard-customers-by-type"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("customers").select("customer_type");
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 60_000,
+  });
+
+  const customerTypeBreakdown = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const c of (customersByTypeQuery.data || []) as any[]) {
+      const t = c.customer_type || "other";
+      counts.set(t, (counts.get(t) || 0) + 1);
+    }
+    return CUSTOMER_TYPE_OPTIONS
+      .map((opt) => ({ name: opt.label, value: counts.get(opt.value) || 0, color: opt.color }))
+      .filter((r) => r.value > 0)
+      .sort((a, b) => b.value - a.value);
+  }, [customersByTypeQuery.data]);
+
   const vendorLabelById = new Map((vendorsQuery.data || []).map((v: any) => [v.id, v.company_name || v.name]));
 
   // Catégories (pour répartition par catégorie parent)

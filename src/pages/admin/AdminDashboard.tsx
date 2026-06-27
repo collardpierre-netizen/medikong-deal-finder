@@ -561,6 +561,40 @@ const AdminDashboard = () => {
         </div>
 
 
+        {/* Clients par typologie */}
+        <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+          <h3 className="text-[14px] font-semibold mb-1" style={{ color: "#1D2530" }}>Clients par typologie</h3>
+          <p className="text-[11px] mb-4" style={{ color: "#8B95A5" }}>
+            Répartition du portefeuille clients (gérée dans <button onClick={() => navigate("/admin/customers")} className="underline hover:text-[#1B5BDA]">/admin/customers</button>)
+          </p>
+          {customerTypeBreakdown.length > 0 ? (
+            <div style={{ width: "100%", height: 260 }}>
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie
+                    data={customerTypeBreakdown}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={90}
+                    label={(e: any) => `${e.name} (${e.value})`}
+                    labelLine={false}
+                  >
+                    {customerTypeBreakdown.map((d, i) => (
+                      <Cell key={i} fill={d.color} />
+                    ))}
+                  </Pie>
+                  <RTooltip formatter={(v: any, n: any) => [`${v} client${Number(v) > 1 ? "s" : ""}`, n]} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <EmptyState message="Aucun client enregistré" />
+          )}
+        </div>
+
         {/* Alerts */}
         <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
           <h3 className="text-[14px] font-semibold mb-4" style={{ color: "#1D2530" }}>{t("alerts")}</h3>

@@ -298,7 +298,10 @@ Deno.serve(async (req) => {
     for (const l of (lines || [])) {
       const label = doc.splitTextToSize(String(l.manual_label || l.products?.name || "—"), COLS.articleWidth);
       const vendor = doc.splitTextToSize(String(l.vendors?.company_name || l.vendors?.name || l.qogita_seller_fid || "—"), COLS.vendorWidth);
-      const rowH = Math.max(6, Math.max(label.length, vendor.length) * 3.4 + 2.5);
+      const cnk = (l as any).cnk_code || l.products?.cnk_code || null;
+      const codeLine = cnk ? `CNK ${cnk}` : null;
+      const extraLines = codeLine ? 1 : 0;
+      const rowH = Math.max(6, (Math.max(label.length, vendor.length) + extraLines) * 3.4 + 2.5);
 
       if (y + rowH > pageH - 50) {
         doc.addPage();
@@ -316,6 +319,12 @@ Deno.serve(async (req) => {
 
       doc.setTextColor(...NAVY);
       doc.text(label, COLS.article, y + 3.5);
+      if (codeLine) {
+        doc.setFontSize(6.5);
+        doc.setTextColor(...MUTED);
+        doc.text(codeLine, COLS.article, y + 3.5 + label.length * 3.4);
+        doc.setFontSize(7.5);
+      }
       doc.setTextColor(80, 80, 80);
       doc.text(vendor, COLS.vendor, y + 3.5);
       doc.setTextColor(...NAVY);

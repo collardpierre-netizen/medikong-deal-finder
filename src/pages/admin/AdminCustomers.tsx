@@ -40,7 +40,25 @@ type ShippingAddress = {
 };
 
 const COUNTRIES = ["BE", "FR", "LU", "NL", "DE"];
-const TYPES = ["pharmacy", "hospital", "clinic", "lab", "other"];
+
+// Typologie complète des clients (alignée sur l'enum DB customer_type).
+// Pour ajouter un nouveau type : étendre l'enum DB + cette liste.
+export const CUSTOMER_TYPE_OPTIONS: { value: string; label: string; color: string }[] = [
+  { value: "pharmacy",     label: "Pharmacie",          color: "#1B5BDA" },
+  { value: "wholesaler",   label: "Grossiste",          color: "#7C3AED" },
+  { value: "hospital",     label: "Hôpital",            color: "#EF4444" },
+  { value: "clinic",       label: "Clinique",           color: "#F59E0B" },
+  { value: "doctor",       label: "Médecin",            color: "#059669" },
+  { value: "dentist",      label: "Dentiste",           color: "#14B8A6" },
+  { value: "veterinary",   label: "Vétérinaire",        color: "#0EA5E9" },
+  { value: "nursing_home", label: "MR/MRS (maison de repos)", color: "#EC4899" },
+  { value: "retail",       label: "Retail / Parapharmacie",   color: "#F97316" },
+  { value: "lab",          label: "Laboratoire",        color: "#8B5CF6" },
+  { value: "other",        label: "Autre",              color: "#8B95A5" },
+];
+const TYPES = CUSTOMER_TYPE_OPTIONS.map((o) => o.value);
+const TYPE_LABEL = Object.fromEntries(CUSTOMER_TYPE_OPTIONS.map((o) => [o.value, o.label]));
+const TYPE_COLOR = Object.fromEntries(CUSTOMER_TYPE_OPTIONS.map((o) => [o.value, o.color]));
 
 export default function AdminCustomers() {
   const qc = useQueryClient();
@@ -216,7 +234,20 @@ export default function AdminCustomers() {
                   selectedId === c.id ? "bg-blue-50" : ""
                 }`}
               >
-                <div className="text-sm font-medium text-slate-900">{c.company_name}</div>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-sm font-medium text-slate-900 truncate">{c.company_name}</div>
+                  {c.customer_type && (
+                    <span
+                      className="text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0"
+                      style={{
+                        color: TYPE_COLOR[c.customer_type] || "#8B95A5",
+                        backgroundColor: (TYPE_COLOR[c.customer_type] || "#8B95A5") + "1A",
+                      }}
+                    >
+                      {TYPE_LABEL[c.customer_type] || c.customer_type}
+                    </span>
+                  )}
+                </div>
                 <div className="text-xs text-slate-500">
                   {c.email} · {c.country_code}
                 </div>
@@ -275,7 +306,7 @@ export default function AdminCustomers() {
                   </Field>
                   <Field label="Type">
                     <select value={form.customer_type || "pharmacy"} onChange={(e) => setForm({ ...form, customer_type: e.target.value })} className="input">
-                      {TYPES.map((t) => (<option key={t} value={t}>{t}</option>))}
+                      {CUSTOMER_TYPE_OPTIONS.map((t) => (<option key={t.value} value={t.value}>{t.label}</option>))}
                     </select>
                   </Field>
                   <Field label="Pays">

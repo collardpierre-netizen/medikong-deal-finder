@@ -222,7 +222,10 @@ Deno.serve(async (req) => {
     let rowIdx = 0;
     for (const l of (lines || [])) {
       const label = doc.splitTextToSize(String(l.label || "—"), COLS.articleWidth);
-      const rowH = Math.max(6, label.length * 3.4 + 2.5);
+      const cnk = (l as any).products?.cnk_code || null;
+      const codeLine = cnk ? `CNK ${cnk}` : null;
+      const extraLines = codeLine ? 1 : 0;
+      const rowH = Math.max(6, (label.length + extraLines) * 3.4 + 2.5);
 
       if (y + rowH > pageH - 50) { doc.addPage(); y = 20; }
 
@@ -233,6 +236,13 @@ Deno.serve(async (req) => {
 
       doc.setTextColor(...NAVY);
       doc.text(label, COLS.article, y + 3.5);
+      if (codeLine) {
+        doc.setFontSize(6.5);
+        doc.setTextColor(...MUTED);
+        doc.text(codeLine, COLS.article, y + 3.5 + label.length * 3.4);
+        doc.setFontSize(7.5);
+        doc.setTextColor(...NAVY);
+      }
       doc.text(String(l.qty || 0), COLS.qty, y + 3.5, { align: "right" });
       doc.text(fmtEur(Number(l.unit_price_ht_cents) || 0, currency), COLS.puHt, y + 3.5, { align: "right" });
       doc.setTextColor(...MUTED);

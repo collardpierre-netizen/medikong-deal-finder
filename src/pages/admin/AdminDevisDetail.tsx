@@ -72,10 +72,20 @@ const AdminDevisDetail = () => {
     toast.success("Email envoyé à l'acheteur");
   });
 
-  const convertToOrder = () => runRpc("Conversion", async () => {
-    const { data, error } = await supabase.rpc("convert_quote_to_order" as any, { _quote_id: id });
+  const convertToOrder = (force = false) => runRpc("Conversion", async () => {
+    if (force) {
+      const ok = window.confirm(
+        `Forcer la conversion de ce devis (statut "${STATUS_LABEL[quote.status] ?? quote.status}") en commande ?\n\nLa commande sera créée même si le devis n'est pas marqué comme payé.`
+      );
+      if (!ok) return;
+    }
+    const { data, error } = await supabase.rpc("convert_quote_to_order" as any, { _quote_id: id, _force: force });
     if (error) throw error;
-    toast.success("Devis converti en commande");
+    if ((data as any)?.error) {
+      toast.error(`Conversion impossible : ${(data as any).error}`);
+      return;
+    }
+    toast.success(force ? "Devis converti manuellement en commande" : "Devis converti en commande");
     const orderId = (data as any)?.order_id;
     if (orderId) navigate(`/admin/commandes`);
   });
@@ -205,9 +215,14 @@ const AdminDevisDetail = () => {
             <Button onClick={duplicate} disabled={busy !== null} className="w-full justify-start" variant="outline">
               <Copy size={14} className="mr-2" /> {busy === "Duplication" ? "Duplication…" : "Dupliquer ce devis"}
             </Button>
-            {quote.status === "accepted" && (
-              <Button onClick={convertToOrder} disabled={busy !== null} className="w-full justify-start bg-green-600 text-white hover:bg-green-700">
+            {quote.status === "accepted" || quote.status === "paid" ? (
+              <Button onClick={() => convertToOrder(false)} disabled={busy !== null} className="w-full justify-start bg-green-600 text-white hover:bg-green-700">
                 <ArrowRightCircle size={14} className="mr-2" /> {busy === "Conversion" ? "Conversion…" : "Convertir en commande"}
+              </Button>
+            ) : null}
+            {quote.status !== "converted" && quote.status !== "paid" && quote.status !== "accepted" && (
+              <Button onClick={() => convertToOrder(true)} disabled={busy !== null} variant="outline" className="w-full justify-start border-amber-400 text-amber-700 hover:bg-amber-50">
+                <ArrowRightCircle size={14} className="mr-2" /> {busy === "Conversion" ? "Conversion…" : "Forcer la conversion (manuel)"}
               </Button>
             )}
           </div>

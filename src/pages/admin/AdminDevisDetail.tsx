@@ -72,10 +72,20 @@ const AdminDevisDetail = () => {
     toast.success("Email envoyé à l'acheteur");
   });
 
-  const convertToOrder = () => runRpc("Conversion", async () => {
-    const { data, error } = await supabase.rpc("convert_quote_to_order" as any, { _quote_id: id });
+  const convertToOrder = (force = false) => runRpc("Conversion", async () => {
+    if (force) {
+      const ok = window.confirm(
+        `Forcer la conversion de ce devis (statut "${STATUS_LABEL[quote.status] ?? quote.status}") en commande ?\n\nLa commande sera créée même si le devis n'est pas marqué comme payé.`
+      );
+      if (!ok) return;
+    }
+    const { data, error } = await supabase.rpc("convert_quote_to_order" as any, { _quote_id: id, _force: force });
     if (error) throw error;
-    toast.success("Devis converti en commande");
+    if ((data as any)?.error) {
+      toast.error(`Conversion impossible : ${(data as any).error}`);
+      return;
+    }
+    toast.success(force ? "Devis converti manuellement en commande" : "Devis converti en commande");
     const orderId = (data as any)?.order_id;
     if (orderId) navigate(`/admin/commandes`);
   });

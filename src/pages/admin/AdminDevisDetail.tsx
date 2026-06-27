@@ -215,9 +215,14 @@ const AdminDevisDetail = () => {
             <Button onClick={duplicate} disabled={busy !== null} className="w-full justify-start" variant="outline">
               <Copy size={14} className="mr-2" /> {busy === "Duplication" ? "Duplication…" : "Dupliquer ce devis"}
             </Button>
-            {quote.status === "accepted" && (
-              <Button onClick={convertToOrder} disabled={busy !== null} className="w-full justify-start bg-green-600 text-white hover:bg-green-700">
+            {quote.status === "accepted" || quote.status === "paid" ? (
+              <Button onClick={() => convertToOrder(false)} disabled={busy !== null} className="w-full justify-start bg-green-600 text-white hover:bg-green-700">
                 <ArrowRightCircle size={14} className="mr-2" /> {busy === "Conversion" ? "Conversion…" : "Convertir en commande"}
+              </Button>
+            ) : null}
+            {quote.status !== "converted" && quote.status !== "paid" && quote.status !== "accepted" && (
+              <Button onClick={() => convertToOrder(true)} disabled={busy !== null} variant="outline" className="w-full justify-start border-amber-400 text-amber-700 hover:bg-amber-50">
+                <ArrowRightCircle size={14} className="mr-2" /> {busy === "Conversion" ? "Conversion…" : "Forcer la conversion (manuel)"}
               </Button>
             )}
           </div>

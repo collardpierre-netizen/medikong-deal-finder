@@ -306,7 +306,7 @@ export default function AdminCustomers() {
                   </Field>
                   <Field label="Type">
                     <select value={form.customer_type || "pharmacy"} onChange={(e) => setForm({ ...form, customer_type: e.target.value })} className="input">
-                      {TYPES.map((t) => (<option key={t} value={t}>{t}</option>))}
+                      {CUSTOMER_TYPE_OPTIONS.map((t) => (<option key={t.value} value={t.value}>{t.label}</option>))}
                     </select>
                   </Field>
                   <Field label="Pays">

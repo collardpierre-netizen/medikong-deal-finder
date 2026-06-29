@@ -293,9 +293,7 @@ ${JSON.stringify(sourcesForAi)}`;
           )
           .then(() => {});
 
-        // 2b. Write to product column when applicable
-        const item = items[idx];
-        if (item.productId && item.field && PRODUCT_FIELD_MAP[item.field]) {
+        if (isAdmin && item.productId && item.field && PRODUCT_FIELD_MAP[item.field]) {
           const colName = `${PRODUCT_FIELD_MAP[item.field].col}_${targetLang}`;
           admin
             .from("products")

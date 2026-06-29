@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Upload, Receipt, CheckCircle2, AlertTriangle, Send, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
+import { VendorsEmbedError } from "@/lib/vendors-embed-error";
 
 interface SendcloudLine {
   parcel_id?: string;

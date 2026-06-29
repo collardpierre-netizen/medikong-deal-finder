@@ -189,16 +189,22 @@ const AdminDevisEditer = () => {
       .slice(0, 50);
   }, [customers, customerSearch]);
 
-  const totals = useMemo(() => {
-    let ht = 0;
-    let tva = 0;
-    lines.forEach((l) => {
-      const lineHt = l.qty * l.unit_price_ht_cents;
-      ht += lineHt;
-      tva += Math.round((lineHt * l.vat_rate) / 100);
-    });
-    return { ht, tva, ttc: ht + tva };
-  }, [lines]);
+  const lineToMetricInput = (l: Line): ManualLineInput => ({
+    quantity: l.qty,
+    unit_price_excl_vat: l.unit_price_ht_cents / 100,
+    vat_rate: l.vat_rate,
+    unit_cost_excl_vat:
+      l.unit_cost_ht_cents != null && l.unit_cost_ht_cents > 0
+        ? l.unit_cost_ht_cents / 100
+        : "",
+    commission_rate: l.commission_rate != null ? l.commission_rate : "",
+    commission_basis: l.commission_rate != null ? "margin" : "ca",
+  });
+
+  const totals = useMemo(() => computeOrderTotals(lines.map(lineToMetricInput)), [lines]);
+  const grossMarginPct = totals.hasAnyCost && totals.excl > 0
+    ? (totals.gross / totals.excl) * 100
+    : null;
 
   const updateLine = (i: number, patch: Partial<Line>) => {
     setLines((prev) => prev.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));

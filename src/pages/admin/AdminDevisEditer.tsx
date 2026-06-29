@@ -165,6 +165,8 @@ const AdminDevisEditer = () => {
         vat_rate: Number(l.vat_rate || 21),
         unit_cost_ht_cents: l.unit_cost_ht_cents,
         commission_rate: l.commission_rate != null ? Number(l.commission_rate) : null,
+        commission_amount_cents: l.commission_amount_cents != null ? Number(l.commission_amount_cents) : null,
+        commission_basis: (l.commission_basis === "margin" || l.commission_basis === "ca") ? l.commission_basis : null,
       }))
     );
   }, [quote]);

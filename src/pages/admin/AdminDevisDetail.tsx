@@ -21,7 +21,7 @@ const AdminDevisDetail = () => {
   const [busy, setBusy] = useState<string | null>(null);
   const [recipientOverride, setRecipientOverride] = useState("");
 
-  const { data: quote, isLoading, refetch } = useQuery({
+  const { data: quote, isLoading, refetch, error: quoteError } = useQuery({
     queryKey: ["admin-quote", id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -36,6 +36,7 @@ const AdminDevisDetail = () => {
   });
 
   if (isLoading) return <div className="p-6 text-slate-500">Chargement…</div>;
+  if (quoteError) return <div className="p-6"><VendorsEmbedError error={quoteError} /></div>;
   if (!quote) return <div className="p-6 text-slate-500">Devis introuvable. <Link to="/admin/devis" className="text-sky-600">Retour</Link></div>;
 
   const lines = (quote.lines || []).sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));

@@ -543,7 +543,7 @@ const AdminDashboard = () => {
                     cx="50%"
                     cy="50%"
                     outerRadius={90}
-                    label={(e: any) => `${e.name} (${((e.percent || 0) * 100).toFixed(0)}%)`}
+                    label={(e: any) => `${e.name} (${((e.percent || 0) * 100).toFixed(1)}%)`}
                     labelLine={false}
                   >
                     {categoryBreakdown.map((_, i) => (
@@ -579,7 +579,7 @@ const AdminDashboard = () => {
                     cy="50%"
                     outerRadius={75}
                     label={(e: any) => {
-                      const pct = (e.percent * 100).toFixed(0);
+                      const pct = (e.percent * 100).toFixed(1);
                       return `${e.name} ${pct}%`;
                     }}
                   >

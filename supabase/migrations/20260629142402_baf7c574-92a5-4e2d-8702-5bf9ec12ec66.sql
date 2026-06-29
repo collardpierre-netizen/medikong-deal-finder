@@ -1,0 +1,1 @@
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS show_payment_info boolean NOT NULL DEFAULT true;

@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import UserCreateDialog from "@/components/admin/UserCreateDialog";
+import EditBuyerProfileDialog from "@/components/admin/EditBuyerProfileDialog";
 
 const LANG_FLAGS: Record<string, string> = { fr: "🇫🇷 Français", nl: "🇳🇱 Nederlands", en: "🇬🇧 English", de: "🇩🇪 Deutsch" };
 
@@ -66,6 +67,7 @@ export default function AdminUsers() {
   const [confirmed, setConfirmed] = useState(false);
   const [deleteModal, setDeleteModal] = useState<UserRow | null>(null);
   const [deleteReason, setDeleteReason] = useState("");
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
   const { startImpersonation } = useImpersonation();
   const navigate = useNavigate();
 
@@ -480,8 +482,11 @@ export default function AdminUsers() {
                     <DetailField icon={CheckCircle} label="Professionnel" value={buyerDetail.is_professional ? "Oui" : "Non"} />
                     <DetailField icon={CheckCircle} label="Vérifié" value={buyerDetail.is_verified ? "✅ Oui" : "❌ Non"} />
 
-                    {/* Danger zone */}
+                    {/* Actions */}
                     <div className="border-t border-border my-4" />
+                    <Button onClick={() => setEditProfileOpen(true)} variant="outline" size="sm" className="w-full gap-1.5 mb-2">
+                      <UserCheck size={14} /> Éditer profil pro
+                    </Button>
                     <Button onClick={() => handleDelete(selectedUser)} variant="ghost" size="sm" className="w-full text-destructive hover:bg-destructive/10 gap-1.5">
                       <Trash2 size={14} /> Supprimer définitivement
                     </Button>
@@ -572,6 +577,16 @@ export default function AdminUsers() {
       )}
 
       <UserCreateDialog open={showCreate} onOpenChange={setShowCreate} onCreated={loadUsers} />
+
+      {editProfileOpen && buyerDetail && (
+        <EditBuyerProfileDialog
+          open={editProfileOpen}
+          onClose={() => setEditProfileOpen(false)}
+          customerId={buyerDetail.id}
+          authUserId={buyerDetail.auth_user_id || null}
+          onSaved={(patch) => setBuyerDetail((prev: any) => prev ? { ...prev, ...patch } : prev)}
+        />
+      )}
     </div>
   );
 }

@@ -1392,6 +1392,13 @@ function LineRow({
                   {" "}·{" "}
                   <button type="button" className="underline" onClick={() => { onPatch({ offer_id: undefined, product_id: undefined, offer_label: undefined, manual_label: undefined, gtin: undefined, cnk_code: undefined }); setOfferSearch(""); }}>changer le produit lié</button>
                 </div>
+                <div className="mt-1 flex items-start gap-1.5 rounded border border-blue-100 bg-blue-50 px-2 py-1.5 text-[11px] text-blue-900">
+                  <span aria-hidden>💡</span>
+                  <span>
+                    Le <strong>libellé override</strong> ci-dessous remplace uniquement l'<em>affichage</em> (commande, PDF, page publique). La <strong>relation au produit</strong> (offer_id, product_id, EAN, CNK) reste intacte. Pour changer le produit réellement lié, utilise « <strong>changer le produit lié</strong> ».
+                  </span>
+                </div>
+
                 <div className="mt-2">
                   <Label className="text-xs">Libellé affiché (override)</Label>
                   <Input

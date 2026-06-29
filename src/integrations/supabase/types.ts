@@ -2840,6 +2840,56 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_profile_history: {
+        Row: {
+          auth_user_id: string | null
+          changed_at: string
+          changed_by: string | null
+          customer_id: string
+          field_name: string
+          id: string
+          new_label: string | null
+          new_value: string | null
+          old_label: string | null
+          old_value: string | null
+          reason: string
+        }
+        Insert: {
+          auth_user_id?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          customer_id: string
+          field_name: string
+          id?: string
+          new_label?: string | null
+          new_value?: string | null
+          old_label?: string | null
+          old_value?: string | null
+          reason: string
+        }
+        Update: {
+          auth_user_id?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          customer_id?: string
+          field_name?: string
+          id?: string
+          new_label?: string | null
+          new_value?: string | null
+          old_label?: string | null
+          old_value?: string | null
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_profile_history_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_shipping_addresses: {
         Row: {
           address_l1: string
@@ -22926,6 +22976,16 @@ export type Database = {
         }[]
       }
       admin_category_mapping_dashboard: { Args: never; Returns: Json }
+      admin_change_buyer_profile: {
+        Args: {
+          _auth_user_id: string
+          _customer_id: string
+          _new_customer_type: string
+          _new_profile_id: string
+          _reason: string
+        }
+        Returns: Json
+      }
       admin_check_orders_coherence: {
         Args: { _order_ids?: string[] }
         Returns: {

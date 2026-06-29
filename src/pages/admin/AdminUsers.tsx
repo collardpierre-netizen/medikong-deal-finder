@@ -214,6 +214,7 @@ export default function AdminUsers() {
       .eq("auth_user_id", userId);
     if (error) { toast.error("Erreur: " + error.message); return; }
     toast.success("Compte suspendu");
+    logAdminAudit("customer.suspend", { targetId: userId, targetType: "auth_user" });
     loadUsers();
     if (buyerDetail) setBuyerDetail({ ...buyerDetail, is_verified: false });
   }

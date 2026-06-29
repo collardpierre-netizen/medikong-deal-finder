@@ -44,7 +44,7 @@ export default function AdminCommissions() {
   });
 
   // Vendor-specific rules
-  const { data: vendorRules = [] } = useQuery({
+  const { data: vendorRules = [], error: vendorRulesError } = useQuery({
     queryKey: ["admin-commission-vendor-rules"],
     queryFn: async () => {
       const { data, error } = await supabase

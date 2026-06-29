@@ -59,6 +59,7 @@ serve(async (req) => {
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     if (!LOVABLE_API_KEY) {
@@ -68,9 +69,41 @@ serve(async (req) => {
       );
     }
 
+    // Require an authenticated caller to prevent anonymous abuse + product field injection.
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+    if (!token) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    const userClient = createClient(SUPABASE_URL, ANON_KEY, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: { persistSession: false },
+    });
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    const callerUserId = claimsData.claims.sub as string;
+
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
       auth: { persistSession: false },
     });
+
+    // Only admins are allowed to write-through product columns.
+    const { data: adminRow } = await admin
+      .from("admin_users")
+      .select("role, is_active")
+      .eq("user_id", callerUserId)
+      .maybeSingle();
+    const isAdmin =
+      !!adminRow?.is_active && ["super_admin", "admin"].includes(adminRow.role as string);
+
 
     const body = (await req.json()) as RequestBody;
     const targetLang = body.targetLang;
@@ -260,9 +293,7 @@ ${JSON.stringify(sourcesForAi)}`;
           )
           .then(() => {});
 
-        // 2b. Write to product column when applicable
-        const item = items[idx];
-        if (item.productId && item.field && PRODUCT_FIELD_MAP[item.field]) {
+        if (isAdmin && item.productId && item.field && PRODUCT_FIELD_MAP[item.field]) {
           const colName = `${PRODUCT_FIELD_MAP[item.field].col}_${targetLang}`;
           admin
             .from("products")

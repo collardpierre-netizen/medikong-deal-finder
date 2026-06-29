@@ -312,8 +312,14 @@ export default function AdminCommissions() {
                   </td>
                 </tr>
               ))}
-              {vendorRules.length === 0 && (
-                <tr><td colSpan={5} className="py-8 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune règle spécifique. Tous les vendeurs utilisent les règles globales.</td></tr>
+              {(vendorRulesError || vendorsError || vendorRules.length === 0) && (
+                <tr><td colSpan={5} className="py-0">
+                  <VendorsEmbedError
+                    error={vendorRulesError ?? vendorsError}
+                    rowCount={vendorRules.length}
+                    emptyTitle="Aucune règle spécifique. Tous les vendeurs utilisent les règles globales."
+                  />
+                </td></tr>
               )}
             </tbody>
           </table>

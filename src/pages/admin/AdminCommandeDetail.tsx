@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { fmtEur } from "@/lib/format-currency";
 import { ArrowLeft, FileDown, Pencil, Copy, Link2, ExternalLink, Lock, Wallet } from "lucide-react";
 import { lineMetrics, type ManualLineInput } from "@/lib/manual-order-metrics";
+import { VendorsEmbedError } from "@/lib/vendors-embed-error";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Brouillon",

@@ -386,7 +386,7 @@ Deno.serve(async (req) => {
       .map((l: any) => l.vendors)
       .find((v: any) => v && (v.iban || v.bank_name));
 
-    if (vendorWithBank) {
+    if (vendorWithBank && (order as any).show_payment_info !== false) {
       if (y > pageH - 50) { doc.addPage(); y = 20; }
       const bkH = 30;
       doc.setFillColor(...SOFT);

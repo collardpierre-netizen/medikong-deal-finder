@@ -8268,6 +8268,7 @@ export type Database = {
           public_token: string | null
           shipping_address: Json
           shipping_address_id: string | null
+          show_payment_info: boolean
           source: Database["public"]["Enums"]["order_source"]
           status: Database["public"]["Enums"]["order_status"]
           stripe_payment_intent_id: string | null
@@ -8313,6 +8314,7 @@ export type Database = {
           public_token?: string | null
           shipping_address?: Json
           shipping_address_id?: string | null
+          show_payment_info?: boolean
           source?: Database["public"]["Enums"]["order_source"]
           status?: Database["public"]["Enums"]["order_status"]
           stripe_payment_intent_id?: string | null
@@ -8358,6 +8360,7 @@ export type Database = {
           public_token?: string | null
           shipping_address?: Json
           shipping_address_id?: string | null
+          show_payment_info?: boolean
           source?: Database["public"]["Enums"]["order_source"]
           status?: Database["public"]["Enums"]["order_status"]
           stripe_payment_intent_id?: string | null
@@ -23084,6 +23087,7 @@ export type Database = {
           public_token: string | null
           shipping_address: Json
           shipping_address_id: string | null
+          show_payment_info: boolean
           source: Database["public"]["Enums"]["order_source"]
           status: Database["public"]["Enums"]["order_status"]
           stripe_payment_intent_id: string | null

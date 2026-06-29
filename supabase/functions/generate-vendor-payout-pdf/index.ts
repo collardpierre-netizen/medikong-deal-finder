@@ -373,9 +373,9 @@ Deno.serve(async (req) => {
       doc.text(fmtEur(totalNetC), totValueX, y + 3, { align: "right" });
       y += 14;
 
-      // Coordonnées bancaires (rappel) — gated par order.show_payment_info
-      const showPaymentInfo = (order as any).show_payment_info !== false;
-      if (showPaymentInfo && (v.iban || v.bank_name)) {
+      // Coordonnées bancaires (rappel) — gated par helper unique partagé avec generate-order-pdf + public_get_order_by_token
+      const { data: showPaymentInfo } = await adminClient.rpc("order_should_show_payment_info", { _order_id: order.id });
+      if (showPaymentInfo !== false && (v.iban || v.bank_name)) {
         if (y > pageH - 40) { doc.addPage(); y = 20; }
         doc.setFillColor(...SOFT);
         doc.setDrawColor(...LINE);

@@ -577,13 +577,11 @@ const AdminDashboard = () => {
                     nameKey="name"
                     cx="50%"
                     cy="50%"
-                    outerRadius={90}
+                    outerRadius={75}
                     label={(e: any) => {
-                      const total = customerTypeBreakdown.reduce((s, r) => s + r.value, 0);
-                      const pct = total > 0 ? Math.round((e.value / total) * 100) : 0;
-                      return `${e.name} (${e.value} · ${pct}%)`;
+                      const pct = (e.percent * 100).toFixed(0);
+                      return `${e.name} ${pct}%`;
                     }}
-                    labelLine={false}
                   >
                     {customerTypeBreakdown.map((d, i) => (
                       <Cell key={i} fill={d.color} />

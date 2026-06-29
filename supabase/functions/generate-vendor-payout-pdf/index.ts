@@ -373,8 +373,9 @@ Deno.serve(async (req) => {
       doc.text(fmtEur(totalNetC), totValueX, y + 3, { align: "right" });
       y += 14;
 
-      // Coordonnées bancaires (rappel)
-      if (v.iban || v.bank_name) {
+      // Coordonnées bancaires (rappel) — gated par order.show_payment_info
+      const showPaymentInfo = (order as any).show_payment_info !== false;
+      if (showPaymentInfo && (v.iban || v.bank_name)) {
         if (y > pageH - 40) { doc.addPage(); y = 20; }
         doc.setFillColor(...SOFT);
         doc.setDrawColor(...LINE);

@@ -23180,6 +23180,25 @@ export type Database = {
           variant: string
         }[]
       }
+      admin_inspect_table_grants: {
+        Args: { _schema?: string; _table?: string }
+        Returns: {
+          grantee: string
+          is_grantable: boolean
+          privilege_type: string
+        }[]
+      }
+      admin_inspect_table_rls: {
+        Args: { _schema?: string; _table?: string }
+        Returns: {
+          cmd: string
+          policy_name: string
+          qual: string
+          rls_enabled: boolean
+          roles: string[]
+          with_check: string
+        }[]
+      }
       admin_list_manual_order_drafts: {
         Args: never
         Returns: {

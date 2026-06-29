@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { fmtEur } from "@/lib/format-currency";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Send, FileDown, RefreshCw, ArrowRightCircle, Copy, Eye, CheckCircle2, XCircle, Clock, Pencil, Trash2, Check, X } from "lucide-react";
+import { VendorsEmbedError } from "@/lib/vendors-embed-error";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Brouillon", sent: "Envoyé", accepted: "Accepté", declined: "Refusé", paid: "Payé", converted: "Converti",

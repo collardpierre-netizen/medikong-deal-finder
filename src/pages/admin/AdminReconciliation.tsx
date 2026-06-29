@@ -46,7 +46,7 @@ const AdminReconciliation = () => {
     },
   });
 
-  const { data: invoices = [] } = useQuery({
+  const { data: invoices = [], error: invoicesError } = useQuery({
     queryKey: ["reconciliation-invoices"],
     queryFn: async () => {
       const { data, error } = await supabase

@@ -259,8 +259,12 @@ const AdminReconciliation = () => {
         <div className="px-5 py-4" style={{ borderBottom: "1px solid #E2E8F0" }}>
           <h3 className="text-[14px] font-semibold" style={{ color: "#1D2530" }}>Historique des factures</h3>
         </div>
-        {invoices.length === 0 ? (
-          <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune facture générée</div>
+        {(invoicesError || invoices.length === 0) ? (
+          <VendorsEmbedError
+            error={invoicesError}
+            rowCount={invoices.length}
+            emptyTitle="Aucune facture générée"
+          />
         ) : (
           <table className="w-full text-left">
             <thead>

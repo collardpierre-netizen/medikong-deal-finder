@@ -250,7 +250,15 @@ const AdminCommandes = () => {
   });
 
   // --- Filtre période (sur created_at) appliqué avant toute dérivation ---
+  // --- Filtre période (sur created_at) : dates custom prennent priorité sur les presets ---
+  const hasCustomDates = Boolean(dateFrom || dateTo);
   const periodStartDate = (() => {
+    if (dateFrom) {
+      const d = new Date(dateFrom);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+    if (hasCustomDates) return null;
     const days = PERIODS.find(p => p.key === period)?.days;
     if (!days) return null;
     const d = new Date();
@@ -258,16 +266,30 @@ const AdminCommandes = () => {
     d.setHours(0, 0, 0, 0);
     return d;
   })();
-  const periodEndDate = new Date();
-  const periodCutoff = periodStartDate ? periodStartDate.getTime() : null;
-  const periodOrders = periodCutoff === null
-    ? orders
-    : orders.filter(o => o.createdAtRaw && new Date(o.createdAtRaw).getTime() >= periodCutoff);
+  const periodEndDate = (() => {
+    if (dateTo) {
+      const d = new Date(dateTo);
+      d.setHours(23, 59, 59, 999);
+      return d;
+    }
+    return new Date();
+  })();
+  const periodOrders = orders.filter(o => {
+    if (!o.createdAtRaw) return true;
+    const t = new Date(o.createdAtRaw).getTime();
+    if (periodStartDate && t < periodStartDate.getTime()) return false;
+    if (periodEndDate && t > periodEndDate.getTime()) return false;
+    return true;
+  });
 
-  const visibleOrders = hideDeleted ? periodOrders.filter(o => !o.hiddenFromList) : periodOrders;
+  // Les commandes archivées (hidden_from_list) restent visibles dans l'onglet « Annulées »
+  // afin que le compteur reflète la réalité ; ailleurs elles sont masquées si hideDeleted=true.
+  const visibleOrders = hideDeleted
+    ? periodOrders.filter(o => !o.hiddenFromList || o.status === "cancelled")
+    : periodOrders;
   const displayOrders = hideTest ? visibleOrders.filter(o => !o.isTest) : visibleOrders;
   const testCount = visibleOrders.filter(o => o.isTest).length;
-  const deletedCount = periodOrders.filter(o => o.hiddenFromList).length;
+  const deletedCount = periodOrders.filter(o => o.hiddenFromList && o.status !== "cancelled").length;
 
   const filtered = displayOrders.filter((o) => {
     if (statusFilter !== "all" && o.status !== statusFilter) return false;

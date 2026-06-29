@@ -653,7 +653,8 @@ const AdminDevisEditer = () => {
               Annuler
             </Button>
             <div className="text-xs text-slate-500 pt-2 border-t mt-2">
-              Le PDF sera à re-générer après modification.
+              Le PDF sera à re-généré après modification.
+            </div>
             </div>
           </div>
         </div>

@@ -24507,6 +24507,10 @@ export type Database = {
         Args: { _product_id: string; _vendor_id: string }
         Returns: boolean
       }
+      order_should_show_payment_info: {
+        Args: { _order_id: string }
+        Returns: boolean
+      }
       override_volume_threshold: {
         Args: { _new_threshold: number; _sub_id: string }
         Returns: undefined

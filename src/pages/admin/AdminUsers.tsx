@@ -482,8 +482,11 @@ export default function AdminUsers() {
                     <DetailField icon={CheckCircle} label="Professionnel" value={buyerDetail.is_professional ? "Oui" : "Non"} />
                     <DetailField icon={CheckCircle} label="Vérifié" value={buyerDetail.is_verified ? "✅ Oui" : "❌ Non"} />
 
-                    {/* Danger zone */}
+                    {/* Actions */}
                     <div className="border-t border-border my-4" />
+                    <Button onClick={() => setEditProfileOpen(true)} variant="outline" size="sm" className="w-full gap-1.5 mb-2">
+                      <UserCheck size={14} /> Éditer profil pro
+                    </Button>
                     <Button onClick={() => handleDelete(selectedUser)} variant="ghost" size="sm" className="w-full text-destructive hover:bg-destructive/10 gap-1.5">
                       <Trash2 size={14} /> Supprimer définitivement
                     </Button>

@@ -105,7 +105,16 @@ Deno.serve(async (req) => {
     }
 
     // Generate a password reset link (acts as invitation link)
-    const siteUrl = Deno.env.get("SITE_URL") || req.headers.get("origin") || "https://medikong-deal-finder.lovable.app";
+    // SECURITY: never trust Origin header — strict allowlist to prevent open redirect.
+    const ALLOWED_ORIGINS = new Set([
+      "https://medikong.pro",
+      "https://www.medikong.pro",
+      "https://medikong-deal-finder.lovable.app",
+    ]);
+    const requestOrigin = req.headers.get("origin") ?? "";
+    const siteUrl =
+      Deno.env.get("SITE_URL") ||
+      (ALLOWED_ORIGINS.has(requestOrigin) ? requestOrigin : "https://medikong.pro");
     const redirectTo = `${siteUrl}/reset-password`;
 
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({

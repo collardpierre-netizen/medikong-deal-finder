@@ -185,6 +185,10 @@ export default function AdminUsers() {
     if (error) { toast.error("Erreur: " + error.message); return; }
     if (!updated) { toast.error("Client introuvable ou déjà validé"); return; }
     toast.success("✅ Compte acheteur validé");
+    logAdminAudit("customer.verify", {
+      targetId: updated.id, targetType: "customer",
+      metadata: { email: updated.email, company_name: updated.company_name },
+    });
 
     // Notify buyer that their account is now verified (transactional)
     if (updated?.email) {

@@ -584,8 +584,57 @@ const AdminDevisEditer = () => {
         </div>
 
         <div className="space-y-4">
-          <div className="bg-white border rounded-lg p-4 space-y-2 sticky top-4">
-            <div className="text-sm font-semibold mb-2">Actions</div>
+          <div className="bg-white border rounded-lg p-4 sticky top-4 space-y-4">
+            <div>
+              <div className="text-sm font-semibold mb-2">Synthèse financière</div>
+              <div className="space-y-1.5 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">CA HTVA</span>
+                  <span className="font-semibold">{fmtEur(totals.excl)} €</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">TVA</span>
+                  <span>{fmtEur(totals.vat)} €</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Coût total HT</span>
+                  <span>{totals.hasAnyCost ? `${fmtEur(totals.cost)} €` : "—"}</span>
+                </div>
+                <div className="flex justify-between border-t pt-1.5">
+                  <span className="text-slate-500">Marge brute</span>
+                  <span className={totals.hasAnyCost ? (totals.gross >= 0 ? "text-emerald-700 font-semibold" : "text-rose-700 font-semibold") : ""}>
+                    {totals.hasAnyCost ? `${fmtEur(totals.gross)} €` : "—"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400">Marge %</span>
+                  <span className="text-slate-600">
+                    {grossMarginPct != null ? `${grossMarginPct.toFixed(1)}%` : "—"}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t pt-1.5">
+                  <span className="text-slate-500">Commission MK</span>
+                  <span className="text-emerald-600 font-semibold">{fmtEur(totals.commission)} €</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Net vendeur</span>
+                  <span className="font-semibold">{fmtEur(totals.netVendor)} €</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400">Marge nette vendeur</span>
+                  <span className="text-slate-600">
+                    {totals.hasAnyCost ? `${fmtEur(totals.netMargin)} €` : "—"}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t pt-1.5">
+                  <span className="font-semibold">Total TTC</span>
+                  <span className="font-bold">{fmtEur(totals.incl)} €</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t pt-3 space-y-2">
+              <div className="text-sm font-semibold mb-1">Actions</div>
             <Button
               onClick={handleSave}
               disabled={saving}

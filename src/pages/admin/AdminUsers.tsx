@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import UserCreateDialog from "@/components/admin/UserCreateDialog";
 import EditBuyerProfileDialog from "@/components/admin/EditBuyerProfileDialog";
 import { logAdminAudit } from "@/lib/admin-audit";
+import UserAuditTimeline from "@/components/admin/UserAuditTimeline";
 
 const LANG_FLAGS: Record<string, string> = { fr: "🇫🇷 Français", nl: "🇳🇱 Nederlands", en: "🇬🇧 English", de: "🇩🇪 Deutsch" };
 

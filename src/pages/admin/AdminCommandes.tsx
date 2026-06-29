@@ -324,6 +324,10 @@ const AdminCommandes = () => {
       });
       if (error) throw error;
       toast.success(`Commande ${hardDeleteTarget.number} supprimée définitivement`);
+      logAdminAudit("order.hard_delete", {
+        targetId: hardDeleteTarget.id, targetType: "order",
+        metadata: { number: hardDeleteTarget.number },
+      });
       await queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
       setHardDeleteTarget(null);
     } catch (e: any) {

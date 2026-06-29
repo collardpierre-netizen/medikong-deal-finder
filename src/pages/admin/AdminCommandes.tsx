@@ -51,6 +51,7 @@ const buyerColors: Record<string, { bg: string; text: string }> = {
 
 const statusFilters = [
   { key: "all", label: "Toutes" },
+  { key: "draft", label: "Brouillons" },
   { key: "pending", label: "En attente" },
   { key: "confirmed", label: "Confirmées" },
   { key: "processing", label: "En cours" },

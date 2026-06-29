@@ -14,6 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import UserCreateDialog from "@/components/admin/UserCreateDialog";
 import EditBuyerProfileDialog from "@/components/admin/EditBuyerProfileDialog";
+import { logAdminAudit } from "@/lib/admin-audit";
+import UserAuditTimeline from "@/components/admin/UserAuditTimeline";
 
 const LANG_FLAGS: Record<string, string> = { fr: "🇫🇷 Français", nl: "🇳🇱 Nederlands", en: "🇬🇧 English", de: "🇩🇪 Deutsch" };
 
@@ -184,6 +186,10 @@ export default function AdminUsers() {
     if (error) { toast.error("Erreur: " + error.message); return; }
     if (!updated) { toast.error("Client introuvable ou déjà validé"); return; }
     toast.success("✅ Compte acheteur validé");
+    logAdminAudit("customer.verify", {
+      targetId: updated.id, targetType: "customer",
+      metadata: { email: updated.email, company_name: updated.company_name },
+    });
 
     // Notify buyer that their account is now verified (transactional)
     if (updated?.email) {
@@ -209,6 +215,7 @@ export default function AdminUsers() {
       .eq("auth_user_id", userId);
     if (error) { toast.error("Erreur: " + error.message); return; }
     toast.success("Compte suspendu");
+    logAdminAudit("customer.suspend", { targetId: userId, targetType: "auth_user" });
     loadUsers();
     if (buyerDetail) setBuyerDetail({ ...buyerDetail, is_verified: false });
   }
@@ -490,6 +497,8 @@ export default function AdminUsers() {
                     <Button onClick={() => handleDelete(selectedUser)} variant="ghost" size="sm" className="w-full text-destructive hover:bg-destructive/10 gap-1.5">
                       <Trash2 size={14} /> Supprimer définitivement
                     </Button>
+
+                    <UserAuditTimeline customerId={buyerDetail.id} authUserId={selectedUser?.userId || null} />
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-8">Aucune donnée trouvée</p>

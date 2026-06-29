@@ -104,6 +104,48 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_audit_log: {
+        Row: {
+          action: string
+          admin_email: string | null
+          admin_id: string | null
+          created_at: string
+          id: string
+          ip: string | null
+          metadata: Json
+          path: string | null
+          target_id: string | null
+          target_type: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          admin_email?: string | null
+          admin_id?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          metadata?: Json
+          path?: string | null
+          target_id?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          admin_email?: string | null
+          admin_id?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          metadata?: Json
+          path?: string | null
+          target_id?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       admin_notification_reads: {
         Row: {
           admin_user_id: string
@@ -24301,6 +24343,16 @@ export type Database = {
           missing_offers_count: number
         }[]
       }
+      log_admin_audit_event: {
+        Args: {
+          _action: string
+          _metadata?: Json
+          _path?: string
+          _target_id?: string
+          _target_type?: string
+        }
+        Returns: string
+      }
       log_offer_data_issue: {
         Args: {
           _details?: Json
@@ -24482,6 +24534,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      purge_admin_audit_log: { Args: never; Returns: number }
       purge_anonymous_savings_simulations: { Args: never; Returns: number }
       purge_bulk_deactivation_events: { Args: never; Returns: number }
       purge_security_audit_logs: { Args: never; Returns: Json }

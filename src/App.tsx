@@ -11,6 +11,7 @@ import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
 import { CountryProvider } from "@/contexts/CountryContext";
 import { PriceDisplayProvider } from "@/contexts/PriceDisplayContext";
 import ImpersonationBanner from "@/components/admin/ImpersonationBanner";
+import ImpersonationPageTracker from "@/components/admin/ImpersonationPageTracker";
 import { EnvNoIndex } from "@/components/layout/EnvNoIndex";
 import { CookieConsent } from "@/components/layout/CookieConsent";
 import { HelmetProvider } from "react-helmet-async";
@@ -199,6 +200,7 @@ const AdminCustomers = lazyWithRetry(() => import("./pages/admin/AdminCustomers"
 const AdminAccountInvitations = lazyWithRetry(() => import("./pages/admin/AdminAccountInvitations"), "AdminAccountInvitations");
 const AdminVendorOwnerAlignment = lazyWithRetry(() => import("./pages/admin/AdminVendorOwnerAlignment"), "AdminVendorOwnerAlignment");
 const AdminAuditLog = lazyWithRetry(() => import("./pages/admin/AdminAuditLog"), "AdminAuditLog");
+const AdminActionsAuditPage = lazyWithRetry(() => import("./pages/admin/AdminActionsAuditPage"), "AdminActionsAuditPage");
 const AuditAchatsPage = lazyWithRetry(() => import("./pages/AuditAchatsPage"), "AuditAchatsPage");
 const AuditAchatsConfirmationPage = lazyWithRetry(() => import("./pages/AuditAchatsConfirmationPage"), "AuditAchatsConfirmationPage");
 const AuditsAdminPage = lazyWithRetry(() => import("./pages/admin/AuditsAdminPage"), "AuditsAdminPage");
@@ -357,6 +359,7 @@ const App = () => (
         <BrowserRouter>
           <EnvNoIndex />
           <ImpersonationBanner />
+          <ImpersonationPageTracker />
           <LazyRouteBoundary>
           <Suspense fallback={<PageLoader />}>
           <Routes>
@@ -556,6 +559,7 @@ const App = () => (
               <Route path="account-invitations" element={<LP><AdminAccountInvitations /></LP>} />
               <Route path="vendor-owner-alignment" element={<LP><AdminVendorOwnerAlignment /></LP>} />
               <Route path="audit-log" element={<LP><AdminAuditLog /></LP>} />
+              <Route path="audit-actions" element={<LP><AdminActionsAuditPage /></LP>} />
               <Route path="contract-audit" element={<LP><AdminContractAudit /></LP>} />
               <Route path="contract-template" element={<LP><AdminContractTemplate /></LP>} />
               <Route path="email-templates" element={<LP><AdminEmailTemplates /></LP>} />

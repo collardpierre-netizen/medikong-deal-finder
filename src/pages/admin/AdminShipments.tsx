@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Truck, Package, Search, CheckCircle2, Clock, AlertTriangle, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { VendorsEmbedError } from "@/lib/vendors-embed-error";
 
 const modeLabel: Record<string, string> = {
   no_shipping: "Manuel",

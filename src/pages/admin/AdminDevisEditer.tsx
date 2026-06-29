@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, Trash2, Save, UserPlus } from "lucide-react";
 import { fmtEur } from "@/lib/format-currency";
+import { lineMetrics, computeOrderTotals, type ManualLineInput } from "@/lib/manual-order-metrics";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -188,16 +189,22 @@ const AdminDevisEditer = () => {
       .slice(0, 50);
   }, [customers, customerSearch]);
 
-  const totals = useMemo(() => {
-    let ht = 0;
-    let tva = 0;
-    lines.forEach((l) => {
-      const lineHt = l.qty * l.unit_price_ht_cents;
-      ht += lineHt;
-      tva += Math.round((lineHt * l.vat_rate) / 100);
-    });
-    return { ht, tva, ttc: ht + tva };
-  }, [lines]);
+  const lineToMetricInput = (l: Line): ManualLineInput => ({
+    quantity: l.qty,
+    unit_price_excl_vat: l.unit_price_ht_cents / 100,
+    vat_rate: l.vat_rate,
+    unit_cost_excl_vat:
+      l.unit_cost_ht_cents != null && l.unit_cost_ht_cents > 0
+        ? l.unit_cost_ht_cents / 100
+        : "",
+    commission_rate: l.commission_rate != null ? l.commission_rate : "",
+    commission_basis: l.commission_rate != null ? "margin" : "ca",
+  });
+
+  const totals = useMemo(() => computeOrderTotals(lines.map(lineToMetricInput)), [lines]);
+  const grossMarginPct = totals.hasAnyCost && totals.excl > 0
+    ? (totals.gross / totals.excl) * 100
+    : null;
 
   const updateLine = (i: number, patch: Partial<Line>) => {
     setLines((prev) => prev.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
@@ -399,17 +406,21 @@ const AdminDevisEditer = () => {
               <thead className="bg-slate-50">
                 <tr>
                   <th className="text-left px-2 py-2 text-[11px] uppercase text-slate-500">Libellé</th>
-                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-20">Qté</th>
-                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-32">PU HT (€)</th>
-                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-20">TVA %</th>
-                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-24" title="Commission MediKong (% de la marge). Vide = utiliser le contrat vendeur.">Com %</th>
-                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-28">Total HT</th>
+                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-16">Qté</th>
+                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-24">PU HT (€)</th>
+                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-24" title="Prix d'achat HT par unité (coût). Vide = inconnu, marge non calculée.">Achat HT (€)</th>
+                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-16">TVA %</th>
+                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-20" title="Commission MediKong (% de la marge). Vide = utiliser le contrat vendeur.">Com %</th>
+                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-24">Total HT</th>
+                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-24" title="Marge brute = CA HT − coût d'achat">Marge €</th>
+                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-16">Marge %</th>
                   <th className="w-10"></th>
                 </tr>
               </thead>
               <tbody>
                 {lines.map((l, i) => {
-                  const lineHt = l.qty * l.unit_price_ht_cents;
+                  const m = lineMetrics(lineToMetricInput(l));
+                  const marginPct = m.hasCost && m.ca > 0 ? (m.gross / m.ca) * 100 : null;
                   return (
                     <tr key={i} className="border-t">
                       <td className="px-2 py-1">
@@ -445,6 +456,22 @@ const AdminDevisEditer = () => {
                       <td className="px-2 py-1">
                         <Input
                           type="number"
+                          step="0.01"
+                          min={0}
+                          placeholder="—"
+                          value={l.unit_cost_ht_cents != null ? (l.unit_cost_ht_cents / 100).toString() : ""}
+                          onChange={(e) => {
+                            const v = e.target.value.trim();
+                            updateLine(i, {
+                              unit_cost_ht_cents: v === "" ? null : Math.round((Number(v) || 0) * 100),
+                            });
+                          }}
+                          className="text-right"
+                        />
+                      </td>
+                      <td className="px-2 py-1">
+                        <Input
+                          type="number"
                           min={0}
                           max={100}
                           step="0.5"
@@ -468,7 +495,25 @@ const AdminDevisEditer = () => {
                           className="text-right"
                         />
                       </td>
-                      <td className="px-2 py-2 text-right font-medium">{fmtEur(lineHt / 100)} €</td>
+                      <td className="px-2 py-2 text-right font-medium">{fmtEur(m.ca)} €</td>
+                      <td className="px-2 py-2 text-right">
+                        {m.hasCost ? (
+                          <span className={m.gross >= 0 ? "text-emerald-700 font-medium" : "text-rose-700 font-medium"}>
+                            {fmtEur(m.gross)} €
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
+                      </td>
+                      <td className="px-2 py-2 text-right text-xs">
+                        {marginPct != null ? (
+                          <span className={marginPct >= 0 ? "text-emerald-700" : "text-rose-700"}>
+                            {marginPct.toFixed(1)}%
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
+                      </td>
                       <td className="px-2 py-1">
                         <Button
                           size="icon"
@@ -486,23 +531,37 @@ const AdminDevisEditer = () => {
               </tbody>
               <tfoot className="bg-slate-50/40">
                 <tr className="border-t">
-                  <td colSpan={5} className="px-3 py-2 text-right text-slate-500">Total HT</td>
-                  <td className="px-3 py-2 text-right font-medium">{fmtEur(totals.ht / 100)} €</td>
+                  <td colSpan={6} className="px-3 py-2 text-right text-slate-500">CA HTVA</td>
+                  <td className="px-3 py-2 text-right font-medium">{fmtEur(totals.excl)} €</td>
+                  <td className="px-3 py-2 text-right font-medium">
+                    {totals.hasAnyCost ? `${fmtEur(totals.gross)} €` : "—"}
+                  </td>
+                  <td className="px-3 py-2 text-right font-medium text-xs">
+                    {grossMarginPct != null ? `${grossMarginPct.toFixed(1)}%` : "—"}
+                  </td>
                   <td />
                 </tr>
                 <tr>
-                  <td colSpan={5} className="px-3 py-2 text-right text-slate-500">TVA</td>
-                  <td className="px-3 py-2 text-right font-medium">{fmtEur(totals.tva / 100)} €</td>
+                  <td colSpan={6} className="px-3 py-2 text-right text-slate-500">Coût total HT</td>
+                  <td className="px-3 py-2 text-right font-medium" colSpan={3}>
+                    {totals.hasAnyCost ? `${fmtEur(totals.cost)} €` : "—"}
+                  </td>
+                  <td />
+                </tr>
+                <tr>
+                  <td colSpan={6} className="px-3 py-2 text-right text-slate-500">TVA</td>
+                  <td className="px-3 py-2 text-right font-medium" colSpan={3}>{fmtEur(totals.vat)} €</td>
                   <td />
                 </tr>
                 <tr className="border-t bg-[#1C58D9] text-white">
-                  <td colSpan={5} className="px-3 py-2 text-right font-semibold">Total TTC</td>
-                  <td className="px-3 py-2 text-right font-bold">{fmtEur(totals.ttc / 100)} €</td>
+                  <td colSpan={6} className="px-3 py-2 text-right font-semibold">Total TTC</td>
+                  <td className="px-3 py-2 text-right font-bold" colSpan={3}>{fmtEur(totals.incl)} €</td>
                   <td />
                 </tr>
               </tfoot>
             </table>
           </div>
+
 
           <div className="bg-white border rounded-lg p-4 space-y-3">
             <div>
@@ -525,8 +584,57 @@ const AdminDevisEditer = () => {
         </div>
 
         <div className="space-y-4">
-          <div className="bg-white border rounded-lg p-4 space-y-2 sticky top-4">
-            <div className="text-sm font-semibold mb-2">Actions</div>
+          <div className="bg-white border rounded-lg p-4 sticky top-4 space-y-4">
+            <div>
+              <div className="text-sm font-semibold mb-2">Synthèse financière</div>
+              <div className="space-y-1.5 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">CA HTVA</span>
+                  <span className="font-semibold">{fmtEur(totals.excl)} €</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">TVA</span>
+                  <span>{fmtEur(totals.vat)} €</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Coût total HT</span>
+                  <span>{totals.hasAnyCost ? `${fmtEur(totals.cost)} €` : "—"}</span>
+                </div>
+                <div className="flex justify-between border-t pt-1.5">
+                  <span className="text-slate-500">Marge brute</span>
+                  <span className={totals.hasAnyCost ? (totals.gross >= 0 ? "text-emerald-700 font-semibold" : "text-rose-700 font-semibold") : ""}>
+                    {totals.hasAnyCost ? `${fmtEur(totals.gross)} €` : "—"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400">Marge %</span>
+                  <span className="text-slate-600">
+                    {grossMarginPct != null ? `${grossMarginPct.toFixed(1)}%` : "—"}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t pt-1.5">
+                  <span className="text-slate-500">Commission MK</span>
+                  <span className="text-emerald-600 font-semibold">{fmtEur(totals.commission)} €</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Net vendeur</span>
+                  <span className="font-semibold">{fmtEur(totals.netVendor)} €</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400">Marge nette vendeur</span>
+                  <span className="text-slate-600">
+                    {totals.hasAnyCost ? `${fmtEur(totals.netMargin)} €` : "—"}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t pt-1.5">
+                  <span className="font-semibold">Total TTC</span>
+                  <span className="font-bold">{fmtEur(totals.incl)} €</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t pt-3 space-y-2">
+              <div className="text-sm font-semibold mb-1">Actions</div>
             <Button
               onClick={handleSave}
               disabled={saving}
@@ -545,7 +653,8 @@ const AdminDevisEditer = () => {
               Annuler
             </Button>
             <div className="text-xs text-slate-500 pt-2 border-t mt-2">
-              Le PDF sera à re-générer après modification.
+              Le PDF sera à re-généré après modification.
+            </div>
             </div>
           </div>
         </div>

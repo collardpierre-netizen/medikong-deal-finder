@@ -577,6 +577,16 @@ export default function AdminUsers() {
       )}
 
       <UserCreateDialog open={showCreate} onOpenChange={setShowCreate} onCreated={loadUsers} />
+
+      {editProfileOpen && buyerDetail && (
+        <EditBuyerProfileDialog
+          open={editProfileOpen}
+          onClose={() => setEditProfileOpen(false)}
+          customerId={buyerDetail.id}
+          authUserId={buyerDetail.auth_user_id || null}
+          onSaved={(patch) => setBuyerDetail((prev: any) => prev ? { ...prev, ...patch } : prev)}
+        />
+      )}
     </div>
   );
 }

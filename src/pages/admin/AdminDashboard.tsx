@@ -578,14 +578,24 @@ const AdminDashboard = () => {
                     cx="50%"
                     cy="50%"
                     outerRadius={90}
-                    label={(e: any) => `${e.name} (${e.value})`}
+                    label={(e: any) => {
+                      const total = customerTypeBreakdown.reduce((s, r) => s + r.value, 0);
+                      const pct = total > 0 ? Math.round((e.value / total) * 100) : 0;
+                      return `${e.name} (${e.value} · ${pct}%)`;
+                    }}
                     labelLine={false}
                   >
                     {customerTypeBreakdown.map((d, i) => (
                       <Cell key={i} fill={d.color} />
                     ))}
                   </Pie>
-                  <RTooltip formatter={(v: any, n: any) => [`${v} client${Number(v) > 1 ? "s" : ""}`, n]} />
+                  <RTooltip
+                    formatter={(v: any, n: any) => {
+                      const total = customerTypeBreakdown.reduce((s, r) => s + r.value, 0);
+                      const pct = total > 0 ? ((Number(v) / total) * 100).toFixed(1) : "0";
+                      return [`${v} client${Number(v) > 1 ? "s" : ""} (${pct}%)`, n];
+                    }}
+                  />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                 </PieChart>
               </ResponsiveContainer>

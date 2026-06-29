@@ -52,7 +52,7 @@ export const CUSTOMER_TYPE_OPTIONS: { value: string; label: string; color: strin
   { value: "dentist",      label: "Dentiste",           color: "#14B8A6" },
   { value: "veterinary",   label: "Vétérinaire",        color: "#0EA5E9" },
   { value: "nursing_home", label: "MR/MRS (maison de repos)", color: "#EC4899" },
-  { value: "retail",       label: "Retail / Parapharmacie",   color: "#F97316" },
+  { value: "retail",       label: "Retail",                   color: "#F97316" },
   { value: "lab",          label: "Laboratoire",        color: "#8B5CF6" },
   { value: "other",        label: "Autre",              color: "#8B95A5" },
 ];

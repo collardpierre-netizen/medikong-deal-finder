@@ -386,7 +386,9 @@ Deno.serve(async (req) => {
       .map((l: any) => l.vendors)
       .find((v: any) => v && (v.iban || v.bank_name));
 
-    if (vendorWithBank && (order as any).show_payment_info !== false) {
+    // Single source of truth (shared with public_get_order_by_token + vendor payout PDF)
+    const { data: showPaymentInfo } = await adminClient.rpc("order_should_show_payment_info", { _order_id: order.id });
+    if (vendorWithBank && showPaymentInfo !== false) {
       if (y > pageH - 50) { doc.addPage(); y = 20; }
       const bkH = 30;
       doc.setFillColor(...SOFT);

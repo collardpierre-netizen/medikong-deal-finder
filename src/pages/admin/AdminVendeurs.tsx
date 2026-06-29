@@ -345,9 +345,35 @@ const AdminVendeurs = () => {
             </tbody>
           </table>
         )}
-        {!isLoading && filtered.length === 0 && (
-          <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucun vendeur trouvé</div>
-        )}
+        {!isLoading && filtered.length === 0 && (() => {
+          const msg = (error as any)?.message || "";
+          const code = (error as any)?.code || "";
+          const isPermission = code === "42501" || /permission denied|insufficient_privilege|not authorized|RLS/i.test(msg);
+          if (error) {
+            return (
+              <div className="py-12 px-6 text-center text-[13px] space-y-2" style={{ color: "#B42318" }}>
+                <div className="font-semibold">
+                  {isPermission
+                    ? "Impossible de charger les vendeurs : permissions insuffisantes sur la table `vendors`."
+                    : "Impossible de charger les vendeurs."}
+                </div>
+                <div className="text-[12px]" style={{ color: "#8B95A5" }}>
+                  {isPermission
+                    ? "PostgREST a refusé la requête (GRANT manquant pour le rôle authenticated ou RLS trop restrictive). Contactez un administrateur pour restaurer les GRANT SELECT/INSERT/UPDATE/DELETE sur public.vendors."
+                    : msg || "Erreur inconnue."}
+                  {code ? ` (code ${code})` : ""}
+                </div>
+              </div>
+            );
+          }
+          return (
+            <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>
+              {vendors.length === 0
+                ? "Aucun vendeur en base. Si vous en attendiez, vérifiez les GRANT sur public.vendors et les politiques RLS."
+                : "Aucun vendeur ne correspond aux filtres actifs."}
+            </div>
+          );
+        })()}
       </div>
 
       <VendorFormDialog open={showForm} onOpenChange={setShowForm} />

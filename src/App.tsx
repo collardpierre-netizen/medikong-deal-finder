@@ -209,6 +209,7 @@ const AdminContractTemplate = lazyWithRetry(() => import("./pages/admin/AdminCon
 const AdminEmailTemplates = lazyWithRetry(() => import("./pages/admin/AdminEmailTemplates"), "AdminEmailTemplates");
 const AdminDbBackups = lazyWithRetry(() => import("./pages/admin/AdminDbBackups"), "AdminDbBackups");
 const AdminBackupRlsAudit = lazyWithRetry(() => import("./pages/admin/AdminBackupRlsAudit"), "AdminBackupRlsAudit");
+const AdminTableGrantsAudit = lazyWithRetry(() => import("./pages/admin/AdminTableGrantsAudit"), "AdminTableGrantsAudit");
 const AdminRfqCreditsPage = lazyWithRetry(() => import("./pages/admin/AdminRfqCreditsPage"), "AdminRfqCreditsPage");
 const AdminRfqConsolePage = lazyWithRetry(() => import("./pages/admin/AdminRfqConsolePage"), "AdminRfqConsolePage");
 const RfqExternalResponsePage = lazyWithRetry(() => import("./pages/RfqExternalResponsePage"), "RfqExternalResponsePage");
@@ -486,6 +487,7 @@ const App = () => (
               <Route path="brands/:slug/edit" element={<LP><AdminBrandTransparenceEdit /></LP>} />
               <Route path="db-backups" element={<LP><AdminDbBackups /></LP>} />
               <Route path="backup-rls-audit" element={<LP><AdminBackupRlsAudit /></LP>} />
+              <Route path="table-grants-audit" element={<LP><AdminTableGrantsAudit /></LP>} />
               <Route path="rfq" element={<LP><AdminRfqConsolePage /></LP>} />
               <Route path="rfq-credits" element={<LP><AdminRfqCreditsPage /></LP>} />
               <Route path="rfq-ledger" element={<LP><AdminRfqLedgerPage /></LP>} />

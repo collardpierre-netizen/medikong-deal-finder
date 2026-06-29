@@ -559,6 +559,7 @@ const App = () => (
               <Route path="account-invitations" element={<LP><AdminAccountInvitations /></LP>} />
               <Route path="vendor-owner-alignment" element={<LP><AdminVendorOwnerAlignment /></LP>} />
               <Route path="audit-log" element={<LP><AdminAuditLog /></LP>} />
+              <Route path="audit-actions" element={<LP><AdminActionsAuditPage /></LP>} />
               <Route path="contract-audit" element={<LP><AdminContractAudit /></LP>} />
               <Route path="contract-template" element={<LP><AdminContractTemplate /></LP>} />
               <Route path="email-templates" element={<LP><AdminEmailTemplates /></LP>} />

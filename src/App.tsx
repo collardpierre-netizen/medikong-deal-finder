@@ -358,6 +358,7 @@ const App = () => (
         <BrowserRouter>
           <EnvNoIndex />
           <ImpersonationBanner />
+          <ImpersonationPageTracker />
           <LazyRouteBoundary>
           <Suspense fallback={<PageLoader />}>
           <Routes>

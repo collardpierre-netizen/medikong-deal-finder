@@ -42,7 +42,7 @@ const AdminDevis = () => {
     }
   };
 
-  const { data: quotes = [], isLoading } = useQuery({
+  const { data: quotes = [], isLoading, error: quotesError } = useQuery({
     queryKey: ["admin-quotes"],
     queryFn: async () => {
       const { data, error } = await supabase

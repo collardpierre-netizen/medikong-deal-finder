@@ -21,7 +21,7 @@ const AdminShipments = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [modeFilter, setModeFilter] = useState<string>("all");
 
-  const { data: shipments = [], isLoading } = useQuery({
+  const { data: shipments = [], isLoading, error: shipmentsError } = useQuery({
     queryKey: ["admin-all-shipments"],
     queryFn: async () => {
       const { data, error } = await supabase

@@ -118,6 +118,7 @@ const AdminCommandeDetail = () => {
   }, [order]);
 
   if (isLoading) return <div className="p-6 text-slate-500">Chargement…</div>;
+  if (orderError) return <div className="p-6"><VendorsEmbedError error={orderError} /></div>;
   if (!order) return <div className="p-6 text-slate-500">Commande introuvable. <Link to="/admin/commandes" className="text-sky-600">Retour</Link></div>;
 
 

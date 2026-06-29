@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { fmtEur } from "@/lib/format-currency";
 import { ArrowLeft, FileDown, Pencil, Copy, Link2, ExternalLink, Lock, Wallet } from "lucide-react";
 import { lineMetrics, type ManualLineInput } from "@/lib/manual-order-metrics";
+import { VendorsEmbedError } from "@/lib/vendors-embed-error";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Brouillon",
@@ -29,7 +30,7 @@ const AdminCommandeDetail = () => {
   const [pinInput, setPinInput] = useState<string>("");
   const [expiresInput, setExpiresInput] = useState<string>("");
 
-  const { data: order, isLoading } = useQuery({
+  const { data: order, isLoading, error: orderError } = useQuery({
     queryKey: ["admin-order", id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -117,6 +118,7 @@ const AdminCommandeDetail = () => {
   }, [order]);
 
   if (isLoading) return <div className="p-6 text-slate-500">Chargement…</div>;
+  if (orderError) return <div className="p-6"><VendorsEmbedError error={orderError} /></div>;
   if (!order) return <div className="p-6 text-slate-500">Commande introuvable. <Link to="/admin/commandes" className="text-sky-600">Retour</Link></div>;
 
 

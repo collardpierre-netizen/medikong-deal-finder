@@ -8,6 +8,7 @@ import { fmtEur } from "@/lib/format-currency";
 import { FileText, Send, Clock, CheckCircle2, XCircle, ArrowRightCircle, Copy } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { VendorsEmbedError } from "@/lib/vendors-embed-error";
 
 const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }> = {
   draft: { bg: "#F1F5F9", color: "#475569", label: "Brouillon" },
@@ -41,7 +42,7 @@ const AdminDevis = () => {
     }
   };
 
-  const { data: quotes = [], isLoading } = useQuery({
+  const { data: quotes = [], isLoading, error: quotesError } = useQuery({
     queryKey: ["admin-quotes"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -126,8 +127,15 @@ const AdminDevis = () => {
           <tbody>
             {isLoading ? (
               <tr><td colSpan={9} className="text-center text-slate-400 py-10">Chargement…</td></tr>
-            ) : filtered.length === 0 ? (
-              <tr><td colSpan={9} className="text-center text-slate-400 py-10">Aucun devis</td></tr>
+            ) : (quotesError || filtered.length === 0) ? (
+              <tr><td colSpan={9} className="py-0">
+                <VendorsEmbedError
+                  error={quotesError}
+                  rowCount={filtered.length}
+                  hasActiveFilters={statusFilter !== "all" || !!search}
+                  emptyTitle="Aucun devis"
+                />
+              </td></tr>
             ) : filtered.map((q) => {
               const s = STATUS_STYLES[q.status] ?? STATUS_STYLES.draft;
               return (

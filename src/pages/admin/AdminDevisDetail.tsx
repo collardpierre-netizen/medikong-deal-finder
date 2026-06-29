@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { fmtEur } from "@/lib/format-currency";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Send, FileDown, RefreshCw, ArrowRightCircle, Copy, Eye, CheckCircle2, XCircle, Clock, Pencil, Trash2, Check, X } from "lucide-react";
+import { VendorsEmbedError } from "@/lib/vendors-embed-error";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Brouillon", sent: "Envoyé", accepted: "Accepté", declined: "Refusé", paid: "Payé", converted: "Converti",
@@ -20,7 +21,7 @@ const AdminDevisDetail = () => {
   const [busy, setBusy] = useState<string | null>(null);
   const [recipientOverride, setRecipientOverride] = useState("");
 
-  const { data: quote, isLoading, refetch } = useQuery({
+  const { data: quote, isLoading, refetch, error: quoteError } = useQuery({
     queryKey: ["admin-quote", id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -35,6 +36,7 @@ const AdminDevisDetail = () => {
   });
 
   if (isLoading) return <div className="p-6 text-slate-500">Chargement…</div>;
+  if (quoteError) return <div className="p-6"><VendorsEmbedError error={quoteError} /></div>;
   if (!quote) return <div className="p-6 text-slate-500">Devis introuvable. <Link to="/admin/devis" className="text-sky-600">Retour</Link></div>;
 
   const lines = (quote.lines || []).sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));

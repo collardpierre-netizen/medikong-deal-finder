@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Truck, Package, Search, CheckCircle2, Clock, AlertTriangle, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { VendorsEmbedError } from "@/lib/vendors-embed-error";
 
 const modeLabel: Record<string, string> = {
   no_shipping: "Manuel",
@@ -20,7 +21,7 @@ const AdminShipments = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [modeFilter, setModeFilter] = useState<string>("all");
 
-  const { data: shipments = [], isLoading } = useQuery({
+  const { data: shipments = [], isLoading, error: shipmentsError } = useQuery({
     queryKey: ["admin-all-shipments"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -93,8 +94,13 @@ const AdminShipments = () => {
       <div className="bg-white rounded-lg border overflow-hidden" style={{ borderColor: "#E2E8F0" }}>
         {isLoading ? (
           <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Chargement…</div>
-        ) : filtered.length === 0 ? (
-          <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune expédition trouvée</div>
+        ) : (shipmentsError || filtered.length === 0) ? (
+          <VendorsEmbedError
+            error={shipmentsError}
+            rowCount={filtered.length}
+            hasActiveFilters={!!search || statusFilter !== "all" || modeFilter !== "all"}
+            emptyTitle="Aucune expédition trouvée"
+          />
         ) : (
           <table className="w-full text-left">
             <thead>

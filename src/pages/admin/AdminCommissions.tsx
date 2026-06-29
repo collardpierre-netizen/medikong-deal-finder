@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import { Plus, Pencil, Trash2, Percent, Layers, BarChart3, Split, Star, UserPlus, Building2 } from "lucide-react";
 import { useCategories, useBrands } from "@/hooks/useAdminData";
+import { VendorsEmbedError } from "@/lib/vendors-embed-error";
 import type { Tables } from "@/integrations/supabase/types";
 
 type MarginRule = Tables<"margin_rules">;
@@ -43,7 +44,7 @@ export default function AdminCommissions() {
   });
 
   // Vendor-specific rules
-  const { data: vendorRules = [] } = useQuery({
+  const { data: vendorRules = [], error: vendorRulesError } = useQuery({
     queryKey: ["admin-commission-vendor-rules"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -56,7 +57,7 @@ export default function AdminCommissions() {
     },
   });
 
-  const { data: vendors = [] } = useQuery({
+  const { data: vendors = [], error: vendorsError } = useQuery({
     queryKey: ["admin-vendors-for-commission"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -311,8 +312,14 @@ export default function AdminCommissions() {
                   </td>
                 </tr>
               ))}
-              {vendorRules.length === 0 && (
-                <tr><td colSpan={5} className="py-8 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune règle spécifique. Tous les vendeurs utilisent les règles globales.</td></tr>
+              {(vendorRulesError || vendorsError || vendorRules.length === 0) && (
+                <tr><td colSpan={5} className="py-0">
+                  <VendorsEmbedError
+                    error={vendorRulesError ?? vendorsError}
+                    rowCount={vendorRules.length}
+                    emptyTitle="Aucune règle spécifique. Tous les vendeurs utilisent les règles globales."
+                  />
+                </td></tr>
               )}
             </tbody>
           </table>

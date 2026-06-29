@@ -24029,6 +24029,38 @@ export type Database = {
           vendor_id: string
         }[]
       }
+      get_my_restock_transaction_contact: {
+        Args: { _tx_id: string }
+        Returns: {
+          buyer_email: string
+          buyer_phone: string
+          buyer_vat_number: string
+          id: string
+        }[]
+      }
+      get_my_vendor_banking: {
+        Args: never
+        Returns: {
+          bank_name: string
+          bic: string
+          iban: string
+          vendor_id: string
+        }[]
+      }
+      get_offer_cost_details: {
+        Args: { _offer_id: string }
+        Returns: {
+          applied_margin_percentage: number
+          commission_model: string
+          commission_rate: number
+          fixed_commission_amount: number
+          id: string
+          margin_split_pct: number
+          purchase_price: number
+          purchase_price_excl_vat: number
+          qogita_base_price: number
+        }[]
+      }
       get_pickup_details: { Args: { _transaction_id: string }; Returns: Json }
       get_product_category_anomalies: {
         Args: { _product_ids: string[] }

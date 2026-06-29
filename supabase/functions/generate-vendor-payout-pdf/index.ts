@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
         unit_price_excl_vat: Number(l.unit_price_excl_vat) || 0,
         vat_rate: Number(l.vat_rate) || 0,
         line_total_excl_vat: (Number(l.quantity) || 0) * (Number(l.unit_price_excl_vat) || 0),
-        manual_label: l.offer_label || l.manual_label,
+        manual_label: l.manual_label || l.offer_label,
         unit_cost_excl_vat: l.unit_cost_excl_vat ?? null,
         commission_rate: l.commission_rate ?? null,
         commission_amount: l.commission_amount ?? null,

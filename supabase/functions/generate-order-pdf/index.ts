@@ -92,7 +92,7 @@ Deno.serve(async (req) => {
           unit_price_excl_vat: unit,
           vat_rate: vatR,
           line_total_excl_vat: ht,
-          manual_label: l.offer_label || l.manual_label,
+          manual_label: l.manual_label || l.offer_label,
           cnk_code: l.cnk_code ?? (prod as any)?.cnk_code ?? null,
           products: prod,
           vendors: vendMap.get(l.vendor_id) || null,

@@ -25,6 +25,8 @@ type Line = {
   vat_rate: number;
   unit_cost_ht_cents?: number | null;
   commission_rate?: number | null;
+  commission_amount_cents?: number | null;
+  commission_basis?: "ca" | "margin" | null;
 };
 
 const AdminDevisEditer = () => {
@@ -163,6 +165,8 @@ const AdminDevisEditer = () => {
         vat_rate: Number(l.vat_rate || 21),
         unit_cost_ht_cents: l.unit_cost_ht_cents,
         commission_rate: l.commission_rate != null ? Number(l.commission_rate) : null,
+        commission_amount_cents: l.commission_amount_cents != null ? Number(l.commission_amount_cents) : null,
+        commission_basis: (l.commission_basis === "margin" || l.commission_basis === "ca") ? l.commission_basis : null,
       }))
     );
   }, [quote]);
@@ -198,7 +202,8 @@ const AdminDevisEditer = () => {
         ? l.unit_cost_ht_cents / 100
         : "",
     commission_rate: l.commission_rate != null ? l.commission_rate : "",
-    commission_basis: l.commission_rate != null ? "margin" : "ca",
+    commission_amount: l.commission_amount_cents != null ? l.commission_amount_cents / 100 : "",
+    commission_basis: l.commission_basis === "margin" ? "margin" : "ca",
   });
 
   const totals = useMemo(() => computeOrderTotals(lines.map(lineToMetricInput)), [lines]);

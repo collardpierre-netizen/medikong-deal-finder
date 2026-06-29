@@ -25,6 +25,8 @@ type Line = {
   vat_rate: number;
   unit_cost_ht_cents?: number | null;
   commission_rate?: number | null;
+  commission_amount_cents?: number | null;
+  commission_basis?: "ca" | "margin" | null;
 };
 
 const AdminDevisEditer = () => {

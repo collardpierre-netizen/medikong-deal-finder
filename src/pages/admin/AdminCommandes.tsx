@@ -953,6 +953,44 @@ const AdminCommandes = () => {
                       );
                     })}
                   </tbody>
+                  {filtered.length > 0 && (() => {
+                    const tHT = filtered.reduce((a, o) => a + o.amountHT, 0);
+                    const tTVA = filtered.reduce((a, o) => a + o.tva, 0);
+                    const tTTC = filtered.reduce((a, o) => a + o.ttc, 0);
+                    const tMargin = filtered.reduce((a, o) => a + (o.hasCost ? o.grossMarginEur : 0), 0);
+                    const tMarginBase = filtered.reduce((a, o) => a + (o.hasCost ? o.amountHT : 0), 0);
+                    const tMarginPct = tMarginBase > 0 ? (tMargin / tMarginBase) * 100 : 0;
+                    const tCommission = filtered.reduce((a, o) => a + o.commissionEur, 0);
+                    const tCommissionPct = tHT > 0 ? (tCommission / tHT) * 100 : 0;
+                    return (
+                      <tfoot>
+                        <tr style={{ backgroundColor: "#F1F5F9", borderTop: "2px solid #CBD5E1" }}>
+                          <td colSpan={2} className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider" style={{ color: "#1D2530" }}>
+                            Total · {filtered.length} commande{filtered.length > 1 ? "s" : ""}
+                          </td>
+                          <td colSpan={5}></td>
+                          <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#1D2530" }}>{fmt(tHT)}</td>
+                          <td className="px-3 py-3 text-[11px] font-mono" style={{ color: "#616B7C" }}>{fmt(tTVA)}</td>
+                          <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#059669" }}>{fmt(tTTC)}</td>
+                          <td className="px-3 py-3 font-mono">
+                            {tMarginBase > 0 ? (
+                              <div className="leading-tight">
+                                <div className="text-[12px] font-bold" style={{ color: "#0E7490" }}>{fmt(tMargin)}</div>
+                                <div className="text-[10px]" style={{ color: "#8B95A5" }}>{tMarginPct.toFixed(2)} %</div>
+                              </div>
+                            ) : <span className="text-[11px]" style={{ color: "#CBD5E1" }}>—</span>}
+                          </td>
+                          <td className="px-3 py-3 font-mono">
+                            <div className="leading-tight">
+                              <div className="text-[12px] font-bold" style={{ color: "#059669" }}>{fmt(tCommission)}</div>
+                              <div className="text-[10px]" style={{ color: "#8B95A5" }}>{tCommissionPct.toFixed(2)} %</div>
+                            </div>
+                          </td>
+                          <td colSpan={4}></td>
+                        </tr>
+                      </tfoot>
+                    );
+                  })()}
                 </table>
               </div>
             )}

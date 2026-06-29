@@ -497,6 +497,8 @@ export default function AdminUsers() {
                     <Button onClick={() => handleDelete(selectedUser)} variant="ghost" size="sm" className="w-full text-destructive hover:bg-destructive/10 gap-1.5">
                       <Trash2 size={14} /> Supprimer définitivement
                     </Button>
+
+                    <UserAuditTimeline customerId={buyerDetail.id} authUserId={selectedUser?.userId || null} />
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-8">Aucune donnée trouvée</p>

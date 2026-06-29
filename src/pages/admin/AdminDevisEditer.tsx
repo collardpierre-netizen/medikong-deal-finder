@@ -406,17 +406,21 @@ const AdminDevisEditer = () => {
               <thead className="bg-slate-50">
                 <tr>
                   <th className="text-left px-2 py-2 text-[11px] uppercase text-slate-500">Libellé</th>
-                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-20">Qté</th>
-                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-32">PU HT (€)</th>
-                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-20">TVA %</th>
-                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-24" title="Commission MediKong (% de la marge). Vide = utiliser le contrat vendeur.">Com %</th>
-                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-28">Total HT</th>
+                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-16">Qté</th>
+                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-24">PU HT (€)</th>
+                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-24" title="Prix d'achat HT par unité (coût). Vide = inconnu, marge non calculée.">Achat HT (€)</th>
+                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-16">TVA %</th>
+                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-20" title="Commission MediKong (% de la marge). Vide = utiliser le contrat vendeur.">Com %</th>
+                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-24">Total HT</th>
+                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-24" title="Marge brute = CA HT − coût d'achat">Marge €</th>
+                  <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-16">Marge %</th>
                   <th className="w-10"></th>
                 </tr>
               </thead>
               <tbody>
                 {lines.map((l, i) => {
-                  const lineHt = l.qty * l.unit_price_ht_cents;
+                  const m = lineMetrics(lineToMetricInput(l));
+                  const marginPct = m.hasCost && m.ca > 0 ? (m.gross / m.ca) * 100 : null;
                   return (
                     <tr key={i} className="border-t">
                       <td className="px-2 py-1">
@@ -452,6 +456,22 @@ const AdminDevisEditer = () => {
                       <td className="px-2 py-1">
                         <Input
                           type="number"
+                          step="0.01"
+                          min={0}
+                          placeholder="—"
+                          value={l.unit_cost_ht_cents != null ? (l.unit_cost_ht_cents / 100).toString() : ""}
+                          onChange={(e) => {
+                            const v = e.target.value.trim();
+                            updateLine(i, {
+                              unit_cost_ht_cents: v === "" ? null : Math.round((Number(v) || 0) * 100),
+                            });
+                          }}
+                          className="text-right"
+                        />
+                      </td>
+                      <td className="px-2 py-1">
+                        <Input
+                          type="number"
                           min={0}
                           max={100}
                           step="0.5"
@@ -475,7 +495,25 @@ const AdminDevisEditer = () => {
                           className="text-right"
                         />
                       </td>
-                      <td className="px-2 py-2 text-right font-medium">{fmtEur(lineHt / 100)} €</td>
+                      <td className="px-2 py-2 text-right font-medium">{fmtEur(m.ca)} €</td>
+                      <td className="px-2 py-2 text-right">
+                        {m.hasCost ? (
+                          <span className={m.gross >= 0 ? "text-emerald-700 font-medium" : "text-rose-700 font-medium"}>
+                            {fmtEur(m.gross)} €
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
+                      </td>
+                      <td className="px-2 py-2 text-right text-xs">
+                        {marginPct != null ? (
+                          <span className={marginPct >= 0 ? "text-emerald-700" : "text-rose-700"}>
+                            {marginPct.toFixed(1)}%
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
+                      </td>
                       <td className="px-2 py-1">
                         <Button
                           size="icon"
@@ -493,23 +531,37 @@ const AdminDevisEditer = () => {
               </tbody>
               <tfoot className="bg-slate-50/40">
                 <tr className="border-t">
-                  <td colSpan={5} className="px-3 py-2 text-right text-slate-500">Total HT</td>
-                  <td className="px-3 py-2 text-right font-medium">{fmtEur(totals.ht / 100)} €</td>
+                  <td colSpan={6} className="px-3 py-2 text-right text-slate-500">CA HTVA</td>
+                  <td className="px-3 py-2 text-right font-medium">{fmtEur(totals.excl)} €</td>
+                  <td className="px-3 py-2 text-right font-medium">
+                    {totals.hasAnyCost ? `${fmtEur(totals.gross)} €` : "—"}
+                  </td>
+                  <td className="px-3 py-2 text-right font-medium text-xs">
+                    {grossMarginPct != null ? `${grossMarginPct.toFixed(1)}%` : "—"}
+                  </td>
                   <td />
                 </tr>
                 <tr>
-                  <td colSpan={5} className="px-3 py-2 text-right text-slate-500">TVA</td>
-                  <td className="px-3 py-2 text-right font-medium">{fmtEur(totals.tva / 100)} €</td>
+                  <td colSpan={6} className="px-3 py-2 text-right text-slate-500">Coût total HT</td>
+                  <td className="px-3 py-2 text-right font-medium" colSpan={3}>
+                    {totals.hasAnyCost ? `${fmtEur(totals.cost)} €` : "—"}
+                  </td>
+                  <td />
+                </tr>
+                <tr>
+                  <td colSpan={6} className="px-3 py-2 text-right text-slate-500">TVA</td>
+                  <td className="px-3 py-2 text-right font-medium" colSpan={3}>{fmtEur(totals.vat)} €</td>
                   <td />
                 </tr>
                 <tr className="border-t bg-[#1C58D9] text-white">
-                  <td colSpan={5} className="px-3 py-2 text-right font-semibold">Total TTC</td>
-                  <td className="px-3 py-2 text-right font-bold">{fmtEur(totals.ttc / 100)} €</td>
+                  <td colSpan={6} className="px-3 py-2 text-right font-semibold">Total TTC</td>
+                  <td className="px-3 py-2 text-right font-bold" colSpan={3}>{fmtEur(totals.incl)} €</td>
                   <td />
                 </tr>
               </tfoot>
             </table>
           </div>
+
 
           <div className="bg-white border rounded-lg p-4 space-y-3">
             <div>

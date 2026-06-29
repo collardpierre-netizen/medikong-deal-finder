@@ -1379,18 +1379,31 @@ function LineRow({
               </div>
             )}
             {(line.offer_id || line.product_id) && (
-              <div className="mt-1 text-xs text-muted-foreground">
-                {line.offer_id ? "Offre liée" : "Produit lié (sans offre)"} : {line.offer_label}
-                {(line.gtin || line.cnk_code) && (
-                  <span className="ml-1 text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
-                    {line.gtin ? `EAN ${line.gtin}` : ""}
-                    {line.gtin && line.cnk_code ? " · " : ""}
-                    {line.cnk_code ? `CNK ${line.cnk_code}` : ""}
-                  </span>
-                )}
-                {" "}·{" "}
-                <button type="button" className="underline" onClick={() => { onPatch({ offer_id: undefined, product_id: undefined, offer_label: undefined, gtin: undefined, cnk_code: undefined }); setOfferSearch(""); }}>changer</button>
-              </div>
+              <>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {line.offer_id ? "Offre liée" : "Produit lié (sans offre)"} : {line.offer_label}
+                  {(line.gtin || line.cnk_code) && (
+                    <span className="ml-1 text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                      {line.gtin ? `EAN ${line.gtin}` : ""}
+                      {line.gtin && line.cnk_code ? " · " : ""}
+                      {line.cnk_code ? `CNK ${line.cnk_code}` : ""}
+                    </span>
+                  )}
+                  {" "}·{" "}
+                  <button type="button" className="underline" onClick={() => { onPatch({ offer_id: undefined, product_id: undefined, offer_label: undefined, manual_label: undefined, gtin: undefined, cnk_code: undefined }); setOfferSearch(""); }}>changer le produit lié</button>
+                </div>
+                <div className="mt-2">
+                  <Label className="text-xs">Libellé affiché (override)</Label>
+                  <Input
+                    placeholder={line.offer_label ?? "Libellé override (laisser vide pour utiliser le nom du produit lié)"}
+                    value={line.manual_label ?? ""}
+                    onChange={(e) => onPatch({ manual_label: e.target.value })}
+                  />
+                  <p className="mt-1 text-[10px] text-muted-foreground">
+                    Modifie le libellé visible (commande, PDF, page publique). Le lien produit, EAN et CNK sont conservés.
+                  </p>
+                </div>
+              </>
             )}
           </div>
 
@@ -1404,6 +1417,7 @@ function LineRow({
             />
           </div>
         )}
+
       </div>
 
       <div className="grid grid-cols-4 gap-2">

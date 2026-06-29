@@ -23667,6 +23667,7 @@ export type Database = {
         Args: { _order_id: string; _reason?: string }
         Returns: undefined
       }
+      admin_test_show_payment_info_toggle: { Args: never; Returns: Json }
       admin_unmapped_categories: {
         Args: { _limit?: number }
         Returns: {

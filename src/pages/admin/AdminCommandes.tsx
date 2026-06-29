@@ -511,16 +511,35 @@ const AdminCommandes = () => {
       } />
 
       {/* Sélecteur de période — applique à tous les KPIs et toutes les vues */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div className="flex items-center gap-1 p-1 rounded-lg" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
           <span className="px-2 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>Période</span>
           {PERIODS.map(p => (
-            <button key={p.key} onClick={() => setPeriod(p.key)}
+            <button key={p.key} onClick={() => { setPeriod(p.key); setDateFrom(""); setDateTo(""); }}
               className="px-3 py-1.5 rounded-md text-[12px] font-semibold transition-colors"
-              style={{ backgroundColor: period === p.key ? "#1B5BDA" : "transparent", color: period === p.key ? "#fff" : "#616B7C" }}>
+              style={{ backgroundColor: period === p.key && !hasCustomDates ? "#1B5BDA" : "transparent", color: period === p.key && !hasCustomDates ? "#fff" : "#616B7C" }}>
               {p.label}
             </button>
           ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>
+            Du
+            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
+              className="px-2 py-1 rounded-md text-[12px] font-medium" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#1D2530" }} />
+          </label>
+          <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>
+            Au
+            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
+              className="px-2 py-1 rounded-md text-[12px] font-medium" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#1D2530" }} />
+          </label>
+          {hasCustomDates && (
+            <button onClick={() => { setDateFrom(""); setDateTo(""); }}
+              className="px-2 py-1 rounded-md text-[11px] font-semibold"
+              style={{ backgroundColor: "#FEF2F2", color: "#B91C1C", border: "1px solid #FCA5A5" }}>
+              Réinitialiser
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-1.5 text-[12px] font-medium" style={{ color: "#616B7C" }}>
           <CalendarClock size={14} style={{ color: "#8B95A5" }} />

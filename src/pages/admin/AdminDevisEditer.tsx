@@ -202,7 +202,8 @@ const AdminDevisEditer = () => {
         ? l.unit_cost_ht_cents / 100
         : "",
     commission_rate: l.commission_rate != null ? l.commission_rate : "",
-    commission_basis: l.commission_rate != null ? "margin" : "ca",
+    commission_amount: l.commission_amount_cents != null ? l.commission_amount_cents / 100 : "",
+    commission_basis: l.commission_basis === "margin" ? "margin" : "ca",
   });
 
   const totals = useMemo(() => computeOrderTotals(lines.map(lineToMetricInput)), [lines]);

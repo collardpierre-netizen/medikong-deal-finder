@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, Trash2, Save, UserPlus } from "lucide-react";
 import { fmtEur } from "@/lib/format-currency";
+import { lineMetrics, computeOrderTotals, type ManualLineInput } from "@/lib/manual-order-metrics";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";

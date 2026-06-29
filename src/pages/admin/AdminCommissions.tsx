@@ -57,7 +57,7 @@ export default function AdminCommissions() {
     },
   });
 
-  const { data: vendors = [] } = useQuery({
+  const { data: vendors = [], error: vendorsError } = useQuery({
     queryKey: ["admin-vendors-for-commission"],
     queryFn: async () => {
       const { data, error } = await supabase

@@ -567,6 +567,24 @@ const AdminDashboard = () => {
           <p className="text-[11px] mb-4" style={{ color: "#8B95A5" }}>
             Répartition du portefeuille clients (gérée dans <button onClick={() => navigate("/admin/customers")} className="underline hover:text-[#1B5BDA]">/admin/customers</button>)
           </p>
+          {(() => {
+            const total = customerTypeBreakdown.reduce((s, r) => s + r.value, 0);
+            const retail = customerTypeBreakdown.find((r) => r.name === "Retail");
+            const retailCount = retail?.value || 0;
+            const retailPct = total > 0 ? ((retailCount / total) * 100).toFixed(1) : "0";
+            return (
+              <div className="mb-4 rounded-lg p-3 flex items-center justify-between" style={{ backgroundColor: "#FFF7ED", border: "1px solid #FDBA74" }}>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: "#F97316" }} />
+                  <span className="text-[13px] font-semibold" style={{ color: "#7C2D12" }}>Retail</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[16px] font-bold" style={{ color: "#C2410C" }}>{retailCount}</span>
+                  <span className="text-[12px] ml-1 font-medium" style={{ color: "#9A3412" }}>({retailPct}%)</span>
+                </div>
+              </div>
+            );
+          })()}
           {customerTypeBreakdown.length > 0 ? (
             <div style={{ width: "100%", height: 260 }}>
               <ResponsiveContainer>

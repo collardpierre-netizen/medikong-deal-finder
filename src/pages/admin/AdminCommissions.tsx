@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import { Plus, Pencil, Trash2, Percent, Layers, BarChart3, Split, Star, UserPlus, Building2 } from "lucide-react";
 import { useCategories, useBrands } from "@/hooks/useAdminData";
+import { VendorsEmbedError } from "@/lib/vendors-embed-error";
 import type { Tables } from "@/integrations/supabase/types";
 
 type MarginRule = Tables<"margin_rules">;

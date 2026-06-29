@@ -127,8 +127,15 @@ const AdminDevis = () => {
           <tbody>
             {isLoading ? (
               <tr><td colSpan={9} className="text-center text-slate-400 py-10">Chargement…</td></tr>
-            ) : filtered.length === 0 ? (
-              <tr><td colSpan={9} className="text-center text-slate-400 py-10">Aucun devis</td></tr>
+            ) : (quotesError || filtered.length === 0) ? (
+              <tr><td colSpan={9} className="py-0">
+                <VendorsEmbedError
+                  error={quotesError}
+                  rowCount={filtered.length}
+                  hasActiveFilters={statusFilter !== "all" || !!search}
+                  emptyTitle="Aucun devis"
+                />
+              </td></tr>
             ) : filtered.map((q) => {
               const s = STATUS_STYLES[q.status] ?? STATUS_STYLES.draft;
               return (

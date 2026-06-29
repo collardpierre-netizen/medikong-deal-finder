@@ -94,8 +94,13 @@ const AdminShipments = () => {
       <div className="bg-white rounded-lg border overflow-hidden" style={{ borderColor: "#E2E8F0" }}>
         {isLoading ? (
           <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Chargement…</div>
-        ) : filtered.length === 0 ? (
-          <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Aucune expédition trouvée</div>
+        ) : (shipmentsError || filtered.length === 0) ? (
+          <VendorsEmbedError
+            error={shipmentsError}
+            rowCount={filtered.length}
+            hasActiveFilters={!!search || statusFilter !== "all" || modeFilter !== "all"}
+            emptyTitle="Aucune expédition trouvée"
+          />
         ) : (
           <table className="w-full text-left">
             <thead>

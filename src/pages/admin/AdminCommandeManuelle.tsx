@@ -1390,7 +1390,7 @@ function LineRow({
                     </span>
                   )}
                   {" "}·{" "}
-                  <button type="button" className="underline" onClick={() => { onPatch({ offer_id: undefined, product_id: undefined, offer_label: undefined, manual_label: undefined, gtin: undefined, cnk_code: undefined }); setOfferSearch(""); }}>changer le produit lié</button>
+                  <button type="button" className="underline" onClick={() => { onPatch({ offer_id: undefined, product_id: undefined, offer_label: undefined, manual_label: undefined, gtin: undefined, cnk_code: undefined }); setOfferSearch(""); toast.info("Produit lié changé — le libellé override a été réinitialisé."); }}>changer le produit lié</button>
                 </div>
                 <div className="mt-1 flex items-start gap-1.5 rounded border border-blue-100 bg-blue-50 px-2 py-1.5 text-[11px] text-blue-900">
                   <span aria-hidden>💡</span>

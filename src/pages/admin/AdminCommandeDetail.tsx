@@ -30,7 +30,7 @@ const AdminCommandeDetail = () => {
   const [pinInput, setPinInput] = useState<string>("");
   const [expiresInput, setExpiresInput] = useState<string>("");
 
-  const { data: order, isLoading } = useQuery({
+  const { data: order, isLoading, error: orderError } = useQuery({
     queryKey: ["admin-order", id],
     queryFn: async () => {
       const { data, error } = await supabase

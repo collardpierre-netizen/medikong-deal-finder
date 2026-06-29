@@ -51,6 +51,7 @@ const buyerColors: Record<string, { bg: string; text: string }> = {
 
 const statusFilters = [
   { key: "all", label: "Toutes" },
+  { key: "draft", label: "Brouillons" },
   { key: "pending", label: "En attente" },
   { key: "confirmed", label: "Confirmées" },
   { key: "processing", label: "En cours" },
@@ -113,6 +114,8 @@ const AdminCommandes = () => {
   const [search, setSearch] = useState("");
   const [hideTest, setHideTest] = useState(true);
   const [period, setPeriod] = useState<PeriodKey>("30d");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
   const [onlyWithCommission, setOnlyWithCommission] = useState(false);
   const [forecastFilter, setForecastFilter] = useState<"all" | "real" | "forecast">("all");
   const [purgeOpen, setPurgeOpen] = useState(false);
@@ -247,7 +250,15 @@ const AdminCommandes = () => {
   });
 
   // --- Filtre période (sur created_at) appliqué avant toute dérivation ---
+  // --- Filtre période (sur created_at) : dates custom prennent priorité sur les presets ---
+  const hasCustomDates = Boolean(dateFrom || dateTo);
   const periodStartDate = (() => {
+    if (dateFrom) {
+      const d = new Date(dateFrom);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+    if (hasCustomDates) return null;
     const days = PERIODS.find(p => p.key === period)?.days;
     if (!days) return null;
     const d = new Date();
@@ -255,16 +266,30 @@ const AdminCommandes = () => {
     d.setHours(0, 0, 0, 0);
     return d;
   })();
-  const periodEndDate = new Date();
-  const periodCutoff = periodStartDate ? periodStartDate.getTime() : null;
-  const periodOrders = periodCutoff === null
-    ? orders
-    : orders.filter(o => o.createdAtRaw && new Date(o.createdAtRaw).getTime() >= periodCutoff);
+  const periodEndDate = (() => {
+    if (dateTo) {
+      const d = new Date(dateTo);
+      d.setHours(23, 59, 59, 999);
+      return d;
+    }
+    return new Date();
+  })();
+  const periodOrders = orders.filter(o => {
+    if (!o.createdAtRaw) return true;
+    const t = new Date(o.createdAtRaw).getTime();
+    if (periodStartDate && t < periodStartDate.getTime()) return false;
+    if (periodEndDate && t > periodEndDate.getTime()) return false;
+    return true;
+  });
 
-  const visibleOrders = hideDeleted ? periodOrders.filter(o => !o.hiddenFromList) : periodOrders;
+  // Les commandes archivées (hidden_from_list) restent visibles dans l'onglet « Annulées »
+  // afin que le compteur reflète la réalité ; ailleurs elles sont masquées si hideDeleted=true.
+  const visibleOrders = hideDeleted
+    ? periodOrders.filter(o => !o.hiddenFromList || o.status === "cancelled")
+    : periodOrders;
   const displayOrders = hideTest ? visibleOrders.filter(o => !o.isTest) : visibleOrders;
   const testCount = visibleOrders.filter(o => o.isTest).length;
-  const deletedCount = periodOrders.filter(o => o.hiddenFromList).length;
+  const deletedCount = periodOrders.filter(o => o.hiddenFromList && o.status !== "cancelled").length;
 
   const filtered = displayOrders.filter((o) => {
     if (statusFilter !== "all" && o.status !== statusFilter) return false;
@@ -486,16 +511,35 @@ const AdminCommandes = () => {
       } />
 
       {/* Sélecteur de période — applique à tous les KPIs et toutes les vues */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div className="flex items-center gap-1 p-1 rounded-lg" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
           <span className="px-2 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>Période</span>
           {PERIODS.map(p => (
-            <button key={p.key} onClick={() => setPeriod(p.key)}
+            <button key={p.key} onClick={() => { setPeriod(p.key); setDateFrom(""); setDateTo(""); }}
               className="px-3 py-1.5 rounded-md text-[12px] font-semibold transition-colors"
-              style={{ backgroundColor: period === p.key ? "#1B5BDA" : "transparent", color: period === p.key ? "#fff" : "#616B7C" }}>
+              style={{ backgroundColor: period === p.key && !hasCustomDates ? "#1B5BDA" : "transparent", color: period === p.key && !hasCustomDates ? "#fff" : "#616B7C" }}>
               {p.label}
             </button>
           ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>
+            Du
+            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
+              className="px-2 py-1 rounded-md text-[12px] font-medium" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#1D2530" }} />
+          </label>
+          <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>
+            Au
+            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
+              className="px-2 py-1 rounded-md text-[12px] font-medium" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#1D2530" }} />
+          </label>
+          {hasCustomDates && (
+            <button onClick={() => { setDateFrom(""); setDateTo(""); }}
+              className="px-2 py-1 rounded-md text-[11px] font-semibold"
+              style={{ backgroundColor: "#FEF2F2", color: "#B91C1C", border: "1px solid #FCA5A5" }}>
+              Réinitialiser
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-1.5 text-[12px] font-medium" style={{ color: "#616B7C" }}>
           <CalendarClock size={14} style={{ color: "#8B95A5" }} />
@@ -909,6 +953,44 @@ const AdminCommandes = () => {
                       );
                     })}
                   </tbody>
+                  {filtered.length > 0 && (() => {
+                    const tHT = filtered.reduce((a, o) => a + o.amountHT, 0);
+                    const tTVA = filtered.reduce((a, o) => a + o.tva, 0);
+                    const tTTC = filtered.reduce((a, o) => a + o.ttc, 0);
+                    const tMargin = filtered.reduce((a, o) => a + (o.hasCost ? o.grossMarginEur : 0), 0);
+                    const tMarginBase = filtered.reduce((a, o) => a + (o.hasCost ? o.amountHT : 0), 0);
+                    const tMarginPct = tMarginBase > 0 ? (tMargin / tMarginBase) * 100 : 0;
+                    const tCommission = filtered.reduce((a, o) => a + o.commissionEur, 0);
+                    const tCommissionPct = tHT > 0 ? (tCommission / tHT) * 100 : 0;
+                    return (
+                      <tfoot>
+                        <tr style={{ backgroundColor: "#F1F5F9", borderTop: "2px solid #CBD5E1" }}>
+                          <td colSpan={2} className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider" style={{ color: "#1D2530" }}>
+                            Total · {filtered.length} commande{filtered.length > 1 ? "s" : ""}
+                          </td>
+                          <td colSpan={5}></td>
+                          <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#1D2530" }}>{fmt(tHT)}</td>
+                          <td className="px-3 py-3 text-[11px] font-mono" style={{ color: "#616B7C" }}>{fmt(tTVA)}</td>
+                          <td className="px-3 py-3 text-[12px] font-bold font-mono" style={{ color: "#059669" }}>{fmt(tTTC)}</td>
+                          <td className="px-3 py-3 font-mono">
+                            {tMarginBase > 0 ? (
+                              <div className="leading-tight">
+                                <div className="text-[12px] font-bold" style={{ color: "#0E7490" }}>{fmt(tMargin)}</div>
+                                <div className="text-[10px]" style={{ color: "#8B95A5" }}>{tMarginPct.toFixed(2)} %</div>
+                              </div>
+                            ) : <span className="text-[11px]" style={{ color: "#CBD5E1" }}>—</span>}
+                          </td>
+                          <td className="px-3 py-3 font-mono">
+                            <div className="leading-tight">
+                              <div className="text-[12px] font-bold" style={{ color: "#059669" }}>{fmt(tCommission)}</div>
+                              <div className="text-[10px]" style={{ color: "#8B95A5" }}>{tCommissionPct.toFixed(2)} %</div>
+                            </div>
+                          </td>
+                          <td colSpan={4}></td>
+                        </tr>
+                      </tfoot>
+                    );
+                  })()}
                 </table>
               </div>
             )}

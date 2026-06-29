@@ -295,9 +295,17 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
         quantity: v.quantity,
       }));
 
-      const origin =
-        req.headers.get("origin") || req.headers.get("referer")?.replace(/\/[^/]*$/, "") ||
-        "https://dev.medikong.pro";
+      const ALLOWED_ORIGINS = new Set([
+        "https://medikong.pro",
+        "https://www.medikong.pro",
+        "https://medikong-deal-finder.lovable.app",
+        "https://dev.medikong.pro",
+      ]);
+      const rawOrigin =
+        req.headers.get("origin") ||
+        req.headers.get("referer")?.replace(/\/[^/]*$/, "") ||
+        "";
+      const origin = ALLOWED_ORIGINS.has(rawOrigin) ? rawOrigin : "https://medikong.pro";
 
       const session = await stripe.checkout.sessions.create({
         mode: "payment",

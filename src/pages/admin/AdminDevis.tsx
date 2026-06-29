@@ -8,6 +8,7 @@ import { fmtEur } from "@/lib/format-currency";
 import { FileText, Send, Clock, CheckCircle2, XCircle, ArrowRightCircle, Copy } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { VendorsEmbedError } from "@/lib/vendors-embed-error";
 
 const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }> = {
   draft: { bg: "#F1F5F9", color: "#475569", label: "Brouillon" },

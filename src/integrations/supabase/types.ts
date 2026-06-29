@@ -24422,6 +24422,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      purge_anonymous_savings_simulations: { Args: never; Returns: number }
       purge_bulk_deactivation_events: { Args: never; Returns: number }
       purge_security_audit_logs: { Args: never; Returns: Json }
       qogita_backed_vendor_ids: {

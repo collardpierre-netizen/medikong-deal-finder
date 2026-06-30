@@ -23048,6 +23048,10 @@ export type Database = {
           status: string
         }[]
       }
+      admin_check_vendor_payout_coherence: {
+        Args: { _order_id: string }
+        Returns: Json
+      }
       admin_claim_product_submission: {
         Args: { _submission_id: string }
         Returns: undefined

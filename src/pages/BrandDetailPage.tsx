@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useFeaturedProducts } from "@/hooks/useProducts";
 import { ProductCard } from "@/components/shared/ProductCard";
 import SearchTrivagoCard from "@/components/search/SearchTrivagoCard";
+import { BestOffersProvider } from "@/contexts/BestOffersContext";
 import { Star, ExternalLink, Heart, Download, Upload, Factory, Store, MapPin, ShoppingCart, Award, ChevronRight, Trophy } from "lucide-react";
 import { useState } from "react";
 import { CatalogViewToggle } from "@/components/catalog/CatalogViewToggle";

@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import SearchTrivagoCard from "./SearchTrivagoCard";
 import type { Product } from "@/hooks/useProducts";
+import { BestOffersProvider } from "@/contexts/BestOffersContext";
 
 interface Props {
   products: Product[];

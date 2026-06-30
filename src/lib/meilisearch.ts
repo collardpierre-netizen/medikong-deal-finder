@@ -8,8 +8,18 @@ let _configPromise: Promise<{ url: string; key: string } | null> | null = null;
 
 async function fetchMeiliConfig(): Promise<{ url: string; key: string } | null> {
   try {
+    // Attache le JWT de session si disponible (sinon l'anon key portée par
+    // supabase.functions.invoke suffit, l'edge function `sync-meilisearch`
+    // est en verify_jwt=false et ne renvoie qu'une search key publique).
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
+    const headers: Record<string, string> = accessToken
+      ? { Authorization: `Bearer ${accessToken}` }
+      : {};
+
     const { data, error } = await supabase.functions.invoke("sync-meilisearch", {
       body: { action: "get-search-key" },
+      headers,
     });
     if (error || !data?.url || !data?.searchKey) return null;
     return { url: data.url, key: data.searchKey };

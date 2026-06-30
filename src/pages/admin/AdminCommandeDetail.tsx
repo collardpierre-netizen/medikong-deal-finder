@@ -171,6 +171,24 @@ const AdminCommandeDetail = () => {
     }
   };
 
+  const checkCoherence = async () => {
+    setBusy("COHERENCE");
+    try {
+      const { data, error } = await supabase.rpc("admin_check_vendor_payout_coherence" as any, { _order_id: id });
+      if (error) throw error;
+      setCoherence(data);
+      setCoherenceOpen(true);
+      const g = (data as any)?.global;
+      if (g?.overall_status === "ok") toast.success(`Cohérence OK (${g.ok_count}/${g.vendor_count} vendeur·s)`);
+      else if (g?.overall_status === "mismatch") toast.warning(`${g.mismatch_count} écart(s) détecté(s)`);
+      else toast.info("Aucun vendeur à vérifier");
+    } catch (e: any) {
+      toast.error(e?.message || "Échec du contrôle de cohérence");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const ensurePublicLink = async () => {
     setBusy("LINK");
     try {

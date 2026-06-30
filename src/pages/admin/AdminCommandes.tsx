@@ -614,26 +614,35 @@ const AdminCommandes = () => {
               <input type="checkbox" checked={onlyWithCommission} onChange={(e) => setOnlyWithCommission(e.target.checked)} />
               Avec commission
             </label>
-            <div className="flex items-center rounded-md overflow-hidden" style={{ border: "1px solid #E2E8F0", backgroundColor: "#fff" }} title="Filtrer les commandes prévisionnelles (date d'encodage future ou tag manuel)">
-              {([
-                { key: "all" as const, label: "Toutes" },
-                { key: "real" as const, label: "Réelles" },
-                { key: "forecast" as const, label: `Prévisionnelles${forecastCount ? ` (${forecastCount})` : ""}` },
-              ]).map((opt) => (
-                <button
-                  key={opt.key}
-                  onClick={() => setForecastFilter(opt.key)}
-                  className="px-3 py-2 text-[12px] font-medium inline-flex items-center gap-1 transition-colors"
-                  style={{
-                    backgroundColor: forecastFilter === opt.key ? "#EDE9FE" : "transparent",
-                    color: forecastFilter === opt.key ? "#6D28D9" : "#616B7C",
-                  }}
-                >
-                  {opt.key === "forecast" && <CalendarClock size={12} />}
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+            <label className="flex items-center gap-2 px-3 py-2 rounded-md text-[12px] font-medium cursor-pointer select-none"
+              style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: forecastFilter !== "real" ? "#6D28D9" : "#616B7C" }}
+              title="Inclure les commandes prévisionnelles (date d'encodage future ou tag manuel) dans la liste">
+              <input
+                type="checkbox"
+                checked={forecastFilter !== "real"}
+                onChange={(e) => setForecastFilter(e.target.checked ? "all" : "real")}
+              />
+              <CalendarClock size={12} />
+              Inclure prévisionnelles
+              {forecastCount > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#EDE9FE", color: "#6D28D9" }}>
+                  {forecastCount}
+                </span>
+              )}
+            </label>
+            <button
+              onClick={() => setForecastFilter(forecastFilter === "forecast" ? "all" : "forecast")}
+              className="px-3 py-2 rounded-md text-[12px] font-medium inline-flex items-center gap-1.5 transition-colors"
+              style={{
+                backgroundColor: forecastFilter === "forecast" ? "#EDE9FE" : "#fff",
+                border: "1px solid #E2E8F0",
+                color: forecastFilter === "forecast" ? "#6D28D9" : "#616B7C",
+              }}
+              title="N'afficher que les commandes prévisionnelles"
+            >
+              <CalendarClock size={12} />
+              Prévisionnelles uniquement
+            </button>
             <button className="flex items-center gap-2 px-3 py-2 rounded-md text-[13px] font-medium" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#616B7C" }}><Filter size={14} /> Filtres</button>
           </div>
 

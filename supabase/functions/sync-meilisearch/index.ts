@@ -245,14 +245,49 @@ serve(async (req) => {
     const action = body.action || "webhook";
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Authentication: require a signed-in user for any call. Admin-only actions
-    // additionally require is_admin. get-search-key is allowed for any authenticated session.
+    // -----------------------------------------------------------------
+    // Endpoint PUBLIC : get-search-key ne renvoie qu'une clé de recherche
+    // Meilisearch (lecture-seule, déjà exposée côté navigateur). Aucun
+    // contrôle d'auth ni de rôle ; on traite tout de suite et on sort.
+    // -----------------------------------------------------------------
+    if (action === "get-search-key") {
+      const searchKey = Deno.env.get("MEILISEARCH_SEARCH_KEY");
+      if (!searchKey) {
+        return new Response(JSON.stringify({ error: "MEILISEARCH_SEARCH_KEY not configured" }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ url: MEILI_URL, searchKey }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // -----------------------------------------------------------------
+    // Toutes les autres actions sont sensibles (sync admin, batchs).
+    // 3 portes d'entrée acceptées, dans cet ordre :
+    //   1) header X-Sync-Secret == MEILI_SYNC_ADMIN_SECRET (cron / scripts)
+    //   2) Bearer == SUPABASE_SERVICE_ROLE_KEY (backend interne)
+    //   3) JWT utilisateur authentifié avec is_admin(_user_id) = true
+    // -----------------------------------------------------------------
+    const ADMIN_ACTIONS = new Set([
+      "setup", "full-sync", "sync-products-batch", "sync-brands-categories", "sync-product-ids",
+      "webhook",
+    ]);
+
+    const syncSecretHeader = req.headers.get("x-sync-secret") ?? "";
+    const expectedSyncSecret = Deno.env.get("MEILI_SYNC_ADMIN_SECRET") ?? "";
+    const hasSyncSecret = !!expectedSyncSecret && syncSecretHeader === expectedSyncSecret;
+
     const authHeader = req.headers.get("Authorization") ?? "";
     const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
-    const isServiceRole = bearer && bearer === SUPABASE_SERVICE_ROLE_KEY;
+    const isServiceRole = !!bearer && bearer === SUPABASE_SERVICE_ROLE_KEY;
+
     let userId: string | null = null;
     let isAdmin = false;
-    if (!isServiceRole) {
+
+    if (hasSyncSecret || isServiceRole) {
+      isAdmin = true;
+    } else {
       if (!bearer) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
           status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -267,10 +302,8 @@ serve(async (req) => {
       }
       const { data: adminCheck } = await supabase.rpc("is_admin", { _user_id: userId });
       isAdmin = adminCheck === true;
-    } else {
-      isAdmin = true;
     }
-    const ADMIN_ACTIONS = new Set(["setup", "full-sync", "sync-products-batch", "sync-brands-categories", "sync-product-ids"]);
+
     if (ADMIN_ACTIONS.has(action) && !isAdmin) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -278,17 +311,6 @@ serve(async (req) => {
     }
 
 
-    if (action === "get-search-key") {
-      const searchKey = Deno.env.get("MEILISEARCH_SEARCH_KEY");
-      if (!searchKey) {
-        return new Response(JSON.stringify({ error: "MEILISEARCH_SEARCH_KEY not configured" }), {
-          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      return new Response(JSON.stringify({ url: MEILI_URL, searchKey }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     if (action === "setup") {
       await setupIndexes();

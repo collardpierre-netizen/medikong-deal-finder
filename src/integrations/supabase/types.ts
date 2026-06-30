@@ -24039,6 +24039,32 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["admin_role"]
       }
+      get_best_offers_for_products: {
+        Args: {
+          _buyer_profile_id?: string
+          _country: string
+          _product_ids: string[]
+        }
+        Returns: {
+          delivery_days: number
+          effective_price_excl_vat: number
+          effective_price_incl_vat: number
+          offer_count: number
+          offer_id: string
+          price_source: string
+          product_id: string
+          stock_quantity: number
+          total_stock: number
+          vendor_company_name: string
+          vendor_display_code: string
+          vendor_display_name: string
+          vendor_id: string
+          vendor_is_verified: boolean
+          vendor_name: string
+          vendor_show_real_name: boolean
+          vendor_show_real_name_resolved: boolean
+        }[]
+      }
       get_effective_offer_price: {
         Args: { _buyer_profile_id: string; _offer_id: string }
         Returns: {

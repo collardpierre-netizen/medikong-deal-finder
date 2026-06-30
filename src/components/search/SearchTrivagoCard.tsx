@@ -5,6 +5,7 @@ import { Heart, Check, ChevronDown, ChevronUp, Package, Truck, RotateCcw, ArrowR
 import { useNavigate, useLocation } from "react-router-dom";
 import { useProductOffers } from "@/hooks/useProducts";
 import type { Product } from "@/hooks/useProducts";
+import { useBestOfferForProduct } from "@/contexts/BestOffersContext";
 
 interface Props {
   product: Product;
@@ -17,17 +18,41 @@ export default function SearchTrivagoCard({ product: p }: Props) {
   const [showMore, setShowMore] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const { data: offers = [] } = useProductOffers(p.id);
 
-  const bestOffer = offers[0];
-  const otherOffers = offers.slice(1);
+  // ⚡ Best offer pré-chargé via le batch RPC (BestOffersProvider). Si la page ne
+  // monte pas le provider, on retombe sur l'ancien `useProductOffers` immédiat.
+  const { bestOffer: batchBest, hasContext } = useBestOfferForProduct(p.id);
+
+  // Les "autres offres" restent en lazy : on ne déclenche `useProductOffers`
+  // que quand l'utilisateur ouvre la liste (économise N-1 RPC par page).
+  const [expanded, setExpanded] = useState(false);
+  const { data: offersFull = [] } = useProductOffers(
+    expanded || !hasContext ? p.id : undefined
+  );
+
+  // Best offer : on privilégie le batch (1 round-trip), sinon le fetch détaillé.
+  const bestOffer = hasContext
+    ? (batchBest
+        ? {
+            id: batchBest.offerId,
+            sellerName: batchBest.sellerName,
+            unitPriceEur: batchBest.unitPriceEur,
+            deliveryDays: batchBest.deliveryDays ?? 0,
+            isVerified: batchBest.isVerified,
+          } as any
+        : undefined)
+    : offersFull[0];
+
+  const otherOffers = offersFull.slice(bestOffer && hasContext ? 0 : 1)
+    .filter((o: any) => !bestOffer || o.id !== bestOffer.id);
   const visibleOffers = otherOffers.slice(0, 2);
   const hiddenOffers = otherOffers.slice(2);
 
   const price = bestOffer?.unitPriceEur || p.price;
   const pct = p.pct;
+  const offerCount = hasContext ? (batchBest?.offerCount ?? 0) : offersFull.length;
   // Aucun vendeur n'a encore listé une offre active sur ce SKU dans le pays courant.
-  const hasOffer = (p.sellers || 0) > 0 && price > 0;
+  const hasOffer = (offerCount > 0 || (p.sellers || 0) > 0) && price > 0;
 
   return (
     <div className="bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-border">
@@ -113,7 +138,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
               </span>
             )}
             {(() => {
-              const n = offers.length || p.sellers || 0;
+              const n = offerCount || p.sellers || 0;
               return n > 0 ? (
                 <span className="text-[11px] text-muted-foreground font-medium">
                   {n} offre{n !== 1 ? "s" : ""}
@@ -181,48 +206,53 @@ export default function SearchTrivagoCard({ product: p }: Props) {
         </div>
       </div>
 
-      {/* Secondary offers */}
-      {otherOffers.length > 0 && (
-        <div className="border-t border-border bg-muted/30">
-          {visibleOffers.map((offer) => (
-            <div key={offer.id} className="flex items-center justify-between px-5 py-2.5 border-b border-border/60 last:border-b-0">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-foreground">{offer.sellerName}</span>
-                {offer.isVerified && (
-                  <span className="flex items-center gap-0.5 text-[10px] text-emerald-600 font-medium">
-                    <Check size={10} /> Vérifié
-                  </span>
-                )}
+      {/* Secondary offers — lazy : on n'invoque useProductOffers qu'au clic */}
+      {(() => {
+        const extraCount = Math.max(0, offerCount - 1);
+        if (extraCount === 0 && otherOffers.length === 0) return null;
+        return (
+          <div className="border-t border-border bg-muted/30">
+            {expanded && visibleOffers.map((offer) => (
+              <div key={offer.id} className="flex items-center justify-between px-5 py-2.5 border-b border-border/60 last:border-b-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-foreground">{offer.sellerName}</span>
+                  {offer.isVerified && (
+                    <span className="flex items-center gap-0.5 text-[10px] text-emerald-600 font-medium">
+                      <Check size={10} /> Vérifié
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  {price > 0 && offer.unitPriceEur > price && (
+                    <span className="text-[10px] font-medium text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded whitespace-nowrap">
+                      +{(offer.unitPriceEur - price).toFixed(2)}&nbsp;€ (+{((offer.unitPriceEur - price) / price * 100).toFixed(1)}%)
+                    </span>
+                  )}
+                  <span className="text-sm font-bold text-foreground">{offer.unitPriceEur.toFixed(2)} €</span>
+                  <button
+                    onClick={() => navigate(`/produit/${p.slug}`, fromState)}
+                    className="px-3.5 py-1 border border-border text-foreground text-[11px] font-semibold rounded-md hover:bg-muted transition-colors"
+                  >
+                    Voir
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                {price > 0 && offer.unitPriceEur > price && (
-                  <span className="text-[10px] font-medium text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded whitespace-nowrap">
-                    +{(offer.unitPriceEur - price).toFixed(2)}&nbsp;€ (+{((offer.unitPriceEur - price) / price * 100).toFixed(1)}%)
-                  </span>
-                )}
-                <span className="text-sm font-bold text-foreground">{offer.unitPriceEur.toFixed(2)} €</span>
-                <button
-                  onClick={() => navigate(`/produit/${p.slug}`, fromState)}
-                  className="px-3.5 py-1 border border-border text-foreground text-[11px] font-semibold
-                            rounded-md hover:bg-muted transition-colors"
-                >
-                  Voir
-                </button>
-              </div>
-            </div>
-          ))}
+            ))}
 
-          {hiddenOffers.length > 0 && (
             <div className="px-5 py-2">
               <button
-                onClick={() => setShowMore(!showMore)}
-                className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground
-                          hover:text-foreground transition-colors"
+                onClick={() => {
+                  if (!expanded) setExpanded(true);
+                  setShowMore(!showMore);
+                }}
+                className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
               >
-                {showMore ? "Moins d'offres" : `+ ${hiddenOffers.length} autre${hiddenOffers.length > 1 ? "s" : ""} offre${hiddenOffers.length > 1 ? "s" : ""}`}
-                {showMore ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                {expanded && showMore
+                  ? "Moins d'offres"
+                  : `+ ${extraCount} autre${extraCount > 1 ? "s" : ""} offre${extraCount > 1 ? "s" : ""}`}
+                {expanded && showMore ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </button>
-              {showMore && (
+              {expanded && showMore && (
                 <div className="mt-1">
                   {hiddenOffers.map((offer) => (
                     <div key={offer.id} className="flex items-center justify-between py-2 border-t border-border/60">
@@ -236,8 +266,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
                         <span className="text-sm font-bold text-foreground">{offer.unitPriceEur.toFixed(2)} €</span>
                         <button
                           onClick={() => navigate(`/produit/${p.slug}`, fromState)}
-                          className="px-3.5 py-1 border border-border text-foreground text-[11px] font-semibold
-                                    rounded-md hover:bg-muted transition-colors"
+                          className="px-3.5 py-1 border border-border text-foreground text-[11px] font-semibold rounded-md hover:bg-muted transition-colors"
                         >
                           Voir
                         </button>
@@ -247,9 +276,9 @@ export default function SearchTrivagoCard({ product: p }: Props) {
                 </div>
               )}
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        );
+      })()}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useFeaturedProducts } from "@/hooks/useProducts";
 import { ProductCard } from "@/components/shared/ProductCard";
 import SearchTrivagoCard from "@/components/search/SearchTrivagoCard";
+import { BestOffersProvider } from "@/contexts/BestOffersContext";
 import { Star, ExternalLink, Heart, Download, Upload, Factory, Store, MapPin, ShoppingCart, Award, ChevronRight, Trophy } from "lucide-react";
 import { useState } from "react";
 import { CatalogViewToggle } from "@/components/catalog/CatalogViewToggle";
@@ -530,11 +531,13 @@ export default function BrandDetailPage() {
                       )}
                     </div>
                   ) : view === "trivago" ? (
-                    <div className="space-y-3">
-                      {filtered.map((p) => (
-                        <SearchTrivagoCard key={p.id} product={p} />
-                      ))}
-                    </div>
+                    <BestOffersProvider productIds={filtered.map((p) => p.id)}>
+                      <div className="space-y-3">
+                        {filtered.map((p) => (
+                          <SearchTrivagoCard key={p.id} product={p} />
+                        ))}
+                      </div>
+                    </BestOffersProvider>
                   ) : (
                     <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                       {filtered.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}

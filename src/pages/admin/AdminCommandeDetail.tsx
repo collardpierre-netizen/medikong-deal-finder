@@ -120,6 +120,33 @@ const AdminCommandeDetail = () => {
     }
   }, [order]);
 
+  const { data: splitSummary, refetch: refetchSplit, isFetching: splitLoading } = useQuery({
+    queryKey: ["admin-order-split", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_get_order_split_summary" as any, { _order_id: id });
+      if (error) throw error;
+      return data as any;
+    },
+    enabled: !!id && !!order,
+  });
+
+  const reprocessFanout = async () => {
+    if (!confirm("Relancer le split en sous-commandes vendeur ?\n\nL'opération est idempotente : aucun doublon ne sera créé, seuls les vendeurs manquants seront ajoutés.")) return;
+    setBusy("REPROCESS");
+    try {
+      const { data, error } = await supabase.rpc("admin_reprocess_order_fanout" as any, { _order_id: id });
+      if (error) throw error;
+      const summary: any = data;
+      toast.success(`Split relancé · ${summary?.actual_sub_order_count || 0} sous-commande(s) au total (${summary?.dispatched_rows || 0} traitée(s))`);
+      await refetchSplit();
+      await queryClient.invalidateQueries({ queryKey: ["admin-order", id] });
+    } catch (e: any) {
+      toast.error(e?.message || "Échec relance split");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   if (isLoading) return <div className="p-6 text-slate-500">Chargement…</div>;
   if (orderError) return <div className="p-6"><VendorsEmbedError error={orderError} /></div>;
   if (!order) return <div className="p-6 text-slate-500">Commande introuvable. <Link to="/admin/commandes" className="text-sky-600">Retour</Link></div>;
@@ -467,6 +494,88 @@ const AdminCommandeDetail = () => {
 
 
         <div className="space-y-4">
+          {(() => {
+            const s: any = splitSummary;
+            if (!s) {
+              return (
+                <div className="bg-white border rounded-lg p-4 text-xs text-slate-500" style={{ borderColor: "#E2E8F0" }}>
+                  {splitLoading ? "Chargement split fournisseurs…" : "Split fournisseurs : aucune donnée"}
+                </div>
+              );
+            }
+            const status = s.overall_status as string;
+            const badge =
+              status === "ok" ? { c: "bg-emerald-100 text-emerald-800 border-emerald-200", t: "✓ OK", I: CheckCircle2 } :
+              status === "missing" ? { c: "bg-amber-100 text-amber-900 border-amber-200", t: "⚠ Vendeur(s) manquant(s)", I: AlertTriangle } :
+              status === "extra" ? { c: "bg-amber-100 text-amber-900 border-amber-200", t: "⚠ Sous-commande orpheline", I: AlertTriangle } :
+              { c: "bg-slate-100 text-slate-700 border-slate-200", t: "Aucune ligne vendeur", I: ShieldCheck };
+            const Icon = badge.I;
+            return (
+              <div className="bg-white border rounded-lg p-4" style={{ borderColor: "#E2E8F0" }}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-sm font-semibold">Split fournisseurs (sub_orders)</div>
+                  <span className={`text-[10px] px-2 py-0.5 rounded border font-medium inline-flex items-center gap-1 ${badge.c}`}>
+                    <Icon size={11} /> {badge.t}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                  <div className="border rounded p-2"><div className="text-slate-500">Vendeurs attendus</div><div className="font-mono font-semibold">{s.expected_vendor_count}</div></div>
+                  <div className="border rounded p-2"><div className="text-slate-500">Sub_orders créés</div><div className="font-mono font-semibold">{s.actual_sub_order_count}</div></div>
+                </div>
+                {(s.missing_vendor_ids?.length || 0) > 0 && (
+                  <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded p-2 mb-2">
+                    <div className="font-semibold mb-1">Vendeurs sans sous-commande :</div>
+                    <div className="space-y-0.5">
+                      {(s.expected || []).filter((e: any) => s.missing_vendor_ids.includes(e.vendor_id)).map((e: any) => (
+                        <div key={e.vendor_id} className="font-mono">• {e.vendor_label} ({e.line_count} ligne{e.line_count > 1 ? "s" : ""})</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {(s.extra_vendor_ids?.length || 0) > 0 && (
+                  <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded p-2 mb-2">
+                    Sub_orders sans ligne correspondante : {s.extra_vendor_ids.length}
+                  </div>
+                )}
+                {(s.sub_orders || []).length > 0 && (
+                  <div className="border-t pt-2 mt-2 space-y-1.5 max-h-64 overflow-y-auto" style={{ borderColor: "#F1F5F9" }}>
+                    {(s.sub_orders || []).map((so: any) => (
+                      <div key={so.sub_order_id} className="text-[11px] border rounded p-2" style={{ borderColor: "#F1F5F9" }}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-medium truncate">{so.vendor_label}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono">{so.status || "—"}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-1 text-slate-600">
+                          <div>TTC : <span className="font-mono">{so.subtotal_incl_vat != null ? `${Number(so.subtotal_incl_vat).toFixed(2)} €` : "—"}</span></div>
+                          <div>Paiement : <span className="font-mono">{so.payment_status || "—"}</span></div>
+                          <div className="col-span-2 text-slate-400">Créé : {so.created_at ? new Date(so.created_at).toLocaleString("fr-BE") : "—"}</div>
+                          {so.vendor_first_viewed_at && <div className="col-span-2 text-slate-400">Vu vendeur : {new Date(so.vendor_first_viewed_at).toLocaleString("fr-BE")}</div>}
+                          {so.vendor_confirmed_at && <div className="col-span-2 text-slate-400">Confirmé : {new Date(so.vendor_confirmed_at).toLocaleString("fr-BE")}</div>}
+                          {so.shipped_at && <div className="col-span-2 text-slate-400">Expédié : {new Date(so.shipped_at).toLocaleString("fr-BE")}</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="text-[10px] text-slate-400 mt-2 space-y-0.5">
+                  {s.first_sub_order_at && <div>Premier sub_order : {new Date(s.first_sub_order_at).toLocaleString("fr-BE")}</div>}
+                  {s.last_sub_order_at && <div>Dernier sub_order : {new Date(s.last_sub_order_at).toLocaleString("fr-BE")}</div>}
+                  {s.last_sub_order_updated_at && <div>Dernière MAJ : {new Date(s.last_sub_order_updated_at).toLocaleString("fr-BE")}</div>}
+                </div>
+                <Button
+                  onClick={reprocessFanout}
+                  disabled={busy !== null || s.expected_vendor_count === 0}
+                  variant={status === "missing" ? "default" : "outline"}
+                  className="w-full mt-3 justify-start"
+                  style={status === "missing" ? { backgroundColor: "#D97706", color: "#fff" } : undefined}
+                  title="Relance l'RPC fan-out (idempotent). Ne crée jamais de doublon."
+                >
+                  <ShieldCheck size={14} className="mr-2" /> {busy === "REPROCESS" ? "Relance…" : "Re-traiter le split (sécurisé)"}
+                </Button>
+              </div>
+            );
+          })()}
+
           <div className="bg-white border rounded-lg p-4 space-y-2" style={{ borderColor: "#E2E8F0" }}>
             <div className="text-sm font-semibold mb-2">Actions</div>
             <Button onClick={generatePdf} disabled={busy !== null} className="w-full justify-start" style={{ backgroundColor: "#1C58D9", color: "#fff" }}>

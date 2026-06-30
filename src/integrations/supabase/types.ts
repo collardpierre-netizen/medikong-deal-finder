@@ -23174,6 +23174,10 @@ export type Database = {
           similarity: number
         }[]
       }
+      admin_get_order_split_summary: {
+        Args: { _order_id: string }
+        Returns: Json
+      }
       admin_hard_delete_order: { Args: { _order_id: string }; Returns: Json }
       admin_home_showcase_kpis: {
         Args: { _days?: number }
@@ -23427,6 +23431,10 @@ export type Database = {
       admin_reorder_home_featured: {
         Args: { _ids: string[]; _kind: string }
         Returns: undefined
+      }
+      admin_reprocess_order_fanout: {
+        Args: { _order_id: string }
+        Returns: Json
       }
       admin_resend_invitation: {
         Args: { _invitation_id: string }

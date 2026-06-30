@@ -291,11 +291,13 @@ export default function ManufacturerPage() {
               <CatalogViewToggle view={view} setView={setView} />
             </div>
             {view === "trivago" ? (
-              <div className="space-y-3">
-                {products.map((p: any) => (
-                  <SearchTrivagoCard key={p.id} product={p as any} />
-                ))}
-              </div>
+              <BestOffersProvider productIds={products.map((p: any) => p.id)}>
+                <div className="space-y-3">
+                  {products.map((p: any) => (
+                    <SearchTrivagoCard key={p.id} product={p as any} />
+                  ))}
+                </div>
+              </BestOffersProvider>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {products.map((p: any, i: number) => (

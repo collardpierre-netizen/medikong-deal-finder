@@ -2101,6 +2101,41 @@ export default function ProductPage() {
                           />
                         </SafeBoundary>
                       </div>
+                    ) : offersError ? (
+                      <div
+                        className="border border-destructive/40 bg-destructive/5 rounded-xl p-6 text-left"
+                        role="alert"
+                        data-testid="offers-load-error"
+                      >
+                        <p className="text-destructive font-semibold mb-1">
+                          Impossible de charger les offres pour ce produit
+                        </p>
+                        <p className="text-sm text-destructive/90">
+                          {(() => {
+                            const err: any = offersError;
+                            const code = err?.code ? ` (code ${err.code})` : "";
+                            if (err?.code === "42501" || /permission denied/i.test(String(err?.message || ""))) {
+                              return `Permissions insuffisantes sur la table « offers »${code}. Vérifiez les GRANT/RLS côté base.`;
+                            }
+                            return `${err?.message || "Erreur inconnue"}${code}`;
+                          })()}
+                        </p>
+                        <details className="mt-3 text-xs text-destructive/80">
+                          <summary className="cursor-pointer">Détails techniques</summary>
+                          <pre className="mt-2 whitespace-pre-wrap break-all bg-destructive/10 p-2 rounded">
+{JSON.stringify({
+  message: (offersError as any)?.message,
+  code: (offersError as any)?.code,
+  details: (offersError as any)?.details,
+  hint: (offersError as any)?.hint,
+}, null, 2)}
+                          </pre>
+                        </details>
+                      </div>
+                    ) : offersLoading ? (
+                      <div className="border border-border bg-muted/30 rounded-xl p-6 text-center text-sm text-muted-foreground" role="status">
+                        Chargement des offres…
+                      </div>
                     ) : (
                       <div
                         className="border border-amber-200 bg-amber-50/60 rounded-xl p-8 text-center"

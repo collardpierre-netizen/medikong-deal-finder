@@ -80,9 +80,10 @@ function TrivagoPaginatedList({ products }: { products: Product[] }) {
 
   const slice = products.slice(0, visible);
   const remaining = products.length - slice.length;
+  const visibleIds = useMemo(() => slice.map((p) => p.id), [slice]);
 
   return (
-    <>
+    <BestOffersProvider productIds={visibleIds}>
       <div className="space-y-3">
         {slice.map((p) => (
           <SearchTrivagoCard key={p.id} product={p} />
@@ -99,6 +100,6 @@ function TrivagoPaginatedList({ products }: { products: Product[] }) {
           </button>
         </div>
       )}
-    </>
+    </BestOffersProvider>
   );
 }

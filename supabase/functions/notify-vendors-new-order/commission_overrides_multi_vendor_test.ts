@@ -111,6 +111,7 @@ Deno.test(
         payment_method: "invoice",
         payment_status: "paid",
         fulfillment_mode: "pickup",
+        shipping_address: {},
         lines: [
           { vendor_id: vendorA, quantity: 2, unit_price_excl_vat: 10, vat_rate: 21, manual_label: "A-1" },
           { vendor_id: vendorA, quantity: 1, unit_price_excl_vat: 25, vat_rate: 21, manual_label: "A-2" },

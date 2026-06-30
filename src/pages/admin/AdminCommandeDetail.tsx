@@ -556,6 +556,77 @@ const AdminCommandeDetail = () => {
           </div>
         </div>
       </div>
+
+      <Dialog open={coherenceOpen} onOpenChange={setCoherenceOpen}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck size={18} className="text-emerald-600" />
+              Cohérence décompte fournisseur
+            </DialogTitle>
+            <DialogDescription>
+              Comparaison entre les totaux recalculés depuis les lignes de commande (formule identique au PDF de décompte) et les sous-commandes vendeur enregistrées.
+            </DialogDescription>
+          </DialogHeader>
+          {coherence?.global && (
+            <div className="space-y-4">
+              <div className={`rounded-lg p-3 text-sm flex items-center gap-2 ${coherence.global.overall_status === "ok" ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : coherence.global.overall_status === "mismatch" ? "bg-amber-50 text-amber-900 border border-amber-200" : "bg-slate-50 text-slate-700 border border-slate-200"}`}>
+                {coherence.global.overall_status === "ok" ? <CheckCircle2 size={16} /> : coherence.global.overall_status === "mismatch" ? <AlertTriangle size={16} /> : <ShieldCheck size={16} />}
+                <span className="font-medium">
+                  {coherence.global.overall_status === "ok" && `Tous les vendeurs cohérents (${coherence.global.ok_count}/${coherence.global.vendor_count})`}
+                  {coherence.global.overall_status === "mismatch" && `${coherence.global.mismatch_count} écart(s) détecté(s) sur ${coherence.global.vendor_count} vendeur(s)`}
+                  {coherence.global.overall_status === "empty" && "Aucun vendeur à vérifier sur cette commande"}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                <div className="border rounded p-2"><div className="text-slate-500">CA HT total</div><div className="font-mono font-semibold">{fmtEur(Math.round(Number(coherence.global.total_ca_ht || 0) * 100))} €</div></div>
+                <div className="border rounded p-2"><div className="text-slate-500">TVA total</div><div className="font-mono">{fmtEur(Math.round(Number(coherence.global.total_vat || 0) * 100))} €</div></div>
+                <div className="border rounded p-2"><div className="text-slate-500">Commission MK</div><div className="font-mono">{fmtEur(Math.round(Number(coherence.global.total_commission || 0) * 100))} €</div></div>
+                <div className="border rounded p-2"><div className="text-slate-500">Net HT à reverser</div><div className="font-mono font-semibold text-emerald-700">{fmtEur(Math.round(Number(coherence.global.total_net_ht || 0) * 100))} €</div></div>
+              </div>
+              <div className="space-y-2">
+                {(coherence.vendors || []).map((v: any) => {
+                  const badge = v.status === "ok"
+                    ? { c: "bg-emerald-100 text-emerald-800 border-emerald-200", t: "✓ Cohérent" }
+                    : v.status === "mismatch"
+                    ? { c: "bg-amber-100 text-amber-900 border-amber-200", t: "⚠ Écart" }
+                    : { c: "bg-slate-100 text-slate-700 border-slate-200", t: "Aucune sous-commande" };
+                  return (
+                    <div key={v.vendor_id} className="border rounded-lg p-3" style={{ borderColor: "#E2E8F0" }}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="font-medium text-sm">{v.vendor_label}</div>
+                        <span className={`text-[10px] px-2 py-0.5 rounded border font-medium ${badge.c}`}>{badge.t}</span>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+                        <div><div className="text-slate-500">Lignes</div><div className="font-mono">{v.line_count}</div></div>
+                        <div><div className="text-slate-500">CA HT</div><div className="font-mono">{Number(v.ca_ht).toFixed(2)} €</div></div>
+                        <div><div className="text-slate-500">TVA</div><div className="font-mono">{Number(v.vat).toFixed(2)} €</div></div>
+                        <div><div className="text-slate-500">Commission MK</div><div className="font-mono">{Number(v.commission).toFixed(2)} €</div></div>
+                        <div><div className="text-slate-500">Net HT</div><div className="font-mono font-semibold text-emerald-700">{Number(v.net_ht).toFixed(2)} €</div></div>
+                      </div>
+                      {v.sub_order_id ? (
+                        <div className="mt-2 pt-2 border-t text-xs grid grid-cols-2 md:grid-cols-4 gap-2" style={{ borderColor: "#F1F5F9" }}>
+                          <div><div className="text-slate-500">Sous-cmd TTC</div><div className="font-mono">{v.sub_ttc != null ? `${Number(v.sub_ttc).toFixed(2)} €` : "—"}</div></div>
+                          <div><div className="text-slate-500">Δ TTC vs calculé</div><div className={`font-mono ${Math.abs(Number(v.delta_ttc || 0)) > 0.01 ? "text-amber-700 font-semibold" : "text-emerald-700"}`}>{v.delta_ttc != null ? `${Number(v.delta_ttc).toFixed(2)} €` : "—"}</div></div>
+                          <div><div className="text-slate-500">Sous-cmd commission</div><div className="font-mono">{v.sub_commission != null ? `${Number(v.sub_commission).toFixed(2)} €` : "—"}</div></div>
+                          <div><div className="text-slate-500">Δ commission</div><div className={`font-mono ${Math.abs(Number(v.delta_commission || 0)) > 0.01 ? "text-amber-700 font-semibold" : "text-emerald-700"}`}>{v.delta_commission != null ? `${Number(v.delta_commission).toFixed(2)} €` : "—"}</div></div>
+                        </div>
+                      ) : (
+                        <div className="mt-2 pt-2 border-t text-xs text-slate-500 italic" style={{ borderColor: "#F1F5F9" }}>
+                          Aucune sous-commande enregistrée pour ce vendeur (fan-out non exécuté ou commande manuelle non éclatée).
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="text-[11px] text-slate-400">
+                Tolérance : ±0,01 € sur TTC et commission. Vérifié le {coherence.global.checked_at ? new Date(coherence.global.checked_at).toLocaleString("fr-BE") : "—"}.
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

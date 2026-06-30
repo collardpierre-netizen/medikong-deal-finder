@@ -30,6 +30,8 @@ const AdminCommandeDetail = () => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pinInput, setPinInput] = useState<string>("");
   const [expiresInput, setExpiresInput] = useState<string>("");
+  const [coherence, setCoherence] = useState<any | null>(null);
+  const [coherenceOpen, setCoherenceOpen] = useState(false);
 
   const { data: order, isLoading, error: orderError } = useQuery({
     queryKey: ["admin-order", id],

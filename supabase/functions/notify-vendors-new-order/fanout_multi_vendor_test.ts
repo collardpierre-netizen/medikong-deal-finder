@@ -72,10 +72,9 @@ Deno.test(
         customer_id: customerId,
         status: "paid",
         payment_status: "paid",
-        currency: "EUR",
         subtotal_excl_vat: 100,
+        vat_amount: 21,
         total_incl_vat: 121,
-        total_excl_vat: 100,
       })
       .select("id")
       .single();

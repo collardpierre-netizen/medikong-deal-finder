@@ -475,6 +475,9 @@ const AdminCommandeDetail = () => {
             <Button onClick={generatePayoutPdf} disabled={busy !== null} className="w-full justify-start" style={{ backgroundColor: "#10B981", color: "#fff" }}>
               <Wallet size={14} className="mr-2" /> {busy === "PAYOUT" ? "Génération…" : "Décompte fournisseur PDF"}
             </Button>
+            <Button onClick={checkCoherence} disabled={busy !== null} className="w-full justify-start" variant="outline">
+              <ShieldCheck size={14} className="mr-2" /> {busy === "COHERENCE" ? "Contrôle…" : "Vérifier cohérence décompte"}
+            </Button>
             {pdfUrl && (
               <Button onClick={copyPdfLink} className="w-full justify-start" variant="outline">
                 <Copy size={14} className="mr-2" /> Copier le lien PDF (7 jours)

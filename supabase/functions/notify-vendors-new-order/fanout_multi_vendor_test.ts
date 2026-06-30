@@ -53,6 +53,10 @@ Deno.test(
       .insert({
         company_name: `TEST-FANOUT-CUST-${tag}`,
         email: `test-fanout-cust-${tag}@example.invalid`,
+        address_line1: "Rue test 1",
+        postal_code: "1000",
+        city: "Bruxelles",
+        country: "BE",
       })
       .select("id")
       .single();

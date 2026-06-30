@@ -1249,7 +1249,7 @@ export default function ProductPage() {
   const { data: product, isLoading } = useProduct(slug);
   const { data: resolvedVat } = useProductVatRate(product?.id, country || "BE");
   const { addToCart } = useCart();
-  const { data: realOffers = [] } = useProductOffers(product?.id);
+  const { data: realOffers = [], error: offersError, isLoading: offersLoading } = useProductOffers(product?.id);
   const { isFavorite, toggleFavorite } = useFavorites();
   const { trackActivity } = useRecentActivity();
 

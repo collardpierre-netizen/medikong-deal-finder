@@ -70,7 +70,7 @@ Deno.test(
       .insert({
         order_number: orderNumber,
         customer_id: customerId,
-        status: "paid",
+        status: "confirmed",
         payment_status: "paid",
         subtotal_excl_vat: 100,
         vat_amount: 21,

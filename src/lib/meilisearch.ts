@@ -1,16 +1,31 @@
 import { MeiliSearch } from "meilisearch";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // Cache the config so we only fetch once
 let _meiliClient: MeiliSearch | null = null;
 let _configured: boolean | null = null;
 let _configPromise: Promise<{ url: string; key: string } | null> | null = null;
+let _warnedOnce = false;
+
+function warnSearchDegraded(reason: string) {
+  if (_warnedOnce) return;
+  _warnedOnce = true;
+  console.warn("[meilisearch] recherche instantanée indisponible :", reason);
+  // Best-effort UI message — n'arrête jamais le rendu, on retombe sur Postgres.
+  try {
+    toast.warning("Recherche instantanée indisponible", {
+      description:
+        "Nous utilisons une recherche de secours. Les résultats restent disponibles, sans tolérance aux fautes de frappe.",
+      duration: 5000,
+    });
+  } catch {
+    // toast peut ne pas être monté (SSR / pages sans Toaster) — on ignore.
+  }
+}
 
 async function fetchMeiliConfig(): Promise<{ url: string; key: string } | null> {
   try {
-    // Attache le JWT de session si disponible (sinon l'anon key portée par
-    // supabase.functions.invoke suffit, l'edge function `sync-meilisearch`
-    // est en verify_jwt=false et ne renvoie qu'une search key publique).
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData?.session?.access_token;
     const headers: Record<string, string> = accessToken
@@ -21,9 +36,17 @@ async function fetchMeiliConfig(): Promise<{ url: string; key: string } | null> 
       body: { action: "get-search-key" },
       headers,
     });
-    if (error || !data?.url || !data?.searchKey) return null;
+    if (error) {
+      warnSearchDegraded(error.message || "edge function error");
+      return null;
+    }
+    if (!data?.url || !data?.searchKey) {
+      warnSearchDegraded("réponse invalide de sync-meilisearch");
+      return null;
+    }
     return { url: data.url, key: data.searchKey };
-  } catch {
+  } catch (err) {
+    warnSearchDegraded(err instanceof Error ? err.message : String(err));
     return null;
   }
 }
@@ -33,9 +56,19 @@ async function getClient(): Promise<MeiliSearch | null> {
   if (!_configPromise) {
     _configPromise = fetchMeiliConfig();
   }
-  const config = await _configPromise;
+  let config: { url: string; key: string } | null = null;
+  try {
+    config = await _configPromise;
+  } catch (err) {
+    // Sécurité : ne jamais propager une rejection (risque d'écran blanc via
+    // un unhandledrejection sur les pages sans ErrorBoundary).
+    warnSearchDegraded(err instanceof Error ? err.message : String(err));
+    config = null;
+  }
   if (!config) {
     _configured = false;
+    // Permet une nouvelle tentative lors d'une prochaine recherche.
+    _configPromise = null;
     return null;
   }
   _configured = true;

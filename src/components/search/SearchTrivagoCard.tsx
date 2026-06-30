@@ -5,6 +5,7 @@ import { Heart, Check, ChevronDown, ChevronUp, Package, Truck, RotateCcw, ArrowR
 import { useNavigate, useLocation } from "react-router-dom";
 import { useProductOffers } from "@/hooks/useProducts";
 import type { Product } from "@/hooks/useProducts";
+import { useBestOfferForProduct } from "@/contexts/BestOffersContext";
 
 interface Props {
   product: Product;
@@ -17,17 +18,41 @@ export default function SearchTrivagoCard({ product: p }: Props) {
   const [showMore, setShowMore] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const { data: offers = [] } = useProductOffers(p.id);
 
-  const bestOffer = offers[0];
-  const otherOffers = offers.slice(1);
+  // ⚡ Best offer pré-chargé via le batch RPC (BestOffersProvider). Si la page ne
+  // monte pas le provider, on retombe sur l'ancien `useProductOffers` immédiat.
+  const { bestOffer: batchBest, hasContext } = useBestOfferForProduct(p.id);
+
+  // Les "autres offres" restent en lazy : on ne déclenche `useProductOffers`
+  // que quand l'utilisateur ouvre la liste (économise N-1 RPC par page).
+  const [expanded, setExpanded] = useState(false);
+  const { data: offersFull = [] } = useProductOffers(
+    expanded || !hasContext ? p.id : undefined
+  );
+
+  // Best offer : on privilégie le batch (1 round-trip), sinon le fetch détaillé.
+  const bestOffer = hasContext
+    ? (batchBest
+        ? {
+            id: batchBest.offerId,
+            sellerName: batchBest.sellerName,
+            unitPriceEur: batchBest.unitPriceEur,
+            deliveryDays: batchBest.deliveryDays ?? 0,
+            isVerified: batchBest.isVerified,
+          } as any
+        : undefined)
+    : offersFull[0];
+
+  const otherOffers = offersFull.slice(bestOffer && hasContext ? 0 : 1)
+    .filter((o: any) => !bestOffer || o.id !== bestOffer.id);
   const visibleOffers = otherOffers.slice(0, 2);
   const hiddenOffers = otherOffers.slice(2);
 
   const price = bestOffer?.unitPriceEur || p.price;
   const pct = p.pct;
+  const offerCount = hasContext ? (batchBest?.offerCount ?? 0) : offersFull.length;
   // Aucun vendeur n'a encore listé une offre active sur ce SKU dans le pays courant.
-  const hasOffer = (p.sellers || 0) > 0 && price > 0;
+  const hasOffer = (offerCount > 0 || (p.sellers || 0) > 0) && price > 0;
 
   return (
     <div className="bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-border">

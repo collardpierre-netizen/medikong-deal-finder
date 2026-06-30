@@ -56,7 +56,7 @@ Deno.test(
         address_line1: "Rue test 1",
         postal_code: "1000",
         city: "Bruxelles",
-        country: "BE",
+        country_code: "BE",
       })
       .select("id")
       .single();

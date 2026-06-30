@@ -206,48 +206,53 @@ export default function SearchTrivagoCard({ product: p }: Props) {
         </div>
       </div>
 
-      {/* Secondary offers */}
-      {otherOffers.length > 0 && (
-        <div className="border-t border-border bg-muted/30">
-          {visibleOffers.map((offer) => (
-            <div key={offer.id} className="flex items-center justify-between px-5 py-2.5 border-b border-border/60 last:border-b-0">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-foreground">{offer.sellerName}</span>
-                {offer.isVerified && (
-                  <span className="flex items-center gap-0.5 text-[10px] text-emerald-600 font-medium">
-                    <Check size={10} /> Vérifié
-                  </span>
-                )}
+      {/* Secondary offers — lazy : on n'invoque useProductOffers qu'au clic */}
+      {(() => {
+        const extraCount = Math.max(0, offerCount - 1);
+        if (extraCount === 0 && otherOffers.length === 0) return null;
+        return (
+          <div className="border-t border-border bg-muted/30">
+            {expanded && visibleOffers.map((offer) => (
+              <div key={offer.id} className="flex items-center justify-between px-5 py-2.5 border-b border-border/60 last:border-b-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-foreground">{offer.sellerName}</span>
+                  {offer.isVerified && (
+                    <span className="flex items-center gap-0.5 text-[10px] text-emerald-600 font-medium">
+                      <Check size={10} /> Vérifié
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  {price > 0 && offer.unitPriceEur > price && (
+                    <span className="text-[10px] font-medium text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded whitespace-nowrap">
+                      +{(offer.unitPriceEur - price).toFixed(2)}&nbsp;€ (+{((offer.unitPriceEur - price) / price * 100).toFixed(1)}%)
+                    </span>
+                  )}
+                  <span className="text-sm font-bold text-foreground">{offer.unitPriceEur.toFixed(2)} €</span>
+                  <button
+                    onClick={() => navigate(`/produit/${p.slug}`, fromState)}
+                    className="px-3.5 py-1 border border-border text-foreground text-[11px] font-semibold rounded-md hover:bg-muted transition-colors"
+                  >
+                    Voir
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                {price > 0 && offer.unitPriceEur > price && (
-                  <span className="text-[10px] font-medium text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded whitespace-nowrap">
-                    +{(offer.unitPriceEur - price).toFixed(2)}&nbsp;€ (+{((offer.unitPriceEur - price) / price * 100).toFixed(1)}%)
-                  </span>
-                )}
-                <span className="text-sm font-bold text-foreground">{offer.unitPriceEur.toFixed(2)} €</span>
-                <button
-                  onClick={() => navigate(`/produit/${p.slug}`, fromState)}
-                  className="px-3.5 py-1 border border-border text-foreground text-[11px] font-semibold
-                            rounded-md hover:bg-muted transition-colors"
-                >
-                  Voir
-                </button>
-              </div>
-            </div>
-          ))}
+            ))}
 
-          {hiddenOffers.length > 0 && (
             <div className="px-5 py-2">
               <button
-                onClick={() => setShowMore(!showMore)}
-                className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground
-                          hover:text-foreground transition-colors"
+                onClick={() => {
+                  if (!expanded) setExpanded(true);
+                  setShowMore(!showMore);
+                }}
+                className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
               >
-                {showMore ? "Moins d'offres" : `+ ${hiddenOffers.length} autre${hiddenOffers.length > 1 ? "s" : ""} offre${hiddenOffers.length > 1 ? "s" : ""}`}
-                {showMore ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                {expanded && showMore
+                  ? "Moins d'offres"
+                  : `+ ${extraCount} autre${extraCount > 1 ? "s" : ""} offre${extraCount > 1 ? "s" : ""}`}
+                {expanded && showMore ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </button>
-              {showMore && (
+              {expanded && showMore && (
                 <div className="mt-1">
                   {hiddenOffers.map((offer) => (
                     <div key={offer.id} className="flex items-center justify-between py-2 border-t border-border/60">
@@ -261,8 +266,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
                         <span className="text-sm font-bold text-foreground">{offer.unitPriceEur.toFixed(2)} €</span>
                         <button
                           onClick={() => navigate(`/produit/${p.slug}`, fromState)}
-                          className="px-3.5 py-1 border border-border text-foreground text-[11px] font-semibold
-                                    rounded-md hover:bg-muted transition-colors"
+                          className="px-3.5 py-1 border border-border text-foreground text-[11px] font-semibold rounded-md hover:bg-muted transition-colors"
                         >
                           Voir
                         </button>
@@ -272,9 +276,9 @@ export default function SearchTrivagoCard({ product: p }: Props) {
                 </div>
               )}
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        );
+      })()}
     </div>
   );
 }

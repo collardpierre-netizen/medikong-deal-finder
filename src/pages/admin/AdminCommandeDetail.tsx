@@ -120,6 +120,33 @@ const AdminCommandeDetail = () => {
     }
   }, [order]);
 
+  const { data: splitSummary, refetch: refetchSplit, isFetching: splitLoading } = useQuery({
+    queryKey: ["admin-order-split", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_get_order_split_summary" as any, { _order_id: id });
+      if (error) throw error;
+      return data as any;
+    },
+    enabled: !!id && !!order,
+  });
+
+  const reprocessFanout = async () => {
+    if (!confirm("Relancer le split en sous-commandes vendeur ?\n\nL'opération est idempotente : aucun doublon ne sera créé, seuls les vendeurs manquants seront ajoutés.")) return;
+    setBusy("REPROCESS");
+    try {
+      const { data, error } = await supabase.rpc("admin_reprocess_order_fanout" as any, { _order_id: id });
+      if (error) throw error;
+      const summary: any = data;
+      toast.success(`Split relancé · ${summary?.actual_sub_order_count || 0} sous-commande(s) au total (${summary?.dispatched_rows || 0} traitée(s))`);
+      await refetchSplit();
+      await queryClient.invalidateQueries({ queryKey: ["admin-order", id] });
+    } catch (e: any) {
+      toast.error(e?.message || "Échec relance split");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   if (isLoading) return <div className="p-6 text-slate-500">Chargement…</div>;
   if (orderError) return <div className="p-6"><VendorsEmbedError error={orderError} /></div>;
   if (!order) return <div className="p-6 text-slate-500">Commande introuvable. <Link to="/admin/commandes" className="text-sky-600">Retour</Link></div>;

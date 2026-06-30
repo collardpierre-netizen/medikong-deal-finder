@@ -14719,6 +14719,164 @@ export type Database = {
           },
         ]
       }
+      sub_order_generation_logs: {
+        Row: {
+          actor_user_id: string | null
+          commission_amount_override: number | null
+          commission_rate_override: number | null
+          cost_total: number | null
+          created_at: string
+          id: string
+          line_count: number
+          lines: Json
+          margin_total: number | null
+          metadata: Json
+          order_id: string
+          order_number: string | null
+          payment_intent_id: string | null
+          source: string
+          stripe_session_id: string | null
+          sub_order_id: string | null
+          subtotal_incl_vat: number | null
+          vendor_id: string | null
+          was_existing: boolean
+        }
+        Insert: {
+          actor_user_id?: string | null
+          commission_amount_override?: number | null
+          commission_rate_override?: number | null
+          cost_total?: number | null
+          created_at?: string
+          id?: string
+          line_count?: number
+          lines?: Json
+          margin_total?: number | null
+          metadata?: Json
+          order_id: string
+          order_number?: string | null
+          payment_intent_id?: string | null
+          source?: string
+          stripe_session_id?: string | null
+          sub_order_id?: string | null
+          subtotal_incl_vat?: number | null
+          vendor_id?: string | null
+          was_existing?: boolean
+        }
+        Update: {
+          actor_user_id?: string | null
+          commission_amount_override?: number | null
+          commission_rate_override?: number | null
+          cost_total?: number | null
+          created_at?: string
+          id?: string
+          line_count?: number
+          lines?: Json
+          margin_total?: number | null
+          metadata?: Json
+          order_id?: string
+          order_number?: string | null
+          payment_intent_id?: string | null
+          source?: string
+          stripe_session_id?: string | null
+          sub_order_id?: string | null
+          subtotal_incl_vat?: number | null
+          vendor_id?: string | null
+          was_existing?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sub_order_generation_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "sub_order_generation_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_with_forecast_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sub_order_generation_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sub_order_generation_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders_visible_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sub_order_generation_logs_sub_order_id_fkey"
+            columns: ["sub_order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["sub_order_id"]
+          },
+          {
+            foreignKeyName: "sub_order_generation_logs_sub_order_id_fkey"
+            columns: ["sub_order_id"]
+            isOneToOne: false
+            referencedRelation: "sub_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sub_order_generation_logs_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "sub_order_generation_logs_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "sub_order_generation_logs_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sub_order_generation_logs_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "sub_order_generation_logs_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "sub_order_generation_logs_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sub_order_generation_logs_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sub_orders: {
         Row: {
           commission_amount_override: number | null
@@ -23175,6 +23333,10 @@ export type Database = {
         }[]
       }
       admin_get_order_split_summary: {
+        Args: { _order_id: string }
+        Returns: Json
+      }
+      admin_get_sub_order_generation_logs: {
         Args: { _order_id: string }
         Returns: Json
       }

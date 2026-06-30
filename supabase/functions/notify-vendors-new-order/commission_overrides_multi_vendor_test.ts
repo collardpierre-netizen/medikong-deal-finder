@@ -80,7 +80,13 @@ Deno.test(
 
     const { error: auErr } = await sb
       .from("admin_users")
-      .insert({ user_id: adminUserId, is_active: true, role: "admin" });
+      .insert({
+        user_id: adminUserId,
+        is_active: true,
+        role: "admin",
+        name: `TEST-COMOV-ADMIN-${tag}`,
+        email: adminEmail,
+      });
     assertEquals(auErr, null, `admin_users insert: ${auErr?.message}`);
 
     // Sign in to get a JWT and run the RPC as admin

@@ -530,11 +530,13 @@ export default function BrandDetailPage() {
                       )}
                     </div>
                   ) : view === "trivago" ? (
-                    <div className="space-y-3">
-                      {filtered.map((p) => (
-                        <SearchTrivagoCard key={p.id} product={p} />
-                      ))}
-                    </div>
+                    <BestOffersProvider productIds={filtered.map((p) => p.id)}>
+                      <div className="space-y-3">
+                        {filtered.map((p) => (
+                          <SearchTrivagoCard key={p.id} product={p} />
+                        ))}
+                      </div>
+                    </BestOffersProvider>
                   ) : (
                     <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                       {filtered.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}

@@ -233,7 +233,41 @@ export function useProductOffers(productId: string | undefined) {
         .eq("is_active", true)
         .eq("country_code", country)
         .order("price_excl_vat", { ascending: true });
-      if (error) throw error;
+      if (error) {
+        // Track explicite des permission denied (42501) sur public.offers,
+        // avec URL + produit + pays + profil, côté client console ET côté
+        // serveur (insert dans public.client_error_logs via errorReporter).
+        const code = (error as any)?.code || "";
+        const msg = String((error as any)?.message || "");
+        const isOffersPermDenied =
+          code === "42501" ||
+          /permission denied for (table |relation )?"?offers"?/i.test(msg);
+        if (isOffersPermDenied) {
+          try {
+            const { report } = await import("@/lib/errorReporter");
+            await report({
+              source: "manual",
+              level: "error",
+              component: "useProductOffers",
+              message: `PostgREST 42501 on public.offers — ${msg || "permission denied"}`,
+              metadata: {
+                table: "public.offers",
+                pg_code: code,
+                pg_details: (error as any)?.details ?? null,
+                pg_hint: (error as any)?.hint ?? null,
+                product_id: productId ?? null,
+                country,
+                buyer_profile_id: buyerProfileId ?? null,
+                url: typeof window !== "undefined" ? window.location.href : null,
+                pathname: typeof window !== "undefined" ? window.location.pathname : null,
+              },
+            });
+          } catch {
+            // never break the query on logging failure
+          }
+        }
+        throw error;
+      }
 
       const offerIds = (offers || []).map((o: any) => o.id);
       const vendorIds = [...new Set((offers || []).map((o: any) => o.vendor_id))];

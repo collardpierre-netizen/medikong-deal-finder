@@ -14,6 +14,7 @@ import { PriceDisplayProvider } from "@/contexts/PriceDisplayContext";
 import ImpersonationBanner from "@/components/admin/ImpersonationBanner";
 import ImpersonationPageTracker from "@/components/admin/ImpersonationPageTracker";
 import { EnvNoIndex } from "@/components/layout/EnvNoIndex";
+import { AccountSelectionGuard } from "@/components/account/AccountSelectionGuard";
 import { CookieConsent } from "@/components/layout/CookieConsent";
 import { HelmetProvider } from "react-helmet-async";
 import { Loader2 } from "lucide-react";

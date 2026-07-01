@@ -1130,11 +1130,18 @@ const AdminCommandes = () => {
                             </p>
                             <button
                               type="button"
-                              onClick={() => setSelectedVendorIds([])}
+                              onClick={() => {
+                                setSelectedVendorIds([]);
+                                setSearch("");
+                                setStatusFilter("all");
+                                setPeriod("all");
+                                setDateFrom("");
+                                setDateTo("");
+                              }}
                               className="px-3 py-1.5 rounded text-[12px] font-medium transition-colors hover:bg-blue-100"
                               style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA", border: "1px solid #BFDBFE" }}
                             >
-                              Réinitialiser les filtres vendeurs
+                              Réinitialiser les filtres
                             </button>
                           </div>
                         </td>

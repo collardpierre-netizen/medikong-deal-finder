@@ -442,7 +442,9 @@ Deno.serve(async (req) => {
   // L'offre catch-all "qogita-best-price" n'est plus enregistrée (cf. branche désactivée plus bas).
   let fetchMultiVendor = true;
   let resyncLogId: string | null = null;
-  let offsetCursor = 0;
+  // Keyset pagination cursor (created_at ISO). null → depuis le début.
+  // Remplace l'ancien offsetCursor pour éviter les OFFSET O(n²) sur products.
+  let afterCreatedAt: string | null = null;
   // Sweep A : run id provided by run-sync-pipeline at full-run start.
   // Stamped on every offer / vendor upsert so qogita_reconcile can detect leftovers.
   let syncRunId: string | null = null;
@@ -451,7 +453,8 @@ Deno.serve(async (req) => {
     if (body?.country) targetCountry = body.country;
     // body.multi_vendor ignoré : forcé à true.
     if (body?.resync_log_id) resyncLogId = String(body.resync_log_id);
-    if (body?.offset !== undefined) offsetCursor = parseInt(String(body.offset), 10) || 0;
+    if (body?.after_created_at) afterCreatedAt = String(body.after_created_at);
+    // Legacy body.offset ignoré (pagination cursor-based).
     if (body?.sync_run_id) syncRunId = String(body.sync_run_id);
   } catch {
     // no-op
@@ -500,7 +503,6 @@ Deno.serve(async (req) => {
   const vatMultiplier = 1 + vatRate / 100;
 
   const syncType = fetchMultiVendor ? "offers_multi_vendor" : "offers_detail";
-  const incrementalProductFilter = "offer_count.gt.0,synced_at.is.null,qogita_qid.is.null";
 
   const { data: resumableLogs } = await sb
     .from("sync_logs")
@@ -517,20 +519,14 @@ Deno.serve(async (req) => {
   ));
 
   let syncLogId: string;
-  let lastOffset = 0;
 
   if (existingPartial) {
     syncLogId = existingPartial.id;
     const prevStats = (existingPartial.stats as any) || {};
-    const prevChunkStart = (prevStats.chunk_start !== undefined && prevStats.chunk_start !== null)
-      ? Number(prevStats.chunk_start)
-      : 0;
-    if (offsetCursor !== prevChunkStart) {
-      // On reprend sur un autre chunk → reset intra-chunk
-      lastOffset = 0;
-    } else {
-      // Même chunk → resume normal
-      lastOffset = prevStats.last_offset || existingPartial.progress_current || 0;
+    // Reprise keyset : si le run partiel a déjà persisté un cursor_after, on l'utilise
+    // (sauf si le caller a explicitement fourni un after_created_at plus récent).
+    if (!afterCreatedAt && prevStats.cursor_after) {
+      afterCreatedAt = String(prevStats.cursor_after);
     }
     await sb
       .from("sync_logs")
@@ -538,8 +534,7 @@ Deno.serve(async (req) => {
         status: "running",
         completed_at: null,
         error_message: null,
-        progress_current: lastOffset,
-        progress_message: `Reprise ${targetCountry} chunk@${offsetCursor} à partir de ${lastOffset}...`,
+        progress_message: `Reprise ${targetCountry} après ${afterCreatedAt ?? "début"}...`,
       })
       .eq("id", syncLogId);
   } else {
@@ -554,7 +549,7 @@ Deno.serve(async (req) => {
       .insert({
         sync_type: syncType as any,
         status: "running",
-        stats: { country: targetCountry, multi_vendor: fetchMultiVendor, chunk_start: offsetCursor },
+        stats: { country: targetCountry, multi_vendor: fetchMultiVendor, cursor_after: afterCreatedAt },
         progress_current: 0,
         progress_total: 0,
         progress_message: `${targetCountry}: authentification...`,
@@ -565,20 +560,11 @@ Deno.serve(async (req) => {
     syncLogId = newLog!.id;
   }
 
-  const { count: totalProducts } = await sb
-    .from("products")
-    .select("id", { count: "exact", head: true })
-    .eq("is_active", true)
-    .not("gtin", "is", null)
-    .or(incrementalProductFilter);
-
-  const remaining = Math.max((totalProducts || 0) - offsetCursor - (lastOffset || 0), 0);
-
   // Run sync synchronously (not in background) so we can return accurate remaining
   let productsEnriched = 0;
   let offersUpserted = 0;
   try {
-    const result = await syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, lastOffset, startTime, fetchMultiVendor, recordEndpointError, recordProgress, resyncLogId, offsetCursor, syncRunId);
+    const result = await syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, startTime, fetchMultiVendor, recordEndpointError, recordProgress, resyncLogId, afterCreatedAt, syncRunId);
     productsEnriched = result?.products_enriched || 0;
     offersUpserted = result?.offers_upserted || 0;
   } catch (e: any) {
@@ -594,9 +580,9 @@ Deno.serve(async (req) => {
       .eq("id", syncLogId);
   }
 
-  // Re-check remaining after this batch
+  // Re-check state after this batch (remaining n'est plus calculable sans COUNT ; on renvoie le statut).
   const { data: updatedLog } = await sb.from("sync_logs").select("status, stats").eq("id", syncLogId).single();
-  const finalRemaining = updatedLog?.status === "partial" ? ((updatedLog.stats as any)?.last_offset ? (totalProducts || 0) - (updatedLog.stats as any).last_offset : 0) : 0;
+  const nextCursor = updatedLog?.status === "partial" ? (updatedLog.stats as any)?.cursor_after ?? null : null;
 
   return new Response(
     JSON.stringify({
@@ -606,9 +592,9 @@ Deno.serve(async (req) => {
       multi_vendor: fetchMultiVendor,
       products_enriched: productsEnriched,
       offers_upserted: offersUpserted,
-      remaining: finalRemaining,
+      next_cursor: nextCursor,
       status: updatedLog?.status || "unknown",
-      message: `Sync offres ${targetCountry} — ${productsEnriched} enrichis, ${finalRemaining} restants`,
+      message: `Sync offres ${targetCountry} — ${productsEnriched} enrichis${nextCursor ? " (chunk suivant programmé)" : ""}`,
     }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );

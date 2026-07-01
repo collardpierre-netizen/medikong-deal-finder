@@ -950,6 +950,25 @@ const AdminCommandeManuelle = () => {
                         <Input value={qcPostalCode} onChange={(e) => setQcPostalCode(e.target.value)} maxLength={20} placeholder="Ex. 7822" />
                     </div>
                     <div>
+                      <Label className="text-xs">Typologie de client</Label>
+                      <Select value={qcCustomerType} onValueChange={setQcCustomerType}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pharmacy">Pharmacie</SelectItem>
+                          <SelectItem value="hospital">Hôpital</SelectItem>
+                          <SelectItem value="clinic">Clinique</SelectItem>
+                          <SelectItem value="doctor">Médecin</SelectItem>
+                          <SelectItem value="dentist">Dentiste</SelectItem>
+                          <SelectItem value="veterinary">Vétérinaire</SelectItem>
+                          <SelectItem value="nursing_home">MR / MRS</SelectItem>
+                          <SelectItem value="wholesaler">Grossiste</SelectItem>
+                          <SelectItem value="retail">Retail</SelectItem>
+                          <SelectItem value="lab">Laboratoire</SelectItem>
+                          <SelectItem value="other">Autre</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
                       <Label className="text-xs">N° TVA (optionnel)</Label>
                       <Input
                         value={qcVatNumber}

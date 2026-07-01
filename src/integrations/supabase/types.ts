@@ -24070,6 +24070,8 @@ export type Database = {
         Args: { _country_code?: string }
         Returns: Json
       }
+      current_active_account_id: { Args: never; Returns: string }
+      current_active_account_kind: { Args: never; Returns: string }
       current_buyer_id: { Args: never; Returns: string }
       current_buyer_profile_id: { Args: never; Returns: string }
       current_guarantee_version_id: { Args: never; Returns: string }
@@ -24268,6 +24270,17 @@ export type Database = {
           price_source: string
           product_id: string
           vendor_id: string
+        }[]
+      }
+      get_my_accounts: {
+        Args: never
+        Returns: {
+          account_id: string
+          display_name: string
+          is_owner: boolean
+          kind: string
+          role: string
+          status: string
         }[]
       }
       get_my_restock_transaction_contact: {
@@ -24563,6 +24576,10 @@ export type Database = {
       is_order_vendor: { Args: { _order_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_verified_buyer_or_admin: { Args: { _uid?: string }; Returns: boolean }
+      link_customer_to_current_user: {
+        Args: { _customer_id: string }
+        Returns: Json
+      }
       list_admin_users: {
         Args: never
         Returns: {
@@ -25424,6 +25441,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      set_active_account: {
+        Args: { _account_id: string; _kind: string }
+        Returns: Json
       }
       set_user_preference: {
         Args: { _key: string; _value: string }

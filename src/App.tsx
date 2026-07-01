@@ -350,6 +350,7 @@ const App = () => (
   <HelmetProvider>
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
+      <ActiveAccountProvider>
       <I18nProvider>
       <CartProvider>
       <CountryProvider>

@@ -136,6 +136,66 @@ const AdminCommandes = () => {
   const isProd = typeof window !== "undefined" && /medikong\.pro|medikong\.com/i.test(window.location.hostname);
   const REQUIRED_TOKEN = "PURGE TEST ORDERS";
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  // Compute period bounds up front (they feed the RPC).
+  const hasCustomDatesPre = Boolean(dateFrom || dateTo);
+  const periodStartIso = (() => {
+    if (dateFrom) { const d = new Date(dateFrom); d.setHours(0, 0, 0, 0); return d.toISOString(); }
+    if (hasCustomDatesPre) return null;
+    const days = PERIODS.find(p => p.key === period)?.days;
+    if (!days) return null;
+    const d = new Date(); d.setDate(d.getDate() - days); d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  })();
+  const periodEndIso = (() => {
+    if (dateTo) { const d = new Date(dateTo); d.setHours(23, 59, 59, 999); return d.toISOString(); }
+    return null;
+  })();
+
+  // Reset to page 1 whenever any filter changes.
+  const filtersKey = JSON.stringify({
+    statusFilter, search, hideTest, period, dateFrom, dateTo,
+    onlyWithCommission, forecastFilter, selectedVendorIds,
+  });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useState(() => {}); // (kept intentionally to preserve prior order of hooks; setPage handled below)
+
+  // Server-side paginated + filtered query.
+  const {
+    data: ordersPage,
+    isLoading,
+    isFetching,
+  } = useAdminOrdersPaginated(
+    {
+      status: statusFilter,
+      dateFrom: periodStartIso,
+      dateTo: periodEndIso,
+      vendorIds: selectedVendorIds,
+      search,
+      onlyWithCommission,
+      forecastFilter,
+      hideTest,
+      hideDeleted: true,
+    },
+    page,
+    pageSize,
+  );
+  const ordersData = ordersPage?.rows ?? [];
+  const serverStatusCounts = ordersPage?.statusCounts ?? {};
+  const serverKpis = ordersPage?.kpis;
+  const serverTotal = ordersPage?.total ?? 0;
+
+  // Reset page to 1 whenever the filter signature changes.
+  if (typeof window !== "undefined") {
+    const w = window as any;
+    if (w.__admin_orders_filters_key !== filtersKey) {
+      w.__admin_orders_filters_key = filtersKey;
+      if (page !== 1) setTimeout(() => setPage(1), 0);
+    }
+  }
+
 
   const vendorLabelById = new Map((vendorsData as any[]).map(v => [v.id, v.company_name || v.name || v.id]));
   const vendorCommissionById = new Map<string, VendorCommissionConfig>(

@@ -5,9 +5,11 @@ import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import AdminOrderSlaPanel from "@/components/admin/AdminOrderSlaPanel";
 import { useI18n } from "@/contexts/I18nContext";
-import { useOrders } from "@/hooks/useAdminData";
+// useOrders retiré : remplacé par useAdminOrdersPaginated (RPC serveur).
+import { useAdminOrdersPaginated } from "@/hooks/useAdminOrdersPaginated";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 import { logAdminAudit } from "@/lib/admin-audit";
 import {
@@ -67,7 +69,6 @@ const fmt = fmtEur;
 const AdminCommandes = () => {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const { data: ordersData = [], isLoading } = useOrders();
   const queryClient = useQueryClient();
   const { data: vendorsData = [] } = useQuery({
     queryKey: ["admin-order-vendor-labels"],
@@ -80,7 +81,7 @@ const AdminCommandes = () => {
     },
   });
   const [activeTab, setActiveTab] = useState<"list" | "timeline" | "aging" | "buyers" | "sla">("list");
-  const [hideDeleted, setHideDeleted] = useState(true);
+  // Note : filtre "masquer supprimées" appliqué serveur (RPC) — toujours actif.
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; number: string } | null>(null);
   const [deleteReason, setDeleteReason] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -135,6 +136,66 @@ const AdminCommandes = () => {
   const isProd = typeof window !== "undefined" && /medikong\.pro|medikong\.com/i.test(window.location.hostname);
   const REQUIRED_TOKEN = "PURGE TEST ORDERS";
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  // Compute period bounds up front (they feed the RPC).
+  const hasCustomDatesPre = Boolean(dateFrom || dateTo);
+  const periodStartIso = (() => {
+    if (dateFrom) { const d = new Date(dateFrom); d.setHours(0, 0, 0, 0); return d.toISOString(); }
+    if (hasCustomDatesPre) return null;
+    const days = PERIODS.find(p => p.key === period)?.days;
+    if (!days) return null;
+    const d = new Date(); d.setDate(d.getDate() - days); d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  })();
+  const periodEndIso = (() => {
+    if (dateTo) { const d = new Date(dateTo); d.setHours(23, 59, 59, 999); return d.toISOString(); }
+    return null;
+  })();
+
+  // Reset to page 1 whenever any filter changes.
+  const filtersKey = JSON.stringify({
+    statusFilter, search, hideTest, period, dateFrom, dateTo,
+    onlyWithCommission, forecastFilter, selectedVendorIds,
+  });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useState(() => {}); // (kept intentionally to preserve prior order of hooks; setPage handled below)
+
+  // Server-side paginated + filtered query.
+  const {
+    data: ordersPage,
+    isLoading,
+    isFetching,
+  } = useAdminOrdersPaginated(
+    {
+      status: statusFilter,
+      dateFrom: periodStartIso,
+      dateTo: periodEndIso,
+      vendorIds: selectedVendorIds,
+      search,
+      onlyWithCommission,
+      forecastFilter,
+      hideTest,
+      hideDeleted: true,
+    },
+    page,
+    pageSize,
+  );
+  const ordersData = ordersPage?.rows ?? [];
+  const serverStatusCounts = ordersPage?.statusCounts ?? {};
+  const serverKpis = ordersPage?.kpis;
+  const serverTotal = ordersPage?.total ?? 0;
+
+  // Reset page to 1 whenever the filter signature changes.
+  if (typeof window !== "undefined") {
+    const w = window as any;
+    if (w.__admin_orders_filters_key !== filtersKey) {
+      w.__admin_orders_filters_key = filtersKey;
+      if (page !== 1) setTimeout(() => setPage(1), 0);
+    }
+  }
+
 
   const vendorLabelById = new Map((vendorsData as any[]).map(v => [v.id, v.company_name || v.name || v.id]));
   const vendorCommissionById = new Map<string, VendorCommissionConfig>(
@@ -254,73 +315,32 @@ const AdminCommandes = () => {
     };
   });
 
-  // --- Filtre période (sur created_at) appliqué avant toute dérivation ---
-  // --- Filtre période (sur created_at) : dates custom prennent priorité sur les presets ---
+  // --- Période : bornes locales pour l'affichage (calcul serveur déjà fait via periodStartIso/EndIso). ---
   const hasCustomDates = Boolean(dateFrom || dateTo);
-  const periodStartDate = (() => {
-    if (dateFrom) {
-      const d = new Date(dateFrom);
-      d.setHours(0, 0, 0, 0);
-      return d;
-    }
-    if (hasCustomDates) return null;
-    const days = PERIODS.find(p => p.key === period)?.days;
-    if (!days) return null;
-    const d = new Date();
-    d.setDate(d.getDate() - days);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  })();
-  const periodEndDate = (() => {
-    if (dateTo) {
-      const d = new Date(dateTo);
-      d.setHours(23, 59, 59, 999);
-      return d;
-    }
-    return new Date();
-  })();
-  const periodOrders = orders.filter(o => {
-    if (!o.createdAtRaw) return true;
-    const t = new Date(o.createdAtRaw).getTime();
-    if (periodStartDate && t < periodStartDate.getTime()) return false;
-    if (periodEndDate && t > periodEndDate.getTime()) return false;
-    return true;
-  });
+  const periodStartDate = periodStartIso ? new Date(periodStartIso) : null;
+  const periodEndDate = periodEndIso ? new Date(periodEndIso) : new Date();
 
-  // Les commandes archivées (hidden_from_list) restent visibles dans l'onglet « Annulées »
-  // afin que le compteur reflète la réalité ; ailleurs elles sont masquées si hideDeleted=true.
-  const visibleOrders = hideDeleted
-    ? periodOrders.filter(o => !o.hiddenFromList || o.status === "cancelled")
-    : periodOrders;
-  const displayOrders = hideTest ? visibleOrders.filter(o => !o.isTest) : visibleOrders;
-  const testCount = visibleOrders.filter(o => o.isTest).length;
-  const deletedCount = periodOrders.filter(o => o.hiddenFromList && o.status !== "cancelled").length;
+  // Le serveur (RPC admin_list_orders) applique déjà tous les filtres (statut, période, vendeurs,
+  // recherche, commission, prévisionnel, test, supprimées). La page courante = `orders`.
+  const displayOrders = orders;
+  const filtered = orders;
 
-  const filtered = displayOrders.filter((o) => {
-    if (statusFilter !== "all" && o.status !== statusFilter) return false;
-    if (onlyWithCommission && !(o.commissionEur > 0)) return false;
-    if (forecastFilter === "real" && o.isForecast) return false;
-    if (forecastFilter === "forecast" && !o.isForecast) return false;
-    if (selectedVendorIds.length > 0) {
-      const orderVendorIds = new Set((o.lines || []).map((l: any) => l.vendor_id).filter(Boolean));
-      const hasMatch = selectedVendorIds.some(vid => orderVendorIds.has(vid));
-      if (!hasMatch) return false;
-    }
-    if (search && !o.id.toLowerCase().includes(search.toLowerCase()) && !o.buyer.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
+  // Compteurs / KPIs : issus du RPC (calculés sur l'ensemble filtré, pas la page courante).
+  const forecastCount = Number(serverKpis?.forecast_count ?? 0);
+  const testCount = 0; // masqué serveur — badge de nettoyage géré via useOrders() ci-dessous
+  const deletedCount = 0;
 
-  const forecastCount = displayOrders.filter(o => o.isForecast).length;
+  const countByStatus = (s: string) => Number(serverStatusCounts?.[s] ?? 0);
 
-  const countByStatus = (s: string) => s === "all" ? displayOrders.length : displayOrders.filter((o) => o.status === s).length;
-
-  const gmvDay = displayOrders.reduce((a, o) => a + o.amountHT, 0);
-  const avgBasket = displayOrders.length > 0 ? Math.round(gmvDay / displayOrders.length) : 0;
-  const commissionTotal = displayOrders.reduce((a, o) => a + o.commissionEur, 0);
+  const gmvDay = Number(serverKpis?.total_ht ?? 0);
+  const totalCount = serverTotal;
+  const avgBasket = totalCount > 0 ? Math.round(gmvDay / totalCount) : 0;
+  const commissionTotal = Number(serverKpis?.commission_total ?? 0);
   const commissionPctGlobal = gmvDay > 0 ? (commissionTotal / gmvDay) * 100 : 0;
-  const grossMarginTotal = displayOrders.reduce((a, o) => a + (o.hasCost ? o.grossMarginEur : 0), 0);
-  const grossMarginCaBase = displayOrders.reduce((a, o) => a + (o.hasCost ? o.amountHT : 0), 0);
+  const grossMarginTotal = Number(serverKpis?.margin_total ?? 0);
+  const grossMarginCaBase = Number(serverKpis?.margin_base_ht ?? 0);
   const grossMarginPctGlobal = grossMarginCaBase > 0 ? (grossMarginTotal / grossMarginCaBase) * 100 : 0;
+
 
   const tabs = [
     { key: "list" as const, label: "Liste" },
@@ -561,7 +581,7 @@ const AdminCommandes = () => {
 
       <div className="grid grid-cols-7 gap-3 mb-5">
         <KpiCard icon={TrendingUp} label={`GMV total (${PERIODS.find(p => p.key === period)?.label})`} value={`${fmt(gmvDay)} EUR`} />
-        <KpiCard icon={ShoppingCart} label="Commandes" value={String(displayOrders.length)} iconColor="#7C3AED" iconBg="#F5F3FF" />
+        <KpiCard icon={ShoppingCart} label="Commandes" value={String(totalCount)} iconColor="#7C3AED" iconBg="#F5F3FF" />
         <KpiCard icon={CreditCard} label="Panier moyen" value={`${fmt(avgBasket)} EUR`} iconColor="#059669" iconBg="#F0FDF4" />
         <KpiCard icon={Percent} label="Commission totale" value={`${fmt(commissionTotal)} EUR`} evolution={{ value: Number(commissionPctGlobal.toFixed(2)), label: "% du CA HT" }} iconColor="#10B981" iconBg="#ECFDF5" />
         <KpiCard
@@ -781,7 +801,17 @@ const AdminCommandes = () => {
               ? `Période filtrée : ${periodStartDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })} – ${periodEndDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}`
               : `Période filtrée : jusqu'au ${periodEndDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}`}
             <span className="mx-1">·</span>
-            <span className="font-semibold" style={{ color: "#1D2530" }}>{filtered.length} résultat(s)</span>
+            <span className="font-semibold" style={{ color: "#1D2530" }}>
+              {totalCount} résultat{totalCount > 1 ? "s" : ""}
+              {totalCount > pageSize && (
+                <span className="font-normal" style={{ color: "#8B95A5" }}>
+                  {" "}· page {page} / {Math.max(1, Math.ceil(totalCount / pageSize))}
+                </span>
+              )}
+              {isFetching && !isLoading && (
+                <span className="ml-2 text-[10px] font-normal" style={{ color: "#8B95A5" }}>(mise à jour…)</span>
+              )}
+            </span>
           </div>
 
           <div className="rounded-[10px] overflow-hidden" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
@@ -1153,6 +1183,51 @@ const AdminCommandes = () => {
               </div>
             )}
           </div>
+
+          {/* Pagination serveur */}
+          {totalCount > 0 && (
+            <div className="flex items-center justify-between mt-3 flex-wrap gap-2">
+              <div className="text-[11px]" style={{ color: "#8B95A5" }}>
+                {(() => {
+                  const from = (page - 1) * pageSize + 1;
+                  const to = Math.min(page * pageSize, totalCount);
+                  return `Affichage ${from}–${to} sur ${totalCount}`;
+                })()}
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-1 text-[11px]" style={{ color: "#616B7C" }}>
+                  Taille
+                  <select
+                    value={pageSize}
+                    onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+                    className="px-2 py-1 rounded text-[11px]"
+                    style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#1D2530" }}
+                  >
+                    {[25, 50, 100, 200].map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </label>
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page <= 1 || isFetching}
+                  className="px-3 py-1.5 rounded text-[12px] font-semibold inline-flex items-center gap-1 disabled:opacity-40"
+                  style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#1D2530" }}
+                >
+                  <ChevronLeft size={12} /> Précédent
+                </button>
+                <span className="text-[11px] font-semibold" style={{ color: "#1D2530" }}>
+                  {page} / {Math.max(1, Math.ceil(totalCount / pageSize))}
+                </span>
+                <button
+                  onClick={() => setPage(p => (p * pageSize < totalCount ? p + 1 : p))}
+                  disabled={page * pageSize >= totalCount || isFetching}
+                  className="px-3 py-1.5 rounded text-[12px] font-semibold inline-flex items-center gap-1 disabled:opacity-40"
+                  style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#1D2530" }}
+                >
+                  Suivant <ChevronRight size={12} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

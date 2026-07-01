@@ -1031,21 +1031,13 @@ const AdminCommandeManuelle = () => {
               </Dialog>
               </div>
             </div>
-            <Input
-              placeholder="Rechercher (nom, email)…"
-              value={customerSearch}
-              onChange={(e) => setCustomerSearch(e.target.value)}
+            <CustomerCombobox
+              customers={customers}
+              value={customerId}
+              onChange={setCustomerId}
+              search={customerSearch}
+              onSearchChange={setCustomerSearch}
             />
-            <Select value={customerId} onValueChange={setCustomerId}>
-              <SelectTrigger><SelectValue placeholder="Sélectionner un acheteur" /></SelectTrigger>
-              <SelectContent>
-                {customers.map((c: any) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.company_name || c.email} {c.country_code ? `· ${c.country_code}` : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
 
             {customerId && (
               <div className="pt-2 border-t space-y-3" style={{ borderColor: "#E2E8F0" }}>

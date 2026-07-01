@@ -5,7 +5,7 @@ import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import AdminOrderSlaPanel from "@/components/admin/AdminOrderSlaPanel";
 import { useI18n } from "@/contexts/I18nContext";
-import { useOrders } from "@/hooks/useAdminData";
+// useOrders retiré : remplacé par useAdminOrdersPaginated (RPC serveur).
 import { useAdminOrdersPaginated } from "@/hooks/useAdminOrdersPaginated";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";

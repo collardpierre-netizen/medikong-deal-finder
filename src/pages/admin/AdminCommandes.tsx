@@ -581,7 +581,7 @@ const AdminCommandes = () => {
 
       <div className="grid grid-cols-7 gap-3 mb-5">
         <KpiCard icon={TrendingUp} label={`GMV total (${PERIODS.find(p => p.key === period)?.label})`} value={`${fmt(gmvDay)} EUR`} />
-        <KpiCard icon={ShoppingCart} label="Commandes" value={String(displayOrders.length)} iconColor="#7C3AED" iconBg="#F5F3FF" />
+        <KpiCard icon={ShoppingCart} label="Commandes" value={String(totalCount)} iconColor="#7C3AED" iconBg="#F5F3FF" />
         <KpiCard icon={CreditCard} label="Panier moyen" value={`${fmt(avgBasket)} EUR`} iconColor="#059669" iconBg="#F0FDF4" />
         <KpiCard icon={Percent} label="Commission totale" value={`${fmt(commissionTotal)} EUR`} evolution={{ value: Number(commissionPctGlobal.toFixed(2)), label: "% du CA HT" }} iconColor="#10B981" iconBg="#ECFDF5" />
         <KpiCard

@@ -178,7 +178,7 @@ const AdminCommandeManuelle = () => {
   }
 
   // Customers (search by company_name / email)
-  const { data: customers = [] } = useQuery({
+  const { data: customersRaw = [] } = useQuery({
     queryKey: ["admin-manual-order-customers", customerSearch],
     queryFn: async () => {
       let q = supabase
@@ -195,6 +195,27 @@ const AdminCommandeManuelle = () => {
       return data ?? [];
     },
   });
+
+  // S'assure que le client sélectionné (édition d'un brouillon) est toujours dans la liste
+  const { data: selectedCustomer } = useQuery({
+    queryKey: ["admin-manual-order-customer-selected", customerId],
+    enabled: !!customerId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("customers")
+        .select("id, company_name, email, country_code")
+        .eq("id", customerId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const customers = useMemo(() => {
+    if (!selectedCustomer) return customersRaw;
+    if (customersRaw.some((c: any) => c.id === selectedCustomer.id)) return customersRaw;
+    return [selectedCustomer, ...customersRaw];
+  }, [customersRaw, selectedCustomer]);
 
   // Adresses de livraison du customer sélectionné
   const { data: shippingAddresses = [] } = useQuery({

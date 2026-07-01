@@ -14,9 +14,11 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
   ShoppingCart, TrendingUp, Clock, CreditCard, Truck, Percent,
-  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle, CalendarClock, Copy, Pencil, Flame, FileDown, Eye,
+  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle, CalendarClock, Copy, Pencil, Flame, FileDown, Eye, Check, X,
 } from "lucide-react";
 import { fmtEur } from "@/lib/format-currency";
 import { computeOrderTotals } from "@/lib/manual-order-metrics";
@@ -118,6 +120,9 @@ const AdminCommandes = () => {
   const [dateTo, setDateTo] = useState<string>("");
   const [onlyWithCommission, setOnlyWithCommission] = useState(false);
   const [forecastFilter, setForecastFilter] = useState<"all" | "real" | "forecast">("all");
+  const [selectedVendorIds, setSelectedVendorIds] = useState<string[]>([]);
+  const [vendorFilterOpen, setVendorFilterOpen] = useState(false);
+  const [vendorSearch, setVendorSearch] = useState("");
   const [purgeOpen, setPurgeOpen] = useState(false);
   const [purging, setPurging] = useState(false);
   const [purgePreview, setPurgePreview] = useState<null | {
@@ -296,6 +301,11 @@ const AdminCommandes = () => {
     if (onlyWithCommission && !(o.commissionEur > 0)) return false;
     if (forecastFilter === "real" && o.isForecast) return false;
     if (forecastFilter === "forecast" && !o.isForecast) return false;
+    if (selectedVendorIds.length > 0) {
+      const orderVendorIds = new Set((o.lines || []).map((l: any) => l.vendor_id).filter(Boolean));
+      const hasMatch = selectedVendorIds.some(vid => orderVendorIds.has(vid));
+      if (!hasMatch) return false;
+    }
     if (search && !o.id.toLowerCase().includes(search.toLowerCase()) && !o.buyer.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
@@ -643,7 +653,87 @@ const AdminCommandes = () => {
               <CalendarClock size={12} />
               Prévisionnelles uniquement
             </button>
-            <button className="flex items-center gap-2 px-3 py-2 rounded-md text-[13px] font-medium" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#616B7C" }}><Filter size={14} /> Filtres</button>
+            <Popover open={vendorFilterOpen} onOpenChange={setVendorFilterOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  className="flex items-center gap-2 px-3 py-2 rounded-md text-[13px] font-medium transition-colors"
+                  style={{
+                    backgroundColor: selectedVendorIds.length > 0 ? "#EFF6FF" : "#fff",
+                    border: "1px solid #E2E8F0",
+                    color: selectedVendorIds.length > 0 ? "#1B5BDA" : "#616B7C",
+                  }}
+                  title="Filtrer les commandes par vendeurs présents dans les lignes"
+                >
+                  <Filter size={14} /> Filtres
+                  {selectedVendorIds.length > 0 && (
+                    <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#1B5BDA", color: "#fff" }}>
+                      {selectedVendorIds.length}
+                    </span>
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0" align="end">
+                <div className="p-3 border-b flex items-center justify-between">
+                  <div className="text-[12px] font-semibold" style={{ color: "#1D2530" }}>Filtrer par vendeur(s)</div>
+                  {selectedVendorIds.length > 0 && (
+                    <button
+                      onClick={() => setSelectedVendorIds([])}
+                      className="text-[11px] font-medium hover:underline inline-flex items-center gap-1"
+                      style={{ color: "#EF4343" }}
+                    >
+                      <X size={11} /> Réinitialiser
+                    </button>
+                  )}
+                </div>
+                <Command shouldFilter={false}>
+                  <CommandInput
+                    placeholder="Rechercher un vendeur..."
+                    value={vendorSearch}
+                    onValueChange={setVendorSearch}
+                  />
+                  <CommandList className="max-h-72">
+                    <CommandEmpty>Aucun vendeur trouvé</CommandEmpty>
+                    <CommandGroup>
+                      {(vendorsData as any[])
+                        .filter((v) => {
+                          const label = (v.company_name || v.name || "").toLowerCase();
+                          return !vendorSearch || label.includes(vendorSearch.toLowerCase());
+                        })
+                        .slice(0, 100)
+                        .map((v) => {
+                          const isSelected = selectedVendorIds.includes(v.id);
+                          const label = v.company_name || v.name || v.id;
+                          return (
+                            <CommandItem
+                              key={v.id}
+                              value={v.id}
+                              onSelect={() => {
+                                setSelectedVendorIds((prev) =>
+                                  prev.includes(v.id) ? prev.filter((x) => x !== v.id) : [...prev, v.id],
+                                );
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <div className="flex items-center gap-2 w-full">
+                                <div
+                                  className="w-4 h-4 rounded border flex items-center justify-center flex-shrink-0"
+                                  style={{
+                                    backgroundColor: isSelected ? "#1B5BDA" : "#fff",
+                                    borderColor: isSelected ? "#1B5BDA" : "#CBD5E1",
+                                  }}
+                                >
+                                  {isSelected && <Check size={12} color="#fff" />}
+                                </div>
+                                <span className="text-[12px] truncate" style={{ color: "#1D2530" }}>{label}</span>
+                              </div>
+                            </CommandItem>
+                          );
+                        })}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="flex items-center gap-1.5 mb-2 text-[12px]" style={{ color: "#8B95A5" }}>

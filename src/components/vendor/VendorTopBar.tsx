@@ -8,6 +8,7 @@ import { useVendorPriceAlertRealtime } from "@/hooks/useVendorPriceAlertRealtime
 import { commissionRates } from "@/lib/vendor-tokens";
 import { NotificationsBell } from "@/components/vendor/NotificationsBell";
 import { VendorAdminStatusBadge } from "@/components/vendor/VendorAdminStatusBadge";
+import { AccountSwitcher } from "@/components/account/AccountSwitcher";
 
 const langs: Lang[] = ["fr", "nl", "de", "en"];
 
@@ -51,6 +52,7 @@ export function VendorTopBar({ onMenuClick }: VendorTopBarProps) {
 
       <div className="flex items-center gap-3 ml-auto">
         <VendorAdminStatusBadge vendorId={vendor?.id} />
+        <AccountSwitcher />
         <div className="flex gap-0.5 bg-[#F1F5F9] rounded-md p-0.5">
           {langs.map((l) => (
             <button

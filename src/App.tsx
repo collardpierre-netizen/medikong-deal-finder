@@ -8,11 +8,13 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { I18nProvider } from "@/contexts/I18nContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
+import { ActiveAccountProvider } from "@/contexts/ActiveAccountContext";
 import { CountryProvider } from "@/contexts/CountryContext";
 import { PriceDisplayProvider } from "@/contexts/PriceDisplayContext";
 import ImpersonationBanner from "@/components/admin/ImpersonationBanner";
 import ImpersonationPageTracker from "@/components/admin/ImpersonationPageTracker";
 import { EnvNoIndex } from "@/components/layout/EnvNoIndex";
+import { AccountSelectionGuard } from "@/components/account/AccountSelectionGuard";
 import { CookieConsent } from "@/components/layout/CookieConsent";
 import { HelmetProvider } from "react-helmet-async";
 import { Loader2 } from "lucide-react";
@@ -55,6 +57,7 @@ const CheckoutPage = lazyWithRetry(() => import("./pages/CheckoutPage"), "Checko
 const ConfirmationPage = lazyWithRetry(() => import("./pages/ConfirmationPage"), "ConfirmationPage");
 const OrderDetailPage = lazyWithRetry(() => import("./pages/OrderDetailPage"), "OrderDetailPage");
 const LoginPage = lazyWithRetry(() => import("./pages/LoginPage"), "LoginPage");
+const SelectAccountPage = lazyWithRetry(() => import("./pages/SelectAccountPage"), "SelectAccountPage");
 const CategoryPage = lazyWithRetry(() => import("./pages/CategoryPage"), "CategoryPage");
 const CataloguePage = lazyWithRetry(() => import("./pages/CataloguePage"), "CataloguePage");
 const PromotionsPage = lazyWithRetry(() => import("./pages/PromotionsPage"), "PromotionsPage");
@@ -349,6 +352,7 @@ const App = () => (
   <HelmetProvider>
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
+      <ActiveAccountProvider>
       <I18nProvider>
       <CartProvider>
       <CountryProvider>
@@ -361,6 +365,7 @@ const App = () => (
           <EnvNoIndex />
           <ImpersonationBanner />
           <ImpersonationPageTracker />
+          <AccountSelectionGuard />
           <LazyRouteBoundary>
           <Suspense fallback={<PageLoader />}>
           <Routes>
@@ -394,6 +399,7 @@ const App = () => (
             <Route path="/confirmation" element={<LP><ConfirmationPage /></LP>} />
             <Route path="/commande/:id" element={<LP><OrderDetailPage /></LP>} />
             <Route path="/connexion" element={<LP><LoginPage /></LP>} />
+            <Route path="/select-account" element={<LP><SelectAccountPage /></LP>} />
             <Route path="/login" element={<Navigate to="/connexion" replace />} />
             <Route path="/inscription" element={<Navigate to="/onboarding" replace />} />
             <Route path="/categorie/:slug" element={<LP><CataloguePage /></LP>} />
@@ -705,6 +711,7 @@ const App = () => (
       </CountryProvider>
       </CartProvider>
       </I18nProvider>
+      </ActiveAccountProvider>
     </AuthProvider>
   </QueryClientProvider>
   </HelmetProvider>

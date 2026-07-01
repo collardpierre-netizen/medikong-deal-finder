@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer, Legend } from "recharts";
 import {
   DollarSign, ShoppingCart, Store, Package, AlertTriangle,
-  TrendingUp, Info, UserCheck, Users, ChevronRight, Clock, Truck, Percent, CalendarClock,
+  TrendingUp, Info, UserCheck, Users, ChevronRight, Clock, Truck, Percent, CalendarClock, UserPlus, UserMinus, Repeat,
 } from "lucide-react";
 
 const toAmount = (value: unknown) => {

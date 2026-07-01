@@ -157,6 +157,7 @@ const AdminCommandeManuelle = () => {
           city,
           postal_code: postalCode,
           vat_number: vatNumber || null,
+          customer_type: qcCustomerType as any,
         })
         .select("id, company_name, email, country_code")
         .single();
@@ -168,6 +169,7 @@ const AdminCommandeManuelle = () => {
       setQcOpen(false);
       setQcName(""); setQcEmail(""); setQcCountry("BE");
       setQcAddressLine1(""); setQcCity(""); setQcPostalCode(""); setQcVatNumber("");
+      setQcCustomerType("other");
     } catch (e: any) {
       toast.error("Échec création : " + (e?.message ?? String(e)));
     } finally {

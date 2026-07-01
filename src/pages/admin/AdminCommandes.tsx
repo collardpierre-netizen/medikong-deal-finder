@@ -120,6 +120,9 @@ const AdminCommandes = () => {
   const [dateTo, setDateTo] = useState<string>("");
   const [onlyWithCommission, setOnlyWithCommission] = useState(false);
   const [forecastFilter, setForecastFilter] = useState<"all" | "real" | "forecast">("all");
+  const [selectedVendorIds, setSelectedVendorIds] = useState<string[]>([]);
+  const [vendorFilterOpen, setVendorFilterOpen] = useState(false);
+  const [vendorSearch, setVendorSearch] = useState("");
   const [purgeOpen, setPurgeOpen] = useState(false);
   const [purging, setPurging] = useState(false);
   const [purgePreview, setPurgePreview] = useState<null | {

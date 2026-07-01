@@ -332,7 +332,7 @@ const AdminCommandes = () => {
 
   const countByStatus = (s: string) => Number(serverStatusCounts?.[s] ?? 0);
 
-  const gmvDay = Number(serverKpis?.total_ht ?? 0);
+  const gmvDay = Number(serverKpis?.gmv_ht ?? serverKpis?.total_ht ?? 0);
   const totalCount = serverTotal;
   const avgBasket = totalCount > 0 ? Math.round(gmvDay / totalCount) : 0;
   const commissionTotal = Number(serverKpis?.commission_total ?? 0);

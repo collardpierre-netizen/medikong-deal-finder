@@ -365,6 +365,32 @@ const AdminDashboard = () => {
         <KpiCard icon={Percent} label="Marge moyenne" value={`${ss?.avgMargin ?? 0}%`} iconColor="#F59E0B" iconBg="#FFFBEB" />
       </div>
 
+      {/* Synthèse Analytics clients */}
+      <div className="mb-6 p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-[14px] font-semibold" style={{ color: "#1D2530" }}>Analytics clients</h3>
+            <p className="text-[11px]" style={{ color: "#8B95A5" }}>
+              Progression du portefeuille — nouveaux clients, churn (&gt; 12 mois), volume moyen par client
+            </p>
+          </div>
+          <button
+            onClick={() => navigate("/admin/analytics-clients")}
+            className="flex items-center gap-1 text-[12px] font-medium hover:underline"
+            style={{ color: "#1B5BDA" }}
+          >
+            Voir le détail <ChevronRight size={14} />
+          </button>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <KpiCard icon={UserPlus} label="Nouveaux (30j)" value={String(ca.new_30d ?? 0)} iconColor="#059669" iconBg="#ECFDF5" />
+          <KpiCard icon={UserMinus} label={`Churn (>12 mois)`} value={`${ca.churned_12m ?? 0} · ${ca.churn_rate_pct ?? 0}%`} iconColor="#DC2626" iconBg="#FEE2E2" />
+          <KpiCard icon={ShoppingCart} label="Commandes / client" value={String(ca.avg_orders_per_customer ?? 0)} iconColor="#7C3AED" iconBg="#F5F3FF" />
+          <KpiCard icon={Repeat} label="Taux récurrence" value={`${ca.repeat_rate_pct ?? 0}%`} iconColor="#1B5BDA" iconBg="#EFF6FF" />
+        </div>
+      </div>
+
+
       {/* Pending Actions */}
       {totalPending > 0 && (
         <div className="mb-6 p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>

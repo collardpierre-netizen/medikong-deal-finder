@@ -99,6 +99,7 @@ const AdminTopBar = ({ title, subtitle, actions }: AdminTopBarProps) => {
         </div>
         <div className="flex items-center gap-3">
           {actions}
+          <AccountSwitcher />
           <ImpersonateBuyerCommand />
           <div
             className="flex rounded-md overflow-hidden"

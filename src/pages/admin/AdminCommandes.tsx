@@ -736,6 +736,45 @@ const AdminCommandes = () => {
             </Popover>
           </div>
 
+          {selectedVendorIds.length > 0 && (
+            <div className="flex items-center flex-wrap gap-1.5 mb-3">
+              <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "#8B95A5" }}>
+                Vendeurs :
+              </span>
+              {selectedVendorIds.map((vid) => {
+                const label = vendorLabelById.get(vid) || vid;
+                return (
+                  <span
+                    key={vid}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium"
+                    style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA", border: "1px solid #BFDBFE" }}
+                  >
+                    {label}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedVendorIds((prev) => prev.filter((x) => x !== vid))}
+                      className="inline-flex items-center justify-center rounded-full hover:bg-blue-100 transition-colors"
+                      style={{ width: 14, height: 14 }}
+                      title={`Retirer ${label}`}
+                      aria-label={`Retirer ${label}`}
+                    >
+                      <X size={10} />
+                    </button>
+                  </span>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => setSelectedVendorIds([])}
+                className="text-[11px] font-medium hover:underline inline-flex items-center gap-1 ml-1"
+                style={{ color: "#EF4343" }}
+              >
+                <X size={11} /> Tout retirer
+              </button>
+            </div>
+          )}
+
+
           <div className="flex items-center gap-1.5 mb-2 text-[12px]" style={{ color: "#8B95A5" }}>
             <CalendarClock size={13} />
             {periodStartDate

@@ -177,7 +177,7 @@ const AdminCommandeManuelle = () => {
     }
   }
 
-  // Customers (search by company_name / email)
+  // Customers (search by company_name / email / vat_number / city)
   const { data: customersRaw = [] } = useQuery({
     queryKey: ["admin-manual-order-customers", customerSearch],
     queryFn: async () => {
@@ -185,10 +185,11 @@ const AdminCommandeManuelle = () => {
         .from("customers")
         .select("id, company_name, email, country_code")
         .order("company_name", { ascending: true })
-        .limit(20);
-      if (customerSearch.trim()) {
-        const s = `%${customerSearch.trim()}%`;
-        q = q.or(`company_name.ilike.${s},email.ilike.${s}`);
+        .limit(50);
+      const s = customerSearch.trim();
+      if (s) {
+        const p = `%${s}%`;
+        q = q.or(`company_name.ilike.${p},email.ilike.${p},vat_number.ilike.${p},city.ilike.${p}`);
       }
       const { data, error } = await q;
       if (error) throw error;

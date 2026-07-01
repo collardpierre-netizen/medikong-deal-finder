@@ -301,6 +301,11 @@ const AdminCommandes = () => {
     if (onlyWithCommission && !(o.commissionEur > 0)) return false;
     if (forecastFilter === "real" && o.isForecast) return false;
     if (forecastFilter === "forecast" && !o.isForecast) return false;
+    if (selectedVendorIds.length > 0) {
+      const orderVendorIds = new Set((o.lines || []).map((l: any) => l.vendor_id).filter(Boolean));
+      const hasMatch = selectedVendorIds.some(vid => orderVendorIds.has(vid));
+      if (!hasMatch) return false;
+    }
     if (search && !o.id.toLowerCase().includes(search.toLowerCase()) && !o.buyer.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });

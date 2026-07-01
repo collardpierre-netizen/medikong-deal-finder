@@ -69,7 +69,6 @@ const fmt = fmtEur;
 const AdminCommandes = () => {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const { data: ordersData = [], isLoading } = useOrders();
   const queryClient = useQueryClient();
   const { data: vendorsData = [] } = useQuery({
     queryKey: ["admin-order-vendor-labels"],

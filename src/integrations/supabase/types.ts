@@ -23387,6 +23387,22 @@ export type Database = {
           updated_at: string
         }[]
       }
+      admin_list_orders: {
+        Args: {
+          _date_from?: string
+          _date_to?: string
+          _forecast_filter?: string
+          _hide_deleted?: boolean
+          _hide_test?: boolean
+          _limit?: number
+          _offset?: number
+          _only_with_commission?: boolean
+          _search?: string
+          _status?: string
+          _vendor_ids?: string[]
+        }
+        Returns: Json
+      }
       admin_list_pending_invitations: {
         Args: never
         Returns: {

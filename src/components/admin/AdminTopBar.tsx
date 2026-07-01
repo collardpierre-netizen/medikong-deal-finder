@@ -2,6 +2,7 @@ import { useI18n, Lang } from "@/contexts/I18nContext";
 import { Home, ChevronRight } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import ImpersonateBuyerCommand from "./ImpersonateBuyerCommand";
+import { AccountSwitcher } from "@/components/account/AccountSwitcher";
 
 interface AdminTopBarProps {
   title: string;

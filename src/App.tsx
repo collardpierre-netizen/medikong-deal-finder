@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { I18nProvider } from "@/contexts/I18nContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
+import { ActiveAccountProvider } from "@/contexts/ActiveAccountContext";
 import { CountryProvider } from "@/contexts/CountryContext";
 import { PriceDisplayProvider } from "@/contexts/PriceDisplayContext";
 import ImpersonationBanner from "@/components/admin/ImpersonationBanner";

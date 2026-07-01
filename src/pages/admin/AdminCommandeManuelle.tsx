@@ -125,6 +125,7 @@ const AdminCommandeManuelle = () => {
   const [qcCity, setQcCity] = useState("");
   const [qcPostalCode, setQcPostalCode] = useState("");
   const [qcVatNumber, setQcVatNumber] = useState("");
+  const [qcCustomerType, setQcCustomerType] = useState<string>("other");
   const [qcSubmitting, setQcSubmitting] = useState(false);
 
   async function quickCreateCustomer() {

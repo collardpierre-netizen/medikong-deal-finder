@@ -397,6 +397,7 @@ const App = () => (
             <Route path="/confirmation" element={<LP><ConfirmationPage /></LP>} />
             <Route path="/commande/:id" element={<LP><OrderDetailPage /></LP>} />
             <Route path="/connexion" element={<LP><LoginPage /></LP>} />
+            <Route path="/select-account" element={<LP><SelectAccountPage /></LP>} />
             <Route path="/login" element={<Navigate to="/connexion" replace />} />
             <Route path="/inscription" element={<Navigate to="/onboarding" replace />} />
             <Route path="/categorie/:slug" element={<LP><CataloguePage /></LP>} />

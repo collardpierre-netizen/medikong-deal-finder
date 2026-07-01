@@ -516,6 +516,18 @@ const AdminCommandeManuelle = () => {
 
   // ---- Brouillons ----
   function buildDraftPayload() {
+    const encodingIso = encodingAt ? new Date(encodingAt).toISOString() : null;
+    const futureEncoding = encodingIso ? new Date(encodingIso).getTime() > Date.now() : false;
+    const selectedShippingAddress = shippingAddressId ? shippingAddresses.find((a) => a.id === shippingAddressId) : null;
+    const shippingSnapshot = fulfillmentMode === "delivery" && selectedShippingAddress ? {
+      label: selectedShippingAddress.label,
+      address_l1: selectedShippingAddress.address_l1,
+      address_l2: selectedShippingAddress.address_l2,
+      postal_code: selectedShippingAddress.postal_code,
+      city: selectedShippingAddress.city,
+      country_code: selectedShippingAddress.country_code,
+    } : null;
+
     return {
       customer_id: customerId || null,
       status,
@@ -523,7 +535,11 @@ const AdminCommandeManuelle = () => {
       payment_status: paymentStatus,
       admin_notes: adminNotes || null,
       encoding_at: encodingAt || null,
-      is_forecast: isForecast,
+      created_at: encodingIso,
+      is_forecast: isForecast || futureEncoding,
+      fulfillment_mode: fulfillmentMode,
+      shipping_address_id: fulfillmentMode === "delivery" ? (shippingAddressId || null) : null,
+      shipping_address: shippingSnapshot,
       lines: lines.map((l) => ({
         id: l.id,
         mode: l.mode,
@@ -539,6 +555,8 @@ const AdminCommandeManuelle = () => {
         commission_rate: l.commission_rate,
         commission_amount: l.commission_amount,
         commission_basis: l.commission_basis,
+        gtin: l.gtin ?? null,
+        cnk_code: l.cnk_code ?? null,
       })),
     };
   }
@@ -591,6 +609,8 @@ const AdminCommandeManuelle = () => {
       setAdminNotes(p.admin_notes ?? "");
       setEncodingAt(p.encoding_at ?? "");
       setIsForecast(Boolean(p.is_forecast));
+      setFulfillmentMode(p.fulfillment_mode === "pickup" ? "pickup" : "delivery");
+      setShippingAddressId(p.shipping_address_id ?? "");
       setLines(Array.isArray(p.lines) ? p.lines.map((l: any) => ({
         id: l.id ?? nid(),
         mode: l.mode ?? "offer",

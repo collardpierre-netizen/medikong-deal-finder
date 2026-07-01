@@ -442,7 +442,9 @@ Deno.serve(async (req) => {
   // L'offre catch-all "qogita-best-price" n'est plus enregistrée (cf. branche désactivée plus bas).
   let fetchMultiVendor = true;
   let resyncLogId: string | null = null;
-  let offsetCursor = 0;
+  // Keyset pagination cursor (created_at ISO). null → depuis le début.
+  // Remplace l'ancien offsetCursor pour éviter les OFFSET O(n²) sur products.
+  let afterCreatedAt: string | null = null;
   // Sweep A : run id provided by run-sync-pipeline at full-run start.
   // Stamped on every offer / vendor upsert so qogita_reconcile can detect leftovers.
   let syncRunId: string | null = null;
@@ -451,7 +453,8 @@ Deno.serve(async (req) => {
     if (body?.country) targetCountry = body.country;
     // body.multi_vendor ignoré : forcé à true.
     if (body?.resync_log_id) resyncLogId = String(body.resync_log_id);
-    if (body?.offset !== undefined) offsetCursor = parseInt(String(body.offset), 10) || 0;
+    if (body?.after_created_at) afterCreatedAt = String(body.after_created_at);
+    // Legacy body.offset ignoré (pagination cursor-based).
     if (body?.sync_run_id) syncRunId = String(body.sync_run_id);
   } catch {
     // no-op
@@ -500,7 +503,6 @@ Deno.serve(async (req) => {
   const vatMultiplier = 1 + vatRate / 100;
 
   const syncType = fetchMultiVendor ? "offers_multi_vendor" : "offers_detail";
-  const incrementalProductFilter = "offer_count.gt.0,synced_at.is.null,qogita_qid.is.null";
 
   const { data: resumableLogs } = await sb
     .from("sync_logs")
@@ -517,20 +519,14 @@ Deno.serve(async (req) => {
   ));
 
   let syncLogId: string;
-  let lastOffset = 0;
 
   if (existingPartial) {
     syncLogId = existingPartial.id;
     const prevStats = (existingPartial.stats as any) || {};
-    const prevChunkStart = (prevStats.chunk_start !== undefined && prevStats.chunk_start !== null)
-      ? Number(prevStats.chunk_start)
-      : 0;
-    if (offsetCursor !== prevChunkStart) {
-      // On reprend sur un autre chunk → reset intra-chunk
-      lastOffset = 0;
-    } else {
-      // Même chunk → resume normal
-      lastOffset = prevStats.last_offset || existingPartial.progress_current || 0;
+    // Reprise keyset : si le run partiel a déjà persisté un cursor_after, on l'utilise
+    // (sauf si le caller a explicitement fourni un after_created_at plus récent).
+    if (!afterCreatedAt && prevStats.cursor_after) {
+      afterCreatedAt = String(prevStats.cursor_after);
     }
     await sb
       .from("sync_logs")
@@ -538,8 +534,7 @@ Deno.serve(async (req) => {
         status: "running",
         completed_at: null,
         error_message: null,
-        progress_current: lastOffset,
-        progress_message: `Reprise ${targetCountry} chunk@${offsetCursor} à partir de ${lastOffset}...`,
+        progress_message: `Reprise ${targetCountry} après ${afterCreatedAt ?? "début"}...`,
       })
       .eq("id", syncLogId);
   } else {
@@ -554,7 +549,7 @@ Deno.serve(async (req) => {
       .insert({
         sync_type: syncType as any,
         status: "running",
-        stats: { country: targetCountry, multi_vendor: fetchMultiVendor, chunk_start: offsetCursor },
+        stats: { country: targetCountry, multi_vendor: fetchMultiVendor, cursor_after: afterCreatedAt },
         progress_current: 0,
         progress_total: 0,
         progress_message: `${targetCountry}: authentification...`,
@@ -565,20 +560,11 @@ Deno.serve(async (req) => {
     syncLogId = newLog!.id;
   }
 
-  const { count: totalProducts } = await sb
-    .from("products")
-    .select("id", { count: "exact", head: true })
-    .eq("is_active", true)
-    .not("gtin", "is", null)
-    .or(incrementalProductFilter);
-
-  const remaining = Math.max((totalProducts || 0) - offsetCursor - (lastOffset || 0), 0);
-
   // Run sync synchronously (not in background) so we can return accurate remaining
   let productsEnriched = 0;
   let offersUpserted = 0;
   try {
-    const result = await syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, lastOffset, startTime, fetchMultiVendor, recordEndpointError, recordProgress, resyncLogId, offsetCursor, syncRunId);
+    const result = await syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, startTime, fetchMultiVendor, recordEndpointError, recordProgress, resyncLogId, afterCreatedAt, syncRunId);
     productsEnriched = result?.products_enriched || 0;
     offersUpserted = result?.offers_upserted || 0;
   } catch (e: any) {
@@ -594,9 +580,9 @@ Deno.serve(async (req) => {
       .eq("id", syncLogId);
   }
 
-  // Re-check remaining after this batch
+  // Re-check state after this batch (remaining n'est plus calculable sans COUNT ; on renvoie le statut).
   const { data: updatedLog } = await sb.from("sync_logs").select("status, stats").eq("id", syncLogId).single();
-  const finalRemaining = updatedLog?.status === "partial" ? ((updatedLog.stats as any)?.last_offset ? (totalProducts || 0) - (updatedLog.stats as any).last_offset : 0) : 0;
+  const nextCursor = updatedLog?.status === "partial" ? (updatedLog.stats as any)?.cursor_after ?? null : null;
 
   return new Response(
     JSON.stringify({
@@ -606,9 +592,9 @@ Deno.serve(async (req) => {
       multi_vendor: fetchMultiVendor,
       products_enriched: productsEnriched,
       offers_upserted: offersUpserted,
-      remaining: finalRemaining,
+      next_cursor: nextCursor,
       status: updatedLog?.status || "unknown",
-      message: `Sync offres ${targetCountry} — ${productsEnriched} enrichis, ${finalRemaining} restants`,
+      message: `Sync offres ${targetCountry} — ${productsEnriched} enrichis${nextCursor ? " (chunk suivant programmé)" : ""}`,
     }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );
@@ -620,37 +606,38 @@ async function syncOffers(
   vatRate: number,
   vatMultiplier: number,
   logId: string,
-  startOffset: number,
   startTime: number,
   fetchMultiVendor: boolean,
   recordEndpointError: (endpoint: string, status: number | null, message: string) => Promise<void>,
   recordProgress: (delta: Record<string, number>) => Promise<void>,
   resyncLogId: string | null,
-  offsetCursor: number = 0,
+  afterCreatedAt: string | null = null,
   syncRunId: string | null = null,
 ) {
   const executionProfile = getExecutionProfile(fetchMultiVendor);
   const { token, baseUrl } = await getQogitaToken(sb);
   const bestPriceVendorId = await ensureBestPriceVendor(sb, country, syncRunId);
 
-
+  const CHUNK_LIMIT = 1000;
   const incrementalProductFilter = "offer_count.gt.0,synced_at.is.null,qogita_qid.is.null";
 
-  const { count: totalEligible } = await sb
+  // Keyset pagination : fetch next 1000 products after cursor.
+  // Remplace COUNT + range(offset, offset+999) qui saturaient la DB (O(n²) OFFSET).
+  let productsQuery = sb
     .from("products")
-    .select("id", { count: "exact", head: true })
-    .eq("is_active", true)
-    .not("gtin", "is", null)
-    .or(incrementalProductFilter);
-
-  const { data: products, error: pErr } = await sb
-    .from("products")
-    .select("id, gtin, qogita_qid, qogita_fid, slug")
+    .select("id, gtin, qogita_qid, qogita_fid, slug, created_at")
     .eq("is_active", true)
     .not("gtin", "is", null)
     .or(incrementalProductFilter)
     .order("created_at", { ascending: true })
-    .range(offsetCursor, offsetCursor + 999);
+    .order("id", { ascending: true })
+    .limit(CHUNK_LIMIT);
+
+  if (afterCreatedAt) {
+    productsQuery = productsQuery.gt("created_at", afterCreatedAt);
+  }
+
+  const { data: products, error: pErr } = await productsQuery;
 
   if (pErr) throw pErr;
 
@@ -663,7 +650,7 @@ async function syncOffers(
         progress_message: `${country}: aucun produit éligible à synchroniser`,
       })
       .eq("id", logId);
-    return;
+    return { products_enriched: 0, offers_upserted: 0 };
   }
 
   const total = products.length;
@@ -671,7 +658,7 @@ async function syncOffers(
     .from("sync_logs")
     .update({
       progress_total: total,
-      progress_current: startOffset,
+      progress_current: 0,
       progress_message: `${country}: ${total} produits à enrichir${fetchMultiVendor ? " (multi-vendeur)" : ""}...`,
     })
     .eq("id", logId);
@@ -686,16 +673,22 @@ async function syncOffers(
     errors: 0,
     skipped: 0,
     rate_limited: 0,
-    last_offset: startOffset,
-    chunk_start: offsetCursor,
+    cursor_after: afterCreatedAt,
     first_api_response_keys: null,
     first_flat_sample: null,
   };
 
+  // Helper : cursor du dernier produit effectivement traité (borne haute atteinte).
+  const cursorAt = (index: number): string | null => {
+    if (index <= 0) return afterCreatedAt;
+    const p = products[Math.min(index, products.length) - 1];
+    return p?.created_at ?? afterCreatedAt;
+  };
+
   // Process in parallel batches tuned per mode
-  for (let batchStart = startOffset; batchStart < total; batchStart += executionProfile.batchSize) {
+  for (let batchStart = 0; batchStart < total; batchStart += executionProfile.batchSize) {
     if (Date.now() - startTime > executionProfile.maxExecutionTime) {
-      stats.last_offset = batchStart;
+      stats.cursor_after = cursorAt(batchStart);
       await sb
         .from("sync_logs")
         .update({
@@ -706,7 +699,7 @@ async function syncOffers(
           progress_message: `${country}: pause timeout — ${batchStart}/${total} (reprendra au prochain clic)`,
         })
         .eq("id", logId);
-      scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, offset: offsetCursor });
+      scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after });
       return stats;
     }
 
@@ -742,16 +735,16 @@ async function syncOffers(
         }
       }
 
-      stats.last_offset = currentChunkEnd;
+      stats.cursor_after = cursorAt(currentChunkEnd);
       if (executionProfile.persistPerChunk) {
         await sb
           .from("sync_logs")
           .update({
             status: "partial",
             stats,
-            progress_current: stats.last_offset,
+            progress_current: currentChunkEnd,
             progress_total: total,
-            progress_message: `${country}: ${stats.last_offset}/${total} — ${stats.offers_upserted} offres, ${stats.multi_vendor_offers} multi-vendeur, ${stats.products_enriched} enrichis`,
+            progress_message: `${country}: ${currentChunkEnd}/${total} — ${stats.offers_upserted} offres, ${stats.multi_vendor_offers} multi-vendeur, ${stats.products_enriched} enrichis`,
           })
           .eq("id", logId);
       }
@@ -762,17 +755,17 @@ async function syncOffers(
           .update({
             status: "partial",
             stats,
-            progress_current: stats.last_offset,
+            progress_current: currentChunkEnd,
             progress_total: total,
-            progress_message: `${country}: pause contrôlée — ${stats.last_offset}/${total} (reprendra automatiquement)`,
+            progress_message: `${country}: pause contrôlée — ${currentChunkEnd}/${total} (reprendra automatiquement)`,
           })
           .eq("id", logId);
-        scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, offset: offsetCursor });
+        scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after });
         return stats;
       }
     }
 
-    stats.last_offset = batchEnd;
+    stats.cursor_after = cursorAt(batchEnd);
     await sb
       .from("sync_logs")
       .update({
@@ -787,10 +780,11 @@ async function syncOffers(
     await sleep(executionProfile.batchDelayMs);
   }
 
-  const processedSoFar = offsetCursor + (products?.length || 0);
-  const hasMoreChunks = (totalEligible || 0) > processedSoFar;
+  // Une page pleine (CHUNK_LIMIT) → il reste probablement d'autres produits éligibles.
+  const hasMoreChunks = total >= CHUNK_LIMIT;
 
   if (hasMoreChunks) {
+    stats.cursor_after = cursorAt(total);
     await sb
       .from("sync_logs")
       .update({
@@ -798,12 +792,14 @@ async function syncOffers(
         stats,
         progress_current: total,
         progress_total: total,
-        progress_message: `${country}: chunk terminé (${processedSoFar}/${totalEligible}) — relance auto`,
+        progress_message: `${country}: chunk terminé (${total} produits, cursor=${stats.cursor_after}) — relance auto`,
       })
       .eq("id", logId);
-    scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, offset: processedSoFar });
+    scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after });
     return stats;
   }
+
+
 
   await sb
     .from("sync_logs")

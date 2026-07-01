@@ -6,8 +6,10 @@ import StatusBadge from "@/components/admin/StatusBadge";
 import AdminOrderSlaPanel from "@/components/admin/AdminOrderSlaPanel";
 import { useI18n } from "@/contexts/I18nContext";
 import { useOrders } from "@/hooks/useAdminData";
+import { useAdminOrdersPaginated } from "@/hooks/useAdminOrdersPaginated";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 import { logAdminAudit } from "@/lib/admin-audit";
 import {

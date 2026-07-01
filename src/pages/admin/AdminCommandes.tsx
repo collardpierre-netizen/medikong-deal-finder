@@ -315,73 +315,32 @@ const AdminCommandes = () => {
     };
   });
 
-  // --- Filtre période (sur created_at) appliqué avant toute dérivation ---
-  // --- Filtre période (sur created_at) : dates custom prennent priorité sur les presets ---
+  // --- Période : bornes locales pour l'affichage (calcul serveur déjà fait via periodStartIso/EndIso). ---
   const hasCustomDates = Boolean(dateFrom || dateTo);
-  const periodStartDate = (() => {
-    if (dateFrom) {
-      const d = new Date(dateFrom);
-      d.setHours(0, 0, 0, 0);
-      return d;
-    }
-    if (hasCustomDates) return null;
-    const days = PERIODS.find(p => p.key === period)?.days;
-    if (!days) return null;
-    const d = new Date();
-    d.setDate(d.getDate() - days);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  })();
-  const periodEndDate = (() => {
-    if (dateTo) {
-      const d = new Date(dateTo);
-      d.setHours(23, 59, 59, 999);
-      return d;
-    }
-    return new Date();
-  })();
-  const periodOrders = orders.filter(o => {
-    if (!o.createdAtRaw) return true;
-    const t = new Date(o.createdAtRaw).getTime();
-    if (periodStartDate && t < periodStartDate.getTime()) return false;
-    if (periodEndDate && t > periodEndDate.getTime()) return false;
-    return true;
-  });
+  const periodStartDate = periodStartIso ? new Date(periodStartIso) : null;
+  const periodEndDate = periodEndIso ? new Date(periodEndIso) : new Date();
 
-  // Les commandes archivées (hidden_from_list) restent visibles dans l'onglet « Annulées »
-  // afin que le compteur reflète la réalité ; ailleurs elles sont masquées si hideDeleted=true.
-  const visibleOrders = hideDeleted
-    ? periodOrders.filter(o => !o.hiddenFromList || o.status === "cancelled")
-    : periodOrders;
-  const displayOrders = hideTest ? visibleOrders.filter(o => !o.isTest) : visibleOrders;
-  const testCount = visibleOrders.filter(o => o.isTest).length;
-  const deletedCount = periodOrders.filter(o => o.hiddenFromList && o.status !== "cancelled").length;
+  // Le serveur (RPC admin_list_orders) applique déjà tous les filtres (statut, période, vendeurs,
+  // recherche, commission, prévisionnel, test, supprimées). La page courante = `orders`.
+  const displayOrders = orders;
+  const filtered = orders;
 
-  const filtered = displayOrders.filter((o) => {
-    if (statusFilter !== "all" && o.status !== statusFilter) return false;
-    if (onlyWithCommission && !(o.commissionEur > 0)) return false;
-    if (forecastFilter === "real" && o.isForecast) return false;
-    if (forecastFilter === "forecast" && !o.isForecast) return false;
-    if (selectedVendorIds.length > 0) {
-      const orderVendorIds = new Set((o.lines || []).map((l: any) => l.vendor_id).filter(Boolean));
-      const hasMatch = selectedVendorIds.some(vid => orderVendorIds.has(vid));
-      if (!hasMatch) return false;
-    }
-    if (search && !o.id.toLowerCase().includes(search.toLowerCase()) && !o.buyer.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
+  // Compteurs / KPIs : issus du RPC (calculés sur l'ensemble filtré, pas la page courante).
+  const forecastCount = Number(serverKpis?.forecast_count ?? 0);
+  const testCount = 0; // masqué serveur — badge de nettoyage géré via useOrders() ci-dessous
+  const deletedCount = 0;
 
-  const forecastCount = displayOrders.filter(o => o.isForecast).length;
+  const countByStatus = (s: string) => Number(serverStatusCounts?.[s] ?? 0);
 
-  const countByStatus = (s: string) => s === "all" ? displayOrders.length : displayOrders.filter((o) => o.status === s).length;
-
-  const gmvDay = displayOrders.reduce((a, o) => a + o.amountHT, 0);
-  const avgBasket = displayOrders.length > 0 ? Math.round(gmvDay / displayOrders.length) : 0;
-  const commissionTotal = displayOrders.reduce((a, o) => a + o.commissionEur, 0);
+  const gmvDay = Number(serverKpis?.total_ht ?? 0);
+  const totalCount = serverTotal;
+  const avgBasket = totalCount > 0 ? Math.round(gmvDay / totalCount) : 0;
+  const commissionTotal = Number(serverKpis?.commission_total ?? 0);
   const commissionPctGlobal = gmvDay > 0 ? (commissionTotal / gmvDay) * 100 : 0;
-  const grossMarginTotal = displayOrders.reduce((a, o) => a + (o.hasCost ? o.grossMarginEur : 0), 0);
-  const grossMarginCaBase = displayOrders.reduce((a, o) => a + (o.hasCost ? o.amountHT : 0), 0);
+  const grossMarginTotal = Number(serverKpis?.margin_total ?? 0);
+  const grossMarginCaBase = Number(serverKpis?.margin_base_ht ?? 0);
   const grossMarginPctGlobal = grossMarginCaBase > 0 ? (grossMarginTotal / grossMarginCaBase) * 100 : 0;
+
 
   const tabs = [
     { key: "list" as const, label: "Liste" },

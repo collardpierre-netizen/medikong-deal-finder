@@ -268,6 +268,18 @@ const AdminDashboard = () => {
 
   const ss = shippingStats.data;
 
+  // Analytics clients (synthèse dashboard)
+  const clientAnalytics = useQuery({
+    queryKey: ["admin-dashboard-client-analytics"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_customer_analytics_kpis");
+      if (error) throw error;
+      return data as any;
+    },
+    staleTime: 60_000,
+  });
+  const ca = clientAnalytics.data || {};
+
   return (
     <div>
       <AdminTopBar title={t("dashboard")} subtitle="Vue d'ensemble de la plateforme MediKong.pro" />

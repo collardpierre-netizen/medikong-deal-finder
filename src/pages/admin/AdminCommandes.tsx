@@ -1090,6 +1090,26 @@ const AdminCommandes = () => {
                         </>
                       );
                     })}
+                    {filtered.length === 0 && selectedVendorIds.length > 0 && (
+                      <tr>
+                        <td colSpan={15} className="px-6 py-10 text-center">
+                          <div className="flex flex-col items-center gap-3">
+                            <Filter size={24} style={{ color: "#CBD5E1" }} />
+                            <p className="text-[13px] font-medium" style={{ color: "#1D2530" }}>
+                              Aucune commande ne correspond aux vendeurs sélectionnés.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedVendorIds([])}
+                              className="px-3 py-1.5 rounded text-[12px] font-medium transition-colors hover:bg-blue-100"
+                              style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA", border: "1px solid #BFDBFE" }}
+                            >
+                              Réinitialiser les filtres vendeurs
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                   {filtered.length > 0 && (() => {
                     const tHT = filtered.reduce((a, o) => a + o.amountHT, 0);

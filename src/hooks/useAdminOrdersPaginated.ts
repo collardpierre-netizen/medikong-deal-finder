@@ -18,8 +18,8 @@ export type OrdersPage = {
   total: number;
   statusCounts: Record<string, number>;
   kpis: {
-    total_ht: number;
-    total_incl_vat: number;
+    gmv_ht: number;
+    gmv_ttc: number;
     orders_count: number;
     forecast_count: number;
     commission_total: number;

@@ -18,8 +18,8 @@ export type OrdersPage = {
   total: number;
   statusCounts: Record<string, number>;
   kpis: {
-    total_ht: number;
-    total_incl_vat: number;
+    gmv_ht: number;
+    gmv_ttc: number;
     orders_count: number;
     forecast_count: number;
     commission_total: number;
@@ -76,8 +76,8 @@ export const useAdminOrdersPaginated = (
         total: Number(payload.total) || 0,
         statusCounts: payload.status_counts ?? {},
         kpis: {
-          total_ht: Number(payload.kpis?.total_ht) || 0,
-          total_incl_vat: Number(payload.kpis?.total_incl_vat) || 0,
+          gmv_ht: Number(payload.kpis?.gmv_ht ?? payload.kpis?.total_ht) || 0,
+          gmv_ttc: Number(payload.kpis?.gmv_ttc ?? payload.kpis?.total_incl_vat) || 0,
           orders_count: Number(payload.kpis?.orders_count) || 0,
           forecast_count: Number(payload.kpis?.forecast_count) || 0,
           commission_total: Number(payload.kpis?.commission_total) || 0,

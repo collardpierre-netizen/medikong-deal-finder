@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer, Legend } from "recharts";
 import {
   DollarSign, ShoppingCart, Store, Package, AlertTriangle,
-  TrendingUp, Info, UserCheck, Users, ChevronRight, Clock, Truck, Percent, CalendarClock,
+  TrendingUp, Info, UserCheck, Users, ChevronRight, Clock, Truck, Percent, CalendarClock, UserPlus, UserMinus, Repeat,
 } from "lucide-react";
 
 const toAmount = (value: unknown) => {
@@ -268,6 +268,18 @@ const AdminDashboard = () => {
 
   const ss = shippingStats.data;
 
+  // Analytics clients (synthèse dashboard)
+  const clientAnalytics = useQuery({
+    queryKey: ["admin-dashboard-client-analytics"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_customer_analytics_kpis");
+      if (error) throw error;
+      return data as any;
+    },
+    staleTime: 60_000,
+  });
+  const ca = clientAnalytics.data || {};
+
   return (
     <div>
       <AdminTopBar title={t("dashboard")} subtitle="Vue d'ensemble de la plateforme MediKong.pro" />
@@ -352,6 +364,32 @@ const AdminDashboard = () => {
         <KpiCard icon={DollarSign} label="Revenu marge WL" value={`${fmtEur(ss?.totalMarginRevenue ?? 0)} EUR`} iconColor="#059669" iconBg="#F0FDF4" />
         <KpiCard icon={Percent} label="Marge moyenne" value={`${ss?.avgMargin ?? 0}%`} iconColor="#F59E0B" iconBg="#FFFBEB" />
       </div>
+
+      {/* Synthèse Analytics clients */}
+      <div className="mb-6 p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-[14px] font-semibold" style={{ color: "#1D2530" }}>Analytics clients</h3>
+            <p className="text-[11px]" style={{ color: "#8B95A5" }}>
+              Progression du portefeuille — nouveaux clients, churn (&gt; 12 mois), volume moyen par client
+            </p>
+          </div>
+          <button
+            onClick={() => navigate("/admin/analytics-clients")}
+            className="flex items-center gap-1 text-[12px] font-medium hover:underline"
+            style={{ color: "#1B5BDA" }}
+          >
+            Voir le détail <ChevronRight size={14} />
+          </button>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <KpiCard icon={UserPlus} label="Nouveaux (30j)" value={String(ca.new_30d ?? 0)} iconColor="#059669" iconBg="#ECFDF5" />
+          <KpiCard icon={UserMinus} label={`Churn (>12 mois)`} value={`${ca.churned_12m ?? 0} · ${ca.churn_rate_pct ?? 0}%`} iconColor="#DC2626" iconBg="#FEE2E2" />
+          <KpiCard icon={ShoppingCart} label="Commandes / client" value={String(ca.avg_orders_per_customer ?? 0)} iconColor="#7C3AED" iconBg="#F5F3FF" />
+          <KpiCard icon={Repeat} label="Taux récurrence" value={`${ca.repeat_rate_pct ?? 0}%`} iconColor="#1B5BDA" iconBg="#EFF6FF" />
+        </div>
+      </div>
+
 
       {/* Pending Actions */}
       {totalPending > 0 && (

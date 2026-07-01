@@ -140,6 +140,7 @@ const CookiePolicyPage = lazyWithRetry(() => import("./pages/legal/CookiePolicyP
 const AdminLoginPage = lazyWithRetry(() => import("./pages/admin/AdminLoginPage"), "AdminLoginPage");
 const AdminLayout = lazyWithRetry(() => import("./components/admin/AdminLayout"), "AdminLayout");
 const AdminDashboard = lazyWithRetry(() => import("./pages/admin/AdminDashboard"), "AdminDashboard");
+const AdminAnalyticsClients = lazyWithRetry(() => import("./pages/admin/AdminAnalyticsClients"), "AdminAnalyticsClients");
 const AdminVendeurs = lazyWithRetry(() => import("./pages/admin/AdminVendeurs"), "AdminVendeurs");
 const AdminAbonnements = lazyWithRetry(() => import("./pages/admin/AdminAbonnements"), "AdminAbonnements");
 const AdminVendors = lazyWithRetry(() => import("./pages/admin/AdminVendors"), "AdminVendors");
@@ -478,6 +479,7 @@ const App = () => (
             {/* Admin Back-Office */}
             <Route path="/admin" element={<LP><AdminLayout /></LP>}>
               <Route index element={<LP><AdminDashboard /></LP>} />
+              <Route path="analytics-clients" element={<LP><AdminAnalyticsClients /></LP>} />
               <Route path="vendeurs" element={<LP><AdminVendeurs /></LP>} />
               <Route path="vendeurs/:id" element={<LP><AdminVendeurDetail /></LP>} />
               <Route path="vendors-stripe" element={<LP><AdminVendors /></LP>} />

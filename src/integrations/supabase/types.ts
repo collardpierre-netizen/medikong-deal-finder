@@ -23290,6 +23290,41 @@ export type Database = {
         Args: { _payload: Json }
         Returns: Json
       }
+      admin_customer_analytics_kpis: { Args: never; Returns: Json }
+      admin_customer_analytics_monthly: {
+        Args: { _months?: number }
+        Returns: {
+          gmv_ttc: number
+          month: string
+          new_customers: number
+          orders_count: number
+          returning_customers: number
+          unique_customers: number
+        }[]
+      }
+      admin_customer_analytics_ranking: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _status?: string
+        }
+        Returns: {
+          company_name: string
+          country_code: string
+          created_at: string
+          customer_id: string
+          customer_type: string
+          days_since_last_order: number
+          email: string
+          first_order: string
+          gmv_ttc: number
+          last_order: string
+          order_count: number
+          status: string
+          total_count: number
+        }[]
+      }
       admin_delete_manual_order_draft: {
         Args: { _id: string }
         Returns: undefined

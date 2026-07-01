@@ -707,6 +707,7 @@ const App = () => (
       </CountryProvider>
       </CartProvider>
       </I18nProvider>
+      </ActiveAccountProvider>
     </AuthProvider>
   </QueryClientProvider>
   </HelmetProvider>

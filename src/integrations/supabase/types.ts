@@ -24821,9 +24821,10 @@ export type Database = {
         Args: { _country_code?: string }
         Returns: number
       }
-      public_get_order_by_token:
-        | { Args: { _token: string }; Returns: Json }
-        | { Args: { _pin?: string; _token: string }; Returns: Json }
+      public_get_order_by_token: {
+        Args: { _pin?: string; _token: string }
+        Returns: Json
+      }
       public_search_brands_fuzzy: {
         Args: { _limit?: number; _q: string }
         Returns: {

@@ -81,7 +81,7 @@ const AdminCommandes = () => {
     },
   });
   const [activeTab, setActiveTab] = useState<"list" | "timeline" | "aging" | "buyers" | "sla">("list");
-  const [hideDeleted, setHideDeleted] = useState(true);
+  // Note : filtre "masquer supprimées" appliqué serveur (RPC) — toujours actif.
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; number: string } | null>(null);
   const [deleteReason, setDeleteReason] = useState("");
   const [deleting, setDeleting] = useState(false);

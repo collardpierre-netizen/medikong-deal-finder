@@ -479,6 +479,7 @@ const App = () => (
             {/* Admin Back-Office */}
             <Route path="/admin" element={<LP><AdminLayout /></LP>}>
               <Route index element={<LP><AdminDashboard /></LP>} />
+              <Route path="analytics-clients" element={<LP><AdminAnalyticsClients /></LP>} />
               <Route path="vendeurs" element={<LP><AdminVendeurs /></LP>} />
               <Route path="vendeurs/:id" element={<LP><AdminVendeurDetail /></LP>} />
               <Route path="vendors-stripe" element={<LP><AdminVendors /></LP>} />

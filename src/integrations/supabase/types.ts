@@ -24110,6 +24110,7 @@ export type Database = {
         Args: { _product_id: string }
         Returns: number
       }
+      email_queue_dispatch: { Args: never; Returns: undefined }
       end_buyer_impersonation: {
         Args: { _ended_reason?: string; _session_id: string }
         Returns: undefined

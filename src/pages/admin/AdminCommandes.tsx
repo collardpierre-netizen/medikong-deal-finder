@@ -801,7 +801,17 @@ const AdminCommandes = () => {
               ? `Période filtrée : ${periodStartDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })} – ${periodEndDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}`
               : `Période filtrée : jusqu'au ${periodEndDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}`}
             <span className="mx-1">·</span>
-            <span className="font-semibold" style={{ color: "#1D2530" }}>{filtered.length} résultat(s)</span>
+            <span className="font-semibold" style={{ color: "#1D2530" }}>
+              {totalCount} résultat{totalCount > 1 ? "s" : ""}
+              {totalCount > pageSize && (
+                <span className="font-normal" style={{ color: "#8B95A5" }}>
+                  {" "}· page {page} / {Math.max(1, Math.ceil(totalCount / pageSize))}
+                </span>
+              )}
+              {isFetching && !isLoading && (
+                <span className="ml-2 text-[10px] font-normal" style={{ color: "#8B95A5" }}>(mise à jour…)</span>
+              )}
+            </span>
           </div>
 
           <div className="rounded-[10px] overflow-hidden" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>

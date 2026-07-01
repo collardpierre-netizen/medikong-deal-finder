@@ -125,6 +125,7 @@ const AdminCommandeManuelle = () => {
   const [qcCity, setQcCity] = useState("");
   const [qcPostalCode, setQcPostalCode] = useState("");
   const [qcVatNumber, setQcVatNumber] = useState("");
+  const [qcCustomerType, setQcCustomerType] = useState<string>("other");
   const [qcSubmitting, setQcSubmitting] = useState(false);
 
   async function quickCreateCustomer() {
@@ -156,6 +157,7 @@ const AdminCommandeManuelle = () => {
           city,
           postal_code: postalCode,
           vat_number: vatNumber || null,
+          customer_type: qcCustomerType as any,
         })
         .select("id, company_name, email, country_code")
         .single();
@@ -167,6 +169,7 @@ const AdminCommandeManuelle = () => {
       setQcOpen(false);
       setQcName(""); setQcEmail(""); setQcCountry("BE");
       setQcAddressLine1(""); setQcCity(""); setQcPostalCode(""); setQcVatNumber("");
+      setQcCustomerType("other");
     } catch (e: any) {
       toast.error("Échec création : " + (e?.message ?? String(e)));
     } finally {
@@ -945,6 +948,25 @@ const AdminCommandeManuelle = () => {
                       <div>
                         <Label className="text-xs">Code postal</Label>
                         <Input value={qcPostalCode} onChange={(e) => setQcPostalCode(e.target.value)} maxLength={20} placeholder="Ex. 7822" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Typologie de client</Label>
+                      <Select value={qcCustomerType} onValueChange={setQcCustomerType}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pharmacy">Pharmacie</SelectItem>
+                          <SelectItem value="hospital">Hôpital</SelectItem>
+                          <SelectItem value="clinic">Clinique</SelectItem>
+                          <SelectItem value="doctor">Médecin</SelectItem>
+                          <SelectItem value="dentist">Dentiste</SelectItem>
+                          <SelectItem value="veterinary">Vétérinaire</SelectItem>
+                          <SelectItem value="nursing_home">MR / MRS</SelectItem>
+                          <SelectItem value="wholesaler">Grossiste</SelectItem>
+                          <SelectItem value="retail">Retail</SelectItem>
+                          <SelectItem value="lab">Laboratoire</SelectItem>
+                          <SelectItem value="other">Autre</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <Label className="text-xs">N° TVA (optionnel)</Label>

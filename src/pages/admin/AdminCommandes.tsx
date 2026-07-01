@@ -795,23 +795,32 @@ const AdminCommandes = () => {
           )}
 
 
-          <div className="flex items-center gap-1.5 mb-2 text-[12px]" style={{ color: "#8B95A5" }}>
-            <CalendarClock size={13} />
-            {periodStartDate
-              ? `Période filtrée : ${periodStartDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })} – ${periodEndDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}`
-              : `Période filtrée : jusqu'au ${periodEndDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}`}
-            <span className="mx-1">·</span>
-            <span className="font-semibold" style={{ color: "#1D2530" }}>
-              {totalCount} résultat{totalCount > 1 ? "s" : ""}
-              {totalCount > pageSize && (
-                <span className="font-normal" style={{ color: "#8B95A5" }}>
-                  {" "}· page {page} / {Math.max(1, Math.ceil(totalCount / pageSize))}
-                </span>
-              )}
+          <div className="flex items-center justify-between mb-3 px-4 py-2.5 rounded-lg" style={{ backgroundColor: "#F1F5F9", border: "1px solid #E2E8F0" }}>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5 text-[12px] font-medium" style={{ color: "#1D2530" }}>
+                <span className="text-[13px] font-bold" style={{ color: "#1B5BDA" }}>{selectedVendorIds.length}</span>
+                vendeur{selectedVendorIds.length > 1 ? "s" : ""} sélectionné{selectedVendorIds.length > 1 ? "s" : ""}
+              </div>
+              <div className="w-px h-4" style={{ backgroundColor: "#CBD5E1" }} />
+              <div className="flex items-center gap-1.5 text-[12px] font-medium" style={{ color: "#1D2530" }}>
+                <span className="text-[13px] font-bold" style={{ color: "#1B5BDA" }}>{totalCount}</span>
+                commande{totalCount > 1 ? "s" : ""} trouvée{totalCount > 1 ? "s" : ""}
+                {totalCount > pageSize && (
+                  <span className="text-[11px] font-normal" style={{ color: "#8B95A5" }}>
+                    (page {page} / {Math.max(1, Math.ceil(totalCount / pageSize))})
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px]" style={{ color: "#8B95A5" }}>
+              <CalendarClock size={12} />
+              {periodStartDate
+                ? `${periodStartDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })} – ${periodEndDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}`
+                : `Jusqu'au ${periodEndDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}`}
               {isFetching && !isLoading && (
-                <span className="ml-2 text-[10px] font-normal" style={{ color: "#8B95A5" }}>(mise à jour…)</span>
+                <span className="ml-1">(mise à jour…)</span>
               )}
-            </span>
+            </div>
           </div>
 
           <div className="rounded-[10px] overflow-hidden" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>

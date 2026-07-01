@@ -177,7 +177,7 @@ const AdminCommandeManuelle = () => {
     }
   }
 
-  // Customers (search by company_name / email)
+  // Customers (search by company_name / email / vat_number / city)
   const { data: customersRaw = [] } = useQuery({
     queryKey: ["admin-manual-order-customers", customerSearch],
     queryFn: async () => {
@@ -185,10 +185,11 @@ const AdminCommandeManuelle = () => {
         .from("customers")
         .select("id, company_name, email, country_code")
         .order("company_name", { ascending: true })
-        .limit(20);
-      if (customerSearch.trim()) {
-        const s = `%${customerSearch.trim()}%`;
-        q = q.or(`company_name.ilike.${s},email.ilike.${s}`);
+        .limit(50);
+      const s = customerSearch.trim();
+      if (s) {
+        const p = `%${s}%`;
+        q = q.or(`company_name.ilike.${p},email.ilike.${p},vat_number.ilike.${p},city.ilike.${p}`);
       }
       const { data, error } = await q;
       if (error) throw error;
@@ -1030,21 +1031,13 @@ const AdminCommandeManuelle = () => {
               </Dialog>
               </div>
             </div>
-            <Input
-              placeholder="Rechercher (nom, email)…"
-              value={customerSearch}
-              onChange={(e) => setCustomerSearch(e.target.value)}
+            <CustomerCombobox
+              customers={customers}
+              value={customerId}
+              onChange={setCustomerId}
+              search={customerSearch}
+              onSearchChange={setCustomerSearch}
             />
-            <Select value={customerId} onValueChange={setCustomerId}>
-              <SelectTrigger><SelectValue placeholder="Sélectionner un acheteur" /></SelectTrigger>
-              <SelectContent>
-                {customers.map((c: any) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.company_name || c.email} {c.country_code ? `· ${c.country_code}` : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
 
             {customerId && (
               <div className="pt-2 border-t space-y-3" style={{ borderColor: "#E2E8F0" }}>
@@ -1641,6 +1634,66 @@ function VendorCombobox({
                     }}
                   >
                     <Check className={`mr-2 h-4 w-4 ${value === v.id ? "opacity-100" : "opacity-0"}`} />
+                    {name}
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function CustomerCombobox({
+  customers,
+  value,
+  onChange,
+  search,
+  onSearchChange,
+}: {
+  customers: any[];
+  value: string;
+  onChange: (v: string) => void;
+  search: string;
+  onSearchChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = customers.find((c) => c.id === value);
+  const label = selected
+    ? `${selected.company_name || selected.email}${selected.country_code ? ` · ${selected.country_code}` : ""}`
+    : "Sélectionner un acheteur";
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between font-normal">
+          <span className={selected ? "" : "text-muted-foreground"}>{label}</span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[380px] p-0" align="start">
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder="Rechercher (nom, email, TVA, ville)…"
+            value={search}
+            onValueChange={onSearchChange}
+          />
+          <CommandList>
+            <CommandEmpty>Aucun acheteur trouvé.</CommandEmpty>
+            <CommandGroup>
+              {customers.map((c) => {
+                const name = `${c.company_name || c.email}${c.country_code ? ` · ${c.country_code}` : ""}`;
+                return (
+                  <CommandItem
+                    key={c.id}
+                    value={c.id}
+                    onSelect={() => {
+                      onChange(c.id);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check className={`mr-2 h-4 w-4 ${value === c.id ? "opacity-100" : "opacity-0"}`} />
                     {name}
                   </CommandItem>
                 );

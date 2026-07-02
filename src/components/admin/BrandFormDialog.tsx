@@ -127,6 +127,8 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
       website_url: form.website || null,
       description: form.description || null,
       logo_url: form.logo_url || null,
+      cover_image_url: form.cover_image_url || null,
+      gallery_images: (form.gallery_images || []).map(s => (s || "").trim()).filter(Boolean),
       manufacturer_id: form.manufacturer_id && form.manufacturer_id !== "none" ? form.manufacturer_id : null,
       is_featured: form.is_featured,
       social_links: normalizeSocialLinks(form.social_links),

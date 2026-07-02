@@ -241,6 +241,7 @@ export function lazyWithRetry<T extends ComponentType<any>>(
       // Only backoff+retry when it looks transient AND we have attempts left.
       // Skip the sniff on the last iteration so we exit immediately to Phase 2.
       if (attempt < IN_PLACE_RETRY_ATTEMPTS - 1) {
+        if (importError == null) break;
         // Cheap probe first (only if we have a URL to probe) so we don't
         // waste retries on a stale deploy.
         const msg = getErrorMessage(importError);

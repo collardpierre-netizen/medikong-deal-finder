@@ -133,9 +133,10 @@ export default function ReconciliationCard({ data, loading, periodLabel }: Props
   };
 
   return (
-    <VCard>
-      <div className="space-y-3">
-        <div className="flex items-start justify-between gap-3">
+    <TooltipProvider delayDuration={150}>
+      <VCard>
+        <div className="space-y-3">
+          <div className="flex items-start justify-between gap-3">
           <div>
             <h3 className="text-[15px] font-semibold text-[#1E252F]">
               Réconciliation CA HTVA ↔ GMV TTC

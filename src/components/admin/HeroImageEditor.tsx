@@ -497,10 +497,10 @@ function CropSlider({
 }
 
 function Field({
-  label, value, onChange, placeholder, max, error, hint,
+  label, value, onChange, placeholder, max, error, hint, disabled,
 }: {
   label: string; value: string; onChange: (v: string) => void;
-  placeholder: string; max: number; error?: string; hint?: string;
+  placeholder: string; max: number; error?: string; hint?: string; disabled?: boolean;
 }) {
   const over = value.length > max;
   return (
@@ -516,9 +516,10 @@ function Field({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         aria-invalid={!!error}
+        disabled={disabled}
         className={`w-full text-[12px] rounded-md border px-2 py-1.5 outline-none transition-colors ${
           error ? "border-red-400 focus:border-red-500 bg-red-50/40" : "border-gray-200 focus:border-[#1B5BDA] bg-white"
-        }`}
+        } ${disabled ? "opacity-60 bg-gray-50 cursor-not-allowed" : ""}`}
       />
       {error ? (
         <p className="text-[10px] text-red-600 mt-0.5 inline-flex items-center gap-1">

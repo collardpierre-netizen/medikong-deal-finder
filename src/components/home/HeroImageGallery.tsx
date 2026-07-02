@@ -87,12 +87,13 @@ export function HeroImageGallery() {
         const fx = Number(img.focal_x ?? 50);
         const fy = Number(img.focal_y ?? 50);
         const zm = Number(img.zoom ?? 1);
+        const fit = img.image_fit === "contain" ? "object-contain" : "object-cover";
         const mobileSrc = (img.image_url_mobile && img.image_url_mobile.trim()) || img.image_url;
         return (
           <picture key={img.id}>
             <source media="(max-width: 640px)" srcSet={mobileSrc} />
             <img src={img.image_url} alt={img.alt_text}
-              className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
+              className={`absolute inset-0 w-full h-full ${fit} transition-opacity duration-700`}
               style={{
                 opacity: i === current ? 1 : 0,
                 objectPosition: `${fx}% ${fy}%`,

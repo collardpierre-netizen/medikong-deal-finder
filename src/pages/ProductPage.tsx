@@ -341,7 +341,8 @@ function OfferRow({
 
   return (
     <motion.div
-      className="border-b border-border last:border-b-0 py-4"
+      className={`border-b border-border last:border-b-0 py-4 ${offer.isShowcaseDimmed ? "opacity-60 grayscale-[30%] bg-muted/30" : ""}`}
+      title={offer.isShowcaseDimmed ? "Offre atténuée : un vendeur bénéficie d'une mise en avant exclusive (showcase) sur ce produit." : undefined}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.3 }}

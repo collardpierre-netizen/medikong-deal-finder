@@ -145,8 +145,13 @@ export function useVendorSalesBreakdowns(vendorId: string | undefined, period: V
 
   return {
     isLoading: linesQuery.isLoading || categoriesQuery.isLoading,
-    error: linesQuery.error || categoriesQuery.error,
+    isFetching: linesQuery.isFetching || categoriesQuery.isFetching,
+    error: (linesQuery.error || categoriesQuery.error) as Error | null,
+    refetch: async () => {
+      await Promise.all([linesQuery.refetch(), categoriesQuery.refetch()]);
+    },
     categoryBreakdown,
     customerTypeBreakdown,
   };
 }
+

@@ -24066,6 +24066,7 @@ export type Database = {
           sent_today: number
         }[]
       }
+      check_qogita_stale_refresh_alert: { Args: never; Returns: undefined }
       cleanup_old_savings_simulations: { Args: never; Returns: number }
       confirm_pickup: {
         Args: { _code?: string; _qr_token?: string; _transaction_id: string }

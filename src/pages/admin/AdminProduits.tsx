@@ -160,6 +160,7 @@ const AdminProduits = () => {
   const [offersSearch, setOffersSearch] = useState("");
   const [debouncedOffersSearch, setDebouncedOffersSearch] = useState("");
   const [offersVendorFilter, setOffersVendorFilter] = useState("all");
+  const [offersVendorFilterOpen, setOffersVendorFilterOpen] = useState(false);
   const [offersBrandFilter, setOffersBrandFilter] = useState("all");
   const [offersCountryFilter, setOffersCountryFilter] = useState("all");
   const [offersStatusFilter, setOffersStatusFilter] = useState("all");

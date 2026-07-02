@@ -180,6 +180,7 @@ export default function HeroImageEditor({ img }: Props) {
         focal_x: focalX,
         focal_y: focalY,
         zoom,
+        image_fit: imageFit,
       })
       .eq("id", img.id);
     setSaving(false);

@@ -164,11 +164,22 @@ export default function AdminQogitaStatus() {
             Suivi des runs de synchronisation, erreurs et désactivations par <code>sync_run_id</code>.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />
-          Rafraîchir
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={runStaleRefresh} disabled={staleBusy}>
+            <Play className={`h-4 w-4 mr-2 ${staleBusy ? "animate-pulse" : ""}`} />
+            Relancer stale refresh
+          </Button>
+          <Button variant="outline" size="sm" onClick={runReconciliationSweep} disabled={sweepBusy}>
+            <Recycle className={`h-4 w-4 mr-2 ${sweepBusy ? "animate-spin" : ""}`} />
+            Reconciliation sweep
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />
+            Rafraîchir
+          </Button>
+        </div>
       </div>
+
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

@@ -5,6 +5,7 @@ import {
   partitionValidRecords,
   sampleValue,
 } from "../_shared/sync-logger.ts";
+import { requireCronOrService } from "../_shared/cron-or-admin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

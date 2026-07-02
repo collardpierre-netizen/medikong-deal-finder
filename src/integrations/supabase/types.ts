@@ -8470,6 +8470,7 @@ export type Database = {
           public_access_expires_at: string | null
           public_access_pin: string | null
           public_token: string | null
+          shipped_at: string | null
           shipping_address: Json
           shipping_address_id: string | null
           show_payment_info: boolean
@@ -8481,6 +8482,9 @@ export type Database = {
           total_cost: number | null
           total_incl_vat: number
           total_margin: number | null
+          tracking_carrier: string | null
+          tracking_number: string | null
+          tracking_url: string | null
           updated_at: string
           vat_amount: number
           was_forecast: boolean
@@ -8516,6 +8520,7 @@ export type Database = {
           public_access_expires_at?: string | null
           public_access_pin?: string | null
           public_token?: string | null
+          shipped_at?: string | null
           shipping_address?: Json
           shipping_address_id?: string | null
           show_payment_info?: boolean
@@ -8527,6 +8532,9 @@ export type Database = {
           total_cost?: number | null
           total_incl_vat?: number
           total_margin?: number | null
+          tracking_carrier?: string | null
+          tracking_number?: string | null
+          tracking_url?: string | null
           updated_at?: string
           vat_amount?: number
           was_forecast?: boolean
@@ -8562,6 +8570,7 @@ export type Database = {
           public_access_expires_at?: string | null
           public_access_pin?: string | null
           public_token?: string | null
+          shipped_at?: string | null
           shipping_address?: Json
           shipping_address_id?: string | null
           show_payment_info?: boolean
@@ -8573,6 +8582,9 @@ export type Database = {
           total_cost?: number | null
           total_incl_vat?: number
           total_margin?: number | null
+          tracking_carrier?: string | null
+          tracking_number?: string | null
+          tracking_url?: string | null
           updated_at?: string
           vat_amount?: number
           was_forecast?: boolean
@@ -23871,6 +23883,7 @@ export type Database = {
           public_access_expires_at: string | null
           public_access_pin: string | null
           public_token: string | null
+          shipped_at: string | null
           shipping_address: Json
           shipping_address_id: string | null
           show_payment_info: boolean
@@ -23882,6 +23895,9 @@ export type Database = {
           total_cost: number | null
           total_incl_vat: number
           total_margin: number | null
+          tracking_carrier: string | null
+          tracking_number: string | null
+          tracking_url: string | null
           updated_at: string
           vat_amount: number
           was_forecast: boolean

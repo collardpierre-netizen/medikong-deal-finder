@@ -884,8 +884,10 @@ const AdminCommandeDetail = () => {
                         <ExternalLink size={14} className="mr-2" /> Ouvrir le suivi
                       </Button>
                     </a>
-              )}
-            </div>
+                  )}
+                </div>
+              );
+            })()}
             <p className="text-[11px] text-slate-400">
               L'URL de suivi et le n° de colis sont visibles sur la page publique de la commande et
               inclus dans l'email d'expédition.

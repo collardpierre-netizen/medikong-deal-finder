@@ -312,6 +312,31 @@ const AdminCommandeDetail = () => {
     }
   };
 
+  const dryRunNotify = async () => {
+    setBusy("TRACKING");
+    try {
+      const { data, error } = await supabase.functions.invoke("notify-order-shipped", {
+        body: { orderId: id, appOrigin: window.location.origin, dryRun: true },
+      });
+      if (error) throw error;
+      const res: any = data;
+      const logs: any[] = res?.existingLogs ?? [];
+      const activeCount = logs.filter((r) => ["sent", "pending"].includes(String(r.status))).length;
+      const msg = res?.alreadySent
+        ? `✅ Test OK — ${activeCount} envoi(s) déjà logué(s) pour clé "${res.idempotencyKey}". Un vrai clic NE créerait PAS de doublon.`
+        : `✅ Test OK — aucun envoi existant. Un vrai clic enverrait exactement 1 email à ${res?.recipient}.`;
+      toast.success(msg, { duration: 8000 });
+      // eslint-disable-next-line no-console
+      console.log("[notify-order-shipped dryRun]", res);
+    } catch (e: any) {
+      toast.error(e?.message || "Échec test");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+
+
   const saveLineTracking = async (lineId: string) => {
     setBusy(`LINE-${lineId}`);
     try {
@@ -788,6 +813,15 @@ const AdminCommandeDetail = () => {
                 variant="outline"
               >
                 {busy === "TRACKING" ? "Enregistrement…" : "Enregistrer sans email"}
+              </Button>
+              <Button
+                onClick={dryRunNotify}
+                disabled={busy !== null}
+                className="w-full justify-start"
+                variant="secondary"
+                title="Simule l'envoi sans rien envoyer et vérifie qu'un seul email partirait (idempotency)"
+              >
+                {busy === "TRACKING" ? "Test…" : "🧪 Tester (dry-run) — vérifier l'envoi unique"}
               </Button>
               {trackUrl.trim() && (
                 <a href={trackUrl.trim()} target="_blank" rel="noreferrer" className="block">

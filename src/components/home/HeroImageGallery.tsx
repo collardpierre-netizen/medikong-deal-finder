@@ -74,11 +74,22 @@ export function HeroImageGallery() {
 
   const slideContent = (
     <div className="relative w-full rounded-2xl overflow-hidden shadow-lg group" style={{ height: 340 }}>
-      {images.map((img, i) => (
-        <img key={img.id} src={img.image_url} alt={img.alt_text}
-          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
-          style={{ opacity: i === current ? 1 : 0 }} loading={i === 0 ? "eager" : "lazy"} />
-      ))}
+      {images.map((img, i) => {
+        const fx = Number(img.focal_x ?? 50);
+        const fy = Number(img.focal_y ?? 50);
+        const zm = Number(img.zoom ?? 1);
+        return (
+          <img key={img.id} src={img.image_url} alt={img.alt_text}
+            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
+            style={{
+              opacity: i === current ? 1 : 0,
+              objectPosition: `${fx}% ${fy}%`,
+              transform: zm > 1 ? `scale(${zm})` : undefined,
+              transformOrigin: `${fx}% ${fy}%`,
+            }}
+            loading={i === 0 ? "eager" : "lazy"} />
+        );
+      })}
       <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/10 to-transparent" />
       <div className="absolute bottom-6 left-6 md:bottom-8 md:left-8 z-10 text-white">
         <p className="text-xs font-medium uppercase tracking-wider opacity-80 mb-1">{translatedSubtitle || fallbackSubtitle}</p>

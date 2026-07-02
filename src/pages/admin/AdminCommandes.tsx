@@ -344,7 +344,7 @@ const AdminCommandes = () => {
   const testCount = 0; // masqué serveur — badge de nettoyage géré via useOrders() ci-dessous
   const deletedCount = 0;
 
-  const countByStatus = (s: string) => Number(serverStatusCounts?.[s] ?? 0);
+  const countByStatus = (s: string) => s === "all" ? serverTotal : Number(serverStatusCounts?.[s] ?? 0);
 
   const gmvDay = Number(serverKpis?.gmv_ht ?? 0);
   const totalCount = serverTotal;
@@ -374,6 +374,7 @@ const AdminCommandes = () => {
       });
       if (error) throw error;
       toast.success(`Commande ${deleteTarget.number} supprimée`);
+      await queryClient.invalidateQueries({ queryKey: ["admin-orders-paginated"] });
       await queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
       setDeleteTarget(null);
       setDeleteReason("");
@@ -397,6 +398,7 @@ const AdminCommandes = () => {
         targetId: hardDeleteTarget.id, targetType: "order",
         metadata: { number: hardDeleteTarget.number },
       });
+      await queryClient.invalidateQueries({ queryKey: ["admin-orders-paginated"] });
       await queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
       setHardDeleteTarget(null);
     } catch (e: any) {
@@ -416,6 +418,7 @@ const AdminCommandes = () => {
       });
       if (error) throw error;
       toast.success(`Commande ${orderNumber} convertie en commande réelle`);
+      await queryClient.invalidateQueries({ queryKey: ["admin-orders-paginated"] });
       await queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
     } catch (e: any) {
       toast.error(e?.message || "Échec de la conversion");
@@ -525,6 +528,7 @@ const AdminCommandes = () => {
       } else {
         toast.success(`${n} commande${n > 1 ? "s" : ""} test supprimée${n > 1 ? "s" : ""} (${result.lines_deleted || 0} ligne(s))`);
       }
+      await queryClient.invalidateQueries({ queryKey: ["admin-orders-paginated"] });
       await queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
       setPurgeOpen(false);
     } catch (e: any) {

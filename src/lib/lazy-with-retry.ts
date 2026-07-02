@@ -192,18 +192,46 @@ export function resetReloadAttempts() {
   }
 }
 
-/** Triggers a hard reload, but only if quota allows. Returns true if reload was triggered. */
+/**
+ * Progressive backoff before a hard reload: 800ms, 2s, 4s, capped at 6s.
+ * Purpose: give the current UI a beat before it "jumps" to a new page,
+ * and space out consecutive reload attempts across the session.
+ */
+const RELOAD_BACKOFF_STEPS_MS = [800, 2_000, 4_000, 6_000] as const;
+
+function reloadBackoffMs(attemptsAlreadyDone: number): number {
+  const idx = Math.max(0, Math.min(attemptsAlreadyDone, RELOAD_BACKOFF_STEPS_MS.length - 1));
+  return RELOAD_BACKOFF_STEPS_MS[idx];
+}
+
+/** Testing hook so unit tests don't have to wait real timers. */
+export const __reloadTiming = {
+  /** Override the timer used before a reload actually fires. */
+  scheduler: (fn: () => void, ms: number) => setTimeout(fn, ms) as unknown as number,
+};
+
+function scheduleReload(fn: () => void, ms: number) {
+  __reloadTiming.scheduler(fn, ms);
+}
+
+/** Triggers a hard reload, but only if quota allows. Returns true if reload was scheduled. */
 export function safeAutoReload(): boolean {
   if (typeof window === "undefined") return false;
   if (!canAutoReload()) return false;
+  const attemptsAlreadyDone = getReloadAttempts();
   try {
-    const next = getReloadAttempts() + 1;
-    window.sessionStorage.setItem(GLOBAL_RELOAD_COUNTER_KEY, String(next));
+    window.sessionStorage.setItem(GLOBAL_RELOAD_COUNTER_KEY, String(attemptsAlreadyDone + 1));
     window.sessionStorage.setItem(GLOBAL_RELOAD_LAST_AT_KEY, String(Date.now()));
   } catch {
     /* ignore */
   }
-  window.location.reload();
+  scheduleReload(() => {
+    try {
+      window.location.reload();
+    } catch {
+      /* ignore */
+    }
+  }, reloadBackoffMs(attemptsAlreadyDone));
   return true;
 }
 
@@ -212,6 +240,12 @@ export function safeCacheBustReload(): boolean {
   const attempts = readInt(CACHE_BUST_RELOAD_COUNTER_KEY);
   if (attempts >= MAX_CACHE_BUST_RELOADS_PER_SESSION) return false;
 
+  // Cooldown between successive cache-bust reloads: prevents the
+  // `vite:preloadError` guard from firing back-to-back and making the
+  // page flicker/jump.
+  const last = readInt(GLOBAL_RELOAD_LAST_AT_KEY);
+  if (last && Date.now() - last < RELOAD_COOLDOWN_MS) return false;
+
   try {
     window.sessionStorage.setItem(CACHE_BUST_RELOAD_COUNTER_KEY, String(attempts + 1));
     window.sessionStorage.setItem(GLOBAL_RELOAD_LAST_AT_KEY, String(Date.now()));
@@ -219,13 +253,19 @@ export function safeCacheBustReload(): boolean {
     /* ignore */
   }
 
-  try {
-    const url = new URL(window.location.href);
-    url.searchParams.set("_v", Date.now().toString());
-    window.location.replace(url.toString());
-  } catch {
-    window.location.reload();
-  }
+  scheduleReload(() => {
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("_v", Date.now().toString());
+      window.location.replace(url.toString());
+    } catch {
+      try {
+        window.location.reload();
+      } catch {
+        /* ignore */
+      }
+    }
+  }, reloadBackoffMs(attempts));
   return true;
 }
 
@@ -242,14 +282,20 @@ export function safeTransientChunkReload(url?: string | null): boolean {
     /* ignore */
   }
 
-  try {
-    const current = new URL(window.location.href);
-    current.searchParams.set("_chunkRetry", String(attempts + 1));
-    current.searchParams.set("_t", Date.now().toString());
-    window.location.replace(current.toString());
-  } catch {
-    window.location.reload();
-  }
+  scheduleReload(() => {
+    try {
+      const current = new URL(window.location.href);
+      current.searchParams.set("_chunkRetry", String(attempts + 1));
+      current.searchParams.set("_t", Date.now().toString());
+      window.location.replace(current.toString());
+    } catch {
+      try {
+        window.location.reload();
+      } catch {
+        /* ignore */
+      }
+    }
+  }, reloadBackoffMs(attempts));
   return true;
 }
 

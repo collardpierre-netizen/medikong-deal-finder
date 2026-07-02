@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Copy, Sliders, ShoppingCart, Shield, Check, Truck, Minus, Plus,
-  Heart, Tag, Package, ChevronRight, Home, Star, Info, Award, Globe, BarChart3, Calculator, TrendingDown, Bell, ExternalLink, Lock, ArrowRight, HelpCircle, ChevronDown, Store, Play, Pause, MapPin, Clock, RefreshCw
+  Heart, Tag, Package, ChevronRight, Home, Star, Info, Award, Globe, BarChart3, Calculator, TrendingDown, Bell, ExternalLink, Lock, ArrowRight, HelpCircle, ChevronDown, Store, Play, Pause, MapPin, Clock, RefreshCw, Eye
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFavorites, useRecentActivity } from "@/hooks/useFavorites";
@@ -374,6 +374,11 @@ function OfferRow({
               Ce vendeur bénéficie d'une exclusivité contractuelle sur ce produit dans votre pays.
             </TooltipContent>
           </Tooltip>
+        )}
+        {offer.isShowcaseDimmed && (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-full">
+            <Eye size={12} /> Showcase
+          </span>
         )}
         {offer.isVerified && (
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full">

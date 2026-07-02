@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ImageOff } from "lucide-react";
+import { ImageOff, Eye } from "lucide-react";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
 import { Heart, Check, ChevronDown, ChevronUp, Package, Truck, RotateCcw, ArrowRight } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -231,6 +231,11 @@ export default function SearchTrivagoCard({ product: p }: Props) {
               >
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-foreground">{offer.sellerName}</span>
+                  {offer.isShowcaseDimmed && (
+                    <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">
+                      <Eye size={10} /> Showcase
+                    </span>
+                  )}
                   {offer.isVerified && (
                     <span className="flex items-center gap-0.5 text-[10px] text-emerald-600 font-medium">
                       <Check size={10} /> Vérifié
@@ -275,7 +280,14 @@ export default function SearchTrivagoCard({ product: p }: Props) {
                       title={offer.isShowcaseDimmed ? "Offre atténuée : un vendeur bénéficie d'une mise en avant exclusive (showcase) sur ce produit." : undefined}
                       className={`flex items-center justify-between py-2 border-t border-border/60 ${offer.isShowcaseDimmed ? "opacity-60 grayscale-[30%]" : ""}`}
                     >
-                      <span className="text-sm text-foreground">{offer.sellerName}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm text-foreground">{offer.sellerName}</span>
+                        {offer.isShowcaseDimmed && (
+                          <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">
+                            <Eye size={10} /> Showcase
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-3">
                         {price > 0 && offer.unitPriceEur > price && (
                           <span className="text-[10px] font-medium text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded whitespace-nowrap">

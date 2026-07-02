@@ -29,8 +29,10 @@ function reconciliation(over: Partial<VendorReconciliation> = {}): VendorReconci
     excludedRevenueExclVatCents: 500,
     excludedGmvInclVatCents: 605,
     vatCents: 2_100,
+    ordersByStatus: {},
     ...over,
   };
+
   return base;
 }
 

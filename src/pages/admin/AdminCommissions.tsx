@@ -622,6 +622,66 @@ export default function AdminCommissions() {
                     <Plus size={12} className="mr-1" /> Ajouter un palier
                   </Button>
                 </div>
+
+                {/* Simulateur */}
+                {(() => {
+                  const basePct = Number(editingRule.margin_percentage ?? 0);
+                  const sortedTiers = [...editingTiers]
+                    .filter(t => Number.isFinite(t.min_gmv_eur) && Number.isFinite(t.margin_percentage))
+                    .sort((a, b) => a.min_gmv_eur - b.min_gmv_eur);
+                  const gmv = Number(simGmvEur) || 0;
+                  const reached = sortedTiers.filter(t => gmv >= t.min_gmv_eur);
+                  const currentTier = reached.length > 0 ? reached[reached.length - 1] : null;
+                  const currentPct = currentTier ? currentTier.margin_percentage : basePct;
+                  const currentLabel = currentTier?.label?.trim() || (currentTier ? `Palier ≥ ${fmtEur(currentTier.min_gmv_eur)} €` : "Taux de base");
+                  const nextTier = sortedTiers.find(t => gmv < t.min_gmv_eur) || null;
+                  const gmvWindow = ((editingRule as any).gmv_window as string) || "calendar_year";
+                  const direction = ((editingRule as any).tiers_direction as string) || "decreasing";
+                  const windowLabel = gmvWindow === "rolling_12m" ? "12 mois glissants" : "année civile";
+                  return (
+                    <div className="rounded-lg border bg-[#F8FAFC] p-3 space-y-3" style={{ borderColor: "#E2E8F0" }}>
+                      <div className="flex items-center gap-2">
+                        <Calculator size={14} className="text-[#1B5BDA]" />
+                        <p className="text-[13px] font-semibold text-[#1D2530]">Simulation</p>
+                        <span className="text-[11px] text-[#8B95A5]">Fenêtre : {windowLabel} · {direction === "decreasing" ? "dégressif" : "progressif"}</span>
+                      </div>
+                      <div>
+                        <Label className="text-[11px]">GMV vendeur simulé (€ HT)</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          step={1000}
+                          value={simGmvEur}
+                          onChange={e => setSimGmvEur(Number(e.target.value))}
+                          placeholder="Ex : 1500000"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="rounded-md bg-white border p-2" style={{ borderColor: "#E2E8F0" }}>
+                          <p className="text-[10px] uppercase tracking-wide text-[#8B95A5]">Taux appliqué</p>
+                          <p className="text-[18px] font-bold text-[#1D2530]">{currentPct}%</p>
+                          <p className="text-[11px] text-[#616B7C]">{currentLabel}</p>
+                        </div>
+                        <div className="rounded-md bg-white border p-2" style={{ borderColor: "#E2E8F0" }}>
+                          <p className="text-[10px] uppercase tracking-wide text-[#8B95A5]">Prochain palier</p>
+                          {nextTier ? (
+                            <>
+                              <p className="text-[18px] font-bold text-[#1D2530]">{nextTier.margin_percentage}%</p>
+                              <p className="text-[11px] text-[#616B7C]">
+                                à {fmtEur(nextTier.min_gmv_eur)} € · encore {fmtEur(Math.max(0, nextTier.min_gmv_eur - gmv))} €
+                              </p>
+                            </>
+                          ) : (
+                            <p className="text-[13px] font-medium text-[#059669] mt-1">Palier maximum atteint</p>
+                          )}
+                        </div>
+                      </div>
+                      {sortedTiers.length === 0 && (
+                        <p className="text-[11px] text-[#8B95A5] italic">Aucun palier configuré : le taux de base s'applique quel que soit le GMV.</p>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           )}

@@ -266,8 +266,8 @@ function backoffDelay(attempt: number) {
 }
 
 function isLikelyTransient(error: unknown, probe: ChunkProbeResult | null) {
-  // Explicit HTML-instead-of-JS → deploy is stale, retrying won't help.
-  if (probe?.looksLikeHtml) return false;
+  if (isStaleHtmlFallbackProbe(probe)) return false;
+  if (isTransientChunkProbe(probe)) return true;
   const msg = getErrorMessage(error).toLowerCase();
   if (!msg) return true;
   return (

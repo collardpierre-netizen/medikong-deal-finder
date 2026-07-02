@@ -229,12 +229,16 @@ export default function VendorDashboard() {
             loading={monthlyLoading}
           />
 
+          {/* Alerte cohérence CA/GMV — silencieuse si tout concorde */}
+          <VendorTotalsConsistencyAlert report={consistencyReport} />
+
           {/* Réconciliation CA HTVA ↔ GMV TTC par statut */}
           <ReconciliationCard
             data={reconciliation}
             loading={reconciliationLoading}
             periodLabel={periodLabel}
           />
+
 
           {/* Courbe CA + ventilation par profil client */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

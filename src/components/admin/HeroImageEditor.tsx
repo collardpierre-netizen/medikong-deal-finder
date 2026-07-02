@@ -460,12 +460,12 @@ function PreviewFrame({
           <div className="absolute bottom-3 left-3 right-3 z-10 text-white">
             {showSubtitle && (
               <p className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wider opacity-80 mb-0.5 line-clamp-1">
-                {subtitle || <span className="italic opacity-60">Sous-titre…</span>}
+                {subtitle ? formatHeroInline(subtitle) : <span className="italic opacity-60">Sous-titre…</span>}
               </p>
             )}
             {showTitle && (
               <h4 className="text-sm sm:text-base font-bold leading-tight line-clamp-2 max-w-[80%]">
-                {title || <span className="italic opacity-60">Titre du bandeau…</span>}
+                {title ? formatHeroInline(title) : <span className="italic opacity-60">Titre du bandeau…</span>}
               </h4>
             )}
             {ctaVisible && (

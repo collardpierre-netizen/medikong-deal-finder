@@ -219,7 +219,8 @@ export default function ReconciliationCard({ data, loading, periodLabel }: Props
                             </td>
                           </tr>
                         )}
-                      </>
+                      </React.Fragment>
+
                     );
                   })}
                 </tbody>

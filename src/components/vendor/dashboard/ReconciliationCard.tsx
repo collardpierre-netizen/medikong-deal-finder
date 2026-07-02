@@ -1,8 +1,18 @@
 import React, { useState } from "react";
-import { ChevronDown, ChevronRight, Download } from "lucide-react";
+import { ChevronDown, ChevronRight, Download, Info } from "lucide-react";
 import { useMoneyFormat } from "@/lib/money-format";
 import { VCard } from "@/components/vendor/ui/VCard";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  VENDOR_GMV_EXCLUDED_STATUSES,
+} from "@/lib/vendor-gmv-filters";
 import type { VendorReconciliation } from "@/hooks/useVendorReconciliation";
+
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "En attente",
@@ -25,6 +35,10 @@ const STATUS_LABELS: Record<string, string> = {
 function labelFor(status: string) {
   return STATUS_LABELS[status] ?? status;
 }
+
+const excludedStatusLabels = Array.from(
+  new Set(VENDOR_GMV_EXCLUDED_STATUSES.map((s) => STATUS_LABELS[s] ?? s)),
+);
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
@@ -119,9 +133,10 @@ export default function ReconciliationCard({ data, loading, periodLabel }: Props
   };
 
   return (
-    <VCard>
-      <div className="space-y-3">
-        <div className="flex items-start justify-between gap-3">
+    <TooltipProvider delayDuration={150}>
+      <VCard>
+        <div className="space-y-3">
+          <div className="flex items-start justify-between gap-3">
           <div>
             <h3 className="text-[15px] font-semibold text-[#1E252F]">
               Réconciliation CA HTVA ↔ GMV TTC
@@ -166,7 +181,21 @@ export default function ReconciliationCard({ data, loading, periodLabel }: Props
                   <tr className="text-left text-[11px] text-[#8B95A5] border-b border-[#E2E8F0]">
                     <th className="py-1.5 pr-2 font-medium w-6"></th>
                     <th className="py-1.5 pr-2 font-medium">Statut</th>
-                    <th className="py-1.5 pr-2 font-medium">Inclus</th>
+                    <th className="py-1.5 pr-2 font-medium">
+                      <Tooltip>
+                        <TooltipTrigger className="inline-flex items-center gap-1 cursor-help">
+                          Inclus
+                          <Info size={11} className="text-[#8B95A5]" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[260px] text-[11px] leading-snug">
+                          <p className="font-medium mb-0.5">Statuts inclus / exclus</p>
+                          <p className="text-[#8B95A5]">
+                            Les statuts suivants sont <em>exclus</em> du CA et du GMV :{" "}
+                            {excludedStatusLabels.join(", ")}.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </th>
                     <th className="py-1.5 pr-2 font-medium text-right">Cmds</th>
                     <th className="py-1.5 pr-2 font-medium text-right">CA HTVA</th>
                     <th className="py-1.5 font-medium text-right">GMV TTC</th>
@@ -204,15 +233,24 @@ export default function ReconciliationCard({ data, loading, periodLabel }: Props
                           </td>
                           <td className="py-1.5 pr-2">{labelFor(r.status)}</td>
                           <td className="py-1.5 pr-2">
-                            <span
-                              className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                                r.included
-                                  ? "bg-[#DCFCE7] text-[#166534]"
-                                  : "bg-[#FEE2E2] text-[#991B1B]"
-                              }`}
-                            >
-                              {r.included ? "Oui" : "Non"}
-                            </span>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span
+                                  className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium cursor-help ${
+                                    r.included
+                                      ? "bg-[#DCFCE7] text-[#166534]"
+                                      : "bg-[#FEE2E2] text-[#991B1B]"
+                                  }`}
+                                >
+                                  {r.included ? "Oui" : "Non"}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[240px] text-[11px] leading-snug">
+                                {r.included
+                                  ? "Ce statut est inclus dans le CA HTVA et le GMV TTC."
+                                  : `Ce statut est exclu du CA et du GMV. Il ne génère pas de TVA collectée.`}
+                              </TooltipContent>
+                            </Tooltip>
                           </td>
                           <td className="py-1.5 pr-2 text-right">{r.ordersCount}</td>
                           <td className="py-1.5 pr-2 text-right">
@@ -239,7 +277,17 @@ export default function ReconciliationCard({ data, loading, periodLabel }: Props
                                         <th className="py-1 pr-2 font-medium text-right">Lignes</th>
                                         <th className="py-1 pr-2 font-medium text-right">CA HTVA</th>
                                         <th className="py-1 pr-2 font-medium text-right">GMV TTC</th>
-                                        <th className="py-1 font-medium text-right">TVA</th>
+                                        <th className="py-1 font-medium text-right">
+                                          <Tooltip>
+                                            <TooltipTrigger className="inline-flex items-center gap-1 cursor-help">
+                                              TVA
+                                              <Info size={10} className="text-[#8B95A5]" />
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top" className="max-w-[220px] text-[11px] leading-snug">
+                                              TVA = GMV TTC − CA HTVA pour cette commande.
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </th>
                                       </tr>
                                     </thead>
                                     <tbody>
@@ -348,13 +396,16 @@ export default function ReconciliationCard({ data, loading, periodLabel }: Props
               </div>
               <p className="text-[11px] text-[#8B95A5] mt-2">
                 Même source, mêmes statuts : l'écart entre CA HTVA et GMV TTC
-                correspond à la TVA. Les lignes «&nbsp;exclues&nbsp;» ci-dessus
-                ne figurent dans aucun des deux totaux.
+                correspond à la TVA. Pour chaque statut <em>inclus</em>, la TVA
+                collectée vaut GMV TTC − CA HTVA de ce statut. Les lignes
+                «&nbsp;exclues&nbsp;» ci-dessus ne figurent dans aucun des deux
+                totaux et ne génèrent donc pas de TVA collectée.
               </p>
             </div>
           </>
         )}
       </div>
-    </VCard>
+      </VCard>
+    </TooltipProvider>
   );
 }

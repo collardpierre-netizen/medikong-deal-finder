@@ -794,11 +794,22 @@ const AdminCommandeDetail = () => {
             )}
             <div>
               <label className="text-xs text-slate-500 block mb-1">URL de suivi (externe)</label>
-              <Input
-                value={trackUrl}
-                onChange={(e) => setTrackUrl(e.target.value)}
-                placeholder="https://track.bpost.be/..."
-              />
+              {(() => {
+                const err = validateTrackingUrl(trackUrl);
+                return (
+                  <>
+                    <Input
+                      value={trackUrl}
+                      onChange={(e) => setTrackUrl(e.target.value)}
+                      placeholder="https://track.bpost.be/..."
+                      aria-invalid={!!err}
+                      className={err ? "border-red-500 focus-visible:ring-red-500" : undefined}
+                    />
+                    {err && <p className="mt-1 text-[11px] text-red-600">{err}</p>}
+                    <p className="mt-1 text-[10px] text-slate-400">https:// uniquement · domaine public requis</p>
+                  </>
+                );
+              })()}
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>

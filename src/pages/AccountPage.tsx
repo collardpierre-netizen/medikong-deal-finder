@@ -597,6 +597,8 @@ export default function AccountPage() {
                         {profileSaving ? "Enregistrement..." : "Enregistrer les modifications"}
                       </motion.button>
 
+                      <AutoRefreshPreferenceToggle />
+
                       {/* GDPR - Delete Account */}
                       <div className="mt-12 pt-8 border-t border-border">
                         <h3 className="text-lg font-bold text-foreground mb-2">Gestion de vos données (RGPD)</h3>

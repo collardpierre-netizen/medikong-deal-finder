@@ -36,6 +36,10 @@ type OrderData = {
   public_access_expires_at?: string | null;
   customer_validated_at?: string | null;
   customer_validation_email?: string | null;
+  tracking_url?: string | null;
+  tracking_carrier?: string | null;
+  tracking_number?: string | null;
+  shipped_at?: string | null;
 };
 
 const STATUS_LABEL: Record<string, string> = {

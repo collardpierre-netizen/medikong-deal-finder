@@ -1,6 +1,10 @@
+import { useMemo, useState } from "react";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { useVendorDashboardKpis } from "@/hooks/useVendorDashboardKpis";
-import { useVendorMonthlyDashboard } from "@/hooks/useVendorMonthlyDashboard";
+import {
+  useVendorMonthlyDashboard,
+  type DashboardPeriod,
+} from "@/hooks/useVendorMonthlyDashboard";
 import { useVendorGmvProgress } from "@/hooks/useVendorGmvProgress";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VStat } from "@/components/vendor/ui/VStat";
@@ -17,10 +21,61 @@ import { useMoneyFormat } from "@/lib/money-format";
 const today = new Date();
 const dateStr = today.toLocaleDateString("fr-BE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
+type PeriodKey = "day" | "week" | "month" | "custom";
+
+const PERIOD_LABELS: Record<PeriodKey, string> = {
+  day: "Aujourd'hui",
+  week: "Cette semaine",
+  month: "Ce mois",
+  custom: "Période",
+};
+
+function computePeriod(
+  key: PeriodKey,
+  custom: { from: string; to: string },
+): DashboardPeriod {
+  const now = new Date();
+  if (key === "day") {
+    const s = new Date(now); s.setHours(0, 0, 0, 0);
+    const e = new Date(now); e.setHours(23, 59, 59, 999);
+    return { start: s, end: e };
+  }
+  if (key === "week") {
+    // Semaine ISO : lundi → dimanche
+    const s = new Date(now);
+    const day = (s.getDay() + 6) % 7; // 0 = lundi
+    s.setDate(s.getDate() - day);
+    s.setHours(0, 0, 0, 0);
+    const e = new Date(s);
+    e.setDate(e.getDate() + 6);
+    e.setHours(23, 59, 59, 999);
+    return { start: s, end: e };
+  }
+  if (key === "custom" && (custom.from || custom.to)) {
+    const s = custom.from ? new Date(custom.from) : new Date(now.getFullYear(), now.getMonth(), 1);
+    s.setHours(0, 0, 0, 0);
+    const e = custom.to ? new Date(custom.to) : new Date(now);
+    e.setHours(23, 59, 59, 999);
+    return { start: s, end: e };
+  }
+  // month par défaut
+  const s = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+  const e = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  return { start: s, end: e };
+}
+
 export default function VendorDashboard() {
   const { data: vendor } = useCurrentVendor();
-  const { data: kpis } = useVendorDashboardKpis(vendor?.id);
-  const { data: monthly, isLoading: monthlyLoading } = useVendorMonthlyDashboard(vendor?.id);
+  const [periodKey, setPeriodKey] = useState<PeriodKey>("month");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+  const period = useMemo(
+    () => computePeriod(periodKey, { from: customFrom, to: customTo }),
+    [periodKey, customFrom, customTo],
+  );
+
+  const { data: kpis } = useVendorDashboardKpis(vendor?.id, period);
+  const { data: monthly, isLoading: monthlyLoading } = useVendorMonthlyDashboard(vendor?.id, period);
   const { data: gmvProgress } = useVendorGmvProgress(vendor?.id);
   const { formatMoney } = useMoneyFormat();
 
@@ -28,14 +83,21 @@ export default function VendorDashboard() {
   const shippingMode = (vendor as any)?.vendor_shipping_mode ?? "no_shipping";
 
   const activeOffers = kpis?.activeOffers ?? 0;
-  const monthOrders = kpis?.monthOrders ?? 0;
-  const revenueEur = (kpis?.revenueCents ?? 0) / 100;
-  const marginEur = ((kpis as any)?.marginCents ?? 0) / 100;
-  const marginPct = (kpis as any)?.marginPct ?? 0;
+  const ordersCount = monthly?.ordersCount ?? 0;
+  // CA HTVA (source unique : order_lines facturables, exprimés en cents)
+  const revenueEur = (monthly?.revenueExclVatCents ?? 0) / 100;
+  const marginEur = (monthly?.grossMarginCents ?? 0) / 100;
+  const marginPct =
+    (monthly?.revenueExclVatCents ?? 0) > 0
+      ? ((monthly?.grossMarginCents ?? 0) / (monthly!.revenueExclVatCents)) * 100
+      : 0;
   const forecastRevenueEur = ((kpis as any)?.forecastRevenueCents ?? 0) / 100;
   const forecastMarginEur = ((kpis as any)?.forecastMarginCents ?? 0) / 100;
   const forecastMarginPct = ((kpis as any)?.forecastMarginPct ?? 0);
   const forecastOrders = (kpis as any)?.forecastOrders ?? 0;
+
+  const periodLabel = PERIOD_LABELS[periodKey];
+  const rangeLabel = `${period.start.toLocaleDateString("fr-BE")} → ${period.end.toLocaleDateString("fr-BE")}`;
 
   return (
     <div className="space-y-5">
@@ -54,13 +116,48 @@ export default function VendorDashboard() {
         <>
           <VendorMarketIntelStatusCard />
 
+          {/* Sélecteur de période */}
+          <div className="flex flex-wrap items-center gap-2">
+            {(Object.keys(PERIOD_LABELS) as PeriodKey[]).map((k) => (
+              <button
+                key={k}
+                onClick={() => setPeriodKey(k)}
+                className="px-2.5 py-1 rounded-full text-[12px] font-semibold transition-colors"
+                style={{
+                  backgroundColor: periodKey === k ? "#1B5BDA" : "#F1F5F9",
+                  color: periodKey === k ? "#fff" : "#475569",
+                }}
+              >
+                {PERIOD_LABELS[k]}
+              </button>
+            ))}
+            {periodKey === "custom" && (
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="date"
+                  value={customFrom}
+                  onChange={(e) => setCustomFrom(e.target.value)}
+                  className="text-[12px] px-2 py-1 rounded border border-[#E2E8F0]"
+                />
+                <span className="text-[11px] text-[#8B95A5]">→</span>
+                <input
+                  type="date"
+                  value={customTo}
+                  onChange={(e) => setCustomTo(e.target.value)}
+                  className="text-[12px] px-2 py-1 rounded border border-[#E2E8F0]"
+                />
+              </div>
+            )}
+            <span className="ml-1 text-[11px] text-[#8B95A5] tabular-nums">{rangeLabel}</span>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <VStat
-              label="CA du mois"
+              label={`CA HTVA · ${periodLabel.toLowerCase()}`}
               value={revenueEur > 0 ? formatMoney(revenueEur, { fractionDigits: 0 }) : "0 EUR"}
               icon="Euro"
               color="#1B5BDA"
-              sub={revenueEur > 0 ? "ce mois" : "aucune vente"}
+              sub={revenueEur > 0 ? "hors TVA, lignes facturables" : "aucune vente"}
             />
             <VStat
               label="Marge brute"
@@ -71,10 +168,10 @@ export default function VendorDashboard() {
             />
             <VStat
               label="Commandes"
-              value={String(monthOrders)}
+              value={String(ordersCount)}
               icon="ShoppingCart"
               color="#7C3AED"
-              sub="ce mois"
+              sub={periodLabel.toLowerCase()}
             />
             <VStat
               label="Offres actives"

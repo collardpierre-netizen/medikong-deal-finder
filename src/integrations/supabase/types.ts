@@ -23646,6 +23646,10 @@ export type Database = {
           threshold_days: number
         }[]
       }
+      admin_qogita_watchdog_run: {
+        Args: { _stale_minutes?: number }
+        Returns: Json
+      }
       admin_redispatch_catalog_notifications: {
         Args: { _source_id: string; _source_type: string }
         Returns: number
@@ -24914,6 +24918,7 @@ export type Database = {
         }
         Returns: Json
       }
+      qogita_watchdog_run: { Args: { _stale_minutes?: number }; Returns: Json }
       quote_public_action: {
         Args: { _action: string; _ip?: string; _token: string }
         Returns: Json

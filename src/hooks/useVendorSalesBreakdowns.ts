@@ -34,22 +34,37 @@ const isActiveOrForecast = (o: any) =>
   o && !o.hidden_from_list && !o.deleted_at &&
   (Boolean(o.is_forecast) || ["pending", "confirmed", "processing", "shipped"].includes(o.status));
 
-export function useVendorSalesBreakdowns(vendorId: string | undefined) {
+export type VendorAnalyticsPeriod = "7d" | "30d" | "90d" | "ytd" | "all";
+
+export function periodToSinceIso(period: VendorAnalyticsPeriod): string | null {
+  const now = new Date();
+  if (period === "all") return null;
+  if (period === "ytd") return new Date(Date.UTC(now.getUTCFullYear(), 0, 1)).toISOString();
+  const days = period === "7d" ? 7 : period === "30d" ? 30 : 90;
+  const d = new Date(now);
+  d.setUTCDate(d.getUTCDate() - days);
+  return d.toISOString();
+}
+
+export function useVendorSalesBreakdowns(vendorId: string | undefined, period: VendorAnalyticsPeriod = "30d") {
+  const sinceIso = useMemo(() => periodToSinceIso(period), [period]);
   const linesQuery = useQuery({
-    queryKey: ["vendor-sales-breakdowns", vendorId],
+    queryKey: ["vendor-sales-breakdowns", vendorId, period],
     enabled: !!vendorId,
     staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("order_lines")
         .select(`
           quantity, unit_price_incl_vat, unit_price_excl_vat, vat_rate,
           line_total_incl_vat, line_total_excl_vat,
           products:product_id ( primary_category_id ),
-          orders:order_id ( id, status, is_forecast, hidden_from_list, deleted_at,
+          orders:order_id!inner ( id, status, is_forecast, hidden_from_list, deleted_at, created_at,
                             customers:customer_id ( customer_type ) )
         `)
         .eq("vendor_id", vendorId!);
+      if (sinceIso) q = q.gte("orders.created_at", sinceIso);
+      const { data, error } = await q;
       if (error) throw error;
       return data || [];
     },

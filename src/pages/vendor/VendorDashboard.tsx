@@ -19,6 +19,7 @@ const dateStr = today.toLocaleDateString("fr-BE", { weekday: "long", day: "numer
 export default function VendorDashboard() {
   const { data: vendor } = useCurrentVendor();
   const { data: kpis } = useVendorDashboardKpis(vendor?.id);
+  const { data: monthly, isLoading: monthlyLoading } = useVendorMonthlyDashboard(vendor?.id);
   const { formatMoney } = useMoneyFormat();
 
   const isApproved = vendor?.validation_status === "approved";

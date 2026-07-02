@@ -14,6 +14,7 @@ const MAX_CACHE_BUST_RELOADS_PER_SESSION = 2;
 const TRANSIENT_CHUNK_RELOAD_COUNTER_KEY = "medikong:transient-chunk-reload-count";
 const MAX_TRANSIENT_CHUNK_RELOADS_PER_SESSION = 5;
 const TRANSIENT_CHUNK_POLL_DELAY_MS = 2_500;
+const TRANSIENT_CHUNK_MAX_WAIT_MS = 10_000;
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -140,12 +141,14 @@ function isHealthyJavaScriptProbe(probe: ChunkProbeResult | null): boolean {
   );
 }
 
-async function waitForChunkServerRecovery(url: string): Promise<void> {
-  while (typeof window !== "undefined") {
+async function waitForChunkServerRecovery(url: string): Promise<boolean> {
+  const startedAt = Date.now();
+  while (typeof window !== "undefined" && Date.now() - startedAt < TRANSIENT_CHUNK_MAX_WAIT_MS) {
     const probe = await probeChunkUrl(url);
-    if (isHealthyJavaScriptProbe(probe) || isStaleHtmlFallbackProbe(probe)) return;
+    if (isHealthyJavaScriptProbe(probe) || isStaleHtmlFallbackProbe(probe)) return true;
     await delay(TRANSIENT_CHUNK_POLL_DELAY_MS);
   }
+  return false;
 }
 
 function readInt(key: string): number {

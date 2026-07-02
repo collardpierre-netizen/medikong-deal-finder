@@ -1,6 +1,7 @@
 import { lazy, type ComponentType, type LazyExoticComponent } from "react";
 
 const RETRY_TOKEN_PREFIX = "lazy-retry:";
+const CACHE_BUST_TOKEN_PREFIX = "lazy-cache-bust:";
 const GLOBAL_RELOAD_COUNTER_KEY = "medikong:reload-count";
 const GLOBAL_RELOAD_LAST_AT_KEY = "medikong:reload-last-at";
 const CACHE_BUST_RELOAD_COUNTER_KEY = "medikong:chunk-cache-bust-count";
@@ -289,15 +290,19 @@ export function lazyWithRetry<T extends ComponentType<any>>(
       if (typeof window !== "undefined" && isChunkLoadError(importError)) {
         const retryKey = `${RETRY_TOKEN_PREFIX}${key}`;
         const alreadyRetried = window.sessionStorage.getItem(retryKey) === "1";
-        if (probe?.looksLikeHtml && !alreadyRetried) {
-          window.sessionStorage.setItem(retryKey, "1");
-          if (safeCacheBustReload()) {
-            return new Promise<never>(() => undefined);
+        if (probe?.looksLikeHtml) {
+          const cacheBustKey = `${CACHE_BUST_TOKEN_PREFIX}${key}`;
+          const alreadyCacheBusted = window.sessionStorage.getItem(cacheBustKey) === "1";
+          if (!alreadyCacheBusted) {
+            window.sessionStorage.setItem(cacheBustKey, "1");
+            if (safeCacheBustReload()) {
+              return new Promise<never>(() => undefined);
+            }
           }
         }
         if (!alreadyRetried && canAutoReload()) {
           window.sessionStorage.setItem(retryKey, "1");
-          if (safeAutoReload()) {
+          if (safeCacheBustReload()) {
             return new Promise<never>(() => undefined);
           }
         }

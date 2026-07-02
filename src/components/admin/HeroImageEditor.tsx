@@ -170,6 +170,7 @@ export default function HeroImageEditor({ img }: Props) {
         show_subtitle: showSubtitle,
         cta_text: cta.trim() || null,
         link_url: link.trim() || null,
+        show_cta: showCta,
         image_url_mobile: imageUrlMobile.trim() || null,
         focal_x: focalX,
         focal_y: focalY,

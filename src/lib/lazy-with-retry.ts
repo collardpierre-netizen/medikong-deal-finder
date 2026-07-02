@@ -161,8 +161,6 @@ function safeCacheBustReload(): boolean {
   if (typeof window === "undefined") return false;
   const attempts = readInt(CACHE_BUST_RELOAD_COUNTER_KEY);
   if (attempts >= MAX_CACHE_BUST_RELOADS_PER_SESSION) return false;
-  const last = readInt(GLOBAL_RELOAD_LAST_AT_KEY);
-  if (last && Date.now() - last < RELOAD_COOLDOWN_MS) return false;
 
   try {
     window.sessionStorage.setItem(CACHE_BUST_RELOAD_COUNTER_KEY, String(attempts + 1));

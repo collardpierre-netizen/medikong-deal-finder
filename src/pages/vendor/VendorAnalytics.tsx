@@ -116,8 +116,10 @@ export default function VendorAnalytics() {
           <p className="text-[11px] mb-4" style={{ color: "#8B95A5" }}>
             Répartition CA TTC par catégorie parent (commandes en cours + prévisionnelles)
           </p>
-          {isLoading ? (
-            <EmptyState message="Chargement…" />
+          {errorMessage ? (
+            <ErrorState message={errorMessage} onRetry={() => { void refetch(); }} />
+          ) : isLoading ? (
+            <ChartSkeleton slow={slow} />
           ) : categoryBreakdown.length > 0 ? (
             <div style={{ width: "100%", height: 260 }}>
               <ResponsiveContainer>

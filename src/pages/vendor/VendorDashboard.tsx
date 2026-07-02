@@ -18,7 +18,10 @@ import MediKongCommissionCard from "@/components/vendor/dashboard/MediKongCommis
 import RevenueTrendCard from "@/components/vendor/dashboard/RevenueTrendCard";
 import CustomerTypeBreakdownCard from "@/components/vendor/dashboard/CustomerTypeBreakdownCard";
 import ReconciliationCard from "@/components/vendor/dashboard/ReconciliationCard";
+import VendorTotalsConsistencyAlert from "@/components/vendor/dashboard/VendorTotalsConsistencyAlert";
+import { checkVendorTotalsConsistency } from "@/lib/vendor-gmv-consistency";
 import { useMoneyFormat } from "@/lib/money-format";
+
 
 const today = new Date();
 const dateStr = today.toLocaleDateString("fr-BE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });

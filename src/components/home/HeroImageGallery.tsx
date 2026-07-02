@@ -104,6 +104,13 @@ export function HeroImageGallery() {
           </picture>
         );
       })}
+      {currentImage?.link_url && (
+        <div className="absolute top-3 right-3 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="bg-white/20 backdrop-blur-sm rounded-full p-2 text-white">
+            <ExternalLink size={16} aria-hidden="true" />
+          </div>
+        </div>
+      )}
       {(() => {
         const showTitle = currentImage?.show_title ?? true;
         const showSubtitle = currentImage?.show_subtitle ?? true;

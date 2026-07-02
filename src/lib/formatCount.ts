@@ -13,5 +13,5 @@ export function formatCount(
   const v = roundDown && safe >= 100 ? Math.floor(safe / 100) * 100 : safe;
   // fr-BE utilise un espace insécable comme séparateur — on le normalise en
   // espace standard pour rester cohérent avec le reste du site.
-  return `${v.toLocaleString("fr-BE").replace(/\u00A0/g, " ")}${suffix}`;
+  return `${v.toLocaleString("fr-BE").replace(/[\s\u00A0\u202F]/g, ".")}${suffix}`;
 }

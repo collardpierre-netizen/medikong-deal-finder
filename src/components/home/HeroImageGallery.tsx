@@ -7,9 +7,9 @@ import { useTranslation } from "react-i18next";
 import { useAutoTranslate } from "@/hooks/useAutoTranslate";
 
 const fallbackImages: HeroImg[] = [
-  { id: "1", image_url: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=900&q=80", image_url_mobile: null, alt_text: "Fournitures médicales", link_url: null, cta_text: null, title: null, subtitle: null, show_title: true, show_subtitle: true },
-  { id: "2", image_url: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=900&q=80", image_url_mobile: null, alt_text: "Équipement médical", link_url: null, cta_text: null, title: null, subtitle: null, show_title: true, show_subtitle: true },
-  { id: "3", image_url: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=900&q=80", image_url_mobile: null, alt_text: "Pharmacie professionnelle", link_url: null, cta_text: null, title: null, subtitle: null, show_title: true, show_subtitle: true },
+  { id: "1", image_url: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=900&q=80", image_url_mobile: null, alt_text: "Fournitures médicales", link_url: null, cta_text: null, title: null, subtitle: null, show_title: true, show_subtitle: true, show_cta: true },
+  { id: "2", image_url: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=900&q=80", image_url_mobile: null, alt_text: "Équipement médical", link_url: null, cta_text: null, title: null, subtitle: null, show_title: true, show_subtitle: true, show_cta: true },
+  { id: "3", image_url: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=900&q=80", image_url_mobile: null, alt_text: "Pharmacie professionnelle", link_url: null, cta_text: null, title: null, subtitle: null, show_title: true, show_subtitle: true, show_cta: true },
 ];
 
 interface HeroImg {
@@ -24,6 +24,7 @@ interface HeroImg {
   subtitle: string | null;
   show_title?: boolean | null;
   show_subtitle?: boolean | null;
+  show_cta?: boolean | null;
   focal_x?: number | null;
   focal_y?: number | null;
   zoom?: number | null;

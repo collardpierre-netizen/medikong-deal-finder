@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ImageOff, Eye } from "lucide-react";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
-import { Heart, Check, ChevronDown, ChevronUp, Package, Truck, RotateCcw, ArrowRight } from "lucide-react";
+import { Heart, Check, ChevronDown, ChevronUp, Package, Truck, RotateCcw, ArrowRight, AlertCircle } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useProductOffers } from "@/hooks/useProducts";
 import type { Product } from "@/hooks/useProducts";
@@ -28,9 +28,12 @@ export default function SearchTrivagoCard({ product: p }: Props) {
   // que quand l'utilisateur ouvre la liste (économise N-1 RPC par page).
   const [expanded, setExpanded] = useState(false);
   const [prefetch, setPrefetch] = useState(false);
-  const { data: offersFull = [], isLoading: offersLoading } = useProductOffers(
-    expanded || prefetch || !hasContext ? p.id : undefined
-  );
+  const {
+    data: offersFull = [],
+    isLoading: offersLoading,
+    error: offersError,
+    refetch: refetchOffers,
+  } = useProductOffers(expanded || prefetch || !hasContext ? p.id : undefined);
 
   // Best offer : on privilégie le batch (1 round-trip), sinon le fetch détaillé.
   const bestOffer = hasContext
@@ -230,6 +233,24 @@ export default function SearchTrivagoCard({ product: p }: Props) {
                 {Array.from({ length: Math.min(extraCount || 2, 4) }).map((_, i) => (
                   <OfferSkeletonRow key={`sk-${i}`} />
                 ))}
+              </div>
+            )}
+            {expanded && !offersLoading && offersError && (
+              <div className="flex flex-col items-center justify-center gap-2 px-5 py-6 border-b border-border/60 text-center">
+                <AlertCircle size={20} className="text-destructive" />
+                <p className="text-sm font-medium text-destructive">
+                  Impossible de charger les offres
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Une erreur est survenue lors de la récupération des autres vendeurs.
+                </p>
+                <button
+                  onClick={() => refetchOffers()}
+                  className="mt-1 inline-flex items-center gap-1.5 text-[12px] font-semibold text-primary hover:text-primary/80 transition-colors"
+                >
+                  <RotateCcw size={12} />
+                  Réessayer
+                </button>
               </div>
             )}
             {expanded && !offersLoading && visibleOffers.map((offer: any) => (

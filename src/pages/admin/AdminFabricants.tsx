@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { Factory, Package, Tag, Plus, Search, Globe, Award, Merge, X, ExternalLink, Download, Upload, FileDown } from "lucide-react";
 import { exportManufacturers, importManufacturers, downloadManufacturerTemplate } from "@/lib/xlsx-utils";
 import { SocialLinksEditor, normalizeSocialLinks } from "@/components/shared/SocialLinks";
+import { CmsMediaFields } from "@/components/admin/CmsMediaFields";
 
 const COUNTRIES = [
   { code: "BE", label: "🇧🇪 Belgique" }, { code: "FR", label: "🇫🇷 France" },

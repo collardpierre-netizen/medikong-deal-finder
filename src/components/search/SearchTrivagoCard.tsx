@@ -227,13 +227,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
             {expanded && offersLoading && (
               <div>
                 {Array.from({ length: Math.min(extraCount || 2, 4) }).map((_, i) => (
-                  <div key={`sk-${i}`} className="flex items-center justify-between px-5 py-2.5 border-b border-border/60 last:border-b-0">
-                    <Skeleton className="h-4 w-28" />
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="h-4 w-16" />
-                      <Skeleton className="h-7 w-14 rounded-md" />
-                    </div>
-                  </div>
+                  <OfferSkeletonRow key={`sk-${i}`} />
                 ))}
               </div>
             )}

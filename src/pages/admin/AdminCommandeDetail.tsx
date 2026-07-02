@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -427,8 +427,8 @@ const AdminCommandeDetail = () => {
                   const lt = lineTracks[l.id] || { url: "", number: "" };
                   const dirty = (l.tracking_url || "") !== lt.url || (l.tracking_number || "") !== lt.number;
                   return (
-                    <>
-                    <tr key={l.id} className="border-t">
+                    <Fragment key={l.id}>
+                    <tr className="border-t">
                       <td className="px-3 py-2">
                         <div>{l.manual_label || l.products?.name || "—"}</div>
                         {(l.products?.cnk_code || l.products?.gtin) && (
@@ -449,7 +449,7 @@ const AdminCommandeDetail = () => {
                       <td className="px-3 py-2 text-right text-slate-600">{fmtEur(puTtc)} €</td>
                       <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(l.line_total_excl_vat) || 0)} €</td>
                     </tr>
-                    <tr key={`${l.id}-track`} className="bg-slate-50/60">
+                    <tr className="bg-slate-50/60">
                       <td colSpan={7} className="px-3 py-2">
                         <div className="flex flex-wrap items-end gap-2">
                           <div className="flex items-center gap-1 text-[11px] text-slate-500 font-medium">

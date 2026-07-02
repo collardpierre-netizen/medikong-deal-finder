@@ -1,13 +1,16 @@
 import { lazy, type ComponentType, type LazyExoticComponent } from "react";
 
 const RETRY_TOKEN_PREFIX = "lazy-retry:";
+const CACHE_BUST_TOKEN_PREFIX = "lazy-cache-bust:";
 const GLOBAL_RELOAD_COUNTER_KEY = "medikong:reload-count";
 const GLOBAL_RELOAD_LAST_AT_KEY = "medikong:reload-last-at";
+const CACHE_BUST_RELOAD_COUNTER_KEY = "medikong:chunk-cache-bust-count";
 
 /** Max automatic reloads per browser session before we stop and show the boundary. */
 export const MAX_AUTO_RELOADS_PER_SESSION = 2;
 /** Cooldown between two auto reloads (ms). Prevents tight loops on cascading errors. */
 const RELOAD_COOLDOWN_MS = 10_000;
+const MAX_CACHE_BUST_RELOADS_PER_SESSION = 2;
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
@@ -129,6 +132,11 @@ export function resetReloadAttempts() {
   try {
     window.sessionStorage.removeItem(GLOBAL_RELOAD_COUNTER_KEY);
     window.sessionStorage.removeItem(GLOBAL_RELOAD_LAST_AT_KEY);
+    window.sessionStorage.removeItem(CACHE_BUST_RELOAD_COUNTER_KEY);
+    for (let i = window.sessionStorage.length - 1; i >= 0; i--) {
+      const key = window.sessionStorage.key(i);
+      if (key?.startsWith(CACHE_BUST_TOKEN_PREFIX)) window.sessionStorage.removeItem(key);
+    }
   } catch {
     /* ignore */
   }
@@ -146,6 +154,28 @@ export function safeAutoReload(): boolean {
     /* ignore */
   }
   window.location.reload();
+  return true;
+}
+
+function safeCacheBustReload(): boolean {
+  if (typeof window === "undefined") return false;
+  const attempts = readInt(CACHE_BUST_RELOAD_COUNTER_KEY);
+  if (attempts >= MAX_CACHE_BUST_RELOADS_PER_SESSION) return false;
+
+  try {
+    window.sessionStorage.setItem(CACHE_BUST_RELOAD_COUNTER_KEY, String(attempts + 1));
+    window.sessionStorage.setItem(GLOBAL_RELOAD_LAST_AT_KEY, String(Date.now()));
+  } catch {
+    /* ignore */
+  }
+
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set("_v", Date.now().toString());
+    window.location.replace(url.toString());
+  } catch {
+    window.location.reload();
+  }
   return true;
 }
 
@@ -215,6 +245,7 @@ export function lazyWithRetry<T extends ComponentType<any>>(
       // Only backoff+retry when it looks transient AND we have attempts left.
       // Skip the sniff on the last iteration so we exit immediately to Phase 2.
       if (attempt < IN_PLACE_RETRY_ATTEMPTS - 1) {
+        if (importError == null) break;
         // Cheap probe first (only if we have a URL to probe) so we don't
         // waste retries on a stale deploy.
         const msg = getErrorMessage(importError);
@@ -262,6 +293,16 @@ export function lazyWithRetry<T extends ComponentType<any>>(
       if (typeof window !== "undefined" && isChunkLoadError(importError)) {
         const retryKey = `${RETRY_TOKEN_PREFIX}${key}`;
         const alreadyRetried = window.sessionStorage.getItem(retryKey) === "1";
+        if (probe?.looksLikeHtml) {
+          const cacheBustKey = `${CACHE_BUST_TOKEN_PREFIX}${key}`;
+          const alreadyCacheBusted = window.sessionStorage.getItem(cacheBustKey) === "1";
+          if (!alreadyCacheBusted) {
+            window.sessionStorage.setItem(cacheBustKey, "1");
+            if (safeCacheBustReload()) {
+              return new Promise<never>(() => undefined);
+            }
+          }
+        }
         if (!alreadyRetried && canAutoReload()) {
           window.sessionStorage.setItem(retryKey, "1");
           if (safeAutoReload()) {

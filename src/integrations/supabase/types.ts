@@ -23354,6 +23354,15 @@ export type Database = {
         Args: { _order_id: string }
         Returns: string
       }
+      admin_finalize_orphan_qogita_resync_logs: {
+        Args: { _stale_minutes?: number }
+        Returns: {
+          finalized_id: string
+          minutes_stuck: number
+          new_status: string
+          products_processed: number
+        }[]
+      }
       admin_find_submission_duplicates: {
         Args: { _submission_id: string }
         Returns: {

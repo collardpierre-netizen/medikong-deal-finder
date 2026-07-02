@@ -388,17 +388,55 @@ export default function AdminCommissions() {
           <div className="space-y-4">
             <div>
               <Label>Vendeur</Label>
-              <Select value={assignVendorId} onValueChange={setAssignVendorId}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner un vendeur" /></SelectTrigger>
-                <SelectContent>
-                  {vendors.map(v => (
-                    <SelectItem key={v.id} value={v.id}>
-                      {v.company_name || v.name}
-                      {vendorsWithRules.has(v.id) && " ✓"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={assignVendorOpen} onOpenChange={setAssignVendorOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={assignVendorOpen}
+                    className="w-full justify-between font-normal"
+                  >
+                    <span className={assignVendorId ? "" : "text-muted-foreground"}>
+                      {assignVendorId
+                        ? (() => {
+                            const v = vendors.find((x: any) => x.id === assignVendorId);
+                            const label = v ? (v.company_name || v.name) : assignVendorId.slice(0, 8);
+                            return label + (vendorsWithRules.has(assignVendorId) ? " ✓" : "");
+                          })()
+                        : "Sélectionner un vendeur"}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[320px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Rechercher un vendeur…" />
+                    <CommandList>
+                      <CommandEmpty>Aucun vendeur trouvé.</CommandEmpty>
+                      <CommandGroup>
+                        {vendors.map((v: any) => {
+                          const name = v.company_name || v.name || v.id.slice(0, 8);
+                          const selected = assignVendorId === v.id;
+                          return (
+                            <CommandItem
+                              key={v.id}
+                              value={name + " " + v.id}
+                              onSelect={() => {
+                                setAssignVendorId(v.id);
+                                setAssignVendorOpen(false);
+                              }}
+                            >
+                              <Check className={`mr-2 h-4 w-4 ${selected ? "opacity-100" : "opacity-0"}`} />
+                              {name}
+                              {vendorsWithRules.has(v.id) && " ✓"}
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div>
               <Label>Template de marge</Label>

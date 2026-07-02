@@ -375,7 +375,6 @@ const AdminCommandeDetail = () => {
     }
     setBusy(`LINE-${lineId}`);
     try {
-      const lt = lineTracks[lineId] || { url: "", number: "" };
       const { error } = await supabase.from("order_lines").update({
         tracking_url: lt.url.trim() || null,
         tracking_number: lt.number.trim() || null,

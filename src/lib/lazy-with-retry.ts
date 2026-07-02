@@ -11,6 +11,19 @@ export const MAX_AUTO_RELOADS_PER_SESSION = 2;
 /** Cooldown between two auto reloads (ms). Prevents tight loops on cascading errors. */
 const RELOAD_COOLDOWN_MS = 10_000;
 const MAX_CACHE_BUST_RELOADS_PER_SESSION = 2;
+const TRANSIENT_CHUNK_RELOAD_COUNTER_KEY = "medikong:transient-chunk-reload-count";
+const MAX_TRANSIENT_CHUNK_RELOADS_PER_SESSION = 5;
+const TRANSIENT_CHUNK_POLL_DELAY_MS = 2_500;
+const TRANSIENT_CHUNK_MAX_WAIT_MS = 10_000;
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function extractChunkUrl(message: string): string | null {
+  const urlMatch = message.match(/https?:\/\/[^\s'")]+\.[a-z]+(?:\?[^\s'")]*)?/i);
+  return urlMatch?.[0] ?? null;
+}
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
@@ -103,6 +116,41 @@ async function isHtmlResponse(url: string): Promise<boolean> {
   return probe.looksLikeHtml;
 }
 
+function isTransientChunkProbe(probe: ChunkProbeResult | null): boolean {
+  if (!probe) return false;
+  if (probe.fetchError) return true;
+  if (probe.status == null) return false;
+  return probe.status === 408 || probe.status === 429 || probe.status >= 500;
+}
+
+function isStaleHtmlFallbackProbe(probe: ChunkProbeResult | null): boolean {
+  if (!probe?.looksLikeHtml) return false;
+  return !isTransientChunkProbe(probe);
+}
+
+function isHealthyJavaScriptProbe(probe: ChunkProbeResult | null): boolean {
+  if (!probe) return false;
+  if (probe.fetchError || probe.looksLikeHtml) return false;
+  if (probe.status == null || probe.status < 200 || probe.status >= 400) return false;
+  const contentType = (probe.contentType ?? "").toLowerCase();
+  return (
+    contentType.includes("javascript") ||
+    contentType.includes("ecmascript") ||
+    contentType.includes("module") ||
+    contentType === ""
+  );
+}
+
+async function waitForChunkServerRecovery(url: string): Promise<boolean> {
+  const startedAt = Date.now();
+  while (typeof window !== "undefined" && Date.now() - startedAt < TRANSIENT_CHUNK_MAX_WAIT_MS) {
+    const probe = await probeChunkUrl(url);
+    if (isHealthyJavaScriptProbe(probe) || isStaleHtmlFallbackProbe(probe)) return true;
+    await delay(TRANSIENT_CHUNK_POLL_DELAY_MS);
+  }
+  return false;
+}
+
 function readInt(key: string): number {
   try {
     const raw = window.sessionStorage.getItem(key);
@@ -133,6 +181,8 @@ export function resetReloadAttempts() {
     window.sessionStorage.removeItem(GLOBAL_RELOAD_COUNTER_KEY);
     window.sessionStorage.removeItem(GLOBAL_RELOAD_LAST_AT_KEY);
     window.sessionStorage.removeItem(CACHE_BUST_RELOAD_COUNTER_KEY);
+    window.sessionStorage.removeItem(TRANSIENT_CHUNK_RELOAD_COUNTER_KEY);
+    window.sessionStorage.removeItem("medikong:transient-chunk-url");
     for (let i = window.sessionStorage.length - 1; i >= 0; i--) {
       const key = window.sessionStorage.key(i);
       if (key?.startsWith(CACHE_BUST_TOKEN_PREFIX)) window.sessionStorage.removeItem(key);
@@ -179,6 +229,30 @@ export function safeCacheBustReload(): boolean {
   return true;
 }
 
+export function safeTransientChunkReload(url?: string | null): boolean {
+  if (typeof window === "undefined") return false;
+  const attempts = readInt(TRANSIENT_CHUNK_RELOAD_COUNTER_KEY);
+  if (attempts >= MAX_TRANSIENT_CHUNK_RELOADS_PER_SESSION) return false;
+
+  try {
+    window.sessionStorage.setItem(TRANSIENT_CHUNK_RELOAD_COUNTER_KEY, String(attempts + 1));
+    window.sessionStorage.setItem(GLOBAL_RELOAD_LAST_AT_KEY, String(Date.now()));
+    if (url) window.sessionStorage.setItem("medikong:transient-chunk-url", url);
+  } catch {
+    /* ignore */
+  }
+
+  try {
+    const current = new URL(window.location.href);
+    current.searchParams.set("_chunkRetry", String(attempts + 1));
+    current.searchParams.set("_t", Date.now().toString());
+    window.location.replace(current.toString());
+  } catch {
+    window.location.reload();
+  }
+  return true;
+}
+
 /**
  * Number of in-place import retries (with exponential backoff) attempted
  * BEFORE we escalate to a full page reload. Handles transient network blips,
@@ -195,8 +269,8 @@ function backoffDelay(attempt: number) {
 }
 
 function isLikelyTransient(error: unknown, probe: ChunkProbeResult | null) {
-  // Explicit HTML-instead-of-JS → deploy is stale, retrying won't help.
-  if (probe?.looksLikeHtml) return false;
+  if (isStaleHtmlFallbackProbe(probe)) return false;
+  if (isTransientChunkProbe(probe)) return true;
   const msg = getErrorMessage(error).toLowerCase();
   if (!msg) return true;
   return (
@@ -248,13 +322,12 @@ export function lazyWithRetry<T extends ComponentType<any>>(
         if (importError == null) break;
         // Cheap probe first (only if we have a URL to probe) so we don't
         // waste retries on a stale deploy.
-        const msg = getErrorMessage(importError);
-        const urlMatch = msg.match(/https?:\/\/[^\s'")]+\.[a-z]+(?:\?[^\s'")]*)?/i);
+        const url = extractChunkUrl(getErrorMessage(importError));
         let probe: ChunkProbeResult | null = null;
-        if (urlMatch) probe = await probeChunkUrl(urlMatch[0]);
-        if (probe?.looksLikeHtml) break; // deploy stale → escalate now
+        if (url) probe = await probeChunkUrl(url);
+        if (isStaleHtmlFallbackProbe(probe)) break; // deploy stale → escalate now
         if (!isLikelyTransient(importError, probe)) break;
-        await new Promise((r) => setTimeout(r, backoffDelay(attempt)));
+        await delay(backoffDelay(attempt));
       }
     }
 
@@ -266,15 +339,17 @@ export function lazyWithRetry<T extends ComponentType<any>>(
     if (looksInvalid) {
       // ---- Phase 2: diagnose + escalate to reload or throw -------------
       const msg = getErrorMessage(importError);
-      const urlMatch = msg.match(/https?:\/\/[^\s'")]+\.[a-z]+(?:\?[^\s'")]*)?/i);
+      const url = extractChunkUrl(msg);
       let probe: ChunkProbeResult | null = null;
-      if (urlMatch) {
-        probe = await probeChunkUrl(urlMatch[0]);
-      }
+      if (url) probe = await probeChunkUrl(url);
 
-      if (probe?.looksLikeHtml) {
+      if (isStaleHtmlFallbackProbe(probe)) {
         importError = new Error(
           `Lazy chunk "${key}" was served as text/html instead of JavaScript (stale deploy or SPA fallback): ${probe.url}`,
+        );
+      } else if (isTransientChunkProbe(probe)) {
+        importError = new Error(
+          `Lazy chunk "${key}" is temporarily unavailable (${probe.status ?? probe.fetchError ?? "network"}): ${probe.url}`,
         );
       } else if (!importError) {
         importError = new Error(
@@ -293,7 +368,13 @@ export function lazyWithRetry<T extends ComponentType<any>>(
       if (typeof window !== "undefined" && isChunkLoadError(importError)) {
         const retryKey = `${RETRY_TOKEN_PREFIX}${key}`;
         const alreadyRetried = window.sessionStorage.getItem(retryKey) === "1";
-        if (probe?.looksLikeHtml) {
+        if (isTransientChunkProbe(probe) && url) {
+          await waitForChunkServerRecovery(url);
+          if (safeTransientChunkReload(url)) {
+            return new Promise<never>(() => undefined);
+          }
+        }
+        if (isStaleHtmlFallbackProbe(probe)) {
           window.sessionStorage.setItem(`${CACHE_BUST_TOKEN_PREFIX}${key}`, "1");
           if (safeCacheBustReload()) {
             return new Promise<never>(() => undefined);
@@ -336,8 +417,17 @@ export function lazyWithRetry<T extends ComponentType<any>>(
 export function installViteChunkReloadGuard() {
   if (typeof window === "undefined") return;
 
-  window.addEventListener("vite:preloadError", (event) => {
+  window.addEventListener("vite:preloadError", async (event) => {
     event.preventDefault();
+    const url = extractChunkUrl(getErrorMessage((event as Event & { payload?: unknown }).payload));
+    if (url) {
+      const probe = await probeChunkUrl(url);
+      if (isTransientChunkProbe(probe)) {
+        await waitForChunkServerRecovery(url);
+        if (safeTransientChunkReload(url)) return;
+      }
+      if (isStaleHtmlFallbackProbe(probe) && safeCacheBustReload()) return;
+    }
     if (!safeCacheBustReload()) safeAutoReload();
   });
 }

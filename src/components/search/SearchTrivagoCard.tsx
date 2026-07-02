@@ -2,11 +2,11 @@ import { useState } from "react";
 import { ImageOff, Eye } from "lucide-react";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
 import { Heart, Check, ChevronDown, ChevronUp, Package, Truck, RotateCcw, ArrowRight } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useProductOffers } from "@/hooks/useProducts";
 import type { Product } from "@/hooks/useProducts";
 import { useBestOfferForProduct } from "@/contexts/BestOffersContext";
+import { OfferSkeletonRow } from "@/components/shared/OfferSkeletonRow";
 
 interface Props {
   product: Product;

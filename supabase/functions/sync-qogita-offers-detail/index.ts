@@ -13,8 +13,8 @@ const PARALLEL_CONCURRENCY = 25;
 const BATCH_DELAY_MS = 500;
 const MULTI_VENDOR_MAX_EXECUTION_TIME = 45000;
 const MULTI_VENDOR_BATCH_SIZE = 20;
-const MULTI_VENDOR_PARALLEL_CONCURRENCY = 5;
-const MULTI_VENDOR_BATCH_DELAY_MS = 800;
+const MULTI_VENDOR_PARALLEL_CONCURRENCY = 2;
+const MULTI_VENDOR_BATCH_DELAY_MS = 1500;
 const STALE_RUNNING_MS = 10 * 60 * 1000;
 const MAX_RETRIES_429 = 3;
 const API_TIMEOUT_MS = 8000;
@@ -40,8 +40,8 @@ function scheduleNextChunk(body: object) {
 // --- Qogita rate limiter (token bucket en mémoire) ---
 // Lisse les appels à ~4 req/s globales pour cette instance d'edge function,
 // indépendamment de la concurrence interne. Évite les pics 429.
-const QOGITA_RATE_CAPACITY = 8;          // burst max
-const QOGITA_RATE_REFILL_PER_SEC = 4;    // débit soutenu
+const QOGITA_RATE_CAPACITY = 2;          // burst max — conservative to avoid Qogita 429
+const QOGITA_RATE_REFILL_PER_SEC = 1;    // débit soutenu
 let qogitaTokens = QOGITA_RATE_CAPACITY;
 let qogitaLastRefill = Date.now();
 

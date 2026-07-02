@@ -896,15 +896,64 @@ const AdminProduits = () => {
               <input type="text" placeholder="Rechercher par produit, EAN, CNK..." value={offersSearch} onChange={(e) => handleOffersSearchChange(e.target.value)}
                 className="flex-1 text-[13px] outline-none bg-transparent" style={{ color: "#1D2530" }} />
             </div>
-            <Select value={offersVendorFilter} onValueChange={(v) => { setOffersVendorFilter(v); setOffersPage(1); }}>
-              <SelectTrigger className="w-[180px] h-9 text-[13px]"><SelectValue placeholder="Tous les vendeurs" /></SelectTrigger>
-              <SelectContent className="max-h-60">
-                <SelectItem value="all">Tous les vendeurs</SelectItem>
-                {sortedVendors.map((v) => (
-                  <SelectItem key={v.id} value={v.id}>{v.company_name || v.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={offersVendorFilterOpen} onOpenChange={setOffersVendorFilterOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={offersVendorFilterOpen}
+                  className="w-[180px] h-9 text-[13px] justify-between font-normal"
+                >
+                  <span className={offersVendorFilter !== "all" ? "" : "text-muted-foreground"}>
+                    {offersVendorFilter !== "all"
+                      ? (() => {
+                          const v = sortedVendors.find((x: any) => x.id === offersVendorFilter);
+                          return v ? (v.company_name || v.name) : offersVendorFilter.slice(0, 8);
+                        })()
+                      : "Tous les vendeurs"}
+                  </span>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[280px] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Rechercher un vendeur…" />
+                  <CommandList>
+                    <CommandEmpty>Aucun vendeur trouvé.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value="all"
+                        onSelect={() => {
+                          setOffersVendorFilter("all");
+                          setOffersPage(1);
+                          setOffersVendorFilterOpen(false);
+                        }}
+                      >
+                        <Check className={`mr-2 h-4 w-4 ${offersVendorFilter === "all" ? "opacity-100" : "opacity-0"}`} />
+                        Tous les vendeurs
+                      </CommandItem>
+                      {sortedVendors.map((v: any) => {
+                        const name = v.company_name || v.name || v.id.slice(0, 8);
+                        return (
+                          <CommandItem
+                            key={v.id}
+                            value={name + " " + v.id}
+                            onSelect={() => {
+                              setOffersVendorFilter(v.id);
+                              setOffersPage(1);
+                              setOffersVendorFilterOpen(false);
+                            }}
+                          >
+                            <Check className={`mr-2 h-4 w-4 ${offersVendorFilter === v.id ? "opacity-100" : "opacity-0"}`} />
+                            {name}
+                          </CommandItem>
+                        );
+                      })}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
             <Select value={offersBrandFilter} onValueChange={(v) => { setOffersBrandFilter(v); setOffersPage(1); }}>
               <SelectTrigger className="w-[180px] h-9 text-[13px]"><SelectValue placeholder="Toutes les marques" /></SelectTrigger>
               <SelectContent className="max-h-60">

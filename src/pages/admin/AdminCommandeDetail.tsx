@@ -814,6 +814,15 @@ const AdminCommandeDetail = () => {
               >
                 {busy === "TRACKING" ? "Enregistrement…" : "Enregistrer sans email"}
               </Button>
+              <Button
+                onClick={dryRunNotify}
+                disabled={busy !== null}
+                className="w-full justify-start"
+                variant="secondary"
+                title="Simule l'envoi sans rien envoyer et vérifie qu'un seul email partirait (idempotency)"
+              >
+                {busy === "TRACKING" ? "Test…" : "🧪 Tester (dry-run) — vérifier l'envoi unique"}
+              </Button>
               {trackUrl.trim() && (
                 <a href={trackUrl.trim()} target="_blank" rel="noreferrer" className="block">
                   <Button className="w-full justify-start" variant="ghost">

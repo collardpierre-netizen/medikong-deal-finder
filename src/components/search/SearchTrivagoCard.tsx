@@ -336,7 +336,29 @@ export default function SearchTrivagoCard({ product: p }: Props) {
                   : `+ ${extraCount} autre${extraCount > 1 ? "s" : ""} offre${extraCount > 1 ? "s" : ""}`}
                 {expanded && showMore ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </button>
-              {expanded && showMore && (
+              {expanded && showMore && offersLoading && (
+                <div className="mt-1">
+                  {Array.from({ length: Math.max(0, (offerCount - 1) - 2) }).map((_, i) => (
+                    <OfferSkeletonRow key={`sk-hidden-${i}`} />
+                  ))}
+                </div>
+              )}
+              {expanded && showMore && !offersLoading && offersError && (
+                <div className="flex flex-col items-center justify-center gap-2 px-5 py-4 border-t border-border/60 text-center">
+                  <AlertCircle size={16} className="text-destructive" />
+                  <p className="text-xs font-medium text-destructive">
+                    Impossible de charger les offres complémentaires
+                  </p>
+                  <button
+                    onClick={() => refetchOffers()}
+                    className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors"
+                  >
+                    <RotateCcw size={11} />
+                    Réessayer
+                  </button>
+                </div>
+              )}
+              {expanded && showMore && !offersLoading && !offersError && (
                 <div className="mt-1">
                   {hiddenOffers.map((offer: any) => (
                     <div

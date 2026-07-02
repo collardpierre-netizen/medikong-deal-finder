@@ -157,7 +157,7 @@ export function safeAutoReload(): boolean {
   return true;
 }
 
-function safeCacheBustReload(): boolean {
+export function safeCacheBustReload(): boolean {
   if (typeof window === "undefined") return false;
   const attempts = readInt(CACHE_BUST_RELOAD_COUNTER_KEY);
   if (attempts >= MAX_CACHE_BUST_RELOADS_PER_SESSION) return false;
@@ -294,13 +294,9 @@ export function lazyWithRetry<T extends ComponentType<any>>(
         const retryKey = `${RETRY_TOKEN_PREFIX}${key}`;
         const alreadyRetried = window.sessionStorage.getItem(retryKey) === "1";
         if (probe?.looksLikeHtml) {
-          const cacheBustKey = `${CACHE_BUST_TOKEN_PREFIX}${key}`;
-          const alreadyCacheBusted = window.sessionStorage.getItem(cacheBustKey) === "1";
-          if (!alreadyCacheBusted) {
-            window.sessionStorage.setItem(cacheBustKey, "1");
-            if (safeCacheBustReload()) {
-              return new Promise<never>(() => undefined);
-            }
+          window.sessionStorage.setItem(`${CACHE_BUST_TOKEN_PREFIX}${key}`, "1");
+          if (safeCacheBustReload()) {
+            return new Promise<never>(() => undefined);
           }
         }
         if (!alreadyRetried && canAutoReload()) {
@@ -325,6 +321,6 @@ export function installViteChunkReloadGuard() {
 
   window.addEventListener("vite:preloadError", (event) => {
     event.preventDefault();
-    safeAutoReload();
+    if (!safeCacheBustReload()) safeAutoReload();
   });
 }

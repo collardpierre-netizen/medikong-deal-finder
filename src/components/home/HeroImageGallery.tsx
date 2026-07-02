@@ -29,6 +29,7 @@ interface HeroImg {
   focal_x?: number | null;
   focal_y?: number | null;
   zoom?: number | null;
+  image_fit?: "cover" | "contain" | null;
 }
 
 export function HeroImageGallery() {
@@ -37,7 +38,7 @@ export function HeroImageGallery() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("cms_hero_images" as any)
-        .select("id, image_url, image_url_mobile, alt_text, sort_order, link_url, cta_text, title, subtitle, show_title, show_subtitle, show_cta, focal_x, focal_y, zoom")
+        .select("id, image_url, image_url_mobile, alt_text, sort_order, link_url, cta_text, title, subtitle, show_title, show_subtitle, show_cta, focal_x, focal_y, zoom, image_fit")
         .eq("is_active", true)
         .order("sort_order");
       if (error || !data?.length) return null;
@@ -86,12 +87,13 @@ export function HeroImageGallery() {
         const fx = Number(img.focal_x ?? 50);
         const fy = Number(img.focal_y ?? 50);
         const zm = Number(img.zoom ?? 1);
+        const fit = img.image_fit === "contain" ? "object-contain" : "object-cover";
         const mobileSrc = (img.image_url_mobile && img.image_url_mobile.trim()) || img.image_url;
         return (
           <picture key={img.id}>
             <source media="(max-width: 640px)" srcSet={mobileSrc} />
             <img src={img.image_url} alt={img.alt_text}
-              className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
+              className={`absolute inset-0 w-full h-full ${fit} transition-opacity duration-700`}
               style={{
                 opacity: i === current ? 1 : 0,
                 objectPosition: `${fx}% ${fy}%`,

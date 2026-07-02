@@ -22,6 +22,7 @@ export interface HeroImageRow {
   focal_x?: number | null;
   focal_y?: number | null;
   zoom?: number | null;
+  image_fit?: "cover" | "contain" | null;
 }
 
 const LIMITS = { title: 80, subtitle: 120, cta: 30, url: 500 };
@@ -88,6 +89,7 @@ export default function HeroImageEditor({ img }: Props) {
   const [focalX, setFocalX] = useState<number>(Number(img.focal_x ?? 50));
   const [focalY, setFocalY] = useState<number>(Number(img.focal_y ?? 50));
   const [zoom, setZoom] = useState<number>(Number(img.zoom ?? 1));
+  const [imageFit, setImageFit] = useState<"cover" | "contain">((img.image_fit as any) ?? "cover");
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
   const [saving, setSaving] = useState(false);
   const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
@@ -107,7 +109,8 @@ export default function HeroImageEditor({ img }: Props) {
     setFocalX(Number(img.focal_x ?? 50));
     setFocalY(Number(img.focal_y ?? 50));
     setZoom(Number(img.zoom ?? 1));
-  }, [img.id, img.title, img.subtitle, img.show_title, img.show_subtitle, img.cta_text, img.link_url, img.show_cta, img.image_url_mobile, img.focal_x, img.focal_y, img.zoom]);
+    setImageFit((img.image_fit as any) ?? "cover");
+  }, [img.id, img.title, img.subtitle, img.show_title, img.show_subtitle, img.cta_text, img.link_url, img.show_cta, img.image_url_mobile, img.focal_x, img.focal_y, img.zoom, img.image_fit]);
 
   // Détection dimensions image source
   useEffect(() => {
@@ -144,7 +147,8 @@ export default function HeroImageEditor({ img }: Props) {
     imageUrlMobile !== (img.image_url_mobile ?? "") ||
     focalX !== Number(img.focal_x ?? 50) ||
     focalY !== Number(img.focal_y ?? 50) ||
-    zoom !== Number(img.zoom ?? 1);
+    zoom !== Number(img.zoom ?? 1) ||
+    imageFit !== ((img.image_fit as any) ?? "cover");
 
   const isInternalLink = link.trim().startsWith("/");
 
@@ -176,6 +180,7 @@ export default function HeroImageEditor({ img }: Props) {
         focal_x: focalX,
         focal_y: focalY,
         zoom,
+        image_fit: imageFit,
       })
       .eq("id", img.id);
     setSaving(false);
@@ -307,6 +312,32 @@ export default function HeroImageEditor({ img }: Props) {
           )}
         </div>
 
+        {/* Ajustement image (cover/contain) */}
+        <div className="rounded-md border border-gray-200 bg-gray-50/60 p-2 space-y-1.5">
+          <p className="text-[10px] uppercase tracking-wider font-semibold text-[#5C6470]">Ajustement dans le cadre</p>
+          <div className="inline-flex rounded-md border border-gray-200 overflow-hidden bg-white">
+            <button
+              type="button"
+              onClick={() => setImageFit("cover")}
+              className={`px-2 py-1 text-[10px] ${imageFit === "cover" ? "bg-[#1B5BDA] text-white" : "text-[#5C6470]"}`}
+            >
+              Couvrir (recadre)
+            </button>
+            <button
+              type="button"
+              onClick={() => setImageFit("contain")}
+              className={`px-2 py-1 text-[10px] ${imageFit === "contain" ? "bg-[#1B5BDA] text-white" : "text-[#5C6470]"}`}
+            >
+              Contenir (image entière)
+            </button>
+          </div>
+          <p className="text-[10px] text-[#8B95A5]">
+            {imageFit === "cover"
+              ? "L'image remplit tout le cadre — les bords peuvent être coupés selon le recadrage."
+              : "L'image est affichée entière — des bandes vides peuvent apparaître si le ratio diffère."}
+          </p>
+        </div>
+
         {/* Recadrage */}
         <div className="rounded-md border border-gray-200 bg-gray-50/60 p-2 space-y-2">
           <div className="flex items-center justify-between">
@@ -398,6 +429,7 @@ export default function HeroImageEditor({ img }: Props) {
           focalX={focalX}
           focalY={focalY}
           zoom={zoom}
+          imageFit={imageFit}
           device={device}
         />
 
@@ -419,12 +451,12 @@ export default function HeroImageEditor({ img }: Props) {
 function PreviewFrame({
   image_url, alt, title, subtitle, showTitle, showSubtitle,
   cta, showCta, link, linkError, isInternalLink,
-  focalX, focalY, zoom, device,
+  focalX, focalY, zoom, imageFit, device,
 }: {
   image_url: string; alt: string; title: string; subtitle: string;
   showTitle: boolean; showSubtitle: boolean;
   cta: string; showCta: boolean; link: string; linkError?: string; isInternalLink: boolean;
-  focalX: number; focalY: number; zoom: number;
+  focalX: number; focalY: number; zoom: number; imageFit: "cover" | "contain";
   device: "desktop" | "mobile";
 }) {
   const aspect = device === "desktop" ? "16/7" : "4/3";
@@ -440,7 +472,7 @@ function PreviewFrame({
         <img
           src={image_url}
           alt={alt}
-          className="absolute inset-0 w-full h-full object-cover"
+          className={`absolute inset-0 w-full h-full ${imageFit === "contain" ? "object-contain" : "object-cover"}`}
           style={{
             objectPosition: `${focalX}% ${focalY}%`,
             transform: zoom > 1 ? `scale(${zoom})` : undefined,

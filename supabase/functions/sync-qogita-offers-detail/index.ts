@@ -824,13 +824,16 @@ async function syncOffers(
   // Push aggregate counters & finalize the qogita_resync_logs row (if provided)
   if (resyncLogId) {
     try {
-      await sb.rpc("record_qogita_resync_progress", {
-        _log_id: resyncLogId,
-        _delta: {
-          products_processed: stats.products_enriched || 0,
-          offers_processed: stats.offers_upserted || 0,
-          offers_updated: stats.offers_upserted || 0,
+      await sb.rpc("finalize_qogita_resync_log", {
+        _id: resyncLogId,
+        _status: stats.errors > 0 ? "partial" : "success",
+        _stats: {
+          products_targeted: stats.products_enriched || 0,
+          offers_processed: (stats.offers_upserted || 0) + (stats.multi_vendor_offers || 0),
+          offers_updated: (stats.offers_upserted || 0) + (stats.multi_vendor_offers || 0),
           tiers_synced: stats.tiers_synced || 0,
+          total_errors: stats.errors || 0,
+          metadata: stats,
         },
       });
     } catch (_) { /* never fail the sync because of logging */ }

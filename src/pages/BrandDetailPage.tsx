@@ -257,7 +257,14 @@ export default function BrandDetailPage() {
   return (
     <Layout>
       {/* Hero — sans étoiles, avec badge Top 20 conditionnel */}
-      <div className="py-8 md:py-10" style={{ background: "linear-gradient(135deg, #EFF6FF, #F0FDF4)" }}>
+      <div
+        className="py-8 md:py-10 relative"
+        style={
+          brand.coverUrl
+            ? { backgroundImage: `linear-gradient(135deg, rgba(239,246,255,0.85), rgba(240,253,244,0.85)), url(${brand.coverUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+            : { background: "linear-gradient(135deg, #EFF6FF, #F0FDF4)" }
+        }
+      >
         <div className="mk-container">
           <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-6">
             <div className="w-[80px] h-[80px] md:w-[100px] md:h-[100px] border border-mk-line bg-white rounded-lg flex items-center justify-center text-xs text-mk-ter shrink-0 overflow-hidden">

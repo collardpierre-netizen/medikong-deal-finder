@@ -445,6 +445,7 @@ Deno.serve(async (req) => {
   // L'offre catch-all "qogita-best-price" n'est plus enregistrée (cf. branche désactivée plus bas).
   let fetchMultiVendor = true;
   let resyncLogId: string | null = null;
+  let productIds: string[] = [];
   // Keyset pagination cursor (created_at ISO). null → depuis le début.
   // Remplace l'ancien offsetCursor pour éviter les OFFSET O(n²) sur products.
   let afterCreatedAt: string | null = null;
@@ -456,6 +457,9 @@ Deno.serve(async (req) => {
     if (body?.country) targetCountry = body.country;
     // body.multi_vendor ignoré : forcé à true.
     if (body?.resync_log_id) resyncLogId = String(body.resync_log_id);
+    if (Array.isArray(body?.product_ids)) {
+      productIds = body.product_ids.filter((id: unknown): id is string => typeof id === "string" && id.length > 0);
+    }
     if (body?.after_created_at) afterCreatedAt = String(body.after_created_at);
     // Legacy body.offset ignoré (pagination cursor-based).
     if (body?.sync_run_id) syncRunId = String(body.sync_run_id);
@@ -567,7 +571,7 @@ Deno.serve(async (req) => {
   let productsEnriched = 0;
   let offersUpserted = 0;
   try {
-    const result = await syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, startTime, fetchMultiVendor, recordEndpointError, recordProgress, resyncLogId, afterCreatedAt, syncRunId);
+    const result = await syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, startTime, fetchMultiVendor, recordEndpointError, recordProgress, resyncLogId, afterCreatedAt, syncRunId, productIds);
     productsEnriched = result?.products_enriched || 0;
     offersUpserted = result?.offers_upserted || 0;
   } catch (e: any) {
@@ -616,6 +620,7 @@ async function syncOffers(
   resyncLogId: string | null,
   afterCreatedAt: string | null = null,
   syncRunId: string | null = null,
+  productIds: string[] = [],
 ) {
   const executionProfile = getExecutionProfile(fetchMultiVendor);
   const { token, baseUrl } = await getQogitaToken(sb);
@@ -631,10 +636,15 @@ async function syncOffers(
     .select("id, gtin, qogita_qid, qogita_fid, slug, created_at")
     .eq("is_active", true)
     .not("gtin", "is", null)
-    .or(incrementalProductFilter)
     .order("created_at", { ascending: true })
     .order("id", { ascending: true })
     .limit(CHUNK_LIMIT);
+
+  if (productIds.length > 0) {
+    productsQuery = productsQuery.in("id", productIds);
+  } else {
+    productsQuery = productsQuery.or(incrementalProductFilter);
+  }
 
   if (afterCreatedAt) {
     productsQuery = productsQuery.gt("created_at", afterCreatedAt);
@@ -709,7 +719,7 @@ async function syncOffers(
           progress_message: `${country}: pause timeout — ${batchStart}/${total} (reprendra au prochain clic)`,
         })
         .eq("id", logId);
-      scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after, resync_log_id: resyncLogId, sync_run_id: syncRunId });
+      scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after, resync_log_id: resyncLogId, sync_run_id: syncRunId, product_ids: productIds });
       return stats;
     }
 
@@ -778,7 +788,7 @@ async function syncOffers(
             progress_message: `${country}: pause contrôlée — ${currentChunkEnd}/${total} (reprendra automatiquement)`,
           })
           .eq("id", logId);
-        scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after, resync_log_id: resyncLogId, sync_run_id: syncRunId });
+        scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after, resync_log_id: resyncLogId, sync_run_id: syncRunId, product_ids: productIds });
         return stats;
       }
     }
@@ -799,7 +809,7 @@ async function syncOffers(
   }
 
   // Une page pleine (CHUNK_LIMIT) → il reste probablement d'autres produits éligibles.
-  const hasMoreChunks = total >= CHUNK_LIMIT;
+  const hasMoreChunks = productIds.length === 0 && total >= CHUNK_LIMIT;
 
   if (hasMoreChunks) {
     stats.cursor_after = cursorAt(total);
@@ -813,7 +823,7 @@ async function syncOffers(
         progress_message: `${country}: chunk terminé (${total} produits, cursor=${stats.cursor_after}) — relance auto`,
       })
       .eq("id", logId);
-    scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after, resync_log_id: resyncLogId, sync_run_id: syncRunId });
+    scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after, resync_log_id: resyncLogId, sync_run_id: syncRunId, product_ids: productIds });
     return stats;
   }
 

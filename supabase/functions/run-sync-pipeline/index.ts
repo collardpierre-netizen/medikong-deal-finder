@@ -427,6 +427,14 @@ serve(async (req) => {
       }
 
       resyncLogId = String(queued.log_id);
+      for (const step of STEPS) {
+        if (step.functionName === "sync-qogita-offers-detail") {
+          step.params = {
+            ...step.params,
+            product_ids: Array.isArray(queued.product_ids) ? queued.product_ids : [],
+          };
+        }
+      }
     }
 
     // Generate sync_run_id for full runs — stamped on every Qogita upsert

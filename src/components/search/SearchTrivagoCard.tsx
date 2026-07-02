@@ -269,8 +269,12 @@ export default function SearchTrivagoCard({ product: p }: Props) {
               </button>
               {expanded && showMore && (
                 <div className="mt-1">
-                  {hiddenOffers.map((offer) => (
-                    <div key={offer.id} className="flex items-center justify-between py-2 border-t border-border/60">
+                  {hiddenOffers.map((offer: any) => (
+                    <div
+                      key={offer.id}
+                      title={offer.isShowcaseDimmed ? "Offre atténuée : un vendeur bénéficie d'une mise en avant exclusive (showcase) sur ce produit." : undefined}
+                      className={`flex items-center justify-between py-2 border-t border-border/60 ${offer.isShowcaseDimmed ? "opacity-60 grayscale-[30%]" : ""}`}
+                    >
                       <span className="text-sm text-foreground">{offer.sellerName}</span>
                       <div className="flex items-center gap-3">
                         {price > 0 && offer.unitPriceEur > price && (

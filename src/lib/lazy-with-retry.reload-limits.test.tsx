@@ -8,6 +8,7 @@ import {
   safeCacheBustReload,
   safeTransientChunkReload,
   MAX_AUTO_RELOADS_PER_SESSION,
+  __reloadTiming,
 } from "./lazy-with-retry";
 
 /**

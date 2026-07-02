@@ -485,6 +485,7 @@ const AdminCommandeDetail = () => {
                   const puTtc = puHt * (1 + vatR / 100);
                   const lt = lineTracks[l.id] || { url: "", number: "" };
                   const dirty = (l.tracking_url || "") !== lt.url || (l.tracking_number || "") !== lt.number;
+                  const ltUrlErr = validateTrackingUrl(lt.url);
                   return (
                     <Fragment key={l.id}>
                     <tr className="border-t">

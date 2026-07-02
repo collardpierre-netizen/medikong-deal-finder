@@ -94,6 +94,8 @@ export default function AdminFabricants() {
         slug: form.slug.trim() || slugify(form.name),
         legal_name: form.legal_name || null,
         logo_url: form.logo_url || null,
+        cover_image_url: form.cover_image_url || null,
+        gallery_images: (form.gallery_images || []).map((s: string) => (s || "").trim()).filter(Boolean),
         website_url: form.website_url || null,
         description: form.description || null,
         country_of_origin: form.country_of_origin || null,

@@ -109,7 +109,9 @@ describe("lazyWithRetry — reload limits across routes", () => {
 
   it("safeCacheBustReload caps at 2 per session (no infinite ?_v= loop)", () => {
     expect(safeCacheBustReload()).toBe(true);
+    sessionStorage.removeItem("medikong:reload-last-at"); // bypass cooldown
     expect(safeCacheBustReload()).toBe(true);
+    sessionStorage.removeItem("medikong:reload-last-at");
     expect(safeCacheBustReload()).toBe(false);
     expect(replaceSpy).toHaveBeenCalledTimes(2);
   });

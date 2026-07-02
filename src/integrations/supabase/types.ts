@@ -2540,6 +2540,8 @@ export type Database = {
           alt_text: string | null
           created_at: string
           cta_text: string | null
+          focal_x: number
+          focal_y: number
           id: string
           image_url: string
           is_active: boolean
@@ -2547,11 +2549,14 @@ export type Database = {
           sort_order: number
           subtitle: string | null
           title: string | null
+          zoom: number
         }
         Insert: {
           alt_text?: string | null
           created_at?: string
           cta_text?: string | null
+          focal_x?: number
+          focal_y?: number
           id?: string
           image_url: string
           is_active?: boolean
@@ -2559,11 +2564,14 @@ export type Database = {
           sort_order?: number
           subtitle?: string | null
           title?: string | null
+          zoom?: number
         }
         Update: {
           alt_text?: string | null
           created_at?: string
           cta_text?: string | null
+          focal_x?: number
+          focal_y?: number
           id?: string
           image_url?: string
           is_active?: boolean
@@ -2571,6 +2579,7 @@ export type Database = {
           sort_order?: number
           subtitle?: string | null
           title?: string | null
+          zoom?: number
         }
         Relationships: []
       }

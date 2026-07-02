@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Check, ExternalLink, Link2 } from "lucide-react";
+import { AlertCircle, Check, ExternalLink, Link2, Monitor, Smartphone, RotateCcw, Info } from "lucide-react";
 import { toast } from "sonner";
 
 export interface HeroImageRow {
@@ -13,13 +13,20 @@ export interface HeroImageRow {
   subtitle: string | null;
   cta_text: string | null;
   link_url: string | null;
+  focal_x?: number | null;
+  focal_y?: number | null;
+  zoom?: number | null;
 }
 
-const LIMITS = {
-  title: 80,
-  subtitle: 120,
-  cta: 30,
-  url: 500,
+const LIMITS = { title: 80, subtitle: 120, cta: 30, url: 500 };
+
+// Dimensions recommandées pour le rendu public (HeroImageGallery : ratio ~16/7, hauteur 340px).
+const RECOMMENDED = {
+  width: 1920,
+  height: 840,
+  ratio: 1920 / 840,
+  minWidth: 1200,
+  ratioTolerance: 0.15,
 };
 
 export function validateHeroUrl(raw: string): string | null {
@@ -40,10 +47,7 @@ export function validateHeroUrl(raw: string): string | null {
 }
 
 export function validateHeroFields(f: {
-  title: string;
-  subtitle: string;
-  cta_text: string;
-  link_url: string;
+  title: string; subtitle: string; cta_text: string; link_url: string;
 }): Record<string, string> {
   const e: Record<string, string> = {};
   if (f.title.length > LIMITS.title) e.title = `Max ${LIMITS.title} caractères`;
@@ -56,9 +60,7 @@ export function validateHeroFields(f: {
   return e;
 }
 
-interface Props {
-  img: HeroImageRow;
-}
+interface Props { img: HeroImageRow; }
 
 export default function HeroImageEditor({ img }: Props) {
   const queryClient = useQueryClient();
@@ -66,14 +68,31 @@ export default function HeroImageEditor({ img }: Props) {
   const [subtitle, setSubtitle] = useState(img.subtitle ?? "");
   const [cta, setCta] = useState(img.cta_text ?? "");
   const [link, setLink] = useState(img.link_url ?? "");
+  const [focalX, setFocalX] = useState<number>(Number(img.focal_x ?? 50));
+  const [focalY, setFocalY] = useState<number>(Number(img.focal_y ?? 50));
+  const [zoom, setZoom] = useState<number>(Number(img.zoom ?? 1));
+  const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
   const [saving, setSaving] = useState(false);
+  const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
 
   useEffect(() => {
     setTitle(img.title ?? "");
     setSubtitle(img.subtitle ?? "");
     setCta(img.cta_text ?? "");
     setLink(img.link_url ?? "");
-  }, [img.id, img.title, img.subtitle, img.cta_text, img.link_url]);
+    setFocalX(Number(img.focal_x ?? 50));
+    setFocalY(Number(img.focal_y ?? 50));
+    setZoom(Number(img.zoom ?? 1));
+  }, [img.id, img.title, img.subtitle, img.cta_text, img.link_url, img.focal_x, img.focal_y, img.zoom]);
+
+  // Détection dimensions image source
+  useEffect(() => {
+    setDims(null);
+    const i = new Image();
+    i.onload = () => setDims({ w: i.naturalWidth, h: i.naturalHeight });
+    i.onerror = () => setDims(null);
+    i.src = img.image_url;
+  }, [img.image_url]);
 
   const errors = useMemo(
     () => validateHeroFields({ title, subtitle, cta_text: cta, link_url: link }),
@@ -85,9 +104,23 @@ export default function HeroImageEditor({ img }: Props) {
     title !== (img.title ?? "") ||
     subtitle !== (img.subtitle ?? "") ||
     cta !== (img.cta_text ?? "") ||
-    link !== (img.link_url ?? "");
+    link !== (img.link_url ?? "") ||
+    focalX !== Number(img.focal_x ?? 50) ||
+    focalY !== Number(img.focal_y ?? 50) ||
+    zoom !== Number(img.zoom ?? 1);
 
   const isInternalLink = link.trim().startsWith("/");
+
+  // Diagnostic dimensions
+  const dimStatus = useMemo(() => {
+    if (!dims) return null;
+    const ratio = dims.w / dims.h;
+    const ratioDelta = Math.abs(ratio - RECOMMENDED.ratio) / RECOMMENDED.ratio;
+    const issues: string[] = [];
+    if (dims.w < RECOMMENDED.minWidth) issues.push(`Trop petit (min ${RECOMMENDED.minWidth}px)`);
+    if (ratioDelta > RECOMMENDED.ratioTolerance) issues.push(`Ratio ${ratio.toFixed(2)} — visez ${RECOMMENDED.ratio.toFixed(2)}`);
+    return { ratio, issues };
+  }, [dims]);
 
   const save = async () => {
     if (hasErrors || !dirty) return;
@@ -99,69 +132,74 @@ export default function HeroImageEditor({ img }: Props) {
         subtitle: subtitle.trim() || null,
         cta_text: cta.trim() || null,
         link_url: link.trim() || null,
+        focal_x: focalX,
+        focal_y: focalY,
+        zoom,
       })
       .eq("id", img.id);
     setSaving(false);
-    if (error) {
-      toast.error("Erreur : " + error.message);
-      return;
-    }
+    if (error) { toast.error("Erreur : " + error.message); return; }
     queryClient.invalidateQueries({ queryKey: ["admin-hero-images"] });
     queryClient.invalidateQueries({ queryKey: ["cms-hero-images"] });
     toast.success("Bandeau mis à jour");
   };
 
+  const resetCrop = () => { setFocalX(50); setFocalY(50); setZoom(1); };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 w-full">
       {/* ---- Form ---- */}
       <div className="space-y-2">
-        <Field
-          label="Titre"
-          value={title}
-          onChange={setTitle}
-          placeholder="Titre principal du bandeau"
-          max={LIMITS.title}
-          error={errors.title}
-        />
-        <Field
-          label="Sous-titre"
-          value={subtitle}
-          onChange={setSubtitle}
-          placeholder="Phrase d'accroche secondaire"
-          max={LIMITS.subtitle}
-          error={errors.subtitle}
-        />
+        <Field label="Titre" value={title} onChange={setTitle} placeholder="Titre principal du bandeau" max={LIMITS.title} error={errors.title} />
+        <Field label="Sous-titre" value={subtitle} onChange={setSubtitle} placeholder="Phrase d'accroche secondaire" max={LIMITS.subtitle} error={errors.subtitle} />
         <div className="grid grid-cols-2 gap-2">
+          <Field label="Label CTA" value={cta} onChange={setCta} placeholder="Découvrir →" max={LIMITS.cta} error={errors.cta_text} />
           <Field
-            label="Label CTA"
-            value={cta}
-            onChange={setCta}
-            placeholder="Découvrir →"
-            max={LIMITS.cta}
-            error={errors.cta_text}
+            label="URL CTA" value={link} onChange={setLink} placeholder="/promotions ou https://…"
+            max={LIMITS.url} error={errors.link_url}
+            hint={link.trim() && !errors.link_url ? (isInternalLink ? "Lien interne" : "Lien externe (nouvel onglet)") : undefined}
           />
-          <Field
-            label="URL CTA"
-            value={link}
-            onChange={setLink}
-            placeholder="/promotions ou https://…"
-            max={LIMITS.url}
-            error={errors.link_url}
-            hint={
-              link.trim() && !errors.link_url
-                ? isInternalLink
-                  ? "Lien interne"
-                  : "Lien externe (nouvel onglet)"
-                : undefined
-            }
-          />
+        </div>
+
+        {/* Recadrage */}
+        <div className="rounded-md border border-gray-200 bg-gray-50/60 p-2 space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] uppercase tracking-wider font-semibold text-[#5C6470]">Recadrage</p>
+            <button
+              type="button"
+              onClick={resetCrop}
+              className="text-[10px] text-[#5C6470] hover:text-[#1B5BDA] inline-flex items-center gap-1"
+            >
+              <RotateCcw size={10} /> Centrer
+            </button>
+          </div>
+          <CropSlider label="Horizontal" value={focalX} onChange={setFocalX} min={0} max={100} unit="%" />
+          <CropSlider label="Vertical" value={focalY} onChange={setFocalY} min={0} max={100} unit="%" />
+          <CropSlider label="Zoom" value={zoom} onChange={setZoom} min={1} max={3} step={0.05} unit="×" fixed={2} />
+        </div>
+
+        {/* Dimensions recommandées */}
+        <div className="rounded-md border border-gray-200 bg-white p-2 text-[10.5px] text-[#5C6470] space-y-1">
+          <p className="inline-flex items-center gap-1 font-semibold text-[#1E252F]">
+            <Info size={11} /> Dimensions recommandées
+          </p>
+          <p>
+            Cible : <strong>{RECOMMENDED.width}×{RECOMMENDED.height}px</strong> · ratio ~{RECOMMENDED.ratio.toFixed(2)}:1 (paysage panoramique) · JPG/WebP &lt; 400 Ko.
+          </p>
+          {dims && (
+            <p className="tabular-nums">
+              Image actuelle :{" "}
+              <span className={dimStatus?.issues.length ? "text-orange-600 font-semibold" : "text-emerald-700 font-semibold"}>
+                {dims.w}×{dims.h}px (ratio {dimStatus?.ratio.toFixed(2)})
+              </span>
+              {dimStatus?.issues.length ? " — " + dimStatus.issues.join(" · ") : " ✓"}
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-2 pt-1">
           <Button
-            size="sm"
-            disabled={!dirty || hasErrors || saving}
-            onClick={save}
+            size="sm" disabled={!dirty || hasErrors || saving} onClick={save}
             className="bg-[#1B5BDA] hover:bg-[#1548B0] text-white gap-1.5 text-[11px] h-7"
           >
             <Check size={12} /> {saving ? "Enregistrement…" : dirty ? "Enregistrer" : "À jour"}
@@ -171,36 +209,49 @@ export default function HeroImageEditor({ img }: Props) {
               <AlertCircle size={11} /> {Object.keys(errors).length} erreur(s) à corriger
             </span>
           )}
+          {dirty && !hasErrors && (
+            <span className="text-[10px] text-orange-600">Modifications non publiées</span>
+          )}
         </div>
       </div>
 
       {/* ---- Live preview ---- */}
       <div>
-        <p className="text-[10px] uppercase tracking-wider text-[#8B95A5] mb-1.5 font-semibold">
-          Aperçu live
-        </p>
-        <div className="relative w-full rounded-xl overflow-hidden shadow-sm" style={{ aspectRatio: "16/7" }}>
-          <img
-            src={img.image_url}
-            alt={img.alt_text}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/15 to-transparent" />
-          <div className="absolute bottom-3 left-3 right-3 z-10 text-white">
-            <p className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wider opacity-80 mb-0.5 line-clamp-1">
-              {subtitle || <span className="italic opacity-60">Sous-titre…</span>}
-            </p>
-            <h4 className="text-sm sm:text-base font-bold leading-tight line-clamp-2 max-w-[80%]">
-              {title || <span className="italic opacity-60">Titre du bandeau…</span>}
-            </h4>
-            {cta.trim() && (
-              <span className="inline-flex items-center gap-1 mt-2 px-3 py-1 rounded-md text-[11px] font-semibold bg-white/25 backdrop-blur-sm">
-                {cta}
-                {link.trim() && !errors.link_url && (isInternalLink ? <Link2 size={10} /> : <ExternalLink size={10} />)}
-              </span>
-            )}
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-[10px] uppercase tracking-wider text-[#8B95A5] font-semibold">
+            Aperçu live {dirty && <span className="text-orange-600">· non publié</span>}
+          </p>
+          <div className="inline-flex rounded-md border border-gray-200 overflow-hidden bg-white">
+            <button
+              type="button" onClick={() => setDevice("desktop")}
+              className={`px-2 py-1 text-[10px] inline-flex items-center gap-1 ${device === "desktop" ? "bg-[#1B5BDA] text-white" : "text-[#5C6470]"}`}
+            >
+              <Monitor size={11} /> Desktop
+            </button>
+            <button
+              type="button" onClick={() => setDevice("mobile")}
+              className={`px-2 py-1 text-[10px] inline-flex items-center gap-1 ${device === "mobile" ? "bg-[#1B5BDA] text-white" : "text-[#5C6470]"}`}
+            >
+              <Smartphone size={11} /> Mobile
+            </button>
           </div>
         </div>
+
+        <PreviewFrame
+          image_url={img.image_url}
+          alt={img.alt_text}
+          title={title}
+          subtitle={subtitle}
+          cta={cta}
+          link={link}
+          linkError={errors.link_url}
+          isInternalLink={isInternalLink}
+          focalX={focalX}
+          focalY={focalY}
+          zoom={zoom}
+          device={device}
+        />
+
         {link.trim() && !errors.link_url && (
           <p className="text-[10px] mt-1.5 text-[#5C6470] truncate">
             <span className="font-medium">Cible :</span> {link}
@@ -211,16 +262,86 @@ export default function HeroImageEditor({ img }: Props) {
   );
 }
 
+function PreviewFrame({
+  image_url, alt, title, subtitle, cta, link, linkError, isInternalLink,
+  focalX, focalY, zoom, device,
+}: {
+  image_url: string; alt: string; title: string; subtitle: string; cta: string;
+  link: string; linkError?: string; isInternalLink: boolean;
+  focalX: number; focalY: number; zoom: number;
+  device: "desktop" | "mobile";
+}) {
+  // Desktop = ratio 16/7 (rendu réel accueil), Mobile = ratio 4/3 approx (crop portrait plus haut)
+  const aspect = device === "desktop" ? "16/7" : "4/3";
+  const maxW = device === "desktop" ? "100%" : 320;
+  return (
+    <div className="flex justify-center bg-gradient-to-br from-gray-100 to-gray-50 rounded-xl p-2">
+      <div
+        className="relative w-full rounded-xl overflow-hidden shadow-sm bg-black"
+        style={{ aspectRatio: aspect, maxWidth: maxW }}
+      >
+        <img
+          src={image_url}
+          alt={alt}
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{
+            objectPosition: `${focalX}% ${focalY}%`,
+            transform: zoom > 1 ? `scale(${zoom})` : undefined,
+            transformOrigin: `${focalX}% ${focalY}%`,
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/15 to-transparent" />
+        {/* Repère centre de crop */}
+        <div
+          className="absolute pointer-events-none w-4 h-4 -ml-2 -mt-2 rounded-full border-2 border-white/70 shadow-[0_0_0_1px_rgba(0,0,0,0.4)]"
+          style={{ left: `${focalX}%`, top: `${focalY}%` }}
+          aria-hidden
+        />
+        <div className="absolute bottom-3 left-3 right-3 z-10 text-white">
+          <p className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wider opacity-80 mb-0.5 line-clamp-1">
+            {subtitle || <span className="italic opacity-60">Sous-titre…</span>}
+          </p>
+          <h4 className="text-sm sm:text-base font-bold leading-tight line-clamp-2 max-w-[80%]">
+            {title || <span className="italic opacity-60">Titre du bandeau…</span>}
+          </h4>
+          {cta.trim() && (
+            <span className="inline-flex items-center gap-1 mt-2 px-3 py-1 rounded-md text-[11px] font-semibold bg-white/25 backdrop-blur-sm">
+              {cta}
+              {link.trim() && !linkError && (isInternalLink ? <Link2 size={10} /> : <ExternalLink size={10} />)}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CropSlider({
+  label, value, onChange, min, max, step = 1, unit = "", fixed = 0,
+}: {
+  label: string; value: number; onChange: (v: number) => void;
+  min: number; max: number; step?: number; unit?: string; fixed?: number;
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-0.5">
+        <label className="text-[10px] text-[#5C6470]">{label}</label>
+        <span className="text-[10px] tabular-nums text-[#1E252F] font-semibold">{value.toFixed(fixed)}{unit}</span>
+      </div>
+      <input
+        type="range" min={min} max={max} step={step} value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full h-1.5 accent-[#1B5BDA] cursor-pointer"
+      />
+    </div>
+  );
+}
+
 function Field({
   label, value, onChange, placeholder, max, error, hint,
 }: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder: string;
-  max: number;
-  error?: string;
-  hint?: string;
+  label: string; value: string; onChange: (v: string) => void;
+  placeholder: string; max: number; error?: string; hint?: string;
 }) {
   const over = value.length > max;
   return (
@@ -237,9 +358,7 @@ function Field({
         placeholder={placeholder}
         aria-invalid={!!error}
         className={`w-full text-[12px] rounded-md border px-2 py-1.5 outline-none transition-colors ${
-          error
-            ? "border-red-400 focus:border-red-500 bg-red-50/40"
-            : "border-gray-200 focus:border-[#1B5BDA] bg-white"
+          error ? "border-red-400 focus:border-red-500 bg-red-50/40" : "border-gray-200 focus:border-[#1B5BDA] bg-white"
         }`}
       />
       {error ? (

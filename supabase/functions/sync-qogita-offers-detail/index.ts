@@ -1007,6 +1007,7 @@ async function processSingleProduct(
   recordEndpointError?: (endpoint: string, status: number | null, message: string) => Promise<void>,
   recordProgress?: (delta: Record<string, number>) => Promise<void>,
   syncRunId: string | null = null,
+  fastMode: boolean = false,
 ) {
   const localStats = {
     products_enriched: 0,
@@ -1018,6 +1019,24 @@ async function processSingleProduct(
   };
 
     try {
+      // FAST MODE : skip /variants/{gtin}/ (heavy). Use cached fid+slug from DB
+      // and go straight to /variants/{fid}/{slug}/offers/ to refresh price/stock/tiers
+      // of already-known multi-vendor offers. Products without fid+slug are excluded
+      // by the query, so this branch is safe.
+      if (fastMode && product.qogita_fid && product.slug) {
+        await refreshOffersOnly(
+          sb, product, baseUrl, token, country, vatRate, vatMultiplier,
+          parentStats, localStats, recordEndpointError, syncRunId,
+        );
+        // Stamp synced_at so tier scheduler doesn't re-pick this product immediately.
+        await sb.from("products").update({
+          synced_at: new Date().toISOString(),
+          ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
+        }).eq("id", product.id);
+        localStats.products_enriched++;
+        return localStats;
+      }
+
       const res = await fetchVariantWithRetry(baseUrl, token, product.gtin, product.qogita_qid, country);
 
       if (!res.ok) {

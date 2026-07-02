@@ -424,7 +424,10 @@ const AdminCommandeDetail = () => {
                   const puHt = Number(l.unit_price_excl_vat) || 0;
                   const vatR = Number(l.vat_rate ?? 0);
                   const puTtc = puHt * (1 + vatR / 100);
+                  const lt = lineTracks[l.id] || { url: "", number: "" };
+                  const dirty = (l.tracking_url || "") !== lt.url || (l.tracking_number || "") !== lt.number;
                   return (
+                    <>
                     <tr key={l.id} className="border-t">
                       <td className="px-3 py-2">
                         <div>{l.manual_label || l.products?.name || "—"}</div>
@@ -446,6 +449,42 @@ const AdminCommandeDetail = () => {
                       <td className="px-3 py-2 text-right text-slate-600">{fmtEur(puTtc)} €</td>
                       <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(l.line_total_excl_vat) || 0)} €</td>
                     </tr>
+                    <tr key={`${l.id}-track`} className="bg-slate-50/60">
+                      <td colSpan={7} className="px-3 py-2">
+                        <div className="flex flex-wrap items-end gap-2">
+                          <div className="flex items-center gap-1 text-[11px] text-slate-500 font-medium">
+                            <Truck size={12} /> Suivi ligne :
+                          </div>
+                          <Input
+                            className="h-8 text-xs flex-1 min-w-[200px]"
+                            placeholder="URL de suivi (externe)"
+                            value={lt.url}
+                            onChange={(e) => setLineTracks((m) => ({ ...m, [l.id]: { ...lt, url: e.target.value } }))}
+                          />
+                          <Input
+                            className="h-8 text-xs w-44"
+                            placeholder="N° de colis"
+                            value={lt.number}
+                            onChange={(e) => setLineTracks((m) => ({ ...m, [l.id]: { ...lt, number: e.target.value } }))}
+                          />
+                          <Button
+                            size="sm"
+                            variant={dirty ? "default" : "outline"}
+                            disabled={!dirty || busy !== null}
+                            onClick={() => saveLineTracking(l.id)}
+                            style={dirty ? { backgroundColor: "#1C58D9", color: "#fff" } : undefined}
+                          >
+                            {busy === `LINE-${l.id}` ? "…" : "Enregistrer"}
+                          </Button>
+                          {(lt.url || "").trim() && (
+                            <a href={lt.url.trim()} target="_blank" rel="noreferrer" className="text-[11px] text-mk-blue hover:underline inline-flex items-center gap-1">
+                              <ExternalLink size={11} /> Ouvrir
+                            </a>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                    </>
                   );
                 })}
                 {lines.length === 0 && (

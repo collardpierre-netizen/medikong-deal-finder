@@ -36,6 +36,7 @@ export default function AdminCommissions() {
   const [editingRule, setEditingRule] = useState<Partial<MarginRule> | null>(null);
   const [editingTiers, setEditingTiers] = useState<TierDraft[]>([]);
   const [assignVendorId, setAssignVendorId] = useState("");
+  const [assignVendorOpen, setAssignVendorOpen] = useState(false);
   const [assignRuleId, setAssignRuleId] = useState("");
   const [simGmvEur, setSimGmvEur] = useState<number>(0);
 

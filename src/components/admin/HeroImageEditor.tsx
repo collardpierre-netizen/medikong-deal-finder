@@ -147,7 +147,8 @@ export default function HeroImageEditor({ img }: Props) {
     imageUrlMobile !== (img.image_url_mobile ?? "") ||
     focalX !== Number(img.focal_x ?? 50) ||
     focalY !== Number(img.focal_y ?? 50) ||
-    zoom !== Number(img.zoom ?? 1);
+    zoom !== Number(img.zoom ?? 1) ||
+    imageFit !== ((img.image_fit as any) ?? "cover");
 
   const isInternalLink = link.trim().startsWith("/");
 

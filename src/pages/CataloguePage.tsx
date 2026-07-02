@@ -49,9 +49,14 @@ export default function CataloguePage() {
   const { view, setView } = useCatalogViewMode();
   const [mobileFilters, setMobileFilters] = useState(false);
 
-  // Collect category IDs from results for contextual sidebar filtering
+  // Collect category IDs + brand IDs from results for contextual sidebar filtering.
+  // Utilisé quand une recherche est active pour ne montrer que les facettes
+  // pertinentes (au lieu des Top marques globales : Nivea 2866, etc.).
   const resultCategoryIds = products.length > 0
     ? [...new Set(products.map(p => p.category_id).filter(Boolean) as string[])]
+    : undefined;
+  const resultBrandIds = products.length > 0
+    ? [...new Set(products.map(p => p.brand_id).filter(Boolean) as string[])]
     : undefined;
 
   const { label: categoryLabel, isLoading: categoryLabelLoading } =

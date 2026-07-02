@@ -413,6 +413,8 @@ export function useProductOffers(productId: string | undefined) {
           vendorNote: o.vendor_note ?? null,
           cartonSizeOverride: o.carton_size_override ?? null,
           packagingLanguages: Array.isArray(o.packaging_languages) ? o.packaging_languages : null,
+          isExclusiveWinner: !!exclMode && o.vendor_id === exclVendorId,
+          isShowcaseDimmed: exclMode === "showcase" && exclVendorId != null && o.vendor_id !== exclVendorId,
         };
       });
 

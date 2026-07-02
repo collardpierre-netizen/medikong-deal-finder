@@ -73,6 +73,8 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
         name: brand.name || "", slug: brand.slug || "",
         country: brand.country_of_origin || "BE", website: brand.website_url || "",
         description: brand.description || "", logo_url: brand.logo_url || "",
+        cover_image_url: brand.cover_image_url || "",
+        gallery_images: Array.isArray(brand.gallery_images) ? brand.gallery_images.filter((x: any) => typeof x === "string") : [],
         manufacturer_id: brand.manufacturer_id || "",
         is_featured: brand.is_featured || false,
         name_fr: getTr("fr", "name"), name_nl: getTr("nl", "name"), name_de: getTr("de", "name"),
@@ -80,7 +82,7 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
         social_links: normalizeSocialLinks(brand.social_links),
       });
     } else {
-      setForm({ name: "", slug: "", country: "BE", website: "", description: "", manufacturer_id: "", is_featured: false, logo_url: "", name_fr: "", name_nl: "", name_de: "", desc_fr: "", desc_nl: "", desc_de: "", social_links: {} });
+      setForm({ name: "", slug: "", country: "BE", website: "", description: "", manufacturer_id: "", is_featured: false, logo_url: "", cover_image_url: "", gallery_images: [], name_fr: "", name_nl: "", name_de: "", desc_fr: "", desc_nl: "", desc_de: "", social_links: {} });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, brand?.id]);

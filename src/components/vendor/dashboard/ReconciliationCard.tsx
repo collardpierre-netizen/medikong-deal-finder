@@ -1,7 +1,13 @@
 import React, { useState } from "react";
-import { ChevronDown, ChevronRight, Download } from "lucide-react";
+import { ChevronDown, ChevronRight, Download, Info } from "lucide-react";
 import { useMoneyFormat } from "@/lib/money-format";
 import { VCard } from "@/components/vendor/ui/VCard";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { VendorReconciliation } from "@/hooks/useVendorReconciliation";
 
 const STATUS_LABELS: Record<string, string> = {

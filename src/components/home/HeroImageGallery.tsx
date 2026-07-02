@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAutoTranslate } from "@/hooks/useAutoTranslate";
+import { formatHeroInline } from "@/lib/hero-inline-format";
 
 const fallbackImages: HeroImg[] = [
   { id: "1", image_url: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=900&q=80", image_url_mobile: null, alt_text: "Fournitures médicales", link_url: null, cta_text: null, title: null, subtitle: null, show_title: true, show_subtitle: true, show_cta: true },

@@ -49,6 +49,22 @@ export default function SearchTrivagoCard({ product: p }: Props) {
     refetch: refetchOffers,
   } = useProductOffers(expanded || prefetch || !hasContext ? p.id : undefined);
 
+  const cardRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (prefetch || prefetchedProductIds.has(p.id)) return;
+    if (!cardRef.current) return;
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          prefetchedProductIds.add(p.id);
+          setPrefetch(true);
+          observer.disconnect();
+        }
+      });
+    }, { threshold: 0 });
+    observer.observe(cardRef.current);
+    return () => observer.disconnect();
+  }, [prefetch, p.id]);
 
   // Best offer : on privilégie le batch (1 round-trip), sinon le fetch détaillé.
   const bestOffer = hasContext

@@ -20,6 +20,7 @@
 
 declare const __BUILD_ID__: string;
 import { safeAutoReload, canAutoReload } from "@/lib/lazy-with-retry";
+import { bustAdminQueryCache } from "@/lib/admin-cache-bust";
 
 const CURRENT_BUILD_ID =
   typeof __BUILD_ID__ !== "undefined" ? __BUILD_ID__ : "dev";
@@ -64,6 +65,11 @@ async function checkVersion() {
   if (!remote || remote === CURRENT_BUILD_ID) return;
 
   markStale();
+
+  // Nouveau déploiement détecté : purge immédiatement les caches admin
+  // en mémoire (chiffres/KPIs) pour ne jamais servir des valeurs calculées
+  // par l'ancien backend, même si le reload est différé ci-dessous.
+  bustAdminQueryCache();
 
   // If the user is mid-typing in a form, don't yank the page from under them.
   const active = document.activeElement;

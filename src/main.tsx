@@ -4,6 +4,7 @@ import App from "./App.tsx";
 import "./index.css";
 import { installViteChunkReloadGuard } from "@/lib/lazy-with-retry";
 import { installBuildVersionWatcher } from "@/lib/build-version";
+import { checkAdminBuildIdOnBoot } from "@/lib/admin-cache-bust";
 import { runContractEnvValidationOnBoot } from "@/lib/contract/env-validation";
 import { installGlobalErrorReporting } from "@/lib/errorReporter";
 import {
@@ -15,6 +16,7 @@ import {
 installViteChunkReloadGuard();
 installBuildVersionWatcher();
 installGlobalErrorReporting();
+checkAdminBuildIdOnBoot();
 
 // Diagnostic non bloquant : vérifie au démarrage que les variables d'env
 // et le bucket de stockage des PDFs de contrats sont correctement configurés.

@@ -43,7 +43,7 @@ export function AnimatedCounter({ target, suffix = "", prefix = "", duration = 1
 
   return (
     <span ref={ref}>
-      {prefix}{decimals > 0 ? count.toFixed(decimals).replace(".", ",") : count.toLocaleString("fr-BE")}{suffix}
+      {prefix}{decimals > 0 ? count.toFixed(decimals).replace(".", ",") : count.toLocaleString("fr-BE").replace(/[\s\u00A0\u202F]/g, ".")}{suffix}
     </span>
   );
 }

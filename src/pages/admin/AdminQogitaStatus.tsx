@@ -209,6 +209,10 @@ export default function AdminQogitaStatus() {
             <Recycle className={`h-4 w-4 mr-2 ${sweepBusy ? "animate-spin" : ""}`} />
             Reconciliation sweep
           </Button>
+          <Button variant="outline" size="sm" onClick={runFinalizeOrphans} disabled={finalizeBusy}>
+            <Wrench className={`h-4 w-4 mr-2 ${finalizeBusy ? "animate-pulse" : ""}`} />
+            Finaliser runs bloqués
+          </Button>
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
             <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />
             Rafraîchir

@@ -28,9 +28,12 @@ export default function SearchTrivagoCard({ product: p }: Props) {
   // que quand l'utilisateur ouvre la liste (économise N-1 RPC par page).
   const [expanded, setExpanded] = useState(false);
   const [prefetch, setPrefetch] = useState(false);
-  const { data: offersFull = [], isLoading: offersLoading } = useProductOffers(
-    expanded || prefetch || !hasContext ? p.id : undefined
-  );
+  const {
+    data: offersFull = [],
+    isLoading: offersLoading,
+    error: offersError,
+    refetch: refetchOffers,
+  } = useProductOffers(expanded || prefetch || !hasContext ? p.id : undefined);
 
   // Best offer : on privilégie le batch (1 round-trip), sinon le fetch détaillé.
   const bestOffer = hasContext

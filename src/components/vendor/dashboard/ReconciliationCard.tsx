@@ -57,26 +57,99 @@ export default function ReconciliationCard({ data, loading, periodLabel }: Props
   const toggle = (status: string) =>
     setExpanded((s) => (s === status ? null : status));
 
+  const handleExportCsv = () => {
+    if (!data || rows.length === 0) return;
+    const money = (c: number) => (c / 100).toFixed(2).replace(".", ",");
+    const esc = (v: string | number) => {
+      const s = String(v);
+      return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const header = ["Statut", "Inclus", "Nb commandes", "CA HTVA (EUR)", "GMV TTC (EUR)"];
+    const lines = [header.join(";")];
+    for (const r of rows) {
+      lines.push(
+        [
+          esc(labelFor(r.status)),
+          r.included ? "Oui" : "Non",
+          r.ordersCount,
+          money(r.revenueExclVatCents),
+          money(r.gmvInclVatCents),
+        ].join(";"),
+      );
+    }
+    lines.push(
+      [
+        esc("Total inclus"),
+        "",
+        rows.filter((r) => r.included).reduce((a, r) => a + r.ordersCount, 0),
+        money(data.includedRevenueExclVatCents),
+        money(data.includedGmvInclVatCents),
+      ].join(";"),
+    );
+    if (hasExcluded) {
+      lines.push(
+        [
+          esc("Total exclu"),
+          "",
+          rows.filter((r) => !r.included).reduce((a, r) => a + r.ordersCount, 0),
+          money(data.excludedRevenueExclVatCents),
+          money(data.excludedGmvInclVatCents),
+        ].join(";"),
+      );
+    }
+    lines.push(
+      [esc("TVA collectée (GMV − CA, inclus)"), "", "", "", money(data.vatCents)].join(";"),
+    );
+    const csv = "\uFEFF" + lines.join("\r\n");
+    const slug = periodLabel
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `reconciliation-${slug || "periode"}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <VCard>
       <div className="space-y-3">
-        <div>
-          <h3 className="text-[15px] font-semibold text-[#1E252F]">
-            Réconciliation CA HTVA ↔ GMV TTC
-          </h3>
-          <p className="text-[11px] text-[#8B95A5] mt-0.5">
-            Détail par statut de commande sur {periodLabel.toLowerCase()}. Les
-            statuts <em>exclus</em> ne comptent ni dans le CA, ni dans le GMV.
-            {rows.length > 0 && (
-              <>
-                {" "}
-                <span className="text-[#475569]">
-                  Cliquez sur une ligne pour voir les commandes qui composent
-                  ces totaux.
-                </span>
-              </>
-            )}
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-[15px] font-semibold text-[#1E252F]">
+              Réconciliation CA HTVA ↔ GMV TTC
+            </h3>
+            <p className="text-[11px] text-[#8B95A5] mt-0.5">
+              Détail par statut de commande sur {periodLabel.toLowerCase()}. Les
+              statuts <em>exclus</em> ne comptent ni dans le CA, ni dans le GMV.
+              {rows.length > 0 && (
+                <>
+                  {" "}
+                  <span className="text-[#475569]">
+                    Cliquez sur une ligne pour voir les commandes qui composent
+                    ces totaux.
+                  </span>
+                </>
+              )}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            disabled={loading || rows.length === 0}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-md border border-[#E2E8F0] bg-white px-2.5 py-1.5 text-[11px] font-medium text-[#1E252F] hover:bg-[#F8FAFC] disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Exporter la réconciliation en CSV"
+          >
+            <Download size={13} />
+            Exporter CSV
+          </button>
         </div>
 
         {loading ? (

@@ -250,6 +250,12 @@ Deno.serve(async (req) => {
     // - Otherwise, we load the vendor's encrypted keys from DB, decrypt them
     //   server-side and test. Cleartext keys never reach the client.
     if (body.action === "test_connection") {
+      // IDOR guard: caller may only test their own vendor's credentials (or admin).
+      if (body.vendor_id) {
+        if (!isAdmin && (!callerVendorId || String(body.vendor_id) !== callerVendorId)) {
+          return forbid("You cannot test another vendor's Sendcloud credentials");
+        }
+      }
       let pk = body.public_key;
       let sk = body.secret_key;
       if ((!pk || !sk) && body.vendor_id) {

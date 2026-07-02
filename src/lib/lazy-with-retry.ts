@@ -149,28 +149,91 @@ export function safeAutoReload(): boolean {
   return true;
 }
 
+/**
+ * Number of in-place import retries (with exponential backoff) attempted
+ * BEFORE we escalate to a full page reload. Handles transient network blips,
+ * cold CDN edges, and flaky mobile connections without disturbing the user.
+ */
+const IN_PLACE_RETRY_ATTEMPTS = 3;
+const IN_PLACE_RETRY_BASE_DELAY_MS = 250;
+const IN_PLACE_RETRY_MAX_DELAY_MS = 1500;
+
+function backoffDelay(attempt: number) {
+  const exp = IN_PLACE_RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
+  const jitter = Math.random() * IN_PLACE_RETRY_BASE_DELAY_MS;
+  return Math.min(IN_PLACE_RETRY_MAX_DELAY_MS, exp + jitter);
+}
+
+function isLikelyTransient(error: unknown, probe: ChunkProbeResult | null) {
+  // Explicit HTML-instead-of-JS → deploy is stale, retrying won't help.
+  if (probe?.looksLikeHtml) return false;
+  const msg = getErrorMessage(error).toLowerCase();
+  if (!msg) return true;
+  return (
+    msg.includes("fetch") ||
+    msg.includes("network") ||
+    msg.includes("timeout") ||
+    msg.includes("load failed") ||
+    msg.includes("dynamically imported module") ||
+    msg.includes("loading chunk") ||
+    msg.includes("chunkloaderror") ||
+    msg.includes("module script")
+  );
+}
+
+async function attemptImport<T>(
+  importer: () => Promise<{ default: T }>,
+): Promise<{ mod: { default: T } | null; error: unknown }> {
+  try {
+    const mod = await importer();
+    return { mod, error: null };
+  } catch (err) {
+    return { mod: null, error: err };
+  }
+}
+
 export function lazyWithRetry<T extends ComponentType<any>>(
   importer: () => Promise<{ default: T }>,
   key: string,
 ): LazyExoticComponent<T> {
   return lazy(async () => {
+    // ---- Phase 1: in-place retries with exponential backoff ------------
     let importError: unknown = null;
     let mod: { default: T } | null = null;
-    try {
-      mod = await importer();
-    } catch (err) {
-      importError = err;
+
+    for (let attempt = 0; attempt < IN_PLACE_RETRY_ATTEMPTS; attempt++) {
+      const res = await attemptImport(importer);
+      mod = res.mod;
+      importError = res.error;
+
+      const resolvedOk =
+        importError == null &&
+        mod != null &&
+        typeof (mod as { default?: unknown }).default !== "undefined";
+      if (resolvedOk) break;
+
+      // Only backoff+retry when it looks transient AND we have attempts left.
+      // Skip the sniff on the last iteration so we exit immediately to Phase 2.
+      if (attempt < IN_PLACE_RETRY_ATTEMPTS - 1) {
+        // Cheap probe first (only if we have a URL to probe) so we don't
+        // waste retries on a stale deploy.
+        const msg = getErrorMessage(importError);
+        const urlMatch = msg.match(/https?:\/\/[^\s'")]+\.[a-z]+(?:\?[^\s'")]*)?/i);
+        let probe: ChunkProbeResult | null = null;
+        if (urlMatch) probe = await probeChunkUrl(urlMatch[0]);
+        if (probe?.looksLikeHtml) break; // deploy stale → escalate now
+        if (!isLikelyTransient(importError, probe)) break;
+        await new Promise((r) => setTimeout(r, backoffDelay(attempt)));
+      }
     }
 
-    // Detect HTML-instead-of-JS: either the import threw, or it resolved
-    // without a default export (some bundlers swallow the MIME error).
     const looksInvalid =
       importError != null ||
       !mod ||
       typeof (mod as { default?: unknown }).default === "undefined";
 
     if (looksInvalid) {
-      // Try to extract a URL from the original error to probe its content-type.
+      // ---- Phase 2: diagnose + escalate to reload or throw -------------
       const msg = getErrorMessage(importError);
       const urlMatch = msg.match(/https?:\/\/[^\s'")]+\.[a-z]+(?:\?[^\s'")]*)?/i);
       let probe: ChunkProbeResult | null = null;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
@@ -81,7 +81,7 @@ export function HeroImageGallery() {
   const slideContent = (
     // Ratios alignés sur l'aperçu admin (HeroImageEditor) : 4/3 en mobile (<640px), 16/7 en desktop.
     // Assure la cohérence de recadrage CMS ⇄ front.
-    <div className="relative w-full rounded-2xl overflow-hidden shadow-lg group aspect-[4/3] sm:aspect-[16/7] bg-black">
+    <div className={`relative w-full rounded-2xl overflow-hidden shadow-lg group aspect-[4/3] sm:aspect-[16/7] bg-black ${currentImage?.link_url ? "cursor-pointer" : ""}`}>
 
       {images.map((img, i) => {
         const fx = Number(img.focal_x ?? 50);
@@ -104,6 +104,13 @@ export function HeroImageGallery() {
           </picture>
         );
       })}
+      {currentImage?.link_url && (
+        <div className="absolute top-3 right-3 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="bg-white/20 backdrop-blur-sm rounded-full p-2 text-white">
+            <ExternalLink size={16} aria-hidden="true" />
+          </div>
+        </div>
+      )}
       {(() => {
         const showTitle = currentImage?.show_title ?? true;
         const showSubtitle = currentImage?.show_subtitle ?? true;

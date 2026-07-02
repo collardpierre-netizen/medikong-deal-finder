@@ -414,18 +414,19 @@ export default function HeroImageEditor({ img }: Props) {
 
 function PreviewFrame({
   image_url, alt, title, subtitle, showTitle, showSubtitle,
-  cta, link, linkError, isInternalLink,
+  cta, showCta, link, linkError, isInternalLink,
   focalX, focalY, zoom, device,
 }: {
   image_url: string; alt: string; title: string; subtitle: string;
   showTitle: boolean; showSubtitle: boolean;
-  cta: string; link: string; linkError?: string; isInternalLink: boolean;
+  cta: string; showCta: boolean; link: string; linkError?: string; isInternalLink: boolean;
   focalX: number; focalY: number; zoom: number;
   device: "desktop" | "mobile";
 }) {
   const aspect = device === "desktop" ? "16/7" : "4/3";
   const maxW = device === "desktop" ? "100%" : 320;
-  const hasAnyText = showTitle || showSubtitle || Boolean(cta.trim());
+  const ctaVisible = showCta && Boolean(cta.trim());
+  const hasAnyText = showTitle || showSubtitle || ctaVisible;
   return (
     <div className="flex justify-center bg-gradient-to-br from-gray-100 to-gray-50 rounded-xl p-2">
       <div
@@ -463,7 +464,7 @@ function PreviewFrame({
                 {title || <span className="italic opacity-60">Titre du bandeau…</span>}
               </h4>
             )}
-            {cta.trim() && (
+            {ctaVisible && (
               <span className="inline-flex items-center gap-1 mt-2 px-3 py-1 rounded-md text-[11px] font-semibold bg-white/25 backdrop-blur-sm">
                 {cta}
                 {link.trim() && !linkError && (isInternalLink ? <Link2 size={10} /> : <ExternalLink size={10} />)}

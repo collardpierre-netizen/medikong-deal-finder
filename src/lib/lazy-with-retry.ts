@@ -414,8 +414,17 @@ export function lazyWithRetry<T extends ComponentType<any>>(
 export function installViteChunkReloadGuard() {
   if (typeof window === "undefined") return;
 
-  window.addEventListener("vite:preloadError", (event) => {
+  window.addEventListener("vite:preloadError", async (event) => {
     event.preventDefault();
+    const url = extractChunkUrl(getErrorMessage((event as Event & { payload?: unknown }).payload));
+    if (url) {
+      const probe = await probeChunkUrl(url);
+      if (isTransientChunkProbe(probe)) {
+        await waitForChunkServerRecovery(url);
+        if (safeTransientChunkReload(url)) return;
+      }
+      if (isStaleHtmlFallbackProbe(probe) && safeCacheBustReload()) return;
+    }
     if (!safeCacheBustReload()) safeAutoReload();
   });
 }

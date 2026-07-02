@@ -8,6 +8,7 @@ import {
   safeCacheBustReload,
   safeTransientChunkReload,
   MAX_AUTO_RELOADS_PER_SESSION,
+  __reloadTiming,
 } from "./lazy-with-retry";
 
 /**
@@ -50,6 +51,7 @@ function renderLazyRoute(importer: () => Promise<any>, key: string) {
 describe("lazyWithRetry — reload limits across routes", () => {
   const originalFetch = globalThis.fetch;
   const originalLocation = window.location;
+  const originalScheduler = __reloadTiming.scheduler;
   let reloadSpy: ReturnType<typeof vi.fn>;
   let replaceSpy: ReturnType<typeof vi.fn>;
 
@@ -59,6 +61,11 @@ describe("lazyWithRetry — reload limits across routes", () => {
 
     reloadSpy = vi.fn();
     replaceSpy = vi.fn();
+    // Run backoff scheduler synchronously so spies can be asserted immediately.
+    __reloadTiming.scheduler = ((fn: () => void) => {
+      fn();
+      return 0;
+    }) as typeof __reloadTiming.scheduler;
     // Redefine window.location with spy-able reload/replace, keep other props.
     Object.defineProperty(window, "location", {
       configurable: true,
@@ -81,6 +88,7 @@ describe("lazyWithRetry — reload limits across routes", () => {
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
+    __reloadTiming.scheduler = originalScheduler;
     Object.defineProperty(window, "location", {
       configurable: true,
       value: originalLocation,
@@ -101,7 +109,9 @@ describe("lazyWithRetry — reload limits across routes", () => {
 
   it("safeCacheBustReload caps at 2 per session (no infinite ?_v= loop)", () => {
     expect(safeCacheBustReload()).toBe(true);
+    sessionStorage.removeItem("medikong:reload-last-at"); // bypass cooldown
     expect(safeCacheBustReload()).toBe(true);
+    sessionStorage.removeItem("medikong:reload-last-at");
     expect(safeCacheBustReload()).toBe(false);
     expect(replaceSpy).toHaveBeenCalledTimes(2);
   });

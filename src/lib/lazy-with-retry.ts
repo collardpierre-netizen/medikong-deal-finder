@@ -320,7 +320,11 @@ export function lazyWithRetry<T extends ComponentType<any>>(
       try {
         window.sessionStorage.removeItem(GLOBAL_RELOAD_COUNTER_KEY);
         window.sessionStorage.removeItem(GLOBAL_RELOAD_LAST_AT_KEY);
-        window.sessionStorage.removeItem(CACHE_BUST_RELOAD_COUNTER_KEY);
+        // NB: on NE réinitialise PAS CACHE_BUST_RELOAD_COUNTER_KEY ici.
+        // Ce compteur borne la garde `vite:preloadError` qui recharge
+        // avec `?_v=…` sur chunk stale ; le remettre à zéro sur chaque
+        // succès permet à la garde de reboucler indéfiniment (page qui
+        // « saute ») quand un chunk pre-bundlé Vite alterne succès/échec.
       } catch {
         /* ignore */
       }

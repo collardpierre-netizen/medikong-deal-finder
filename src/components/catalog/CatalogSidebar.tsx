@@ -15,9 +15,10 @@ interface Props {
   setFilter: (key: string, value: any) => void;
   clearAll: () => void;
   resultCategoryIds?: string[];
+  resultBrandIds?: string[];
 }
 
-export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds }: Props) {
+export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds, resultBrandIds }: Props) {
   const { t, i18n } = useTranslation();
   const { currentCountry } = useCountry();
   const { data: categories = [], isPending: isCategoriesPending } = useCatalogCategories();

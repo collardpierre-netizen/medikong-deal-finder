@@ -155,7 +155,9 @@ export function installBuildVersionWatcher() {
   // Don't bother in dev.
   if (CURRENT_BUILD_ID === "dev" || import.meta.env.DEV) return;
 
-  // Initial check shortly after boot
+  // Immediate check at boot to catch tabs left open during a redeploy,
+  // puis re-check à +30 s pour rattraper un déploiement juste après le boot.
+  void checkVersion();
   window.setTimeout(() => void checkVersion(), 30_000);
   // Periodic check
   window.setInterval(() => void checkVersion(), POLL_INTERVAL_MS);

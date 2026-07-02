@@ -389,7 +389,13 @@ const AdminCMS = () => {
         <TabsContent value="hero-images">
           <div className="bg-white rounded-lg border p-5" style={{ borderColor: "#E2E8F0" }}>
             <h3 className="text-[14px] font-semibold mb-4" style={{ color: "#1D2530" }}>Images Hero Homepage</h3>
-            <p className="text-[12px] mb-4" style={{ color: "#8B95A5" }}>Gérez les photos du carrousel hero. Les modifications sont appliquées en temps réel sur la homepage.</p>
+            <p className="text-[12px] mb-2" style={{ color: "#8B95A5" }}>Gérez les photos du carrousel hero. Les modifications sont appliquées en temps réel sur la homepage.</p>
+            <div className="mb-4 p-3 rounded-md border text-[11px] leading-relaxed" style={{ borderColor: "#DBEAFE", backgroundColor: "#EFF6FF", color: "#1E40AF" }}>
+              <strong>Format recommandé :</strong> 1920 × 840 px (ratio ~2.28:1), JPG ou WebP, &lt; 400 Ko.
+              Zone de sécurité pour le texte à gauche (~40% de la largeur). Les visages/éléments clés doivent rester dans le tiers central pour rester visibles sur mobile.
+              <br />
+              <strong>Comment ajouter :</strong> cliquez sur <em>Uploader une image</em> (fichier local) <em>ou</em> collez une URL externe puis <em>Ajouter URL</em>. Renseignez le texte alt, et optionnellement une URL + libellé CTA (les deux ensemble ou aucun).
+            </div>
 
             {/* Upload file */}
             <div className="flex flex-col gap-3 mb-6 p-4 rounded-lg border border-dashed" style={{ borderColor: "#CBD5E1" }}>

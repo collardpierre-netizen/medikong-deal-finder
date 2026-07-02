@@ -1,5 +1,6 @@
 import { Suspense } from "react"; // v2
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/lib/query-client";
 import { BrowserRouter, Route, Routes, Navigate, useParams, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -332,16 +333,8 @@ const RestockSellerPickupLocation = lazyWithRetry(() => import("./pages/restock/
 const RestockCheckout = lazyWithRetry(() => import("./pages/restock/RestockCheckout"), "RestockCheckout");
 const PitchdeckRedirect = lazyWithRetry(() => import("./pages/PitchdeckRedirect"), "PitchdeckRedirect");
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000,
-      gcTime: 30 * 60 * 1000,
-      refetchOnWindowFocus: false,
-      retry: 2,
-    },
-  },
-});
+// queryClient est désormais exposé depuis @/lib/query-client afin d'être
+// accessible aux utilitaires hors composants (ex. bustAdminQueryCache).
 
 function LP({ children }: { children: React.ReactNode }) {
   return (

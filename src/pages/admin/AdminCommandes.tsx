@@ -225,12 +225,16 @@ const AdminCommandes = () => {
   const computeCommissionFromLines = (lines: any[]): number =>
     computeCommissionFromLinesPure(lines, vendorCommissionById);
 
-  const readStoredCommission = (raw: any): { value: number; explicit: boolean } => {
-    const subs = ((raw as any).sub_orders || []) as Array<{
+  const readStoredCommission = (raw: any, vendorIds: string[] = []): { value: number; explicit: boolean } => {
+    const allSubs = ((raw as any).sub_orders || []) as Array<{
+      vendor_id?: string | null;
       commission_amount_override: number | null;
       commission_rate_override: number | null;
       subtotal_incl_vat: number | null;
     }>;
+    const subs = vendorIds.length > 0
+      ? allSubs.filter((s) => s.vendor_id && vendorIds.includes(s.vendor_id))
+      : allSubs;
     let explicit = false;
     const value = subs.reduce((acc, s) => {
       const amt = s.commission_amount_override;
@@ -253,12 +257,15 @@ const AdminCommandes = () => {
     const draftPayload = (o as any).draft_payload as any;
     const draftLines = o.status === "draft" && Array.isArray(draftPayload?.lines) ? draftPayload.lines : [];
     const persistedLines = ((o as any).order_lines || []) as any[];
-    const lines = persistedLines.length > 0 ? persistedLines : draftLines;
+    const scopedPersistedLines = selectedVendorIds.length > 0
+      ? persistedLines.filter((l: any) => l.vendor_id && selectedVendorIds.includes(l.vendor_id))
+      : persistedLines;
+    const lines = persistedLines.length > 0 ? scopedPersistedLines : draftLines;
     const draftTotals = draftLines.length > 0 ? computeOrderTotals(draftLines) : null;
-    const stored = readStoredCommission(o);
+    const stored = readStoredCommission(o, selectedVendorIds);
     // Fallback : ni override stocké, ni draft → recalcul depuis order_lines + vendors.commission_*
-    const fallbackCommission = !stored.explicit && !draftTotals && persistedLines.length > 0
-      ? computeCommissionFromLines(persistedLines)
+    const fallbackCommission = !stored.explicit && !draftTotals && scopedPersistedLines.length > 0
+      ? computeCommissionFromLines(scopedPersistedLines)
       : 0;
     const commissionEur = stored.explicit
       ? stored.value
@@ -266,8 +273,13 @@ const AdminCommandes = () => {
         ? draftTotals.commission
         : fallbackCommission;
 
-    const amountHT = Number(o.subtotal_excl_vat) || 0;
-    const effectiveHT = draftTotals ? draftTotals.excl : amountHT;
+    const scopedHT = selectedVendorIds.length > 0 && scopedPersistedLines.length > 0
+      ? scopedPersistedLines.reduce((sum: number, l: any) => sum + (Number(l.line_total_excl_vat) || 0), 0)
+      : Number(o.subtotal_excl_vat) || 0;
+    const scopedTTC = selectedVendorIds.length > 0 && scopedPersistedLines.length > 0
+      ? scopedPersistedLines.reduce((sum: number, l: any) => sum + (Number(l.line_total_incl_vat) || 0), 0)
+      : Number(o.total_incl_vat) || 0;
+    const effectiveHT = draftTotals ? draftTotals.excl : scopedHT;
 
     // Marge HT = CA HT - coût d'achat HT (par ligne, agrégé)
     let costTotal = 0;
@@ -303,8 +315,8 @@ const AdminCommandes = () => {
       buyerType: (o.customers as any)?.customer_type || "pharmacy",
       seller: "—",
       amountHT: effectiveHT,
-      tva: draftTotals ? draftTotals.vat : Number(o.vat_amount) || 0,
-      ttc: draftTotals ? draftTotals.incl : Number(o.total_incl_vat) || 0,
+      tva: draftTotals ? draftTotals.vat : Math.max(0, scopedTTC - effectiveHT),
+      ttc: draftTotals ? draftTotals.incl : scopedTTC,
       commissionEur,
       commissionPct: effectiveHT > 0 ? (commissionEur / effectiveHT) * 100 : 0,
       commissionSource: stored.explicit ? "stored" : draftTotals ? "draft" : fallbackCommission > 0 ? "computed" : "none",
@@ -344,7 +356,7 @@ const AdminCommandes = () => {
   const testCount = 0; // masqué serveur — badge de nettoyage géré via useOrders() ci-dessous
   const deletedCount = 0;
 
-  const countByStatus = (s: string) => Number(serverStatusCounts?.[s] ?? 0);
+  const countByStatus = (s: string) => s === "all" ? serverTotal : Number(serverStatusCounts?.[s] ?? 0);
 
   const gmvDay = Number(serverKpis?.gmv_ht ?? 0);
   const totalCount = serverTotal;
@@ -374,6 +386,7 @@ const AdminCommandes = () => {
       });
       if (error) throw error;
       toast.success(`Commande ${deleteTarget.number} supprimée`);
+      await queryClient.invalidateQueries({ queryKey: ["admin-orders-paginated"] });
       await queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
       setDeleteTarget(null);
       setDeleteReason("");
@@ -397,6 +410,7 @@ const AdminCommandes = () => {
         targetId: hardDeleteTarget.id, targetType: "order",
         metadata: { number: hardDeleteTarget.number },
       });
+      await queryClient.invalidateQueries({ queryKey: ["admin-orders-paginated"] });
       await queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
       setHardDeleteTarget(null);
     } catch (e: any) {
@@ -416,6 +430,7 @@ const AdminCommandes = () => {
       });
       if (error) throw error;
       toast.success(`Commande ${orderNumber} convertie en commande réelle`);
+      await queryClient.invalidateQueries({ queryKey: ["admin-orders-paginated"] });
       await queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
     } catch (e: any) {
       toast.error(e?.message || "Échec de la conversion");
@@ -525,6 +540,7 @@ const AdminCommandes = () => {
       } else {
         toast.success(`${n} commande${n > 1 ? "s" : ""} test supprimée${n > 1 ? "s" : ""} (${result.lines_deleted || 0} ligne(s))`);
       }
+      await queryClient.invalidateQueries({ queryKey: ["admin-orders-paginated"] });
       await queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
       setPurgeOpen(false);
     } catch (e: any) {

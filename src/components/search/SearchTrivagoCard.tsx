@@ -27,7 +27,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
   // Les "autres offres" restent en lazy : on ne déclenche `useProductOffers`
   // que quand l'utilisateur ouvre la liste (économise N-1 RPC par page).
   const [expanded, setExpanded] = useState(false);
-  const { data: offersFull = [] } = useProductOffers(
+  const { data: offersFull = [], isLoading: offersLoading } = useProductOffers(
     expanded || !hasContext ? p.id : undefined
   );
 

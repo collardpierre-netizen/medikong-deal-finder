@@ -495,11 +495,43 @@ async function upsertQogitaOffer(sb: any, payload: Record<string, unknown>) {
     }
   }
 
-  return await sb
+  const inserted = await sb
     .from("offers")
     .insert(payload)
     .select("id")
     .maybeSingle();
+
+  const insertError = inserted.error as any;
+  if (insertError?.code === "23505") {
+    if (String(insertError.message || insertError.details || "").includes("offers_product_vendor_country_unique")) {
+      if (qid) {
+        const { error: clearQidError } = await sb
+          .from("offers")
+          .update({ qogita_offer_qid: null })
+          .eq("qogita_offer_qid", qid);
+        if (clearQidError) return { data: null, error: clearQidError };
+      }
+      return await sb
+        .from("offers")
+        .update(payload)
+        .eq("product_id", productId)
+        .eq("vendor_id", vendorId)
+        .eq("country_code", country)
+        .select("id")
+        .maybeSingle();
+    }
+
+    if (qid && String(insertError.message || insertError.details || "").includes("offers_qogita_offer_qid_key")) {
+      return await sb
+        .from("offers")
+        .update(payload)
+        .eq("qogita_offer_qid", qid)
+        .select("id")
+        .maybeSingle();
+    }
+  }
+
+  return inserted;
 }
 
 Deno.serve(async (req) => {

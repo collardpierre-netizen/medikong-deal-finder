@@ -158,9 +158,19 @@ export default function SearchTrivagoCard({ product: p }: Props) {
           {hasOffer ? (
             <>
               <div>
-                <p className="text-xs font-bold text-emerald-800">
-                  {bestOffer?.sellerName || "Meilleur prix"}
-                </p>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <p className="text-xs font-bold text-emerald-800">
+                    {bestOffer?.sellerName || "Meilleur prix"}
+                  </p>
+                  {bestOffer?.isExclusiveWinner && (
+                    <span
+                      title="Vendeur exclusif sur ce produit"
+                      className="text-[9px] font-bold uppercase tracking-wide text-amber-900 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded"
+                    >
+                      Exclusif
+                    </span>
+                  )}
+                </div>
                 {bestOffer && (
                   <p className="text-[10px] text-emerald-600 mt-1 flex items-center gap-1">
                     <Check size={10} className="text-emerald-500" />

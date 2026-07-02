@@ -183,6 +183,10 @@ export async function preflightBuildVersionBeforeRender(): Promise<boolean> {
   markStale();
   bustAdminQueryCache();
 
+  // Préférence utilisateur : ne pas recharger automatiquement.
+  // Le watcher affichera un toast pour un rechargement manuel.
+  if (isAutoRefreshDisabled()) return true;
+
   if (safeCacheBustReload() || safeAutoReload()) return false;
   return true;
 }

@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Languages, ChevronsUpDown, Check, Wand2, Upload, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SocialLinksEditor, normalizeSocialLinks, type SocialLinks } from "@/components/shared/SocialLinks";
+import { CmsMediaFields } from "@/components/admin/CmsMediaFields";
 
 interface BrandFormDialogProps {
   open: boolean;

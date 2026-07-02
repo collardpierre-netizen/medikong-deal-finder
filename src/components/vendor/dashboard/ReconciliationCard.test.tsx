@@ -115,3 +115,46 @@ describe("ReconciliationCard · cohérence arithmétique des totaux", () => {
     );
   });
 });
+
+describe("ReconciliationCard · drill-down par statut", () => {
+  it("cliquer sur une ligne de statut affiche les commandes qui la composent", () => {
+    render(<ReconciliationCard data={data} loading={false} periodLabel="Ce mois" />);
+    // Ligne masquée par défaut
+    expect(screen.queryByText("MK-1001")).not.toBeInTheDocument();
+
+    const paidRow = screen.getByText("Payée").closest("tr")!;
+    fireEvent.click(paidRow);
+
+    expect(screen.getByText("MK-1001")).toBeInTheDocument();
+    expect(paidRow).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("un second clic replie le détail", () => {
+    render(<ReconciliationCard data={data} loading={false} periodLabel="Ce mois" />);
+    const paidRow = screen.getByText("Payée").closest("tr")!;
+    fireEvent.click(paidRow);
+    expect(screen.getByText("MK-1001")).toBeInTheDocument();
+    fireEvent.click(paidRow);
+    expect(screen.queryByText("MK-1001")).not.toBeInTheDocument();
+  });
+
+  it("le détail affiche les mêmes montants CA/GMV que la ligne agrégée + la TVA correspondante", () => {
+    render(<ReconciliationCard data={data} loading={false} periodLabel="Ce mois" />);
+    fireEvent.click(screen.getByText("Payée").closest("tr")!);
+    const detailRow = screen.getByText("MK-1001").closest("tr")!;
+    // 8 000 c → 80 €, 9 680 c → 96,80 €, TVA = 16,80 €
+    expect(within(detailRow).getByText(/80,00/)).toBeInTheDocument();
+    expect(within(detailRow).getByText(/96,80/)).toBeInTheDocument();
+    expect(within(detailRow).getByText(/16,80/)).toBeInTheDocument();
+  });
+
+  it("ouvrir un autre statut referme le précédent (single-expand)", () => {
+    render(<ReconciliationCard data={data} loading={false} periodLabel="Ce mois" />);
+    fireEvent.click(screen.getByText("Payée").closest("tr")!);
+    expect(screen.getByText("MK-1001")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Expédiée").closest("tr")!);
+    expect(screen.queryByText("MK-1001")).not.toBeInTheDocument();
+    expect(screen.getByText("MK-1002")).toBeInTheDocument();
+  });
+});
+

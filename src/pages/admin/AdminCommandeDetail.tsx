@@ -290,7 +290,7 @@ const AdminCommandeDetail = () => {
         patch.status = "shipped";
         patch.shipped_at = new Date().toISOString();
       }
-      const { error } = await supabase.from("orders").update(patch).eq("id", id!);
+      const { error } = await supabase.from("orders").update(patch as any).eq("id", id!);
       if (error) throw error;
       if (opts.notify) {
         const { data: notifyRes, error: notifyErr } = await supabase.functions.invoke("notify-order-shipped", {

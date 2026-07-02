@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RefreshCw, Activity, AlertTriangle, CheckCircle2, Clock, PackageX } from "lucide-react";
+import { RefreshCw, Activity, AlertTriangle, CheckCircle2, Clock, PackageX, Play, Recycle } from "lucide-react";
 import QogitaReconciliationPanel from "@/components/admin/QogitaReconciliationPanel";
 import { formatUpdatedAtFull } from "@/lib/format-date";
+import { toast } from "sonner";
 
 type ResyncLog = {
   id: string;
@@ -66,6 +67,49 @@ export default function AdminQogitaStatus() {
   const [modeFilter, setModeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [staleBusy, setStaleBusy] = useState(false);
+  const [sweepBusy, setSweepBusy] = useState(false);
+
+  async function runStaleRefresh() {
+    if (staleBusy) return;
+    setStaleBusy(true);
+    try {
+      const { data, error } = await supabase.rpc("enqueue_qogita_resync_batch", {
+        _batch_size: 500,
+        _mode: "daily_stale_refresh",
+      });
+      if (error) throw error;
+      const d = data as any;
+      if (d?.rate_limited) {
+        toast.warning(`Rate limit Qogita — ${d.available ?? 0} tokens dispo (demandé ${d.requested})`);
+      } else {
+        toast.success(`Batch enqueued : ${d?.enqueued ?? 0} produits`);
+      }
+      refetch();
+    } catch (e: any) {
+      toast.error(`Échec relance stale refresh : ${e?.message ?? e}`);
+    } finally {
+      setStaleBusy(false);
+    }
+  }
+
+  async function runReconciliationSweep() {
+    if (sweepBusy) return;
+    setSweepBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("qogita-reconcile", {
+        body: { sweep: "staleness", threshold_days: 7, dry_run: false },
+      });
+      if (error) throw error;
+      toast.success(`Reconciliation sweep déclenché${(data as any)?.deactivated != null ? ` — ${(data as any).deactivated} désactivations` : ""}`);
+      refetch();
+    } catch (e: any) {
+      toast.error(`Échec reconciliation sweep : ${e?.message ?? e}`);
+    } finally {
+      setSweepBusy(false);
+    }
+  }
+
 
   const { data: logs, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["qogita-resync-logs", modeFilter, statusFilter],
@@ -120,11 +164,22 @@ export default function AdminQogitaStatus() {
             Suivi des runs de synchronisation, erreurs et désactivations par <code>sync_run_id</code>.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />
-          Rafraîchir
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={runStaleRefresh} disabled={staleBusy}>
+            <Play className={`h-4 w-4 mr-2 ${staleBusy ? "animate-pulse" : ""}`} />
+            Relancer stale refresh
+          </Button>
+          <Button variant="outline" size="sm" onClick={runReconciliationSweep} disabled={sweepBusy}>
+            <Recycle className={`h-4 w-4 mr-2 ${sweepBusy ? "animate-spin" : ""}`} />
+            Reconciliation sweep
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />
+            Rafraîchir
+          </Button>
+        </div>
       </div>
+
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

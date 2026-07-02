@@ -22,6 +22,7 @@ export interface HeroImageRow {
   focal_x?: number | null;
   focal_y?: number | null;
   zoom?: number | null;
+  image_fit?: "cover" | "contain" | null;
 }
 
 const LIMITS = { title: 80, subtitle: 120, cta: 30, url: 500 };

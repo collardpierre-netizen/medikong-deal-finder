@@ -1,8 +1,9 @@
+import { useState } from "react";
 import { PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer, Legend } from "recharts";
 import { Info } from "lucide-react";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
-import { useVendorSalesBreakdowns } from "@/hooks/useVendorSalesBreakdowns";
+import { useVendorSalesBreakdowns, type VendorAnalyticsPeriod } from "@/hooks/useVendorSalesBreakdowns";
 import { fmtEur } from "@/lib/format-currency";
 
 const EmptyState = ({ message }: { message: string }) => (
@@ -12,9 +13,18 @@ const EmptyState = ({ message }: { message: string }) => (
   </div>
 );
 
+const PERIOD_OPTIONS: { value: VendorAnalyticsPeriod; label: string }[] = [
+  { value: "7d", label: "7 jours" },
+  { value: "30d", label: "30 jours" },
+  { value: "90d", label: "90 jours" },
+  { value: "ytd", label: "Année en cours" },
+  { value: "all", label: "Tout" },
+];
+
 export default function VendorAnalytics() {
   const { data: vendor } = useCurrentVendor();
-  const { categoryBreakdown, customerTypeBreakdown, isLoading } = useVendorSalesBreakdowns(vendor?.id);
+  const [period, setPeriod] = useState<VendorAnalyticsPeriod>("30d");
+  const { categoryBreakdown, customerTypeBreakdown, isLoading } = useVendorSalesBreakdowns(vendor?.id, period);
 
   const totalClients = customerTypeBreakdown.reduce((s, r) => s + r.value, 0);
   const retail = customerTypeBreakdown.find((r) => r.name === "Retail");
@@ -23,10 +33,34 @@ export default function VendorAnalytics() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-[#1D2530]">Analytics</h1>
-        <p className="text-[13px] text-[#616B7C] mt-0.5">Répartition de votre CA et de votre portefeuille clients</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-xl font-bold text-[#1D2530]">Analytics</h1>
+          <p className="text-[13px] text-[#616B7C] mt-0.5">Répartition de votre CA et de votre portefeuille clients</p>
+        </div>
+        <div className="inline-flex rounded-[8px] border border-[#E2E8F0] bg-white p-0.5" role="tablist" aria-label="Période">
+          {PERIOD_OPTIONS.map((opt) => {
+            const active = opt.value === period;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setPeriod(opt.value)}
+                className="px-3 py-1.5 text-[12px] font-medium rounded-[6px] transition-colors"
+                style={{
+                  backgroundColor: active ? "#1B5BDA" : "transparent",
+                  color: active ? "#fff" : "#616B7C",
+                }}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Catégories vendues */}

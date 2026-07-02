@@ -3,9 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   VENDOR_GMV_ORDER_COLUMNS,
-  applyVendorGmvOrderFilters,
   isBillableOrder,
 } from "@/lib/vendor-gmv-filters";
+
 
 
 /**

@@ -568,22 +568,22 @@ Deno.serve(async (req) => {
   let resyncLogId: string | null = null;
   let productIds: string[] = [];
   // Keyset pagination cursor (created_at ISO). null → depuis le début.
-  // Remplace l'ancien offsetCursor pour éviter les OFFSET O(n²) sur products.
   let afterCreatedAt: string | null = null;
-  // Sweep A : run id provided by run-sync-pipeline at full-run start.
-  // Stamped on every offer / vendor upsert so qogita_reconcile can detect leftovers.
   let syncRunId: string | null = null;
+  // fast mode : skip /variants/ endpoint, only call /variants/{fid}/{slug}/offers/
+  // to refresh price/stock/tiers of existing multi-vendor offers. Requires
+  // products with cached qogita_fid + slug (already enriched once).
+  let fastMode = false;
   try {
     const body = await req.json();
     if (body?.country) targetCountry = body.country;
-    // body.multi_vendor ignoré : forcé à true.
     if (body?.resync_log_id) resyncLogId = String(body.resync_log_id);
     if (Array.isArray(body?.product_ids)) {
       productIds = body.product_ids.filter((id: unknown): id is string => typeof id === "string" && id.length > 0);
     }
     if (body?.after_created_at) afterCreatedAt = String(body.after_created_at);
-    // Legacy body.offset ignoré (pagination cursor-based).
     if (body?.sync_run_id) syncRunId = String(body.sync_run_id);
+    if (body?.mode === "fast" || body?.fast_mode === true) fastMode = true;
   } catch {
     // no-op
   }

@@ -8,7 +8,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  VENDOR_GMV_EXCLUDED_STATUSES,
+} from "@/lib/vendor-gmv-filters";
 import type { VendorReconciliation } from "@/hooks/useVendorReconciliation";
+
+const excludedStatusLabels = Array.from(
+  new Set(VENDOR_GMV_EXCLUDED_STATUSES.map((s) => STATUS_LABELS[s] ?? s)),
+);
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "En attente",

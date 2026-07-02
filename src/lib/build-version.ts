@@ -171,18 +171,14 @@ async function checkVersion() {
   // par l'ancien backend, même si le reload est différé ci-dessous.
   bustAdminQueryCache();
 
-  // If the user is mid-typing in a form, don't yank the page from under them.
-  const active = document.activeElement;
-  const isEditing =
-    active instanceof HTMLElement &&
-    (active.tagName === "INPUT" ||
-      active.tagName === "TEXTAREA" ||
-      active.isContentEditable);
-
   const autoRefreshDisabled = isAutoRefreshDisabled();
+  const atRisk = isAtRiskPath();
+  const busy = isUserBusy();
+
   const canReloadNow =
     !autoRefreshDisabled &&
-    !isEditing &&
+    atRisk &&
+    !busy &&
     document.visibilityState === "visible" &&
     canAutoReload();
 
@@ -191,11 +187,15 @@ async function checkVersion() {
     return;
   }
 
-  // Reload différé : on prévient l'utilisateur avec un toast persistant
-  // + CTA « Recharger maintenant », et on planifie un nouveau tentative
-  // automatique dans 60 s (au cas où il quitterait le champ entre temps).
+  // Reload différé :
+  //  - Sur page à risque (admin) : toast + retry auto dans 60 s dès que
+  //    l'utilisateur n'est plus en train d'interagir.
+  //  - Ailleurs : toast uniquement, aucun rechargement automatique
+  //    (l'utilisateur recharge quand il veut via le CTA du toast).
   showNewVersionToast();
-  scheduleDeferredReload();
+  if (atRisk && !autoRefreshDisabled) {
+    scheduleDeferredReload();
+  }
 }
 
 function resetReloadCountersForRemoteBuild(remoteBuildId: string) {

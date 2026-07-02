@@ -101,11 +101,12 @@ export default function HeroImageEditor({ img }: Props) {
     setShowSubtitle(img.show_subtitle ?? true);
     setCta(img.cta_text ?? "");
     setLink(img.link_url ?? "");
+    setShowCta(img.show_cta ?? true);
     setImageUrlMobile(img.image_url_mobile ?? "");
     setFocalX(Number(img.focal_x ?? 50));
     setFocalY(Number(img.focal_y ?? 50));
     setZoom(Number(img.zoom ?? 1));
-  }, [img.id, img.title, img.subtitle, img.show_title, img.show_subtitle, img.cta_text, img.link_url, img.image_url_mobile, img.focal_x, img.focal_y, img.zoom]);
+  }, [img.id, img.title, img.subtitle, img.show_title, img.show_subtitle, img.cta_text, img.link_url, img.show_cta, img.image_url_mobile, img.focal_x, img.focal_y, img.zoom]);
 
   // Détection dimensions image source
   useEffect(() => {

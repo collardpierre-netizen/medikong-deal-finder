@@ -837,6 +837,14 @@ const AdminCommandeDetail = () => {
               const trackUrlErr = validateTrackingUrl(trackUrl);
               return (
                 <div className="space-y-2 pt-1">
+                  {order.status === "delivered" && (
+                    <div className="rounded-md bg-green-50 border border-green-200 p-3 text-sm text-green-800">
+                      <div className="font-semibold mb-0.5 flex items-center gap-2">
+                        <CheckCircle2 size={14} /> Commande livrée
+                      </div>
+                      <div className="text-[12px]">L'acheteur a déjà été notifié de l'expédition. Les actions de renotification ne sont plus disponibles.</div>
+                    </div>
+                  )}
                   {order.status !== "shipped" && order.status !== "delivered" && (
                     <Button
                       onClick={() => saveTracking({ notify: true, markShipped: true })}
@@ -849,17 +857,19 @@ const AdminCommandeDetail = () => {
                       {busy === "TRACKING" ? "Envoi…" : "Marquer expédié & notifier l'acheteur"}
                     </Button>
                   )}
-                  <Button
-                    onClick={() => saveTracking({ notify: true, markShipped: false })}
-                    disabled={busy !== null || !!trackUrlErr}
-                    className="w-full justify-start"
-                    variant={order.status === "shipped" ? "default" : "outline"}
-                    style={order.status === "shipped" ? { backgroundColor: "#1C58D9", color: "#fff" } : undefined}
-                    title={trackUrlErr || undefined}
-                  >
-                    <Send size={14} className="mr-2" />
-                    {busy === "TRACKING" ? "Envoi…" : "Enregistrer & renotifier l'acheteur"}
-                  </Button>
+                  {order.status !== "delivered" && (
+                    <Button
+                      onClick={() => saveTracking({ notify: true, markShipped: false })}
+                      disabled={busy !== null || !!trackUrlErr}
+                      className="w-full justify-start"
+                      variant={order.status === "shipped" ? "default" : "outline"}
+                      style={order.status === "shipped" ? { backgroundColor: "#1C58D9", color: "#fff" } : undefined}
+                      title={trackUrlErr || undefined}
+                    >
+                      <Send size={14} className="mr-2" />
+                      {busy === "TRACKING" ? "Envoi…" : "Enregistrer & renotifier l'acheteur"}
+                    </Button>
+                  )}
                   <Button
                     onClick={() => saveTracking({ notify: false, markShipped: false })}
                     disabled={busy !== null || !!trackUrlErr}
@@ -869,15 +879,17 @@ const AdminCommandeDetail = () => {
                   >
                     {busy === "TRACKING" ? "Enregistrement…" : "Enregistrer sans email"}
                   </Button>
-                  <Button
-                    onClick={dryRunNotify}
-                    disabled={busy !== null}
-                    className="w-full justify-start"
-                    variant="secondary"
-                    title="Simule l'envoi sans rien envoyer et vérifie qu'un seul email partirait (idempotency)"
-                  >
-                    {busy === "TRACKING" ? "Test…" : "🧪 Tester (dry-run) — vérifier l'envoi unique"}
-                  </Button>
+                  {order.status !== "delivered" && (
+                    <Button
+                      onClick={dryRunNotify}
+                      disabled={busy !== null}
+                      className="w-full justify-start"
+                      variant="secondary"
+                      title="Simule l'envoi sans rien envoyer et vérifie qu'un seul email partirait (idempotency)"
+                    >
+                      {busy === "TRACKING" ? "Test…" : "🧪 Tester (dry-run) — vérifier l'envoi unique"}
+                    </Button>
+                  )}
                   {trackUrl.trim() && !trackUrlErr && (
                     <a href={trackUrl.trim()} target="_blank" rel="noreferrer" className="block">
                       <Button className="w-full justify-start" variant="ghost">

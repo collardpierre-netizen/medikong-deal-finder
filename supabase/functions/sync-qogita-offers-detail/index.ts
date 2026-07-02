@@ -434,6 +434,74 @@ async function syncOfferTiers(
   return tierRows.length;
 }
 
+async function upsertQogitaOffer(sb: any, payload: Record<string, unknown>) {
+  const productId = String(payload.product_id || "");
+  const vendorId = String(payload.vendor_id || "");
+  const country = String(payload.country_code || "");
+  const qid = typeof payload.qogita_offer_qid === "string" ? payload.qogita_offer_qid : null;
+
+  if (!productId || !vendorId || !country) {
+    return { data: null, error: { message: "Missing product/vendor/country for Qogita offer upsert" } };
+  }
+
+  // Primary business identity in our catalog: one active Qogita seller offer per
+  // product/vendor/country. Qogita can rotate qid for the same seller/product, so
+  // update that row first and free the old qid if another row still carries it.
+  const { data: byCombo, error: comboLookupError } = await sb
+    .from("offers")
+    .select("id")
+    .eq("product_id", productId)
+    .eq("vendor_id", vendorId)
+    .eq("country_code", country)
+    .maybeSingle();
+
+  if (comboLookupError) return { data: null, error: comboLookupError };
+
+  if (byCombo?.id) {
+    if (qid) {
+      const { error: clearQidError } = await sb
+        .from("offers")
+        .update({ qogita_offer_qid: null })
+        .eq("qogita_offer_qid", qid)
+        .neq("id", byCombo.id);
+      if (clearQidError) return { data: null, error: clearQidError };
+    }
+
+    return await sb
+      .from("offers")
+      .update(payload)
+      .eq("id", byCombo.id)
+      .select("id")
+      .maybeSingle();
+  }
+
+  // Fallback identity: if Qogita reuses the same qid, refresh that row.
+  if (qid) {
+    const { data: byQid, error: qidLookupError } = await sb
+      .from("offers")
+      .select("id")
+      .eq("qogita_offer_qid", qid)
+      .maybeSingle();
+
+    if (qidLookupError) return { data: null, error: qidLookupError };
+
+    if (byQid?.id) {
+      return await sb
+        .from("offers")
+        .update(payload)
+        .eq("id", byQid.id)
+        .select("id")
+        .maybeSingle();
+    }
+  }
+
+  return await sb
+    .from("offers")
+    .insert(payload)
+    .select("id")
+    .maybeSingle();
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   const startTime = Date.now();

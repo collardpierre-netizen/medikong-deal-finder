@@ -82,6 +82,7 @@ export default function HeroImageEditor({ img }: Props) {
   const [showSubtitle, setShowSubtitle] = useState<boolean>(img.show_subtitle ?? true);
   const [cta, setCta] = useState(img.cta_text ?? "");
   const [link, setLink] = useState(img.link_url ?? "");
+  const [showCta, setShowCta] = useState<boolean>(img.show_cta ?? true);
   const [imageUrlMobile, setImageUrlMobile] = useState<string>(img.image_url_mobile ?? "");
   const [focalX, setFocalX] = useState<number>(Number(img.focal_x ?? 50));
   const [focalY, setFocalY] = useState<number>(Number(img.focal_y ?? 50));

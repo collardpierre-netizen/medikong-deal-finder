@@ -249,6 +249,8 @@ export default function BrandDetailPage() {
     manufacturerSlug: (brandData?.manufacturers as any)?.slug || "",
     description: brandData?.description || "Marque partenaire disponible sur MediKong pour les professionnels de santé.",
     logoUrl: brandData?.logo_url || null,
+    coverUrl: (brandData as any)?.cover_image_url || null,
+    gallery: Array.isArray((brandData as any)?.gallery_images) ? ((brandData as any).gallery_images as string[]).filter(Boolean) : [],
     websiteUrl: brandData?.website_url || null,
   };
 

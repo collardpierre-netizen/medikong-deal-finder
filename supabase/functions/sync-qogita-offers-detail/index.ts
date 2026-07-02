@@ -699,7 +699,7 @@ async function syncOffers(
           progress_message: `${country}: pause timeout — ${batchStart}/${total} (reprendra au prochain clic)`,
         })
         .eq("id", logId);
-      scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after });
+      scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after, resync_log_id: resyncLogId, sync_run_id: syncRunId });
       return stats;
     }
 
@@ -735,6 +735,14 @@ async function syncOffers(
         }
       }
 
+      if (resyncLogId) {
+        await recordProgress({
+          products_processed: results.reduce((a, result) => a + (result.status === "fulfilled" ? (result.value?.products_enriched ?? 0) : 0), 0),
+          offers_processed: results.reduce((a, result) => a + (result.status === "fulfilled" ? ((result.value?.offers_upserted ?? 0) + (result.value?.multi_vendor_offers ?? 0)) : 0), 0),
+          offers_updated: results.reduce((a, result) => a + (result.status === "fulfilled" ? ((result.value?.offers_upserted ?? 0) + (result.value?.multi_vendor_offers ?? 0)) : 0), 0),
+        });
+      }
+
       stats.cursor_after = cursorAt(currentChunkEnd);
       if (executionProfile.persistPerChunk) {
         await sb
@@ -760,7 +768,7 @@ async function syncOffers(
             progress_message: `${country}: pause contrôlée — ${currentChunkEnd}/${total} (reprendra automatiquement)`,
           })
           .eq("id", logId);
-        scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after });
+        scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after, resync_log_id: resyncLogId, sync_run_id: syncRunId });
         return stats;
       }
     }
@@ -795,7 +803,7 @@ async function syncOffers(
         progress_message: `${country}: chunk terminé (${total} produits, cursor=${stats.cursor_after}) — relance auto`,
       })
       .eq("id", logId);
-    scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after });
+    scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after, resync_log_id: resyncLogId, sync_run_id: syncRunId });
     return stats;
   }
 

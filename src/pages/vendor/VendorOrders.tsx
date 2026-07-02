@@ -677,6 +677,9 @@ export default function VendorOrders() {
           );
         })}
       </div>
+      )}
+
+
 
       <ShipLineDialog line={shipLine} onClose={() => setShipLine(null)} onDone={invalidate} />
       <CancelLineDialog line={cancelLine} onClose={() => setCancelLine(null)} onDone={invalidate} />

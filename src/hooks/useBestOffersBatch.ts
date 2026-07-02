@@ -19,6 +19,8 @@ export interface BatchBestOffer {
   stockQuantity: number;
   offerCount: number;
   totalStock: number;
+  exclusivityMode: "showcase" | "hide" | "block" | null;
+  isExclusiveWinner: boolean;
 }
 
 /**

@@ -74,16 +74,17 @@ export default function AdminQogitaStatus() {
     if (staleBusy) return;
     setStaleBusy(true);
     try {
-      const { data, error } = await supabase.rpc("enqueue_qogita_resync_batch", {
-        _batch_size: 500,
-        _mode: "daily_stale_refresh",
+      const { data, error } = await supabase.functions.invoke("run-sync-pipeline", {
+        body: { country: "BE", triggeredBy: "admin", mode: "daily_stale_refresh", batchSize: 500 },
       });
       if (error) throw error;
       const d = data as any;
-      if (d?.rate_limited) {
-        toast.warning(`Rate limit Qogita — ${d.available ?? 0} tokens dispo (demandé ${d.requested})`);
+      if (d?.status === "rate_limited") {
+        toast.warning(`Rate limit Qogita — ${d.enqueue?.available ?? 0} tokens dispo (demandé ${d.enqueue?.requested})`);
+      } else if (d?.status === "nothing_to_sync") {
+        toast.info("Aucun produit stale à rafraîchir pour le moment");
       } else {
-        toast.success(`Batch enqueued : ${d?.enqueued ?? 0} produits`);
+        toast.success(`Stale refresh lancé${d?.resyncLogId ? ` — log ${String(d.resyncLogId).slice(0, 8)}` : ""}`);
       }
       refetch();
     } catch (e: any) {

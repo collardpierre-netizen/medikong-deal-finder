@@ -13,8 +13,8 @@ const PARALLEL_CONCURRENCY = 25;
 const BATCH_DELAY_MS = 500;
 const MULTI_VENDOR_MAX_EXECUTION_TIME = 45000;
 const MULTI_VENDOR_BATCH_SIZE = 20;
-const MULTI_VENDOR_PARALLEL_CONCURRENCY = 5;
-const MULTI_VENDOR_BATCH_DELAY_MS = 800;
+const MULTI_VENDOR_PARALLEL_CONCURRENCY = 2;
+const MULTI_VENDOR_BATCH_DELAY_MS = 1500;
 const STALE_RUNNING_MS = 10 * 60 * 1000;
 const MAX_RETRIES_429 = 3;
 const API_TIMEOUT_MS = 8000;
@@ -24,7 +24,7 @@ function sleep(ms: number) {
 }
 
 function scheduleNextChunk(body: object) {
-  fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sync-qogita-offers-detail`, {
+  const nextChunk = fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sync-qogita-offers-detail`, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
@@ -32,13 +32,16 @@ function scheduleNextChunk(body: object) {
     },
     body: JSON.stringify(body),
   }).catch((e) => console.error("scheduleNextChunk failed:", e.message));
+
+  const edgeRuntime = (globalThis as any).EdgeRuntime;
+  if (edgeRuntime?.waitUntil) edgeRuntime.waitUntil(nextChunk);
 }
 
 // --- Qogita rate limiter (token bucket en mémoire) ---
 // Lisse les appels à ~4 req/s globales pour cette instance d'edge function,
 // indépendamment de la concurrence interne. Évite les pics 429.
-const QOGITA_RATE_CAPACITY = 8;          // burst max
-const QOGITA_RATE_REFILL_PER_SEC = 4;    // débit soutenu
+const QOGITA_RATE_CAPACITY = 2;          // burst max — conservative to avoid Qogita 429
+const QOGITA_RATE_REFILL_PER_SEC = 1;    // débit soutenu
 let qogitaTokens = QOGITA_RATE_CAPACITY;
 let qogitaLastRefill = Date.now();
 
@@ -431,6 +434,106 @@ async function syncOfferTiers(
   return tierRows.length;
 }
 
+async function upsertQogitaOffer(sb: any, payload: Record<string, unknown>) {
+  const productId = String(payload.product_id || "");
+  const vendorId = String(payload.vendor_id || "");
+  const country = String(payload.country_code || "");
+  const qid = typeof payload.qogita_offer_qid === "string" ? payload.qogita_offer_qid : null;
+
+  if (!productId || !vendorId || !country) {
+    return { data: null, error: { message: "Missing product/vendor/country for Qogita offer upsert" } };
+  }
+
+  // Primary business identity in our catalog: one active Qogita seller offer per
+  // product/vendor/country. Qogita can rotate qid for the same seller/product, so
+  // update that row first and free the old qid if another row still carries it.
+  const { data: byCombo, error: comboLookupError } = await sb
+    .from("offers")
+    .select("id")
+    .eq("product_id", productId)
+    .eq("vendor_id", vendorId)
+    .eq("country_code", country)
+    .maybeSingle();
+
+  if (comboLookupError) return { data: null, error: comboLookupError };
+
+  if (byCombo?.id) {
+    if (qid) {
+      const { error: clearQidError } = await sb
+        .from("offers")
+        .update({ qogita_offer_qid: null })
+        .eq("qogita_offer_qid", qid)
+        .neq("id", byCombo.id);
+      if (clearQidError) return { data: null, error: clearQidError };
+    }
+
+    return await sb
+      .from("offers")
+      .update(payload)
+      .eq("id", byCombo.id)
+      .select("id")
+      .maybeSingle();
+  }
+
+  // Fallback identity: if Qogita reuses the same qid, refresh that row.
+  if (qid) {
+    const { data: byQid, error: qidLookupError } = await sb
+      .from("offers")
+      .select("id")
+      .eq("qogita_offer_qid", qid)
+      .maybeSingle();
+
+    if (qidLookupError) return { data: null, error: qidLookupError };
+
+    if (byQid?.id) {
+      return await sb
+        .from("offers")
+        .update(payload)
+        .eq("id", byQid.id)
+        .select("id")
+        .maybeSingle();
+    }
+  }
+
+  const inserted = await sb
+    .from("offers")
+    .insert(payload)
+    .select("id")
+    .maybeSingle();
+
+  const insertError = inserted.error as any;
+  if (insertError?.code === "23505") {
+    if (String(insertError.message || insertError.details || "").includes("offers_product_vendor_country_unique")) {
+      if (qid) {
+        const { error: clearQidError } = await sb
+          .from("offers")
+          .update({ qogita_offer_qid: null })
+          .eq("qogita_offer_qid", qid);
+        if (clearQidError) return { data: null, error: clearQidError };
+      }
+      return await sb
+        .from("offers")
+        .update(payload)
+        .eq("product_id", productId)
+        .eq("vendor_id", vendorId)
+        .eq("country_code", country)
+        .select("id")
+        .maybeSingle();
+    }
+
+    if (qid && String(insertError.message || insertError.details || "").includes("offers_qogita_offer_qid_key")) {
+      return await sb
+        .from("offers")
+        .update(payload)
+        .eq("qogita_offer_qid", qid)
+        .select("id")
+        .maybeSingle();
+    }
+  }
+
+  return inserted;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   const startTime = Date.now();
@@ -442,6 +545,7 @@ Deno.serve(async (req) => {
   // L'offre catch-all "qogita-best-price" n'est plus enregistrée (cf. branche désactivée plus bas).
   let fetchMultiVendor = true;
   let resyncLogId: string | null = null;
+  let productIds: string[] = [];
   // Keyset pagination cursor (created_at ISO). null → depuis le début.
   // Remplace l'ancien offsetCursor pour éviter les OFFSET O(n²) sur products.
   let afterCreatedAt: string | null = null;
@@ -453,6 +557,9 @@ Deno.serve(async (req) => {
     if (body?.country) targetCountry = body.country;
     // body.multi_vendor ignoré : forcé à true.
     if (body?.resync_log_id) resyncLogId = String(body.resync_log_id);
+    if (Array.isArray(body?.product_ids)) {
+      productIds = body.product_ids.filter((id: unknown): id is string => typeof id === "string" && id.length > 0);
+    }
     if (body?.after_created_at) afterCreatedAt = String(body.after_created_at);
     // Legacy body.offset ignoré (pagination cursor-based).
     if (body?.sync_run_id) syncRunId = String(body.sync_run_id);
@@ -513,7 +620,7 @@ Deno.serve(async (req) => {
     .limit(5);
 
   const staleCutoff = Date.now() - STALE_RUNNING_MS;
-  const existingPartial = (resumableLogs || []).find((log: any) => (
+  const existingPartial = resyncLogId ? undefined : (resumableLogs || []).find((log: any) => (
     log.status === "partial" ||
     (log.status === "running" && new Date(log.started_at).getTime() < staleCutoff)
   ));
@@ -564,7 +671,7 @@ Deno.serve(async (req) => {
   let productsEnriched = 0;
   let offersUpserted = 0;
   try {
-    const result = await syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, startTime, fetchMultiVendor, recordEndpointError, recordProgress, resyncLogId, afterCreatedAt, syncRunId);
+    const result = await syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, startTime, fetchMultiVendor, recordEndpointError, recordProgress, resyncLogId, afterCreatedAt, syncRunId, productIds);
     productsEnriched = result?.products_enriched || 0;
     offersUpserted = result?.offers_upserted || 0;
   } catch (e: any) {
@@ -613,6 +720,7 @@ async function syncOffers(
   resyncLogId: string | null,
   afterCreatedAt: string | null = null,
   syncRunId: string | null = null,
+  productIds: string[] = [],
 ) {
   const executionProfile = getExecutionProfile(fetchMultiVendor);
   const { token, baseUrl } = await getQogitaToken(sb);
@@ -628,10 +736,15 @@ async function syncOffers(
     .select("id, gtin, qogita_qid, qogita_fid, slug, created_at")
     .eq("is_active", true)
     .not("gtin", "is", null)
-    .or(incrementalProductFilter)
     .order("created_at", { ascending: true })
     .order("id", { ascending: true })
     .limit(CHUNK_LIMIT);
+
+  if (productIds.length > 0) {
+    productsQuery = productsQuery.in("id", productIds);
+  } else {
+    productsQuery = productsQuery.or(incrementalProductFilter);
+  }
 
   if (afterCreatedAt) {
     productsQuery = productsQuery.gt("created_at", afterCreatedAt);
@@ -650,6 +763,13 @@ async function syncOffers(
         progress_message: `${country}: aucun produit éligible à synchroniser`,
       })
       .eq("id", logId);
+    if (resyncLogId) {
+      await sb.rpc("finalize_qogita_resync_log", {
+        _id: resyncLogId,
+        _status: "success",
+        _stats: { metadata: { country, multi_vendor: fetchMultiVendor, completed_reason: "no_eligible_products" } },
+      });
+    }
     return { products_enriched: 0, offers_upserted: 0 };
   }
 
@@ -699,7 +819,7 @@ async function syncOffers(
           progress_message: `${country}: pause timeout — ${batchStart}/${total} (reprendra au prochain clic)`,
         })
         .eq("id", logId);
-      scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after });
+      scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after, resync_log_id: resyncLogId, sync_run_id: syncRunId, product_ids: productIds });
       return stats;
     }
 
@@ -735,6 +855,14 @@ async function syncOffers(
         }
       }
 
+      if (resyncLogId) {
+        await recordProgress({
+          products_processed: results.reduce((a, result) => a + (result.status === "fulfilled" ? (result.value?.products_enriched ?? 0) : 0), 0),
+          offers_processed: results.reduce((a, result) => a + (result.status === "fulfilled" ? ((result.value?.offers_upserted ?? 0) + (result.value?.multi_vendor_offers ?? 0)) : 0), 0),
+          offers_updated: results.reduce((a, result) => a + (result.status === "fulfilled" ? ((result.value?.offers_upserted ?? 0) + (result.value?.multi_vendor_offers ?? 0)) : 0), 0),
+        });
+      }
+
       stats.cursor_after = cursorAt(currentChunkEnd);
       if (executionProfile.persistPerChunk) {
         await sb
@@ -760,7 +888,7 @@ async function syncOffers(
             progress_message: `${country}: pause contrôlée — ${currentChunkEnd}/${total} (reprendra automatiquement)`,
           })
           .eq("id", logId);
-        scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after });
+        scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after, resync_log_id: resyncLogId, sync_run_id: syncRunId, product_ids: productIds });
         return stats;
       }
     }
@@ -781,7 +909,7 @@ async function syncOffers(
   }
 
   // Une page pleine (CHUNK_LIMIT) → il reste probablement d'autres produits éligibles.
-  const hasMoreChunks = total >= CHUNK_LIMIT;
+  const hasMoreChunks = productIds.length === 0 && total >= CHUNK_LIMIT;
 
   if (hasMoreChunks) {
     stats.cursor_after = cursorAt(total);
@@ -795,7 +923,7 @@ async function syncOffers(
         progress_message: `${country}: chunk terminé (${total} produits, cursor=${stats.cursor_after}) — relance auto`,
       })
       .eq("id", logId);
-    scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after });
+    scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after, resync_log_id: resyncLogId, sync_run_id: syncRunId, product_ids: productIds });
     return stats;
   }
 
@@ -816,13 +944,12 @@ async function syncOffers(
   // Push aggregate counters & finalize the qogita_resync_logs row (if provided)
   if (resyncLogId) {
     try {
-      await sb.rpc("record_qogita_resync_progress", {
-        _log_id: resyncLogId,
-        _delta: {
-          products_processed: stats.products_enriched || 0,
-          offers_processed: stats.offers_upserted || 0,
-          offers_updated: stats.offers_upserted || 0,
-          tiers_synced: stats.tiers_synced || 0,
+      await sb.rpc("finalize_qogita_resync_log", {
+        _id: resyncLogId,
+        _status: stats.errors > 0 ? "partial" : "success",
+        _stats: {
+          total_errors: stats.errors || 0,
+          metadata: stats,
         },
       });
     } catch (_) { /* never fail the sync because of logging */ }
@@ -1028,33 +1155,27 @@ async function processSingleProduct(
               // --- Price tiers (degressive pricing by MOV threshold) ---
               const rawTiers: any[] = extractRawTiers(offer);
 
-              const { data: upsertedOffer, error: mvErr } = await sb.from("offers").upsert(
-                {
-                  product_id: product.id,
-                  vendor_id: vendorId,
-                  qogita_offer_qid: oQid,
-                  country_code: country,
-                  qogita_base_price: oExclVat,
-                  qogita_base_delay_days: delayDays,
-                  is_qogita_backed: true,
-                  price_excl_vat: oExclVat,
-                  price_incl_vat: oInclVat,
-                  vat_rate: vatRate,
-                  moq: oMoq,
-                  mov: oMov > 0 ? oMov : null,
-                  stock_quantity: oStock,
-                  stock_status: oStock > 0 ? "in_stock" : "out_of_stock",
-                  delivery_days: delayDays,
-                  shipping_from_country: country,
-                  is_active: true,
-                  synced_at: new Date().toISOString(),
-                  ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
-                },
-                // Conflict cible : (product_id, vendor_id, country_code) — contrainte
-                // offers_product_vendor_country_unique. ignoreDuplicates=false ⇒ UPDATE
-                // des champs prix/stock/availability sur conflit (idempotent).
-                { onConflict: "product_id,vendor_id,country_code", ignoreDuplicates: false },
-              ).select("id").maybeSingle();
+              const { data: upsertedOffer, error: mvErr } = await upsertQogitaOffer(sb, {
+                product_id: product.id,
+                vendor_id: vendorId,
+                qogita_offer_qid: oQid,
+                country_code: country,
+                qogita_base_price: oExclVat,
+                qogita_base_delay_days: delayDays,
+                is_qogita_backed: true,
+                price_excl_vat: oExclVat,
+                price_incl_vat: oInclVat,
+                vat_rate: vatRate,
+                moq: oMoq,
+                mov: oMov > 0 ? oMov : null,
+                stock_quantity: oStock,
+                stock_status: oStock > 0 ? "in_stock" : "out_of_stock",
+                delivery_days: delayDays,
+                shipping_from_country: country,
+                is_active: true,
+                synced_at: new Date().toISOString(),
+                ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
+              });
 
               if (mvErr) {
                 const code = (mvErr as any)?.code as string | undefined;

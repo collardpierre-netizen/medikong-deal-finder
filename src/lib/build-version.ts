@@ -327,10 +327,16 @@ async function checkVersion() {
   const autoRefreshDisabled = isAutoRefreshDisabled();
   const atRisk = isAtRiskPath();
   const busy = isUserBusy();
+  // Exclusion supplémentaire : route sensible (formulaires longs,
+  // checkout, onboarding, édition admin…) OU brouillon non sauvegardé
+  // détecté dans le DOM. Dans ces cas on ne recharge JAMAIS
+  // automatiquement, même si la page est "à risque".
+  const sensitive = isSensitivePath() || hasUnsavedDraft();
 
   const canReloadNow =
     !autoRefreshDisabled &&
     atRisk &&
+    !sensitive &&
     !busy &&
     document.visibilityState === "visible" &&
     canAutoReload();
@@ -341,12 +347,11 @@ async function checkVersion() {
   }
 
   // Reload différé :
-  //  - Sur page à risque (admin) : toast + retry auto dans 60 s dès que
-  //    l'utilisateur n'est plus en train d'interagir.
-  //  - Ailleurs : toast uniquement, aucun rechargement automatique
-  //    (l'utilisateur recharge quand il veut via le CTA du toast).
+  //  - Sur page à risque (admin) non sensible : toast + retry auto dans 60 s
+  //    dès que l'utilisateur n'est plus en train d'interagir ni de saisir.
+  //  - Ailleurs / route sensible / brouillon détecté : toast uniquement.
   showNewVersionToast();
-  if (atRisk && !autoRefreshDisabled) {
+  if (atRisk && !sensitive && !autoRefreshDisabled) {
     scheduleDeferredReload();
   }
 }

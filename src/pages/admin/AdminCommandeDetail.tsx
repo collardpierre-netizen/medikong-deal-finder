@@ -278,6 +278,60 @@ const AdminCommandeDetail = () => {
     }
   };
 
+  const saveTracking = async (opts: { notify: boolean; markShipped: boolean }) => {
+    setBusy("TRACKING");
+    try {
+      const patch: Record<string, any> = {
+        tracking_url: trackUrl.trim() || null,
+        tracking_carrier: trackCarrier.trim() || null,
+        tracking_number: trackNumber.trim() || null,
+      };
+      if (opts.markShipped) {
+        patch.status = "shipped";
+        patch.shipped_at = new Date().toISOString();
+      }
+      const { error } = await supabase.from("orders").update(patch).eq("id", id!);
+      if (error) throw error;
+      if (opts.notify) {
+        const { data: notifyRes, error: notifyErr } = await supabase.functions.invoke("notify-order-shipped", {
+          body: { orderId: id, appOrigin: window.location.origin },
+        });
+        if (notifyErr) {
+          toast.warning("Suivi enregistré — email non envoyé : " + (notifyErr.message || "erreur"));
+        } else {
+          toast.success(`Suivi enregistré · email envoyé à ${(notifyRes as any)?.recipient || "l'acheteur"}`);
+        }
+      } else {
+        toast.success("Suivi enregistré");
+      }
+      await queryClient.invalidateQueries({ queryKey: ["admin-order", id] });
+    } catch (e: any) {
+      toast.error(e?.message || "Échec enregistrement suivi");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const saveLineTracking = async (lineId: string) => {
+    setBusy(`LINE-${lineId}`);
+    try {
+      const lt = lineTracks[lineId] || { url: "", number: "" };
+      const { error } = await supabase.from("order_lines").update({
+        tracking_url: lt.url.trim() || null,
+        tracking_number: lt.number.trim() || null,
+      }).eq("id", lineId);
+      if (error) throw error;
+      toast.success("Suivi ligne enregistré");
+      await queryClient.invalidateQueries({ queryKey: ["admin-order", id] });
+    } catch (e: any) {
+      toast.error(e?.message || "Échec suivi ligne");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+
+
 
   return (
     <div>

@@ -24,7 +24,7 @@ function sleep(ms: number) {
 }
 
 function scheduleNextChunk(body: object) {
-  fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sync-qogita-offers-detail`, {
+  const nextChunk = fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sync-qogita-offers-detail`, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
@@ -32,6 +32,9 @@ function scheduleNextChunk(body: object) {
     },
     body: JSON.stringify(body),
   }).catch((e) => console.error("scheduleNextChunk failed:", e.message));
+
+  const edgeRuntime = (globalThis as any).EdgeRuntime;
+  if (edgeRuntime?.waitUntil) edgeRuntime.waitUntil(nextChunk);
 }
 
 // --- Qogita rate limiter (token bucket en mémoire) ---
@@ -828,10 +831,6 @@ async function syncOffers(
         _id: resyncLogId,
         _status: stats.errors > 0 ? "partial" : "success",
         _stats: {
-          products_targeted: stats.products_enriched || 0,
-          offers_processed: (stats.offers_upserted || 0) + (stats.multi_vendor_offers || 0),
-          offers_updated: (stats.offers_upserted || 0) + (stats.multi_vendor_offers || 0),
-          tiers_synced: stats.tiers_synced || 0,
           total_errors: stats.errors || 0,
           metadata: stats,
         },

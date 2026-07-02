@@ -225,13 +225,13 @@ export default function SearchTrivagoCard({ product: p }: Props) {
         return (
           <div className="border-t border-border bg-muted/30">
             {expanded && offersLoading && (
-              <div className="px-5 py-3 space-y-2.5">
+              <div>
                 {Array.from({ length: Math.min(extraCount || 2, 4) }).map((_, i) => (
-                  <div key={`sk-${i}`} className="flex items-center justify-between py-1">
+                  <div key={`sk-${i}`} className="flex items-center justify-between px-5 py-2.5 border-b border-border/60 last:border-b-0">
                     <Skeleton className="h-4 w-28" />
                     <div className="flex items-center gap-3">
                       <Skeleton className="h-4 w-16" />
-                      <Skeleton className="h-8 w-14 rounded-md" />
+                      <Skeleton className="h-7 w-14 rounded-md" />
                     </div>
                   </div>
                 ))}

@@ -1,22 +1,130 @@
+import { PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer, Legend } from "recharts";
+import { Info } from "lucide-react";
 import { VCard } from "@/components/vendor/ui/VCard";
-import { Database } from "lucide-react";
+import { useCurrentVendor } from "@/hooks/useCurrentVendor";
+import { useVendorSalesBreakdowns } from "@/hooks/useVendorSalesBreakdowns";
+import { fmtEur } from "@/lib/format-currency";
+
+const EmptyState = ({ message }: { message: string }) => (
+  <div className="flex flex-col items-center justify-center py-10 text-center">
+    <Info size={28} className="mb-2" style={{ color: "#8B95A5" }} />
+    <p className="text-[13px]" style={{ color: "#8B95A5" }}>{message}</p>
+  </div>
+);
 
 export default function VendorAnalytics() {
+  const { data: vendor } = useCurrentVendor();
+  const { categoryBreakdown, customerTypeBreakdown, isLoading } = useVendorSalesBreakdowns(vendor?.id);
+
+  const totalClients = customerTypeBreakdown.reduce((s, r) => s + r.value, 0);
+  const retail = customerTypeBreakdown.find((r) => r.name === "Retail");
+  const retailCount = retail?.value || 0;
+  const retailPct = totalClients > 0 ? ((retailCount / totalClients) * 100).toFixed(1) : "0";
+
   return (
     <div className="space-y-5">
       <div>
         <h1 className="text-xl font-bold text-[#1D2530]">Analytics</h1>
-        <p className="text-[13px] text-[#616B7C] mt-0.5">Performance et intelligence commerciale</p>
+        <p className="text-[13px] text-[#616B7C] mt-0.5">Répartition de votre CA et de votre portefeuille clients</p>
       </div>
-      <VCard>
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Database size={48} className="text-[#CBD5E1] mb-4" />
-          <h3 className="text-[15px] font-bold text-[#1D2530] mb-2">Aucune donnée disponible</h3>
-          <p className="text-[13px] text-[#8B95A5] max-w-md">
-            Les analytics de votre boutique s'afficheront ici dès que vous aurez des commandes et des offres actives.
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Catégories vendues */}
+        <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+          <h3 className="text-[14px] font-semibold mb-1" style={{ color: "#1D2530" }}>Catégories vendues</h3>
+          <p className="text-[11px] mb-4" style={{ color: "#8B95A5" }}>
+            Répartition CA TTC par catégorie parent (commandes en cours + prévisionnelles)
           </p>
+          {isLoading ? (
+            <EmptyState message="Chargement…" />
+          ) : categoryBreakdown.length > 0 ? (
+            <div style={{ width: "100%", height: 260 }}>
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie
+                    data={categoryBreakdown}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={90}
+                    label={(e: any) => `${e.name} (${((e.percent || 0) * 100).toFixed(1)}%)`}
+                    labelLine={false}
+                  >
+                    {categoryBreakdown.map((d, i) => (
+                      <Cell key={i} fill={d.color} />
+                    ))}
+                  </Pie>
+                  <RTooltip formatter={(v: any) => `${fmtEur(Number(v))} EUR`} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <EmptyState message="Aucune ligne de commande avec catégorie résolue" />
+          )}
         </div>
-      </VCard>
+
+        {/* Clients par typologie */}
+        <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+          <h3 className="text-[14px] font-semibold mb-1" style={{ color: "#1D2530" }}>Clients par typologie</h3>
+          <p className="text-[11px] mb-4" style={{ color: "#8B95A5" }}>
+            Répartition de vos commandes par typologie d'acheteur
+          </p>
+          {totalClients > 0 && (
+            <div className="mb-4 rounded-lg p-3 flex items-center justify-between" style={{ backgroundColor: "#FFF7ED", border: "1px solid #FDBA74" }}>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: "#F97316" }} />
+                <span className="text-[13px] font-semibold" style={{ color: "#7C2D12" }}>Retail</span>
+              </div>
+              <div className="text-right">
+                <span className="text-[16px] font-bold" style={{ color: "#C2410C" }}>{retailCount}</span>
+                <span className="text-[12px] ml-1 font-medium" style={{ color: "#9A3412" }}>({retailPct}%)</span>
+              </div>
+            </div>
+          )}
+          {isLoading ? (
+            <EmptyState message="Chargement…" />
+          ) : customerTypeBreakdown.length > 0 ? (
+            <div style={{ width: "100%", height: 260 }}>
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie
+                    data={customerTypeBreakdown}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={75}
+                    label={(e: any) => `${e.name} ${(e.percent * 100).toFixed(1)}%`}
+                  >
+                    {customerTypeBreakdown.map((d, i) => (
+                      <Cell key={i} fill={d.color} />
+                    ))}
+                  </Pie>
+                  <RTooltip
+                    formatter={(v: any, n: any) => {
+                      const pct = totalClients > 0 ? ((Number(v) / totalClients) * 100).toFixed(1) : "0";
+                      return [`${v} commande${Number(v) > 1 ? "s" : ""} (${pct}%)`, n];
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <EmptyState message="Aucune commande enregistrée" />
+          )}
+        </div>
+      </div>
+
+      {!isLoading && categoryBreakdown.length === 0 && customerTypeBreakdown.length === 0 && (
+        <VCard>
+          <p className="text-[13px] text-[#8B95A5] text-center py-4">
+            Ces graphiques s'alimenteront automatiquement dès vos premières commandes.
+          </p>
+        </VCard>
+      )}
     </div>
   );
 }

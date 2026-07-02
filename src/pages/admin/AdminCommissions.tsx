@@ -11,10 +11,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import AdminTopBar from "@/components/admin/AdminTopBar";
-import { Plus, Pencil, Trash2, Percent, Layers, BarChart3, Split, Star, UserPlus, Building2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Percent, Layers, BarChart3, Split, Star, UserPlus, Building2, TrendingDown, TrendingUp } from "lucide-react";
 import { useCategories, useBrands } from "@/hooks/useAdminData";
 import { VendorsEmbedError } from "@/lib/vendors-embed-error";
 import type { Tables } from "@/integrations/supabase/types";
+
+type TierDraft = {
+  id?: string;
+  min_gmv_eur: number;
+  margin_percentage: number;
+  label: string;
+};
 
 type MarginRule = Tables<"margin_rules">;
 
@@ -23,6 +30,7 @@ export default function AdminCommissions() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<Partial<MarginRule> | null>(null);
+  const [editingTiers, setEditingTiers] = useState<TierDraft[]>([]);
   const [assignVendorId, setAssignVendorId] = useState("");
   const [assignRuleId, setAssignRuleId] = useState("");
 

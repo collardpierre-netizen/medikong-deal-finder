@@ -111,10 +111,14 @@ export function HeroImageGallery() {
             <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/10 to-transparent" />
             <div className="absolute bottom-6 left-6 md:bottom-8 md:left-8 z-10 text-white">
               {showSubtitle && (
-                <p className="text-xs font-medium uppercase tracking-wider opacity-80 mb-1">{translatedSubtitle || fallbackSubtitle}</p>
+                <p className="text-xs font-medium uppercase tracking-wider opacity-80 mb-1">
+                  {translatedSubtitle ? formatHeroInline(translatedSubtitle) : fallbackSubtitle}
+                </p>
               )}
               {showTitle && (
-                <h3 className="text-lg md:text-2xl font-bold leading-tight max-w-sm">{translatedTitle || fallbackTitle}</h3>
+                <h3 className="text-lg md:text-2xl font-bold leading-tight max-w-sm">
+                  {translatedTitle ? formatHeroInline(translatedTitle) : fallbackTitle}
+                </h3>
               )}
               {ctaVisible && (
                 <span className="inline-block mt-3 px-5 py-2 rounded-lg text-sm font-semibold bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors">

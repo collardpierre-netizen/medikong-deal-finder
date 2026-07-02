@@ -742,6 +742,7 @@ async function syncOffers(
   afterCreatedAt: string | null = null,
   syncRunId: string | null = null,
   productIds: string[] = [],
+  fastMode: boolean = false,
 ) {
   const executionProfile = getExecutionProfile(fetchMultiVendor);
   const { token, baseUrl } = await getQogitaToken(sb);
@@ -751,7 +752,6 @@ async function syncOffers(
   const incrementalProductFilter = "offer_count.gt.0,synced_at.is.null,qogita_qid.is.null";
 
   // Keyset pagination : fetch next 1000 products after cursor.
-  // Remplace COUNT + range(offset, offset+999) qui saturaient la DB (O(n²) OFFSET).
   let productsQuery = sb
     .from("products")
     .select("id, gtin, qogita_qid, qogita_fid, slug, created_at")
@@ -763,8 +763,17 @@ async function syncOffers(
 
   if (productIds.length > 0) {
     productsQuery = productsQuery.in("id", productIds);
+  } else if (fastMode) {
+    // Fast mode without explicit ids : never happens (enqueue always passes ids),
+    // but guard anyway — require fid+slug so we can hit /offers/ directly.
+    productsQuery = productsQuery.not("qogita_fid", "is", null).not("slug", "is", null);
   } else {
     productsQuery = productsQuery.or(incrementalProductFilter);
+  }
+
+  if (fastMode) {
+    // Fast mode still needs fid+slug regardless of product_ids.
+    productsQuery = productsQuery.not("qogita_fid", "is", null).not("slug", "is", null);
   }
 
   if (afterCreatedAt) {

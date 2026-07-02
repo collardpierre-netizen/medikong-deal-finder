@@ -132,6 +132,11 @@ export function resetReloadAttempts() {
   try {
     window.sessionStorage.removeItem(GLOBAL_RELOAD_COUNTER_KEY);
     window.sessionStorage.removeItem(GLOBAL_RELOAD_LAST_AT_KEY);
+    window.sessionStorage.removeItem(CACHE_BUST_RELOAD_COUNTER_KEY);
+    for (let i = window.sessionStorage.length - 1; i >= 0; i--) {
+      const key = window.sessionStorage.key(i);
+      if (key?.startsWith(CACHE_BUST_TOKEN_PREFIX)) window.sessionStorage.removeItem(key);
+    }
   } catch {
     /* ignore */
   }
@@ -302,7 +307,7 @@ export function lazyWithRetry<T extends ComponentType<any>>(
         }
         if (!alreadyRetried && canAutoReload()) {
           window.sessionStorage.setItem(retryKey, "1");
-          if (safeCacheBustReload()) {
+          if (safeAutoReload()) {
             return new Promise<never>(() => undefined);
           }
         }

@@ -23155,6 +23155,164 @@ export type Database = {
           },
         ]
       }
+      vendor_competitor_alerts_anon_v: {
+        Row: {
+          competitor_display_code: string | null
+          competitor_price: number | null
+          country_code: string | null
+          created_at: string | null
+          current_rank: number | null
+          gap_amount: number | null
+          gap_percentage: number | null
+          id: string | null
+          my_offer_id: string | null
+          my_price: number | null
+          previous_rank: number | null
+          product_id: string | null
+          read_at: string | null
+          resolved_at: string | null
+          status: string | null
+          suggested_price: number | null
+          total_competitors: number | null
+          updated_at: string | null
+          vendor_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_competitor_alerts_my_offer_id_fkey"
+            columns: ["my_offer_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["mk_best_offer_id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_my_offer_id_fkey"
+            columns: ["my_offer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_offer_prices_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_my_offer_id_fkey"
+            columns: ["my_offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_my_offer_id_fkey"
+            columns: ["my_offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_public_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_my_offer_id_fkey"
+            columns: ["my_offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_with_exclusivity_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_my_offer_id_fkey"
+            columns: ["my_offer_id"]
+            isOneToOne: false
+            referencedRelation: "public_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_market_intel_status_v: {
         Row: {
           billing_method:

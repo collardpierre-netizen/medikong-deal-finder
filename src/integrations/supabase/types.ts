@@ -26352,6 +26352,26 @@ export type Database = {
         Args: { _version_id: string }
         Returns: string
       }
+      vendor_gmv_filters_self_test: {
+        Args: never
+        Returns: {
+          actual: number
+          details: string
+          expected: number
+          ok: boolean
+          scenario: string
+        }[]
+      }
+      vendor_gmv_filters_self_test_admin: {
+        Args: never
+        Returns: {
+          actual: number
+          details: string
+          expected: number
+          ok: boolean
+          scenario: string
+        }[]
+      }
       vendor_has_accepted_current_guarantee: {
         Args: { _vendor_id: string }
         Returns: boolean

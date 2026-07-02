@@ -351,7 +351,7 @@ export default function VendorPublicPage() {
       const from = (pageParam as number) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
       let q = supabase
-        .from("offers")
+        .from("offers_public_v" as any)
         .select(
           needsInnerJoin
             ? "*, products!inner(id, slug, name, brand_name, brand_id, image_urls, category_name, category_id, brands(slug))"

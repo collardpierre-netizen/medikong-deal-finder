@@ -66,6 +66,11 @@ async function checkVersion() {
 
   markStale();
 
+  // Nouveau déploiement détecté : purge immédiatement les caches admin
+  // en mémoire (chiffres/KPIs) pour ne jamais servir des valeurs calculées
+  // par l'ancien backend, même si le reload est différé ci-dessous.
+  bustAdminQueryCache();
+
   // If the user is mid-typing in a form, don't yank the page from under them.
   const active = document.activeElement;
   const isEditing =

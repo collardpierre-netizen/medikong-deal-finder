@@ -24,6 +24,20 @@ interface StepConfig {
 }
 
 function getPipelineSteps(country: string, mode: string): StepConfig[] {
+  if (mode === "fast_tier_refresh") {
+    return [
+      {
+        name: "offers_fast_refresh",
+        label: "Refresh rapide offres (prix/stock/paliers)",
+        functionName: "sync-qogita-offers-detail",
+        params: { country, mode: "fast" },
+        required: true,
+        loopBatch: true,
+        batchSize: 100,
+      },
+    ];
+  }
+
   if (mode === "daily_stale_refresh") {
     return [
       {
@@ -424,6 +438,40 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 200,
         });
+      }
+
+      resyncLogId = String(queued.log_id);
+      for (const step of STEPS) {
+        if (step.functionName === "sync-qogita-offers-detail") {
+          step.params = {
+            ...step.params,
+            product_ids: Array.isArray(queued.product_ids) ? queued.product_ids : [],
+          };
+        }
+      }
+    }
+
+    if (mode === "fast_tier_refresh") {
+      const tier = String(body.tier ?? "A").toUpperCase();
+      if (!["A", "B", "C"].includes(tier)) {
+        return new Response(JSON.stringify({ error: `invalid tier: ${tier}` }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const maxAgeHours = Math.min(Math.max(Number(body.maxAgeHours ?? 2), 1), 24 * 30);
+      const { data: enqueueResult, error: enqueueError } = await supabase.rpc(
+        "enqueue_qogita_fast_refresh_batch",
+        { _tier: tier, _batch_size: batchSize, _max_age_hours: maxAgeHours },
+      );
+      if (enqueueError) throw enqueueError;
+
+      const queued = enqueueResult as any;
+      if (queued?.rate_limited || Number(queued?.enqueued ?? 0) <= 0 || !queued?.log_id) {
+        return new Response(JSON.stringify({
+          success: true, runId: null,
+          status: queued?.rate_limited ? "rate_limited" : "nothing_to_sync",
+          tier, enqueue: queued,
+        }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
       }
 
       resyncLogId = String(queued.log_id);

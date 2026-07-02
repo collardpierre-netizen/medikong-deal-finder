@@ -9946,6 +9946,7 @@ export type Database = {
           qogita_fid: string | null
           qogita_qid: string | null
           qogita_slug: string | null
+          qogita_sync_tier: string
           reference_price: number | null
           seller_count: number | null
           shipping_from: string[] | null
@@ -10039,6 +10040,7 @@ export type Database = {
           qogita_fid?: string | null
           qogita_qid?: string | null
           qogita_slug?: string | null
+          qogita_sync_tier?: string
           reference_price?: number | null
           seller_count?: number | null
           shipping_from?: string[] | null
@@ -10132,6 +10134,7 @@ export type Database = {
           qogita_fid?: string | null
           qogita_qid?: string | null
           qogita_slug?: string | null
+          qogita_sync_tier?: string
           reference_price?: number | null
           seller_count?: number | null
           shipping_from?: string[] | null
@@ -24187,6 +24190,10 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      enqueue_qogita_fast_refresh_batch: {
+        Args: { _batch_size?: number; _max_age_hours?: number; _tier?: string }
+        Returns: Json
+      }
       enqueue_qogita_resync_batch: {
         Args: {
           _batch_size?: number
@@ -24937,6 +24944,7 @@ export type Database = {
         Args: { _buyer_id: string }
         Returns: undefined
       }
+      recompute_qogita_sync_tiers: { Args: never; Returns: Json }
       recompute_quote_totals: {
         Args: { _quote_id: string }
         Returns: undefined

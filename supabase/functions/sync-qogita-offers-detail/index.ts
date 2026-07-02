@@ -568,22 +568,22 @@ Deno.serve(async (req) => {
   let resyncLogId: string | null = null;
   let productIds: string[] = [];
   // Keyset pagination cursor (created_at ISO). null → depuis le début.
-  // Remplace l'ancien offsetCursor pour éviter les OFFSET O(n²) sur products.
   let afterCreatedAt: string | null = null;
-  // Sweep A : run id provided by run-sync-pipeline at full-run start.
-  // Stamped on every offer / vendor upsert so qogita_reconcile can detect leftovers.
   let syncRunId: string | null = null;
+  // fast mode : skip /variants/ endpoint, only call /variants/{fid}/{slug}/offers/
+  // to refresh price/stock/tiers of existing multi-vendor offers. Requires
+  // products with cached qogita_fid + slug (already enriched once).
+  let fastMode = false;
   try {
     const body = await req.json();
     if (body?.country) targetCountry = body.country;
-    // body.multi_vendor ignoré : forcé à true.
     if (body?.resync_log_id) resyncLogId = String(body.resync_log_id);
     if (Array.isArray(body?.product_ids)) {
       productIds = body.product_ids.filter((id: unknown): id is string => typeof id === "string" && id.length > 0);
     }
     if (body?.after_created_at) afterCreatedAt = String(body.after_created_at);
-    // Legacy body.offset ignoré (pagination cursor-based).
     if (body?.sync_run_id) syncRunId = String(body.sync_run_id);
+    if (body?.mode === "fast" || body?.fast_mode === true) fastMode = true;
   } catch {
     // no-op
   }
@@ -692,7 +692,7 @@ Deno.serve(async (req) => {
   let productsEnriched = 0;
   let offersUpserted = 0;
   try {
-    const result = await syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, startTime, fetchMultiVendor, recordEndpointError, recordProgress, resyncLogId, afterCreatedAt, syncRunId, productIds);
+    const result = await syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, startTime, fetchMultiVendor, recordEndpointError, recordProgress, resyncLogId, afterCreatedAt, syncRunId, productIds, fastMode);
     productsEnriched = result?.products_enriched || 0;
     offersUpserted = result?.offers_upserted || 0;
   } catch (e: any) {
@@ -742,6 +742,7 @@ async function syncOffers(
   afterCreatedAt: string | null = null,
   syncRunId: string | null = null,
   productIds: string[] = [],
+  fastMode: boolean = false,
 ) {
   const executionProfile = getExecutionProfile(fetchMultiVendor);
   const { token, baseUrl } = await getQogitaToken(sb);
@@ -751,7 +752,6 @@ async function syncOffers(
   const incrementalProductFilter = "offer_count.gt.0,synced_at.is.null,qogita_qid.is.null";
 
   // Keyset pagination : fetch next 1000 products after cursor.
-  // Remplace COUNT + range(offset, offset+999) qui saturaient la DB (O(n²) OFFSET).
   let productsQuery = sb
     .from("products")
     .select("id, gtin, qogita_qid, qogita_fid, slug, created_at")
@@ -763,8 +763,17 @@ async function syncOffers(
 
   if (productIds.length > 0) {
     productsQuery = productsQuery.in("id", productIds);
+  } else if (fastMode) {
+    // Fast mode without explicit ids : never happens (enqueue always passes ids),
+    // but guard anyway — require fid+slug so we can hit /offers/ directly.
+    productsQuery = productsQuery.not("qogita_fid", "is", null).not("slug", "is", null);
   } else {
     productsQuery = productsQuery.or(incrementalProductFilter);
+  }
+
+  if (fastMode) {
+    // Fast mode still needs fid+slug regardless of product_ids.
+    productsQuery = productsQuery.not("qogita_fid", "is", null).not("slug", "is", null);
   }
 
   if (afterCreatedAt) {
@@ -858,7 +867,7 @@ async function syncOffers(
       const currentChunkEnd = Math.min(batchStart + (chunkIndex + 1) * executionProfile.parallelConcurrency, batchEnd);
       const results = await Promise.allSettled(
         chunk.map((p: any) =>
-          processSingleProduct(sb, p, baseUrl, token, country, vatRate, vatMultiplier, bestPriceVendorId, fetchMultiVendor, stats, recordEndpointError, recordProgress, syncRunId)
+          processSingleProduct(sb, p, baseUrl, token, country, vatRate, vatMultiplier, bestPriceVendorId, fetchMultiVendor, stats, recordEndpointError, recordProgress, syncRunId, fastMode)
         )
       );
 
@@ -983,6 +992,117 @@ async function syncOffers(
   return stats;
 }
 
+/**
+ * FAST refresh : call ONLY /variants/{fid}/{slug}/offers/ and update existing
+ * multi-vendor offers with fresh price/stock/tiers. Skips the heavy
+ * /variants/{gtin}/ enrichment call. Costs 1 API call per product instead of 2.
+ */
+async function refreshOffersOnly(
+  sb: any,
+  product: any,
+  baseUrl: string,
+  token: string,
+  country: string,
+  vatRate: number,
+  vatMultiplier: number,
+  parentStats: any,
+  localStats: any,
+  recordEndpointError: ((endpoint: string, status: number | null, message: string) => Promise<void>) | undefined,
+  syncRunId: string | null,
+): Promise<void> {
+  try {
+    const offersUrl = `${baseUrl}/variants/${product.qogita_fid}/${product.slug}/offers/`;
+    const offersRes = await fetchWithRetry(offersUrl, token);
+
+    if (!offersRes.ok) {
+      if (offersRes.status === 429) localStats.rate_limited++;
+      else if (offersRes.status !== 404) localStats.errors++;
+      if (offersRes.status !== 404 && recordEndpointError) {
+        await recordEndpointError(`/variants/{fid}/{slug}/offers/ [fast]`, offersRes.status,
+          `gtin=${product.gtin} fid=${product.qogita_fid}`);
+      }
+      return;
+    }
+
+    const offersData = await offersRes.json();
+    const offersArr = offersData?.offers || (Array.isArray(offersData) ? offersData : []);
+
+    for (const offer of offersArr) {
+      const sellerCode = offer.seller || offer.sellerCode;
+      if (!sellerCode) continue;
+
+      const vendorId = await resolveVendor(sb, sellerCode, country, syncRunId);
+      if (!vendorId) continue;
+
+      const offerPrice = parseFloat(String(offer.price ?? "0")) || 0;
+      if (offerPrice <= 0) continue;
+
+      const oExclVat = offerPrice;
+      const oInclVat = Math.round(oExclVat * vatMultiplier * 100) / 100;
+      const oMov = parseFloat(String(offer.mov ?? "0")) || 0;
+      const oStock = parseInt(String(offer.inventory ?? "0"), 10) || 0;
+      const oQid = offer.qid || `${sellerCode}-${product.gtin}-${country}`;
+      const delayDays = parseDeliveryDays(offer.delay);
+
+      const bundleRaw =
+        offer.bundleSize ?? offer.bundle_size ??
+        offer.minOrderQuantity ?? offer.moq ??
+        offer.minimumOrderQuantity ?? 1;
+      const oMoq = Math.max(1, parseInt(String(bundleRaw), 10) || 1);
+      const rawTiers = extractRawTiers(offer);
+
+      const { data: upsertedOffer, error: mvErr } = await upsertQogitaOffer(sb, {
+        product_id: product.id,
+        vendor_id: vendorId,
+        qogita_offer_qid: oQid,
+        country_code: country,
+        qogita_base_price: oExclVat,
+        qogita_base_delay_days: delayDays,
+        is_qogita_backed: true,
+        price_excl_vat: oExclVat,
+        price_incl_vat: oInclVat,
+        vat_rate: vatRate,
+        moq: oMoq,
+        mov: oMov > 0 ? oMov : null,
+        stock_quantity: oStock,
+        stock_status: oStock > 0 ? "in_stock" : "out_of_stock",
+        delivery_days: delayDays,
+        shipping_from_country: country,
+        is_active: true,
+        synced_at: new Date().toISOString(),
+        ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
+      });
+
+      if (mvErr) {
+        console.warn(formatDbError("qogita.fast_refresh.upsert", mvErr, {
+          product_id: product.id, gtin: product.gtin, seller: sellerCode,
+          country, vendor_id: vendorId, offer_qid: oQid,
+        }));
+        continue;
+      }
+
+      localStats.multi_vendor_offers++;
+
+      if (upsertedOffer?.id) {
+        try {
+          const inserted = await syncOfferTiers(
+            sb, upsertedOffer.id, oExclVat, oMov, oMoq, vatMultiplier, rawTiers,
+            { gtin: product.gtin, country, vendor: sellerCode, parentStats },
+          );
+          if (inserted > 0) {
+            parentStats.tiers_synced = (parentStats.tiers_synced || 0) + inserted;
+          }
+        } catch (tErr: any) {
+          console.error(`[qogita.fast.tiers] error offer=${upsertedOffer.id}: ${tErr.message}`);
+        }
+      }
+    }
+  } catch (e: any) {
+    localStats.errors++;
+    console.error(`[qogita.fast_refresh] product ${product.id} (${product.gtin}): ${e.message}`);
+  }
+}
+
 /** Process a single product (called in parallel across PARALLEL_CONCURRENCY) */
 async function processSingleProduct(
   sb: any,
@@ -998,6 +1118,7 @@ async function processSingleProduct(
   recordEndpointError?: (endpoint: string, status: number | null, message: string) => Promise<void>,
   recordProgress?: (delta: Record<string, number>) => Promise<void>,
   syncRunId: string | null = null,
+  fastMode: boolean = false,
 ) {
   const localStats = {
     products_enriched: 0,
@@ -1009,6 +1130,24 @@ async function processSingleProduct(
   };
 
     try {
+      // FAST MODE : skip /variants/{gtin}/ (heavy). Use cached fid+slug from DB
+      // and go straight to /variants/{fid}/{slug}/offers/ to refresh price/stock/tiers
+      // of already-known multi-vendor offers. Products without fid+slug are excluded
+      // by the query, so this branch is safe.
+      if (fastMode && product.qogita_fid && product.slug) {
+        await refreshOffersOnly(
+          sb, product, baseUrl, token, country, vatRate, vatMultiplier,
+          parentStats, localStats, recordEndpointError, syncRunId,
+        );
+        // Stamp synced_at so tier scheduler doesn't re-pick this product immediately.
+        await sb.from("products").update({
+          synced_at: new Date().toISOString(),
+          ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
+        }).eq("id", product.id);
+        localStats.products_enriched++;
+        return localStats;
+      }
+
       const res = await fetchVariantWithRetry(baseUrl, token, product.gtin, product.qogita_qid, country);
 
       if (!res.ok) {

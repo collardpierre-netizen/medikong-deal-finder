@@ -178,6 +178,8 @@ export function resetReloadAttempts() {
     window.sessionStorage.removeItem(GLOBAL_RELOAD_COUNTER_KEY);
     window.sessionStorage.removeItem(GLOBAL_RELOAD_LAST_AT_KEY);
     window.sessionStorage.removeItem(CACHE_BUST_RELOAD_COUNTER_KEY);
+    window.sessionStorage.removeItem(TRANSIENT_CHUNK_RELOAD_COUNTER_KEY);
+    window.sessionStorage.removeItem("medikong:transient-chunk-url");
     for (let i = window.sessionStorage.length - 1; i >= 0; i--) {
       const key = window.sessionStorage.key(i);
       if (key?.startsWith(CACHE_BUST_TOKEN_PREFIX)) window.sessionStorage.removeItem(key);

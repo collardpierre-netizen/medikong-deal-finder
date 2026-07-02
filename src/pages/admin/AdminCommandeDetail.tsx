@@ -516,10 +516,11 @@ const AdminCommandeDetail = () => {
                             <Truck size={12} /> Suivi ligne :
                           </div>
                           <Input
-                            className="h-8 text-xs flex-1 min-w-[200px]"
-                            placeholder="URL de suivi (externe)"
+                            className={`h-8 text-xs flex-1 min-w-[200px] ${ltUrlErr ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                            placeholder="https://..."
                             value={lt.url}
                             onChange={(e) => setLineTracks((m) => ({ ...m, [l.id]: { ...lt, url: e.target.value } }))}
+                            aria-invalid={!!ltUrlErr}
                           />
                           <Input
                             className="h-8 text-xs w-44"

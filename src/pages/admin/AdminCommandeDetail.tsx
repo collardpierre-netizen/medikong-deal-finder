@@ -538,11 +538,12 @@ const AdminCommandeDetail = () => {
                           >
                             {busy === `LINE-${l.id}` ? "…" : "Enregistrer"}
                           </Button>
-                          {(lt.url || "").trim() && (
+                          {(lt.url || "").trim() && !ltUrlErr && (
                             <a href={lt.url.trim()} target="_blank" rel="noreferrer" className="text-[11px] text-mk-blue hover:underline inline-flex items-center gap-1">
                               <ExternalLink size={11} /> Ouvrir
                             </a>
                           )}
+                          {ltUrlErr && <span className="text-[11px] text-red-600 w-full">{ltUrlErr}</span>}
                         </div>
                       </td>
                     </tr>

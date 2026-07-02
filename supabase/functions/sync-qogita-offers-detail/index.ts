@@ -204,7 +204,9 @@ async function fetchWithRetry(
 
     if (res.status === 429 && attempt < MAX_RETRIES_429) {
       const retryAfter = parseInt(res.headers.get("Retry-After") || "5");
-      await sleep(retryAfter * 1000);
+      const waitMs = trip429Cooldown(retryAfter, attempt);
+      console.warn(`[qogita] 429 on ${url} — cooldown ${waitMs}ms (attempt ${attempt + 1}/${MAX_RETRIES_429})`);
+      await sleep(waitMs);
       continue;
     }
     return res;

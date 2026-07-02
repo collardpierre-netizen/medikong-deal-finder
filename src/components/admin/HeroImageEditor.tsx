@@ -250,20 +250,29 @@ export default function HeroImageEditor({ img }: Props) {
                 className="scale-75 origin-left"
               />
               <span className={`text-[9px] font-medium normal-case tracking-normal ${showCta ? "text-emerald-700" : "text-[#8B95A5]"}`}>
-                {showCta ? "Affiché" : "Masqué"}
+                {showCta ? "Affiché" : "Bouton masqué"}
               </span>
             </label>
           </div>
-          <div className={`grid grid-cols-2 gap-2 ${!showCta ? "opacity-50" : ""}`}>
-            <Field label="Label CTA" value={cta} onChange={setCta} placeholder="Découvrir →" max={LIMITS.cta} error={errors.cta_text} disabled={!showCta} />
+          <div className="grid grid-cols-2 gap-2">
+            <div className={!showCta ? "opacity-50" : ""}>
+              <Field label="Label CTA" value={cta} onChange={setCta} placeholder="Découvrir →" max={LIMITS.cta} error={errors.cta_text} disabled={!showCta} />
+            </div>
             <Field
-              label="URL CTA" value={link} onChange={setLink} placeholder="/promotions ou https://…"
+              label={showCta ? "URL CTA" : "URL du lien image"}
+              value={link} onChange={setLink} placeholder="/promotions ou https://…"
               max={LIMITS.url} error={errors.link_url}
-              hint={link.trim() && !errors.link_url ? (isInternalLink ? "Lien interne" : "Lien externe (nouvel onglet)") : undefined}
-              disabled={!showCta}
+              hint={
+                link.trim() && !errors.link_url
+                  ? (showCta
+                      ? (isInternalLink ? "Lien interne" : "Lien externe (nouvel onglet)")
+                      : (isInternalLink ? "Image entière cliquable · lien interne" : "Image entière cliquable · nouvel onglet"))
+                  : (!showCta ? "Facultatif — rend l'image entière cliquable" : undefined)
+              }
             />
           </div>
         </div>
+
 
         {/* Image mobile dédiée */}
         <div className="rounded-md border border-gray-200 bg-gray-50/60 p-2 space-y-1.5">

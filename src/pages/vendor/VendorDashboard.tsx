@@ -85,6 +85,11 @@ export default function VendorDashboard() {
     useVendorReconciliation(vendor?.id, period);
   const { data: gmvProgress } = useVendorGmvProgress(vendor?.id);
   const { formatMoney } = useMoneyFormat();
+  const consistencyReport = useMemo(
+    () => checkVendorTotalsConsistency(monthly, reconciliation),
+    [monthly, reconciliation],
+  );
+
 
   const isApproved = vendor?.validation_status === "approved";
   const shippingMode = (vendor as any)?.vendor_shipping_mode ?? "no_shipping";

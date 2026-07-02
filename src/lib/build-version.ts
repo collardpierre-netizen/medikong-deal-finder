@@ -398,8 +398,10 @@ function scheduleDeferredReload() {
     deferredReloadTimer = null;
     if (isAutoRefreshDisabled()) return;
     // Si l'utilisateur a navigué hors d'une page à risque entre-temps,
-    // on n'insiste pas : rechargement seulement là où c'est nécessaire.
+    // ou qu'il a ouvert un formulaire / démarré un brouillon, on n'insiste
+    // pas : rechargement seulement là où c'est nécessaire et sûr.
     if (!isAtRiskPath()) return;
+    if (isSensitivePath() || hasUnsavedDraft()) return;
     if (
       !isUserBusy() &&
       document.visibilityState === "visible" &&

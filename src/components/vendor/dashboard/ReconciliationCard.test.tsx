@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, within, fireEvent } from "@testing-library/react";
+
 import ReconciliationCard from "@/components/vendor/dashboard/ReconciliationCard";
 import type { VendorReconciliation } from "@/hooks/useVendorReconciliation";
 
@@ -19,7 +20,19 @@ const data: VendorReconciliation = {
   excludedRevenueExclVatCents: 500,
   excludedGmvInclVatCents: 605,
   vatCents: 2_100,
+  ordersByStatus: {
+    paid: [
+      { orderId: "o-1", orderNumber: "MK-1001", createdAt: "2026-06-15T10:00:00Z", revenueExclVatCents: 8_000, gmvInclVatCents: 9_680, linesCount: 2 },
+    ],
+    shipped: [
+      { orderId: "o-2", orderNumber: "MK-1002", createdAt: "2026-06-20T10:00:00Z", revenueExclVatCents: 2_000, gmvInclVatCents: 2_420, linesCount: 1 },
+    ],
+    cancelled: [
+      { orderId: "o-3", orderNumber: "MK-1003", createdAt: "2026-06-22T10:00:00Z", revenueExclVatCents: 500, gmvInclVatCents: 605, linesCount: 1 },
+    ],
+  },
 };
+
 
 describe("ReconciliationCard · totaux et formule GMV − CA", () => {
   it("affiche le total inclus (CA HTVA et GMV TTC) tels que fournis par la source", () => {
@@ -77,6 +90,8 @@ describe("ReconciliationCard · totaux et formule GMV − CA", () => {
           excludedRevenueExclVatCents: 0,
           excludedGmvInclVatCents: 0,
           vatCents: 0,
+          ordersByStatus: {},
+
         }}
         loading={false}
         periodLabel="Ce mois"
@@ -100,3 +115,46 @@ describe("ReconciliationCard · cohérence arithmétique des totaux", () => {
     );
   });
 });
+
+describe("ReconciliationCard · drill-down par statut", () => {
+  it("cliquer sur une ligne de statut affiche les commandes qui la composent", () => {
+    render(<ReconciliationCard data={data} loading={false} periodLabel="Ce mois" />);
+    // Ligne masquée par défaut
+    expect(screen.queryByText("MK-1001")).not.toBeInTheDocument();
+
+    const paidRow = screen.getByText("Payée").closest("tr")!;
+    fireEvent.click(paidRow);
+
+    expect(screen.getByText("MK-1001")).toBeInTheDocument();
+    expect(paidRow).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("un second clic replie le détail", () => {
+    render(<ReconciliationCard data={data} loading={false} periodLabel="Ce mois" />);
+    const paidRow = screen.getByText("Payée").closest("tr")!;
+    fireEvent.click(paidRow);
+    expect(screen.getByText("MK-1001")).toBeInTheDocument();
+    fireEvent.click(paidRow);
+    expect(screen.queryByText("MK-1001")).not.toBeInTheDocument();
+  });
+
+  it("le détail affiche les mêmes montants CA/GMV que la ligne agrégée + la TVA correspondante", () => {
+    render(<ReconciliationCard data={data} loading={false} periodLabel="Ce mois" />);
+    fireEvent.click(screen.getByText("Payée").closest("tr")!);
+    const detailRow = screen.getByText("MK-1001").closest("tr")!;
+    // 8 000 c → 80 €, 9 680 c → 96,80 €, TVA = 16,80 €
+    expect(within(detailRow).getByText(/80,00/)).toBeInTheDocument();
+    expect(within(detailRow).getByText(/96,80/)).toBeInTheDocument();
+    expect(within(detailRow).getByText(/16,80/)).toBeInTheDocument();
+  });
+
+  it("ouvrir un autre statut referme le précédent (single-expand)", () => {
+    render(<ReconciliationCard data={data} loading={false} periodLabel="Ce mois" />);
+    fireEvent.click(screen.getByText("Payée").closest("tr")!);
+    expect(screen.getByText("MK-1001")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Expédiée").closest("tr")!);
+    expect(screen.queryByText("MK-1001")).not.toBeInTheDocument();
+    expect(screen.getByText("MK-1002")).toBeInTheDocument();
+  });
+});
+

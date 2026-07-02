@@ -31,6 +31,15 @@ export interface StatusReconciliationRow {
   ordersCount: number;
 }
 
+export interface ReconciliationOrder {
+  orderId: string;
+  orderNumber: string | null;
+  createdAt: string | null;
+  revenueExclVatCents: number;
+  gmvInclVatCents: number;
+  linesCount: number;
+}
+
 export interface VendorReconciliation {
   rows: StatusReconciliationRow[];
   includedRevenueExclVatCents: number;
@@ -38,7 +47,14 @@ export interface VendorReconciliation {
   excludedRevenueExclVatCents: number;
   excludedGmvInclVatCents: number;
   vatCents: number; // GMV inclus - CA inclus
+  /**
+   * Détail des commandes par statut, trié par GMV décroissant.
+   * Alimente le drill-down « cliquer sur une ligne » du composant
+   * ReconciliationCard.
+   */
+  ordersByStatus: Record<string, ReconciliationOrder[]>;
 }
+
 
 export function useVendorReconciliation(
   vendorId: string | undefined,
@@ -61,7 +77,7 @@ export function useVendorReconciliation(
         .from("order_lines")
         .select(
           `line_total_incl_vat, line_total_excl_vat,
-           orders!inner ( ${VENDOR_GMV_ORDER_COLUMNS} )`,
+           orders!inner ( ${VENDOR_GMV_ORDER_COLUMNS}, order_number )`,
         )
         .eq("vendor_id", vendorId!)
         .eq("orders.is_forecast", false)
@@ -75,6 +91,8 @@ export function useVendorReconciliation(
         string,
         { excl: number; incl: number; orderIds: Set<string> }
       >();
+      // Détail par (statut, order_id) pour alimenter le drill-down.
+      const perStatusOrders = new Map<string, Map<string, ReconciliationOrder>>();
 
       for (const l of (data ?? []) as any[]) {
         const o = l.orders;
@@ -83,17 +101,41 @@ export function useVendorReconciliation(
         const cur =
           perStatus.get(status) ??
           { excl: 0, incl: 0, orderIds: new Set<string>() };
-        cur.excl += toCents(l.line_total_excl_vat);
-        cur.incl += toCents(l.line_total_incl_vat);
+        const excl = toCents(l.line_total_excl_vat);
+        const incl = toCents(l.line_total_incl_vat);
+        cur.excl += excl;
+        cur.incl += incl;
         if (o.id) cur.orderIds.add(o.id);
         perStatus.set(status, cur);
+
+        if (o.id) {
+          let bucket = perStatusOrders.get(status);
+          if (!bucket) {
+            bucket = new Map<string, ReconciliationOrder>();
+            perStatusOrders.set(status, bucket);
+          }
+          const existing = bucket.get(o.id);
+          if (existing) {
+            existing.revenueExclVatCents += excl;
+            existing.gmvInclVatCents += incl;
+            existing.linesCount += 1;
+          } else {
+            bucket.set(o.id, {
+              orderId: o.id,
+              orderNumber: o.order_number ?? null,
+              createdAt: o.created_at ?? null,
+              revenueExclVatCents: excl,
+              gmvInclVatCents: incl,
+              linesCount: 1,
+            });
+          }
+        }
       }
 
       const rows: StatusReconciliationRow[] = Array.from(perStatus.entries())
         .map(([status, v]) => ({
           status,
           included: isBillableStatus(status),
-
           revenueExclVatCents: v.excl,
           gmvInclVatCents: v.incl,
           ordersCount: v.orderIds.size,
@@ -117,6 +159,13 @@ export function useVendorReconciliation(
         }
       }
 
+      const ordersByStatus: Record<string, ReconciliationOrder[]> = {};
+      for (const [status, bucket] of perStatusOrders.entries()) {
+        ordersByStatus[status] = Array.from(bucket.values()).sort(
+          (a, b) => b.gmvInclVatCents - a.gmvInclVatCents,
+        );
+      }
+
       return {
         rows,
         includedRevenueExclVatCents,
@@ -124,7 +173,9 @@ export function useVendorReconciliation(
         excludedRevenueExclVatCents,
         excludedGmvInclVatCents,
         vatCents: includedGmvInclVatCents - includedRevenueExclVatCents,
+        ordersByStatus,
       };
     },
   });
 }
+

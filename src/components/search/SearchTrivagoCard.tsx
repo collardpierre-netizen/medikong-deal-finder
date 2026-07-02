@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ImageOff, Eye } from "lucide-react";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
 import { Heart, Check, ChevronDown, ChevronUp, Package, Truck, RotateCcw, ArrowRight, AlertCircle } from "lucide-react";
@@ -49,6 +49,22 @@ export default function SearchTrivagoCard({ product: p }: Props) {
     refetch: refetchOffers,
   } = useProductOffers(expanded || prefetch || !hasContext ? p.id : undefined);
 
+  const cardRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (prefetch || prefetchedProductIds.has(p.id)) return;
+    if (!cardRef.current) return;
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          prefetchedProductIds.add(p.id);
+          setPrefetch(true);
+          observer.disconnect();
+        }
+      });
+    }, { threshold: 0 });
+    observer.observe(cardRef.current);
+    return () => observer.disconnect();
+  }, [prefetch, p.id]);
 
   // Best offer : on privilégie le batch (1 round-trip), sinon le fetch détaillé.
   const bestOffer = hasContext
@@ -76,7 +92,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
   const hasOffer = (offerCount > 0 || (p.sellers || 0) > 0) && price > 0;
 
   return (
-    <div className="bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-border">
+    <div ref={cardRef} className="bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-border">
       {/* Main 3-zone row */}
       <div className="flex flex-col md:flex-row">
         {/* ZONE 1 — Image */}

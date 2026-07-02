@@ -17,6 +17,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import { isAutoRefreshDisabled, setAutoRefreshDisabled } from "@/lib/auto-refresh-preference";
 
 const tabs = [
   { key: "profil", label: "Profil", icon: Users, disabled: false },

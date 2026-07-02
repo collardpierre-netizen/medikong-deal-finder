@@ -12,11 +12,11 @@ const BATCH_SIZE = 100;
 const PARALLEL_CONCURRENCY = 25;
 const BATCH_DELAY_MS = 500;
 const MULTI_VENDOR_MAX_EXECUTION_TIME = 45000;
-const MULTI_VENDOR_BATCH_SIZE = 20;
-const MULTI_VENDOR_PARALLEL_CONCURRENCY = 2;
-const MULTI_VENDOR_BATCH_DELAY_MS = 1500;
+const MULTI_VENDOR_BATCH_SIZE = 10;
+const MULTI_VENDOR_PARALLEL_CONCURRENCY = 1;
+const MULTI_VENDOR_BATCH_DELAY_MS = 3000;
 const STALE_RUNNING_MS = 10 * 60 * 1000;
-const MAX_RETRIES_429 = 3;
+const MAX_RETRIES_429 = 5;
 const API_TIMEOUT_MS = 8000;
 
 function sleep(ms: number) {
@@ -38,16 +38,22 @@ function scheduleNextChunk(body: object) {
 }
 
 // --- Qogita rate limiter (token bucket en mémoire) ---
-// Lisse les appels à ~4 req/s globales pour cette instance d'edge function,
-// indépendamment de la concurrence interne. Évite les pics 429.
-const QOGITA_RATE_CAPACITY = 2;          // burst max — conservative to avoid Qogita 429
-const QOGITA_RATE_REFILL_PER_SEC = 1;    // débit soutenu
+// Débit soutenu ~0.5 req/s (1 req toutes les 2s), burst 1. Volontairement
+// conservateur pour rester sous le seuil 429 observé côté Qogita (juin 2026).
+const QOGITA_RATE_CAPACITY = 1;
+const QOGITA_RATE_REFILL_PER_SEC = 0.5;
 let qogitaTokens = QOGITA_RATE_CAPACITY;
 let qogitaLastRefill = Date.now();
+// Pénalité globale : quand un 429 tombe, on interdit tout appel pendant N ms.
+let qogitaCooldownUntil = 0;
 
 async function acquireQogitaToken(): Promise<void> {
   while (true) {
     const now = Date.now();
+    if (now < qogitaCooldownUntil) {
+      await sleep(qogitaCooldownUntil - now);
+      continue;
+    }
     const elapsedSec = (now - qogitaLastRefill) / 1000;
     if (elapsedSec > 0) {
       qogitaTokens = Math.min(QOGITA_RATE_CAPACITY, qogitaTokens + elapsedSec * QOGITA_RATE_REFILL_PER_SEC);
@@ -57,10 +63,20 @@ async function acquireQogitaToken(): Promise<void> {
       qogitaTokens -= 1;
       return;
     }
-    // Pas de token : attendre le délai exact pour en regagner 1
     const waitMs = Math.ceil(((1 - qogitaTokens) / QOGITA_RATE_REFILL_PER_SEC) * 1000);
     await sleep(waitMs);
   }
+}
+
+// Déclenche un cooldown global (drain du bucket) après un 429.
+function trip429Cooldown(retryAfterSec: number, attempt: number): number {
+  const base = Math.max(retryAfterSec, 2) * 1000;
+  const backoff = base * Math.pow(2, attempt);
+  const jitter = Math.floor(Math.random() * 500);
+  const waitMs = Math.min(backoff + jitter, 30_000);
+  qogitaCooldownUntil = Math.max(qogitaCooldownUntil, Date.now() + waitMs);
+  qogitaTokens = 0;
+  return waitMs;
 }
 
 
@@ -188,7 +204,9 @@ async function fetchWithRetry(
 
     if (res.status === 429 && attempt < MAX_RETRIES_429) {
       const retryAfter = parseInt(res.headers.get("Retry-After") || "5");
-      await sleep(retryAfter * 1000);
+      const waitMs = trip429Cooldown(retryAfter, attempt);
+      console.warn(`[qogita] 429 on ${url} — cooldown ${waitMs}ms (attempt ${attempt + 1}/${MAX_RETRIES_429})`);
+      await sleep(waitMs);
       continue;
     }
     return res;
@@ -233,7 +251,10 @@ async function fetchVariantWithRetry(
       lastResponse = res;
 
       if (res.status === 429 && attempt < MAX_RETRIES_429) {
-        await sleep(1200 * (attempt + 1));
+        const retryAfter = parseInt(res.headers.get("Retry-After") || "3");
+        const waitMs = trip429Cooldown(retryAfter, attempt);
+        console.warn(`[qogita] 429 on variant ${url} — cooldown ${waitMs}ms (attempt ${attempt + 1}/${MAX_RETRIES_429})`);
+        await sleep(waitMs);
         continue;
       }
 

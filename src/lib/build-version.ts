@@ -270,6 +270,11 @@ export async function preflightBuildVersionBeforeRender(): Promise<boolean> {
   // Le watcher affichera un toast pour un rechargement manuel.
   if (isAutoRefreshDisabled()) return true;
 
+  // Ne préflighte de rechargement que sur les pages à risque (admin).
+  // Ailleurs on laisse le boot se poursuivre : le watcher affichera un toast
+  // et l'utilisateur rechargera à sa convenance.
+  if (!isAtRiskPath()) return true;
+
   if (safeCacheBustReload() || safeAutoReload()) return false;
   return true;
 }

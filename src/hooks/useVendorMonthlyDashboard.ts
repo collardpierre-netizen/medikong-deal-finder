@@ -87,11 +87,12 @@ export function useVendorMonthlyDashboard(
         .from("order_lines")
         .select(
           `line_total_incl_vat, line_total_excl_vat, line_margin, commission_amount,
-           orders!inner ( id, created_at, is_forecast, status, hidden_from_list, deleted_at,
+           orders!inner ( id, created_at, is_forecast, is_test, status, hidden_from_list, deleted_at,
                           customers:customer_id ( customer_type ) )`,
         )
         .eq("vendor_id", vendorId!)
         .eq("orders.is_forecast", false)
+        .eq("orders.is_test", false)
         .gte("orders.created_at", start.toISOString())
         .lte("orders.created_at", end.toISOString());
       if (error) throw error;
@@ -99,6 +100,7 @@ export function useVendorMonthlyDashboard(
       const billable = (data ?? []).filter((l: any) => {
         const o = l.orders;
         if (!o || o.hidden_from_list || o.deleted_at) return false;
+        if (o.is_forecast || o.is_test) return false;
         return !EXCLUDED_STATUSES.has(String(o.status ?? "").toLowerCase());
       });
 

@@ -49,9 +49,14 @@ export default function CataloguePage() {
   const { view, setView } = useCatalogViewMode();
   const [mobileFilters, setMobileFilters] = useState(false);
 
-  // Collect category IDs from results for contextual sidebar filtering
+  // Collect category IDs + brand IDs from results for contextual sidebar filtering.
+  // Utilisé quand une recherche est active pour ne montrer que les facettes
+  // pertinentes (au lieu des Top marques globales : Nivea 2866, etc.).
   const resultCategoryIds = products.length > 0
     ? [...new Set(products.map(p => p.category_id).filter(Boolean) as string[])]
+    : undefined;
+  const resultBrandIds = products.length > 0
+    ? [...new Set(products.map(p => p.brand_id).filter(Boolean) as string[])]
     : undefined;
 
   const { label: categoryLabel, isLoading: categoryLabelLoading } =
@@ -102,7 +107,7 @@ export default function CataloguePage() {
         <div className="flex gap-6">
           {/* Desktop sidebar */}
           <aside className="hidden lg:block w-[280px] shrink-0 sticky top-20 self-start max-h-[calc(100vh-6rem)] overflow-y-auto pr-4 border-r border-border">
-            <CatalogSidebar filters={filters} setFilter={setFilter} clearAll={clearAll} resultCategoryIds={resultCategoryIds} />
+            <CatalogSidebar filters={filters} setFilter={setFilter} clearAll={clearAll} resultCategoryIds={resultCategoryIds} resultBrandIds={resultBrandIds} />
           </aside>
 
           {/* Mobile filter drawer */}
@@ -129,7 +134,7 @@ export default function CataloguePage() {
                       <X size={20} />
                     </button>
                   </div>
-                  <CatalogSidebar filters={filters} setFilter={setFilter} clearAll={clearAll} resultCategoryIds={resultCategoryIds} />
+                  <CatalogSidebar filters={filters} setFilter={setFilter} clearAll={clearAll} resultCategoryIds={resultCategoryIds} resultBrandIds={resultBrandIds} />
                   <button
                     onClick={() => setMobileFilters(false)}
                     className="mt-6 w-full bg-primary text-primary-foreground py-2.5 rounded-md font-medium"

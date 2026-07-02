@@ -78,21 +78,3 @@ export function isBillableOrder(order: {
 export const VENDOR_GMV_ORDER_COLUMNS =
   "id, status, is_forecast, is_test, hidden_from_list, deleted_at, created_at" as const;
 
-/**
- * Applique les filtres structurels (is_forecast, is_test, période) à un builder
- * PostgREST qui a déjà fait `.from("order_lines").select("..., orders!inner(...)")`.
- * Les filtres de statut, hidden_from_list et deleted_at sont appliqués côté
- * client via `isBillableOrder` pour rester alignés avec la RPC (qui filtre en
- * SQL sur les mêmes valeurs).
- */
-export function applyVendorGmvOrderFilters<T extends {
-  eq: (col: string, val: unknown) => T;
-  gte: (col: string, val: unknown) => T;
-  lte: (col: string, val: unknown) => T;
-}>(builder: T, opts: { startISO: string; endISO: string }): T {
-  return builder
-    .eq("orders.is_forecast", false)
-    .eq("orders.is_test", false)
-    .gte("orders.created_at", opts.startISO)
-    .lte("orders.created_at", opts.endISO);
-}

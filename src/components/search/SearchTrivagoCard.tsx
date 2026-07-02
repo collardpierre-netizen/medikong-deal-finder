@@ -310,8 +310,9 @@ export default function SearchTrivagoCard({ product: p }: Props) {
                   if (!expanded) setExpanded(true);
                   setShowMore(!showMore);
                 }}
-                onMouseEnter={() => setPrefetch(true)}
-                onFocus={() => setPrefetch(true)}
+                onMouseEnter={triggerPrefetch}
+                onFocus={triggerPrefetch}
+
                 className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
               >
                 {expanded && showMore

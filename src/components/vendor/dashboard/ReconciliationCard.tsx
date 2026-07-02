@@ -370,6 +370,7 @@ export default function ReconciliationCard({ data, loading, periodLabel }: Props
           </>
         )}
       </div>
-    </VCard>
+      </VCard>
+    </TooltipProvider>
   );
 }

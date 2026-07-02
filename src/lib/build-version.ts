@@ -51,10 +51,59 @@ const DEFERRED_AUTO_RELOAD_MS = 60_000; // laisse 60 s pour finir une saisie
  */
 const AT_RISK_PATH_PREFIXES = ["/admin"];
 
+/**
+ * Routes "sensibles" où l'utilisateur remplit un formulaire long ou un
+ * brouillon (checkout, onboarding vendeur, ReStock publier, RFQ, édition
+ * admin, paramètres compte, …). Même sur une page à risque, ces routes
+ * sont exclues de l'auto-reload : on ne veut pas faire perdre la saisie.
+ *
+ * Les patterns supportent :
+ *  - préfixes littéraux (`/panier`)
+ *  - segments d'action fréquents (`/nouveau`, `/edit`, `/publier`) qui
+ *    apparaissent souvent en fin ou milieu de path.
+ */
+const SENSITIVE_PATH_PREFIXES = [
+  "/panier",
+  "/checkout",
+  "/onboarding",
+  "/compte",
+  "/vendor",
+  "/restock/publier",
+  "/restock/nouveau",
+  "/demander-un-prix",
+  "/mes-rfq/nouveau",
+];
+const SENSITIVE_PATH_SEGMENTS = [
+  "/nouveau",
+  "/new",
+  "/edit",
+  "/editer",
+  "/publier",
+  "/creer",
+  "/create",
+  "/import",
+];
+
 function isAtRiskPath(): boolean {
   try {
     const path = window.location?.pathname ?? "";
     return AT_RISK_PATH_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
+  } catch {
+    return false;
+  }
+}
+
+function isSensitivePath(): boolean {
+  try {
+    const path = window.location?.pathname ?? "";
+    if (SENSITIVE_PATH_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`))) {
+      return true;
+    }
+    // Segments comme `/edit`, `/nouveau`, `/publier` apparaissant n'importe
+    // où dans le chemin (ex. `/admin/marques/:slug/edit`).
+    return SENSITIVE_PATH_SEGMENTS.some(
+      (seg) => path.endsWith(seg) || path.includes(`${seg}/`),
+    );
   } catch {
     return false;
   }
@@ -125,6 +174,110 @@ function isUserBusy(): boolean {
   }
 }
 
+/**
+ * Détection "formulaire / brouillon en cours" indépendante du focus.
+ *
+ * Contrairement à `isUserBusy()` qui exige que l'élément soit *actif*,
+ * cette fonction inspecte le DOM à froid pour repérer un brouillon non
+ * sauvegardé qui serait perdu par un reload — même si l'utilisateur a
+ * momentanément cliqué ailleurs (onglet, notification, etc.).
+ *
+ * Signaux détectés :
+ *  - `<form data-dirty="true">` ou `[data-dirty="true"]` posé par le code
+ *    applicatif (react-hook-form + useEffect, TipTap onUpdate, etc.).
+ *  - `<input>` / `<textarea>` avec une valeur non vide qui diverge de
+ *    l'attribut par défaut (l'utilisateur a tapé quelque chose).
+ *  - `<select>` dont la valeur diverge de l'option `defaultSelected`.
+ *  - Éléments `contenteditable` non vides (éditeurs riches type TipTap).
+ *  - Attribut sentinelle `[data-lov-draft]` posé explicitement par une
+ *    page pour indiquer un brouillon en cours.
+ *
+ * On IGNORE volontairement les champs de recherche/nav (`type="search"`,
+ * `role="searchbox"`, `[data-search-input]`) pour ne pas bloquer un reload
+ * sur une simple recherche header.
+ */
+function isSearchLikeInput(el: Element): boolean {
+  if (el instanceof HTMLInputElement && el.type === "search") return true;
+  const role = el.getAttribute("role");
+  if (role === "searchbox" || role === "search") return true;
+  if (el.hasAttribute("data-search-input")) return true;
+  // Ancêtre marqué comme zone de recherche/navigation.
+  if (el.closest('[role="search"], [data-search-input], nav')) return true;
+  return false;
+}
+
+function inputHasUserValue(el: HTMLInputElement | HTMLTextAreaElement): boolean {
+  const value = el.value ?? "";
+  if (!value.trim()) return false;
+  // Ignore les champs pré-remplis inchangés (defaultValue reflète la valeur
+  // initiale rendue par React ou l'attribut `value` du HTML).
+  if (el.defaultValue != null && el.defaultValue === value) return false;
+  return true;
+}
+
+function hasUnsavedDraft(): boolean {
+  try {
+    // Sentinelles explicites.
+    if (document.querySelector('[data-dirty="true"], [data-lov-draft]')) {
+      return true;
+    }
+
+    // Inputs / textareas avec valeur utilisateur.
+    const inputs = document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+      "input, textarea",
+    );
+    for (const el of Array.from(inputs)) {
+      if (isSearchLikeInput(el)) continue;
+      if (el instanceof HTMLInputElement) {
+        // Ignore les types non textuels sans intérêt (button, submit, hidden…).
+        const t = el.type;
+        if (
+          t === "button" ||
+          t === "submit" ||
+          t === "reset" ||
+          t === "hidden" ||
+          t === "image"
+        ) {
+          continue;
+        }
+        // Cases à cocher / radios : dirty si l'état diverge du défaut.
+        if (t === "checkbox" || t === "radio") {
+          if (el.checked !== el.defaultChecked) return true;
+          continue;
+        }
+      }
+      if (inputHasUserValue(el)) return true;
+    }
+
+    // Selects dont la sélection diverge du défaut.
+    const selects = document.querySelectorAll<HTMLSelectElement>("select");
+    for (const sel of Array.from(selects)) {
+      if (isSearchLikeInput(sel)) continue;
+      const options = Array.from(sel.options);
+      const defaultOpt = options.find((o) => o.defaultSelected);
+      const currentValue = sel.value;
+      if (defaultOpt && defaultOpt.value !== currentValue) return true;
+      if (!defaultOpt && currentValue && options[0]?.value !== currentValue) return true;
+    }
+
+    // Contenteditable non vide (éditeurs riches).
+    const editables = document.querySelectorAll<HTMLElement>(
+      '[contenteditable="true"], [contenteditable=""]',
+    );
+    for (const ed of Array.from(editables)) {
+      if (isSearchLikeInput(ed)) continue;
+      const text = (ed.textContent ?? "").trim();
+      if (text.length > 0) return true;
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+
+
 let deferredReloadTimer: number | null = null;
 let toastShown = false;
 let started = false;
@@ -174,10 +327,16 @@ async function checkVersion() {
   const autoRefreshDisabled = isAutoRefreshDisabled();
   const atRisk = isAtRiskPath();
   const busy = isUserBusy();
+  // Exclusion supplémentaire : route sensible (formulaires longs,
+  // checkout, onboarding, édition admin…) OU brouillon non sauvegardé
+  // détecté dans le DOM. Dans ces cas on ne recharge JAMAIS
+  // automatiquement, même si la page est "à risque".
+  const sensitive = isSensitivePath() || hasUnsavedDraft();
 
   const canReloadNow =
     !autoRefreshDisabled &&
     atRisk &&
+    !sensitive &&
     !busy &&
     document.visibilityState === "visible" &&
     canAutoReload();
@@ -188,12 +347,11 @@ async function checkVersion() {
   }
 
   // Reload différé :
-  //  - Sur page à risque (admin) : toast + retry auto dans 60 s dès que
-  //    l'utilisateur n'est plus en train d'interagir.
-  //  - Ailleurs : toast uniquement, aucun rechargement automatique
-  //    (l'utilisateur recharge quand il veut via le CTA du toast).
+  //  - Sur page à risque (admin) non sensible : toast + retry auto dans 60 s
+  //    dès que l'utilisateur n'est plus en train d'interagir ni de saisir.
+  //  - Ailleurs / route sensible / brouillon détecté : toast uniquement.
   showNewVersionToast();
-  if (atRisk && !autoRefreshDisabled) {
+  if (atRisk && !sensitive && !autoRefreshDisabled) {
     scheduleDeferredReload();
   }
 }
@@ -240,8 +398,10 @@ function scheduleDeferredReload() {
     deferredReloadTimer = null;
     if (isAutoRefreshDisabled()) return;
     // Si l'utilisateur a navigué hors d'une page à risque entre-temps,
-    // on n'insiste pas : rechargement seulement là où c'est nécessaire.
+    // ou qu'il a ouvert un formulaire / démarré un brouillon, on n'insiste
+    // pas : rechargement seulement là où c'est nécessaire et sûr.
     if (!isAtRiskPath()) return;
+    if (isSensitivePath() || hasUnsavedDraft()) return;
     if (
       !isUserBusy() &&
       document.visibilityState === "visible" &&
@@ -270,10 +430,13 @@ export async function preflightBuildVersionBeforeRender(): Promise<boolean> {
   // Le watcher affichera un toast pour un rechargement manuel.
   if (isAutoRefreshDisabled()) return true;
 
-  // Ne préflighte de rechargement que sur les pages à risque (admin).
-  // Ailleurs on laisse le boot se poursuivre : le watcher affichera un toast
-  // et l'utilisateur rechargera à sa convenance.
+  // Ne préflighte de rechargement que sur les pages à risque (admin) qui
+  // ne sont ni une route sensible (checkout, onboarding, édition…) ni en
+  // train d'afficher un brouillon utilisateur. Ailleurs on laisse le boot
+  // se poursuivre : le watcher affichera un toast et l'utilisateur
+  // rechargera à sa convenance.
   if (!isAtRiskPath()) return true;
+  if (isSensitivePath() || hasUnsavedDraft()) return true;
 
   if (safeCacheBustReload() || safeAutoReload()) return false;
   return true;
@@ -302,6 +465,7 @@ export function installBuildVersionWatcher() {
   window.addEventListener("focus", () => {
     if (isAutoRefreshDisabled()) return;
     if (!isAtRiskPath()) return;
+    if (isSensitivePath() || hasUnsavedDraft()) return;
     if (isUserBusy()) return;
     if (isBuildStale() && canAutoReload()) {
       if (!safeCacheBustReload()) safeAutoReload();

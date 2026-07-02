@@ -296,9 +296,13 @@ export function installBuildVersionWatcher() {
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") void checkVersion();
   });
-  // If we already flagged stale and the user comes back, reload.
+  // If we already flagged stale and the user comes back, reload — mais
+  // uniquement sur une page à risque et si l'utilisateur n'est pas en train
+  // de saisir/interagir.
   window.addEventListener("focus", () => {
     if (isAutoRefreshDisabled()) return;
+    if (!isAtRiskPath()) return;
+    if (isUserBusy()) return;
     if (isBuildStale() && canAutoReload()) {
       if (!safeCacheBustReload()) safeAutoReload();
     }

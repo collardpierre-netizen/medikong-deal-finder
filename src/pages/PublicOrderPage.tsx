@@ -253,10 +253,18 @@ const PublicOrderPage = () => {
           </div>
         </div>
 
-        {(order.tracking_url || order.tracking_number || order.tracking_carrier) && (
+        {(order.tracking_url || order.tracking_number || order.tracking_carrier || order.status === "delivered") && (
           <div className="mb-6 rounded-lg border border-indigo-200 bg-indigo-50 p-4">
-            <div className="text-[11px] uppercase text-indigo-700 font-semibold mb-1">Suivi d'expédition</div>
-            {order.shipped_at && (
+            <div className="flex items-center gap-2 mb-1">
+              <div className="text-[11px] uppercase text-indigo-700 font-semibold">Suivi d'expédition</div>
+              {order.status === "delivered" && (
+                <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">Livrée</span>
+              )}
+            </div>
+            {order.delivered_at && (
+              <div className="text-xs text-emerald-700 font-medium">Livrée le {new Date(order.delivered_at).toLocaleString("fr-BE")}</div>
+            )}
+            {order.shipped_at && !order.delivered_at && (
               <div className="text-xs text-slate-600">Expédiée le {new Date(order.shipped_at).toLocaleString("fr-BE")}</div>
             )}
             {order.tracking_carrier && (

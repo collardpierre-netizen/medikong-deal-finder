@@ -181,7 +181,21 @@ export default function ReconciliationCard({ data, loading, periodLabel }: Props
                   <tr className="text-left text-[11px] text-[#8B95A5] border-b border-[#E2E8F0]">
                     <th className="py-1.5 pr-2 font-medium w-6"></th>
                     <th className="py-1.5 pr-2 font-medium">Statut</th>
-                    <th className="py-1.5 pr-2 font-medium">Inclus</th>
+                    <th className="py-1.5 pr-2 font-medium">
+                      <Tooltip>
+                        <TooltipTrigger className="inline-flex items-center gap-1 cursor-help">
+                          Inclus
+                          <Info size={11} className="text-[#8B95A5]" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[260px] text-[11px] leading-snug">
+                          <p className="font-medium mb-0.5">Statuts inclus / exclus</p>
+                          <p className="text-[#8B95A5]">
+                            Les statuts suivants sont <em>exclus</em> du CA et du GMV :{" "}
+                            {excludedStatusLabels.join(", ")}.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </th>
                     <th className="py-1.5 pr-2 font-medium text-right">Cmds</th>
                     <th className="py-1.5 pr-2 font-medium text-right">CA HTVA</th>
                     <th className="py-1.5 font-medium text-right">GMV TTC</th>

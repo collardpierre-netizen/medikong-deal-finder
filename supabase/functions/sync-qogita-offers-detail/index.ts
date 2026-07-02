@@ -1067,10 +1067,9 @@ async function processSingleProduct(
                   synced_at: new Date().toISOString(),
                   ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
                 },
-                // Conflict cible : (product_id, vendor_id, country_code) — contrainte
-                // offers_product_vendor_country_unique. ignoreDuplicates=false ⇒ UPDATE
-                // des champs prix/stock/availability sur conflit (idempotent).
-                { onConflict: "product_id,vendor_id,country_code", ignoreDuplicates: false },
+                // Qogita offer qid is the stable upstream identifier; use it as
+                // the conflict target to refresh existing offers idempotently.
+                { onConflict: "qogita_offer_qid", ignoreDuplicates: false },
               ).select("id").maybeSingle();
 
               if (mvErr) {

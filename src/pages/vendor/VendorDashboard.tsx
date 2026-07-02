@@ -18,7 +18,10 @@ import MediKongCommissionCard from "@/components/vendor/dashboard/MediKongCommis
 import RevenueTrendCard from "@/components/vendor/dashboard/RevenueTrendCard";
 import CustomerTypeBreakdownCard from "@/components/vendor/dashboard/CustomerTypeBreakdownCard";
 import ReconciliationCard from "@/components/vendor/dashboard/ReconciliationCard";
+import VendorTotalsConsistencyAlert from "@/components/vendor/dashboard/VendorTotalsConsistencyAlert";
+import { checkVendorTotalsConsistency } from "@/lib/vendor-gmv-consistency";
 import { useMoneyFormat } from "@/lib/money-format";
+
 
 const today = new Date();
 const dateStr = today.toLocaleDateString("fr-BE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -82,6 +85,11 @@ export default function VendorDashboard() {
     useVendorReconciliation(vendor?.id, period);
   const { data: gmvProgress } = useVendorGmvProgress(vendor?.id);
   const { formatMoney } = useMoneyFormat();
+  const consistencyReport = useMemo(
+    () => checkVendorTotalsConsistency(monthly, reconciliation),
+    [monthly, reconciliation],
+  );
+
 
   const isApproved = vendor?.validation_status === "approved";
   const shippingMode = (vendor as any)?.vendor_shipping_mode ?? "no_shipping";
@@ -221,12 +229,16 @@ export default function VendorDashboard() {
             loading={monthlyLoading}
           />
 
+          {/* Alerte cohérence CA/GMV — silencieuse si tout concorde */}
+          <VendorTotalsConsistencyAlert report={consistencyReport} />
+
           {/* Réconciliation CA HTVA ↔ GMV TTC par statut */}
           <ReconciliationCard
             data={reconciliation}
             loading={reconciliationLoading}
             periodLabel={periodLabel}
           />
+
 
           {/* Courbe CA + ventilation par profil client */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

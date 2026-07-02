@@ -7,20 +7,23 @@ import { useTranslation } from "react-i18next";
 import { useAutoTranslate } from "@/hooks/useAutoTranslate";
 
 const fallbackImages: HeroImg[] = [
-  { id: "1", image_url: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=900&q=80", alt_text: "Fournitures médicales", link_url: null, cta_text: null, title: null, subtitle: null },
-  { id: "2", image_url: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=900&q=80", alt_text: "Équipement médical", link_url: null, cta_text: null, title: null, subtitle: null },
-  { id: "3", image_url: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=900&q=80", alt_text: "Pharmacie professionnelle", link_url: null, cta_text: null, title: null, subtitle: null },
+  { id: "1", image_url: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=900&q=80", image_url_mobile: null, alt_text: "Fournitures médicales", link_url: null, cta_text: null, title: null, subtitle: null, show_title: true, show_subtitle: true },
+  { id: "2", image_url: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=900&q=80", image_url_mobile: null, alt_text: "Équipement médical", link_url: null, cta_text: null, title: null, subtitle: null, show_title: true, show_subtitle: true },
+  { id: "3", image_url: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=900&q=80", image_url_mobile: null, alt_text: "Pharmacie professionnelle", link_url: null, cta_text: null, title: null, subtitle: null, show_title: true, show_subtitle: true },
 ];
 
 interface HeroImg {
   id: string;
   image_url: string;
+  image_url_mobile?: string | null;
   alt_text: string;
   sort_order?: number;
   link_url: string | null;
   cta_text: string | null;
   title: string | null;
   subtitle: string | null;
+  show_title?: boolean | null;
+  show_subtitle?: boolean | null;
   focal_x?: number | null;
   focal_y?: number | null;
   zoom?: number | null;
@@ -32,7 +35,7 @@ export function HeroImageGallery() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("cms_hero_images" as any)
-        .select("id, image_url, alt_text, sort_order, link_url, cta_text, title, subtitle, focal_x, focal_y, zoom")
+        .select("id, image_url, image_url_mobile, alt_text, sort_order, link_url, cta_text, title, subtitle, show_title, show_subtitle, focal_x, focal_y, zoom")
         .eq("is_active", true)
         .order("sort_order");
       if (error || !data?.length) return null;
@@ -78,28 +81,46 @@ export function HeroImageGallery() {
         const fx = Number(img.focal_x ?? 50);
         const fy = Number(img.focal_y ?? 50);
         const zm = Number(img.zoom ?? 1);
+        const mobileSrc = (img.image_url_mobile && img.image_url_mobile.trim()) || img.image_url;
         return (
-          <img key={img.id} src={img.image_url} alt={img.alt_text}
-            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
-            style={{
-              opacity: i === current ? 1 : 0,
-              objectPosition: `${fx}% ${fy}%`,
-              transform: zm > 1 ? `scale(${zm})` : undefined,
-              transformOrigin: `${fx}% ${fy}%`,
-            }}
-            loading={i === 0 ? "eager" : "lazy"} />
+          <picture key={img.id}>
+            <source media="(max-width: 640px)" srcSet={mobileSrc} />
+            <img src={img.image_url} alt={img.alt_text}
+              className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
+              style={{
+                opacity: i === current ? 1 : 0,
+                objectPosition: `${fx}% ${fy}%`,
+                transform: zm > 1 ? `scale(${zm})` : undefined,
+                transformOrigin: `${fx}% ${fy}%`,
+              }}
+              loading={i === 0 ? "eager" : "lazy"} />
+          </picture>
         );
       })}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/10 to-transparent" />
-      <div className="absolute bottom-6 left-6 md:bottom-8 md:left-8 z-10 text-white">
-        <p className="text-xs font-medium uppercase tracking-wider opacity-80 mb-1">{translatedSubtitle || fallbackSubtitle}</p>
-        <h3 className="text-lg md:text-2xl font-bold leading-tight max-w-sm">{translatedTitle || fallbackTitle}</h3>
-        {currentImage?.cta_text && (
-          <span className="inline-block mt-3 px-5 py-2 rounded-lg text-sm font-semibold bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors">
-            {translatedCta || currentImage.cta_text}
-          </span>
-        )}
-      </div>
+      {(() => {
+        const showTitle = currentImage?.show_title ?? true;
+        const showSubtitle = currentImage?.show_subtitle ?? true;
+        const hasText = showTitle || showSubtitle || Boolean(currentImage?.cta_text);
+        if (!hasText) return null;
+        return (
+          <>
+            <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/10 to-transparent" />
+            <div className="absolute bottom-6 left-6 md:bottom-8 md:left-8 z-10 text-white">
+              {showSubtitle && (
+                <p className="text-xs font-medium uppercase tracking-wider opacity-80 mb-1">{translatedSubtitle || fallbackSubtitle}</p>
+              )}
+              {showTitle && (
+                <h3 className="text-lg md:text-2xl font-bold leading-tight max-w-sm">{translatedTitle || fallbackTitle}</h3>
+              )}
+              {currentImage?.cta_text && (
+                <span className="inline-block mt-3 px-5 py-2 rounded-lg text-sm font-semibold bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors">
+                  {translatedCta || currentImage.cta_text}
+                </span>
+              )}
+            </div>
+          </>
+        );
+      })()}
       {count > 1 && (
         <>
           <button

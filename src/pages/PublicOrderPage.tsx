@@ -252,6 +252,28 @@ const PublicOrderPage = () => {
           </div>
         </div>
 
+        {(order.tracking_url || order.tracking_number || order.tracking_carrier) && (
+          <div className="mb-6 rounded-lg border border-indigo-200 bg-indigo-50 p-4">
+            <div className="text-[11px] uppercase text-indigo-700 font-semibold mb-1">Suivi d'expédition</div>
+            {order.shipped_at && (
+              <div className="text-xs text-slate-600">Expédiée le {new Date(order.shipped_at).toLocaleString("fr-BE")}</div>
+            )}
+            {order.tracking_carrier && (
+              <div className="text-sm text-slate-800 mt-1"><strong>Transporteur :</strong> {order.tracking_carrier}</div>
+            )}
+            {order.tracking_number && (
+              <div className="text-sm text-slate-800"><strong>N° de colis :</strong> <span className="font-mono">{order.tracking_number}</span></div>
+            )}
+            {order.tracking_url && (
+              <a href={order.tracking_url} target="_blank" rel="noreferrer" className="inline-block mt-2 bg-mk-blue text-white text-sm font-semibold px-4 py-2 rounded" style={{ backgroundColor: "#1C58D9" }}>
+                Suivre mon colis →
+              </a>
+            )}
+          </div>
+        )}
+
+
+
         {order.notes && (
           <div className="bg-blue-50/60 border-l-2 border-blue-400 px-3 py-2 rounded text-sm italic text-slate-700 mb-6">{order.notes}</div>
         )}

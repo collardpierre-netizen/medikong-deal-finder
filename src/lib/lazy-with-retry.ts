@@ -319,13 +319,12 @@ export function lazyWithRetry<T extends ComponentType<any>>(
         if (importError == null) break;
         // Cheap probe first (only if we have a URL to probe) so we don't
         // waste retries on a stale deploy.
-        const msg = getErrorMessage(importError);
-        const urlMatch = msg.match(/https?:\/\/[^\s'")]+\.[a-z]+(?:\?[^\s'")]*)?/i);
+        const url = extractChunkUrl(getErrorMessage(importError));
         let probe: ChunkProbeResult | null = null;
-        if (urlMatch) probe = await probeChunkUrl(urlMatch[0]);
-        if (probe?.looksLikeHtml) break; // deploy stale → escalate now
+        if (url) probe = await probeChunkUrl(url);
+        if (isStaleHtmlFallbackProbe(probe)) break; // deploy stale → escalate now
         if (!isLikelyTransient(importError, probe)) break;
-        await new Promise((r) => setTimeout(r, backoffDelay(attempt)));
+        await delay(backoffDelay(attempt));
       }
     }
 
@@ -337,15 +336,17 @@ export function lazyWithRetry<T extends ComponentType<any>>(
     if (looksInvalid) {
       // ---- Phase 2: diagnose + escalate to reload or throw -------------
       const msg = getErrorMessage(importError);
-      const urlMatch = msg.match(/https?:\/\/[^\s'")]+\.[a-z]+(?:\?[^\s'")]*)?/i);
+      const url = extractChunkUrl(msg);
       let probe: ChunkProbeResult | null = null;
-      if (urlMatch) {
-        probe = await probeChunkUrl(urlMatch[0]);
-      }
+      if (url) probe = await probeChunkUrl(url);
 
-      if (probe?.looksLikeHtml) {
+      if (isStaleHtmlFallbackProbe(probe)) {
         importError = new Error(
           `Lazy chunk "${key}" was served as text/html instead of JavaScript (stale deploy or SPA fallback): ${probe.url}`,
+        );
+      } else if (isTransientChunkProbe(probe)) {
+        importError = new Error(
+          `Lazy chunk "${key}" is temporarily unavailable (${probe.status ?? probe.fetchError ?? "network"}): ${probe.url}`,
         );
       } else if (!importError) {
         importError = new Error(
@@ -364,7 +365,13 @@ export function lazyWithRetry<T extends ComponentType<any>>(
       if (typeof window !== "undefined" && isChunkLoadError(importError)) {
         const retryKey = `${RETRY_TOKEN_PREFIX}${key}`;
         const alreadyRetried = window.sessionStorage.getItem(retryKey) === "1";
-        if (probe?.looksLikeHtml) {
+        if (isTransientChunkProbe(probe) && url) {
+          await waitForChunkServerRecovery(url);
+          if (safeTransientChunkReload(url)) {
+            return new Promise<never>(() => undefined);
+          }
+        }
+        if (isStaleHtmlFallbackProbe(probe)) {
           window.sessionStorage.setItem(`${CACHE_BUST_TOKEN_PREFIX}${key}`, "1");
           if (safeCacheBustReload()) {
             return new Promise<never>(() => undefined);

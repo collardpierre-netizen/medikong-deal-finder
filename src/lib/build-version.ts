@@ -20,7 +20,12 @@
 
 declare const __BUILD_ID__: string;
 import { toast } from "sonner";
-import { safeAutoReload, canAutoReload } from "@/lib/lazy-with-retry";
+import {
+  safeAutoReload,
+  safeCacheBustReload,
+  canAutoReload,
+  resetReloadAttempts,
+} from "@/lib/lazy-with-retry";
 import { bustAdminQueryCache } from "@/lib/admin-cache-bust";
 
 const CURRENT_BUILD_ID =
@@ -28,6 +33,7 @@ const CURRENT_BUILD_ID =
 const VERSION_URL = "/version.json";
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 min
 const STALE_FLAG_KEY = "medikong:build-stale";
+const RELOAD_COUNTER_BUILD_KEY = "medikong:reload-counter-build-id";
 const TOAST_ID = "medikong-new-version";
 const DEFERRED_AUTO_RELOAD_MS = 60_000; // laisse 60 s pour finir une saisie
 
@@ -70,6 +76,7 @@ async function checkVersion() {
   const remote = await fetchRemoteBuildId();
   if (!remote || remote === CURRENT_BUILD_ID) return;
 
+  resetReloadCountersForRemoteBuild(remote);
   markStale();
 
   // Nouveau déploiement détecté : purge immédiatement les caches admin
@@ -89,7 +96,7 @@ async function checkVersion() {
     !isEditing && document.visibilityState === "visible" && canAutoReload();
 
   if (canReloadNow) {
-    safeAutoReload();
+    if (!safeCacheBustReload()) safeAutoReload();
     return;
   }
 
@@ -98,6 +105,17 @@ async function checkVersion() {
   // automatique dans 60 s (au cas où il quitterait le champ entre temps).
   showNewVersionToast();
   scheduleDeferredReload();
+}
+
+function resetReloadCountersForRemoteBuild(remoteBuildId: string) {
+  try {
+    const previous = window.sessionStorage.getItem(RELOAD_COUNTER_BUILD_KEY);
+    if (previous === remoteBuildId) return;
+    resetReloadAttempts();
+    window.sessionStorage.setItem(RELOAD_COUNTER_BUILD_KEY, remoteBuildId);
+  } catch {
+    /* ignore */
+  }
 }
 
 function showNewVersionToast() {
@@ -140,12 +158,27 @@ function scheduleDeferredReload() {
       document.visibilityState === "visible" &&
       canAutoReload()
     ) {
-      safeAutoReload();
+      if (!safeCacheBustReload()) safeAutoReload();
     } else {
       // Toujours pas safe → on retente plus tard.
       scheduleDeferredReload();
     }
   }, DEFERRED_AUTO_RELOAD_MS);
+}
+
+export async function preflightBuildVersionBeforeRender(): Promise<boolean> {
+  if (typeof window === "undefined") return true;
+  if (CURRENT_BUILD_ID === "dev" || import.meta.env.DEV) return true;
+
+  const remote = await fetchRemoteBuildId();
+  if (!remote || remote === CURRENT_BUILD_ID) return true;
+
+  resetReloadCountersForRemoteBuild(remote);
+  markStale();
+  bustAdminQueryCache();
+
+  if (safeCacheBustReload() || safeAutoReload()) return false;
+  return true;
 }
 
 export function installBuildVersionWatcher() {
@@ -167,7 +200,9 @@ export function installBuildVersionWatcher() {
   });
   // If we already flagged stale and the user comes back, reload.
   window.addEventListener("focus", () => {
-    if (isBuildStale() && canAutoReload()) safeAutoReload();
+    if (isBuildStale() && canAutoReload()) {
+      if (!safeCacheBustReload()) safeAutoReload();
+    }
   });
 }
 

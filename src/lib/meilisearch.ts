@@ -1,9 +1,9 @@
-import { MeiliSearch } from "meilisearch";
+import type { MeiliSearch as MeiliSearchClient } from "meilisearch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 // Cache the config so we only fetch once
-let _meiliClient: MeiliSearch | null = null;
+let _meiliClient: MeiliSearchClient | null = null;
 let _configured: boolean | null = null;
 let _configPromise: Promise<{ url: string; key: string } | null> | null = null;
 let _warnedOnce = false;
@@ -51,7 +51,7 @@ async function fetchMeiliConfig(): Promise<{ url: string; key: string } | null> 
   }
 }
 
-async function getClient(): Promise<MeiliSearch | null> {
+async function getClient(): Promise<MeiliSearchClient | null> {
   if (_meiliClient) return _meiliClient;
   if (!_configPromise) {
     _configPromise = fetchMeiliConfig();
@@ -72,7 +72,18 @@ async function getClient(): Promise<MeiliSearch | null> {
     return null;
   }
   _configured = true;
-  _meiliClient = new MeiliSearch({ host: config.url, apiKey: config.key });
+  try {
+    const { MeiliSearch } = await import("meilisearch");
+    _meiliClient = new MeiliSearch({ host: config.url, apiKey: config.key });
+  } catch (err) {
+    // En preview/dev, une dépendance optimisée Vite obsolète peut répondre 504
+    // et faire échouer le chunk de route entier si elle est importée statiquement.
+    // On dégrade donc vers Postgres au lieu de bloquer la page.
+    warnSearchDegraded(err instanceof Error ? err.message : String(err));
+    _configured = false;
+    _configPromise = null;
+    return null;
+  }
   return _meiliClient;
 }
 

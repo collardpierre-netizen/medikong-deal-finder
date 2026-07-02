@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RefreshCw, Activity, AlertTriangle, CheckCircle2, Clock, PackageX, Play, Recycle } from "lucide-react";
+import { RefreshCw, Activity, AlertTriangle, CheckCircle2, Clock, PackageX, Play, Recycle, Wrench } from "lucide-react";
 import QogitaReconciliationPanel from "@/components/admin/QogitaReconciliationPanel";
 import { formatUpdatedAtFull } from "@/lib/format-date";
 import { toast } from "sonner";
@@ -69,6 +69,41 @@ export default function AdminQogitaStatus() {
   const [search, setSearch] = useState("");
   const [staleBusy, setStaleBusy] = useState(false);
   const [sweepBusy, setSweepBusy] = useState(false);
+  const [finalizeBusy, setFinalizeBusy] = useState(false);
+
+  async function runFinalizeOrphans() {
+    if (finalizeBusy) return;
+    const raw = window.prompt(
+      "Finaliser les runs bloqués en « running » depuis plus de N minutes.\n\nSeuil (min, défaut 30, min 1) :",
+      "30",
+    );
+    if (raw === null) return;
+    const minutes = Math.max(1, Math.floor(Number(raw)));
+    if (!Number.isFinite(minutes) || minutes < 1) {
+      toast.error("Seuil invalide");
+      return;
+    }
+    setFinalizeBusy(true);
+    try {
+      const { data, error } = await supabase.rpc("admin_finalize_orphan_qogita_resync_logs", {
+        _stale_minutes: minutes,
+      });
+      if (error) throw error;
+      const rows = (data ?? []) as Array<{ finalized_id: string; new_status: string; minutes_stuck: number }>;
+      if (!rows.length) {
+        toast.info(`Aucun run bloqué au-delà de ${minutes} min`);
+      } else {
+        const partial = rows.filter((r) => r.new_status === "partial").length;
+        const failed = rows.filter((r) => r.new_status === "failed").length;
+        toast.success(`${rows.length} run(s) finalisé(s) — ${partial} partial · ${failed} failed`);
+      }
+      refetch();
+    } catch (e: any) {
+      toast.error(`Échec finalisation : ${e?.message ?? e}`);
+    } finally {
+      setFinalizeBusy(false);
+    }
+  }
 
   async function runStaleRefresh() {
     if (staleBusy) return;
@@ -173,6 +208,10 @@ export default function AdminQogitaStatus() {
           <Button variant="outline" size="sm" onClick={runReconciliationSweep} disabled={sweepBusy}>
             <Recycle className={`h-4 w-4 mr-2 ${sweepBusy ? "animate-spin" : ""}`} />
             Reconciliation sweep
+          </Button>
+          <Button variant="outline" size="sm" onClick={runFinalizeOrphans} disabled={finalizeBusy}>
+            <Wrench className={`h-4 w-4 mr-2 ${finalizeBusy ? "animate-pulse" : ""}`} />
+            Finaliser runs bloqués
           </Button>
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
             <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />

@@ -833,51 +833,57 @@ const AdminCommandeDetail = () => {
                 />
               </div>
             </div>
-            <div className="space-y-2 pt-1">
-              {order.status !== "shipped" && order.status !== "delivered" && (
-                <Button
-                  onClick={() => saveTracking({ notify: true, markShipped: true })}
-                  disabled={busy !== null}
-                  className="w-full justify-start"
-                  style={{ backgroundColor: "#1C58D9", color: "#fff" }}
-                >
-                  <Send size={14} className="mr-2" />
-                  {busy === "TRACKING" ? "Envoi…" : "Marquer expédié & notifier l'acheteur"}
-                </Button>
-              )}
-              <Button
-                onClick={() => saveTracking({ notify: true, markShipped: false })}
-                disabled={busy !== null}
-                className="w-full justify-start"
-                variant={order.status === "shipped" ? "default" : "outline"}
-                style={order.status === "shipped" ? { backgroundColor: "#1C58D9", color: "#fff" } : undefined}
-              >
-                <Send size={14} className="mr-2" />
-                {busy === "TRACKING" ? "Envoi…" : "Enregistrer & renotifier l'acheteur"}
-              </Button>
-              <Button
-                onClick={() => saveTracking({ notify: false, markShipped: false })}
-                disabled={busy !== null}
-                className="w-full justify-start"
-                variant="outline"
-              >
-                {busy === "TRACKING" ? "Enregistrement…" : "Enregistrer sans email"}
-              </Button>
-              <Button
-                onClick={dryRunNotify}
-                disabled={busy !== null}
-                className="w-full justify-start"
-                variant="secondary"
-                title="Simule l'envoi sans rien envoyer et vérifie qu'un seul email partirait (idempotency)"
-              >
-                {busy === "TRACKING" ? "Test…" : "🧪 Tester (dry-run) — vérifier l'envoi unique"}
-              </Button>
-              {trackUrl.trim() && (
-                <a href={trackUrl.trim()} target="_blank" rel="noreferrer" className="block">
-                  <Button className="w-full justify-start" variant="ghost">
-                    <ExternalLink size={14} className="mr-2" /> Ouvrir le suivi
+            {(() => {
+              const trackUrlErr = validateTrackingUrl(trackUrl);
+              return (
+                <div className="space-y-2 pt-1">
+                  {order.status !== "shipped" && order.status !== "delivered" && (
+                    <Button
+                      onClick={() => saveTracking({ notify: true, markShipped: true })}
+                      disabled={busy !== null || !!trackUrlErr}
+                      className="w-full justify-start"
+                      style={{ backgroundColor: "#1C58D9", color: "#fff" }}
+                      title={trackUrlErr || undefined}
+                    >
+                      <Send size={14} className="mr-2" />
+                      {busy === "TRACKING" ? "Envoi…" : "Marquer expédié & notifier l'acheteur"}
+                    </Button>
+                  )}
+                  <Button
+                    onClick={() => saveTracking({ notify: true, markShipped: false })}
+                    disabled={busy !== null || !!trackUrlErr}
+                    className="w-full justify-start"
+                    variant={order.status === "shipped" ? "default" : "outline"}
+                    style={order.status === "shipped" ? { backgroundColor: "#1C58D9", color: "#fff" } : undefined}
+                    title={trackUrlErr || undefined}
+                  >
+                    <Send size={14} className="mr-2" />
+                    {busy === "TRACKING" ? "Envoi…" : "Enregistrer & renotifier l'acheteur"}
                   </Button>
-                </a>
+                  <Button
+                    onClick={() => saveTracking({ notify: false, markShipped: false })}
+                    disabled={busy !== null || !!trackUrlErr}
+                    className="w-full justify-start"
+                    variant="outline"
+                    title={trackUrlErr || undefined}
+                  >
+                    {busy === "TRACKING" ? "Enregistrement…" : "Enregistrer sans email"}
+                  </Button>
+                  <Button
+                    onClick={dryRunNotify}
+                    disabled={busy !== null}
+                    className="w-full justify-start"
+                    variant="secondary"
+                    title="Simule l'envoi sans rien envoyer et vérifie qu'un seul email partirait (idempotency)"
+                  >
+                    {busy === "TRACKING" ? "Test…" : "🧪 Tester (dry-run) — vérifier l'envoi unique"}
+                  </Button>
+                  {trackUrl.trim() && !trackUrlErr && (
+                    <a href={trackUrl.trim()} target="_blank" rel="noreferrer" className="block">
+                      <Button className="w-full justify-start" variant="ghost">
+                        <ExternalLink size={14} className="mr-2" /> Ouvrir le suivi
+                      </Button>
+                    </a>
               )}
             </div>
             <p className="text-[11px] text-slate-400">

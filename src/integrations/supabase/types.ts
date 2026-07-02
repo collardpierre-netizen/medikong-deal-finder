@@ -24756,6 +24756,8 @@ export type Database = {
           delivery_days: number
           effective_price_excl_vat: number
           effective_price_incl_vat: number
+          exclusivity_mode: Database["public"]["Enums"]["vendor_exclusivity_mode"]
+          is_exclusive_winner: boolean
           offer_count: number
           offer_id: string
           price_source: string

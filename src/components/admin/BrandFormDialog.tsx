@@ -234,6 +234,12 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
           <SocialLinksEditor value={form.social_links} onChange={(next) => setForm({ ...form, social_links: next })} />
           <div><Label className="text-xs">Description (originale)</Label><Textarea rows={2} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
 
+          <CmsMediaFields
+            coverImageUrl={form.cover_image_url}
+            galleryImages={form.gallery_images}
+            onChange={({ cover_image_url, gallery_images }) => setForm({ ...form, cover_image_url, gallery_images })}
+          />
+
           {/* Translation fields */}
           <div className="border-t pt-3 mt-1">
             <div className="flex items-center justify-between mb-2">

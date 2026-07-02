@@ -40,6 +40,7 @@ type OrderData = {
   tracking_carrier?: string | null;
   tracking_number?: string | null;
   shipped_at?: string | null;
+  delivered_at?: string | null;
 };
 
 const STATUS_LABEL: Record<string, string> = {

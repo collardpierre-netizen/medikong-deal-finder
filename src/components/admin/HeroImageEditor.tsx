@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { AlertCircle, Check, ExternalLink, Link2, Monitor, Smartphone, RotateCcw, Info, Upload, X as XIcon } from "lucide-react";
 import { toast } from "sonner";
+import { formatHeroInline } from "@/lib/hero-inline-format";
 
 export interface HeroImageRow {
   id: string;
@@ -228,6 +229,9 @@ export default function HeroImageEditor({ img }: Props) {
           max={LIMITS.subtitle} error={errors.subtitle}
           enabled={showSubtitle} onEnabledChange={setShowSubtitle}
         />
+        <p className="text-[10px] text-[#5C6470] -mt-1 pl-1">
+          Mise en forme : <code className="bg-gray-100 px-1 rounded">**gras**</code> et <code className="bg-gray-100 px-1 rounded">[texte](/lien)</code>
+        </p>
         <div className="rounded-md border border-gray-200 bg-gray-50/60 p-2 space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-[10px] uppercase tracking-wider font-semibold text-[#5C6470] inline-flex items-center gap-2">
@@ -456,12 +460,12 @@ function PreviewFrame({
           <div className="absolute bottom-3 left-3 right-3 z-10 text-white">
             {showSubtitle && (
               <p className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wider opacity-80 mb-0.5 line-clamp-1">
-                {subtitle || <span className="italic opacity-60">Sous-titre…</span>}
+                {subtitle ? formatHeroInline(subtitle) : <span className="italic opacity-60">Sous-titre…</span>}
               </p>
             )}
             {showTitle && (
               <h4 className="text-sm sm:text-base font-bold leading-tight line-clamp-2 max-w-[80%]">
-                {title || <span className="italic opacity-60">Titre du bandeau…</span>}
+                {title ? formatHeroInline(title) : <span className="italic opacity-60">Titre du bandeau…</span>}
               </h4>
             )}
             {ctaVisible && (

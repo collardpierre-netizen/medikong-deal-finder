@@ -387,6 +387,7 @@ export default function HeroImageEditor({ img }: Props) {
           showTitle={showTitle}
           showSubtitle={showSubtitle}
           cta={cta}
+          showCta={showCta}
           link={link}
           linkError={errors.link_url}
           isInternalLink={isInternalLink}

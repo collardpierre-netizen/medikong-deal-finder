@@ -104,10 +104,10 @@ export default function ReconciliationCard({ data, loading, periodLabel }: Props
                     const isOpen = expanded === r.status;
                     const orders = ordersByStatus[r.status] ?? [];
                     return (
-                      <>
+                      <React.Fragment key={r.status}>
                         <tr
-                          key={r.status}
                           role="button"
+
                           tabIndex={0}
                           aria-expanded={isOpen}
                           aria-label={`Voir les commandes ${labelFor(r.status)}`}

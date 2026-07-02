@@ -296,41 +296,10 @@ export default function VendorOrders() {
     onError: (e: any) => toast.error(e?.message || "Erreur lors de la modification du statut"),
   });
 
-  // ----- Rendu -----
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="animate-spin text-muted-foreground" size={32} />
-      </div>
-    );
-  }
-
-  if (!orders || orders.length === 0) {
-    return (
-      <div className="space-y-5">
-        <div>
-          <h1 className="text-xl font-bold text-foreground">Commandes</h1>
-          <p className="text-[13px] text-muted-foreground mt-0.5">Gestion de vos commandes</p>
-        </div>
-        <VEmptyState
-          icon="ShoppingCart"
-          title="Aucune commande"
-          sub="Vos commandes apparaîtront ici dès qu'un acheteur passera commande sur vos offres."
-        />
-      </div>
-    );
-  }
-
-  const formatAddress = (addr: any) => {
-    if (!addr) return "—";
-    if (typeof addr === "string") return addr;
-    return addr.line1 || `${addr.street || ""} ${addr.postal_code || ""} ${addr.city || ""}`.trim() || "—";
-  };
-
   // ---- KPIs sur tout le portefeuille (avant filtres) ----
   const kpis = useMemo(() => {
     const acc = { total: 0, toTreat: 0, processing: 0, shipped: 0, delivered: 0, cancelled: 0, revenueHT: 0 };
-    for (const o of orders) {
+    for (const o of orders ?? []) {
       for (const l of o.lines) {
         acc.total += 1;
         acc.revenueHT += l.line_total_excl_vat || 0;
@@ -364,7 +333,7 @@ export default function VendorOrders() {
       return true;
     };
 
-    const filtered = orders.filter((o) => {
+    const filtered = (orders ?? []).filter((o) => {
       if (periodMs && now - new Date(o.order_date).getTime() > periodMs) return false;
       const statuses = o.lines.map(l => l.fulfillment_status);
       if (!matchStatus(statuses)) return false;
@@ -387,6 +356,38 @@ export default function VendorOrders() {
     });
     return filtered;
   }, [orders, statusFilter, search, periodFilter, sortBy]);
+
+  // ----- Rendu -----
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="animate-spin text-muted-foreground" size={32} />
+      </div>
+    );
+  }
+
+  if (!orders || orders.length === 0) {
+    return (
+      <div className="space-y-5">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Commandes</h1>
+          <p className="text-[13px] text-muted-foreground mt-0.5">Gestion de vos commandes</p>
+        </div>
+        <VEmptyState
+          icon="ShoppingCart"
+          title="Aucune commande"
+          sub="Vos commandes apparaîtront ici dès qu'un acheteur passera commande sur vos offres."
+        />
+      </div>
+    );
+  }
+
+  const formatAddress = (addr: any) => {
+    if (!addr) return "—";
+    if (typeof addr === "string") return addr;
+    return addr.line1 || `${addr.street || ""} ${addr.postal_code || ""} ${addr.city || ""}`.trim() || "—";
+  };
+
 
   const statusTabs: { key: string; label: string; count: number; icon: any; color: string }[] = [
     { key: "all",        label: "Toutes",       count: kpis.total,     icon: ShoppingCart,  color: "text-foreground" },

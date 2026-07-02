@@ -235,6 +235,24 @@ export default function SearchTrivagoCard({ product: p }: Props) {
                 ))}
               </div>
             )}
+            {expanded && !offersLoading && offersError && (
+              <div className="flex flex-col items-center justify-center gap-2 px-5 py-6 border-b border-border/60 text-center">
+                <AlertCircle size={20} className="text-destructive" />
+                <p className="text-sm font-medium text-destructive">
+                  Impossible de charger les offres
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Une erreur est survenue lors de la récupération des autres vendeurs.
+                </p>
+                <button
+                  onClick={() => refetchOffers()}
+                  className="mt-1 inline-flex items-center gap-1.5 text-[12px] font-semibold text-primary hover:text-primary/80 transition-colors"
+                >
+                  <RotateCcw size={12} />
+                  Réessayer
+                </button>
+              </div>
+            )}
             {expanded && !offersLoading && visibleOffers.map((offer: any) => (
               <div
                 key={offer.id}

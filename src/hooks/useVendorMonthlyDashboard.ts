@@ -30,12 +30,18 @@ export interface VendorMonthlyDashboard {
   customerTypeBreakdown: CustomerTypeSlice[];
 }
 
+/**
+ * Statuts exclus — DOIT rester aligné avec la RPC canonique
+ * `get_vendor_gmv_progress` (source de vérité GMV / paliers commission).
+ * Toute modification ici implique d'ajuster aussi la RPC (et inversement).
+ */
 const EXCLUDED_STATUSES = new Set([
   "cancelled",
   "canceled",
+  "refused",
+  "rejected",
   "refunded",
   "failed",
-  "rejected",
 ]);
 
 export interface DashboardPeriod {

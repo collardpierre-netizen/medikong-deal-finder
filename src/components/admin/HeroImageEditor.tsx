@@ -451,12 +451,12 @@ export default function HeroImageEditor({ img }: Props) {
 function PreviewFrame({
   image_url, alt, title, subtitle, showTitle, showSubtitle,
   cta, showCta, link, linkError, isInternalLink,
-  focalX, focalY, zoom, device,
+  focalX, focalY, zoom, imageFit, device,
 }: {
   image_url: string; alt: string; title: string; subtitle: string;
   showTitle: boolean; showSubtitle: boolean;
   cta: string; showCta: boolean; link: string; linkError?: string; isInternalLink: boolean;
-  focalX: number; focalY: number; zoom: number;
+  focalX: number; focalY: number; zoom: number; imageFit: "cover" | "contain";
   device: "desktop" | "mobile";
 }) {
   const aspect = device === "desktop" ? "16/7" : "4/3";
@@ -472,7 +472,7 @@ function PreviewFrame({
         <img
           src={image_url}
           alt={alt}
-          className="absolute inset-0 w-full h-full object-cover"
+          className={`absolute inset-0 w-full h-full ${imageFit === "contain" ? "object-contain" : "object-cover"}`}
           style={{
             objectPosition: `${focalX}% ${focalY}%`,
             transform: zoom > 1 ? `scale(${zoom})` : undefined,

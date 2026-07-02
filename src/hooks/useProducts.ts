@@ -271,8 +271,24 @@ export function useProductOffers(productId: string | undefined) {
         throw error;
       }
 
-      const offerIds = (offers || []).map((o: any) => o.id);
-      const vendorIds = [...new Set((offers || []).map((o: any) => o.vendor_id))];
+      // Résolution exclusivité produit×pays×profil (Lot 1b) : masque les offres
+      // concurrentes en mode hide/block, tague le vendeur exclusif en showcase.
+      const { data: exclRows } = await supabase.rpc("resolve_offer_exclusivity" as any, {
+        _product_id: productId!,
+        _country: country,
+        _buyer_profile_id: buyerProfileId ?? null,
+      });
+      const exclusivity = Array.isArray(exclRows) && exclRows.length > 0 ? (exclRows[0] as any) : null;
+      const exclVendorId: string | null = exclusivity?.vendor_id ?? null;
+      const exclMode: "showcase" | "hide" | "block" | null = (exclusivity?.mode as any) ?? null;
+
+      const visibleOffers = (offers || []).filter((o: any) => {
+        if (!exclMode || exclMode === "showcase") return true;
+        return o.vendor_id === exclVendorId; // hide + block
+      });
+
+      const offerIds = visibleOffers.map((o: any) => o.id);
+      const vendorIds = [...new Set(visibleOffers.map((o: any) => o.vendor_id))];
 
       // Cascade prix utilisateur (DB-driven) :
       // Lecture unique de la vue `effective_offer_prices_v` qui applique côté

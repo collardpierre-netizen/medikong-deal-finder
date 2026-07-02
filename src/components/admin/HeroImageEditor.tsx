@@ -139,6 +139,7 @@ export default function HeroImageEditor({ img }: Props) {
     showSubtitle !== (img.show_subtitle ?? true) ||
     cta !== (img.cta_text ?? "") ||
     link !== (img.link_url ?? "") ||
+    showCta !== (img.show_cta ?? true) ||
     imageUrlMobile !== (img.image_url_mobile ?? "") ||
     focalX !== Number(img.focal_x ?? 50) ||
     focalY !== Number(img.focal_y ?? 50) ||

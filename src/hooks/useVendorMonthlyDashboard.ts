@@ -88,21 +88,22 @@ export function useVendorMonthlyDashboard(
     enabled: !!vendorId,
     staleTime: 60_000,
     queryFn: async () => {
-      const baseQuery = supabase
+      const { data, error } = await supabase
         .from("order_lines")
         .select(
           `line_total_incl_vat, line_total_excl_vat, line_margin, commission_amount,
            orders!inner ( ${VENDOR_GMV_ORDER_COLUMNS},
                           customers:customer_id ( customer_type ) )`,
         )
-        .eq("vendor_id", vendorId!);
-      const { data, error } = await applyVendorGmvOrderFilters(baseQuery, {
-        startISO: start.toISOString(),
-        endISO: end.toISOString(),
-      });
+        .eq("vendor_id", vendorId!)
+        .eq("orders.is_forecast", false)
+        .eq("orders.is_test", false)
+        .gte("orders.created_at", start.toISOString())
+        .lte("orders.created_at", end.toISOString());
       if (error) throw error;
 
       const billable = (data ?? []).filter((l: any) => isBillableOrder(l.orders));
+
 
 
       const toCents = (v: unknown) => Math.round(Number(v ?? 0) * 100);

@@ -5,6 +5,7 @@ import {
   useVendorMonthlyDashboard,
   type DashboardPeriod,
 } from "@/hooks/useVendorMonthlyDashboard";
+import { useVendorReconciliation } from "@/hooks/useVendorReconciliation";
 import { useVendorGmvProgress } from "@/hooks/useVendorGmvProgress";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VStat } from "@/components/vendor/ui/VStat";
@@ -16,6 +17,7 @@ import VendorMarketIntelStatusCard from "@/components/vendor/dashboard/VendorMar
 import MediKongCommissionCard from "@/components/vendor/dashboard/MediKongCommissionCard";
 import RevenueTrendCard from "@/components/vendor/dashboard/RevenueTrendCard";
 import CustomerTypeBreakdownCard from "@/components/vendor/dashboard/CustomerTypeBreakdownCard";
+import ReconciliationCard from "@/components/vendor/dashboard/ReconciliationCard";
 import { useMoneyFormat } from "@/lib/money-format";
 
 const today = new Date();
@@ -76,6 +78,8 @@ export default function VendorDashboard() {
 
   const { data: kpis } = useVendorDashboardKpis(vendor?.id, period);
   const { data: monthly, isLoading: monthlyLoading } = useVendorMonthlyDashboard(vendor?.id, period);
+  const { data: reconciliation, isLoading: reconciliationLoading } =
+    useVendorReconciliation(vendor?.id, period);
   const { data: gmvProgress } = useVendorGmvProgress(vendor?.id);
   const { formatMoney } = useMoneyFormat();
 
@@ -211,6 +215,13 @@ export default function VendorDashboard() {
             netMarginCents={monthly?.netMarginCents ?? 0}
             progress={gmvProgress ?? null}
             loading={monthlyLoading}
+          />
+
+          {/* Réconciliation CA HTVA ↔ GMV TTC par statut */}
+          <ReconciliationCard
+            data={reconciliation}
+            loading={reconciliationLoading}
+            periodLabel={periodLabel}
           />
 
           {/* Courbe CA + ventilation par profil client */}

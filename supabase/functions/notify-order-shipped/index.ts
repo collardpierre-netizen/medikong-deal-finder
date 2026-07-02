@@ -70,6 +70,35 @@ Deno.serve(async (req) => {
   const stamp = order.updated_at ? new Date(order.updated_at).getTime() : Date.now()
   const idempotencyKey = `order-shipped-${order.id}-${stamp}`
 
+  // Recherche des envois déjà loggés pour cette clé d'idempotence (dedup par message_id)
+  const { data: existingLogs } = await admin
+    .from('email_send_log')
+    .select('id, status, created_at, error_message')
+    .eq('message_id', idempotencyKey)
+    .order('created_at', { ascending: false })
+  const alreadySent = (existingLogs ?? []).some((r: any) =>
+    ['sent', 'pending'].includes(String(r.status))
+  )
+
+  // Mode test : ne rien envoyer, retourner ce qui serait fait + traces existantes
+  const dryRun = body?.dryRun === true
+  if (dryRun) {
+    return json({
+      success: true,
+      dryRun: true,
+      idempotencyKey,
+      recipient: recipientEmail,
+      templateName: 'order-shipped',
+      templateData,
+      alreadySent,
+      wouldSend: !alreadySent,
+      existingLogs: existingLogs ?? [],
+      note: alreadySent
+        ? "Un envoi existe déjà pour cette clé — un vrai appel ne créerait PAS un doublon (idempotency)."
+        : "Aucun envoi existant — un vrai appel enverrait exactement 1 email.",
+    })
+  }
+
   const { data: sendData, error: sendErr } = await admin.functions.invoke('send-transactional-email', {
     body: {
       templateName: 'order-shipped',
@@ -90,5 +119,20 @@ Deno.serve(async (req) => {
     return json({ error: 'email_invoke_failed', detail }, 502)
   }
 
-  return json({ success: true, queued: true, recipient: recipientEmail, sendData })
+  // Post-check : relire les logs pour confirmer un seul envoi actif
+  const { data: postLogs } = await admin
+    .from('email_send_log')
+    .select('id, status, created_at')
+    .eq('message_id', idempotencyKey)
+    .order('created_at', { ascending: false })
+
+  return json({
+    success: true,
+    queued: true,
+    recipient: recipientEmail,
+    idempotencyKey,
+    alreadySentBefore: alreadySent,
+    logsAfter: postLogs ?? [],
+    sendData,
+  })
 })

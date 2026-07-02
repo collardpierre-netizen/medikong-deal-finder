@@ -27,8 +27,9 @@ export default function SearchTrivagoCard({ product: p }: Props) {
   // Les "autres offres" restent en lazy : on ne déclenche `useProductOffers`
   // que quand l'utilisateur ouvre la liste (économise N-1 RPC par page).
   const [expanded, setExpanded] = useState(false);
+  const [prefetch, setPrefetch] = useState(false);
   const { data: offersFull = [], isLoading: offersLoading } = useProductOffers(
-    expanded || !hasContext ? p.id : undefined
+    expanded || prefetch || !hasContext ? p.id : undefined
   );
 
   // Best offer : on privilégie le batch (1 round-trip), sinon le fetch détaillé.
@@ -273,6 +274,8 @@ export default function SearchTrivagoCard({ product: p }: Props) {
                   if (!expanded) setExpanded(true);
                   setShowMore(!showMore);
                 }}
+                onMouseEnter={() => setPrefetch(true)}
+                onFocus={() => setPrefetch(true)}
                 className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
               >
                 {expanded && showMore

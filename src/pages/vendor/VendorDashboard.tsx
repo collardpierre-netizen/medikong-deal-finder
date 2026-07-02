@@ -151,7 +151,7 @@ export default function VendorDashboard() {
             <span className="ml-1 text-[11px] text-[#8B95A5] tabular-nums">{rangeLabel}</span>
           </div>
           <p className="text-[11px] text-[#8B95A5]">
-            CA &amp; GMV : commandes payées, en cours et livrées — hors annulées, remboursées, échouées ou rejetées.
+            CA HTVA &amp; GMV TTC : même source unique (<code>order_lines</code>) — exclut commandes prévisionnelles, de test, masquées, supprimées, annulées, refusées, rejetées, remboursées ou en échec.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

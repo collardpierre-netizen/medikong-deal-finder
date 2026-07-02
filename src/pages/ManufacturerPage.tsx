@@ -145,14 +145,14 @@ export default function ManufacturerPage() {
       </div>
 
       <div
-        className="py-8 md:py-10 relative"
+        className={`py-8 md:py-10 relative ${(manufacturer as any)?.cover_image_url ? "" : "bg-mk-alt"}`}
         style={
           (manufacturer as any)?.cover_image_url
             ? { backgroundImage: `linear-gradient(135deg, rgba(248,250,252,0.88), rgba(248,250,252,0.88)), url(${(manufacturer as any).cover_image_url})`, backgroundSize: "cover", backgroundPosition: "center" }
             : undefined
         }
       >
-        <div className={`mk-container ${(manufacturer as any)?.cover_image_url ? "" : "bg-mk-alt"}`}>
+        <div className="mk-container">
           <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-6">
             {manufacturer.logo_url ? (
               <img src={manufacturer.logo_url} alt={manufacturer.name} referrerPolicy="no-referrer" crossOrigin="anonymous" className="w-[80px] h-[80px] md:w-[100px] md:h-[100px] border border-mk-line bg-white rounded-lg object-contain p-2" />

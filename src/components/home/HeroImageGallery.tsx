@@ -7,20 +7,23 @@ import { useTranslation } from "react-i18next";
 import { useAutoTranslate } from "@/hooks/useAutoTranslate";
 
 const fallbackImages: HeroImg[] = [
-  { id: "1", image_url: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=900&q=80", alt_text: "Fournitures médicales", link_url: null, cta_text: null, title: null, subtitle: null },
-  { id: "2", image_url: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=900&q=80", alt_text: "Équipement médical", link_url: null, cta_text: null, title: null, subtitle: null },
-  { id: "3", image_url: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=900&q=80", alt_text: "Pharmacie professionnelle", link_url: null, cta_text: null, title: null, subtitle: null },
+  { id: "1", image_url: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=900&q=80", image_url_mobile: null, alt_text: "Fournitures médicales", link_url: null, cta_text: null, title: null, subtitle: null, show_title: true, show_subtitle: true },
+  { id: "2", image_url: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=900&q=80", image_url_mobile: null, alt_text: "Équipement médical", link_url: null, cta_text: null, title: null, subtitle: null, show_title: true, show_subtitle: true },
+  { id: "3", image_url: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=900&q=80", image_url_mobile: null, alt_text: "Pharmacie professionnelle", link_url: null, cta_text: null, title: null, subtitle: null, show_title: true, show_subtitle: true },
 ];
 
 interface HeroImg {
   id: string;
   image_url: string;
+  image_url_mobile?: string | null;
   alt_text: string;
   sort_order?: number;
   link_url: string | null;
   cta_text: string | null;
   title: string | null;
   subtitle: string | null;
+  show_title?: boolean | null;
+  show_subtitle?: boolean | null;
   focal_x?: number | null;
   focal_y?: number | null;
   zoom?: number | null;
@@ -32,7 +35,7 @@ export function HeroImageGallery() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("cms_hero_images" as any)
-        .select("id, image_url, alt_text, sort_order, link_url, cta_text, title, subtitle, focal_x, focal_y, zoom")
+        .select("id, image_url, image_url_mobile, alt_text, sort_order, link_url, cta_text, title, subtitle, show_title, show_subtitle, focal_x, focal_y, zoom")
         .eq("is_active", true)
         .order("sort_order");
       if (error || !data?.length) return null;

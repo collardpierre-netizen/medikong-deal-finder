@@ -12,6 +12,15 @@ interface Props {
   product: Product;
 }
 
+// Cache module-level : mémorise les productId déjà "prefetch". Deux buts :
+//  1. Un même productId affiché dans plusieurs cartes ne déclenche qu'un seul
+//     mount de useProductOffers (React Query dédoublonne déjà le fetch réseau,
+//     mais on évite le state churn et les re-renders).
+//  2. Après un unmount/remount (scroll virtuel, retour navigation), la carte
+//     reste en mode "déjà prefetch" au lieu de repasser par le survol.
+const prefetchedProductIds = new Set<string>();
+
+
 export default function SearchTrivagoCard({ product: p }: Props) {
   const navigate = useNavigate();
   const location = useLocation();

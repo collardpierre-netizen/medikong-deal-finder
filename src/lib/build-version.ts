@@ -93,8 +93,12 @@ async function checkVersion() {
       active.tagName === "TEXTAREA" ||
       active.isContentEditable);
 
+  const autoRefreshDisabled = isAutoRefreshDisabled();
   const canReloadNow =
-    !isEditing && document.visibilityState === "visible" && canAutoReload();
+    !autoRefreshDisabled &&
+    !isEditing &&
+    document.visibilityState === "visible" &&
+    canAutoReload();
 
   if (canReloadNow) {
     if (!safeCacheBustReload()) safeAutoReload();

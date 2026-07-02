@@ -1123,32 +1123,27 @@ async function processSingleProduct(
               // --- Price tiers (degressive pricing by MOV threshold) ---
               const rawTiers: any[] = extractRawTiers(offer);
 
-              const { data: upsertedOffer, error: mvErr } = await sb.from("offers").upsert(
-                {
-                  product_id: product.id,
-                  vendor_id: vendorId,
-                  qogita_offer_qid: oQid,
-                  country_code: country,
-                  qogita_base_price: oExclVat,
-                  qogita_base_delay_days: delayDays,
-                  is_qogita_backed: true,
-                  price_excl_vat: oExclVat,
-                  price_incl_vat: oInclVat,
-                  vat_rate: vatRate,
-                  moq: oMoq,
-                  mov: oMov > 0 ? oMov : null,
-                  stock_quantity: oStock,
-                  stock_status: oStock > 0 ? "in_stock" : "out_of_stock",
-                  delivery_days: delayDays,
-                  shipping_from_country: country,
-                  is_active: true,
-                  synced_at: new Date().toISOString(),
-                  ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
-                },
-                // Qogita offer qid is the stable upstream identifier; use it as
-                // the conflict target to refresh existing offers idempotently.
-                { onConflict: "qogita_offer_qid", ignoreDuplicates: false },
-              ).select("id").maybeSingle();
+              const { data: upsertedOffer, error: mvErr } = await upsertQogitaOffer(sb, {
+                product_id: product.id,
+                vendor_id: vendorId,
+                qogita_offer_qid: oQid,
+                country_code: country,
+                qogita_base_price: oExclVat,
+                qogita_base_delay_days: delayDays,
+                is_qogita_backed: true,
+                price_excl_vat: oExclVat,
+                price_incl_vat: oInclVat,
+                vat_rate: vatRate,
+                moq: oMoq,
+                mov: oMov > 0 ? oMov : null,
+                stock_quantity: oStock,
+                stock_status: oStock > 0 ? "in_stock" : "out_of_stock",
+                delivery_days: delayDays,
+                shipping_from_country: country,
+                is_active: true,
+                synced_at: new Date().toISOString(),
+                ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
+              });
 
               if (mvErr) {
                 const code = (mvErr as any)?.code as string | undefined;

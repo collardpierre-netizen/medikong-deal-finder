@@ -29,6 +29,7 @@ interface HeroImg {
   focal_x?: number | null;
   focal_y?: number | null;
   zoom?: number | null;
+  image_fit?: "cover" | "contain" | null;
 }
 
 export function HeroImageGallery() {

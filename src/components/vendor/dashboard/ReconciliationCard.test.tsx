@@ -19,7 +19,19 @@ const data: VendorReconciliation = {
   excludedRevenueExclVatCents: 500,
   excludedGmvInclVatCents: 605,
   vatCents: 2_100,
+  ordersByStatus: {
+    paid: [
+      { orderId: "o-1", orderNumber: "MK-1001", createdAt: "2026-06-15T10:00:00Z", revenueExclVatCents: 8_000, gmvInclVatCents: 9_680, linesCount: 2 },
+    ],
+    shipped: [
+      { orderId: "o-2", orderNumber: "MK-1002", createdAt: "2026-06-20T10:00:00Z", revenueExclVatCents: 2_000, gmvInclVatCents: 2_420, linesCount: 1 },
+    ],
+    cancelled: [
+      { orderId: "o-3", orderNumber: "MK-1003", createdAt: "2026-06-22T10:00:00Z", revenueExclVatCents: 500, gmvInclVatCents: 605, linesCount: 1 },
+    ],
+  },
 };
+
 
 describe("ReconciliationCard · totaux et formule GMV − CA", () => {
   it("affiche le total inclus (CA HTVA et GMV TTC) tels que fournis par la source", () => {

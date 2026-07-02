@@ -367,6 +367,12 @@ const AdminCommandeDetail = () => {
 
 
   const saveLineTracking = async (lineId: string) => {
+    const lt = lineTracks[lineId] || { url: "", number: "" };
+    const urlErr = validateTrackingUrl(lt.url);
+    if (urlErr) {
+      toast.error(`Ligne : ${urlErr}`);
+      return;
+    }
     setBusy(`LINE-${lineId}`);
     try {
       const lt = lineTracks[lineId] || { url: "", number: "" };

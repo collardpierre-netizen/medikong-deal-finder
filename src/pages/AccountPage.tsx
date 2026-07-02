@@ -94,6 +94,72 @@ function ProfileSelector() {
   );
 }
 
+function AutoRefreshPreferenceToggle() {
+  const { user } = useAuth();
+  const [disabled, setDisabled] = useState<boolean>(() => isAutoRefreshDisabled());
+
+  // Hydrate from remote profile preference if available (best-effort).
+  useEffect(() => {
+    let cancelled = false;
+    if (!user?.id) return;
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("preferences")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const remote = (data?.preferences as any)?.disable_auto_refresh;
+      if (typeof remote === "boolean") {
+        setDisabled(remote);
+        setAutoRefreshDisabled(remote);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  const onToggle = async (next: boolean) => {
+    setDisabled(next);
+    setAutoRefreshDisabled(next);
+    if (user?.id) {
+      try {
+        await (supabase.rpc as any)("set_user_preference", {
+          _key: "disable_auto_refresh",
+          _value: next,
+        });
+      } catch {
+        /* best-effort */
+      }
+    }
+    toast.success(
+      next
+        ? "Auto-rafraîchissement désactivé : les nouvelles versions ne rechargeront plus la page automatiquement."
+        : "Auto-rafraîchissement réactivé.",
+    );
+  };
+
+  return (
+    <div className="mt-12 pt-8 border-t border-border">
+      <h3 className="text-lg font-bold text-foreground mb-2">Préférences d'interface</h3>
+      <div className="flex items-start justify-between gap-4 rounded-lg border border-mk-line p-4">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-mk-navy">
+            Désactiver l'auto-rafraîchissement des nouvelles versions
+          </p>
+          <p className="text-xs text-mk-sec mt-1">
+            Par défaut, MediKong recharge la page automatiquement quand une nouvelle version est
+            déployée. Si vous cochez cette option, aucun rechargement ne sera déclenché : un simple
+            message vous préviendra et vous pourrez recharger manuellement quand vous le souhaitez.
+          </p>
+        </div>
+        <Switch checked={disabled} onCheckedChange={onToggle} aria-label="Désactiver l'auto-rafraîchissement" />
+      </div>
+    </div>
+  );
+}
+
 function DeleteAccountButton() {
   const { user } = useAuth();
   const navigate = useNavigate();

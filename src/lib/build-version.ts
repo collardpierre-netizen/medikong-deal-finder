@@ -125,6 +125,8 @@ function isUserBusy(): boolean {
   }
 }
 
+let deferredReloadTimer: number | null = null;
+let toastShown = false;
 let started = false;
 
 async function fetchRemoteBuildId(): Promise<string | null> {

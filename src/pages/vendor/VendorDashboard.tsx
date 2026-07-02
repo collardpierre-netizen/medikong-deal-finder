@@ -150,6 +150,9 @@ export default function VendorDashboard() {
             )}
             <span className="ml-1 text-[11px] text-[#8B95A5] tabular-nums">{rangeLabel}</span>
           </div>
+          <p className="text-[11px] text-[#8B95A5]">
+            CA &amp; GMV : commandes payées, en cours et livrées — hors annulées, remboursées, échouées ou rejetées.
+          </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <VStat

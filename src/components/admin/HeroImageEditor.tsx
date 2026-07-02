@@ -229,6 +229,9 @@ export default function HeroImageEditor({ img }: Props) {
           max={LIMITS.subtitle} error={errors.subtitle}
           enabled={showSubtitle} onEnabledChange={setShowSubtitle}
         />
+        <p className="text-[10px] text-[#5C6470] -mt-1 pl-1">
+          Mise en forme : <code className="bg-gray-100 px-1 rounded">**gras**</code> et <code className="bg-gray-100 px-1 rounded">[texte](/lien)</code>
+        </p>
         <div className="rounded-md border border-gray-200 bg-gray-50/60 p-2 space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-[10px] uppercase tracking-wider font-semibold text-[#5C6470] inline-flex items-center gap-2">

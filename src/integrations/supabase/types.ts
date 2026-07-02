@@ -24213,6 +24213,15 @@ export type Database = {
           vendor_subtotal_incl_vat: number
         }[]
       }
+      finalize_orphan_qogita_resync_logs: {
+        Args: { _stale_minutes?: number }
+        Returns: {
+          finalized_id: string
+          minutes_stuck: number
+          new_status: string
+          products_processed: number
+        }[]
+      }
       finalize_qogita_resync_log: {
         Args: {
           _id: string

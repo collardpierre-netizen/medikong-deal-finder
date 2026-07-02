@@ -39,6 +39,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
             unitPriceEur: batchBest.unitPriceEur,
             deliveryDays: batchBest.deliveryDays ?? 0,
             isVerified: batchBest.isVerified,
+            isExclusiveWinner: batchBest.isExclusiveWinner,
           } as any
         : undefined)
     : offersFull[0];

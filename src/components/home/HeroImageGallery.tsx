@@ -78,7 +78,10 @@ export function HeroImageGallery() {
   const { translated: translatedCta } = useAutoTranslate(currentImage?.cta_text || null);
 
   const slideContent = (
-    <div className="relative w-full rounded-2xl overflow-hidden shadow-lg group" style={{ height: 340 }}>
+    // Ratios alignés sur l'aperçu admin (HeroImageEditor) : 4/3 en mobile (<640px), 16/7 en desktop.
+    // Assure la cohérence de recadrage CMS ⇄ front.
+    <div className="relative w-full rounded-2xl overflow-hidden shadow-lg group aspect-[4/3] sm:aspect-[16/7]">
+
       {images.map((img, i) => {
         const fx = Number(img.focal_x ?? 50);
         const fy = Number(img.focal_y ?? 50);

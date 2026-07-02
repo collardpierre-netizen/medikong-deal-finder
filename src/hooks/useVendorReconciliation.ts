@@ -2,6 +2,11 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { DashboardPeriod } from "./useVendorMonthlyDashboard";
+import {
+  VENDOR_GMV_ORDER_COLUMNS,
+  isBillableStatus,
+  normalizeOrderStatus,
+} from "@/lib/vendor-gmv-filters";
 
 /**
  * Réconciliation CA HTVA ↔ GMV TTC sur la période.
@@ -13,16 +18,10 @@ import type { DashboardPeriod } from "./useVendorMonthlyDashboard";
  *  - nombre de commandes
  *  - inclus / exclu du calcul CA & GMV
  *
- * DOIT rester aligné avec `EXCLUDED_STATUSES` de useVendorMonthlyDashboard.
+ * Les statuts inclus/exclus proviennent du modèle de filtre partagé
+ * `src/lib/vendor-gmv-filters.ts` (aligné sur la RPC `get_vendor_gmv_progress`).
  */
-const EXCLUDED_STATUSES = new Set([
-  "cancelled",
-  "canceled",
-  "refused",
-  "rejected",
-  "refunded",
-  "failed",
-]);
+
 
 export interface StatusReconciliationRow {
   status: string;

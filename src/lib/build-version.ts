@@ -465,6 +465,7 @@ export function installBuildVersionWatcher() {
   window.addEventListener("focus", () => {
     if (isAutoRefreshDisabled()) return;
     if (!isAtRiskPath()) return;
+    if (isSensitivePath() || hasUnsavedDraft()) return;
     if (isUserBusy()) return;
     if (isBuildStale() && canAutoReload()) {
       if (!safeCacheBustReload()) safeAutoReload();

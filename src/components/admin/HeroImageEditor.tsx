@@ -2,15 +2,19 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Check, ExternalLink, Link2, Monitor, Smartphone, RotateCcw, Info } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { AlertCircle, Check, ExternalLink, Link2, Monitor, Smartphone, RotateCcw, Info, Upload, X as XIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export interface HeroImageRow {
   id: string;
   image_url: string;
+  image_url_mobile?: string | null;
   alt_text: string;
   title: string | null;
   subtitle: string | null;
+  show_title?: boolean | null;
+  show_subtitle?: boolean | null;
   cta_text: string | null;
   link_url: string | null;
   focal_x?: number | null;
@@ -27,6 +31,13 @@ const RECOMMENDED = {
   ratio: 1920 / 840,
   minWidth: 1200,
   ratioTolerance: 0.15,
+};
+
+// Mobile : ratio 4/3 recommandé (crop plus haut, ~800×600).
+const RECOMMENDED_MOBILE = {
+  width: 800,
+  height: 600,
+  ratio: 4 / 3,
 };
 
 export function validateHeroUrl(raw: string): string | null {
@@ -66,24 +77,33 @@ export default function HeroImageEditor({ img }: Props) {
   const queryClient = useQueryClient();
   const [title, setTitle] = useState(img.title ?? "");
   const [subtitle, setSubtitle] = useState(img.subtitle ?? "");
+  const [showTitle, setShowTitle] = useState<boolean>(img.show_title ?? true);
+  const [showSubtitle, setShowSubtitle] = useState<boolean>(img.show_subtitle ?? true);
   const [cta, setCta] = useState(img.cta_text ?? "");
   const [link, setLink] = useState(img.link_url ?? "");
+  const [imageUrlMobile, setImageUrlMobile] = useState<string>(img.image_url_mobile ?? "");
   const [focalX, setFocalX] = useState<number>(Number(img.focal_x ?? 50));
   const [focalY, setFocalY] = useState<number>(Number(img.focal_y ?? 50));
   const [zoom, setZoom] = useState<number>(Number(img.zoom ?? 1));
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
   const [saving, setSaving] = useState(false);
   const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
+  const [dimsMobile, setDimsMobile] = useState<{ w: number; h: number } | null>(null);
+  const [uploadingMobile, setUploadingMobile] = useState(false);
+  const mobileFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setTitle(img.title ?? "");
     setSubtitle(img.subtitle ?? "");
+    setShowTitle(img.show_title ?? true);
+    setShowSubtitle(img.show_subtitle ?? true);
     setCta(img.cta_text ?? "");
     setLink(img.link_url ?? "");
+    setImageUrlMobile(img.image_url_mobile ?? "");
     setFocalX(Number(img.focal_x ?? 50));
     setFocalY(Number(img.focal_y ?? 50));
     setZoom(Number(img.zoom ?? 1));
-  }, [img.id, img.title, img.subtitle, img.cta_text, img.link_url, img.focal_x, img.focal_y, img.zoom]);
+  }, [img.id, img.title, img.subtitle, img.show_title, img.show_subtitle, img.cta_text, img.link_url, img.image_url_mobile, img.focal_x, img.focal_y, img.zoom]);
 
   // Détection dimensions image source
   useEffect(() => {
@@ -94,6 +114,15 @@ export default function HeroImageEditor({ img }: Props) {
     i.src = img.image_url;
   }, [img.image_url]);
 
+  useEffect(() => {
+    setDimsMobile(null);
+    if (!imageUrlMobile.trim()) return;
+    const i = new Image();
+    i.onload = () => setDimsMobile({ w: i.naturalWidth, h: i.naturalHeight });
+    i.onerror = () => setDimsMobile(null);
+    i.src = imageUrlMobile;
+  }, [imageUrlMobile]);
+
   const errors = useMemo(
     () => validateHeroFields({ title, subtitle, cta_text: cta, link_url: link }),
     [title, subtitle, cta, link]
@@ -103,15 +132,18 @@ export default function HeroImageEditor({ img }: Props) {
   const dirty =
     title !== (img.title ?? "") ||
     subtitle !== (img.subtitle ?? "") ||
+    showTitle !== (img.show_title ?? true) ||
+    showSubtitle !== (img.show_subtitle ?? true) ||
     cta !== (img.cta_text ?? "") ||
     link !== (img.link_url ?? "") ||
+    imageUrlMobile !== (img.image_url_mobile ?? "") ||
     focalX !== Number(img.focal_x ?? 50) ||
     focalY !== Number(img.focal_y ?? 50) ||
     zoom !== Number(img.zoom ?? 1);
 
   const isInternalLink = link.trim().startsWith("/");
 
-  // Diagnostic dimensions
+  // Diagnostic dimensions desktop
   const dimStatus = useMemo(() => {
     if (!dims) return null;
     const ratio = dims.w / dims.h;
@@ -130,8 +162,11 @@ export default function HeroImageEditor({ img }: Props) {
       .update({
         title: title.trim() || null,
         subtitle: subtitle.trim() || null,
+        show_title: showTitle,
+        show_subtitle: showSubtitle,
         cta_text: cta.trim() || null,
         link_url: link.trim() || null,
+        image_url_mobile: imageUrlMobile.trim() || null,
         focal_x: focalX,
         focal_y: focalY,
         zoom,
@@ -146,12 +181,48 @@ export default function HeroImageEditor({ img }: Props) {
 
   const resetCrop = () => { setFocalX(50); setFocalY(50); setZoom(1); };
 
+  const handleMobileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast.error("Fichier non supporté"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("Image trop lourde (max 5 Mo)"); return; }
+    setUploadingMobile(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const fileName = `hero-mobile-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("cms-images").upload(`hero/${fileName}`, file, { upsert: false });
+      if (upErr) throw upErr;
+      const { data: urlData } = supabase.storage.from("cms-images").getPublicUrl(`hero/${fileName}`);
+      setImageUrlMobile(urlData.publicUrl);
+      toast.success("Image mobile uploadée — pensez à enregistrer");
+    } catch (err: any) {
+      toast.error("Erreur upload : " + (err.message || "inconnue"));
+    } finally {
+      setUploadingMobile(false);
+      if (mobileFileRef.current) mobileFileRef.current.value = "";
+    }
+  };
+
+  const effectiveMobileSrc = imageUrlMobile.trim() || img.image_url;
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 w-full">
       {/* ---- Form ---- */}
       <div className="space-y-2">
-        <Field label="Titre" value={title} onChange={setTitle} placeholder="Titre principal du bandeau" max={LIMITS.title} error={errors.title} />
-        <Field label="Sous-titre" value={subtitle} onChange={setSubtitle} placeholder="Phrase d'accroche secondaire" max={LIMITS.subtitle} error={errors.subtitle} />
+        <FieldWithToggle
+          label="Titre"
+          value={title} onChange={setTitle}
+          placeholder="Titre principal du bandeau"
+          max={LIMITS.title} error={errors.title}
+          enabled={showTitle} onEnabledChange={setShowTitle}
+        />
+        <FieldWithToggle
+          label="Sous-titre"
+          value={subtitle} onChange={setSubtitle}
+          placeholder="Phrase d'accroche secondaire"
+          max={LIMITS.subtitle} error={errors.subtitle}
+          enabled={showSubtitle} onEnabledChange={setShowSubtitle}
+        />
         <div className="grid grid-cols-2 gap-2">
           <Field label="Label CTA" value={cta} onChange={setCta} placeholder="Découvrir →" max={LIMITS.cta} error={errors.cta_text} />
           <Field
@@ -159,6 +230,55 @@ export default function HeroImageEditor({ img }: Props) {
             max={LIMITS.url} error={errors.link_url}
             hint={link.trim() && !errors.link_url ? (isInternalLink ? "Lien interne" : "Lien externe (nouvel onglet)") : undefined}
           />
+        </div>
+
+        {/* Image mobile dédiée */}
+        <div className="rounded-md border border-gray-200 bg-gray-50/60 p-2 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] uppercase tracking-wider font-semibold text-[#5C6470]">
+              Image mobile <span className="text-[9px] text-[#8B95A5] normal-case tracking-normal">(facultatif — sinon l'image desktop est utilisée)</span>
+            </p>
+            {imageUrlMobile && (
+              <button
+                type="button"
+                onClick={() => setImageUrlMobile("")}
+                className="text-[10px] text-red-600 inline-flex items-center gap-1 hover:underline"
+              >
+                <XIcon size={10} /> Retirer
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              value={imageUrlMobile}
+              onChange={(e) => setImageUrlMobile(e.target.value)}
+              placeholder="https://… (ratio 4/3 recommandé)"
+              className="flex-1 text-[12px] rounded-md border border-gray-200 px-2 py-1.5 outline-none focus:border-[#1B5BDA] bg-white"
+            />
+            <input
+              ref={mobileFileRef}
+              type="file"
+              accept="image/*"
+              onChange={handleMobileUpload}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => mobileFileRef.current?.click()}
+              disabled={uploadingMobile}
+              className="px-2 py-1.5 text-[11px] rounded-md border border-gray-200 bg-white text-[#5C6470] hover:border-[#1B5BDA] hover:text-[#1B5BDA] inline-flex items-center gap-1 disabled:opacity-60"
+            >
+              <Upload size={11} /> {uploadingMobile ? "Upload…" : "Uploader"}
+            </button>
+          </div>
+          <p className="text-[10px] text-[#8B95A5]">
+            Cible : <strong>{RECOMMENDED_MOBILE.width}×{RECOMMENDED_MOBILE.height}px</strong> · ratio ~{RECOMMENDED_MOBILE.ratio.toFixed(2)}:1 (portrait cadré serré).
+          </p>
+          {imageUrlMobile && dimsMobile && (
+            <p className="text-[10px] text-emerald-700 tabular-nums">
+              Image mobile : {dimsMobile.w}×{dimsMobile.h}px (ratio {(dimsMobile.w / dimsMobile.h).toFixed(2)})
+            </p>
+          )}
         </div>
 
         {/* Recadrage */}
@@ -178,10 +298,10 @@ export default function HeroImageEditor({ img }: Props) {
           <CropSlider label="Zoom" value={zoom} onChange={setZoom} min={1} max={3} step={0.05} unit="×" fixed={2} />
         </div>
 
-        {/* Dimensions recommandées */}
+        {/* Dimensions recommandées desktop */}
         <div className="rounded-md border border-gray-200 bg-white p-2 text-[10.5px] text-[#5C6470] space-y-1">
           <p className="inline-flex items-center gap-1 font-semibold text-[#1E252F]">
-            <Info size={11} /> Dimensions recommandées
+            <Info size={11} /> Dimensions recommandées (desktop)
           </p>
           <p>
             Cible : <strong>{RECOMMENDED.width}×{RECOMMENDED.height}px</strong> · ratio ~{RECOMMENDED.ratio.toFixed(2)}:1 (paysage panoramique) · JPG/WebP &lt; 400 Ko.
@@ -238,10 +358,12 @@ export default function HeroImageEditor({ img }: Props) {
         </div>
 
         <PreviewFrame
-          image_url={img.image_url}
+          image_url={device === "mobile" ? effectiveMobileSrc : img.image_url}
           alt={img.alt_text}
-          title={title}
-          subtitle={subtitle}
+          title={showTitle ? title : ""}
+          subtitle={showSubtitle ? subtitle : ""}
+          showTitle={showTitle}
+          showSubtitle={showSubtitle}
           cta={cta}
           link={link}
           linkError={errors.link_url}
@@ -252,6 +374,11 @@ export default function HeroImageEditor({ img }: Props) {
           device={device}
         />
 
+        {device === "mobile" && !imageUrlMobile.trim() && (
+          <p className="text-[10px] mt-1 text-[#8B95A5] italic">
+            Aucune image mobile dédiée — l'image desktop est utilisée.
+          </p>
+        )}
         {link.trim() && !errors.link_url && (
           <p className="text-[10px] mt-1.5 text-[#5C6470] truncate">
             <span className="font-medium">Cible :</span> {link}
@@ -263,17 +390,19 @@ export default function HeroImageEditor({ img }: Props) {
 }
 
 function PreviewFrame({
-  image_url, alt, title, subtitle, cta, link, linkError, isInternalLink,
+  image_url, alt, title, subtitle, showTitle, showSubtitle,
+  cta, link, linkError, isInternalLink,
   focalX, focalY, zoom, device,
 }: {
-  image_url: string; alt: string; title: string; subtitle: string; cta: string;
-  link: string; linkError?: string; isInternalLink: boolean;
+  image_url: string; alt: string; title: string; subtitle: string;
+  showTitle: boolean; showSubtitle: boolean;
+  cta: string; link: string; linkError?: string; isInternalLink: boolean;
   focalX: number; focalY: number; zoom: number;
   device: "desktop" | "mobile";
 }) {
-  // Desktop = ratio 16/7 (rendu réel accueil), Mobile = ratio 4/3 approx (crop portrait plus haut)
   const aspect = device === "desktop" ? "16/7" : "4/3";
   const maxW = device === "desktop" ? "100%" : 320;
+  const hasAnyText = showTitle || showSubtitle || Boolean(cta.trim());
   return (
     <div className="flex justify-center bg-gradient-to-br from-gray-100 to-gray-50 rounded-xl p-2">
       <div
@@ -290,27 +419,35 @@ function PreviewFrame({
             transformOrigin: `${focalX}% ${focalY}%`,
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/15 to-transparent" />
+        {hasAnyText && (
+          <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/15 to-transparent" />
+        )}
         {/* Repère centre de crop */}
         <div
           className="absolute pointer-events-none w-4 h-4 -ml-2 -mt-2 rounded-full border-2 border-white/70 shadow-[0_0_0_1px_rgba(0,0,0,0.4)]"
           style={{ left: `${focalX}%`, top: `${focalY}%` }}
           aria-hidden
         />
-        <div className="absolute bottom-3 left-3 right-3 z-10 text-white">
-          <p className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wider opacity-80 mb-0.5 line-clamp-1">
-            {subtitle || <span className="italic opacity-60">Sous-titre…</span>}
-          </p>
-          <h4 className="text-sm sm:text-base font-bold leading-tight line-clamp-2 max-w-[80%]">
-            {title || <span className="italic opacity-60">Titre du bandeau…</span>}
-          </h4>
-          {cta.trim() && (
-            <span className="inline-flex items-center gap-1 mt-2 px-3 py-1 rounded-md text-[11px] font-semibold bg-white/25 backdrop-blur-sm">
-              {cta}
-              {link.trim() && !linkError && (isInternalLink ? <Link2 size={10} /> : <ExternalLink size={10} />)}
-            </span>
-          )}
-        </div>
+        {hasAnyText && (
+          <div className="absolute bottom-3 left-3 right-3 z-10 text-white">
+            {showSubtitle && (
+              <p className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wider opacity-80 mb-0.5 line-clamp-1">
+                {subtitle || <span className="italic opacity-60">Sous-titre…</span>}
+              </p>
+            )}
+            {showTitle && (
+              <h4 className="text-sm sm:text-base font-bold leading-tight line-clamp-2 max-w-[80%]">
+                {title || <span className="italic opacity-60">Titre du bandeau…</span>}
+              </h4>
+            )}
+            {cta.trim() && (
+              <span className="inline-flex items-center gap-1 mt-2 px-3 py-1 rounded-md text-[11px] font-semibold bg-white/25 backdrop-blur-sm">
+                {cta}
+                {link.trim() && !linkError && (isInternalLink ? <Link2 size={10} /> : <ExternalLink size={10} />)}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -368,6 +505,53 @@ function Field({
       ) : hint ? (
         <p className="text-[10px] text-[#8B95A5] mt-0.5">{hint}</p>
       ) : null}
+    </div>
+  );
+}
+
+function FieldWithToggle({
+  label, value, onChange, placeholder, max, error,
+  enabled, onEnabledChange,
+}: {
+  label: string; value: string; onChange: (v: string) => void;
+  placeholder: string; max: number; error?: string;
+  enabled: boolean; onEnabledChange: (v: boolean) => void;
+}) {
+  const over = value.length > max;
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-0.5 gap-2">
+        <label className="text-[10px] font-semibold uppercase tracking-wider text-[#5C6470] inline-flex items-center gap-2">
+          {label}
+          <Switch
+            checked={enabled}
+            onCheckedChange={onEnabledChange}
+            aria-label={`Afficher ${label.toLowerCase()}`}
+            className="scale-75 origin-left"
+          />
+          <span className={`text-[9px] font-medium normal-case tracking-normal ${enabled ? "text-emerald-700" : "text-[#8B95A5]"}`}>
+            {enabled ? "Affiché" : "Masqué"}
+          </span>
+        </label>
+        <span className={`text-[9px] tabular-nums ${over ? "text-red-600 font-semibold" : "text-[#8B95A5]"}`}>
+          {value.length}/{max}
+        </span>
+      </div>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        aria-invalid={!!error}
+        disabled={!enabled}
+        className={`w-full text-[12px] rounded-md border px-2 py-1.5 outline-none transition-colors ${
+          error ? "border-red-400 focus:border-red-500 bg-red-50/40" : "border-gray-200 focus:border-[#1B5BDA] bg-white"
+        } ${!enabled ? "opacity-50 bg-gray-50" : ""}`}
+      />
+      {error && (
+        <p className="text-[10px] text-red-600 mt-0.5 inline-flex items-center gap-1">
+          <AlertCircle size={10} /> {error}
+        </p>
+      )}
     </div>
   );
 }

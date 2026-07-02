@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer, Legend } from "recharts";
-import { Info } from "lucide-react";
+import { AlertTriangle, Info, RefreshCw } from "lucide-react";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { useVendorSalesBreakdowns, type VendorAnalyticsPeriod } from "@/hooks/useVendorSalesBreakdowns";
@@ -12,6 +12,38 @@ const EmptyState = ({ message }: { message: string }) => (
     <p className="text-[13px]" style={{ color: "#8B95A5" }}>{message}</p>
   </div>
 );
+
+const ChartSkeleton = ({ slow }: { slow: boolean }) => (
+  <div className="py-4" role="status" aria-live="polite" aria-busy="true">
+    <div className="mx-auto rounded-full animate-pulse bg-[#E2E8F0]" style={{ width: 180, height: 180 }} />
+    <div className="mt-4 flex flex-wrap justify-center gap-2">
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} className="h-3 w-20 rounded animate-pulse bg-[#E2E8F0]" />
+      ))}
+    </div>
+    {slow && (
+      <p className="mt-3 text-center text-[11px]" style={{ color: "#B45309" }}>
+        Le chargement prend plus de temps que prévu…
+      </p>
+    )}
+  </div>
+);
+
+const ErrorState = ({ message, onRetry }: { message: string; onRetry: () => void }) => (
+  <div className="flex flex-col items-center justify-center py-8 text-center" role="alert">
+    <AlertTriangle size={28} className="mb-2" style={{ color: "#DC2626" }} />
+    <p className="text-[13px] mb-3" style={{ color: "#991B1B" }}>{message}</p>
+    <button
+      type="button"
+      onClick={onRetry}
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-[6px] border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC]"
+      style={{ color: "#1D2530" }}
+    >
+      <RefreshCw size={12} /> Réessayer
+    </button>
+  </div>
+);
+
 
 const PERIOD_OPTIONS: { value: VendorAnalyticsPeriod; label: string }[] = [
   { value: "7d", label: "7 jours" },

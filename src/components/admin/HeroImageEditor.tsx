@@ -429,6 +429,7 @@ export default function HeroImageEditor({ img }: Props) {
           focalX={focalX}
           focalY={focalY}
           zoom={zoom}
+          imageFit={imageFit}
           device={device}
         />
 

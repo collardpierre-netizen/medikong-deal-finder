@@ -101,7 +101,9 @@ export function HeroImageGallery() {
       {(() => {
         const showTitle = currentImage?.show_title ?? true;
         const showSubtitle = currentImage?.show_subtitle ?? true;
-        const hasText = showTitle || showSubtitle || Boolean(currentImage?.cta_text);
+        const showCta = currentImage?.show_cta ?? true;
+        const ctaVisible = showCta && Boolean(currentImage?.cta_text);
+        const hasText = showTitle || showSubtitle || ctaVisible;
         if (!hasText) return null;
         return (
           <>
@@ -113,7 +115,7 @@ export function HeroImageGallery() {
               {showTitle && (
                 <h3 className="text-lg md:text-2xl font-bold leading-tight max-w-sm">{translatedTitle || fallbackTitle}</h3>
               )}
-              {currentImage?.cta_text && (
+              {ctaVisible && (
                 <span className="inline-block mt-3 px-5 py-2 rounded-lg text-sm font-semibold bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors">
                   {translatedCta || currentImage.cta_text}
                 </span>

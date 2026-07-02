@@ -150,7 +150,7 @@ export default function ReconciliationCard({ data, loading, periodLabel }: Props
               </div>
               <p className="text-[11px] text-[#8B95A5] mt-2">
                 Même source, mêmes statuts : l'écart entre CA HTVA et GMV TTC
-                correspond à la TVA. Les lignes «&nbsp;exclues&nbsp» ci-dessus
+                correspond à la TVA. Les lignes «&nbsp;exclues&nbsp;» ci-dessus
                 ne figurent dans aucun des deux totaux.
               </p>
             </div>

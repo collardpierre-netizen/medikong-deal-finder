@@ -23,6 +23,30 @@ const STATUS_LABEL: Record<string, string> = {
   refunded: "Remboursée",
 };
 
+/**
+ * Valide une URL de tracking externe.
+ * - Doit parser comme URL absolue
+ * - Protocole obligatoire : https
+ * - Hôte requis avec au moins un point (pas de localhost / IP interne)
+ * - Longueur max 2048
+ * Retourne null si valide, sinon un message d'erreur FR.
+ */
+function validateTrackingUrl(raw: string): string | null {
+  const v = (raw || "").trim();
+  if (!v) return null; // champ optionnel — vide = pas d'URL
+  if (v.length > 2048) return "URL trop longue (max 2048 caractères).";
+  let u: URL;
+  try {
+    u = new URL(v);
+  } catch {
+    return "URL invalide — doit commencer par https://";
+  }
+  if (u.protocol !== "https:") return "L'URL doit utiliser https:// (http et autres protocoles refusés).";
+  if (!u.hostname || !u.hostname.includes(".")) return "Nom de domaine invalide.";
+  if (/^(localhost|127\.|10\.|192\.168\.|0\.0\.0\.0)/i.test(u.hostname)) return "Domaine local/interne interdit.";
+  return null;
+}
+
 const AdminCommandeDetail = () => {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();

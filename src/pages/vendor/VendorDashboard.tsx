@@ -1,5 +1,6 @@
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { useVendorDashboardKpis } from "@/hooks/useVendorDashboardKpis";
+import { useVendorMonthlyDashboard } from "@/hooks/useVendorMonthlyDashboard";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VStat } from "@/components/vendor/ui/VStat";
 import { Database } from "lucide-react";
@@ -7,6 +8,9 @@ import VendorKycStepper from "@/components/vendor/VendorKycStepper";
 import NoShippingDashboard from "@/components/vendor/dashboard/NoShippingDashboard";
 import SendcloudDashboard from "@/components/vendor/dashboard/SendcloudDashboard";
 import VendorMarketIntelStatusCard from "@/components/vendor/dashboard/VendorMarketIntelStatusCard";
+import MediKongCommissionCard from "@/components/vendor/dashboard/MediKongCommissionCard";
+import RevenueTrendCard from "@/components/vendor/dashboard/RevenueTrendCard";
+import CustomerTypeBreakdownCard from "@/components/vendor/dashboard/CustomerTypeBreakdownCard";
 import { useMoneyFormat } from "@/lib/money-format";
 
 const today = new Date();

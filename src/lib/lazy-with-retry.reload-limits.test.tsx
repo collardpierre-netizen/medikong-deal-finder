@@ -88,6 +88,7 @@ describe("lazyWithRetry — reload limits across routes", () => {
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
+    __reloadTiming.scheduler = originalScheduler;
     Object.defineProperty(window, "location", {
       configurable: true,
       value: originalLocation,

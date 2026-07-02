@@ -24,6 +24,20 @@ interface StepConfig {
 }
 
 function getPipelineSteps(country: string, mode: string): StepConfig[] {
+  if (mode === "fast_tier_refresh") {
+    return [
+      {
+        name: "offers_fast_refresh",
+        label: "Refresh rapide offres (prix/stock/paliers)",
+        functionName: "sync-qogita-offers-detail",
+        params: { country, mode: "fast" },
+        required: true,
+        loopBatch: true,
+        batchSize: 100,
+      },
+    ];
+  }
+
   if (mode === "daily_stale_refresh") {
     return [
       {

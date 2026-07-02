@@ -118,6 +118,27 @@ export default function OrderDetailPage() {
           )}
         </div>
 
+        {((order as any)?.tracking_url || (order as any)?.tracking_number || (order as any)?.tracking_carrier) && (
+          <div className="mb-6 rounded-lg border border-indigo-200 bg-indigo-50 p-4">
+            <div className="text-[11px] uppercase text-indigo-700 font-semibold mb-1">Suivi d'expédition</div>
+            {(order as any)?.shipped_at && (
+              <div className="text-xs text-mk-sec">Expédiée le {formatOrderDateTime((order as any).shipped_at)}</div>
+            )}
+            {(order as any)?.tracking_carrier && (
+              <div className="text-sm text-mk-navy mt-1"><strong>Transporteur :</strong> {(order as any).tracking_carrier}</div>
+            )}
+            {(order as any)?.tracking_number && (
+              <div className="text-sm text-mk-navy"><strong>N° de colis :</strong> <span className="font-mono">{(order as any).tracking_number}</span></div>
+            )}
+            {(order as any)?.tracking_url && (
+              <a href={(order as any).tracking_url} target="_blank" rel="noreferrer" className="inline-block mt-2 bg-mk-blue text-white text-sm font-semibold px-4 py-2 rounded">
+                Suivre mon colis →
+              </a>
+            )}
+          </div>
+        )}
+
+
         {/* Timeline dynamique */}
         {currentStep >= 0 ? (
           <div className="bg-mk-alt rounded-lg p-4 md:p-6 mb-8 overflow-x-auto">

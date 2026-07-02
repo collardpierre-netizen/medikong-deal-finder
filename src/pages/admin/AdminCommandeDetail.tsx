@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { fmtEur } from "@/lib/format-currency";
-import { ArrowLeft, FileDown, Pencil, Copy, Link2, ExternalLink, Lock, Wallet, ShieldCheck, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, FileDown, Pencil, Copy, Link2, ExternalLink, Lock, Wallet, ShieldCheck, AlertTriangle, CheckCircle2, Truck, Send } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { lineMetrics, type ManualLineInput } from "@/lib/manual-order-metrics";
 import { VendorsEmbedError } from "@/lib/vendors-embed-error";
@@ -32,6 +32,12 @@ const AdminCommandeDetail = () => {
   const [expiresInput, setExpiresInput] = useState<string>("");
   const [coherence, setCoherence] = useState<any | null>(null);
   const [coherenceOpen, setCoherenceOpen] = useState(false);
+  // Suivi d'expédition (niveau commande)
+  const [trackUrl, setTrackUrl] = useState("");
+  const [trackCarrier, setTrackCarrier] = useState("");
+  const [trackNumber, setTrackNumber] = useState("");
+  // Suivi par ligne — édition admin
+  const [lineTracks, setLineTracks] = useState<Record<string, { url: string; number: string }>>({});
 
   const { data: order, isLoading, error: orderError } = useQuery({
     queryKey: ["admin-order", id],
@@ -117,6 +123,14 @@ const AdminCommandeDetail = () => {
       setPinInput((order as any).public_access_pin || "");
       const exp = (order as any).public_access_expires_at;
       setExpiresInput(exp ? new Date(exp).toISOString().slice(0, 10) : "");
+      setTrackUrl((order as any).tracking_url || "");
+      setTrackCarrier((order as any).tracking_carrier || "");
+      setTrackNumber((order as any).tracking_number || "");
+      const map: Record<string, { url: string; number: string }> = {};
+      for (const l of ((order as any).order_lines || [])) {
+        map[l.id] = { url: l.tracking_url || "", number: l.tracking_number || "" };
+      }
+      setLineTracks(map);
     }
   }, [order]);
 
@@ -264,6 +278,60 @@ const AdminCommandeDetail = () => {
     }
   };
 
+  const saveTracking = async (opts: { notify: boolean; markShipped: boolean }) => {
+    setBusy("TRACKING");
+    try {
+      const patch: Record<string, any> = {
+        tracking_url: trackUrl.trim() || null,
+        tracking_carrier: trackCarrier.trim() || null,
+        tracking_number: trackNumber.trim() || null,
+      };
+      if (opts.markShipped) {
+        patch.status = "shipped";
+        patch.shipped_at = new Date().toISOString();
+      }
+      const { error } = await supabase.from("orders").update(patch as any).eq("id", id!);
+      if (error) throw error;
+      if (opts.notify) {
+        const { data: notifyRes, error: notifyErr } = await supabase.functions.invoke("notify-order-shipped", {
+          body: { orderId: id, appOrigin: window.location.origin },
+        });
+        if (notifyErr) {
+          toast.warning("Suivi enregistré — email non envoyé : " + (notifyErr.message || "erreur"));
+        } else {
+          toast.success(`Suivi enregistré · email envoyé à ${(notifyRes as any)?.recipient || "l'acheteur"}`);
+        }
+      } else {
+        toast.success("Suivi enregistré");
+      }
+      await queryClient.invalidateQueries({ queryKey: ["admin-order", id] });
+    } catch (e: any) {
+      toast.error(e?.message || "Échec enregistrement suivi");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const saveLineTracking = async (lineId: string) => {
+    setBusy(`LINE-${lineId}`);
+    try {
+      const lt = lineTracks[lineId] || { url: "", number: "" };
+      const { error } = await supabase.from("order_lines").update({
+        tracking_url: lt.url.trim() || null,
+        tracking_number: lt.number.trim() || null,
+      }).eq("id", lineId);
+      if (error) throw error;
+      toast.success("Suivi ligne enregistré");
+      await queryClient.invalidateQueries({ queryKey: ["admin-order", id] });
+    } catch (e: any) {
+      toast.error(e?.message || "Échec suivi ligne");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+
+
 
   return (
     <div>
@@ -356,8 +424,11 @@ const AdminCommandeDetail = () => {
                   const puHt = Number(l.unit_price_excl_vat) || 0;
                   const vatR = Number(l.vat_rate ?? 0);
                   const puTtc = puHt * (1 + vatR / 100);
+                  const lt = lineTracks[l.id] || { url: "", number: "" };
+                  const dirty = (l.tracking_url || "") !== lt.url || (l.tracking_number || "") !== lt.number;
                   return (
-                    <tr key={l.id} className="border-t">
+                    <Fragment key={l.id}>
+                    <tr className="border-t">
                       <td className="px-3 py-2">
                         <div>{l.manual_label || l.products?.name || "—"}</div>
                         {(l.products?.cnk_code || l.products?.gtin) && (
@@ -378,6 +449,42 @@ const AdminCommandeDetail = () => {
                       <td className="px-3 py-2 text-right text-slate-600">{fmtEur(puTtc)} €</td>
                       <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(l.line_total_excl_vat) || 0)} €</td>
                     </tr>
+                    <tr className="bg-slate-50/60">
+                      <td colSpan={7} className="px-3 py-2">
+                        <div className="flex flex-wrap items-end gap-2">
+                          <div className="flex items-center gap-1 text-[11px] text-slate-500 font-medium">
+                            <Truck size={12} /> Suivi ligne :
+                          </div>
+                          <Input
+                            className="h-8 text-xs flex-1 min-w-[200px]"
+                            placeholder="URL de suivi (externe)"
+                            value={lt.url}
+                            onChange={(e) => setLineTracks((m) => ({ ...m, [l.id]: { ...lt, url: e.target.value } }))}
+                          />
+                          <Input
+                            className="h-8 text-xs w-44"
+                            placeholder="N° de colis"
+                            value={lt.number}
+                            onChange={(e) => setLineTracks((m) => ({ ...m, [l.id]: { ...lt, number: e.target.value } }))}
+                          />
+                          <Button
+                            size="sm"
+                            variant={dirty ? "default" : "outline"}
+                            disabled={!dirty || busy !== null}
+                            onClick={() => saveLineTracking(l.id)}
+                            style={dirty ? { backgroundColor: "#1C58D9", color: "#fff" } : undefined}
+                          >
+                            {busy === `LINE-${l.id}` ? "…" : "Enregistrer"}
+                          </Button>
+                          {(lt.url || "").trim() && (
+                            <a href={lt.url.trim()} target="_blank" rel="noreferrer" className="text-[11px] text-mk-blue hover:underline inline-flex items-center gap-1">
+                              <ExternalLink size={11} /> Ouvrir
+                            </a>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                    </Fragment>
                   );
                 })}
                 {lines.length === 0 && (
@@ -615,6 +722,88 @@ const AdminCommandeDetail = () => {
               </Link>
             )}
           </div>
+
+          {/* Suivi d'expédition */}
+          <div className="bg-white border rounded-lg p-4 space-y-3" style={{ borderColor: "#E2E8F0" }}>
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <Truck size={14} /> Suivi d'expédition
+            </div>
+            {(order as any).shipped_at && (
+              <div className="text-[11px] text-slate-500">
+                Expédiée le {new Date((order as any).shipped_at).toLocaleString("fr-BE")}
+              </div>
+            )}
+            <div>
+              <label className="text-xs text-slate-500 block mb-1">URL de suivi (externe)</label>
+              <Input
+                value={trackUrl}
+                onChange={(e) => setTrackUrl(e.target.value)}
+                placeholder="https://track.bpost.be/..."
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-slate-500 block mb-1">Transporteur</label>
+                <Input
+                  value={trackCarrier}
+                  onChange={(e) => setTrackCarrier(e.target.value)}
+                  placeholder="bpost, DPD, DHL…"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-slate-500 block mb-1">N° de colis</label>
+                <Input
+                  value={trackNumber}
+                  onChange={(e) => setTrackNumber(e.target.value)}
+                  placeholder="Ex. 323123456789"
+                />
+              </div>
+            </div>
+            <div className="space-y-2 pt-1">
+              {order.status !== "shipped" && order.status !== "delivered" && (
+                <Button
+                  onClick={() => saveTracking({ notify: true, markShipped: true })}
+                  disabled={busy !== null}
+                  className="w-full justify-start"
+                  style={{ backgroundColor: "#1C58D9", color: "#fff" }}
+                >
+                  <Send size={14} className="mr-2" />
+                  {busy === "TRACKING" ? "Envoi…" : "Marquer expédié & notifier l'acheteur"}
+                </Button>
+              )}
+              <Button
+                onClick={() => saveTracking({ notify: true, markShipped: false })}
+                disabled={busy !== null}
+                className="w-full justify-start"
+                variant={order.status === "shipped" ? "default" : "outline"}
+                style={order.status === "shipped" ? { backgroundColor: "#1C58D9", color: "#fff" } : undefined}
+              >
+                <Send size={14} className="mr-2" />
+                {busy === "TRACKING" ? "Envoi…" : "Enregistrer & renotifier l'acheteur"}
+              </Button>
+              <Button
+                onClick={() => saveTracking({ notify: false, markShipped: false })}
+                disabled={busy !== null}
+                className="w-full justify-start"
+                variant="outline"
+              >
+                {busy === "TRACKING" ? "Enregistrement…" : "Enregistrer sans email"}
+              </Button>
+              {trackUrl.trim() && (
+                <a href={trackUrl.trim()} target="_blank" rel="noreferrer" className="block">
+                  <Button className="w-full justify-start" variant="ghost">
+                    <ExternalLink size={14} className="mr-2" /> Ouvrir le suivi
+                  </Button>
+                </a>
+              )}
+            </div>
+            <p className="text-[11px] text-slate-400">
+              L'URL de suivi et le n° de colis sont visibles sur la page publique de la commande et
+              inclus dans l'email d'expédition.
+            </p>
+          </div>
+
+
 
           {publicUrl && (
             <div className="bg-white border rounded-lg p-4 space-y-3" style={{ borderColor: "#E2E8F0" }}>

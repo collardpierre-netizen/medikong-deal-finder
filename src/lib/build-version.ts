@@ -174,6 +174,110 @@ function isUserBusy(): boolean {
   }
 }
 
+/**
+ * Détection "formulaire / brouillon en cours" indépendante du focus.
+ *
+ * Contrairement à `isUserBusy()` qui exige que l'élément soit *actif*,
+ * cette fonction inspecte le DOM à froid pour repérer un brouillon non
+ * sauvegardé qui serait perdu par un reload — même si l'utilisateur a
+ * momentanément cliqué ailleurs (onglet, notification, etc.).
+ *
+ * Signaux détectés :
+ *  - `<form data-dirty="true">` ou `[data-dirty="true"]` posé par le code
+ *    applicatif (react-hook-form + useEffect, TipTap onUpdate, etc.).
+ *  - `<input>` / `<textarea>` avec une valeur non vide qui diverge de
+ *    l'attribut par défaut (l'utilisateur a tapé quelque chose).
+ *  - `<select>` dont la valeur diverge de l'option `defaultSelected`.
+ *  - Éléments `contenteditable` non vides (éditeurs riches type TipTap).
+ *  - Attribut sentinelle `[data-lov-draft]` posé explicitement par une
+ *    page pour indiquer un brouillon en cours.
+ *
+ * On IGNORE volontairement les champs de recherche/nav (`type="search"`,
+ * `role="searchbox"`, `[data-search-input]`) pour ne pas bloquer un reload
+ * sur une simple recherche header.
+ */
+function isSearchLikeInput(el: Element): boolean {
+  if (el instanceof HTMLInputElement && el.type === "search") return true;
+  const role = el.getAttribute("role");
+  if (role === "searchbox" || role === "search") return true;
+  if (el.hasAttribute("data-search-input")) return true;
+  // Ancêtre marqué comme zone de recherche/navigation.
+  if (el.closest('[role="search"], [data-search-input], nav')) return true;
+  return false;
+}
+
+function inputHasUserValue(el: HTMLInputElement | HTMLTextAreaElement): boolean {
+  const value = el.value ?? "";
+  if (!value.trim()) return false;
+  // Ignore les champs pré-remplis inchangés (defaultValue reflète la valeur
+  // initiale rendue par React ou l'attribut `value` du HTML).
+  if (el.defaultValue != null && el.defaultValue === value) return false;
+  return true;
+}
+
+function hasUnsavedDraft(): boolean {
+  try {
+    // Sentinelles explicites.
+    if (document.querySelector('[data-dirty="true"], [data-lov-draft]')) {
+      return true;
+    }
+
+    // Inputs / textareas avec valeur utilisateur.
+    const inputs = document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+      "input, textarea",
+    );
+    for (const el of Array.from(inputs)) {
+      if (isSearchLikeInput(el)) continue;
+      if (el instanceof HTMLInputElement) {
+        // Ignore les types non textuels sans intérêt (button, submit, hidden…).
+        const t = el.type;
+        if (
+          t === "button" ||
+          t === "submit" ||
+          t === "reset" ||
+          t === "hidden" ||
+          t === "image"
+        ) {
+          continue;
+        }
+        // Cases à cocher / radios : dirty si l'état diverge du défaut.
+        if (t === "checkbox" || t === "radio") {
+          if (el.checked !== el.defaultChecked) return true;
+          continue;
+        }
+      }
+      if (inputHasUserValue(el)) return true;
+    }
+
+    // Selects dont la sélection diverge du défaut.
+    const selects = document.querySelectorAll<HTMLSelectElement>("select");
+    for (const sel of Array.from(selects)) {
+      if (isSearchLikeInput(sel)) continue;
+      const options = Array.from(sel.options);
+      const defaultOpt = options.find((o) => o.defaultSelected);
+      const currentValue = sel.value;
+      if (defaultOpt && defaultOpt.value !== currentValue) return true;
+      if (!defaultOpt && currentValue && options[0]?.value !== currentValue) return true;
+    }
+
+    // Contenteditable non vide (éditeurs riches).
+    const editables = document.querySelectorAll<HTMLElement>(
+      '[contenteditable="true"], [contenteditable=""]',
+    );
+    for (const ed of Array.from(editables)) {
+      if (isSearchLikeInput(ed)) continue;
+      const text = (ed.textContent ?? "").trim();
+      if (text.length > 0) return true;
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+
+
 let deferredReloadTimer: number | null = null;
 let toastShown = false;
 let started = false;

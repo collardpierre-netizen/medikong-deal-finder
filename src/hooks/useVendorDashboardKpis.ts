@@ -1,9 +1,34 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { DashboardPeriod } from "@/hooks/useVendorMonthlyDashboard";
 
-export function useVendorDashboardKpis(vendorId: string | undefined) {
+/**
+ * KPIs secondaires vendeur (offres actives + prévisionnel).
+ *
+ * ⚠️ Le CA / GMV / nombre de commandes réels ne sont **plus** calculés ici :
+ *   ils viennent de `useVendorMonthlyDashboard` (source unique `order_lines`,
+ *   mêmes règles de statuts / mêmes unités). Cela corrige le bug d'unité qui
+ *   divisait par 100 des euros stockés dans `sub_orders.subtotal_incl_vat`.
+ */
+export function useVendorDashboardKpis(
+  vendorId: string | undefined,
+  period?: DashboardPeriod,
+) {
+  const { start, end } = useMemo(() => {
+    if (period) {
+      const s = new Date(period.start); s.setHours(0, 0, 0, 0);
+      const e = new Date(period.end); e.setHours(23, 59, 59, 999);
+      return { start: s, end: e };
+    }
+    const now = new Date();
+    const s = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    const e = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    return { start: s, end: e };
+  }, [period?.start?.getTime(), period?.end?.getTime()]);
+
   return useQuery({
-    queryKey: ["vendor-dashboard-kpis", vendorId],
+    queryKey: ["vendor-dashboard-kpis", vendorId, start.toISOString(), end.toISOString()],
     enabled: !!vendorId,
     queryFn: async () => {
       const { count: activeOffers } = await supabase
@@ -12,76 +37,41 @@ export function useVendorDashboardKpis(vendorId: string | undefined) {
         .eq("vendor_id", vendorId!)
         .eq("is_active", true);
 
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
-
-      const { data: subOrders, count: monthOrders } = await supabase
-        .from("sub_orders")
-        .select("subtotal_incl_vat,status", { count: "exact" })
-        .eq("vendor_id", vendorId!)
-        .gte("created_at", startOfMonth.toISOString());
-
-      const revenueCents = (subOrders ?? [])
-        .filter((r: any) =>
-          ["confirmed", "processing", "shipped", "partially_shipped", "delivered"].includes(
-            r.status,
-          ),
-        )
-        .reduce((sum, r: any) => sum + Number(r.subtotal_incl_vat ?? 0), 0);
-
-      // Lignes réelles (non prévisionnelles) du mois pour ce vendeur — pour la marge brute
-      const { data: realLines } = await supabase
-        .from("order_lines")
-        .select("line_total_excl_vat, line_margin, orders!inner(id, created_at, is_forecast, status)")
-        .eq("vendor_id", vendorId!)
-        .eq("orders.is_forecast", false)
-        .gte("orders.created_at", startOfMonth.toISOString());
-
-      const EXCLUDED = new Set(["cancelled", "canceled", "refunded", "failed", "rejected"]);
-      const billableLines = (realLines ?? []).filter(
-        (l: any) => !EXCLUDED.has(String(l.orders?.status ?? "").toLowerCase()),
-      );
-      const revenueExclVatCents = billableLines.reduce(
-        (s, l: any) => s + Number(l.line_total_excl_vat ?? 0),
-        0,
-      );
-      const marginCents = billableLines.reduce(
-        (s, l: any) => s + Number(l.line_margin ?? 0),
-        0,
-      );
-      const marginPct = revenueExclVatCents > 0 ? (marginCents / revenueExclVatCents) * 100 : 0;
-
-      // CA prévisionnel — agrège la part vendeur des commandes prévisionnelles (actives, converties ou annulées)
-      // créées ce mois-ci, à partir des lignes order_lines vendor_id = ce vendeur.
+      // CA prévisionnel — agrège la part vendeur des commandes prévisionnelles
+      // (actives, converties ou annulées) créées dans la période sélectionnée.
       const { data: forecastLines } = await supabase
         .from("order_lines")
-        .select("line_total_incl_vat, line_total_excl_vat, line_margin, orders!inner(id, created_at, is_forecast, was_forecast, forecast_created_at)")
+        .select(
+          "line_total_incl_vat, line_total_excl_vat, line_margin, orders!inner(id, created_at, is_forecast, was_forecast, forecast_created_at)",
+        )
         .eq("vendor_id", vendorId!)
         .or("is_forecast.eq.true,was_forecast.eq.true", { foreignTable: "orders" })
-        .gte("orders.created_at", startOfMonth.toISOString());
+        .gte("orders.created_at", start.toISOString())
+        .lte("orders.created_at", end.toISOString());
 
+      const toCents = (v: unknown) => Math.round(Number(v ?? 0) * 100);
       const forecastRevenueCents = (forecastLines ?? []).reduce(
-        (sum, l: any) => sum + Number(l.line_total_incl_vat ?? 0),
+        (sum, l: any) => sum + toCents(l.line_total_incl_vat),
         0,
       );
       const forecastExclVatCents = (forecastLines ?? []).reduce(
-        (sum, l: any) => sum + Number(l.line_total_excl_vat ?? 0),
+        (sum, l: any) => sum + toCents(l.line_total_excl_vat),
         0,
       );
       const forecastMarginCents = (forecastLines ?? []).reduce(
-        (sum, l: any) => sum + Number(l.line_margin ?? 0),
+        (sum, l: any) => sum + toCents(l.line_margin),
         0,
       );
-      const forecastMarginPct = forecastExclVatCents > 0 ? (forecastMarginCents / forecastExclVatCents) * 100 : 0;
-      const forecastOrders = new Set((forecastLines ?? []).map((l: any) => l.orders?.id).filter(Boolean)).size;
+      const forecastMarginPct =
+        forecastExclVatCents > 0
+          ? (forecastMarginCents / forecastExclVatCents) * 100
+          : 0;
+      const forecastOrders = new Set(
+        (forecastLines ?? []).map((l: any) => l.orders?.id).filter(Boolean),
+      ).size;
 
       return {
         activeOffers: activeOffers ?? 0,
-        monthOrders: monthOrders ?? 0,
-        revenueCents,
-        marginCents,
-        marginPct,
         forecastRevenueCents,
         forecastMarginCents,
         forecastMarginPct,

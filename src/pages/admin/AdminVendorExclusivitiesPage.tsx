@@ -93,6 +93,7 @@ const emptyForm: FormState = {
 export default function AdminVendorExclusivitiesPage() {
   const qc = useQueryClient();
   const [filterVendor, setFilterVendor] = useState<string>("all");
+  const [vendorFilterOpen, setVendorFilterOpen] = useState(false);
   const [filterScope, setFilterScope] = useState<Scope | "all">("all");
   const [filterMode, setFilterMode] = useState<Mode | "all">("all");
   const [filterStatus, setFilterStatus] = useState<StatusFilter>("active");

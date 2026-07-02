@@ -2,11 +2,11 @@ import { useState } from "react";
 import { ImageOff, Eye } from "lucide-react";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
 import { Heart, Check, ChevronDown, ChevronUp, Package, Truck, RotateCcw, ArrowRight } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useProductOffers } from "@/hooks/useProducts";
 import type { Product } from "@/hooks/useProducts";
 import { useBestOfferForProduct } from "@/contexts/BestOffersContext";
+import { OfferSkeletonRow } from "@/components/shared/OfferSkeletonRow";
 
 interface Props {
   product: Product;
@@ -227,13 +227,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
             {expanded && offersLoading && (
               <div>
                 {Array.from({ length: Math.min(extraCount || 2, 4) }).map((_, i) => (
-                  <div key={`sk-${i}`} className="flex items-center justify-between px-5 py-2.5 border-b border-border/60 last:border-b-0">
-                    <Skeleton className="h-4 w-28" />
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="h-4 w-16" />
-                      <Skeleton className="h-7 w-14 rounded-md" />
-                    </div>
-                  </div>
+                  <OfferSkeletonRow key={`sk-${i}`} />
                 ))}
               </div>
             )}

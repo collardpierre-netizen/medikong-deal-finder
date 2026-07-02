@@ -5,6 +5,7 @@ import { resolveTierSaving } from "@/lib/tier-saving-guard";
 import { TierSavingAdminAlert } from "@/components/admin/TierSavingAdminAlert";
 import { isValidProductImage, getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder, getPreferredProductImageUrls } from "@/lib/image-utils";
 import { useProduct, useProductOffers, type Offer } from "@/hooks/useProducts";
+import { OfferSkeletonRow } from "@/components/shared/OfferSkeletonRow";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
@@ -2202,55 +2203,67 @@ export default function ProductPage() {
                     />
 
                     {/* Other Offers */}
-                    {otherOffers.length > 0 && (
+                    {(otherOffers.length > 0 || offersLoading) && (
                       <div className="border border-border rounded-xl p-4 md:p-6 overflow-hidden">
                         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                           <div className="flex items-center gap-2">
                             <h3 className="text-base font-bold text-foreground">
-                              {otherOffers.length} autre{otherOffers.length > 1 ? "s" : ""} offre{otherOffers.length > 1 ? "s" : ""}
+                              {offersLoading
+                                ? "Autres offres"
+                                : `${otherOffers.length} autre${otherOffers.length > 1 ? "s" : ""} offre${otherOffers.length > 1 ? "s" : ""}`}
                             </h3>
-                            <span className="text-xs text-muted-foreground">Tri par prix</span>
+                            {!offersLoading && (
+                              <span className="text-xs text-muted-foreground">Tri par prix</span>
+                            )}
                           </div>
-                          <span className="text-sm text-primary font-medium">
-                            {formatCount(otherOffers.reduce((s, o) => s + o.stockQuantity, 0))} disponibles{otherOffers.length > 1 ? ` auprès de ${otherOffers.length} fournisseurs` : ""}
-                          </span>
+                          {!offersLoading && (
+                            <span className="text-sm text-primary font-medium">
+                              {formatCount(otherOffers.reduce((s, o) => s + o.stockQuantity, 0))} disponibles{otherOffers.length > 1 ? ` auprès de ${otherOffers.length} fournisseurs` : ""}
+                            </span>
+                          )}
                         </div>
 
-                        <div className="hidden lg:grid grid-cols-[minmax(150px,1fr)_minmax(180px,1fr)_minmax(96px,auto)_176px] gap-x-3 px-1 py-3 text-xs font-semibold text-muted-foreground border-b border-border sticky top-16 z-20 bg-background">
-                          <span>Fournisseur</span>
-                          <span>Prix {offerCompareBasis === 'pack' ? '/ pack' : offerCompareBasis === 'unit' ? '/ unité' : '/ 100 u.'} · MOV</span>
-                          <span className="text-right">Stock</span>
-                          <span className="text-right">Commander</span>
-                        </div>
+                        {!offersLoading && (
+                          <div className="hidden lg:grid grid-cols-[minmax(150px,1fr)_minmax(180px,1fr)_minmax(96px,auto)_176px] gap-x-3 px-1 py-3 text-xs font-semibold text-muted-foreground border-b border-border sticky top-16 z-20 bg-background">
+                            <span>Fournisseur</span>
+                            <span>Prix {offerCompareBasis === 'pack' ? '/ pack' : offerCompareBasis === 'unit' ? '/ unité' : '/ 100 u.'} · MOV</span>
+                            <span className="text-right">Stock</span>
+                            <span className="text-right">Commander</span>
+                          </div>
+                        )}
 
-                        {otherOffers.map((offer, i) => (
-                          <SafeBoundary
-                            key={offer.id}
-                            label={`l'offre de ${offer.sellerName || "ce fournisseur"}`}
-                          >
-                            <OfferRow
-                              offer={offer}
-                              productId={product.id}
-                              productName={product.name}
-                              productSlug={product.slug}
-                              productImageUrl={product.imageUrls?.[0] || product.imageUrl || undefined}
-                              user={user}
-                              navigate={navigate}
-                              addToCart={addToCart}
-                              delay={i * 0.06}
-                              isTVAC={isTVAC}
-                              categoryId={categoryData?.category?.id}
-                              bestPrice={bestOffer ? bestOfferDisplayPrice : undefined}
-                              discountPercentage={Number((product as any)?.discount_percentage) || 0}
-                              compareBasis={offerCompareBasis}
-                              packSize={resolvePackSize({
-                                offerOverride: (offer as any)?.packSizeOverride,
-                                productPackSize: (product as any)?.pack_size,
-                                productName: product.name,
-                              }).packSize}
-                            />
-                          </SafeBoundary>
-                        ))}
+                        {offersLoading
+                          ? Array.from({ length: 3 }).map((_, i) => (
+                              <OfferSkeletonRow key={`sk-${i}`} />
+                            ))
+                          : otherOffers.map((offer, i) => (
+                              <SafeBoundary
+                                key={offer.id}
+                                label={`l'offre de ${offer.sellerName || "ce fournisseur"}`}
+                              >
+                                <OfferRow
+                                  offer={offer}
+                                  productId={product.id}
+                                  productName={product.name}
+                                  productSlug={product.slug}
+                                  productImageUrl={product.imageUrls?.[0] || product.imageUrl || undefined}
+                                  user={user}
+                                  navigate={navigate}
+                                  addToCart={addToCart}
+                                  delay={i * 0.06}
+                                  isTVAC={isTVAC}
+                                  categoryId={categoryData?.category?.id}
+                                  bestPrice={bestOffer ? bestOfferDisplayPrice : undefined}
+                                  discountPercentage={Number((product as any)?.discount_percentage) || 0}
+                                  compareBasis={offerCompareBasis}
+                                  packSize={resolvePackSize({
+                                    offerOverride: (offer as any)?.packSizeOverride,
+                                    productPackSize: (product as any)?.pack_size,
+                                    productName: product.name,
+                                  }).packSize}
+                                />
+                              </SafeBoundary>
+                            ))}
                       </div>
                     )}
                     </VendorTrustProvider>

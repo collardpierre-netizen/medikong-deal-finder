@@ -223,8 +223,12 @@ export default function SearchTrivagoCard({ product: p }: Props) {
         if (extraCount === 0 && otherOffers.length === 0) return null;
         return (
           <div className="border-t border-border bg-muted/30">
-            {expanded && visibleOffers.map((offer) => (
-              <div key={offer.id} className="flex items-center justify-between px-5 py-2.5 border-b border-border/60 last:border-b-0">
+            {expanded && visibleOffers.map((offer: any) => (
+              <div
+                key={offer.id}
+                title={offer.isShowcaseDimmed ? "Offre atténuée : un vendeur bénéficie d'une mise en avant exclusive (showcase) sur ce produit." : undefined}
+                className={`flex items-center justify-between px-5 py-2.5 border-b border-border/60 last:border-b-0 ${offer.isShowcaseDimmed ? "opacity-60 grayscale-[30%]" : ""}`}
+              >
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-foreground">{offer.sellerName}</span>
                   {offer.isVerified && (

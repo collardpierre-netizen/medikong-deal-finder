@@ -327,6 +327,23 @@ Deno.serve(async (req) => {
       });
     }
 
+    // IDOR guard: parcel-scoped operations must belong to caller's vendor (or admin).
+    const parcelScopedOps = new Set(["getLabel", "cancelParcel", "getTracking"]);
+    if (parcelScopedOps.has(operation)) {
+      const parcelId = (payload as any)?.parcel_id;
+      if (!parcelId) {
+        return new Response(JSON.stringify({ success: false, error: "Missing parcel_id" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const owns = await callerOwnsParcel(parcelId);
+      if (!owns) return forbid("You do not own this parcel");
+    } else if (!isAdmin && !callerVendorId) {
+      // Non-parcel operations (createParcel, createSenderAddress, updateSenderAddress,
+      // createBrand, getShippingMethods) still require an active vendor identity.
+      return forbid("Vendor account required");
+    }
+
     const start = Date.now();
     const res = await handler(payload);
     const duration = Date.now() - start;

@@ -92,7 +92,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
   const hasOffer = (offerCount > 0 || (p.sellers || 0) > 0) && price > 0;
 
   return (
-    <div className="bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-border">
+    <div ref={cardRef} className="bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-border">
       {/* Main 3-zone row */}
       <div className="flex flex-col md:flex-row">
         {/* ZONE 1 — Image */}

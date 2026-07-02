@@ -312,6 +312,32 @@ export default function HeroImageEditor({ img }: Props) {
           )}
         </div>
 
+        {/* Ajustement image (cover/contain) */}
+        <div className="rounded-md border border-gray-200 bg-gray-50/60 p-2 space-y-1.5">
+          <p className="text-[10px] uppercase tracking-wider font-semibold text-[#5C6470]">Ajustement dans le cadre</p>
+          <div className="inline-flex rounded-md border border-gray-200 overflow-hidden bg-white">
+            <button
+              type="button"
+              onClick={() => setImageFit("cover")}
+              className={`px-2 py-1 text-[10px] ${imageFit === "cover" ? "bg-[#1B5BDA] text-white" : "text-[#5C6470]"}`}
+            >
+              Couvrir (recadre)
+            </button>
+            <button
+              type="button"
+              onClick={() => setImageFit("contain")}
+              className={`px-2 py-1 text-[10px] ${imageFit === "contain" ? "bg-[#1B5BDA] text-white" : "text-[#5C6470]"}`}
+            >
+              Contenir (image entière)
+            </button>
+          </div>
+          <p className="text-[10px] text-[#8B95A5]">
+            {imageFit === "cover"
+              ? "L'image remplit tout le cadre — les bords peuvent être coupés selon le recadrage."
+              : "L'image est affichée entière — des bandes vides peuvent apparaître si le ratio diffère."}
+          </p>
+        </div>
+
         {/* Recadrage */}
         <div className="rounded-md border border-gray-200 bg-gray-50/60 p-2 space-y-2">
           <div className="flex items-center justify-between">

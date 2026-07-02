@@ -7,9 +7,9 @@ import { useTranslation } from "react-i18next";
 import { useAutoTranslate } from "@/hooks/useAutoTranslate";
 
 const fallbackImages: HeroImg[] = [
-  { id: "1", image_url: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=900&q=80", image_url_mobile: null, alt_text: "Fournitures médicales", link_url: null, cta_text: null, title: null, subtitle: null, show_title: true, show_subtitle: true },
-  { id: "2", image_url: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=900&q=80", image_url_mobile: null, alt_text: "Équipement médical", link_url: null, cta_text: null, title: null, subtitle: null, show_title: true, show_subtitle: true },
-  { id: "3", image_url: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=900&q=80", image_url_mobile: null, alt_text: "Pharmacie professionnelle", link_url: null, cta_text: null, title: null, subtitle: null, show_title: true, show_subtitle: true },
+  { id: "1", image_url: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=900&q=80", image_url_mobile: null, alt_text: "Fournitures médicales", link_url: null, cta_text: null, title: null, subtitle: null, show_title: true, show_subtitle: true, show_cta: true },
+  { id: "2", image_url: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=900&q=80", image_url_mobile: null, alt_text: "Équipement médical", link_url: null, cta_text: null, title: null, subtitle: null, show_title: true, show_subtitle: true, show_cta: true },
+  { id: "3", image_url: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=900&q=80", image_url_mobile: null, alt_text: "Pharmacie professionnelle", link_url: null, cta_text: null, title: null, subtitle: null, show_title: true, show_subtitle: true, show_cta: true },
 ];
 
 interface HeroImg {
@@ -24,6 +24,7 @@ interface HeroImg {
   subtitle: string | null;
   show_title?: boolean | null;
   show_subtitle?: boolean | null;
+  show_cta?: boolean | null;
   focal_x?: number | null;
   focal_y?: number | null;
   zoom?: number | null;
@@ -35,7 +36,7 @@ export function HeroImageGallery() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("cms_hero_images" as any)
-        .select("id, image_url, image_url_mobile, alt_text, sort_order, link_url, cta_text, title, subtitle, show_title, show_subtitle, focal_x, focal_y, zoom")
+        .select("id, image_url, image_url_mobile, alt_text, sort_order, link_url, cta_text, title, subtitle, show_title, show_subtitle, show_cta, focal_x, focal_y, zoom")
         .eq("is_active", true)
         .order("sort_order");
       if (error || !data?.length) return null;
@@ -100,7 +101,9 @@ export function HeroImageGallery() {
       {(() => {
         const showTitle = currentImage?.show_title ?? true;
         const showSubtitle = currentImage?.show_subtitle ?? true;
-        const hasText = showTitle || showSubtitle || Boolean(currentImage?.cta_text);
+        const showCta = currentImage?.show_cta ?? true;
+        const ctaVisible = showCta && Boolean(currentImage?.cta_text);
+        const hasText = showTitle || showSubtitle || ctaVisible;
         if (!hasText) return null;
         return (
           <>
@@ -112,7 +115,7 @@ export function HeroImageGallery() {
               {showTitle && (
                 <h3 className="text-lg md:text-2xl font-bold leading-tight max-w-sm">{translatedTitle || fallbackTitle}</h3>
               )}
-              {currentImage?.cta_text && (
+              {ctaVisible && (
                 <span className="inline-block mt-3 px-5 py-2 rounded-lg text-sm font-semibold bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors">
                   {translatedCta || currentImage.cta_text}
                 </span>

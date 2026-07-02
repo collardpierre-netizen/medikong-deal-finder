@@ -2547,6 +2547,7 @@ export type Database = {
           image_url_mobile: string | null
           is_active: boolean
           link_url: string | null
+          show_cta: boolean
           show_subtitle: boolean
           show_title: boolean
           sort_order: number
@@ -2565,6 +2566,7 @@ export type Database = {
           image_url_mobile?: string | null
           is_active?: boolean
           link_url?: string | null
+          show_cta?: boolean
           show_subtitle?: boolean
           show_title?: boolean
           sort_order?: number
@@ -2583,6 +2585,7 @@ export type Database = {
           image_url_mobile?: string | null
           is_active?: boolean
           link_url?: string | null
+          show_cta?: boolean
           show_subtitle?: boolean
           show_title?: boolean
           sort_order?: number

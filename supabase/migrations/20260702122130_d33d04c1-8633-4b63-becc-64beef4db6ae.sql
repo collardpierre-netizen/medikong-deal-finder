@@ -1,0 +1,1 @@
+ALTER TABLE public.cms_hero_images ADD COLUMN IF NOT EXISTS show_cta BOOLEAN NOT NULL DEFAULT true;

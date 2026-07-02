@@ -17,6 +17,7 @@ export interface HeroImageRow {
   show_subtitle?: boolean | null;
   cta_text: string | null;
   link_url: string | null;
+  show_cta?: boolean | null;
   focal_x?: number | null;
   focal_y?: number | null;
   zoom?: number | null;
@@ -81,6 +82,7 @@ export default function HeroImageEditor({ img }: Props) {
   const [showSubtitle, setShowSubtitle] = useState<boolean>(img.show_subtitle ?? true);
   const [cta, setCta] = useState(img.cta_text ?? "");
   const [link, setLink] = useState(img.link_url ?? "");
+  const [showCta, setShowCta] = useState<boolean>(img.show_cta ?? true);
   const [imageUrlMobile, setImageUrlMobile] = useState<string>(img.image_url_mobile ?? "");
   const [focalX, setFocalX] = useState<number>(Number(img.focal_x ?? 50));
   const [focalY, setFocalY] = useState<number>(Number(img.focal_y ?? 50));
@@ -99,11 +101,12 @@ export default function HeroImageEditor({ img }: Props) {
     setShowSubtitle(img.show_subtitle ?? true);
     setCta(img.cta_text ?? "");
     setLink(img.link_url ?? "");
+    setShowCta(img.show_cta ?? true);
     setImageUrlMobile(img.image_url_mobile ?? "");
     setFocalX(Number(img.focal_x ?? 50));
     setFocalY(Number(img.focal_y ?? 50));
     setZoom(Number(img.zoom ?? 1));
-  }, [img.id, img.title, img.subtitle, img.show_title, img.show_subtitle, img.cta_text, img.link_url, img.image_url_mobile, img.focal_x, img.focal_y, img.zoom]);
+  }, [img.id, img.title, img.subtitle, img.show_title, img.show_subtitle, img.cta_text, img.link_url, img.show_cta, img.image_url_mobile, img.focal_x, img.focal_y, img.zoom]);
 
   // Détection dimensions image source
   useEffect(() => {
@@ -136,6 +139,7 @@ export default function HeroImageEditor({ img }: Props) {
     showSubtitle !== (img.show_subtitle ?? true) ||
     cta !== (img.cta_text ?? "") ||
     link !== (img.link_url ?? "") ||
+    showCta !== (img.show_cta ?? true) ||
     imageUrlMobile !== (img.image_url_mobile ?? "") ||
     focalX !== Number(img.focal_x ?? 50) ||
     focalY !== Number(img.focal_y ?? 50) ||
@@ -166,6 +170,7 @@ export default function HeroImageEditor({ img }: Props) {
         show_subtitle: showSubtitle,
         cta_text: cta.trim() || null,
         link_url: link.trim() || null,
+        show_cta: showCta,
         image_url_mobile: imageUrlMobile.trim() || null,
         focal_x: focalX,
         focal_y: focalY,
@@ -223,13 +228,30 @@ export default function HeroImageEditor({ img }: Props) {
           max={LIMITS.subtitle} error={errors.subtitle}
           enabled={showSubtitle} onEnabledChange={setShowSubtitle}
         />
-        <div className="grid grid-cols-2 gap-2">
-          <Field label="Label CTA" value={cta} onChange={setCta} placeholder="Découvrir →" max={LIMITS.cta} error={errors.cta_text} />
-          <Field
-            label="URL CTA" value={link} onChange={setLink} placeholder="/promotions ou https://…"
-            max={LIMITS.url} error={errors.link_url}
-            hint={link.trim() && !errors.link_url ? (isInternalLink ? "Lien interne" : "Lien externe (nouvel onglet)") : undefined}
-          />
+        <div className="rounded-md border border-gray-200 bg-gray-50/60 p-2 space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-[10px] uppercase tracking-wider font-semibold text-[#5C6470] inline-flex items-center gap-2">
+              CTA (bouton + lien)
+              <Switch
+                checked={showCta}
+                onCheckedChange={setShowCta}
+                aria-label="Afficher le CTA"
+                className="scale-75 origin-left"
+              />
+              <span className={`text-[9px] font-medium normal-case tracking-normal ${showCta ? "text-emerald-700" : "text-[#8B95A5]"}`}>
+                {showCta ? "Affiché" : "Masqué"}
+              </span>
+            </label>
+          </div>
+          <div className={`grid grid-cols-2 gap-2 ${!showCta ? "opacity-50" : ""}`}>
+            <Field label="Label CTA" value={cta} onChange={setCta} placeholder="Découvrir →" max={LIMITS.cta} error={errors.cta_text} disabled={!showCta} />
+            <Field
+              label="URL CTA" value={link} onChange={setLink} placeholder="/promotions ou https://…"
+              max={LIMITS.url} error={errors.link_url}
+              hint={link.trim() && !errors.link_url ? (isInternalLink ? "Lien interne" : "Lien externe (nouvel onglet)") : undefined}
+              disabled={!showCta}
+            />
+          </div>
         </div>
 
         {/* Image mobile dédiée */}
@@ -365,6 +387,7 @@ export default function HeroImageEditor({ img }: Props) {
           showTitle={showTitle}
           showSubtitle={showSubtitle}
           cta={cta}
+          showCta={showCta}
           link={link}
           linkError={errors.link_url}
           isInternalLink={isInternalLink}
@@ -391,18 +414,19 @@ export default function HeroImageEditor({ img }: Props) {
 
 function PreviewFrame({
   image_url, alt, title, subtitle, showTitle, showSubtitle,
-  cta, link, linkError, isInternalLink,
+  cta, showCta, link, linkError, isInternalLink,
   focalX, focalY, zoom, device,
 }: {
   image_url: string; alt: string; title: string; subtitle: string;
   showTitle: boolean; showSubtitle: boolean;
-  cta: string; link: string; linkError?: string; isInternalLink: boolean;
+  cta: string; showCta: boolean; link: string; linkError?: string; isInternalLink: boolean;
   focalX: number; focalY: number; zoom: number;
   device: "desktop" | "mobile";
 }) {
   const aspect = device === "desktop" ? "16/7" : "4/3";
   const maxW = device === "desktop" ? "100%" : 320;
-  const hasAnyText = showTitle || showSubtitle || Boolean(cta.trim());
+  const ctaVisible = showCta && Boolean(cta.trim());
+  const hasAnyText = showTitle || showSubtitle || ctaVisible;
   return (
     <div className="flex justify-center bg-gradient-to-br from-gray-100 to-gray-50 rounded-xl p-2">
       <div
@@ -440,7 +464,7 @@ function PreviewFrame({
                 {title || <span className="italic opacity-60">Titre du bandeau…</span>}
               </h4>
             )}
-            {cta.trim() && (
+            {ctaVisible && (
               <span className="inline-flex items-center gap-1 mt-2 px-3 py-1 rounded-md text-[11px] font-semibold bg-white/25 backdrop-blur-sm">
                 {cta}
                 {link.trim() && !linkError && (isInternalLink ? <Link2 size={10} /> : <ExternalLink size={10} />)}
@@ -475,10 +499,10 @@ function CropSlider({
 }
 
 function Field({
-  label, value, onChange, placeholder, max, error, hint,
+  label, value, onChange, placeholder, max, error, hint, disabled,
 }: {
   label: string; value: string; onChange: (v: string) => void;
-  placeholder: string; max: number; error?: string; hint?: string;
+  placeholder: string; max: number; error?: string; hint?: string; disabled?: boolean;
 }) {
   const over = value.length > max;
   return (
@@ -494,9 +518,10 @@ function Field({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         aria-invalid={!!error}
+        disabled={disabled}
         className={`w-full text-[12px] rounded-md border px-2 py-1.5 outline-none transition-colors ${
           error ? "border-red-400 focus:border-red-500 bg-red-50/40" : "border-gray-200 focus:border-[#1B5BDA] bg-white"
-        }`}
+        } ${disabled ? "opacity-60 bg-gray-50 cursor-not-allowed" : ""}`}
       />
       {error ? (
         <p className="text-[10px] text-red-600 mt-0.5 inline-flex items-center gap-1">

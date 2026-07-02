@@ -37,18 +37,17 @@ export interface VendorMonthlyDashboard {
 }
 
 /**
- * Statuts exclus — DOIT rester aligné avec la RPC canonique
- * `get_vendor_gmv_progress` (source de vérité GMV / paliers commission).
- * Toute modification ici implique d'ajuster aussi la RPC (et inversement).
+ * Voir `src/lib/vendor-gmv-filters.ts` — modèle de filtre partagé aligné
+ * strictement sur la RPC `get_vendor_gmv_progress` (source de vérité GMV /
+ * paliers commission). Toute exclusion (statuts + drapeaux structurels) est
+ * définie une seule fois là-bas.
  */
-const EXCLUDED_STATUSES = new Set([
-  "cancelled",
-  "canceled",
-  "refused",
-  "rejected",
-  "refunded",
-  "failed",
-]);
+
+export interface DashboardPeriod {
+  start: Date;
+  end: Date;
+}
+
 
 export interface DashboardPeriod {
   start: Date;

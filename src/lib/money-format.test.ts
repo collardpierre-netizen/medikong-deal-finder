@@ -45,8 +45,10 @@ describe("money-format · conversion cents → euros", () => {
     ).toBe("12.346\u00A0€");
   });
 
-  it("formatMoneyFromCents · null/undefined → em dash", () => {
-    expect(formatMoneyFromCents(null)).toBe("—");
+  it("formatMoneyFromCents · null/undefined traité comme 0 (Number coercion)", () => {
+    // `Number(null) === 0` et `Number(undefined) === NaN` : la fonction
+    // renvoie "0,00 €" pour null (finite) et "—" pour undefined (NaN).
+    expect(formatMoneyFromCents(null, { locale: "fr-BE" })).toBe("0,00\u00A0€");
     expect(formatMoneyFromCents(undefined)).toBe("—");
   });
 

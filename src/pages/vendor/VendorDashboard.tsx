@@ -1,5 +1,6 @@
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { useVendorDashboardKpis } from "@/hooks/useVendorDashboardKpis";
+import { useVendorMonthlyDashboard } from "@/hooks/useVendorMonthlyDashboard";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VStat } from "@/components/vendor/ui/VStat";
 import { Database } from "lucide-react";
@@ -7,6 +8,9 @@ import VendorKycStepper from "@/components/vendor/VendorKycStepper";
 import NoShippingDashboard from "@/components/vendor/dashboard/NoShippingDashboard";
 import SendcloudDashboard from "@/components/vendor/dashboard/SendcloudDashboard";
 import VendorMarketIntelStatusCard from "@/components/vendor/dashboard/VendorMarketIntelStatusCard";
+import MediKongCommissionCard from "@/components/vendor/dashboard/MediKongCommissionCard";
+import RevenueTrendCard from "@/components/vendor/dashboard/RevenueTrendCard";
+import CustomerTypeBreakdownCard from "@/components/vendor/dashboard/CustomerTypeBreakdownCard";
 import { useMoneyFormat } from "@/lib/money-format";
 
 const today = new Date();
@@ -15,6 +19,7 @@ const dateStr = today.toLocaleDateString("fr-BE", { weekday: "long", day: "numer
 export default function VendorDashboard() {
   const { data: vendor } = useCurrentVendor();
   const { data: kpis } = useVendorDashboardKpis(vendor?.id);
+  const { data: monthly, isLoading: monthlyLoading } = useVendorMonthlyDashboard(vendor?.id);
   const { formatMoney } = useMoneyFormat();
 
   const isApproved = vendor?.validation_status === "approved";
@@ -96,6 +101,27 @@ export default function VendorDashboard() {
               />
             </div>
           )}
+
+          {/* Bloc GMV / Commission MediKong / Marge nette + jauge palier négocié */}
+          <MediKongCommissionCard
+            gmvCents={monthly?.gmvCents ?? 0}
+            commissionCents={monthly?.commissionCents ?? 0}
+            netMarginCents={monthly?.netMarginCents ?? 0}
+            tier={monthly?.commissionTier ?? null}
+            loading={monthlyLoading}
+          />
+
+          {/* Courbe CA + ventilation par profil client */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2">
+              <RevenueTrendCard data={monthly?.dailySeries ?? []} loading={monthlyLoading} />
+            </div>
+            <CustomerTypeBreakdownCard
+              data={monthly?.customerTypeBreakdown ?? []}
+              loading={monthlyLoading}
+            />
+          </div>
+
 
           {/* Shipping section — adapts to vendor's shipping mode */}
           {vendor && (

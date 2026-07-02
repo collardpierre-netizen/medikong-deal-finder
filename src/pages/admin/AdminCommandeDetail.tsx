@@ -303,6 +303,11 @@ const AdminCommandeDetail = () => {
   };
 
   const saveTracking = async (opts: { notify: boolean; markShipped: boolean }) => {
+    const urlErr = validateTrackingUrl(trackUrl);
+    if (urlErr) {
+      toast.error(urlErr);
+      return;
+    }
     setBusy("TRACKING");
     try {
       const patch: Record<string, any> = {

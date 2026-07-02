@@ -251,7 +251,10 @@ async function fetchVariantWithRetry(
       lastResponse = res;
 
       if (res.status === 429 && attempt < MAX_RETRIES_429) {
-        await sleep(1200 * (attempt + 1));
+        const retryAfter = parseInt(res.headers.get("Retry-After") || "3");
+        const waitMs = trip429Cooldown(retryAfter, attempt);
+        console.warn(`[qogita] 429 on variant ${url} — cooldown ${waitMs}ms (attempt ${attempt + 1}/${MAX_RETRIES_429})`);
+        await sleep(waitMs);
         continue;
       }
 

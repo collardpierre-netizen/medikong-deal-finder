@@ -268,7 +268,17 @@ export default function ReconciliationCard({ data, loading, periodLabel }: Props
                                         <th className="py-1 pr-2 font-medium text-right">Lignes</th>
                                         <th className="py-1 pr-2 font-medium text-right">CA HTVA</th>
                                         <th className="py-1 pr-2 font-medium text-right">GMV TTC</th>
-                                        <th className="py-1 font-medium text-right">TVA</th>
+                                        <th className="py-1 font-medium text-right">
+                                          <Tooltip>
+                                            <TooltipTrigger className="inline-flex items-center gap-1 cursor-help">
+                                              TVA
+                                              <Info size={10} className="text-[#8B95A5]" />
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top" className="max-w-[220px] text-[11px] leading-snug">
+                                              TVA = GMV TTC − CA HTVA pour cette commande.
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </th>
                                       </tr>
                                     </thead>
                                     <tbody>

@@ -61,6 +61,11 @@ describe("lazyWithRetry — reload limits across routes", () => {
 
     reloadSpy = vi.fn();
     replaceSpy = vi.fn();
+    // Run backoff scheduler synchronously so spies can be asserted immediately.
+    __reloadTiming.scheduler = ((fn: () => void) => {
+      fn();
+      return 0;
+    }) as typeof __reloadTiming.scheduler;
     // Redefine window.location with spy-able reload/replace, keep other props.
     Object.defineProperty(window, "location", {
       configurable: true,

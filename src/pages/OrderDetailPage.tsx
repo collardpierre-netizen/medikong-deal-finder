@@ -118,10 +118,18 @@ export default function OrderDetailPage() {
           )}
         </div>
 
-        {((order as any)?.tracking_url || (order as any)?.tracking_number || (order as any)?.tracking_carrier) && (
+        {((order as any)?.tracking_url || (order as any)?.tracking_number || (order as any)?.tracking_carrier || (order as any)?.status === "delivered") && (
           <div className="mb-6 rounded-lg border border-indigo-200 bg-indigo-50 p-4">
-            <div className="text-[11px] uppercase text-indigo-700 font-semibold mb-1">Suivi d'expédition</div>
-            {(order as any)?.shipped_at && (
+            <div className="flex items-center gap-2 mb-1">
+              <div className="text-[11px] uppercase text-indigo-700 font-semibold">Suivi d'expédition</div>
+              {(order as any)?.status === "delivered" && (
+                <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">Livrée</span>
+              )}
+            </div>
+            {(order as any)?.delivered_at && (
+              <div className="text-xs text-emerald-700 font-medium">Livrée le {formatOrderDateTime((order as any).delivered_at)}</div>
+            )}
+            {(order as any)?.shipped_at && !(order as any)?.delivered_at && (
               <div className="text-xs text-mk-sec">Expédiée le {formatOrderDateTime((order as any).shipped_at)}</div>
             )}
             {(order as any)?.tracking_carrier && (

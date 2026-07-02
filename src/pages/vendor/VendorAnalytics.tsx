@@ -56,7 +56,22 @@ const PERIOD_OPTIONS: { value: VendorAnalyticsPeriod; label: string }[] = [
 export default function VendorAnalytics() {
   const { data: vendor } = useCurrentVendor();
   const [period, setPeriod] = useState<VendorAnalyticsPeriod>("30d");
-  const { categoryBreakdown, customerTypeBreakdown, isLoading } = useVendorSalesBreakdowns(vendor?.id, period);
+  const { categoryBreakdown, customerTypeBreakdown, isLoading, isFetching, error, refetch } =
+    useVendorSalesBreakdowns(vendor?.id, period);
+
+  // Slow-load hint: after 4s of loading/fetching, flag as "prend trop de temps"
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    if (!isLoading && !isFetching) {
+      setSlow(false);
+      return;
+    }
+    setSlow(false);
+    const t = window.setTimeout(() => setSlow(true), 4000);
+    return () => window.clearTimeout(t);
+  }, [isLoading, isFetching, period]);
+
+  const errorMessage = error ? (error.message || "Erreur lors du chargement des données.") : null;
 
   const totalClients = customerTypeBreakdown.reduce((s, r) => s + r.value, 0);
   const retail = customerTypeBreakdown.find((r) => r.name === "Retail");

@@ -211,6 +211,8 @@ export interface Offer {
   vendorNote?: string | null;
   cartonSizeOverride?: number | null;
   packagingLanguages?: string[] | null;
+  isExclusiveWinner?: boolean;
+  isShowcaseDimmed?: boolean;
 }
 
 export function useProductOffers(productId: string | undefined) {

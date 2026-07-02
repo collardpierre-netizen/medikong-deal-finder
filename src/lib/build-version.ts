@@ -27,6 +27,7 @@ import {
   resetReloadAttempts,
 } from "@/lib/lazy-with-retry";
 import { bustAdminQueryCache } from "@/lib/admin-cache-bust";
+import { isAutoRefreshDisabled } from "@/lib/auto-refresh-preference";
 
 const CURRENT_BUILD_ID =
   typeof __BUILD_ID__ !== "undefined" ? __BUILD_ID__ : "dev";

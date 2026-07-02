@@ -152,6 +152,7 @@ function scheduleDeferredReload() {
   if (deferredReloadTimer != null) return;
   deferredReloadTimer = window.setTimeout(() => {
     deferredReloadTimer = null;
+    if (isAutoRefreshDisabled()) return;
     const active = document.activeElement;
     const stillEditing =
       active instanceof HTMLElement &&

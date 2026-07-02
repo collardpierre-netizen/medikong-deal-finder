@@ -1,48 +1,59 @@
+## Objectif
 
-## Contexte
+Remplacer le barème indicatif codé en dur du dashboard vendeur par de vrais paliers de commission négociée, pilotables depuis `/admin/commissions`, et afficher au vendeur sa progression GMV en valeur et % vers le prochain palier (avec conservation/perte du taux préférentiel).
 
-Le tableau de bord vendeur affiche aujourd'hui 4 KPIs (CA du mois, Marge brute, Commandes, Offres actives) + optionnellement le prévisionnel. Manquent :
+## Modèle de données
 
-1. **CA en cours (graphique jour par jour)** — mois en cours
-2. **Ventilation par profil client** (pharmacie, hôpital, cabinet, etc.)
-3. **Marge nette** (marge brute − commission MediKong)
-4. **Commission MediKong** (montant du mois)
-5. **GMV du mois** (volume brut TTC)
-6. **Barre de progression GMV** vers le prochain palier de commission négociée
+Nouvelle table `margin_rule_tiers` (paliers optionnels attachés à une règle `margin_rules`) :
 
-Aucune modification d'une autre partie du dashboard ni de la logique métier existante.
+- `margin_rule_id` (FK)
+- `min_gmv_cents` (bigint) — seuil GMV cumulé à atteindre
+- `margin_percentage` (numeric) — taux appliqué au-delà du seuil
+- `label` (text, optionnel — ex. "Palier négocié 1M€")
+- `sort_order` (int)
 
-## Ce que je vais faire
+Convention : la règle parente (`margin_rules.margin_percentage`) reste le taux "base" (palier 0). Les `margin_rule_tiers` définissent les paliers supérieurs.
 
-### 1. Nouveau hook `useVendorMonthlyDashboard(vendorId)`
-- Charge les `order_lines` du vendeur du mois en cours (non-forecast, hors statuts exclus).
-- Rejoint `sub_orders` (subtotal_incl_vat pour GMV) et `resolve_effective_commission` déjà utilisé côté back-office pour calculer la commission par ligne.
-- Renvoie :
-  - `gmvCents` (Σ line_total_incl_vat)
-  - `revenueExclVatCents`, `grossMarginCents`
-  - `commissionCents` (Σ commissions par ligne)
-  - `netMarginCents = grossMarginCents − commissionCents`
-  - `dailySeries: Array<{ day: string; revenueCents }>` (CA HTVA par jour, 1..fin de mois, 0 pour jours sans vente)
-  - `commissionTier: { currentPct, nextPct, thresholdCents, progressPct }` lu depuis `vendor_commission_negotiated_tiers` (table à confirmer). Si aucune règle négociée : renvoie `null` → la jauge ne s'affiche pas.
+Deux nouveaux champs sur `margin_rules` :
+- `gmv_window` enum (`calendar_year` | `rolling_12m`) — défaut `calendar_year`
+- `tiers_direction` enum (`decreasing` | `increasing`) — défaut `decreasing` (plus de GMV = taux plus bas)
 
-### 2. Nouveau hook `useVendorCustomerTypeRevenue(vendorId, period="month")`
-- Réutilise `useVendorSalesBreakdowns` existant mais en filtrant sur le mois courant et en calculant le **montant** par `customer_type` (au lieu du nombre de commandes actuellement affiché).
+RPC `get_vendor_gmv_progress(_vendor_id uuid)` :
+retourne `{ current_gmv_cents, current_tier_percentage, next_tier_min_gmv_cents, next_tier_percentage, progress_pct, window_start, window_end }` en s'appuyant sur `order_lines` (mêmes filtres que le dashboard) et la règle vendeur active (fallback règle globale).
 
-### 3. Nouveaux composants sous `src/components/vendor/dashboard/`
-- `RevenueTrendCard.tsx` — courbe Recharts (AreaChart) du CA quotidien du mois.
-- `CustomerTypeBreakdownCard.tsx` — barres horizontales par profil client avec montant + %.
-- `MediKongCommissionCard.tsx` — 3 stats (Commission, Marge nette, GMV) + `CommissionTierProgress` (barre + libellé "1 250 EUR / 5 000 EUR avant palier 15 %").
+RLS : lecture par admin ou par le vendeur concerné (via `current_vendor_id()`).
 
-### 4. Intégration dans `src/pages/vendor/VendorDashboard.tsx`
-Ajout d'une nouvelle rangée sous la rangée KPI existante :
-- Ligne 1 (existante, inchangée) : 4 VStat
-- **Nouvelle ligne 2** : `MediKongCommissionCard` (3 stats + jauge palier)
-- **Nouvelle ligne 3** : `RevenueTrendCard` (2/3) + `CustomerTypeBreakdownCard` (1/3)
+## Admin `/admin/commissions`
 
-## Questions à confirmer avant de coder
+Dans l'éditeur de règle (dialog) :
+- Section "Paliers négociés" repliable (visible seulement quand une règle vendeur est éditée, ou activable via un toggle sur les templates globaux).
+- Tableau éditable : GMV min (€) | Taux (%) | Label.
+- Sélecteurs : fenêtre GMV (année civile / 12 mois glissants), direction (dégressif / progressif).
+- Aperçu : "À partir de X € de GMV, taux Y %".
 
-1. **Palier de commission négociée** — quelle est la source de vérité ? Une table `vendor_commission_negotiated_tiers` (à créer), un champ JSON sur `vendors`, ou les paliers viennent d'une constante hardcodée à définir avec toi ?
-2. **GMV = TTC ou HTVA ?** Standard e-commerce = TTC (subtotal_incl_vat). Je pars sur TTC sauf indication contraire.
-3. **Commission MediKong** : dois-je utiliser la RPC existante `resolve_effective_commission` par offre (précis mais N appels) ou est-ce qu'un champ `commission_amount_cents` est déjà stocké sur `order_lines` / `sub_orders` que je peux sommer directement ?
+Sur la table des règles vendeurs : afficher une petite pastille "N paliers" quand `margin_rule_tiers` > 0.
 
-Je m'arrête ici pour validation avant d'écrire le code ou toute migration DB.
+## Dashboard vendeur (`MediKongCommissionCard`)
+
+- Supprimer le barème local indicatif.
+- Appeler le RPC `get_vendor_gmv_progress`.
+- Afficher :
+  - Taux actuel (badge) + libellé du palier.
+  - GMV cumulé (€) sur la fenêtre.
+  - Prochain palier : "Encore X € pour passer à Y %" (ou "Palier max atteint").
+  - Barre de progression (% vers prochain palier).
+  - Note conditionnelle si la règle est `decreasing` : "Sous ce seuil, le taux repasse à Z %".
+
+Si le vendeur n'a aucun palier configuré : afficher juste le taux fixe actuel (aucune barre, aucun barème indicatif).
+
+## Décisions par défaut appliquées
+
+- **GMV = HTVA** (`line_total_excl_vat`) — cohérent avec la négociation commerciale. Bascule TTC possible plus tard si tu veux.
+- **Fenêtre par défaut = année civile** (reset au 1er janvier), configurable par règle.
+- **Commission** : le taux résolu s'applique aux **commandes suivantes** après franchissement du palier (pas de rétroactif). Le RPC calcule uniquement l'affichage ; l'application effective aux `order_lines.commission_amount` reste sur le trigger existant (à faire évoluer dans un second temps si tu valides ce comportement).
+
+## Questions bloquantes avant migration
+
+1. **Application au calcul réel des commissions** : je limite ce lot à **l'affichage dashboard + config admin** (le taux effectif dans `order_lines.commission_amount` continue d'utiliser `margin_rules.margin_percentage` "base"). OK ou tu veux aussi que le trigger de commission consulte les paliers dès maintenant ?
+2. **HTVA confirmé** pour la GMV ?
+3. **Fenêtre par défaut = année civile** OK ?

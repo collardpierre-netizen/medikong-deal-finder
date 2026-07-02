@@ -81,6 +81,8 @@ export function useBestOffersBatch(productIds: string[]) {
           stockQuantity: Number(r.stock_quantity) || 0,
           offerCount: Number(r.offer_count) || 0,
           totalStock: Number(r.total_stock) || 0,
+          exclusivityMode: (r.exclusivity_mode as any) ?? null,
+          isExclusiveWinner: !!r.is_exclusive_winner,
         });
       }
       return map;

@@ -239,14 +239,11 @@ function scheduleDeferredReload() {
   deferredReloadTimer = window.setTimeout(() => {
     deferredReloadTimer = null;
     if (isAutoRefreshDisabled()) return;
-    const active = document.activeElement;
-    const stillEditing =
-      active instanceof HTMLElement &&
-      (active.tagName === "INPUT" ||
-        active.tagName === "TEXTAREA" ||
-        active.isContentEditable);
+    // Si l'utilisateur a navigué hors d'une page à risque entre-temps,
+    // on n'insiste pas : rechargement seulement là où c'est nécessaire.
+    if (!isAtRiskPath()) return;
     if (
-      !stillEditing &&
+      !isUserBusy() &&
       document.visibilityState === "visible" &&
       canAutoReload()
     ) {

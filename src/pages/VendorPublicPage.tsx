@@ -371,7 +371,7 @@ export default function VendorPublicPage() {
       }
       const { data, error } = await q.range(from, to).abortSignal(signal);
       if (error) throw error;
-      return data || [];
+      return (data as any[]) || [];
     },
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length === PAGE_SIZE ? allPages.length : undefined,

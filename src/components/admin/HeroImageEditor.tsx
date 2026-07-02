@@ -228,13 +228,30 @@ export default function HeroImageEditor({ img }: Props) {
           max={LIMITS.subtitle} error={errors.subtitle}
           enabled={showSubtitle} onEnabledChange={setShowSubtitle}
         />
-        <div className="grid grid-cols-2 gap-2">
-          <Field label="Label CTA" value={cta} onChange={setCta} placeholder="Découvrir →" max={LIMITS.cta} error={errors.cta_text} />
-          <Field
-            label="URL CTA" value={link} onChange={setLink} placeholder="/promotions ou https://…"
-            max={LIMITS.url} error={errors.link_url}
-            hint={link.trim() && !errors.link_url ? (isInternalLink ? "Lien interne" : "Lien externe (nouvel onglet)") : undefined}
-          />
+        <div className="rounded-md border border-gray-200 bg-gray-50/60 p-2 space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-[10px] uppercase tracking-wider font-semibold text-[#5C6470] inline-flex items-center gap-2">
+              CTA (bouton + lien)
+              <Switch
+                checked={showCta}
+                onCheckedChange={setShowCta}
+                aria-label="Afficher le CTA"
+                className="scale-75 origin-left"
+              />
+              <span className={`text-[9px] font-medium normal-case tracking-normal ${showCta ? "text-emerald-700" : "text-[#8B95A5]"}`}>
+                {showCta ? "Affiché" : "Masqué"}
+              </span>
+            </label>
+          </div>
+          <div className={`grid grid-cols-2 gap-2 ${!showCta ? "opacity-50" : ""}`}>
+            <Field label="Label CTA" value={cta} onChange={setCta} placeholder="Découvrir →" max={LIMITS.cta} error={errors.cta_text} disabled={!showCta} />
+            <Field
+              label="URL CTA" value={link} onChange={setLink} placeholder="/promotions ou https://…"
+              max={LIMITS.url} error={errors.link_url}
+              hint={link.trim() && !errors.link_url ? (isInternalLink ? "Lien interne" : "Lien externe (nouvel onglet)") : undefined}
+              disabled={!showCta}
+            />
+          </div>
         </div>
 
         {/* Image mobile dédiée */}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useMoneyFormat } from "@/lib/money-format";
 import { VCard } from "@/components/vendor/ui/VCard";

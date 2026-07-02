@@ -38,9 +38,95 @@ const RELOAD_COUNTER_BUILD_KEY = "medikong:reload-counter-build-id";
 const TOAST_ID = "medikong-new-version";
 const DEFERRED_AUTO_RELOAD_MS = 60_000; // laisse 60 s pour finir une saisie
 
+/**
+ * Pages "à risque" pour lesquelles on force le rechargement automatique
+ * quand une nouvelle version est détectée. Sur les autres routes on ne
+ * recharge JAMAIS automatiquement : le toast reste visible et l'utilisateur
+ * recharge quand il le souhaite (le rechargement finira par avoir lieu au
+ * prochain chunk-load error via lazy-with-retry, ou à la prochaine navigation).
+ *
+ * Rationale : les écrans admin manipulent des chiffres/KPIs calculés côté
+ * backend et exposent des actions destructives ; il est plus grave d'y
+ * afficher un bundle stale que d'y perdre un focus.
+ */
+const AT_RISK_PATH_PREFIXES = ["/admin"];
+
+function isAtRiskPath(): boolean {
+  try {
+    const path = window.location?.pathname ?? "";
+    return AT_RISK_PATH_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Détection "utilisateur en train de saisir / interagir" plus fiable que le
+ * simple `activeElement instanceof HTMLInputElement`. Couvre :
+ *  - Élément actif input/textarea/select/contenteditable (y compris à
+ *    travers les shadow roots ouverts, ex. composants Radix).
+ *  - Ancêtre `contenteditable` (ex. TipTap : l'élément focus peut être
+ *    un `<span>` interne).
+ *  - Dialogs / drawers / popovers ouverts (Radix pose `data-state="open"`
+ *    sur `[role="dialog"]` / `[role="alertdialog"]`).
+ *  - Zone marquée `aria-busy="true"` (upload / save en cours).
+ *  - Sélection de texte non vide (l'utilisateur est en train de copier).
+ *  - Média en cours de lecture non muet.
+ */
+function getDeepActiveElement(): Element | null {
+  try {
+    let el: Element | null = document.activeElement;
+    while (el && (el as HTMLElement & { shadowRoot?: ShadowRoot | null }).shadowRoot?.activeElement) {
+      el = (el as HTMLElement & { shadowRoot: ShadowRoot }).shadowRoot.activeElement;
+    }
+    return el;
+  } catch {
+    return null;
+  }
+}
+
+function isUserBusy(): boolean {
+  try {
+    const active = getDeepActiveElement();
+    if (active instanceof HTMLElement) {
+      const tag = active.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+      if (active.isContentEditable) return true;
+      if (active.closest("[contenteditable=\"true\"], [contenteditable=\"\"]")) return true;
+    }
+
+    // Modals / drawers / popovers ouverts.
+    if (
+      document.querySelector(
+        '[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]',
+      )
+    ) {
+      return true;
+    }
+
+    // Zone marquée occupée (upload / save en cours).
+    if (document.querySelector('[aria-busy="true"]')) return true;
+
+    // Sélection de texte active (copie en cours).
+    const sel = window.getSelection?.();
+    if (sel && !sel.isCollapsed && (sel.toString()?.length ?? 0) > 0) return true;
+
+    // Média audio/vidéo en cours de lecture non muet.
+    const media = Array.from(
+      document.querySelectorAll<HTMLMediaElement>("video, audio"),
+    );
+    if (media.some((m) => !m.paused && !m.ended && !m.muted && m.currentTime > 0)) {
+      return true;
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 let deferredReloadTimer: number | null = null;
 let toastShown = false;
-
 let started = false;
 
 async function fetchRemoteBuildId(): Promise<string | null> {
@@ -85,18 +171,14 @@ async function checkVersion() {
   // par l'ancien backend, même si le reload est différé ci-dessous.
   bustAdminQueryCache();
 
-  // If the user is mid-typing in a form, don't yank the page from under them.
-  const active = document.activeElement;
-  const isEditing =
-    active instanceof HTMLElement &&
-    (active.tagName === "INPUT" ||
-      active.tagName === "TEXTAREA" ||
-      active.isContentEditable);
-
   const autoRefreshDisabled = isAutoRefreshDisabled();
+  const atRisk = isAtRiskPath();
+  const busy = isUserBusy();
+
   const canReloadNow =
     !autoRefreshDisabled &&
-    !isEditing &&
+    atRisk &&
+    !busy &&
     document.visibilityState === "visible" &&
     canAutoReload();
 
@@ -105,11 +187,15 @@ async function checkVersion() {
     return;
   }
 
-  // Reload différé : on prévient l'utilisateur avec un toast persistant
-  // + CTA « Recharger maintenant », et on planifie un nouveau tentative
-  // automatique dans 60 s (au cas où il quitterait le champ entre temps).
+  // Reload différé :
+  //  - Sur page à risque (admin) : toast + retry auto dans 60 s dès que
+  //    l'utilisateur n'est plus en train d'interagir.
+  //  - Ailleurs : toast uniquement, aucun rechargement automatique
+  //    (l'utilisateur recharge quand il veut via le CTA du toast).
   showNewVersionToast();
-  scheduleDeferredReload();
+  if (atRisk && !autoRefreshDisabled) {
+    scheduleDeferredReload();
+  }
 }
 
 function resetReloadCountersForRemoteBuild(remoteBuildId: string) {
@@ -153,14 +239,11 @@ function scheduleDeferredReload() {
   deferredReloadTimer = window.setTimeout(() => {
     deferredReloadTimer = null;
     if (isAutoRefreshDisabled()) return;
-    const active = document.activeElement;
-    const stillEditing =
-      active instanceof HTMLElement &&
-      (active.tagName === "INPUT" ||
-        active.tagName === "TEXTAREA" ||
-        active.isContentEditable);
+    // Si l'utilisateur a navigué hors d'une page à risque entre-temps,
+    // on n'insiste pas : rechargement seulement là où c'est nécessaire.
+    if (!isAtRiskPath()) return;
     if (
-      !stillEditing &&
+      !isUserBusy() &&
       document.visibilityState === "visible" &&
       canAutoReload()
     ) {
@@ -187,6 +270,11 @@ export async function preflightBuildVersionBeforeRender(): Promise<boolean> {
   // Le watcher affichera un toast pour un rechargement manuel.
   if (isAutoRefreshDisabled()) return true;
 
+  // Ne préflighte de rechargement que sur les pages à risque (admin).
+  // Ailleurs on laisse le boot se poursuivre : le watcher affichera un toast
+  // et l'utilisateur rechargera à sa convenance.
+  if (!isAtRiskPath()) return true;
+
   if (safeCacheBustReload() || safeAutoReload()) return false;
   return true;
 }
@@ -208,9 +296,13 @@ export function installBuildVersionWatcher() {
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") void checkVersion();
   });
-  // If we already flagged stale and the user comes back, reload.
+  // If we already flagged stale and the user comes back, reload — mais
+  // uniquement sur une page à risque et si l'utilisateur n'est pas en train
+  // de saisir/interagir.
   window.addEventListener("focus", () => {
     if (isAutoRefreshDisabled()) return;
+    if (!isAtRiskPath()) return;
+    if (isUserBusy()) return;
     if (isBuildStale() && canAutoReload()) {
       if (!safeCacheBustReload()) safeAutoReload();
     }

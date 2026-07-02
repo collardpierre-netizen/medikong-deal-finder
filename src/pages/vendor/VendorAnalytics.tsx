@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer, Legend } from "recharts";
-import { Info } from "lucide-react";
+import { AlertTriangle, Info, RefreshCw } from "lucide-react";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { useVendorSalesBreakdowns, type VendorAnalyticsPeriod } from "@/hooks/useVendorSalesBreakdowns";
@@ -13,6 +13,38 @@ const EmptyState = ({ message }: { message: string }) => (
   </div>
 );
 
+const ChartSkeleton = ({ slow }: { slow: boolean }) => (
+  <div className="py-4" role="status" aria-live="polite" aria-busy="true">
+    <div className="mx-auto rounded-full animate-pulse bg-[#E2E8F0]" style={{ width: 180, height: 180 }} />
+    <div className="mt-4 flex flex-wrap justify-center gap-2">
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} className="h-3 w-20 rounded animate-pulse bg-[#E2E8F0]" />
+      ))}
+    </div>
+    {slow && (
+      <p className="mt-3 text-center text-[11px]" style={{ color: "#B45309" }}>
+        Le chargement prend plus de temps que prévu…
+      </p>
+    )}
+  </div>
+);
+
+const ErrorState = ({ message, onRetry }: { message: string; onRetry: () => void }) => (
+  <div className="flex flex-col items-center justify-center py-8 text-center" role="alert">
+    <AlertTriangle size={28} className="mb-2" style={{ color: "#DC2626" }} />
+    <p className="text-[13px] mb-3" style={{ color: "#991B1B" }}>{message}</p>
+    <button
+      type="button"
+      onClick={onRetry}
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-[6px] border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC]"
+      style={{ color: "#1D2530" }}
+    >
+      <RefreshCw size={12} /> Réessayer
+    </button>
+  </div>
+);
+
+
 const PERIOD_OPTIONS: { value: VendorAnalyticsPeriod; label: string }[] = [
   { value: "7d", label: "7 jours" },
   { value: "30d", label: "30 jours" },
@@ -24,7 +56,22 @@ const PERIOD_OPTIONS: { value: VendorAnalyticsPeriod; label: string }[] = [
 export default function VendorAnalytics() {
   const { data: vendor } = useCurrentVendor();
   const [period, setPeriod] = useState<VendorAnalyticsPeriod>("30d");
-  const { categoryBreakdown, customerTypeBreakdown, isLoading } = useVendorSalesBreakdowns(vendor?.id, period);
+  const { categoryBreakdown, customerTypeBreakdown, isLoading, isFetching, error, refetch } =
+    useVendorSalesBreakdowns(vendor?.id, period);
+
+  // Slow-load hint: after 4s of loading/fetching, flag as "prend trop de temps"
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    if (!isLoading && !isFetching) {
+      setSlow(false);
+      return;
+    }
+    setSlow(false);
+    const t = window.setTimeout(() => setSlow(true), 4000);
+    return () => window.clearTimeout(t);
+  }, [isLoading, isFetching, period]);
+
+  const errorMessage = error ? (error.message || "Erreur lors du chargement des données.") : null;
 
   const totalClients = customerTypeBreakdown.reduce((s, r) => s + r.value, 0);
   const retail = customerTypeBreakdown.find((r) => r.name === "Retail");
@@ -69,8 +116,10 @@ export default function VendorAnalytics() {
           <p className="text-[11px] mb-4" style={{ color: "#8B95A5" }}>
             Répartition CA TTC par catégorie parent (commandes en cours + prévisionnelles)
           </p>
-          {isLoading ? (
-            <EmptyState message="Chargement…" />
+          {errorMessage ? (
+            <ErrorState message={errorMessage} onRetry={() => { void refetch(); }} />
+          ) : isLoading ? (
+            <ChartSkeleton slow={slow} />
           ) : categoryBreakdown.length > 0 ? (
             <div style={{ width: "100%", height: 260 }}>
               <ResponsiveContainer>
@@ -117,8 +166,10 @@ export default function VendorAnalytics() {
               </div>
             </div>
           )}
-          {isLoading ? (
-            <EmptyState message="Chargement…" />
+          {errorMessage ? (
+            <ErrorState message={errorMessage} onRetry={() => { void refetch(); }} />
+          ) : isLoading ? (
+            <ChartSkeleton slow={slow} />
           ) : customerTypeBreakdown.length > 0 ? (
             <div style={{ width: "100%", height: 260 }}>
               <ResponsiveContainer>

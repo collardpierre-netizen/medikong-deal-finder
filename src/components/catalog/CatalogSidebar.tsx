@@ -92,9 +92,15 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
 
   const filteredBrands = useMemo(() => {
     let list = mergedBrands;
+    // Quand une recherche mot-clé est active, on ne montre que les marques
+    // présentes dans le résultat courant (au lieu des Top marques globales).
+    if (filters.search && resultBrandIds && !brandSearch) {
+      const idSet = new Set(resultBrandIds);
+      list = list.filter(b => idSet.has(b.id));
+    }
     if (brandSearch) list = list.filter(b => b.name.toLowerCase().includes(brandSearch.toLowerCase()));
     return showAllBrands ? list : list.slice(0, 15);
-  }, [mergedBrands, brandSearch, showAllBrands]);
+  }, [mergedBrands, brandSearch, showAllBrands, filters.search, resultBrandIds]);
 
   const filteredMf = useMemo(() => {
     let list = manufacturers;

@@ -36,6 +36,10 @@ function labelFor(status: string) {
   return STATUS_LABELS[status] ?? status;
 }
 
+const excludedStatusLabels = Array.from(
+  new Set(VENDOR_GMV_EXCLUDED_STATUSES.map((s) => STATUS_LABELS[s] ?? s)),
+);
+
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
   try {

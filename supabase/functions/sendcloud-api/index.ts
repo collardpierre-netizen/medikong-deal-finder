@@ -197,6 +197,50 @@ Deno.serve(async (req) => {
     });
   }
 
+  // Resolve caller's vendor_id + admin status for ownership checks (IDOR guard).
+  const { data: callerVendor } = await supabase
+    .from("vendors")
+    .select("id")
+    .eq("auth_user_id", userId)
+    .maybeSingle();
+  const callerVendorId: string | null = (callerVendor?.id as string | undefined) ?? null;
+  let isAdmin = false;
+  try {
+    const { data: adminRpc } = await supabase.rpc("is_admin" as any, { _user_id: userId } as any);
+    isAdmin = adminRpc === true;
+  } catch {
+    isAdmin = false;
+  }
+
+  const forbid = (msg = "Forbidden") =>
+    new Response(JSON.stringify({ success: false, error: msg }), {
+      status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
+  // Verify that a Sendcloud parcel_id belongs to the caller's vendor account.
+  // Parcels are tracked in `shipments.parcel_id` (vendor_id) and
+  // `restock_shipments.sendcloud_parcel_id` (seller_id).
+  async function callerOwnsParcel(parcelIdRaw: unknown): Promise<boolean> {
+    if (isAdmin) return true;
+    if (!callerVendorId) return false;
+    const parcelId = String(parcelIdRaw ?? "").trim();
+    if (!parcelId) return false;
+    const { data: s1 } = await supabase
+      .from("shipments")
+      .select("id")
+      .eq("parcel_id", parcelId)
+      .eq("vendor_id", callerVendorId)
+      .maybeSingle();
+    if (s1?.id) return true;
+    const { data: s2 } = await supabase
+      .from("restock_shipments")
+      .select("id")
+      .eq("sendcloud_parcel_id", parcelId)
+      .eq("seller_id", callerVendorId)
+      .maybeSingle();
+    return !!s2?.id;
+  }
+
   try {
     const body: ApiRequest = await req.json();
 

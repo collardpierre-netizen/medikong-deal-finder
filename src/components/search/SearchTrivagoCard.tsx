@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ImageOff, Eye } from "lucide-react";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
 import { Heart, Check, ChevronDown, ChevronUp, Package, Truck, RotateCcw, ArrowRight, AlertCircle } from "lucide-react";

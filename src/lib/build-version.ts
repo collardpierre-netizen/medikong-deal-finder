@@ -38,8 +38,92 @@ const RELOAD_COUNTER_BUILD_KEY = "medikong:reload-counter-build-id";
 const TOAST_ID = "medikong-new-version";
 const DEFERRED_AUTO_RELOAD_MS = 60_000; // laisse 60 s pour finir une saisie
 
-let deferredReloadTimer: number | null = null;
-let toastShown = false;
+/**
+ * Pages "à risque" pour lesquelles on force le rechargement automatique
+ * quand une nouvelle version est détectée. Sur les autres routes on ne
+ * recharge JAMAIS automatiquement : le toast reste visible et l'utilisateur
+ * recharge quand il le souhaite (le rechargement finira par avoir lieu au
+ * prochain chunk-load error via lazy-with-retry, ou à la prochaine navigation).
+ *
+ * Rationale : les écrans admin manipulent des chiffres/KPIs calculés côté
+ * backend et exposent des actions destructives ; il est plus grave d'y
+ * afficher un bundle stale que d'y perdre un focus.
+ */
+const AT_RISK_PATH_PREFIXES = ["/admin"];
+
+function isAtRiskPath(): boolean {
+  try {
+    const path = window.location?.pathname ?? "";
+    return AT_RISK_PATH_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Détection "utilisateur en train de saisir / interagir" plus fiable que le
+ * simple `activeElement instanceof HTMLInputElement`. Couvre :
+ *  - Élément actif input/textarea/select/contenteditable (y compris à
+ *    travers les shadow roots ouverts, ex. composants Radix).
+ *  - Ancêtre `contenteditable` (ex. TipTap : l'élément focus peut être
+ *    un `<span>` interne).
+ *  - Dialogs / drawers / popovers ouverts (Radix pose `data-state="open"`
+ *    sur `[role="dialog"]` / `[role="alertdialog"]`).
+ *  - Zone marquée `aria-busy="true"` (upload / save en cours).
+ *  - Sélection de texte non vide (l'utilisateur est en train de copier).
+ *  - Média en cours de lecture non muet.
+ */
+function getDeepActiveElement(): Element | null {
+  try {
+    let el: Element | null = document.activeElement;
+    while (el && (el as HTMLElement & { shadowRoot?: ShadowRoot | null }).shadowRoot?.activeElement) {
+      el = (el as HTMLElement & { shadowRoot: ShadowRoot }).shadowRoot.activeElement;
+    }
+    return el;
+  } catch {
+    return null;
+  }
+}
+
+function isUserBusy(): boolean {
+  try {
+    const active = getDeepActiveElement();
+    if (active instanceof HTMLElement) {
+      const tag = active.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+      if (active.isContentEditable) return true;
+      if (active.closest("[contenteditable=\"true\"], [contenteditable=\"\"]")) return true;
+    }
+
+    // Modals / drawers / popovers ouverts.
+    if (
+      document.querySelector(
+        '[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]',
+      )
+    ) {
+      return true;
+    }
+
+    // Zone marquée occupée (upload / save en cours).
+    if (document.querySelector('[aria-busy="true"]')) return true;
+
+    // Sélection de texte active (copie en cours).
+    const sel = window.getSelection?.();
+    if (sel && !sel.isCollapsed && (sel.toString()?.length ?? 0) > 0) return true;
+
+    // Média audio/vidéo en cours de lecture non muet.
+    const media = Array.from(
+      document.querySelectorAll<HTMLMediaElement>("video, audio"),
+    );
+    if (media.some((m) => !m.paused && !m.ended && !m.muted && m.currentTime > 0)) {
+      return true;
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
+}
 
 let started = false;
 

@@ -110,8 +110,6 @@ export function useVendorMonthlyDashboard(vendorId: string | undefined) {
         .map(([type, amountCents]) => ({ type, amountCents }))
         .sort((a, b) => b.amountCents - a.amountCents);
 
-      const commissionTier = resolveTier(gmvCents);
-
       return {
         gmvCents,
         revenueExclVatCents,
@@ -120,7 +118,6 @@ export function useVendorMonthlyDashboard(vendorId: string | undefined) {
         netMarginCents,
         dailySeries,
         customerTypeBreakdown,
-        commissionTier,
       };
     },
   });

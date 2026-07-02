@@ -40,6 +40,7 @@ describe("lazyWithRetry", () => {
     sessionStorage.clear();
     // Disable auto-reload by maxing the counter so errors propagate to the boundary.
     sessionStorage.setItem("medikong:reload-count", "99");
+    sessionStorage.setItem("medikong:chunk-cache-bust-count", "99");
     // Default: probe returns a JS-looking response.
     globalThis.fetch = vi.fn(async () =>
       new Response("export default {};", {

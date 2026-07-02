@@ -51,10 +51,59 @@ const DEFERRED_AUTO_RELOAD_MS = 60_000; // laisse 60 s pour finir une saisie
  */
 const AT_RISK_PATH_PREFIXES = ["/admin"];
 
+/**
+ * Routes "sensibles" où l'utilisateur remplit un formulaire long ou un
+ * brouillon (checkout, onboarding vendeur, ReStock publier, RFQ, édition
+ * admin, paramètres compte, …). Même sur une page à risque, ces routes
+ * sont exclues de l'auto-reload : on ne veut pas faire perdre la saisie.
+ *
+ * Les patterns supportent :
+ *  - préfixes littéraux (`/panier`)
+ *  - segments d'action fréquents (`/nouveau`, `/edit`, `/publier`) qui
+ *    apparaissent souvent en fin ou milieu de path.
+ */
+const SENSITIVE_PATH_PREFIXES = [
+  "/panier",
+  "/checkout",
+  "/onboarding",
+  "/compte",
+  "/vendor",
+  "/restock/publier",
+  "/restock/nouveau",
+  "/demander-un-prix",
+  "/mes-rfq/nouveau",
+];
+const SENSITIVE_PATH_SEGMENTS = [
+  "/nouveau",
+  "/new",
+  "/edit",
+  "/editer",
+  "/publier",
+  "/creer",
+  "/create",
+  "/import",
+];
+
 function isAtRiskPath(): boolean {
   try {
     const path = window.location?.pathname ?? "";
     return AT_RISK_PATH_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
+  } catch {
+    return false;
+  }
+}
+
+function isSensitivePath(): boolean {
+  try {
+    const path = window.location?.pathname ?? "";
+    if (SENSITIVE_PATH_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`))) {
+      return true;
+    }
+    // Segments comme `/edit`, `/nouveau`, `/publier` apparaissant n'importe
+    // où dans le chemin (ex. `/admin/marques/:slug/edit`).
+    return SENSITIVE_PATH_SEGMENTS.some(
+      (seg) => path.endsWith(seg) || path.includes(`${seg}/`),
+    );
   } catch {
     return false;
   }

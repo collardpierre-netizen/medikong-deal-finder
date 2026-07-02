@@ -20,6 +20,7 @@
 
 declare const __BUILD_ID__: string;
 import { safeAutoReload, canAutoReload } from "@/lib/lazy-with-retry";
+import { bustAdminQueryCache } from "@/lib/admin-cache-bust";
 
 const CURRENT_BUILD_ID =
   typeof __BUILD_ID__ !== "undefined" ? __BUILD_ID__ : "dev";

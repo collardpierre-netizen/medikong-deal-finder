@@ -67,6 +67,49 @@ export default function AdminQogitaStatus() {
   const [modeFilter, setModeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [staleBusy, setStaleBusy] = useState(false);
+  const [sweepBusy, setSweepBusy] = useState(false);
+
+  async function runStaleRefresh() {
+    if (staleBusy) return;
+    setStaleBusy(true);
+    try {
+      const { data, error } = await supabase.rpc("enqueue_qogita_resync_batch", {
+        _batch_size: 500,
+        _mode: "daily_stale_refresh",
+      });
+      if (error) throw error;
+      const d = data as any;
+      if (d?.rate_limited) {
+        toast.warning(`Rate limit Qogita — ${d.available ?? 0} tokens dispo (demandé ${d.requested})`);
+      } else {
+        toast.success(`Batch enqueued : ${d?.enqueued ?? 0} produits`);
+      }
+      refetch();
+    } catch (e: any) {
+      toast.error(`Échec relance stale refresh : ${e?.message ?? e}`);
+    } finally {
+      setStaleBusy(false);
+    }
+  }
+
+  async function runReconciliationSweep() {
+    if (sweepBusy) return;
+    setSweepBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("qogita-reconcile", {
+        body: { sweep: "staleness", threshold_days: 7, dry_run: false },
+      });
+      if (error) throw error;
+      toast.success(`Reconciliation sweep déclenché${(data as any)?.deactivated != null ? ` — ${(data as any).deactivated} désactivations` : ""}`);
+      refetch();
+    } catch (e: any) {
+      toast.error(`Échec reconciliation sweep : ${e?.message ?? e}`);
+    } finally {
+      setSweepBusy(false);
+    }
+  }
+
 
   const { data: logs, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["qogita-resync-logs", modeFilter, statusFilter],

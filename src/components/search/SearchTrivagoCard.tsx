@@ -231,6 +231,11 @@ export default function SearchTrivagoCard({ product: p }: Props) {
               >
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-foreground">{offer.sellerName}</span>
+                  {offer.isShowcaseDimmed && (
+                    <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">
+                      <Eye size={10} /> Showcase
+                    </span>
+                  )}
                   {offer.isVerified && (
                     <span className="flex items-center gap-0.5 text-[10px] text-emerald-600 font-medium">
                       <Check size={10} /> Vérifié

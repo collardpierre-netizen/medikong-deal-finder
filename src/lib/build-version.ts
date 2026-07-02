@@ -27,6 +27,7 @@ import {
   resetReloadAttempts,
 } from "@/lib/lazy-with-retry";
 import { bustAdminQueryCache } from "@/lib/admin-cache-bust";
+import { isAutoRefreshDisabled } from "@/lib/auto-refresh-preference";
 
 const CURRENT_BUILD_ID =
   typeof __BUILD_ID__ !== "undefined" ? __BUILD_ID__ : "dev";
@@ -92,8 +93,12 @@ async function checkVersion() {
       active.tagName === "TEXTAREA" ||
       active.isContentEditable);
 
+  const autoRefreshDisabled = isAutoRefreshDisabled();
   const canReloadNow =
-    !isEditing && document.visibilityState === "visible" && canAutoReload();
+    !autoRefreshDisabled &&
+    !isEditing &&
+    document.visibilityState === "visible" &&
+    canAutoReload();
 
   if (canReloadNow) {
     if (!safeCacheBustReload()) safeAutoReload();
@@ -147,6 +152,7 @@ function scheduleDeferredReload() {
   if (deferredReloadTimer != null) return;
   deferredReloadTimer = window.setTimeout(() => {
     deferredReloadTimer = null;
+    if (isAutoRefreshDisabled()) return;
     const active = document.activeElement;
     const stillEditing =
       active instanceof HTMLElement &&
@@ -177,6 +183,10 @@ export async function preflightBuildVersionBeforeRender(): Promise<boolean> {
   markStale();
   bustAdminQueryCache();
 
+  // Préférence utilisateur : ne pas recharger automatiquement.
+  // Le watcher affichera un toast pour un rechargement manuel.
+  if (isAutoRefreshDisabled()) return true;
+
   if (safeCacheBustReload() || safeAutoReload()) return false;
   return true;
 }
@@ -200,6 +210,7 @@ export function installBuildVersionWatcher() {
   });
   // If we already flagged stale and the user comes back, reload.
   window.addEventListener("focus", () => {
+    if (isAutoRefreshDisabled()) return;
     if (isBuildStale() && canAutoReload()) {
       if (!safeCacheBustReload()) safeAutoReload();
     }

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { AlertCircle, Check, ExternalLink, Link2, Monitor, Smartphone, RotateCcw, Info, Upload, X as XIcon } from "lucide-react";
 import { toast } from "sonner";
+import { formatHeroInline } from "@/lib/hero-inline-format";
 
 export interface HeroImageRow {
   id: string;

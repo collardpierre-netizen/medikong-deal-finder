@@ -154,8 +154,12 @@ export default function VendorDashboard() {
             )}
             <span className="ml-1 text-[11px] text-[#8B95A5] tabular-nums">{rangeLabel}</span>
           </div>
-          <p className="text-[11px] text-[#8B95A5]">
-            CA HTVA &amp; GMV TTC : même source unique (<code>order_lines</code>) — exclut commandes prévisionnelles, de test, masquées, supprimées, annulées, refusées, rejetées, remboursées ou en échec.
+          <p className="text-[11px] leading-relaxed text-[#8B95A5]">
+            <strong className="text-[#1E252F]">CA HTVA &amp; GMV TTC</strong> — source unique <code>order_lines</code>, alignée sur la RPC <code>get_vendor_gmv_progress</code>.
+            <br />
+            <span className="text-[#475569]">Inclus</span> : toutes les commandes réelles, non-test, non supprimées, non masquées, dont le statut ∈ {"{"}<code>pending</code>, <code>confirmed</code>, <code>processing</code>, <code>shipped</code>, <code>delivered</code>, <code>completed</code>, <code>invoiced</code>, <code>paid</code>{"}"} (tout statut hors liste d'exclusion ci-dessous).
+            <br />
+            <span className="text-[#475569]">Exclus</span> : commandes prévisionnelles (<code>is_forecast=true</code>), de test (<code>is_test=true</code>), masquées (<code>hidden_from_list=true</code>), supprimées (<code>deleted_at</code> non nul) ; statuts <code>cancelled</code>, <code>canceled</code>, <code>refused</code>, <code>rejected</code>, <code>refunded</code>, <code>failed</code>.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

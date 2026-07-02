@@ -183,6 +183,7 @@ const AdminCmsHomeBrands = lazyWithRetry(() => import("./pages/admin/AdminCmsHom
 const AdminCmsHomeProducts = lazyWithRetry(() => import("./pages/admin/AdminCmsHomeProducts"), "AdminCmsHomeProducts");
 const AdminCmsHomeShowcase = lazyWithRetry(() => import("./pages/admin/AdminCmsHomeShowcase"), "AdminCmsHomeShowcase");
 const AdminMedia = lazyWithRetry(() => import("./pages/admin/AdminMedia"), "AdminMedia");
+const AdminMediaLibrary = lazyWithRetry(() => import("./pages/admin/AdminMediaLibrary"), "AdminMediaLibrary");
 const AdminUnmappedCategories = lazyWithRetry(() => import("./pages/admin/AdminUnmappedCategories"), "AdminUnmappedCategories");
 const AdminSourcingPipeline = lazyWithRetry(() => import("./pages/admin/AdminSourcingPipeline"), "AdminSourcingPipeline");
 const AdminCategoryAnomalies = lazyWithRetry(() => import("./pages/admin/AdminCategoryAnomalies"), "AdminCategoryAnomalies");
@@ -545,6 +546,7 @@ const App = () => (
               <Route path="cms/home/produits" element={<LP><AdminCmsHomeProducts /></LP>} />
               <Route path="cms/home/comparaison" element={<LP><AdminCmsHomeShowcase /></LP>} />
               <Route path="media" element={<LP><AdminMedia /></LP>} />
+              <Route path="media-library" element={<LP><AdminMediaLibrary /></LP>} />
               <Route path="cms/partenaires-invest" element={<LP><AdminCmsPartnerLogos /></LP>} />
               <Route path="categories/non-mappees" element={<LP><AdminUnmappedCategories /></LP>} />
               <Route path="sourcing/pipeline" element={<LP><AdminSourcingPipeline /></LP>} />

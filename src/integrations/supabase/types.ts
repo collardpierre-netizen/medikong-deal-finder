@@ -6438,6 +6438,104 @@ export type Database = {
           },
         ]
       }
+      media_library: {
+        Row: {
+          alt_text: string | null
+          created_at: string
+          description: string | null
+          filename: string
+          folder: string
+          height: number | null
+          id: string
+          mime_type: string
+          sha256: string
+          size_bytes: number
+          storage_path: string
+          tags: string[]
+          title: string | null
+          updated_at: string
+          uploaded_by: string | null
+          width: number | null
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string
+          description?: string | null
+          filename: string
+          folder?: string
+          height?: number | null
+          id?: string
+          mime_type: string
+          sha256: string
+          size_bytes: number
+          storage_path: string
+          tags?: string[]
+          title?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+          width?: number | null
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string
+          description?: string | null
+          filename?: string
+          folder?: string
+          height?: number | null
+          id?: string
+          mime_type?: string
+          sha256?: string
+          size_bytes?: number
+          storage_path?: string
+          tags?: string[]
+          title?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+          width?: number | null
+        }
+        Relationships: []
+      }
+      media_library_links: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["media_link_entity"]
+          id: string
+          media_id: string
+          role: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["media_link_entity"]
+          id?: string
+          media_id: string
+          role?: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string
+          entity_type?: Database["public"]["Enums"]["media_link_entity"]
+          id?: string
+          media_id?: string
+          role?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_library_links_media_id_fkey"
+            columns: ["media_id"]
+            isOneToOne: false
+            referencedRelation: "media_library"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       offer_buyer_profile_prices: {
         Row: {
           buyer_profile_id: string
@@ -26143,6 +26241,7 @@ export type Database = {
         | "cancelled"
       import_job_type: "buyer_comparator" | "product_submission"
       media_asset_type: "catalogue" | "affiche" | "video" | "fiche" | "brochure"
+      media_link_entity: "product" | "brand" | "offer" | "cms"
       media_visibility: "public" | "authenticated" | "premium"
       notification_channel: "in_app" | "email" | "push"
       notification_sender: "system" | "superadmin"
@@ -26522,6 +26621,7 @@ export const Constants = {
       ],
       import_job_type: ["buyer_comparator", "product_submission"],
       media_asset_type: ["catalogue", "affiche", "video", "fiche", "brochure"],
+      media_link_entity: ["product", "brand", "offer", "cms"],
       media_visibility: ["public", "authenticated", "premium"],
       notification_channel: ["in_app", "email", "push"],
       notification_sender: ["system", "superadmin"],

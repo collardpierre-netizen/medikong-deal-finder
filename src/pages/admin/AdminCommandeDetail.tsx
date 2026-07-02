@@ -484,7 +484,7 @@ const AdminCommandeDetail = () => {
                         </div>
                       </td>
                     </tr>
-                    </>
+                    </Fragment>
                   );
                 })}
                 {lines.length === 0 && (

@@ -325,6 +325,27 @@ export default function BrandDetailPage() {
         </div>
       </div>
 
+      {/* CMS gallery (éditée depuis l'admin) */}
+      {brand.gallery.length > 0 && (
+        <div className="bg-white border-b border-mk-line py-6">
+          <div className="mk-container">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {brand.gallery.slice(0, 8).map((url, i) => (
+                <img
+                  key={i}
+                  src={url}
+                  alt={`${brand.name} — image ${i + 1}`}
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                  className="w-full h-32 md:h-40 object-cover rounded-lg border border-mk-line bg-white"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Fact sheet "Transparence" — 5 sections sourcées, sans note globale */}
       {brandData && (
         <div className="bg-white border-y border-mk-line py-6 md:py-8">

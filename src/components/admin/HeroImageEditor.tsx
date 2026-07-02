@@ -69,8 +69,10 @@ export function validateHeroFields(f: {
   if (f.cta_text.length > LIMITS.cta) e.cta_text = `Max ${LIMITS.cta} caractères`;
   const urlErr = validateHeroUrl(f.link_url);
   if (urlErr) e.link_url = urlErr;
+  // NB : label CTA sans URL reste une erreur (bouton non fonctionnel).
+  // En revanche, une URL sans label CTA est autorisée : l'image entière devient
+  // cliquable (voir HeroImageGallery — wrap <Link>/<a> dès qu'un link_url existe).
   if (f.cta_text.trim() && !f.link_url.trim()) e.link_url = "URL requise si un label CTA est défini";
-  if (f.link_url.trim() && !f.cta_text.trim()) e.cta_text = "Label requis si une URL est définie";
   return e;
 }
 

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Download } from "lucide-react";
 import { useMoneyFormat } from "@/lib/money-format";
 import { VCard } from "@/components/vendor/ui/VCard";
 import type { VendorReconciliation } from "@/hooks/useVendorReconciliation";

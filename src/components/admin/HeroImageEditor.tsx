@@ -17,6 +17,7 @@ export interface HeroImageRow {
   show_subtitle?: boolean | null;
   cta_text: string | null;
   link_url: string | null;
+  show_cta?: boolean | null;
   focal_x?: number | null;
   focal_y?: number | null;
   zoom?: number | null;

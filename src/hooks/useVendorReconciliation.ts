@@ -31,6 +31,15 @@ export interface StatusReconciliationRow {
   ordersCount: number;
 }
 
+export interface ReconciliationOrder {
+  orderId: string;
+  orderNumber: string | null;
+  createdAt: string | null;
+  revenueExclVatCents: number;
+  gmvInclVatCents: number;
+  linesCount: number;
+}
+
 export interface VendorReconciliation {
   rows: StatusReconciliationRow[];
   includedRevenueExclVatCents: number;
@@ -38,7 +47,14 @@ export interface VendorReconciliation {
   excludedRevenueExclVatCents: number;
   excludedGmvInclVatCents: number;
   vatCents: number; // GMV inclus - CA inclus
+  /**
+   * Détail des commandes par statut, trié par GMV décroissant.
+   * Alimente le drill-down « cliquer sur une ligne » du composant
+   * ReconciliationCard.
+   */
+  ordersByStatus: Record<string, ReconciliationOrder[]>;
 }
+
 
 export function useVendorReconciliation(
   vendorId: string | undefined,

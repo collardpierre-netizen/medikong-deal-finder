@@ -233,15 +233,24 @@ export default function ReconciliationCard({ data, loading, periodLabel }: Props
                           </td>
                           <td className="py-1.5 pr-2">{labelFor(r.status)}</td>
                           <td className="py-1.5 pr-2">
-                            <span
-                              className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                                r.included
-                                  ? "bg-[#DCFCE7] text-[#166534]"
-                                  : "bg-[#FEE2E2] text-[#991B1B]"
-                              }`}
-                            >
-                              {r.included ? "Oui" : "Non"}
-                            </span>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span
+                                  className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium cursor-help ${
+                                    r.included
+                                      ? "bg-[#DCFCE7] text-[#166534]"
+                                      : "bg-[#FEE2E2] text-[#991B1B]"
+                                  }`}
+                                >
+                                  {r.included ? "Oui" : "Non"}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[240px] text-[11px] leading-snug">
+                                {r.included
+                                  ? "Ce statut est inclus dans le CA HTVA et le GMV TTC."
+                                  : `Ce statut est exclu du CA et du GMV. Il ne génère pas de TVA collectée.`}
+                              </TooltipContent>
+                            </Tooltip>
                           </td>
                           <td className="py-1.5 pr-2 text-right">{r.ordersCount}</td>
                           <td className="py-1.5 pr-2 text-right">

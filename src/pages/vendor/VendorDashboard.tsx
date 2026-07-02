@@ -102,6 +102,27 @@ export default function VendorDashboard() {
             </div>
           )}
 
+          {/* Bloc GMV / Commission MediKong / Marge nette + jauge palier négocié */}
+          <MediKongCommissionCard
+            gmvCents={monthly?.gmvCents ?? 0}
+            commissionCents={monthly?.commissionCents ?? 0}
+            netMarginCents={monthly?.netMarginCents ?? 0}
+            tier={monthly?.commissionTier ?? null}
+            loading={monthlyLoading}
+          />
+
+          {/* Courbe CA + ventilation par profil client */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2">
+              <RevenueTrendCard data={monthly?.dailySeries ?? []} loading={monthlyLoading} />
+            </div>
+            <CustomerTypeBreakdownCard
+              data={monthly?.customerTypeBreakdown ?? []}
+              loading={monthlyLoading}
+            />
+          </div>
+
+
           {/* Shipping section — adapts to vendor's shipping mode */}
           {vendor && (
             <div className="space-y-2">

@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { formatDbError, sampleValue } from "../_shared/sync-logger.ts";
 import { maybeDecrypt } from "../_shared/qogita-creds.ts";
+import { requireCronOrService } from "../_shared/cron-or-admin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

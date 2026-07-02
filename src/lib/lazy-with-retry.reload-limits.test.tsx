@@ -51,6 +51,7 @@ function renderLazyRoute(importer: () => Promise<any>, key: string) {
 describe("lazyWithRetry — reload limits across routes", () => {
   const originalFetch = globalThis.fetch;
   const originalLocation = window.location;
+  const originalScheduler = __reloadTiming.scheduler;
   let reloadSpy: ReturnType<typeof vi.fn>;
   let replaceSpy: ReturnType<typeof vi.fn>;
 

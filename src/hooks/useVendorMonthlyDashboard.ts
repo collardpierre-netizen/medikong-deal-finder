@@ -3,16 +3,15 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * KPIs mensuels enrichis pour le tableau de bord vendeur :
- *  - GMV TTC (Σ line_total_incl_vat des lignes non-forecast facturables)
- *  - Marge brute (Σ line_margin)
- *  - Commission MediKong (Σ order_lines.commission_amount)
- *  - Marge nette = marge brute − commission
- *  - Série journalière du CA HTVA
- *  - Ventilation TTC par profil client
+ * KPIs enrichis (période paramétrable) pour le tableau de bord vendeur.
  *
- * Les paliers de commission négociée sont désormais exposés séparément via
- * `useVendorGmvProgress` (source : table margin_rule_tiers).
+ * Source unique : `order_lines` joint sur `orders` (non-forecast + non supprimées
+ * + statut facturable), afin d'unifier « CA HTVA », « GMV TTC », « Commandes »,
+ * « Marge brute » et « Commission ».
+ *
+ * ⚠️ Les valeurs de `order_lines` (line_total_incl_vat, line_total_excl_vat,
+ * line_margin, commission_amount) sont stockées **en euros** ; on convertit en
+ * centimes ici pour rester cohérent avec le reste du dashboard.
  */
 
 export interface CustomerTypeSlice {
@@ -26,6 +25,7 @@ export interface VendorMonthlyDashboard {
   grossMarginCents: number;
   commissionCents: number;
   netMarginCents: number;
+  ordersCount: number;
   dailySeries: Array<{ day: number; date: string; revenueCents: number }>;
   customerTypeBreakdown: CustomerTypeSlice[];
 }
@@ -38,17 +38,42 @@ const EXCLUDED_STATUSES = new Set([
   "rejected",
 ]);
 
+export interface DashboardPeriod {
+  start: Date;
+  end: Date;
+}
 
-export function useVendorMonthlyDashboard(vendorId: string | undefined) {
-  const { start, daysInMonth } = useMemo(() => {
-    const now = new Date();
-    const s = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-    return { start: s, daysInMonth: end.getDate() };
-  }, []);
+function defaultMonthPeriod(): DashboardPeriod {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  return { start, end };
+}
+
+export function useVendorMonthlyDashboard(
+  vendorId: string | undefined,
+  period?: DashboardPeriod,
+) {
+  const { start, end, dayCount } = useMemo(() => {
+    const p = period ?? defaultMonthPeriod();
+    const s = new Date(p.start);
+    s.setHours(0, 0, 0, 0);
+    const e = new Date(p.end);
+    e.setHours(23, 59, 59, 999);
+    const diffDays = Math.max(
+      1,
+      Math.floor((e.getTime() - s.getTime()) / (24 * 3600 * 1000)) + 1,
+    );
+    return { start: s, end: e, dayCount: diffDays };
+  }, [period?.start?.getTime(), period?.end?.getTime()]);
 
   return useQuery<VendorMonthlyDashboard>({
-    queryKey: ["vendor-monthly-dashboard", vendorId, start.toISOString()],
+    queryKey: [
+      "vendor-monthly-dashboard",
+      vendorId,
+      start.toISOString(),
+      end.toISOString(),
+    ],
     enabled: !!vendorId,
     staleTime: 60_000,
     queryFn: async () => {
@@ -61,7 +86,8 @@ export function useVendorMonthlyDashboard(vendorId: string | undefined) {
         )
         .eq("vendor_id", vendorId!)
         .eq("orders.is_forecast", false)
-        .gte("orders.created_at", start.toISOString());
+        .gte("orders.created_at", start.toISOString())
+        .lte("orders.created_at", end.toISOString());
       if (error) throw error;
 
       const billable = (data ?? []).filter((l: any) => {
@@ -70,14 +96,15 @@ export function useVendorMonthlyDashboard(vendorId: string | undefined) {
         return !EXCLUDED_STATUSES.has(String(o.status ?? "").toLowerCase());
       });
 
-      const toCents = (v: unknown) => Math.round(Number(v ?? 0) * 100) / 1;
+      const toCents = (v: unknown) => Math.round(Number(v ?? 0) * 100);
 
       let gmvCents = 0;
       let revenueExclVatCents = 0;
       let grossMarginCents = 0;
       let commissionCents = 0;
-      const daily = new Array(daysInMonth).fill(0);
+      const daily = new Array(dayCount).fill(0);
       const perType = new Map<string, number>();
+      const orderIds = new Set<string>();
 
       for (const l of billable as any[]) {
         const incl = Number(l.line_total_incl_vat ?? 0);
@@ -89,10 +116,15 @@ export function useVendorMonthlyDashboard(vendorId: string | undefined) {
         grossMarginCents += toCents(margin);
         commissionCents += toCents(commission);
 
+        const oid = l.orders?.id;
+        if (oid) orderIds.add(oid);
+
         const createdAt = l.orders?.created_at ? new Date(l.orders.created_at) : null;
         if (createdAt) {
-          const dayIdx = createdAt.getDate() - 1;
-          if (dayIdx >= 0 && dayIdx < daysInMonth) {
+          const dayIdx = Math.floor(
+            (createdAt.getTime() - start.getTime()) / (24 * 3600 * 1000),
+          );
+          if (dayIdx >= 0 && dayIdx < dayCount) {
             daily[dayIdx] += toCents(excl);
           }
         }
@@ -102,8 +134,12 @@ export function useVendorMonthlyDashboard(vendorId: string | undefined) {
 
       const netMarginCents = grossMarginCents - commissionCents;
       const dailySeries = daily.map((cents: number, i: number) => {
-        const d = new Date(start.getFullYear(), start.getMonth(), i + 1);
-        return { day: i + 1, date: d.toISOString().slice(0, 10), revenueCents: cents };
+        const d = new Date(start.getTime() + i * 24 * 3600 * 1000);
+        return {
+          day: i + 1,
+          date: d.toISOString().slice(0, 10),
+          revenueCents: cents,
+        };
       });
 
       const customerTypeBreakdown: CustomerTypeSlice[] = Array.from(perType.entries())
@@ -116,6 +152,7 @@ export function useVendorMonthlyDashboard(vendorId: string | undefined) {
         grossMarginCents,
         commissionCents,
         netMarginCents,
+        ordersCount: orderIds.size,
         dailySeries,
         customerTypeBreakdown,
       };

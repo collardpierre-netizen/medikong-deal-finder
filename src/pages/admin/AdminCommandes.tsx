@@ -73,11 +73,25 @@ const AdminCommandes = () => {
   const { data: vendorsData = [] } = useQuery({
     queryKey: ["admin-order-vendor-labels"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vendors")
-        .select("id, name, company_name, commission_model, commission_rate, margin_split_pct, fixed_commission_amount");
-      if (error) throw error;
-      return data ?? [];
+      // Pagination : la limite par défaut PostgREST (1000) tronquait la liste
+      // et masquait certains vrais vendeurs derrière les 1700+ Qogita sellers.
+      const PAGE = 1000;
+      let from = 0;
+      const rows: any[] = [];
+      // Hard cap défensif à 20k pour éviter une boucle infinie.
+      for (let i = 0; i < 20; i++) {
+        const { data, error } = await supabase
+          .from("vendors")
+          .select("id, name, company_name, commission_model, commission_rate, margin_split_pct, fixed_commission_amount")
+          .order("company_name", { ascending: true, nullsFirst: false })
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        const batch = data ?? [];
+        rows.push(...batch);
+        if (batch.length < PAGE) break;
+        from += PAGE;
+      }
+      return rows;
     },
   });
   const [activeTab, setActiveTab] = useState<"list" | "timeline" | "aging" | "buyers" | "sla">("list");

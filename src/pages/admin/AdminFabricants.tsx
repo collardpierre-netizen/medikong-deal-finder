@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { Factory, Package, Tag, Plus, Search, Globe, Award, Merge, X, ExternalLink, Download, Upload, FileDown } from "lucide-react";
 import { exportManufacturers, importManufacturers, downloadManufacturerTemplate } from "@/lib/xlsx-utils";
 import { SocialLinksEditor, normalizeSocialLinks } from "@/components/shared/SocialLinks";
+import { CmsMediaFields } from "@/components/admin/CmsMediaFields";
 
 const COUNTRIES = [
   { code: "BE", label: "🇧🇪 Belgique" }, { code: "FR", label: "🇫🇷 France" },
@@ -93,6 +94,8 @@ export default function AdminFabricants() {
         slug: form.slug.trim() || slugify(form.name),
         legal_name: form.legal_name || null,
         logo_url: form.logo_url || null,
+        cover_image_url: form.cover_image_url || null,
+        gallery_images: (form.gallery_images || []).map((s: string) => (s || "").trim()).filter(Boolean),
         website_url: form.website_url || null,
         description: form.description || null,
         country_of_origin: form.country_of_origin || null,
@@ -362,6 +365,8 @@ function ManufacturerFormDialog({ open, onOpenChange, item, onSave, saving }: { 
       setForm({
         id: item.id, name: item.name || "", slug: item.slug || "",
         legal_name: item.legal_name || "", logo_url: item.logo_url || "",
+        cover_image_url: item.cover_image_url || "",
+        gallery_images: Array.isArray(item.gallery_images) ? item.gallery_images.filter((x: any) => typeof x === "string") : [],
         website_url: item.website_url || "", description: item.description || "",
         country_of_origin: item.country_of_origin || "",
         year_founded: item.year_founded?.toString() || "",
@@ -370,7 +375,7 @@ function ManufacturerFormDialog({ open, onOpenChange, item, onSave, saving }: { 
         social_links: normalizeSocialLinks(item.social_links),
       });
     } else {
-      setForm({ name: "", slug: "", legal_name: "", logo_url: "", website_url: "", description: "", country_of_origin: "", year_founded: "", certifications: "", specialties: "", social_links: {} });
+      setForm({ name: "", slug: "", legal_name: "", logo_url: "", cover_image_url: "", gallery_images: [], website_url: "", description: "", country_of_origin: "", year_founded: "", certifications: "", specialties: "", social_links: {} });
     }
   };
 
@@ -412,6 +417,11 @@ function ManufacturerFormDialog({ open, onOpenChange, item, onSave, saving }: { 
           <div><Label className="text-xs">Certifications (virgules)</Label><Input value={form.certifications || ""} onChange={e => setForm({ ...form, certifications: e.target.value })} placeholder="ISO 13485, CE, FDA" /></div>
           <div><Label className="text-xs">Spécialités (virgules)</Label><Input value={form.specialties || ""} onChange={e => setForm({ ...form, specialties: e.target.value })} placeholder="Wound care, Incontinence" /></div>
           <SocialLinksEditor value={form.social_links || {}} onChange={(next) => setForm({ ...form, social_links: next })} />
+          <CmsMediaFields
+            coverImageUrl={form.cover_image_url || ""}
+            galleryImages={form.gallery_images || []}
+            onChange={({ cover_image_url, gallery_images }) => setForm({ ...form, cover_image_url, gallery_images })}
+          />
         </div>
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>

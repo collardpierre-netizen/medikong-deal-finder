@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Languages, ChevronsUpDown, Check, Wand2, Upload, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SocialLinksEditor, normalizeSocialLinks, type SocialLinks } from "@/components/shared/SocialLinks";
+import { CmsMediaFields } from "@/components/admin/CmsMediaFields";
 
 interface BrandFormDialogProps {
   open: boolean;
@@ -34,6 +35,7 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
   const [form, setForm] = useState({
     name: "", slug: "", country: "BE", website: "", description: "",
     manufacturer_id: "", is_featured: false, logo_url: "",
+    cover_image_url: "", gallery_images: [] as string[],
     name_fr: "", name_nl: "", name_de: "",
     desc_fr: "", desc_nl: "", desc_de: "",
     social_links: {} as SocialLinks,
@@ -71,6 +73,8 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
         name: brand.name || "", slug: brand.slug || "",
         country: brand.country_of_origin || "BE", website: brand.website_url || "",
         description: brand.description || "", logo_url: brand.logo_url || "",
+        cover_image_url: brand.cover_image_url || "",
+        gallery_images: Array.isArray(brand.gallery_images) ? brand.gallery_images.filter((x: any) => typeof x === "string") : [],
         manufacturer_id: brand.manufacturer_id || "",
         is_featured: brand.is_featured || false,
         name_fr: getTr("fr", "name"), name_nl: getTr("nl", "name"), name_de: getTr("de", "name"),
@@ -78,7 +82,7 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
         social_links: normalizeSocialLinks(brand.social_links),
       });
     } else {
-      setForm({ name: "", slug: "", country: "BE", website: "", description: "", manufacturer_id: "", is_featured: false, logo_url: "", name_fr: "", name_nl: "", name_de: "", desc_fr: "", desc_nl: "", desc_de: "", social_links: {} });
+      setForm({ name: "", slug: "", country: "BE", website: "", description: "", manufacturer_id: "", is_featured: false, logo_url: "", cover_image_url: "", gallery_images: [], name_fr: "", name_nl: "", name_de: "", desc_fr: "", desc_nl: "", desc_de: "", social_links: {} });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, brand?.id]);
@@ -123,6 +127,8 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
       website_url: form.website || null,
       description: form.description || null,
       logo_url: form.logo_url || null,
+      cover_image_url: form.cover_image_url || null,
+      gallery_images: (form.gallery_images || []).map(s => (s || "").trim()).filter(Boolean),
       manufacturer_id: form.manufacturer_id && form.manufacturer_id !== "none" ? form.manufacturer_id : null,
       is_featured: form.is_featured,
       social_links: normalizeSocialLinks(form.social_links),
@@ -227,6 +233,12 @@ export function BrandFormDialog({ open, onOpenChange, brand, manufacturers }: Br
           <div><Label className="text-xs">Site web</Label><Input value={form.website} onChange={e => setForm({ ...form, website: e.target.value })} placeholder="https://" /></div>
           <SocialLinksEditor value={form.social_links} onChange={(next) => setForm({ ...form, social_links: next })} />
           <div><Label className="text-xs">Description (originale)</Label><Textarea rows={2} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
+
+          <CmsMediaFields
+            coverImageUrl={form.cover_image_url}
+            galleryImages={form.gallery_images}
+            onChange={({ cover_image_url, gallery_images }) => setForm({ ...form, cover_image_url, gallery_images })}
+          />
 
           {/* Translation fields */}
           <div className="border-t pt-3 mt-1">

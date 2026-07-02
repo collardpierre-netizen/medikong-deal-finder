@@ -34,7 +34,7 @@ export default function BrandDetailPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("brands")
-        .select("id, name, slug, description, logo_url, website_url, social_links, product_count, manufacturer_id, parent_company, country_hq, main_category, subcategories, year_entered_be_market, afmps_status, ce_marking, certifications, manufacturing_countries, inami_reimbursement_pct, inami_categories, google_trends_12m, google_trends_trend_pct, officinal_coverage_pct, press_mentions_12m, distribution_type, is_top20, sources_last_updated, manufacturers(name, slug)")
+        .select("id, name, slug, description, logo_url, cover_image_url, gallery_images, website_url, social_links, product_count, manufacturer_id, parent_company, country_hq, main_category, subcategories, year_entered_be_market, afmps_status, ce_marking, certifications, manufacturing_countries, inami_reimbursement_pct, inami_categories, google_trends_12m, google_trends_trend_pct, officinal_coverage_pct, press_mentions_12m, distribution_type, is_top20, sources_last_updated, manufacturers(name, slug)")
         .eq("slug", slug!)
         .maybeSingle();
       if (error) throw error;
@@ -249,13 +249,22 @@ export default function BrandDetailPage() {
     manufacturerSlug: (brandData?.manufacturers as any)?.slug || "",
     description: brandData?.description || "Marque partenaire disponible sur MediKong pour les professionnels de santé.",
     logoUrl: brandData?.logo_url || null,
+    coverUrl: (brandData as any)?.cover_image_url || null,
+    gallery: Array.isArray((brandData as any)?.gallery_images) ? ((brandData as any).gallery_images as string[]).filter(Boolean) : [],
     websiteUrl: brandData?.website_url || null,
   };
 
   return (
     <Layout>
       {/* Hero — sans étoiles, avec badge Top 20 conditionnel */}
-      <div className="py-8 md:py-10" style={{ background: "linear-gradient(135deg, #EFF6FF, #F0FDF4)" }}>
+      <div
+        className="py-8 md:py-10 relative"
+        style={
+          brand.coverUrl
+            ? { backgroundImage: `linear-gradient(135deg, rgba(239,246,255,0.85), rgba(240,253,244,0.85)), url(${brand.coverUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+            : { background: "linear-gradient(135deg, #EFF6FF, #F0FDF4)" }
+        }
+      >
         <div className="mk-container">
           <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-6">
             <div className="w-[80px] h-[80px] md:w-[100px] md:h-[100px] border border-mk-line bg-white rounded-lg flex items-center justify-center text-xs text-mk-ter shrink-0 overflow-hidden">
@@ -315,6 +324,27 @@ export default function BrandDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* CMS gallery (éditée depuis l'admin) */}
+      {brand.gallery.length > 0 && (
+        <div className="bg-white border-b border-mk-line py-6">
+          <div className="mk-container">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {brand.gallery.slice(0, 8).map((url, i) => (
+                <img
+                  key={i}
+                  src={url}
+                  alt={`${brand.name} — image ${i + 1}`}
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                  className="w-full h-32 md:h-40 object-cover rounded-lg border border-mk-line bg-white"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Fact sheet "Transparence" — 5 sections sourcées, sans note globale */}
       {brandData && (

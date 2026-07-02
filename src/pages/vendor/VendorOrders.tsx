@@ -327,17 +327,165 @@ export default function VendorOrders() {
     return addr.line1 || `${addr.street || ""} ${addr.postal_code || ""} ${addr.city || ""}`.trim() || "—";
   };
 
+  // ---- KPIs sur tout le portefeuille (avant filtres) ----
+  const kpis = useMemo(() => {
+    const acc = { total: 0, toTreat: 0, processing: 0, shipped: 0, delivered: 0, cancelled: 0, revenueHT: 0 };
+    for (const o of orders) {
+      for (const l of o.lines) {
+        acc.total += 1;
+        acc.revenueHT += l.line_total_excl_vat || 0;
+        const s = l.fulfillment_status;
+        if (s === "pending") acc.toTreat += 1;
+        else if (s === "processing" || s === "forwarded") acc.processing += 1;
+        else if (s === "shipped") acc.shipped += 1;
+        else if (s === "delivered") acc.delivered += 1;
+        else if (s === "cancelled") acc.cancelled += 1;
+      }
+    }
+    return acc;
+  }, [orders]);
+
+  // ---- Filtrage + tri ----
+  const visibleOrders = useMemo(() => {
+    const now = Date.now();
+    const periodMs =
+      periodFilter === "7d" ? 7 * 864e5 :
+      periodFilter === "30d" ? 30 * 864e5 :
+      periodFilter === "90d" ? 90 * 864e5 : null;
+    const q = search.trim().toLowerCase();
+
+    const matchStatus = (statuses: string[]) => {
+      if (statusFilter === "all") return true;
+      if (statusFilter === "to_treat") return statuses.includes("pending");
+      if (statusFilter === "processing") return statuses.some(s => s === "processing" || s === "forwarded");
+      if (statusFilter === "shipped") return statuses.includes("shipped");
+      if (statusFilter === "delivered") return statuses.every(s => s === "delivered");
+      if (statusFilter === "cancelled") return statuses.every(s => s === "cancelled");
+      return true;
+    };
+
+    const filtered = orders.filter((o) => {
+      if (periodMs && now - new Date(o.order_date).getTime() > periodMs) return false;
+      const statuses = o.lines.map(l => l.fulfillment_status);
+      if (!matchStatus(statuses)) return false;
+      if (q) {
+        const hay = [o.order_number, ...o.lines.map(l => l.product_name)].join(" ").toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+
+    const totalHT = (o: OrderWithLines) => o.lines.reduce((s, l) => s + l.line_total_excl_vat, 0);
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "date_asc":  return new Date(a.order_date).getTime() - new Date(b.order_date).getTime();
+        case "amount_desc": return totalHT(b) - totalHT(a);
+        case "amount_asc":  return totalHT(a) - totalHT(b);
+        case "date_desc":
+        default: return new Date(b.order_date).getTime() - new Date(a.order_date).getTime();
+      }
+    });
+    return filtered;
+  }, [orders, statusFilter, search, periodFilter, sortBy]);
+
+  const statusTabs: { key: string; label: string; count: number; icon: any; color: string }[] = [
+    { key: "all",        label: "Toutes",       count: kpis.total,     icon: ShoppingCart,  color: "text-foreground" },
+    { key: "to_treat",   label: "À traiter",    count: kpis.toTreat,   icon: AlertCircle,   color: "text-amber-600" },
+    { key: "processing", label: "En cours",     count: kpis.processing,icon: Clock,         color: "text-blue-600" },
+    { key: "shipped",    label: "Expédiées",    count: kpis.shipped,   icon: Truck,         color: "text-indigo-600" },
+    { key: "delivered",  label: "Livrées",      count: kpis.delivered, icon: CheckCircle2,  color: "text-emerald-600" },
+    { key: "cancelled",  label: "Annulées",     count: kpis.cancelled, icon: Ban,           color: "text-muted-foreground" },
+  ];
+
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-foreground">Commandes</h1>
-        <p className="text-[13px] text-muted-foreground mt-0.5">
-          {orders.length} commande{orders.length > 1 ? "s" : ""} · {orders.reduce((s, o) => s + o.lines.length, 0)} ligne{orders.reduce((s, o) => s + o.lines.length, 0) > 1 ? "s" : ""}
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Commandes</h1>
+          <p className="text-[13px] text-muted-foreground mt-0.5">
+            {orders.length} commande{orders.length > 1 ? "s" : ""} · {kpis.total} ligne{kpis.total > 1 ? "s" : ""} · CA {fmtEur(kpis.revenueHT)}&nbsp;€ HT
+          </p>
+        </div>
       </div>
 
+      {/* KPIs / filtres statuts */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+        {statusTabs.map((tab) => {
+          const Icon = tab.icon;
+          const active = statusFilter === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setStatusFilter(tab.key)}
+              className={`text-left rounded-lg border p-3 transition-all ${
+                active
+                  ? "border-primary bg-primary/5 shadow-sm"
+                  : "border-border bg-card hover:bg-muted/40"
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                <Icon size={14} className={tab.color} />
+                <span className="text-[11px] font-medium text-muted-foreground">{tab.label}</span>
+              </div>
+              <div className="mt-1 text-lg font-bold text-foreground">{tab.count}</div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Toolbar : recherche + période + tri */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[220px]">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher un numéro de commande ou un produit…"
+            className="pl-9 h-9 text-[13px]"
+          />
+        </div>
+        <Select value={periodFilter} onValueChange={setPeriodFilter}>
+          <SelectTrigger className="h-9 w-[150px] text-[13px]">
+            <SelectValue placeholder="Période" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toutes les périodes</SelectItem>
+            <SelectItem value="7d">7 derniers jours</SelectItem>
+            <SelectItem value="30d">30 derniers jours</SelectItem>
+            <SelectItem value="90d">90 derniers jours</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="h-9 w-[180px] text-[13px]">
+            <ArrowUpDown size={12} className="mr-1" />
+            <SelectValue placeholder="Trier" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="date_desc">Date (récent)</SelectItem>
+            <SelectItem value="date_asc">Date (ancien)</SelectItem>
+            <SelectItem value="amount_desc">Montant (élevé)</SelectItem>
+            <SelectItem value="amount_asc">Montant (faible)</SelectItem>
+          </SelectContent>
+        </Select>
+        {(statusFilter !== "all" || search || periodFilter !== "all" || sortBy !== "date_desc") && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9 text-[12px]"
+            onClick={() => { setStatusFilter("all"); setSearch(""); setPeriodFilter("all"); setSortBy("date_desc"); }}
+          >
+            Réinitialiser
+          </Button>
+        )}
+      </div>
+
+      {visibleOrders.length === 0 ? (
+        <VCard className="p-8 text-center">
+          <p className="text-[13px] text-muted-foreground">Aucune commande ne correspond à ces filtres.</p>
+        </VCard>
+      ) : (
       <div className="space-y-3">
-        {orders.map((order) => {
+        {visibleOrders.map((order) => {
           const isExpanded = expandedOrder === order.order_id;
           const totalHT = order.lines.reduce((s, l) => s + l.line_total_excl_vat, 0);
           const hasQogita = order.lines.some(l => l.fulfillment_type === "qogita");

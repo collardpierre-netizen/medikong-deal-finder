@@ -311,6 +311,19 @@ export function lazyWithRetry<T extends ComponentType<any>>(
 
     if (typeof window !== "undefined") {
       window.sessionStorage.removeItem(`${RETRY_TOKEN_PREFIX}${key}`);
+      // A lazy chunk resolved successfully → the app is healthy again.
+      // Reset the session reload counters so a future unrelated chunk
+      // failure isn't immediately gated by past reloads accumulated
+      // across navigation. Without this, hitting the auto-reload cap
+      // once per session permanently pins the boundary on any later
+      // transient error.
+      try {
+        window.sessionStorage.removeItem(GLOBAL_RELOAD_COUNTER_KEY);
+        window.sessionStorage.removeItem(GLOBAL_RELOAD_LAST_AT_KEY);
+        window.sessionStorage.removeItem(CACHE_BUST_RELOAD_COUNTER_KEY);
+      } catch {
+        /* ignore */
+      }
     }
     return mod!;
   });

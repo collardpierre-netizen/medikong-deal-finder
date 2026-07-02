@@ -5244,12 +5244,54 @@ export type Database = {
           },
         ]
       }
+      margin_rule_tiers: {
+        Row: {
+          created_at: string
+          id: string
+          label: string | null
+          margin_percentage: number
+          margin_rule_id: string
+          min_gmv_cents: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          margin_percentage: number
+          margin_rule_id: string
+          min_gmv_cents: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          margin_percentage?: number
+          margin_rule_id?: string
+          min_gmv_cents?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "margin_rule_tiers_margin_rule_id_fkey"
+            columns: ["margin_rule_id"]
+            isOneToOne: false
+            referencedRelation: "margin_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       margin_rules: {
         Row: {
           brand_id: string | null
           category_id: string | null
           created_at: string
           extra_delay_days: number
+          gmv_window: string
           id: string
           is_active: boolean
           margin_percentage: number
@@ -5258,6 +5300,7 @@ export type Database = {
           name: string
           priority: number
           round_price_to: number
+          tiers_direction: string
           updated_at: string
           vendor_id: string | null
         }
@@ -5266,6 +5309,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           extra_delay_days?: number
+          gmv_window?: string
           id?: string
           is_active?: boolean
           margin_percentage?: number
@@ -5274,6 +5318,7 @@ export type Database = {
           name: string
           priority?: number
           round_price_to?: number
+          tiers_direction?: string
           updated_at?: string
           vendor_id?: string | null
         }
@@ -5282,6 +5327,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           extra_delay_days?: number
+          gmv_window?: string
           id?: string
           is_active?: boolean
           margin_percentage?: number
@@ -5290,6 +5336,7 @@ export type Database = {
           name?: string
           priority?: number
           round_price_to?: number
+          tiers_direction?: string
           updated_at?: string
           vendor_id?: string | null
         }
@@ -25201,6 +25248,7 @@ export type Database = {
           vendor_id: string
         }[]
       }
+      get_vendor_gmv_progress: { Args: { _vendor_id: string }; Returns: Json }
       get_vendor_market_intelligence: {
         Args: { _vendor_id: string }
         Returns: {

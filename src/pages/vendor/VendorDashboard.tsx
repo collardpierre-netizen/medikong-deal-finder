@@ -1,6 +1,7 @@
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { useVendorDashboardKpis } from "@/hooks/useVendorDashboardKpis";
 import { useVendorMonthlyDashboard } from "@/hooks/useVendorMonthlyDashboard";
+import { useVendorGmvProgress } from "@/hooks/useVendorGmvProgress";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VStat } from "@/components/vendor/ui/VStat";
 import { Database } from "lucide-react";
@@ -20,6 +21,7 @@ export default function VendorDashboard() {
   const { data: vendor } = useCurrentVendor();
   const { data: kpis } = useVendorDashboardKpis(vendor?.id);
   const { data: monthly, isLoading: monthlyLoading } = useVendorMonthlyDashboard(vendor?.id);
+  const { data: gmvProgress } = useVendorGmvProgress(vendor?.id);
   const { formatMoney } = useMoneyFormat();
 
   const isApproved = vendor?.validation_status === "approved";
@@ -107,7 +109,7 @@ export default function VendorDashboard() {
             gmvCents={monthly?.gmvCents ?? 0}
             commissionCents={monthly?.commissionCents ?? 0}
             netMarginCents={monthly?.netMarginCents ?? 0}
-            tier={monthly?.commissionTier ?? null}
+            progress={gmvProgress ?? null}
             loading={monthlyLoading}
           />
 

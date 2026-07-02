@@ -5,36 +5,19 @@ import { supabase } from "@/integrations/supabase/client";
 /**
  * KPIs mensuels enrichis pour le tableau de bord vendeur :
  *  - GMV TTC (Σ line_total_incl_vat des lignes non-forecast facturables)
- *  - Marge brute (Σ line_margin) — cohérent avec useVendorDashboardKpis
+ *  - Marge brute (Σ line_margin)
  *  - Commission MediKong (Σ order_lines.commission_amount)
  *  - Marge nette = marge brute − commission
- *  - Série journalière du CA HTVA (1..N jours du mois en cours)
- *  - Ventilation TTC par profil client (customers.customer_type)
- *  - Palier de commission négociée (placeholder — voir NEGOTIATED_TIERS)
+ *  - Série journalière du CA HTVA
+ *  - Ventilation TTC par profil client
  *
- * NB commission : `order_lines.commission_amount` est stocké au moment de la
- * commande (source de vérité côté finance) ; on somme directement plutôt que
- * de rejouer la RPC `resolve_effective_commission` (perf + cohérence).
- *
- * NB paliers : aucune table `vendor_commission_negotiated_tiers` n'existe
- * encore côté DB — j'utilise ici une échelle locale par défaut (5k / 15k / 30k
- * EUR TTC) à titre de démonstration. À remplacer par la vraie source dès
- * qu'elle est modélisée. Aucun changement de schéma effectué (strict scope).
+ * Les paliers de commission négociée sont désormais exposés séparément via
+ * `useVendorGmvProgress` (source : table margin_rule_tiers).
  */
 
 export interface CustomerTypeSlice {
   type: string;
   amountCents: number;
-}
-
-export interface CommissionTierState {
-  isPlaceholder: boolean;
-  currentPct: number | null;
-  nextPct: number | null;
-  thresholdCents: number | null;
-  gmvCents: number;
-  progressPct: number;
-  remainingCents: number;
 }
 
 export interface VendorMonthlyDashboard {
@@ -45,16 +28,7 @@ export interface VendorMonthlyDashboard {
   netMarginCents: number;
   dailySeries: Array<{ day: number; date: string; revenueCents: number }>;
   customerTypeBreakdown: CustomerTypeSlice[];
-  commissionTier: CommissionTierState | null;
 }
-
-// Placeholder — à remplacer par la source réelle des paliers négociés.
-const NEGOTIATED_TIERS: Array<{ upToGmvCents: number; ratePct: number }> = [
-  { upToGmvCents: 500_000, ratePct: 20 }, //   0 –  5 000 EUR : 20 %
-  { upToGmvCents: 1_500_000, ratePct: 17 }, // 5 000 – 15 000 EUR : 17 %
-  { upToGmvCents: 3_000_000, ratePct: 15 }, // 15 000 – 30 000 EUR : 15 %
-  { upToGmvCents: Number.POSITIVE_INFINITY, ratePct: 12 }, // > 30 000 EUR : 12 %
-];
 
 const EXCLUDED_STATUSES = new Set([
   "cancelled",
@@ -64,44 +38,6 @@ const EXCLUDED_STATUSES = new Set([
   "rejected",
 ]);
 
-function resolveTier(gmvCents: number): CommissionTierState {
-  let cumulative = 0;
-  for (let i = 0; i < NEGOTIATED_TIERS.length; i++) {
-    const tier = NEGOTIATED_TIERS[i];
-    if (gmvCents < tier.upToGmvCents) {
-      const next = NEGOTIATED_TIERS[i + 1];
-      const rangeStart = cumulative;
-      const rangeEnd = Number.isFinite(tier.upToGmvCents)
-        ? tier.upToGmvCents
-        : rangeStart + gmvCents; // dernier palier : pas de barre
-      const progressPct = Number.isFinite(tier.upToGmvCents)
-        ? Math.min(100, ((gmvCents - rangeStart) / (rangeEnd - rangeStart)) * 100)
-        : 100;
-      return {
-        isPlaceholder: true,
-        currentPct: tier.ratePct,
-        nextPct: next ? next.ratePct : null,
-        thresholdCents: Number.isFinite(tier.upToGmvCents) ? tier.upToGmvCents : null,
-        gmvCents,
-        progressPct,
-        remainingCents: Number.isFinite(tier.upToGmvCents)
-          ? Math.max(0, tier.upToGmvCents - gmvCents)
-          : 0,
-      };
-    }
-    cumulative = tier.upToGmvCents;
-  }
-  const last = NEGOTIATED_TIERS[NEGOTIATED_TIERS.length - 1];
-  return {
-    isPlaceholder: true,
-    currentPct: last.ratePct,
-    nextPct: null,
-    thresholdCents: null,
-    gmvCents,
-    progressPct: 100,
-    remainingCents: 0,
-  };
-}
 
 export function useVendorMonthlyDashboard(vendorId: string | undefined) {
   const { start, daysInMonth } = useMemo(() => {
@@ -174,8 +110,6 @@ export function useVendorMonthlyDashboard(vendorId: string | undefined) {
         .map(([type, amountCents]) => ({ type, amountCents }))
         .sort((a, b) => b.amountCents - a.amountCents);
 
-      const commissionTier = resolveTier(gmvCents);
-
       return {
         gmvCents,
         revenueExclVatCents,
@@ -184,7 +118,6 @@ export function useVendorMonthlyDashboard(vendorId: string | undefined) {
         netMarginCents,
         dailySeries,
         customerTypeBreakdown,
-        commissionTier,
       };
     },
   });

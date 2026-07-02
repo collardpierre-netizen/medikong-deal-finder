@@ -11,10 +11,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import AdminTopBar from "@/components/admin/AdminTopBar";
-import { Plus, Pencil, Trash2, Percent, Layers, BarChart3, Split, Star, UserPlus, Building2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Percent, Layers, BarChart3, Split, Star, UserPlus, Building2, TrendingDown, TrendingUp } from "lucide-react";
 import { useCategories, useBrands } from "@/hooks/useAdminData";
 import { VendorsEmbedError } from "@/lib/vendors-embed-error";
 import type { Tables } from "@/integrations/supabase/types";
+
+type TierDraft = {
+  id?: string;
+  min_gmv_eur: number;
+  margin_percentage: number;
+  label: string;
+};
 
 type MarginRule = Tables<"margin_rules">;
 
@@ -23,6 +30,7 @@ export default function AdminCommissions() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<Partial<MarginRule> | null>(null);
+  const [editingTiers, setEditingTiers] = useState<TierDraft[]>([]);
   const [assignVendorId, setAssignVendorId] = useState("");
   const [assignRuleId, setAssignRuleId] = useState("");
 
@@ -76,7 +84,7 @@ export default function AdminCommissions() {
   };
 
   const saveMutation = useMutation({
-    mutationFn: async (rule: Partial<MarginRule>) => {
+    mutationFn: async ({ rule, tiers }: { rule: Partial<MarginRule>; tiers: TierDraft[] }) => {
       const payload: any = {
         name: rule.name || "Nouvelle règle",
         margin_percentage: rule.margin_percentage ?? 15,
@@ -89,12 +97,32 @@ export default function AdminCommissions() {
         vendor_id: rule.vendor_id || null,
         min_base_price: rule.min_base_price || null,
         max_base_price: rule.max_base_price || null,
+        gmv_window: (rule as any).gmv_window ?? "calendar_year",
+        tiers_direction: (rule as any).tiers_direction ?? "decreasing",
       };
-      if (rule.id) {
-        const { error } = await supabase.from("margin_rules").update(payload).eq("id", rule.id);
+      let ruleId = rule.id as string | undefined;
+      if (ruleId) {
+        const { error } = await supabase.from("margin_rules").update(payload).eq("id", ruleId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("margin_rules").insert(payload);
+        const { data, error } = await supabase.from("margin_rules").insert(payload).select("id").single();
+        if (error) throw error;
+        ruleId = data!.id as string;
+      }
+
+      // Replace tiers wholesale
+      await supabase.from("margin_rule_tiers").delete().eq("margin_rule_id", ruleId!);
+      const cleaned = tiers
+        .filter(t => Number.isFinite(t.min_gmv_eur) && Number.isFinite(t.margin_percentage))
+        .map((t, i) => ({
+          margin_rule_id: ruleId!,
+          min_gmv_cents: Math.round(t.min_gmv_eur * 100),
+          margin_percentage: t.margin_percentage,
+          label: t.label?.trim() || null,
+          sort_order: i,
+        }));
+      if (cleaned.length > 0) {
+        const { error } = await supabase.from("margin_rule_tiers").insert(cleaned);
         if (error) throw error;
       }
     },
@@ -161,10 +189,29 @@ export default function AdminCommissions() {
       vendor_id: null,
       min_base_price: null,
       max_base_price: null,
+      gmv_window: "calendar_year" as any,
+      tiers_direction: "decreasing" as any,
     });
+    setEditingTiers([]);
     setDialogOpen(true);
   };
-  const openEdit = (r: MarginRule) => { setEditingRule({ ...r }); setDialogOpen(true); };
+  const openEdit = async (r: MarginRule) => {
+    setEditingRule({ ...r });
+    const { data } = await supabase
+      .from("margin_rule_tiers")
+      .select("id, min_gmv_cents, margin_percentage, label, sort_order")
+      .eq("margin_rule_id", r.id)
+      .order("sort_order", { ascending: true });
+    setEditingTiers(
+      (data ?? []).map((t: any) => ({
+        id: t.id,
+        min_gmv_eur: Number(t.min_gmv_cents) / 100,
+        margin_percentage: Number(t.margin_percentage),
+        label: t.label ?? "",
+      })),
+    );
+    setDialogOpen(true);
+  };
 
   const vendorsWithRules = new Set(vendorRules.map((r: any) => r.vendor_id));
   const vendorsWithoutRule = vendors.filter(v => !vendorsWithRules.has(v.id));
@@ -451,11 +498,137 @@ export default function AdminCommissions() {
                 <Switch checked={editingRule.is_active ?? true} onCheckedChange={v => setEditingRule({ ...editingRule, is_active: v })} />
                 <Label>Règle active</Label>
               </div>
+
+              {/* Paliers de commission négociée */}
+              <div className="border-t pt-4 space-y-3" style={{ borderColor: "#E2E8F0" }}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[13px] font-semibold text-[#1D2530]">Paliers de commission négociée</p>
+                    <p className="text-[11px] text-[#8B95A5]">Taux différencié selon le GMV cumulé du vendeur sur la fenêtre.</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Fenêtre GMV</Label>
+                    <Select
+                      value={((editingRule as any).gmv_window as string) || "calendar_year"}
+                      onValueChange={v => setEditingRule({ ...(editingRule as any), gmv_window: v })}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="calendar_year">Année civile (reset 1er janvier)</SelectItem>
+                        <SelectItem value="rolling_12m">12 mois glissants</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Direction</Label>
+                    <Select
+                      value={((editingRule as any).tiers_direction as string) || "decreasing"}
+                      onValueChange={v => setEditingRule({ ...(editingRule as any), tiers_direction: v })}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="decreasing">
+                          <span className="inline-flex items-center gap-1.5"><TrendingDown size={12} /> Dégressif (plus de GMV = taux plus bas)</span>
+                        </SelectItem>
+                        <SelectItem value="increasing">
+                          <span className="inline-flex items-center gap-1.5"><TrendingUp size={12} /> Progressif (plus de GMV = taux plus haut)</span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {editingTiers.length === 0 && (
+                    <p className="text-[11px] text-[#8B95A5] italic">
+                      Aucun palier. Le taux de base ({editingRule.margin_percentage ?? 15}%) s'applique quel que soit le GMV.
+                    </p>
+                  )}
+                  {editingTiers.map((t, i) => (
+                    <div key={i} className="grid grid-cols-[1fr_100px_1fr_32px] gap-2 items-end">
+                      <div>
+                        {i === 0 && <Label className="text-[11px]">Seuil GMV (€ HT)</Label>}
+                        <Input
+                          type="number"
+                          min={0}
+                          step={100}
+                          value={t.min_gmv_eur}
+                          onChange={e => {
+                            const next = [...editingTiers];
+                            next[i] = { ...t, min_gmv_eur: Number(e.target.value) };
+                            setEditingTiers(next);
+                          }}
+                        />
+                      </div>
+                      <div>
+                        {i === 0 && <Label className="text-[11px]">Taux (%)</Label>}
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          step={0.5}
+                          value={t.margin_percentage}
+                          onChange={e => {
+                            const next = [...editingTiers];
+                            next[i] = { ...t, margin_percentage: Number(e.target.value) };
+                            setEditingTiers(next);
+                          }}
+                        />
+                      </div>
+                      <div>
+                        {i === 0 && <Label className="text-[11px]">Libellé (optionnel)</Label>}
+                        <Input
+                          value={t.label}
+                          placeholder="Ex : Palier 1M€"
+                          onChange={e => {
+                            const next = [...editingTiers];
+                            next[i] = { ...t, label: e.target.value };
+                            setEditingTiers(next);
+                          }}
+                        />
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 text-destructive"
+                        onClick={() => setEditingTiers(editingTiers.filter((_, j) => j !== i))}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setEditingTiers([
+                        ...editingTiers,
+                        {
+                          min_gmv_eur:
+                            editingTiers.length > 0
+                              ? editingTiers[editingTiers.length - 1].min_gmv_eur + 100_000
+                              : 1_000_000,
+                          margin_percentage: editingRule.margin_percentage ?? 15,
+                          label: "",
+                        },
+                      ])
+                    }
+                  >
+                    <Plus size={12} className="mr-1" /> Ajouter un palier
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
-            <Button onClick={() => editingRule && saveMutation.mutate(editingRule)} disabled={saveMutation.isPending || !editingRule?.name}>
+            <Button
+              onClick={() => editingRule && saveMutation.mutate({ rule: editingRule, tiers: editingTiers })}
+              disabled={saveMutation.isPending || !editingRule?.name}
+            >
               {saveMutation.isPending ? "Sauvegarde…" : "Sauvegarder"}
             </Button>
           </DialogFooter>

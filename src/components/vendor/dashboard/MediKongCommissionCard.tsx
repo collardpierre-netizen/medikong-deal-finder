@@ -1,29 +1,32 @@
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VProgressBar } from "@/components/vendor/ui/VProgressBar";
 import { useMoneyFormat } from "@/lib/money-format";
-import type { CommissionTierState } from "@/hooks/useVendorMonthlyDashboard";
-import { Info } from "lucide-react";
+import type { VendorGmvProgress } from "@/hooks/useVendorGmvProgress";
 
 interface Props {
   gmvCents: number;
   commissionCents: number;
   netMarginCents: number;
-  tier: CommissionTierState | null;
+  progress: VendorGmvProgress | null;
   loading?: boolean;
 }
 
 /**
  * Bloc GMV + Commission MediKong + Marge nette + jauge de progression
- * vers le prochain palier de commission négociée.
+ * vers le prochain palier de commission négociée (source : margin_rule_tiers).
  */
 export default function MediKongCommissionCard({
   gmvCents,
   commissionCents,
   netMarginCents,
-  tier,
+  progress,
   loading,
 }: Props) {
   const { formatMoney } = useMoneyFormat();
+
+  const windowLabel =
+    progress?.gmv_window === "rolling_12m" ? "12 mois glissants" : "année en cours";
+  const directionDecreasing = progress?.tiers_direction !== "increasing";
 
   return (
     <VCard>
@@ -55,59 +58,96 @@ export default function MediKongCommissionCard({
         />
       </div>
 
-      {tier && (
+      {progress && progress.has_tiers && (
         <div className="mt-4 pt-4 border-t border-[#E2E8F0]">
           <div className="flex items-baseline justify-between mb-1.5">
             <div>
               <p className="text-[12px] font-semibold text-[#1D2530]">
-                Palier négocié
-                {tier.isPlaceholder && (
-                  <span
-                    title="Barème indicatif — à remplacer par vos paliers négociés réels."
-                    className="inline-flex items-center gap-1 ml-1.5 text-[10px] font-normal text-[#8B95A5]"
-                  >
-                    <Info size={10} /> indicatif
-                  </span>
-                )}
+                Palier de commission négociée
+                <span className="ml-1.5 text-[10px] font-normal text-[#8B95A5]">
+                  · {windowLabel}
+                </span>
               </p>
               <p className="text-[11px] text-[#616B7C]">
                 Taux courant :{" "}
                 <span className="font-semibold text-[#1D2530]">
-                  {tier.currentPct != null ? `${tier.currentPct}%` : "—"}
+                  {progress.current_tier_percentage != null
+                    ? `${Number(progress.current_tier_percentage).toFixed(2).replace(/\.00$/, "")}%`
+                    : "—"}
                 </span>
-                {tier.nextPct != null && (
+                {progress.current_tier_label && (
+                  <span className="text-[#8B95A5]"> ({progress.current_tier_label})</span>
+                )}
+                {progress.next_tier_percentage != null && (
                   <>
                     {" "}· prochain palier :{" "}
-                    <span className="font-semibold text-[#059669]">{tier.nextPct}%</span>
+                    <span
+                      className={`font-semibold ${
+                        directionDecreasing ? "text-[#059669]" : "text-[#1B5BDA]"
+                      }`}
+                    >
+                      {Number(progress.next_tier_percentage).toFixed(2).replace(/\.00$/, "")}%
+                    </span>
                   </>
                 )}
               </p>
             </div>
             <span className="text-[11px] tabular-nums text-[#616B7C]">
-              {formatMoney(tier.gmvCents / 100, { fractionDigits: 0 })}
-              {tier.thresholdCents != null && (
+              {formatMoney(progress.current_gmv_cents / 100, { fractionDigits: 0 })}
+              {progress.next_tier_min_gmv_cents != null && (
                 <>
                   {" "}/{" "}
-                  {formatMoney(tier.thresholdCents / 100, { fractionDigits: 0 })}
+                  {formatMoney(progress.next_tier_min_gmv_cents / 100, { fractionDigits: 0 })}
                 </>
               )}
             </span>
           </div>
-          <VProgressBar value={tier.progressPct} max={100} color="#1B5BDA" height={8} />
-          {tier.nextPct != null && tier.remainingCents > 0 && (
-            <p className="mt-1.5 text-[11px] text-[#8B95A5]">
-              Encore{" "}
-              <span className="font-semibold text-[#1D2530]">
-                {formatMoney(tier.remainingCents / 100, { fractionDigits: 0 })}
-              </span>{" "}
-              de GMV pour débloquer le palier {tier.nextPct}%.
-            </p>
-          )}
-          {tier.nextPct == null && (
+          <VProgressBar
+            value={progress.progress_pct}
+            max={100}
+            color={directionDecreasing ? "#059669" : "#1B5BDA"}
+            height={8}
+          />
+          {progress.next_tier_min_gmv_cents != null &&
+            progress.next_tier_min_gmv_cents > progress.current_gmv_cents && (
+              <p className="mt-1.5 text-[11px] text-[#8B95A5]">
+                Encore{" "}
+                <span className="font-semibold text-[#1D2530]">
+                  {formatMoney(
+                    (progress.next_tier_min_gmv_cents - progress.current_gmv_cents) / 100,
+                    { fractionDigits: 0 },
+                  )}
+                </span>{" "}
+                de GMV HT pour{" "}
+                {directionDecreasing ? "débloquer" : "atteindre"} le palier{" "}
+                {Number(progress.next_tier_percentage).toFixed(2).replace(/\.00$/, "")}%.
+              </p>
+            )}
+          {progress.next_tier_percentage == null && (
             <p className="mt-1.5 text-[11px] text-[#059669]">
               Palier maximum atteint sur la période.
             </p>
           )}
+          {directionDecreasing && progress.base_percentage != null && (
+            <p className="mt-1 text-[10px] text-[#8B95A5]">
+              Sous les seuils, le taux repasse à{" "}
+              {Number(progress.base_percentage).toFixed(2).replace(/\.00$/, "")}% (taux de base).
+            </p>
+          )}
+        </div>
+      )}
+
+      {progress && !progress.has_tiers && progress.base_percentage != null && (
+        <div className="mt-4 pt-4 border-t border-[#E2E8F0]">
+          <p className="text-[11px] text-[#616B7C]">
+            Taux de commission actuel :{" "}
+            <span className="font-semibold text-[#1D2530]">
+              {Number(progress.base_percentage).toFixed(2).replace(/\.00$/, "")}%
+            </span>
+            <span className="text-[#8B95A5]">
+              {" "}· aucun palier négocié configuré
+            </span>
+          </p>
         </div>
       )}
     </VCard>

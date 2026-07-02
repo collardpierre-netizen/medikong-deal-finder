@@ -742,10 +742,12 @@ export type Database = {
           certifications: string[] | null
           country_hq: string | null
           country_of_origin: string | null
+          cover_image_url: string | null
           created_at: string
           description: string | null
           description_en: string | null
           distribution_type: string | null
+          gallery_images: Json
           google_trends_12m: Json | null
           google_trends_trend_pct: number | null
           id: string
@@ -788,10 +790,12 @@ export type Database = {
           certifications?: string[] | null
           country_hq?: string | null
           country_of_origin?: string | null
+          cover_image_url?: string | null
           created_at?: string
           description?: string | null
           description_en?: string | null
           distribution_type?: string | null
+          gallery_images?: Json
           google_trends_12m?: Json | null
           google_trends_trend_pct?: number | null
           id?: string
@@ -834,10 +838,12 @@ export type Database = {
           certifications?: string[] | null
           country_hq?: string | null
           country_of_origin?: string | null
+          cover_image_url?: string | null
           created_at?: string
           description?: string | null
           description_en?: string | null
           distribution_type?: string | null
+          gallery_images?: Json
           google_trends_12m?: Json | null
           google_trends_trend_pct?: number | null
           id?: string
@@ -5068,9 +5074,11 @@ export type Database = {
           brand_count: number | null
           certifications: string[] | null
           country_of_origin: string | null
+          cover_image_url: string | null
           created_at: string | null
           description: string | null
           description_en: string | null
+          gallery_images: Json
           id: string
           is_active: boolean | null
           legal_name: string | null
@@ -5099,9 +5107,11 @@ export type Database = {
           brand_count?: number | null
           certifications?: string[] | null
           country_of_origin?: string | null
+          cover_image_url?: string | null
           created_at?: string | null
           description?: string | null
           description_en?: string | null
+          gallery_images?: Json
           id?: string
           is_active?: boolean | null
           legal_name?: string | null
@@ -5130,9 +5140,11 @@ export type Database = {
           brand_count?: number | null
           certifications?: string[] | null
           country_of_origin?: string | null
+          cover_image_url?: string | null
           created_at?: string | null
           description?: string | null
           description_en?: string | null
+          gallery_images?: Json
           id?: string
           is_active?: boolean | null
           legal_name?: string | null

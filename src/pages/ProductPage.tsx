@@ -375,6 +375,11 @@ function OfferRow({
             </TooltipContent>
           </Tooltip>
         )}
+        {offer.isShowcaseDimmed && (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-full">
+            <Eye size={12} /> Showcase
+          </span>
+        )}
         {offer.isVerified && (
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
             <Check size={12} /> Fournisseur verifie

@@ -166,8 +166,10 @@ export default function VendorAnalytics() {
               </div>
             </div>
           )}
-          {isLoading ? (
-            <EmptyState message="Chargement…" />
+          {errorMessage ? (
+            <ErrorState message={errorMessage} onRetry={() => { void refetch(); }} />
+          ) : isLoading ? (
+            <ChartSkeleton slow={slow} />
           ) : customerTypeBreakdown.length > 0 ? (
             <div style={{ width: "100%", height: 260 }}>
               <ResponsiveContainer>

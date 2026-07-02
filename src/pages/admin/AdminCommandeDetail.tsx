@@ -684,6 +684,88 @@ const AdminCommandeDetail = () => {
             )}
           </div>
 
+          {/* Suivi d'expédition */}
+          <div className="bg-white border rounded-lg p-4 space-y-3" style={{ borderColor: "#E2E8F0" }}>
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <Truck size={14} /> Suivi d'expédition
+            </div>
+            {(order as any).shipped_at && (
+              <div className="text-[11px] text-slate-500">
+                Expédiée le {new Date((order as any).shipped_at).toLocaleString("fr-BE")}
+              </div>
+            )}
+            <div>
+              <label className="text-xs text-slate-500 block mb-1">URL de suivi (externe)</label>
+              <Input
+                value={trackUrl}
+                onChange={(e) => setTrackUrl(e.target.value)}
+                placeholder="https://track.bpost.be/..."
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-slate-500 block mb-1">Transporteur</label>
+                <Input
+                  value={trackCarrier}
+                  onChange={(e) => setTrackCarrier(e.target.value)}
+                  placeholder="bpost, DPD, DHL…"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-slate-500 block mb-1">N° de colis</label>
+                <Input
+                  value={trackNumber}
+                  onChange={(e) => setTrackNumber(e.target.value)}
+                  placeholder="Ex. 323123456789"
+                />
+              </div>
+            </div>
+            <div className="space-y-2 pt-1">
+              {order.status !== "shipped" && order.status !== "delivered" && (
+                <Button
+                  onClick={() => saveTracking({ notify: true, markShipped: true })}
+                  disabled={busy !== null}
+                  className="w-full justify-start"
+                  style={{ backgroundColor: "#1C58D9", color: "#fff" }}
+                >
+                  <Send size={14} className="mr-2" />
+                  {busy === "TRACKING" ? "Envoi…" : "Marquer expédié & notifier l'acheteur"}
+                </Button>
+              )}
+              <Button
+                onClick={() => saveTracking({ notify: true, markShipped: false })}
+                disabled={busy !== null}
+                className="w-full justify-start"
+                variant={order.status === "shipped" ? "default" : "outline"}
+                style={order.status === "shipped" ? { backgroundColor: "#1C58D9", color: "#fff" } : undefined}
+              >
+                <Send size={14} className="mr-2" />
+                {busy === "TRACKING" ? "Envoi…" : "Enregistrer & renotifier l'acheteur"}
+              </Button>
+              <Button
+                onClick={() => saveTracking({ notify: false, markShipped: false })}
+                disabled={busy !== null}
+                className="w-full justify-start"
+                variant="outline"
+              >
+                {busy === "TRACKING" ? "Enregistrement…" : "Enregistrer sans email"}
+              </Button>
+              {trackUrl.trim() && (
+                <a href={trackUrl.trim()} target="_blank" rel="noreferrer" className="block">
+                  <Button className="w-full justify-start" variant="ghost">
+                    <ExternalLink size={14} className="mr-2" /> Ouvrir le suivi
+                  </Button>
+                </a>
+              )}
+            </div>
+            <p className="text-[11px] text-slate-400">
+              L'URL de suivi et le n° de colis sont visibles sur la page publique de la commande et
+              inclus dans l'email d'expédition.
+            </p>
+          </div>
+
+
+
           {publicUrl && (
             <div className="bg-white border rounded-lg p-4 space-y-3" style={{ borderColor: "#E2E8F0" }}>
               <div className="flex items-center gap-2 text-sm font-semibold">

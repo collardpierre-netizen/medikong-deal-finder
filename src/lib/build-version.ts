@@ -19,6 +19,7 @@
  */
 
 declare const __BUILD_ID__: string;
+import { toast } from "sonner";
 import { safeAutoReload, canAutoReload } from "@/lib/lazy-with-retry";
 import { bustAdminQueryCache } from "@/lib/admin-cache-bust";
 
@@ -27,6 +28,11 @@ const CURRENT_BUILD_ID =
 const VERSION_URL = "/version.json";
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 min
 const STALE_FLAG_KEY = "medikong:build-stale";
+const TOAST_ID = "medikong-new-version";
+const DEFERRED_AUTO_RELOAD_MS = 60_000; // laisse 60 s pour finir une saisie
+
+let deferredReloadTimer: number | null = null;
+let toastShown = false;
 
 let started = false;
 
@@ -79,10 +85,67 @@ async function checkVersion() {
       active.tagName === "TEXTAREA" ||
       active.isContentEditable);
 
-  if (!isEditing && document.visibilityState === "visible" && canAutoReload()) {
+  const canReloadNow =
+    !isEditing && document.visibilityState === "visible" && canAutoReload();
+
+  if (canReloadNow) {
     safeAutoReload();
+    return;
   }
-  // Otherwise: the next chunk error or visibility change will trigger reload.
+
+  // Reload différé : on prévient l'utilisateur avec un toast persistant
+  // + CTA « Recharger maintenant », et on planifie un nouveau tentative
+  // automatique dans 60 s (au cas où il quitterait le champ entre temps).
+  showNewVersionToast();
+  scheduleDeferredReload();
+}
+
+function showNewVersionToast() {
+  if (toastShown) return;
+  toastShown = true;
+  try {
+    toast("Nouvelle version disponible", {
+      id: TOAST_ID,
+      description:
+        "Une mise à jour du site est prête. Rechargez pour l'appliquer.",
+      duration: Infinity,
+      action: {
+        label: "Recharger",
+        onClick: () => {
+          try {
+            window.location.reload();
+          } catch {
+            /* ignore */
+          }
+        },
+      },
+    });
+  } catch {
+    /* toast non disponible → on retombera sur l'auto-reload programmé */
+  }
+}
+
+function scheduleDeferredReload() {
+  if (deferredReloadTimer != null) return;
+  deferredReloadTimer = window.setTimeout(() => {
+    deferredReloadTimer = null;
+    const active = document.activeElement;
+    const stillEditing =
+      active instanceof HTMLElement &&
+      (active.tagName === "INPUT" ||
+        active.tagName === "TEXTAREA" ||
+        active.isContentEditable);
+    if (
+      !stillEditing &&
+      document.visibilityState === "visible" &&
+      canAutoReload()
+    ) {
+      safeAutoReload();
+    } else {
+      // Toujours pas safe → on retente plus tard.
+      scheduleDeferredReload();
+    }
+  }, DEFERRED_AUTO_RELOAD_MS);
 }
 
 export function installBuildVersionWatcher() {

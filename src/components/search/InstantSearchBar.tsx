@@ -27,7 +27,18 @@ interface InstantSearchBarProps {
 export function InstantSearchBar({ className = "", placeholder, variant = "navbar" }: InstantSearchBarProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [query, setQuery] = useState("");
+
+  // Sync input value with URL ?q= (catalogue / recherche), pour que le mot-clé
+  // reste visible dans la barre après soumission et lors des retours navigateur.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const q = params.get("q") || "";
+    setQuery((prev) => (prev === q ? prev : q));
+    // On veut refléter l'URL, sans rouvrir le dropdown de résultats instantanés.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname, location.search]);
   const [results, setResults] = useState<FederatedResults>({ products: [], brands: [], categories: [] });
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

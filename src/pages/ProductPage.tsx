@@ -362,6 +362,18 @@ function OfferRow({
             <Tag size={12} /> Promo -{Number(discountPercentage).toFixed(0)}%
           </span>
         )}
+        {offer.isExclusiveWinner && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-amber-900 bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-full cursor-help">
+                <Star size={12} /> Exclusif
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[260px] text-xs">
+              Ce vendeur bénéficie d'une exclusivité contractuelle sur ce produit dans votre pays.
+            </TooltipContent>
+          </Tooltip>
+        )}
         {offer.isVerified && (
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
             <Check size={12} /> Fournisseur verifie

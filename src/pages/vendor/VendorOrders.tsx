@@ -123,6 +123,12 @@ export default function VendorOrders() {
   const vendorOrdersQueryKey = useMemo(() => ["vendor-order-lines", vendorId] as const, [vendorId]);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
+  // Filtres & tri
+  const [statusFilter, setStatusFilter] = useState<string>("all"); // all | to_treat | processing | shipped | delivered | cancelled
+  const [search, setSearch] = useState("");
+  const [periodFilter, setPeriodFilter] = useState<string>("all"); // all | 7d | 30d | 90d
+  const [sortBy, setSortBy] = useState<string>("date_desc"); // date_desc | date_asc | amount_desc | amount_asc
+
   // Modales
   const [shipLine, setShipLine] = useState<OrderWithLines["lines"][number] & { order: OrderWithLines } | null>(null);
   const [cancelLine, setCancelLine] = useState<OrderWithLines["lines"][number] & { order: OrderWithLines } | null>(null);

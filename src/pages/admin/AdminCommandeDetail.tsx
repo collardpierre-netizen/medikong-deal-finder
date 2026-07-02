@@ -123,6 +123,14 @@ const AdminCommandeDetail = () => {
       setPinInput((order as any).public_access_pin || "");
       const exp = (order as any).public_access_expires_at;
       setExpiresInput(exp ? new Date(exp).toISOString().slice(0, 10) : "");
+      setTrackUrl((order as any).tracking_url || "");
+      setTrackCarrier((order as any).tracking_carrier || "");
+      setTrackNumber((order as any).tracking_number || "");
+      const map: Record<string, { url: string; number: string }> = {};
+      for (const l of ((order as any).order_lines || [])) {
+        map[l.id] = { url: l.tracking_url || "", number: l.tracking_number || "" };
+      }
+      setLineTracks(map);
     }
   }, [order]);
 

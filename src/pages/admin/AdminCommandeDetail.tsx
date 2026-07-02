@@ -531,9 +531,10 @@ const AdminCommandeDetail = () => {
                           <Button
                             size="sm"
                             variant={dirty ? "default" : "outline"}
-                            disabled={!dirty || busy !== null}
+                            disabled={!dirty || busy !== null || !!ltUrlErr}
                             onClick={() => saveLineTracking(l.id)}
-                            style={dirty ? { backgroundColor: "#1C58D9", color: "#fff" } : undefined}
+                            style={dirty && !ltUrlErr ? { backgroundColor: "#1C58D9", color: "#fff" } : undefined}
+                            title={ltUrlErr || undefined}
                           >
                             {busy === `LINE-${l.id}` ? "…" : "Enregistrer"}
                           </Button>

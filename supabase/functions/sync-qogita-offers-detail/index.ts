@@ -992,6 +992,117 @@ async function syncOffers(
   return stats;
 }
 
+/**
+ * FAST refresh : call ONLY /variants/{fid}/{slug}/offers/ and update existing
+ * multi-vendor offers with fresh price/stock/tiers. Skips the heavy
+ * /variants/{gtin}/ enrichment call. Costs 1 API call per product instead of 2.
+ */
+async function refreshOffersOnly(
+  sb: any,
+  product: any,
+  baseUrl: string,
+  token: string,
+  country: string,
+  vatRate: number,
+  vatMultiplier: number,
+  parentStats: any,
+  localStats: any,
+  recordEndpointError: ((endpoint: string, status: number | null, message: string) => Promise<void>) | undefined,
+  syncRunId: string | null,
+): Promise<void> {
+  try {
+    const offersUrl = `${baseUrl}/variants/${product.qogita_fid}/${product.slug}/offers/`;
+    const offersRes = await fetchWithRetry(offersUrl, token);
+
+    if (!offersRes.ok) {
+      if (offersRes.status === 429) localStats.rate_limited++;
+      else if (offersRes.status !== 404) localStats.errors++;
+      if (offersRes.status !== 404 && recordEndpointError) {
+        await recordEndpointError(`/variants/{fid}/{slug}/offers/ [fast]`, offersRes.status,
+          `gtin=${product.gtin} fid=${product.qogita_fid}`);
+      }
+      return;
+    }
+
+    const offersData = await offersRes.json();
+    const offersArr = offersData?.offers || (Array.isArray(offersData) ? offersData : []);
+
+    for (const offer of offersArr) {
+      const sellerCode = offer.seller || offer.sellerCode;
+      if (!sellerCode) continue;
+
+      const vendorId = await resolveVendor(sb, sellerCode, country, syncRunId);
+      if (!vendorId) continue;
+
+      const offerPrice = parseFloat(String(offer.price ?? "0")) || 0;
+      if (offerPrice <= 0) continue;
+
+      const oExclVat = offerPrice;
+      const oInclVat = Math.round(oExclVat * vatMultiplier * 100) / 100;
+      const oMov = parseFloat(String(offer.mov ?? "0")) || 0;
+      const oStock = parseInt(String(offer.inventory ?? "0"), 10) || 0;
+      const oQid = offer.qid || `${sellerCode}-${product.gtin}-${country}`;
+      const delayDays = parseDeliveryDays(offer.delay);
+
+      const bundleRaw =
+        offer.bundleSize ?? offer.bundle_size ??
+        offer.minOrderQuantity ?? offer.moq ??
+        offer.minimumOrderQuantity ?? 1;
+      const oMoq = Math.max(1, parseInt(String(bundleRaw), 10) || 1);
+      const rawTiers = extractRawTiers(offer);
+
+      const { data: upsertedOffer, error: mvErr } = await upsertQogitaOffer(sb, {
+        product_id: product.id,
+        vendor_id: vendorId,
+        qogita_offer_qid: oQid,
+        country_code: country,
+        qogita_base_price: oExclVat,
+        qogita_base_delay_days: delayDays,
+        is_qogita_backed: true,
+        price_excl_vat: oExclVat,
+        price_incl_vat: oInclVat,
+        vat_rate: vatRate,
+        moq: oMoq,
+        mov: oMov > 0 ? oMov : null,
+        stock_quantity: oStock,
+        stock_status: oStock > 0 ? "in_stock" : "out_of_stock",
+        delivery_days: delayDays,
+        shipping_from_country: country,
+        is_active: true,
+        synced_at: new Date().toISOString(),
+        ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
+      });
+
+      if (mvErr) {
+        console.warn(formatDbError("qogita.fast_refresh.upsert", mvErr, {
+          product_id: product.id, gtin: product.gtin, seller: sellerCode,
+          country, vendor_id: vendorId, offer_qid: oQid,
+        }));
+        continue;
+      }
+
+      localStats.multi_vendor_offers++;
+
+      if (upsertedOffer?.id) {
+        try {
+          const inserted = await syncOfferTiers(
+            sb, upsertedOffer.id, oExclVat, oMov, oMoq, vatMultiplier, rawTiers,
+            { gtin: product.gtin, country, vendor: sellerCode, parentStats },
+          );
+          if (inserted > 0) {
+            parentStats.tiers_synced = (parentStats.tiers_synced || 0) + inserted;
+          }
+        } catch (tErr: any) {
+          console.error(`[qogita.fast.tiers] error offer=${upsertedOffer.id}: ${tErr.message}`);
+        }
+      }
+    }
+  } catch (e: any) {
+    localStats.errors++;
+    console.error(`[qogita.fast_refresh] product ${product.id} (${product.gtin}): ${e.message}`);
+  }
+}
+
 /** Process a single product (called in parallel across PARALLEL_CONCURRENCY) */
 async function processSingleProduct(
   sb: any,

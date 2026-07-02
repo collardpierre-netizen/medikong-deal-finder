@@ -89,6 +89,7 @@ export default function HeroImageEditor({ img }: Props) {
   const [focalX, setFocalX] = useState<number>(Number(img.focal_x ?? 50));
   const [focalY, setFocalY] = useState<number>(Number(img.focal_y ?? 50));
   const [zoom, setZoom] = useState<number>(Number(img.zoom ?? 1));
+  const [imageFit, setImageFit] = useState<"cover" | "contain">((img.image_fit as any) ?? "cover");
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
   const [saving, setSaving] = useState(false);
   const [dims, setDims] = useState<{ w: number; h: number } | null>(null);

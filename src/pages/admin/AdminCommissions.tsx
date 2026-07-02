@@ -34,6 +34,7 @@ export default function AdminCommissions() {
   const [editingTiers, setEditingTiers] = useState<TierDraft[]>([]);
   const [assignVendorId, setAssignVendorId] = useState("");
   const [assignRuleId, setAssignRuleId] = useState("");
+  const [simGmvEur, setSimGmvEur] = useState<number>(0);
 
   const { data: categories = [] } = useCategories();
   const { data: brands = [] } = useBrands();

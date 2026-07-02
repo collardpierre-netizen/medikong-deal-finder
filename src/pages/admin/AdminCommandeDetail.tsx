@@ -32,6 +32,12 @@ const AdminCommandeDetail = () => {
   const [expiresInput, setExpiresInput] = useState<string>("");
   const [coherence, setCoherence] = useState<any | null>(null);
   const [coherenceOpen, setCoherenceOpen] = useState(false);
+  // Suivi d'expédition (niveau commande)
+  const [trackUrl, setTrackUrl] = useState("");
+  const [trackCarrier, setTrackCarrier] = useState("");
+  const [trackNumber, setTrackNumber] = useState("");
+  // Suivi par ligne — édition admin
+  const [lineTracks, setLineTracks] = useState<Record<string, { url: string; number: string }>>({});
 
   const { data: order, isLoading, error: orderError } = useQuery({
     queryKey: ["admin-order", id],

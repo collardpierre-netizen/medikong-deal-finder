@@ -2544,8 +2544,11 @@ export type Database = {
           focal_y: number
           id: string
           image_url: string
+          image_url_mobile: string | null
           is_active: boolean
           link_url: string | null
+          show_subtitle: boolean
+          show_title: boolean
           sort_order: number
           subtitle: string | null
           title: string | null
@@ -2559,8 +2562,11 @@ export type Database = {
           focal_y?: number
           id?: string
           image_url: string
+          image_url_mobile?: string | null
           is_active?: boolean
           link_url?: string | null
+          show_subtitle?: boolean
+          show_title?: boolean
           sort_order?: number
           subtitle?: string | null
           title?: string | null
@@ -2574,8 +2580,11 @@ export type Database = {
           focal_y?: number
           id?: string
           image_url?: string
+          image_url_mobile?: string | null
           is_active?: boolean
           link_url?: string | null
+          show_subtitle?: boolean
+          show_title?: boolean
           sort_order?: number
           subtitle?: string | null
           title?: string | null

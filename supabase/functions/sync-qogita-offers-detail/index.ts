@@ -516,7 +516,7 @@ Deno.serve(async (req) => {
     .limit(5);
 
   const staleCutoff = Date.now() - STALE_RUNNING_MS;
-  const existingPartial = (resumableLogs || []).find((log: any) => (
+  const existingPartial = resyncLogId ? undefined : (resumableLogs || []).find((log: any) => (
     log.status === "partial" ||
     (log.status === "running" && new Date(log.started_at).getTime() < staleCutoff)
   ));
@@ -653,6 +653,13 @@ async function syncOffers(
         progress_message: `${country}: aucun produit éligible à synchroniser`,
       })
       .eq("id", logId);
+    if (resyncLogId) {
+      await sb.rpc("finalize_qogita_resync_log", {
+        _id: resyncLogId,
+        _status: "success",
+        _stats: { metadata: { country, multi_vendor: fetchMultiVendor, completed_reason: "no_eligible_products" } },
+      });
+    }
     return { products_enriched: 0, offers_upserted: 0 };
   }
 

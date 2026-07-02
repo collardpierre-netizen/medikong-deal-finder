@@ -84,7 +84,7 @@ export default function AdminCommissions() {
   };
 
   const saveMutation = useMutation({
-    mutationFn: async (rule: Partial<MarginRule>) => {
+    mutationFn: async ({ rule, tiers }: { rule: Partial<MarginRule>; tiers: TierDraft[] }) => {
       const payload: any = {
         name: rule.name || "Nouvelle règle",
         margin_percentage: rule.margin_percentage ?? 15,
@@ -97,12 +97,32 @@ export default function AdminCommissions() {
         vendor_id: rule.vendor_id || null,
         min_base_price: rule.min_base_price || null,
         max_base_price: rule.max_base_price || null,
+        gmv_window: (rule as any).gmv_window ?? "calendar_year",
+        tiers_direction: (rule as any).tiers_direction ?? "decreasing",
       };
-      if (rule.id) {
-        const { error } = await supabase.from("margin_rules").update(payload).eq("id", rule.id);
+      let ruleId = rule.id as string | undefined;
+      if (ruleId) {
+        const { error } = await supabase.from("margin_rules").update(payload).eq("id", ruleId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("margin_rules").insert(payload);
+        const { data, error } = await supabase.from("margin_rules").insert(payload).select("id").single();
+        if (error) throw error;
+        ruleId = data!.id as string;
+      }
+
+      // Replace tiers wholesale
+      await supabase.from("margin_rule_tiers").delete().eq("margin_rule_id", ruleId!);
+      const cleaned = tiers
+        .filter(t => Number.isFinite(t.min_gmv_eur) && Number.isFinite(t.margin_percentage))
+        .map((t, i) => ({
+          margin_rule_id: ruleId!,
+          min_gmv_cents: Math.round(t.min_gmv_eur * 100),
+          margin_percentage: t.margin_percentage,
+          label: t.label?.trim() || null,
+          sort_order: i,
+        }));
+      if (cleaned.length > 0) {
+        const { error } = await supabase.from("margin_rule_tiers").insert(cleaned);
         if (error) throw error;
       }
     },
@@ -169,10 +189,29 @@ export default function AdminCommissions() {
       vendor_id: null,
       min_base_price: null,
       max_base_price: null,
+      gmv_window: "calendar_year" as any,
+      tiers_direction: "decreasing" as any,
     });
+    setEditingTiers([]);
     setDialogOpen(true);
   };
-  const openEdit = (r: MarginRule) => { setEditingRule({ ...r }); setDialogOpen(true); };
+  const openEdit = async (r: MarginRule) => {
+    setEditingRule({ ...r });
+    const { data } = await supabase
+      .from("margin_rule_tiers")
+      .select("id, min_gmv_cents, margin_percentage, label, sort_order")
+      .eq("margin_rule_id", r.id)
+      .order("sort_order", { ascending: true });
+    setEditingTiers(
+      (data ?? []).map((t: any) => ({
+        id: t.id,
+        min_gmv_eur: Number(t.min_gmv_cents) / 100,
+        margin_percentage: Number(t.margin_percentage),
+        label: t.label ?? "",
+      })),
+    );
+    setDialogOpen(true);
+  };
 
   const vendorsWithRules = new Set(vendorRules.map((r: any) => r.vendor_id));
   const vendorsWithoutRule = vendors.filter(v => !vendorsWithRules.has(v.id));

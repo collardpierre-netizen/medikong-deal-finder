@@ -11,6 +11,18 @@ export const MAX_AUTO_RELOADS_PER_SESSION = 2;
 /** Cooldown between two auto reloads (ms). Prevents tight loops on cascading errors. */
 const RELOAD_COOLDOWN_MS = 10_000;
 const MAX_CACHE_BUST_RELOADS_PER_SESSION = 2;
+const TRANSIENT_CHUNK_RELOAD_COUNTER_KEY = "medikong:transient-chunk-reload-count";
+const MAX_TRANSIENT_CHUNK_RELOADS_PER_SESSION = 5;
+const TRANSIENT_CHUNK_POLL_DELAY_MS = 2_500;
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function extractChunkUrl(message: string): string | null {
+  const urlMatch = message.match(/https?:\/\/[^\s'")]+\.[a-z]+(?:\?[^\s'")]*)?/i);
+  return urlMatch?.[0] ?? null;
+}
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
@@ -101,6 +113,39 @@ export async function probeChunkUrl(url: string): Promise<ChunkProbeResult> {
 async function isHtmlResponse(url: string): Promise<boolean> {
   const probe = await probeChunkUrl(url);
   return probe.looksLikeHtml;
+}
+
+function isTransientChunkProbe(probe: ChunkProbeResult | null): boolean {
+  if (!probe) return false;
+  if (probe.fetchError) return true;
+  if (probe.status == null) return false;
+  return probe.status === 408 || probe.status === 429 || probe.status >= 500;
+}
+
+function isStaleHtmlFallbackProbe(probe: ChunkProbeResult | null): boolean {
+  if (!probe?.looksLikeHtml) return false;
+  return !isTransientChunkProbe(probe);
+}
+
+function isHealthyJavaScriptProbe(probe: ChunkProbeResult | null): boolean {
+  if (!probe) return false;
+  if (probe.fetchError || probe.looksLikeHtml) return false;
+  if (probe.status == null || probe.status < 200 || probe.status >= 400) return false;
+  const contentType = (probe.contentType ?? "").toLowerCase();
+  return (
+    contentType.includes("javascript") ||
+    contentType.includes("ecmascript") ||
+    contentType.includes("module") ||
+    contentType === ""
+  );
+}
+
+async function waitForChunkServerRecovery(url: string): Promise<void> {
+  while (typeof window !== "undefined") {
+    const probe = await probeChunkUrl(url);
+    if (isHealthyJavaScriptProbe(probe) || isStaleHtmlFallbackProbe(probe)) return;
+    await delay(TRANSIENT_CHUNK_POLL_DELAY_MS);
+  }
 }
 
 function readInt(key: string): number {

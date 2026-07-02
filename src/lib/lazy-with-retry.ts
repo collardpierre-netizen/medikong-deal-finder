@@ -224,6 +224,30 @@ export function safeCacheBustReload(): boolean {
   return true;
 }
 
+export function safeTransientChunkReload(url?: string | null): boolean {
+  if (typeof window === "undefined") return false;
+  const attempts = readInt(TRANSIENT_CHUNK_RELOAD_COUNTER_KEY);
+  if (attempts >= MAX_TRANSIENT_CHUNK_RELOADS_PER_SESSION) return false;
+
+  try {
+    window.sessionStorage.setItem(TRANSIENT_CHUNK_RELOAD_COUNTER_KEY, String(attempts + 1));
+    window.sessionStorage.setItem(GLOBAL_RELOAD_LAST_AT_KEY, String(Date.now()));
+    if (url) window.sessionStorage.setItem("medikong:transient-chunk-url", url);
+  } catch {
+    /* ignore */
+  }
+
+  try {
+    const current = new URL(window.location.href);
+    current.searchParams.set("_chunkRetry", String(attempts + 1));
+    current.searchParams.set("_t", Date.now().toString());
+    window.location.replace(current.toString());
+  } catch {
+    window.location.reload();
+  }
+  return true;
+}
+
 /**
  * Number of in-place import retries (with exponential backoff) attempted
  * BEFORE we escalate to a full page reload. Handles transient network blips,

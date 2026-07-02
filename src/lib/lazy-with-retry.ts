@@ -3,11 +3,13 @@ import { lazy, type ComponentType, type LazyExoticComponent } from "react";
 const RETRY_TOKEN_PREFIX = "lazy-retry:";
 const GLOBAL_RELOAD_COUNTER_KEY = "medikong:reload-count";
 const GLOBAL_RELOAD_LAST_AT_KEY = "medikong:reload-last-at";
+const CACHE_BUST_RELOAD_COUNTER_KEY = "medikong:chunk-cache-bust-count";
 
 /** Max automatic reloads per browser session before we stop and show the boundary. */
 export const MAX_AUTO_RELOADS_PER_SESSION = 2;
 /** Cooldown between two auto reloads (ms). Prevents tight loops on cascading errors. */
 const RELOAD_COOLDOWN_MS = 10_000;
+const MAX_CACHE_BUST_RELOADS_PER_SESSION = 2;
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
@@ -149,6 +151,30 @@ export function safeAutoReload(): boolean {
   return true;
 }
 
+function safeCacheBustReload(): boolean {
+  if (typeof window === "undefined") return false;
+  const attempts = readInt(CACHE_BUST_RELOAD_COUNTER_KEY);
+  if (attempts >= MAX_CACHE_BUST_RELOADS_PER_SESSION) return false;
+  const last = readInt(GLOBAL_RELOAD_LAST_AT_KEY);
+  if (last && Date.now() - last < RELOAD_COOLDOWN_MS) return false;
+
+  try {
+    window.sessionStorage.setItem(CACHE_BUST_RELOAD_COUNTER_KEY, String(attempts + 1));
+    window.sessionStorage.setItem(GLOBAL_RELOAD_LAST_AT_KEY, String(Date.now()));
+  } catch {
+    /* ignore */
+  }
+
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set("_v", Date.now().toString());
+    window.location.replace(url.toString());
+  } catch {
+    window.location.reload();
+  }
+  return true;
+}
+
 /**
  * Number of in-place import retries (with exponential backoff) attempted
  * BEFORE we escalate to a full page reload. Handles transient network blips,
@@ -262,6 +288,12 @@ export function lazyWithRetry<T extends ComponentType<any>>(
       if (typeof window !== "undefined" && isChunkLoadError(importError)) {
         const retryKey = `${RETRY_TOKEN_PREFIX}${key}`;
         const alreadyRetried = window.sessionStorage.getItem(retryKey) === "1";
+        if (probe?.looksLikeHtml && !alreadyRetried) {
+          window.sessionStorage.setItem(retryKey, "1");
+          if (safeCacheBustReload()) {
+            return new Promise<never>(() => undefined);
+          }
+        }
         if (!alreadyRetried && canAutoReload()) {
           window.sessionStorage.setItem(retryKey, "1");
           if (safeAutoReload()) {

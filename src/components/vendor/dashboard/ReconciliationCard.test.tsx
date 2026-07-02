@@ -89,6 +89,8 @@ describe("ReconciliationCard · totaux et formule GMV − CA", () => {
           excludedRevenueExclVatCents: 0,
           excludedGmvInclVatCents: 0,
           vatCents: 0,
+          ordersByStatus: {},
+
         }}
         loading={false}
         periodLabel="Ce mois"

@@ -21,6 +21,9 @@ interface HeroImg {
   cta_text: string | null;
   title: string | null;
   subtitle: string | null;
+  focal_x?: number | null;
+  focal_y?: number | null;
+  zoom?: number | null;
 }
 
 export function HeroImageGallery() {

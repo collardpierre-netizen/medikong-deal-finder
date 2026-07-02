@@ -12,6 +12,15 @@ interface Props {
   product: Product;
 }
 
+// Cache module-level : mémorise les productId déjà "prefetch". Deux buts :
+//  1. Un même productId affiché dans plusieurs cartes ne déclenche qu'un seul
+//     mount de useProductOffers (React Query dédoublonne déjà le fetch réseau,
+//     mais on évite le state churn et les re-renders).
+//  2. Après un unmount/remount (scroll virtuel, retour navigation), la carte
+//     reste en mode "déjà prefetch" au lieu de repasser par le survol.
+const prefetchedProductIds = new Set<string>();
+
+
 export default function SearchTrivagoCard({ product: p }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -27,13 +36,19 @@ export default function SearchTrivagoCard({ product: p }: Props) {
   // Les "autres offres" restent en lazy : on ne déclenche `useProductOffers`
   // que quand l'utilisateur ouvre la liste (économise N-1 RPC par page).
   const [expanded, setExpanded] = useState(false);
-  const [prefetch, setPrefetch] = useState(false);
+  const [prefetch, setPrefetch] = useState(() => prefetchedProductIds.has(p.id));
+  const triggerPrefetch = () => {
+    if (prefetchedProductIds.has(p.id)) return; // dédoublonné : hover répété = no-op
+    prefetchedProductIds.add(p.id);
+    setPrefetch(true);
+  };
   const {
     data: offersFull = [],
     isLoading: offersLoading,
     error: offersError,
     refetch: refetchOffers,
   } = useProductOffers(expanded || prefetch || !hasContext ? p.id : undefined);
+
 
   // Best offer : on privilégie le batch (1 round-trip), sinon le fetch détaillé.
   const bestOffer = hasContext
@@ -295,8 +310,9 @@ export default function SearchTrivagoCard({ product: p }: Props) {
                   if (!expanded) setExpanded(true);
                   setShowMore(!showMore);
                 }}
-                onMouseEnter={() => setPrefetch(true)}
-                onFocus={() => setPrefetch(true)}
+                onMouseEnter={triggerPrefetch}
+                onFocus={triggerPrefetch}
+
                 className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
               >
                 {expanded && showMore

@@ -2,6 +2,11 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { DashboardPeriod } from "./useVendorMonthlyDashboard";
+import {
+  VENDOR_GMV_ORDER_COLUMNS,
+  isBillableStatus,
+  normalizeOrderStatus,
+} from "@/lib/vendor-gmv-filters";
 
 /**
  * Réconciliation CA HTVA ↔ GMV TTC sur la période.
@@ -13,16 +18,10 @@ import type { DashboardPeriod } from "./useVendorMonthlyDashboard";
  *  - nombre de commandes
  *  - inclus / exclu du calcul CA & GMV
  *
- * DOIT rester aligné avec `EXCLUDED_STATUSES` de useVendorMonthlyDashboard.
+ * Les statuts inclus/exclus proviennent du modèle de filtre partagé
+ * `src/lib/vendor-gmv-filters.ts` (aligné sur la RPC `get_vendor_gmv_progress`).
  */
-const EXCLUDED_STATUSES = new Set([
-  "cancelled",
-  "canceled",
-  "refused",
-  "rejected",
-  "refunded",
-  "failed",
-]);
+
 
 export interface StatusReconciliationRow {
   status: string;
@@ -62,7 +61,7 @@ export function useVendorReconciliation(
         .from("order_lines")
         .select(
           `line_total_incl_vat, line_total_excl_vat,
-           orders!inner ( id, status, is_forecast, is_test, hidden_from_list, deleted_at, created_at )`,
+           orders!inner ( ${VENDOR_GMV_ORDER_COLUMNS} )`,
         )
         .eq("vendor_id", vendorId!)
         .eq("orders.is_forecast", false)
@@ -80,7 +79,7 @@ export function useVendorReconciliation(
       for (const l of (data ?? []) as any[]) {
         const o = l.orders;
         if (!o || o.hidden_from_list || o.deleted_at) continue;
-        const status = String(o.status ?? "unknown").toLowerCase();
+        const status = normalizeOrderStatus(o.status) || "unknown";
         const cur =
           perStatus.get(status) ??
           { excl: 0, incl: 0, orderIds: new Set<string>() };
@@ -93,7 +92,8 @@ export function useVendorReconciliation(
       const rows: StatusReconciliationRow[] = Array.from(perStatus.entries())
         .map(([status, v]) => ({
           status,
-          included: !EXCLUDED_STATUSES.has(status),
+          included: isBillableStatus(status),
+
           revenueExclVatCents: v.excl,
           gmvInclVatCents: v.incl,
           ordersCount: v.orderIds.size,

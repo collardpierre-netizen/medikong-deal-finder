@@ -1,6 +1,12 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  VENDOR_GMV_ORDER_COLUMNS,
+  isBillableOrder,
+} from "@/lib/vendor-gmv-filters";
+
+
 
 /**
  * KPIs enrichis (période paramétrable) pour le tableau de bord vendeur.
@@ -31,18 +37,17 @@ export interface VendorMonthlyDashboard {
 }
 
 /**
- * Statuts exclus — DOIT rester aligné avec la RPC canonique
- * `get_vendor_gmv_progress` (source de vérité GMV / paliers commission).
- * Toute modification ici implique d'ajuster aussi la RPC (et inversement).
+ * Voir `src/lib/vendor-gmv-filters.ts` — modèle de filtre partagé aligné
+ * strictement sur la RPC `get_vendor_gmv_progress` (source de vérité GMV /
+ * paliers commission). Toute exclusion (statuts + drapeaux structurels) est
+ * définie une seule fois là-bas.
  */
-const EXCLUDED_STATUSES = new Set([
-  "cancelled",
-  "canceled",
-  "refused",
-  "rejected",
-  "refunded",
-  "failed",
-]);
+
+export interface DashboardPeriod {
+  start: Date;
+  end: Date;
+}
+
 
 export interface DashboardPeriod {
   start: Date;
@@ -87,7 +92,7 @@ export function useVendorMonthlyDashboard(
         .from("order_lines")
         .select(
           `line_total_incl_vat, line_total_excl_vat, line_margin, commission_amount,
-           orders!inner ( id, created_at, is_forecast, is_test, status, hidden_from_list, deleted_at,
+           orders!inner ( ${VENDOR_GMV_ORDER_COLUMNS},
                           customers:customer_id ( customer_type ) )`,
         )
         .eq("vendor_id", vendorId!)
@@ -97,12 +102,9 @@ export function useVendorMonthlyDashboard(
         .lte("orders.created_at", end.toISOString());
       if (error) throw error;
 
-      const billable = (data ?? []).filter((l: any) => {
-        const o = l.orders;
-        if (!o || o.hidden_from_list || o.deleted_at) return false;
-        if (o.is_forecast || o.is_test) return false;
-        return !EXCLUDED_STATUSES.has(String(o.status ?? "").toLowerCase());
-      });
+      const billable = (data ?? []).filter((l: any) => isBillableOrder(l.orders));
+
+
 
       const toCents = (v: unknown) => Math.round(Number(v ?? 0) * 100);
 

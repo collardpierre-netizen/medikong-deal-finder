@@ -10,6 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
@@ -90,6 +93,7 @@ const emptyForm: FormState = {
 export default function AdminVendorExclusivitiesPage() {
   const qc = useQueryClient();
   const [filterVendor, setFilterVendor] = useState<string>("all");
+  const [vendorFilterOpen, setVendorFilterOpen] = useState(false);
   const [filterScope, setFilterScope] = useState<Scope | "all">("all");
   const [filterMode, setFilterMode] = useState<Mode | "all">("all");
   const [filterStatus, setFilterStatus] = useState<StatusFilter>("active");
@@ -324,15 +328,62 @@ export default function AdminVendorExclusivitiesPage() {
             </div>
             <div>
               <Label className="text-xs">Vendeur</Label>
-              <Select value={filterVendor} onValueChange={setFilterVendor}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous</SelectItem>
-                  {vendors.map((v) => (
-                    <SelectItem key={v.id} value={v.id}>{getVendorAdminName({ name: v.name, company_name: v.company_name, display_code: v.display_code })}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={vendorFilterOpen} onOpenChange={setVendorFilterOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={vendorFilterOpen}
+                    className="w-full justify-between font-normal"
+                  >
+                    <span className={filterVendor !== "all" ? "" : "text-muted-foreground"}>
+                      {filterVendor !== "all"
+                        ? (() => {
+                            const v = vendors.find((x) => x.id === filterVendor);
+                            return v ? getVendorAdminName({ name: v.name, company_name: v.company_name, display_code: v.display_code }) : filterVendor.slice(0, 8);
+                          })()
+                        : "Tous les vendeurs"}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[280px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Rechercher un vendeur…" />
+                    <CommandList>
+                      <CommandEmpty>Aucun vendeur trouvé.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="all"
+                          onSelect={() => {
+                            setFilterVendor("all");
+                            setVendorFilterOpen(false);
+                          }}
+                        >
+                          <Check className={`mr-2 h-4 w-4 ${filterVendor === "all" ? "opacity-100" : "opacity-0"}`} />
+                          Tous les vendeurs
+                        </CommandItem>
+                        {vendors.map((v) => {
+                          const label = getVendorAdminName({ name: v.name, company_name: v.company_name, display_code: v.display_code });
+                          return (
+                            <CommandItem
+                              key={v.id}
+                              value={label + " " + v.id}
+                              onSelect={() => {
+                                setFilterVendor(v.id);
+                                setVendorFilterOpen(false);
+                              }}
+                            >
+                              <Check className={`mr-2 h-4 w-4 ${filterVendor === v.id ? "opacity-100" : "opacity-0"}`} />
+                              {label}
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div>
               <Label className="text-xs">Scope</Label>

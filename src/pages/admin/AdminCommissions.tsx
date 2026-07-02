@@ -6,6 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -33,6 +36,7 @@ export default function AdminCommissions() {
   const [editingRule, setEditingRule] = useState<Partial<MarginRule> | null>(null);
   const [editingTiers, setEditingTiers] = useState<TierDraft[]>([]);
   const [assignVendorId, setAssignVendorId] = useState("");
+  const [assignVendorOpen, setAssignVendorOpen] = useState(false);
   const [assignRuleId, setAssignRuleId] = useState("");
   const [simGmvEur, setSimGmvEur] = useState<number>(0);
 
@@ -384,17 +388,55 @@ export default function AdminCommissions() {
           <div className="space-y-4">
             <div>
               <Label>Vendeur</Label>
-              <Select value={assignVendorId} onValueChange={setAssignVendorId}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner un vendeur" /></SelectTrigger>
-                <SelectContent>
-                  {vendors.map(v => (
-                    <SelectItem key={v.id} value={v.id}>
-                      {v.company_name || v.name}
-                      {vendorsWithRules.has(v.id) && " ✓"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={assignVendorOpen} onOpenChange={setAssignVendorOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={assignVendorOpen}
+                    className="w-full justify-between font-normal"
+                  >
+                    <span className={assignVendorId ? "" : "text-muted-foreground"}>
+                      {assignVendorId
+                        ? (() => {
+                            const v = vendors.find((x: any) => x.id === assignVendorId);
+                            const label = v ? (v.company_name || v.name) : assignVendorId.slice(0, 8);
+                            return label + (vendorsWithRules.has(assignVendorId) ? " ✓" : "");
+                          })()
+                        : "Sélectionner un vendeur"}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[320px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Rechercher un vendeur…" />
+                    <CommandList>
+                      <CommandEmpty>Aucun vendeur trouvé.</CommandEmpty>
+                      <CommandGroup>
+                        {vendors.map((v: any) => {
+                          const name = v.company_name || v.name || v.id.slice(0, 8);
+                          const selected = assignVendorId === v.id;
+                          return (
+                            <CommandItem
+                              key={v.id}
+                              value={name + " " + v.id}
+                              onSelect={() => {
+                                setAssignVendorId(v.id);
+                                setAssignVendorOpen(false);
+                              }}
+                            >
+                              <Check className={`mr-2 h-4 w-4 ${selected ? "opacity-100" : "opacity-0"}`} />
+                              {name}
+                              {vendorsWithRules.has(v.id) && " ✓"}
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div>
               <Label>Template de marge</Label>

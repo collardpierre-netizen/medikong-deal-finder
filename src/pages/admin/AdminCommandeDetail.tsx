@@ -23,6 +23,30 @@ const STATUS_LABEL: Record<string, string> = {
   refunded: "Remboursée",
 };
 
+/**
+ * Valide une URL de tracking externe.
+ * - Doit parser comme URL absolue
+ * - Protocole obligatoire : https
+ * - Hôte requis avec au moins un point (pas de localhost / IP interne)
+ * - Longueur max 2048
+ * Retourne null si valide, sinon un message d'erreur FR.
+ */
+function validateTrackingUrl(raw: string): string | null {
+  const v = (raw || "").trim();
+  if (!v) return null; // champ optionnel — vide = pas d'URL
+  if (v.length > 2048) return "URL trop longue (max 2048 caractères).";
+  let u: URL;
+  try {
+    u = new URL(v);
+  } catch {
+    return "URL invalide — doit commencer par https://";
+  }
+  if (u.protocol !== "https:") return "L'URL doit utiliser https:// (http et autres protocoles refusés).";
+  if (!u.hostname || !u.hostname.includes(".")) return "Nom de domaine invalide.";
+  if (/^(localhost|127\.|10\.|192\.168\.|0\.0\.0\.0)/i.test(u.hostname)) return "Domaine local/interne interdit.";
+  return null;
+}
+
 const AdminCommandeDetail = () => {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
@@ -279,6 +303,11 @@ const AdminCommandeDetail = () => {
   };
 
   const saveTracking = async (opts: { notify: boolean; markShipped: boolean }) => {
+    const urlErr = validateTrackingUrl(trackUrl);
+    if (urlErr) {
+      toast.error(urlErr);
+      return;
+    }
     setBusy("TRACKING");
     try {
       const patch: Record<string, any> = {
@@ -338,9 +367,14 @@ const AdminCommandeDetail = () => {
 
 
   const saveLineTracking = async (lineId: string) => {
+    const lt = lineTracks[lineId] || { url: "", number: "" };
+    const urlErr = validateTrackingUrl(lt.url);
+    if (urlErr) {
+      toast.error(`Ligne : ${urlErr}`);
+      return;
+    }
     setBusy(`LINE-${lineId}`);
     try {
-      const lt = lineTracks[lineId] || { url: "", number: "" };
       const { error } = await supabase.from("order_lines").update({
         tracking_url: lt.url.trim() || null,
         tracking_number: lt.number.trim() || null,
@@ -451,6 +485,7 @@ const AdminCommandeDetail = () => {
                   const puTtc = puHt * (1 + vatR / 100);
                   const lt = lineTracks[l.id] || { url: "", number: "" };
                   const dirty = (l.tracking_url || "") !== lt.url || (l.tracking_number || "") !== lt.number;
+                  const ltUrlErr = validateTrackingUrl(lt.url);
                   return (
                     <Fragment key={l.id}>
                     <tr className="border-t">
@@ -481,10 +516,11 @@ const AdminCommandeDetail = () => {
                             <Truck size={12} /> Suivi ligne :
                           </div>
                           <Input
-                            className="h-8 text-xs flex-1 min-w-[200px]"
-                            placeholder="URL de suivi (externe)"
+                            className={`h-8 text-xs flex-1 min-w-[200px] ${ltUrlErr ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                            placeholder="https://..."
                             value={lt.url}
                             onChange={(e) => setLineTracks((m) => ({ ...m, [l.id]: { ...lt, url: e.target.value } }))}
+                            aria-invalid={!!ltUrlErr}
                           />
                           <Input
                             className="h-8 text-xs w-44"
@@ -495,17 +531,19 @@ const AdminCommandeDetail = () => {
                           <Button
                             size="sm"
                             variant={dirty ? "default" : "outline"}
-                            disabled={!dirty || busy !== null}
+                            disabled={!dirty || busy !== null || !!ltUrlErr}
                             onClick={() => saveLineTracking(l.id)}
-                            style={dirty ? { backgroundColor: "#1C58D9", color: "#fff" } : undefined}
+                            style={dirty && !ltUrlErr ? { backgroundColor: "#1C58D9", color: "#fff" } : undefined}
+                            title={ltUrlErr || undefined}
                           >
                             {busy === `LINE-${l.id}` ? "…" : "Enregistrer"}
                           </Button>
-                          {(lt.url || "").trim() && (
+                          {(lt.url || "").trim() && !ltUrlErr && (
                             <a href={lt.url.trim()} target="_blank" rel="noreferrer" className="text-[11px] text-mk-blue hover:underline inline-flex items-center gap-1">
                               <ExternalLink size={11} /> Ouvrir
                             </a>
                           )}
+                          {ltUrlErr && <span className="text-[11px] text-red-600 w-full">{ltUrlErr}</span>}
                         </div>
                       </td>
                     </tr>
@@ -760,11 +798,22 @@ const AdminCommandeDetail = () => {
             )}
             <div>
               <label className="text-xs text-slate-500 block mb-1">URL de suivi (externe)</label>
-              <Input
-                value={trackUrl}
-                onChange={(e) => setTrackUrl(e.target.value)}
-                placeholder="https://track.bpost.be/..."
-              />
+              {(() => {
+                const err = validateTrackingUrl(trackUrl);
+                return (
+                  <>
+                    <Input
+                      value={trackUrl}
+                      onChange={(e) => setTrackUrl(e.target.value)}
+                      placeholder="https://track.bpost.be/..."
+                      aria-invalid={!!err}
+                      className={err ? "border-red-500 focus-visible:ring-red-500" : undefined}
+                    />
+                    {err && <p className="mt-1 text-[11px] text-red-600">{err}</p>}
+                    <p className="mt-1 text-[10px] text-slate-400">https:// uniquement · domaine public requis</p>
+                  </>
+                );
+              })()}
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
@@ -784,53 +833,61 @@ const AdminCommandeDetail = () => {
                 />
               </div>
             </div>
-            <div className="space-y-2 pt-1">
-              {order.status !== "shipped" && order.status !== "delivered" && (
-                <Button
-                  onClick={() => saveTracking({ notify: true, markShipped: true })}
-                  disabled={busy !== null}
-                  className="w-full justify-start"
-                  style={{ backgroundColor: "#1C58D9", color: "#fff" }}
-                >
-                  <Send size={14} className="mr-2" />
-                  {busy === "TRACKING" ? "Envoi…" : "Marquer expédié & notifier l'acheteur"}
-                </Button>
-              )}
-              <Button
-                onClick={() => saveTracking({ notify: true, markShipped: false })}
-                disabled={busy !== null}
-                className="w-full justify-start"
-                variant={order.status === "shipped" ? "default" : "outline"}
-                style={order.status === "shipped" ? { backgroundColor: "#1C58D9", color: "#fff" } : undefined}
-              >
-                <Send size={14} className="mr-2" />
-                {busy === "TRACKING" ? "Envoi…" : "Enregistrer & renotifier l'acheteur"}
-              </Button>
-              <Button
-                onClick={() => saveTracking({ notify: false, markShipped: false })}
-                disabled={busy !== null}
-                className="w-full justify-start"
-                variant="outline"
-              >
-                {busy === "TRACKING" ? "Enregistrement…" : "Enregistrer sans email"}
-              </Button>
-              <Button
-                onClick={dryRunNotify}
-                disabled={busy !== null}
-                className="w-full justify-start"
-                variant="secondary"
-                title="Simule l'envoi sans rien envoyer et vérifie qu'un seul email partirait (idempotency)"
-              >
-                {busy === "TRACKING" ? "Test…" : "🧪 Tester (dry-run) — vérifier l'envoi unique"}
-              </Button>
-              {trackUrl.trim() && (
-                <a href={trackUrl.trim()} target="_blank" rel="noreferrer" className="block">
-                  <Button className="w-full justify-start" variant="ghost">
-                    <ExternalLink size={14} className="mr-2" /> Ouvrir le suivi
+            {(() => {
+              const trackUrlErr = validateTrackingUrl(trackUrl);
+              return (
+                <div className="space-y-2 pt-1">
+                  {order.status !== "shipped" && order.status !== "delivered" && (
+                    <Button
+                      onClick={() => saveTracking({ notify: true, markShipped: true })}
+                      disabled={busy !== null || !!trackUrlErr}
+                      className="w-full justify-start"
+                      style={{ backgroundColor: "#1C58D9", color: "#fff" }}
+                      title={trackUrlErr || undefined}
+                    >
+                      <Send size={14} className="mr-2" />
+                      {busy === "TRACKING" ? "Envoi…" : "Marquer expédié & notifier l'acheteur"}
+                    </Button>
+                  )}
+                  <Button
+                    onClick={() => saveTracking({ notify: true, markShipped: false })}
+                    disabled={busy !== null || !!trackUrlErr}
+                    className="w-full justify-start"
+                    variant={order.status === "shipped" ? "default" : "outline"}
+                    style={order.status === "shipped" ? { backgroundColor: "#1C58D9", color: "#fff" } : undefined}
+                    title={trackUrlErr || undefined}
+                  >
+                    <Send size={14} className="mr-2" />
+                    {busy === "TRACKING" ? "Envoi…" : "Enregistrer & renotifier l'acheteur"}
                   </Button>
-                </a>
-              )}
-            </div>
+                  <Button
+                    onClick={() => saveTracking({ notify: false, markShipped: false })}
+                    disabled={busy !== null || !!trackUrlErr}
+                    className="w-full justify-start"
+                    variant="outline"
+                    title={trackUrlErr || undefined}
+                  >
+                    {busy === "TRACKING" ? "Enregistrement…" : "Enregistrer sans email"}
+                  </Button>
+                  <Button
+                    onClick={dryRunNotify}
+                    disabled={busy !== null}
+                    className="w-full justify-start"
+                    variant="secondary"
+                    title="Simule l'envoi sans rien envoyer et vérifie qu'un seul email partirait (idempotency)"
+                  >
+                    {busy === "TRACKING" ? "Test…" : "🧪 Tester (dry-run) — vérifier l'envoi unique"}
+                  </Button>
+                  {trackUrl.trim() && !trackUrlErr && (
+                    <a href={trackUrl.trim()} target="_blank" rel="noreferrer" className="block">
+                      <Button className="w-full justify-start" variant="ghost">
+                        <ExternalLink size={14} className="mr-2" /> Ouvrir le suivi
+                      </Button>
+                    </a>
+                  )}
+                </div>
+              );
+            })()}
             <p className="text-[11px] text-slate-400">
               L'URL de suivi et le n° de colis sont visibles sur la page publique de la commande et
               inclus dans l'email d'expédition.

@@ -24,6 +24,20 @@ interface StepConfig {
 }
 
 function getPipelineSteps(country: string, mode: string): StepConfig[] {
+  if (mode === "daily_stale_refresh") {
+    return [
+      {
+        name: "offers_detail",
+        label: "Mise à jour offres stale",
+        functionName: "sync-qogita-offers-detail",
+        params: { country },
+        required: true,
+        loopBatch: true,
+        batchSize: 100,
+      },
+    ];
+  }
+
   if (mode === "incremental") {
     // Daily incremental: best-price offer recovery + multi-vendor refresh so ALL
     // offers (incl. secondary sellers) keep a synced_at < 24h. Runs 3x/day via cron.
@@ -240,11 +254,13 @@ async function executePipeline({
   runId,
   steps,
   stepOnly,
+  sharedParams,
 }: {
   supabase: any;
   runId: string;
   steps: StepConfig[];
   stepOnly?: string;
+  sharedParams?: Record<string, unknown>;
 }) {
   const updateStep = async (idx: number, status: string, stats?: unknown) => {
     const { data: current } = await supabase
@@ -288,7 +304,10 @@ async function executePipeline({
         let iterations = 0;
 
         while (iterations < MAX_LOOP_ITERATIONS) {
-          const result = (await callEdgeFunction(step.functionName, step.params)) as any;
+          const result = (await callEdgeFunction(step.functionName, {
+            ...step.params,
+            ...(sharedParams ?? {}),
+          })) as any;
           if (result?.timeout) {
             throw new Error(result.message || `Timeout sur ${step.label}`);
           }
@@ -327,7 +346,10 @@ async function executePipeline({
 
         await updateStep(i, "completed", { totalProcessed, iterations });
       } else {
-        const result = await callEdgeFunction(step.functionName, step.params);
+        const result = await callEdgeFunction(step.functionName, {
+          ...step.params,
+          ...(sharedParams ?? {}),
+        });
         if (step.waitsForSyncLog && (result as any)?.sync_log_id) {
           await waitForSyncLogCompletion(supabase, (result as any).sync_log_id);
         }
@@ -377,10 +399,35 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const country = body.country || "BE";
     const triggeredBy = body.triggeredBy || "manual";
-    const mode = body.mode || "incremental"; // "incremental" (default) or "full"
+    const mode = body.mode || "incremental"; // "incremental" (default), "full" or "daily_stale_refresh"
     const stepOnly = body.stepOnly;
+    const batchSize = Math.min(Math.max(Number(body.batchSize ?? 500), 1), 1000);
+    let resyncLogId: string | null = null;
 
     const STEPS = getPipelineSteps(country, mode);
+
+    if (mode === "daily_stale_refresh") {
+      const { data: enqueueResult, error: enqueueError } = await supabase.rpc("enqueue_qogita_resync_batch", {
+        _batch_size: batchSize,
+        _mode: "daily_stale_refresh",
+      });
+      if (enqueueError) throw enqueueError;
+
+      const queued = enqueueResult as any;
+      if (queued?.rate_limited || Number(queued?.enqueued ?? 0) <= 0 || !queued?.log_id) {
+        return new Response(JSON.stringify({
+          success: true,
+          runId: null,
+          status: queued?.rate_limited ? "rate_limited" : "nothing_to_sync",
+          enqueue: queued,
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+
+      resyncLogId = String(queued.log_id);
+    }
 
     // Generate sync_run_id for full runs — stamped on every Qogita upsert
     // so sweep A can identify entities not touched by this run.
@@ -429,6 +476,7 @@ serve(async (req) => {
       runId,
       steps: STEPS,
       stepOnly,
+      sharedParams: resyncLogId ? { resync_log_id: resyncLogId } : undefined,
     }).catch(async (error: any) => {
 
       console.error("run-sync-pipeline background error:", error);
@@ -449,7 +497,7 @@ serve(async (req) => {
       await backgroundRun;
     }
 
-    return new Response(JSON.stringify({ success: true, runId, status: "started" }), {
+    return new Response(JSON.stringify({ success: true, runId, resyncLogId, status: "started" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 202,
     });

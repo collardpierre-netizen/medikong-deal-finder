@@ -2543,6 +2543,7 @@ export type Database = {
           focal_x: number
           focal_y: number
           id: string
+          image_fit: string
           image_url: string
           image_url_mobile: string | null
           is_active: boolean
@@ -2562,6 +2563,7 @@ export type Database = {
           focal_x?: number
           focal_y?: number
           id?: string
+          image_fit?: string
           image_url: string
           image_url_mobile?: string | null
           is_active?: boolean
@@ -2581,6 +2583,7 @@ export type Database = {
           focal_x?: number
           focal_y?: number
           id?: string
+          image_fit?: string
           image_url?: string
           image_url_mobile?: string | null
           is_active?: boolean

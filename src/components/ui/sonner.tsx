@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useTheme } from "next-themes";
 import { Toaster as Sonner, toast, useSonner } from "sonner";
 import { useToastFocusTrap } from "@/hooks/useToastFocusTrap";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
@@ -13,6 +14,7 @@ const ToastBackdrop = () => {
   const { toasts } = useSonner();
   const active = !!toasts && toasts.length > 0;
   const trapRef = useToastFocusTrap(active);
+  useScrollLock(active);
 
   useEffect(() => {
     if (!active) return;

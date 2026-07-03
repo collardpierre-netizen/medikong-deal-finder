@@ -8,6 +8,7 @@ export function Toaster() {
   const { toasts, dismiss } = useToast();
   const hasVisible = toasts.some((t) => t.open !== false);
   const trapRef = useToastFocusTrap(hasVisible);
+  useScrollLock(hasVisible);
   const baseId = useId();
 
   useEffect(() => {

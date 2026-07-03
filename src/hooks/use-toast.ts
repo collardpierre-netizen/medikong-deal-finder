@@ -3,7 +3,10 @@ import * as React from "react";
 import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
 
 const TOAST_LIMIT = 1;
-const TOAST_REMOVE_DELAY = 1000000;
+// Durée d'affichage par défaut d'un toast (ms) avant auto-dismiss.
+const TOAST_AUTO_DISMISS_MS = 2500;
+// Délai entre dismiss (fin d'animation) et retrait effectif de la file.
+const TOAST_REMOVE_DELAY = 400;
 
 type ToasterToast = ToastProps & {
   id: string;

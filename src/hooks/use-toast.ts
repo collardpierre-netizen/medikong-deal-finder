@@ -159,6 +159,15 @@ function toast({ ...props }: Toast) {
     },
   });
 
+  // Auto-dismiss : garantit qu'aucun toast ne reste actif en permanence.
+  const autoDismissMs =
+    typeof (props as { duration?: number }).duration === "number"
+      ? (props as { duration?: number }).duration!
+      : TOAST_AUTO_DISMISS_MS;
+  if (autoDismissMs > 0 && Number.isFinite(autoDismissMs)) {
+    setTimeout(dismiss, autoDismissMs);
+  }
+
   return {
     id: id,
     dismiss,

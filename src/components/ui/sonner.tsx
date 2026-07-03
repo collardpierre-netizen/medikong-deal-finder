@@ -31,7 +31,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
         duration={2500}
         visibleToasts={1}
         closeButton
-        className="toaster group"
+        offset="50vh"
+        className="toaster group [&_[data-sonner-toaster]]:!top-1/2 [&_[data-sonner-toaster]]:!-translate-y-1/2"
         toastOptions={{
           duration: 2500,
           classNames: {

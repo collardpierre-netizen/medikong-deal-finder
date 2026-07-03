@@ -2,6 +2,7 @@ import { useEffect, useId } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Toast, ToastClose, ToastDescription, ToastProvider, ToastTitle, ToastViewport } from "@/components/ui/toast";
 import { useToastFocusTrap } from "@/hooks/useToastFocusTrap";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 export function Toaster() {
   const { toasts, dismiss } = useToast();

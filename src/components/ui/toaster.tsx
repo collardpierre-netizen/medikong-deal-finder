@@ -3,9 +3,16 @@ import { Toast, ToastClose, ToastDescription, ToastProvider, ToastTitle, ToastVi
 
 export function Toaster() {
   const { toasts } = useToast();
+  const hasVisible = toasts.some((t) => t.open !== false);
 
   return (
     <ToastProvider>
+      {hasVisible && (
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-0 z-[99] bg-foreground/20 backdrop-blur-[1px] animate-in fade-in duration-150"
+        />
+      )}
       {toasts.map(function ({ id, title, description, action, ...props }) {
         return (
           <Toast key={id} {...props}>

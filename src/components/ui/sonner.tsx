@@ -1,20 +1,39 @@
+import { useEffect } from "react";
 import { useTheme } from "next-themes";
 import { Toaster as Sonner, toast, useSonner } from "sonner";
+import { useToastFocusTrap } from "@/hooks/useToastFocusTrap";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
 /**
- * Backdrop grisé affiché tant qu'un toast est visible.
- * Non bloquant (pointer-events-none) : l'UI reste utilisable,
- * mais le focus visuel est ramené au centre de l'écran.
+ * Backdrop grisé cliquable + Escape pour fermer + focus trap.
+ * Recentre l'attention sur le toast sans figer l'app plus longtemps que nécessaire.
  */
 const ToastBackdrop = () => {
   const { toasts } = useSonner();
-  if (!toasts || toasts.length === 0) return null;
+  const active = !!toasts && toasts.length > 0;
+  const trapRef = useToastFocusTrap(active);
+
+  useEffect(() => {
+    if (!active) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        toast.dismiss();
+      }
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [active]);
+
+  if (!active) return null;
   return (
     <div
-      aria-hidden
-      className="fixed inset-0 z-[90] bg-foreground/20 backdrop-blur-[1px] pointer-events-none animate-in fade-in duration-150"
+      ref={trapRef}
+      tabIndex={-1}
+      role="presentation"
+      onClick={() => toast.dismiss()}
+      className="fixed inset-0 z-[90] bg-foreground/20 backdrop-blur-[1px] animate-in fade-in duration-150 outline-none"
     />
   );
 };

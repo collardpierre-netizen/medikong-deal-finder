@@ -31,7 +31,9 @@ const ToastBackdrop = () => {
     <div
       ref={trapRef}
       tabIndex={-1}
-      role="presentation"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Notification"
       onClick={() => toast.dismiss()}
       className="fixed inset-0 z-[90] bg-foreground/20 backdrop-blur-[1px] animate-in fade-in duration-150 outline-none"
     />

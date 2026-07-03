@@ -13,7 +13,11 @@ export function useToastFocusTrap(active: boolean) {
     const container = ref.current;
     if (!container) return;
 
-    const previouslyFocused = document.activeElement as HTMLElement | null;
+    // Capture du déclencheur : élément focusé au moment où le popup s'ouvre.
+    // On ignore <body>/null (pas un vrai déclencheur clavier).
+    const activeEl = document.activeElement as HTMLElement | null;
+    const trigger =
+      activeEl && activeEl !== document.body && typeof activeEl.focus === "function" ? activeEl : null;
 
     const getFocusables = () =>
       Array.from(
@@ -35,11 +39,11 @@ export function useToastFocusTrap(active: boolean) {
       }
       const first = items[0];
       const last = items[items.length - 1];
-      const active = document.activeElement as HTMLElement | null;
-      if (e.shiftKey && active === first) {
+      const activeItem = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && activeItem === first) {
         e.preventDefault();
         last.focus();
-      } else if (!e.shiftKey && active === last) {
+      } else if (!e.shiftKey && activeItem === last) {
         e.preventDefault();
         first.focus();
       }
@@ -48,7 +52,14 @@ export function useToastFocusTrap(active: boolean) {
     container.addEventListener("keydown", handleKey);
     return () => {
       container.removeEventListener("keydown", handleKey);
-      previouslyFocused?.focus?.();
+      // Restauration du focus sur le déclencheur si toujours présent dans le DOM et focusable.
+      if (trigger && document.contains(trigger)) {
+        try {
+          trigger.focus({ preventScroll: true });
+        } catch {
+          trigger.focus();
+        }
+      }
     };
   }, [active]);
 

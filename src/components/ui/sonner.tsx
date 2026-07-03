@@ -14,6 +14,7 @@ const ToastBackdrop = () => {
   const { toasts } = useSonner();
   const active = !!toasts && toasts.length > 0;
   const trapRef = useToastFocusTrap(active);
+  useScrollLock(active);
 
   useEffect(() => {
     if (!active) return;

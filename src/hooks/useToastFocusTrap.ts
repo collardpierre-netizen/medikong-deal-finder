@@ -26,9 +26,19 @@ export function useToastFocusTrap(active: boolean) {
         ),
       ).filter((el) => !el.hasAttribute("disabled") && el.offsetParent !== null);
 
-    // Focus initial : premier bouton, sinon le container.
+    const isCloseButton = (el: HTMLElement) => {
+      if (el.hasAttribute("toast-close") || el.hasAttribute("data-toast-close")) return true;
+      const label = (el.getAttribute("aria-label") || "").toLowerCase();
+      if (label.includes("close") || label.includes("fermer") || label.includes("dismiss")) return true;
+      if (el.dataset?.dismiss === "toast") return true;
+      return false;
+    };
+
+    // Focus initial : premier élément interactif hors bouton de fermeture,
+    // sinon fallback sur le bouton de fermeture, sinon le container.
     const focusables = getFocusables();
-    (focusables[0] ?? container).focus();
+    const primary = focusables.find((el) => !isCloseButton(el));
+    (primary ?? focusables[0] ?? container).focus();
 
     const handleKey = (e: KeyboardEvent) => {
       if (e.key !== "Tab") return;

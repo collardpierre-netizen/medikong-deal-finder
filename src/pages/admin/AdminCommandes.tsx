@@ -349,6 +349,7 @@ const AdminCommandes = () => {
       hasCost: hasAnyCost,
       costTotal,
       paymentTerms: o.payment_method || "invoice",
+      paymentStatus: (o as any).payment_status || null,
       dueDate: o.payment_due_date ? new Date(o.payment_due_date).toLocaleDateString("fr-BE") : "—",
       status: o.status as "draft" | "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled",
       isTest: Boolean((o as any).is_test),

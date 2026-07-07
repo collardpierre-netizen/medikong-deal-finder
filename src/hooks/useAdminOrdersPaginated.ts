@@ -11,6 +11,9 @@ export type OrdersPageFilters = {
   forecastFilter?: "all" | "real" | "forecast";
   hideTest?: boolean;
   hideDeleted?: boolean;
+  buyerType?: string;                     // 'all' | customers.customer_type
+  paymentStatus?: string;                 // 'all' | orders.payment_status
+  billingStatus?: string;                 // 'all' | to_invoice/invoiced/partial/paid/overdue/cancelled/na
 };
 
 export type OrdersPage = {
@@ -56,6 +59,9 @@ export const useAdminOrdersPaginated = (
         _hide_deleted: filters.hideDeleted ?? true,
         _limit: pageSize,
         _offset: offset,
+        _buyer_type: filters.buyerType ?? "all",
+        _payment_status: filters.paymentStatus ?? "all",
+        _billing_status: filters.billingStatus ?? "all",
       });
       if (error) throw error;
 

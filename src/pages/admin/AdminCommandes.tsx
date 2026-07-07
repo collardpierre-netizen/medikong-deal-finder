@@ -136,6 +136,9 @@ const AdminCommandes = () => {
   const [onlyWithCommission, setOnlyWithCommission] = useState(false);
   const [forecastFilter, setForecastFilter] = useState<"all" | "real" | "forecast">("all");
   const [selectedVendorIds, setSelectedVendorIds] = useState<string[]>([]);
+  const [buyerType, setBuyerType] = useState<string>("all");
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("all");
+  const [billingStatusFilter, setBillingStatusFilter] = useState<string>("all");
   const [vendorFilterOpen, setVendorFilterOpen] = useState(false);
   const [vendorSearch, setVendorSearch] = useState("");
   const [purgeOpen, setPurgeOpen] = useState(false);
@@ -172,6 +175,7 @@ const AdminCommandes = () => {
   const filtersKey = JSON.stringify({
     statusFilter, search, hideTest, period, dateFrom, dateTo,
     onlyWithCommission, forecastFilter, selectedVendorIds,
+    buyerType, paymentStatusFilter, billingStatusFilter,
   });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useState(() => {}); // (kept intentionally to preserve prior order of hooks; setPage handled below)
@@ -192,6 +196,9 @@ const AdminCommandes = () => {
       forecastFilter,
       hideTest,
       hideDeleted: true,
+      buyerType,
+      paymentStatus: paymentStatusFilter,
+      billingStatus: billingStatusFilter,
     },
     page,
     pageSize,
@@ -727,6 +734,47 @@ const AdminCommandes = () => {
               <CalendarClock size={12} />
               Prévisionnelles uniquement
             </button>
+            <select
+              value={buyerType}
+              onChange={(e) => setBuyerType(e.target.value)}
+              className="px-3 py-2 rounded-md text-[12px] font-medium outline-none cursor-pointer"
+              style={{ backgroundColor: buyerType !== "all" ? "#EFF6FF" : "#fff", border: "1px solid #E2E8F0", color: buyerType !== "all" ? "#1B5BDA" : "#616B7C" }}
+              title="Filtrer par type d'acheteur"
+            >
+              <option value="all">Tous acheteurs</option>
+              <option value="pharmacy">Pharmacie</option>
+              <option value="nursing_home">MRS</option>
+              <option value="doctor">Médecin</option>
+              <option value="retail">Détail / Parapharmacie</option>
+              <option value="other">Autre</option>
+            </select>
+            <select
+              value={paymentStatusFilter}
+              onChange={(e) => setPaymentStatusFilter(e.target.value)}
+              className="px-3 py-2 rounded-md text-[12px] font-medium outline-none cursor-pointer"
+              style={{ backgroundColor: paymentStatusFilter !== "all" ? "#EFF6FF" : "#fff", border: "1px solid #E2E8F0", color: paymentStatusFilter !== "all" ? "#1B5BDA" : "#616B7C" }}
+              title="Filtrer par statut de paiement"
+            >
+              <option value="all">Tous paiements</option>
+              <option value="pending">Paiement en attente</option>
+              <option value="paid">Payées</option>
+            </select>
+            <select
+              value={billingStatusFilter}
+              onChange={(e) => setBillingStatusFilter(e.target.value)}
+              className="px-3 py-2 rounded-md text-[12px] font-medium outline-none cursor-pointer"
+              style={{ backgroundColor: billingStatusFilter !== "all" ? "#EFF6FF" : "#fff", border: "1px solid #E2E8F0", color: billingStatusFilter !== "all" ? "#1B5BDA" : "#616B7C" }}
+              title="Filtrer par statut de facturation"
+            >
+              <option value="all">Toute facturation</option>
+              <option value="to_invoice">À facturer</option>
+              <option value="invoiced">Facturée</option>
+              <option value="partial">Part. payée</option>
+              <option value="paid">Payée</option>
+              <option value="overdue">En retard</option>
+              <option value="cancelled">Annulée</option>
+              <option value="na">Non applicable</option>
+            </select>
             <Popover open={vendorFilterOpen} onOpenChange={setVendorFilterOpen}>
               <PopoverTrigger asChild>
                 <button

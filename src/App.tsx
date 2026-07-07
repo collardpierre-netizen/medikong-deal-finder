@@ -395,6 +395,8 @@ const App = () => (
             <Route path="/checkout" element={<LP><CheckoutPage /></LP>} />
             <Route path="/confirmation" element={<LP><ConfirmationPage /></LP>} />
             <Route path="/commande/:id" element={<LP><OrderDetailPage /></LP>} />
+            <Route path="/commande/confirmer/:token" element={<LP><DeliveryConfirmationPage /></LP>} />
+            <Route path="/commande/:id/confirmer" element={<LP><DeliveryConfirmationPage /></LP>} />
             <Route path="/connexion" element={<LP><LoginPage /></LP>} />
             <Route path="/select-account" element={<LP><SelectAccountPage /></LP>} />
             <Route path="/login" element={<Navigate to="/connexion" replace />} />

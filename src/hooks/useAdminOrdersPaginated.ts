@@ -64,6 +64,8 @@ export const useAdminOrdersPaginated = (
         _buyer_type: filters.buyerType ?? "all",
         _payment_status: filters.paymentStatus ?? "all",
         _billing_status: filters.billingStatus ?? "all",
+        _sort_by: filters.sortBy ?? "date",
+        _sort_dir: filters.sortDir ?? "desc",
       });
       if (error) throw error;
 

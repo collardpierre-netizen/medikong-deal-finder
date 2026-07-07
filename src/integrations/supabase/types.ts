@@ -24265,6 +24265,27 @@ export type Database = {
             }
             Returns: Json
           }
+        | {
+            Args: {
+              _billing_status?: string
+              _buyer_type?: string
+              _date_from?: string
+              _date_to?: string
+              _forecast_filter?: string
+              _hide_deleted?: boolean
+              _hide_test?: boolean
+              _limit?: number
+              _offset?: number
+              _only_with_commission?: boolean
+              _payment_status?: string
+              _search?: string
+              _sort_by?: string
+              _sort_dir?: string
+              _status?: string
+              _vendor_ids?: string[]
+            }
+            Returns: Json
+          }
       admin_list_pending_invitations: {
         Args: never
         Returns: {

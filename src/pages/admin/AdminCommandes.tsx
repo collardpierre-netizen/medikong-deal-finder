@@ -685,6 +685,16 @@ const AdminCommandes = () => {
             Réinitialiser
           </button>
         )}
+        {(billingUpdatedFrom || billingUpdatedTo) && (
+          <span
+            className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-semibold"
+            style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA", border: "1px solid #BFDBFE" }}
+            aria-live="polite"
+          >
+            {isFetching && <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: "#1B5BDA" }} />}
+            {totalCount.toLocaleString("fr-FR")} commande{totalCount > 1 ? "s" : ""} trouvée{totalCount > 1 ? "s" : ""}
+          </span>
+        )}
         <span className="text-[11px]" style={{ color: "#8B95A5" }}>
           Filtre sur la dernière modification connue d'une facture rattachée à la commande.
         </span>

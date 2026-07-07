@@ -648,6 +648,14 @@ const AdminCommandes = () => {
               Réinitialiser
             </button>
           )}
+          <span
+            className="ml-1 inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-semibold"
+            style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA", border: "1px solid #BFDBFE" }}
+            aria-live="polite"
+          >
+            {isFetching && <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: "#1B5BDA" }} />}
+            {totalCount.toLocaleString("fr-FR")} commande{totalCount > 1 ? "s" : ""}
+          </span>
         </div>
         <div className="flex items-center gap-1.5 text-[12px] font-medium" style={{ color: "#616B7C" }}>
           <CalendarClock size={14} style={{ color: "#8B95A5" }} />

@@ -906,6 +906,87 @@ const AdminCommandeDetail = () => {
             </p>
           </div>
 
+          {order.status === "delivered" && (
+            <div className="bg-white border rounded-lg p-4 space-y-3" style={{ borderColor: "#E2E8F0" }}>
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Send size={14} /> Confirmation de réception
+              </div>
+              {(order as any).delivery_confirmation_completed_at ? (
+                <div className="rounded-md bg-green-50 border border-green-200 p-3 text-sm text-green-800">
+                  <div className="font-semibold mb-0.5 flex items-center gap-2">
+                    <CheckCircle2 size={14} /> Confirmée par l'acheteur
+                  </div>
+                  <div className="text-[12px]">
+                    Le {new Date((order as any).delivery_confirmation_completed_at).toLocaleString("fr-BE")}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-[12px] text-slate-500">
+                  {(order as any).delivery_confirmation_requested_at
+                    ? <>Email envoyé le {new Date((order as any).delivery_confirmation_requested_at).toLocaleString("fr-BE")} · aucune confirmation reçue à ce jour.</>
+                    : <>Aucune demande de confirmation envoyée pour l'instant.</>}
+                </div>
+              )}
+              <Button
+                onClick={async () => {
+                  setBusy("DELIVERY_CONF");
+                  try {
+                    const { data, error } = await supabase.functions.invoke("request-delivery-confirmation", {
+                      body: { orderId: order.id, appOrigin: window.location.origin },
+                    });
+                    if (error) throw error;
+                    if ((data as any)?.skipped) {
+                      toast.info("Déjà confirmée par l'acheteur — email non renvoyé.");
+                    } else {
+                      toast.success(`Email de confirmation renvoyé à ${(data as any)?.recipient || "l'acheteur"}`);
+                    }
+                    queryClient.invalidateQueries({ queryKey: ["admin-order", id] });
+                  } catch (e: any) {
+                    toast.error("Échec envoi : " + (e?.message || "erreur"));
+                  } finally {
+                    setBusy(null);
+                  }
+                }}
+                disabled={busy !== null || !!(order as any).delivery_confirmation_completed_at}
+                className="w-full justify-start"
+                style={{ backgroundColor: "#1C58D9", color: "#fff" }}
+              >
+                <Send size={14} className="mr-2" />
+                {busy === "DELIVERY_CONF" ? "Envoi…" : "Renvoyer la demande de confirmation"}
+              </Button>
+              <Button
+                onClick={async () => {
+                  setBusy("DELIVERY_CONF");
+                  try {
+                    const { data, error } = await supabase.functions.invoke("request-delivery-confirmation", {
+                      body: { orderId: order.id, appOrigin: window.location.origin, dryRun: true },
+                    });
+                    if (error) throw error;
+                    const d = data as any;
+                    if (d?.skipped) toast.info("Dry-run : déjà confirmée — aucun envoi ne partirait.");
+                    else toast.success(`Dry-run OK · destinataire ${d?.recipient} · key ${d?.idempotencyKey}`);
+                  } catch (e: any) {
+                    toast.error("Dry-run échec : " + (e?.message || "erreur"));
+                  } finally {
+                    setBusy(null);
+                  }
+                }}
+                disabled={busy !== null}
+                className="w-full justify-start"
+                variant="secondary"
+                title="Simule l'envoi (idempotency key réutilisée si nécessaire)"
+              >
+                {busy === "DELIVERY_CONF" ? "Test…" : "🧪 Tester (dry-run)"}
+              </Button>
+              <p className="text-[11px] text-slate-400">
+                Le token magic-link est régénéré côté serveur (RPC <code>create_buyer_delivery_token</code>) et l'idempotency key <code>order-delivery-confirmation-&lt;id&gt;</code> évite les doublons côté file d'attente email.
+              </p>
+            </div>
+          )}
+
+
+
+
 
 
           {publicUrl && (

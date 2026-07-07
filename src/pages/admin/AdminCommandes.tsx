@@ -1434,25 +1434,60 @@ const AdminCommandes = () => {
                     {[25, 50, 100, 200].map(n => <option key={n} value={n}>{n}</option>)}
                   </select>
                 </label>
-                <button
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page <= 1 || isFetching}
-                  className="px-3 py-1.5 rounded text-[12px] font-semibold inline-flex items-center gap-1 disabled:opacity-40"
-                  style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#1D2530" }}
-                >
-                  <ChevronLeft size={12} /> Précédent
-                </button>
-                <span className="text-[11px] font-semibold" style={{ color: "#1D2530" }}>
-                  {page} / {Math.max(1, Math.ceil(totalCount / pageSize))}
-                </span>
-                <button
-                  onClick={() => setPage(p => (p * pageSize < totalCount ? p + 1 : p))}
-                  disabled={page * pageSize >= totalCount || isFetching}
-                  className="px-3 py-1.5 rounded text-[12px] font-semibold inline-flex items-center gap-1 disabled:opacity-40"
-                  style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#1D2530" }}
-                >
-                  Suivant <ChevronRight size={12} />
-                </button>
+                {(() => {
+                  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+                  const pages: (number | "...")[] = [];
+                  if (totalPages <= 7) {
+                    for (let i = 1; i <= totalPages; i++) pages.push(i);
+                  } else {
+                    pages.push(1);
+                    if (page > 3) pages.push("...");
+                    for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) pages.push(i);
+                    if (page < totalPages - 2) pages.push("...");
+                    pages.push(totalPages);
+                  }
+                  return (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page <= 1 || isFetching}
+                        className="p-1.5 rounded text-[12px] inline-flex items-center disabled:opacity-40"
+                        style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#1D2530" }}
+                        aria-label="Page précédente"
+                      >
+                        <ChevronLeft size={14} />
+                      </button>
+                      {pages.map((p, i) =>
+                        p === "..." ? (
+                          <span key={`e${i}`} className="px-1.5 text-[11px]" style={{ color: "#8B95A5" }}>…</span>
+                        ) : (
+                          <button
+                            key={p}
+                            onClick={() => setPage(p)}
+                            disabled={isFetching && p !== page}
+                            className="min-w-7 h-7 px-2 rounded text-[11px] font-semibold transition-colors"
+                            style={
+                              p === page
+                                ? { backgroundColor: "#1C58D9", border: "1px solid #1C58D9", color: "#fff" }
+                                : { backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#1D2530" }
+                            }
+                          >
+                            {p}
+                          </button>
+                        )
+                      )}
+                      <button
+                        onClick={() => setPage(p => (p * pageSize < totalCount ? p + 1 : p))}
+                        disabled={page * pageSize >= totalCount || isFetching}
+                        className="p-1.5 rounded text-[12px] inline-flex items-center disabled:opacity-40"
+                        style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#1D2530" }}
+                        aria-label="Page suivante"
+                      >
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           )}

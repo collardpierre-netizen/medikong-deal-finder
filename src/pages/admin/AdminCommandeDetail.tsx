@@ -1011,7 +1011,35 @@ const AdminCommandeDetail = () => {
               >
                 ✉️ Envoyer un email de test (collardpierre@gmail.com)
               </Button>
-              <p className="text-[11px] text-slate-400">
+              <Button
+                onClick={async () => {
+                  setBusy("DELIVERY_CONF");
+                  try {
+                    const { data: sess } = await supabase.auth.getSession();
+                    const token = sess.session?.access_token;
+                    if (!token) throw new Error("Session admin introuvable");
+                    const url = `https://iokwqxhhpblcbkrxgcje.supabase.co/functions/v1/preview-order-delivery-confirmation?orderId=${encodeURIComponent(order.id)}`;
+                    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const html = await res.text();
+                    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+                    const blobUrl = URL.createObjectURL(blob);
+                    window.open(blobUrl, "_blank", "noopener");
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+                  } catch (e: any) {
+                    toast.error("Aperçu échec : " + (e?.message || "erreur"));
+                  } finally {
+                    setBusy(null);
+                  }
+                }}
+                disabled={busy !== null}
+                className="w-full justify-start"
+                variant="outline"
+                title="Ouvre le rendu HTML du template dans un nouvel onglet"
+              >
+                👁️ Aperçu mail (rendu HTML)
+              </Button>
+
                 Le token magic-link est régénéré côté serveur (RPC <code>create_buyer_delivery_token</code>) et l'idempotency key <code>order-delivery-confirmation-&lt;id&gt;</code> évite les doublons côté file d'attente email.
               </p>
             </div>

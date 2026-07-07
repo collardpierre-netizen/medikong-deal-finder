@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
 
   const { data: customer } = await admin
     .from('customers')
-    .select('email, company_name, first_name')
+    .select('email, company_name')
     .eq('id', order.customer_id)
     .maybeSingle()
   const recipientEmail = customer?.email
@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
 
   const templateData = {
     orderNumber: order.order_number,
-    customerName: customer?.first_name || customer?.company_name || undefined,
+    customerName: customer?.company_name || undefined,
     trackingUrl: order.tracking_url ?? undefined,
     trackingCarrier: order.tracking_carrier ?? undefined,
     trackingNumber: order.tracking_number ?? undefined,

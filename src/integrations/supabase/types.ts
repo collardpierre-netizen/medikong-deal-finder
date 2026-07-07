@@ -25444,7 +25444,9 @@ export type Database = {
         Args: { _account_id: string; _kind: string }
         Returns: boolean
       }
-      is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_admin:
+        | { Args: never; Returns: boolean }
+        | { Args: { _user_id: string }; Returns: boolean }
       is_customer_order: { Args: { _order_id: string }; Returns: boolean }
       is_order_vendor: { Args: { _order_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }

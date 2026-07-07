@@ -657,6 +657,31 @@ const AdminCommandes = () => {
         </div>
       </div>
 
+      {/* Filtre secondaire : dernière mise à jour facturation */}
+      <div className="flex items-center flex-wrap gap-2 mb-4">
+        <span className="px-2 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>MàJ facturation</span>
+        <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>
+          Du
+          <input type="date" value={billingUpdatedFrom} onChange={(e) => setBillingUpdatedFrom(e.target.value)}
+            className="px-2 py-1 rounded-md text-[12px] font-medium" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#1D2530" }} />
+        </label>
+        <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>
+          Au
+          <input type="date" value={billingUpdatedTo} onChange={(e) => setBillingUpdatedTo(e.target.value)}
+            className="px-2 py-1 rounded-md text-[12px] font-medium" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#1D2530" }} />
+        </label>
+        {(billingUpdatedFrom || billingUpdatedTo) && (
+          <button onClick={() => { setBillingUpdatedFrom(""); setBillingUpdatedTo(""); }}
+            className="px-2 py-1 rounded-md text-[11px] font-semibold"
+            style={{ backgroundColor: "#FEF2F2", color: "#B91C1C", border: "1px solid #FCA5A5" }}>
+            Réinitialiser
+          </button>
+        )}
+        <span className="text-[11px]" style={{ color: "#8B95A5" }}>
+          Filtre sur la dernière modification connue d'une facture rattachée à la commande.
+        </span>
+      </div>
+
       <div className="grid grid-cols-7 gap-3 mb-5">
         <KpiCard icon={TrendingUp} label={`GMV total (${PERIODS.find(p => p.key === period)?.label})`} value={`${fmt(gmvDay)} EUR`} />
         <KpiCard icon={ShoppingCart} label="Commandes" value={String(totalCount)} iconColor="#7C3AED" iconBg="#F5F3FF" />

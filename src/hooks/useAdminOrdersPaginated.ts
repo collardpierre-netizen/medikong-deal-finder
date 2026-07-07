@@ -11,6 +11,9 @@ export type OrdersPageFilters = {
   forecastFilter?: "all" | "real" | "forecast";
   hideTest?: boolean;
   hideDeleted?: boolean;
+  buyerType?: string;                     // 'all' | customers.customer_type
+  paymentStatus?: string;                 // 'all' | orders.payment_status
+  billingStatus?: string;                 // 'all' | to_invoice/invoiced/partial/paid/overdue/cancelled/na
 };
 
 export type OrdersPage = {

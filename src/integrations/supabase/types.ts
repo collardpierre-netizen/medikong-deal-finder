@@ -1452,6 +1452,72 @@ export type Database = {
         }
         Relationships: []
       }
+      buyer_order_tokens: {
+        Row: {
+          created_at: string
+          customer_id: string
+          expires_at: string
+          order_id: string
+          order_number: string
+          token_hash: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          expires_at?: string
+          order_id: string
+          order_number: string
+          token_hash: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          expires_at?: string
+          order_id?: string
+          order_number?: string
+          token_hash?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_order_tokens_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_order_tokens_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "buyer_order_tokens_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "admin_orders_with_forecast_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_order_tokens_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_order_tokens_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders_visible_v"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buyer_p2p_listings: {
         Row: {
           accepted_at: string | null
@@ -7957,6 +8023,13 @@ export type Database = {
       }
       order_lines: {
         Row: {
+          buyer_confirmation_note: string | null
+          buyer_confirmation_source: string | null
+          buyer_confirmation_status:
+            | Database["public"]["Enums"]["buyer_line_confirmation_status"]
+            | null
+          buyer_confirmed_at: string | null
+          buyer_confirmed_quantity: number | null
           cancellation_reason: string | null
           cancelled_at: string | null
           commission_amount: number | null
@@ -7990,6 +8063,13 @@ export type Database = {
           vendor_id: string
         }
         Insert: {
+          buyer_confirmation_note?: string | null
+          buyer_confirmation_source?: string | null
+          buyer_confirmation_status?:
+            | Database["public"]["Enums"]["buyer_line_confirmation_status"]
+            | null
+          buyer_confirmed_at?: string | null
+          buyer_confirmed_quantity?: number | null
           cancellation_reason?: string | null
           cancelled_at?: string | null
           commission_amount?: number | null
@@ -8023,6 +8103,13 @@ export type Database = {
           vendor_id: string
         }
         Update: {
+          buyer_confirmation_note?: string | null
+          buyer_confirmation_source?: string | null
+          buyer_confirmation_status?:
+            | Database["public"]["Enums"]["buyer_line_confirmation_status"]
+            | null
+          buyer_confirmed_at?: string | null
+          buyer_confirmed_quantity?: number | null
           cancellation_reason?: string | null
           cancelled_at?: string | null
           commission_amount?: number | null
@@ -8498,6 +8585,8 @@ export type Database = {
           deleted_at: string | null
           deleted_by: string | null
           deleted_reason: string | null
+          delivery_confirmation_completed_at: string | null
+          delivery_confirmation_requested_at: string | null
           draft_fingerprint: string | null
           draft_payload: Json | null
           estimated_delivery_date: string | null
@@ -8548,6 +8637,8 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           deleted_reason?: string | null
+          delivery_confirmation_completed_at?: string | null
+          delivery_confirmation_requested_at?: string | null
           draft_fingerprint?: string | null
           draft_payload?: Json | null
           estimated_delivery_date?: string | null
@@ -8598,6 +8689,8 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           deleted_reason?: string | null
+          delivery_confirmation_completed_at?: string | null
+          delivery_confirmation_requested_at?: string | null
           draft_fingerprint?: string | null
           draft_payload?: Json | null
           estimated_delivery_date?: string | null
@@ -23713,6 +23806,10 @@ export type Database = {
     }
     Functions: {
       _account_hash_token: { Args: { _token: string }; Returns: string }
+      _apply_buyer_delivery_confirmation: {
+        Args: { _lines: Json; _order_id: string; _source: string }
+        Returns: Json
+      }
       _cat_tokens: { Args: { _label: string }; Returns: string[] }
       _current_user_buyer_ids: { Args: never; Returns: string[] }
       _is_admin_or_service: { Args: never; Returns: boolean }
@@ -23912,6 +24009,8 @@ export type Database = {
           deleted_at: string | null
           deleted_by: string | null
           deleted_reason: string | null
+          delivery_confirmation_completed_at: string | null
+          delivery_confirmation_requested_at: string | null
           draft_fingerprint: string | null
           draft_payload: Json | null
           estimated_delivery_date: string | null
@@ -24698,6 +24797,14 @@ export type Database = {
         Args: { _source_hash: string }
         Returns: undefined
       }
+      buyer_get_delivery_confirmation: {
+        Args: { _token: string }
+        Returns: Json
+      }
+      buyer_get_delivery_confirmation_by_auth: {
+        Args: { _order_id: string }
+        Returns: Json
+      }
       buyer_p2p_get_contact: {
         Args: { _listing_id: string; _role: string }
         Returns: {
@@ -24705,6 +24812,14 @@ export type Database = {
           email: string
           pharmacy_name: string
         }[]
+      }
+      buyer_submit_delivery_confirmation: {
+        Args: { _lines: Json; _token: string }
+        Returns: Json
+      }
+      buyer_submit_delivery_confirmation_by_auth: {
+        Args: { _lines: Json; _order_id: string }
+        Returns: Json
       }
       calculate_offer_price_for_quantity: {
         Args: { p_offer_id: string; p_quantity: number }
@@ -24803,6 +24918,10 @@ export type Database = {
           _type: string
         }
         Returns: undefined
+      }
+      create_buyer_delivery_token: {
+        Args: { _order_id: string }
+        Returns: string
       }
       create_offers_from_products: {
         Args: { _country_code?: string }
@@ -26402,6 +26521,13 @@ export type Database = {
           _tracking_url?: string
         }
         Returns: {
+          buyer_confirmation_note: string | null
+          buyer_confirmation_source: string | null
+          buyer_confirmation_status:
+            | Database["public"]["Enums"]["buyer_line_confirmation_status"]
+            | null
+          buyer_confirmed_at: string | null
+          buyer_confirmed_quantity: number | null
           cancellation_reason: string | null
           cancelled_at: string | null
           commission_amount: number | null
@@ -26459,6 +26585,11 @@ export type Database = {
         | "auto_resolved"
       alert_type: "market_price" | "external_offer"
       app_role: "super_admin" | "admin" | "moderator" | "user"
+      buyer_line_confirmation_status:
+        | "confirmed"
+        | "partial"
+        | "damaged"
+        | "refused"
       buyer_p2p_commission_payer: "seller" | "buyer" | "split"
       buyer_p2p_status:
         | "draft"
@@ -26828,6 +26959,12 @@ export const Constants = {
       alert_status: ["new", "seen", "in_progress", "resolved", "auto_resolved"],
       alert_type: ["market_price", "external_offer"],
       app_role: ["super_admin", "admin", "moderator", "user"],
+      buyer_line_confirmation_status: [
+        "confirmed",
+        "partial",
+        "damaged",
+        "refused",
+      ],
       buyer_p2p_commission_payer: ["seller", "buyer", "split"],
       buyer_p2p_status: [
         "draft",

@@ -14,6 +14,8 @@ export type OrdersPageFilters = {
   buyerType?: string;                     // 'all' | customers.customer_type
   paymentStatus?: string;                 // 'all' | orders.payment_status
   billingStatus?: string;                 // 'all' | to_invoice/invoiced/partial/paid/overdue/cancelled/na
+  sortBy?: "date" | "total" | "payment" | "billing";
+  sortDir?: "asc" | "desc";
 };
 
 export type OrdersPage = {

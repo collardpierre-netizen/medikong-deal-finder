@@ -149,6 +149,8 @@ const AdminCommandes = () => {
       setSortDir(key === "date" ? "desc" : "asc");
     }
   };
+  const [billingUpdatedFrom, setBillingUpdatedFrom] = useState<string>("");
+  const [billingUpdatedTo, setBillingUpdatedTo] = useState<string>("");
   const [vendorFilterOpen, setVendorFilterOpen] = useState(false);
   const [vendorSearch, setVendorSearch] = useState("");
   const [purgeOpen, setPurgeOpen] = useState(false);
@@ -186,6 +188,7 @@ const AdminCommandes = () => {
     statusFilter, search, hideTest, period, dateFrom, dateTo,
     onlyWithCommission, forecastFilter, selectedVendorIds,
     buyerType, paymentStatusFilter, billingStatusFilter,
+    sortBy, sortDir, billingUpdatedFrom, billingUpdatedTo,
   });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useState(() => {}); // (kept intentionally to preserve prior order of hooks; setPage handled below)
@@ -211,6 +214,8 @@ const AdminCommandes = () => {
       billingStatus: billingStatusFilter,
       sortBy,
       sortDir,
+      billingUpdatedFrom: billingUpdatedFrom ? new Date(billingUpdatedFrom + "T00:00:00").toISOString() : null,
+      billingUpdatedTo: billingUpdatedTo ? new Date(billingUpdatedTo + "T23:59:59").toISOString() : null,
     },
     page,
     pageSize,
@@ -650,6 +655,31 @@ const AdminCommandes = () => {
             ? `Du ${periodStartDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })} au ${periodEndDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}`
             : `Jusqu'au ${periodEndDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}`}
         </div>
+      </div>
+
+      {/* Filtre secondaire : dernière mise à jour facturation */}
+      <div className="flex items-center flex-wrap gap-2 mb-4">
+        <span className="px-2 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>MàJ facturation</span>
+        <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>
+          Du
+          <input type="date" value={billingUpdatedFrom} onChange={(e) => setBillingUpdatedFrom(e.target.value)}
+            className="px-2 py-1 rounded-md text-[12px] font-medium" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#1D2530" }} />
+        </label>
+        <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>
+          Au
+          <input type="date" value={billingUpdatedTo} onChange={(e) => setBillingUpdatedTo(e.target.value)}
+            className="px-2 py-1 rounded-md text-[12px] font-medium" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#1D2530" }} />
+        </label>
+        {(billingUpdatedFrom || billingUpdatedTo) && (
+          <button onClick={() => { setBillingUpdatedFrom(""); setBillingUpdatedTo(""); }}
+            className="px-2 py-1 rounded-md text-[11px] font-semibold"
+            style={{ backgroundColor: "#FEF2F2", color: "#B91C1C", border: "1px solid #FCA5A5" }}>
+            Réinitialiser
+          </button>
+        )}
+        <span className="text-[11px]" style={{ color: "#8B95A5" }}>
+          Filtre sur la dernière modification connue d'une facture rattachée à la commande.
+        </span>
       </div>
 
       <div className="grid grid-cols-7 gap-3 mb-5">

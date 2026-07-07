@@ -16,6 +16,8 @@ export type OrdersPageFilters = {
   billingStatus?: string;                 // 'all' | to_invoice/invoiced/partial/paid/overdue/cancelled/na
   sortBy?: "date" | "total" | "payment" | "billing";
   sortDir?: "asc" | "desc";
+  billingUpdatedFrom?: string | null;
+  billingUpdatedTo?: string | null;
 };
 
 export type OrdersPage = {

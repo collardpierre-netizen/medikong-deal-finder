@@ -951,6 +951,75 @@ const AdminCommandeDetail = () => {
                     : <>Aucune demande de confirmation envoyée pour l'instant.</>}
                 </div>
               )}
+
+              {/* Historique des envois email (production + tests) */}
+              <div className="rounded-md border p-3" style={{ borderColor: "#E2E8F0" }}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide">
+                    Historique des envois email
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => refetchDeliveryEmailLogs()}
+                    className="text-[11px] text-slate-500 hover:text-slate-800 underline"
+                    disabled={emailLogsLoading}
+                  >
+                    {emailLogsLoading ? "…" : "Rafraîchir"}
+                  </button>
+                </div>
+                {(deliveryEmailLogs?.length ?? 0) === 0 ? (
+                  <div className="text-[12px] text-slate-400">Aucun envoi enregistré à ce jour.</div>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {deliveryEmailLogs!.map((log) => {
+                      const statusStyle: Record<string, { bg: string; fg: string; label: string }> = {
+                        sent: { bg: "#DCFCE7", fg: "#166534", label: "Envoyé" },
+                        pending: { bg: "#FEF3C7", fg: "#92400E", label: "En file" },
+                        suppressed: { bg: "#E0E7FF", fg: "#3730A3", label: "Dédupliqué / supprimé" },
+                        failed: { bg: "#FEE2E2", fg: "#991B1B", label: "Échec" },
+                        dlq: { bg: "#FEE2E2", fg: "#991B1B", label: "DLQ" },
+                        bounced: { bg: "#FEE2E2", fg: "#991B1B", label: "Bounce" },
+                        complained: { bg: "#FEE2E2", fg: "#991B1B", label: "Plainte" },
+                      };
+                      const s = statusStyle[log.status] || { bg: "#F1F5F9", fg: "#475569", label: log.status };
+                      return (
+                        <li key={log.message_id} className="text-[12px] flex items-start gap-2">
+                          <span
+                            className="inline-block px-1.5 py-0.5 rounded font-semibold whitespace-nowrap"
+                            style={{ backgroundColor: s.bg, color: s.fg, fontSize: 10 }}
+                            title={log.error_message || ""}
+                          >
+                            {s.label}
+                          </span>
+                          <span className="flex-1 min-w-0">
+                            <span className="text-slate-800">{log.recipient_email}</span>
+                            {log.is_test && (
+                              <span className="ml-1 text-[10px] text-slate-500">(test)</span>
+                            )}
+                            {log.error_message && (
+                              <div className="text-[11px] text-red-600 truncate" title={log.error_message}>
+                                {log.error_message}
+                              </div>
+                            )}
+                          </span>
+                          <span className="text-slate-400 whitespace-nowrap">
+                            {new Date(log.last_event_at).toLocaleString("fr-BE")}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+                {(() => {
+                  const last = deliveryEmailLogs?.[0];
+                  return last ? (
+                    <div className="mt-2 text-[11px] text-slate-500">
+                      Dernier envoi : {new Date(last.last_event_at).toLocaleString("fr-BE")} · {last.recipient_email}
+                    </div>
+                  ) : null;
+                })()}
+              </div>
+
               <Button
                 onClick={async () => {
                   setBusy("DELIVERY_CONF");

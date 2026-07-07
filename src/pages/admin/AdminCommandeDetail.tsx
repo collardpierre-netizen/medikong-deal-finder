@@ -1110,6 +1110,8 @@ const AdminCommandeDetail = () => {
                         });
                         if (error) throw error;
                         toast.success(`Email de test envoyé à ${email}`);
+                        setTimeout(() => refetchDeliveryEmailLogs(), 1500);
+
                       } catch (e: any) {
                         toast.error("Échec test : " + (e?.message || "erreur"));
                       } finally {

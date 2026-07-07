@@ -59,6 +59,9 @@ export const useAdminOrdersPaginated = (
         _hide_deleted: filters.hideDeleted ?? true,
         _limit: pageSize,
         _offset: offset,
+        _buyer_type: filters.buyerType ?? "all",
+        _payment_status: filters.paymentStatus ?? "all",
+        _billing_status: filters.billingStatus ?? "all",
       });
       if (error) throw error;
 

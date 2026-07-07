@@ -1011,6 +1011,51 @@ const AdminCommandes = () => {
                               );
                             })()}
                             <td className="px-3 py-3 text-[11px]" style={{ color: "#616B7C" }}>{o.paymentTerms}</td>
+                            {(() => {
+                              const invs = (invoicesByOrder as Map<string, any[]>).get(o.rawId) || [];
+                              let label = "À facturer";
+                              let bg = "#FFFBEB";
+                              let color = "#D97706";
+                              let title = "Aucune facture émise";
+                              if (o.status === "cancelled") {
+                                label = "Annulée"; bg = "#F1F5F9"; color = "#616B7C"; title = "Commande annulée";
+                              } else if (invs.length > 0) {
+                                const allPaid = invs.every((i) => i.status === "paid");
+                                const anyPaid = invs.some((i) => i.status === "paid");
+                                const anyOverdue = invs.some((i) => i.status === "overdue" || i.status === "uncollectible");
+                                if (allPaid || o.paymentStatus === "paid") {
+                                  label = "Payée"; bg = "#F0FDF4"; color = "#059669";
+                                  title = `${invs.length} facture(s) payée(s)`;
+                                } else if (anyOverdue) {
+                                  label = "En retard"; bg = "#FEF2F2"; color = "#DC2626";
+                                  title = "Facture(s) en retard";
+                                } else if (anyPaid) {
+                                  label = "Part. payée"; bg = "#EFF6FF"; color = "#1B5BDA";
+                                  title = "Paiement partiel";
+                                } else {
+                                  label = "Facturée"; bg = "#EEF2FF"; color = "#4F46E5";
+                                  title = `${invs.length} facture(s) en attente`;
+                                }
+                              } else if (o.paymentStatus === "paid") {
+                                label = "Payée"; bg = "#F0FDF4"; color = "#059669";
+                                title = "Paiement enregistré (hors facture)";
+                              } else if (o.status === "draft" || o.status === "pending") {
+                                label = "—"; bg = "#F8FAFC"; color = "#94A3B8";
+                                title = "Facturation non applicable";
+                              }
+                              return (
+                                <td className="px-3 py-3">
+                                  <span
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+                                    style={{ backgroundColor: bg, color }}
+                                    title={title}
+                                  >
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
+                                    {label}
+                                  </span>
+                                </td>
+                              );
+                            })()}
                             <td className="px-3 py-3"><StatusBadge status={o.status} /></td>
                             <td className="px-3 py-3 text-right">
                               <div className="inline-flex items-center gap-1">

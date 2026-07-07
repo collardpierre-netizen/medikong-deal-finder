@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
 
   const { data: customer } = await admin
     .from('customers')
-    .select('email, company_name, first_name')
+    .select('email, company_name')
     .eq('id', order.customer_id)
     .maybeSingle()
   const recipientEmail = customer?.email

@@ -24218,6 +24218,17 @@ export type Database = {
           updated_at: string
         }[]
       }
+      admin_list_order_delivery_confirmation_test_emails: {
+        Args: { _order_id: string }
+        Returns: {
+          error_message: string
+          is_test: boolean
+          last_event_at: string
+          message_id: string
+          recipient_email: string
+          status: string
+        }[]
+      }
       admin_list_orders: {
         Args: {
           _date_from?: string

@@ -170,6 +170,28 @@ const AdminCommandeDetail = () => {
     enabled: !!id && !!order,
   });
 
+  const { data: deliveryEmailLogs, refetch: refetchDeliveryEmailLogs, isFetching: emailLogsLoading } = useQuery({
+    queryKey: ["admin-order-delivery-email-logs", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc(
+        "admin_list_order_delivery_confirmation_test_emails" as any,
+        { _order_id: id },
+      );
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        message_id: string;
+        recipient_email: string;
+        status: string;
+        error_message: string | null;
+        last_event_at: string;
+        is_test: boolean;
+      }>;
+    },
+    enabled: !!id && !!order && order.status === "delivered",
+    refetchInterval: 15000,
+  });
+
+
   const reprocessFanout = async () => {
     if (!confirm("Relancer le split en sous-commandes vendeur ?\n\nL'opération est idempotente : aucun doublon ne sera créé, seuls les vendeurs manquants seront ajoutés.")) return;
     setBusy("REPROCESS");

@@ -1035,7 +1035,10 @@ const AdminCommandeDetail = () => {
                 </p>
               </div>
 
+              <Button
+                onClick={async () => {
                   setBusy("DELIVERY_CONF");
+
                   try {
                     const { data: sess } = await supabase.auth.getSession();
                     const token = sess.session?.access_token;

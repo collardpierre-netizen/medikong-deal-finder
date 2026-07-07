@@ -980,41 +980,61 @@ const AdminCommandeDetail = () => {
               >
                 {busy === "DELIVERY_CONF" ? "Test…" : "🧪 Tester (dry-run)"}
               </Button>
-              <Button
-                onClick={async () => {
-                  const TEST_EMAIL = "collardpierre@gmail.com";
-                  setBusy("DELIVERY_CONF");
-                  try {
-                    const { data, error } = await supabase.functions.invoke("send-transactional-email", {
-                      body: {
-                        templateName: "order-delivery-confirmation",
-                        recipientEmail: TEST_EMAIL,
-                        idempotencyKey: `order-delivery-confirmation-test-${order.id}-${Date.now()}`,
-                        templateData: {
-                          orderNumber: order.order_number,
-                          customerName: (order as any).customers?.company_name || "Test admin",
-                          confirmUrl: `${window.location.origin}/commande/confirmer/TEST-TOKEN-PREVIEW`,
-                          lineCount: (order as any).order_lines?.length ?? 3,
-                        },
-                      },
-                    });
-                    if (error) throw error;
-                    toast.success(`Email de test envoyé à ${TEST_EMAIL}`);
-                  } catch (e: any) {
-                    toast.error("Échec test : " + (e?.message || "erreur"));
-                  } finally {
-                    setBusy(null);
-                  }
-                }}
-                disabled={busy !== null}
-                className="w-full justify-start"
-                variant="outline"
-                title="Envoie un rendu du template à collardpierre@gmail.com (lien de confirmation factice)"
-              >
-                ✉️ Envoyer un email de test (collardpierre@gmail.com)
-              </Button>
-              <Button
-                onClick={async () => {
+              <div className="rounded-md border p-3 space-y-2" style={{ borderColor: "#E2E8F0" }}>
+                <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide">
+                  Envoyer un email de test à
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    type="email"
+                    value={testEmail}
+                    onChange={(e) => setTestEmail(e.target.value)}
+                    placeholder="adresse@exemple.com"
+                    className="flex-1"
+                    disabled={busy !== null}
+                  />
+                  <Button
+                    onClick={async () => {
+                      const email = testEmail.trim().toLowerCase();
+                      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                        toast.error("Adresse email invalide");
+                        return;
+                      }
+                      setBusy("DELIVERY_CONF");
+                      try {
+                        const { data, error } = await supabase.functions.invoke("send-transactional-email", {
+                          body: {
+                            templateName: "order-delivery-confirmation",
+                            recipientEmail: email,
+                            idempotencyKey: `order-delivery-confirmation-test-${order.id}-${Date.now()}`,
+                            templateData: {
+                              orderNumber: order.order_number,
+                              customerName: (order as any).customers?.company_name || "Test admin",
+                              confirmUrl: `${window.location.origin}/commande/confirmer/TEST-TOKEN-PREVIEW`,
+                              lineCount: (order as any).order_lines?.length ?? 3,
+                            },
+                          },
+                        });
+                        if (error) throw error;
+                        toast.success(`Email de test envoyé à ${email}`);
+                      } catch (e: any) {
+                        toast.error("Échec test : " + (e?.message || "erreur"));
+                      } finally {
+                        setBusy(null);
+                      }
+                    }}
+                    disabled={busy !== null}
+                    variant="outline"
+                    title="Envoie le rendu du template à l'adresse saisie (lien de confirmation factice)"
+                  >
+                    ✉️ Envoyer test
+                  </Button>
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  Utilise les données réelles de la commande mais un token de confirmation factice — n'impacte pas l'acheteur.
+                </p>
+              </div>
+
                   setBusy("DELIVERY_CONF");
                   try {
                     const { data: sess } = await supabase.auth.getSession();

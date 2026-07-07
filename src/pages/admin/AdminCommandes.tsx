@@ -201,6 +201,29 @@ const AdminCommandes = () => {
   const serverKpis = ordersPage?.kpis;
   const serverTotal = ordersPage?.total ?? 0;
 
+  // Récupère les factures pour les commandes affichées (colonne "Facturation").
+  const visibleOrderIds = ordersData.map((o: any) => o.id).filter(Boolean);
+  const invoicesKey = visibleOrderIds.slice().sort().join(",");
+  const { data: invoicesByOrder = new Map<string, any[]>() } = useQuery({
+    queryKey: ["admin-orders-invoices", invoicesKey],
+    enabled: visibleOrderIds.length > 0,
+    staleTime: 15_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("order_invoices")
+        .select("order_id,status,invoice_number,hosted_url,pdf_url")
+        .in("order_id", visibleOrderIds);
+      if (error) throw error;
+      const map = new Map<string, any[]>();
+      for (const inv of data || []) {
+        const arr = map.get(inv.order_id) || [];
+        arr.push(inv);
+        map.set(inv.order_id, arr);
+      }
+      return map;
+    },
+  });
+
   // Reset page to 1 whenever the filter signature changes.
   if (typeof window !== "undefined") {
     const w = window as any;

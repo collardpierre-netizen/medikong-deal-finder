@@ -1039,9 +1039,10 @@ const AdminCommandeDetail = () => {
               >
                 👁️ Aperçu mail (rendu HTML)
               </Button>
-
+              <p className="text-[11px] text-slate-400">
                 Le token magic-link est régénéré côté serveur (RPC <code>create_buyer_delivery_token</code>) et l'idempotency key <code>order-delivery-confirmation-&lt;id&gt;</code> évite les doublons côté file d'attente email.
               </p>
+
             </div>
           )}
 

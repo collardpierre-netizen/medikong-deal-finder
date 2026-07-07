@@ -47,6 +47,7 @@ import { template as orderLineDelivered } from './order-line-delivered.tsx'
 import { template as vendorDelegateCallback } from './vendor-delegate-callback.tsx'
 import { template as quoteSent } from './quote-sent.tsx'
 import { template as orderShipped } from './order-shipped.tsx'
+import { template as orderDeliveryConfirmation } from './order-delivery-confirmation.tsx'
 
 
 
@@ -89,5 +90,6 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'vendor-delegate-callback': vendorDelegateCallback,
   'quote-sent': quoteSent,
   'order-shipped': orderShipped,
+  'order-delivery-confirmation': orderDeliveryConfirmation,
 }
 

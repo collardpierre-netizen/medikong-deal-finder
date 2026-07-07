@@ -57,6 +57,7 @@ const AccountPage = lazyWithRetry(() => import("./pages/AccountPage"), "AccountP
 const CheckoutPage = lazyWithRetry(() => import("./pages/CheckoutPage"), "CheckoutPage");
 const ConfirmationPage = lazyWithRetry(() => import("./pages/ConfirmationPage"), "ConfirmationPage");
 const OrderDetailPage = lazyWithRetry(() => import("./pages/OrderDetailPage"), "OrderDetailPage");
+const DeliveryConfirmationPage = lazyWithRetry(() => import("./pages/DeliveryConfirmationPage"), "DeliveryConfirmationPage");
 const LoginPage = lazyWithRetry(() => import("./pages/LoginPage"), "LoginPage");
 const SelectAccountPage = lazyWithRetry(() => import("./pages/SelectAccountPage"), "SelectAccountPage");
 const CategoryPage = lazyWithRetry(() => import("./pages/CategoryPage"), "CategoryPage");
@@ -394,6 +395,8 @@ const App = () => (
             <Route path="/checkout" element={<LP><CheckoutPage /></LP>} />
             <Route path="/confirmation" element={<LP><ConfirmationPage /></LP>} />
             <Route path="/commande/:id" element={<LP><OrderDetailPage /></LP>} />
+            <Route path="/commande/confirmer/:token" element={<LP><DeliveryConfirmationPage /></LP>} />
+            <Route path="/commande/:id/confirmer" element={<LP><DeliveryConfirmationPage /></LP>} />
             <Route path="/connexion" element={<LP><LoginPage /></LP>} />
             <Route path="/select-account" element={<LP><SelectAccountPage /></LP>} />
             <Route path="/login" element={<Navigate to="/connexion" replace />} />

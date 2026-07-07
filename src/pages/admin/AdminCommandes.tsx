@@ -209,6 +209,8 @@ const AdminCommandes = () => {
       buyerType,
       paymentStatus: paymentStatusFilter,
       billingStatus: billingStatusFilter,
+      sortBy,
+      sortDir,
     },
     page,
     pageSize,

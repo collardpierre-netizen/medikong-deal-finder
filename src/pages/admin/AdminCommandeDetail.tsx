@@ -978,11 +978,45 @@ const AdminCommandeDetail = () => {
               >
                 {busy === "DELIVERY_CONF" ? "Test…" : "🧪 Tester (dry-run)"}
               </Button>
+              <Button
+                onClick={async () => {
+                  const TEST_EMAIL = "collardpierre@gmail.com";
+                  setBusy("DELIVERY_CONF");
+                  try {
+                    const { data, error } = await supabase.functions.invoke("send-transactional-email", {
+                      body: {
+                        templateName: "order-delivery-confirmation",
+                        recipientEmail: TEST_EMAIL,
+                        idempotencyKey: `order-delivery-confirmation-test-${order.id}-${Date.now()}`,
+                        templateData: {
+                          orderNumber: order.order_number,
+                          customerName: (order as any).customers?.company_name || "Test admin",
+                          confirmUrl: `${window.location.origin}/commande/confirmer/TEST-TOKEN-PREVIEW`,
+                          lineCount: (order as any).order_lines?.length ?? 3,
+                        },
+                      },
+                    });
+                    if (error) throw error;
+                    toast.success(`Email de test envoyé à ${TEST_EMAIL}`);
+                  } catch (e: any) {
+                    toast.error("Échec test : " + (e?.message || "erreur"));
+                  } finally {
+                    setBusy(null);
+                  }
+                }}
+                disabled={busy !== null}
+                className="w-full justify-start"
+                variant="outline"
+                title="Envoie un rendu du template à collardpierre@gmail.com (lien de confirmation factice)"
+              >
+                ✉️ Envoyer un email de test (collardpierre@gmail.com)
+              </Button>
               <p className="text-[11px] text-slate-400">
                 Le token magic-link est régénéré côté serveur (RPC <code>create_buyer_delivery_token</code>) et l'idempotency key <code>order-delivery-confirmation-&lt;id&gt;</code> évite les doublons côté file d'attente email.
               </p>
             </div>
           )}
+
 
 
 

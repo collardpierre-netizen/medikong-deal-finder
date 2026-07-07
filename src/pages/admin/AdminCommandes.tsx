@@ -139,6 +139,16 @@ const AdminCommandes = () => {
   const [buyerType, setBuyerType] = useState<string>("all");
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("all");
   const [billingStatusFilter, setBillingStatusFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"date" | "total" | "payment" | "billing">("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const toggleSort = (key: "date" | "total" | "payment" | "billing") => {
+    if (sortBy === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(key);
+      setSortDir(key === "date" ? "desc" : "asc");
+    }
+  };
   const [vendorFilterOpen, setVendorFilterOpen] = useState(false);
   const [vendorSearch, setVendorSearch] = useState("");
   const [purgeOpen, setPurgeOpen] = useState(false);

@@ -1034,6 +1034,8 @@ const AdminCommandeDetail = () => {
                       toast.success(`Email de confirmation renvoyé à ${(data as any)?.recipient || "l'acheteur"}`);
                     }
                     queryClient.invalidateQueries({ queryKey: ["admin-order", id] });
+                    setTimeout(() => refetchDeliveryEmailLogs(), 1500);
+
                   } catch (e: any) {
                     toast.error("Échec envoi : " + (e?.message || "erreur"));
                   } finally {

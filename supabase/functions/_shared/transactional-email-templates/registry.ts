@@ -90,5 +90,6 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'vendor-delegate-callback': vendorDelegateCallback,
   'quote-sent': quoteSent,
   'order-shipped': orderShipped,
+  'order-delivery-confirmation': orderDeliveryConfirmation,
 }
 

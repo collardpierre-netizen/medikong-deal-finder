@@ -149,6 +149,8 @@ const AdminCommandes = () => {
       setSortDir(key === "date" ? "desc" : "asc");
     }
   };
+  const [billingUpdatedFrom, setBillingUpdatedFrom] = useState<string>("");
+  const [billingUpdatedTo, setBillingUpdatedTo] = useState<string>("");
   const [vendorFilterOpen, setVendorFilterOpen] = useState(false);
   const [vendorSearch, setVendorSearch] = useState("");
   const [purgeOpen, setPurgeOpen] = useState(false);

@@ -1151,7 +1151,7 @@ const AdminCommandes = () => {
                           </tr>
                           {isExpanded && o.lines.length > 0 && (
                             <tr key={`${o.rawId}-lines`}>
-                              <td colSpan={15} className="px-0 py-0">
+                              <td colSpan={16} className="px-0 py-0">
                                 <div className="mx-4 mb-3 rounded-lg overflow-hidden" style={{ border: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
                                   <table className="w-full text-left">
                                     <thead>
@@ -1220,7 +1220,7 @@ const AdminCommandes = () => {
                           )}
                           {isExpanded && o.lines.length === 0 && (
                             <tr key={`${o.rawId}-empty`}>
-                              <td colSpan={15} className="px-6 py-4 text-center text-[12px]" style={{ color: "#8B95A5" }}>
+                              <td colSpan={16} className="px-6 py-4 text-center text-[12px]" style={{ color: "#8B95A5" }}>
                                 Aucune ligne de commande enregistrée.
                               </td>
                             </tr>
@@ -1230,7 +1230,7 @@ const AdminCommandes = () => {
                     })}
                     {filtered.length === 0 && selectedVendorIds.length > 0 && (
                       <tr>
-                        <td colSpan={15} className="px-6 py-10 text-center">
+                        <td colSpan={16} className="px-6 py-10 text-center">
                           <div className="flex flex-col items-center gap-3">
                             <Filter size={24} style={{ color: "#CBD5E1" }} />
                             <p className="text-[13px] font-medium" style={{ color: "#1D2530" }}>
@@ -1289,7 +1289,7 @@ const AdminCommandes = () => {
                               <div className="text-[10px]" style={{ color: "#8B95A5" }}>{tCommissionPct.toFixed(2)} %</div>
                             </div>
                           </td>
-                          <td colSpan={4}></td>
+                          <td colSpan={5}></td>
                         </tr>
                       </tfoot>
                     );

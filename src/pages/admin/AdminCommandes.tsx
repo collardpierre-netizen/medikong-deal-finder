@@ -175,6 +175,7 @@ const AdminCommandes = () => {
   const filtersKey = JSON.stringify({
     statusFilter, search, hideTest, period, dateFrom, dateTo,
     onlyWithCommission, forecastFilter, selectedVendorIds,
+    buyerType, paymentStatusFilter, billingStatusFilter,
   });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useState(() => {}); // (kept intentionally to preserve prior order of hooks; setPage handled below)

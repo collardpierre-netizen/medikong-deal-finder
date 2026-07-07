@@ -136,6 +136,9 @@ const AdminCommandes = () => {
   const [onlyWithCommission, setOnlyWithCommission] = useState(false);
   const [forecastFilter, setForecastFilter] = useState<"all" | "real" | "forecast">("all");
   const [selectedVendorIds, setSelectedVendorIds] = useState<string[]>([]);
+  const [buyerType, setBuyerType] = useState<string>("all");
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("all");
+  const [billingStatusFilter, setBillingStatusFilter] = useState<string>("all");
   const [vendorFilterOpen, setVendorFilterOpen] = useState(false);
   const [vendorSearch, setVendorSearch] = useState("");
   const [purgeOpen, setPurgeOpen] = useState(false);

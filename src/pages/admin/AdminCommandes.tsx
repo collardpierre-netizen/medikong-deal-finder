@@ -214,6 +214,8 @@ const AdminCommandes = () => {
       billingStatus: billingStatusFilter,
       sortBy,
       sortDir,
+      billingUpdatedFrom: billingUpdatedFrom ? new Date(billingUpdatedFrom + "T00:00:00").toISOString() : null,
+      billingUpdatedTo: billingUpdatedTo ? new Date(billingUpdatedTo + "T23:59:59").toISOString() : null,
     },
     page,
     pageSize,

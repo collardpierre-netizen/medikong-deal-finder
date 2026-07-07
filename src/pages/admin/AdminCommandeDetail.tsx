@@ -63,6 +63,8 @@ const AdminCommandeDetail = () => {
   // Suivi par ligne — édition admin
   const [lineTracks, setLineTracks] = useState<Record<string, { url: string; number: string }>>({});
   const [testEmail, setTestEmail] = useState<string>("collardpierre@gmail.com");
+  const [testUseRealToken, setTestUseRealToken] = useState<boolean>(false);
+
 
 
   const { data: order, isLoading, error: orderError } = useQuery({

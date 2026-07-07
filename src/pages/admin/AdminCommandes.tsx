@@ -201,6 +201,29 @@ const AdminCommandes = () => {
   const serverKpis = ordersPage?.kpis;
   const serverTotal = ordersPage?.total ?? 0;
 
+  // Récupère les factures pour les commandes affichées (colonne "Facturation").
+  const visibleOrderIds = ordersData.map((o: any) => o.id).filter(Boolean);
+  const invoicesKey = visibleOrderIds.slice().sort().join(",");
+  const { data: invoicesByOrder = new Map<string, any[]>() } = useQuery({
+    queryKey: ["admin-orders-invoices", invoicesKey],
+    enabled: visibleOrderIds.length > 0,
+    staleTime: 15_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("order_invoices")
+        .select("order_id,status,invoice_number,hosted_url,pdf_url")
+        .in("order_id", visibleOrderIds);
+      if (error) throw error;
+      const map = new Map<string, any[]>();
+      for (const inv of data || []) {
+        const arr = map.get(inv.order_id) || [];
+        arr.push(inv);
+        map.set(inv.order_id, arr);
+      }
+      return map;
+    },
+  });
+
   // Reset page to 1 whenever the filter signature changes.
   if (typeof window !== "undefined") {
     const w = window as any;
@@ -326,6 +349,7 @@ const AdminCommandes = () => {
       hasCost: hasAnyCost,
       costTotal,
       paymentTerms: o.payment_method || "invoice",
+      paymentStatus: (o as any).payment_status || null,
       dueDate: o.payment_due_date ? new Date(o.payment_due_date).toLocaleDateString("fr-BE") : "—",
       status: o.status as "draft" | "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled",
       isTest: Boolean((o as any).is_test),
@@ -860,7 +884,7 @@ const AdminCommandes = () => {
                   <thead>
                     <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
                       <th className="px-2 py-3 w-8"></th>
-                      {["ID / Réf PO", "Acheteur", "Type", "Lignes", "Vendeurs", "Lignes uniques", "HT", "TVA", "TTC", "Marge HT", "Commission", "Cohérence", "Paiement", "Statut", ""].map((h) => (
+                      {["ID / Réf PO", "Acheteur", "Type", "Lignes", "Vendeurs", "Lignes uniques", "HT", "TVA", "TTC", "Marge HT", "Commission", "Cohérence", "Paiement", "Facturation", "Statut", ""].map((h) => (
                         <th key={h} className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                       ))}
                     </tr>
@@ -987,6 +1011,51 @@ const AdminCommandes = () => {
                               );
                             })()}
                             <td className="px-3 py-3 text-[11px]" style={{ color: "#616B7C" }}>{o.paymentTerms}</td>
+                            {(() => {
+                              const invs = (invoicesByOrder as Map<string, any[]>).get(o.rawId) || [];
+                              let label = "À facturer";
+                              let bg = "#FFFBEB";
+                              let color = "#D97706";
+                              let title = "Aucune facture émise";
+                              if (o.status === "cancelled") {
+                                label = "Annulée"; bg = "#F1F5F9"; color = "#616B7C"; title = "Commande annulée";
+                              } else if (invs.length > 0) {
+                                const allPaid = invs.every((i) => i.status === "paid");
+                                const anyPaid = invs.some((i) => i.status === "paid");
+                                const anyOverdue = invs.some((i) => i.status === "overdue" || i.status === "uncollectible");
+                                if (allPaid || o.paymentStatus === "paid") {
+                                  label = "Payée"; bg = "#F0FDF4"; color = "#059669";
+                                  title = `${invs.length} facture(s) payée(s)`;
+                                } else if (anyOverdue) {
+                                  label = "En retard"; bg = "#FEF2F2"; color = "#DC2626";
+                                  title = "Facture(s) en retard";
+                                } else if (anyPaid) {
+                                  label = "Part. payée"; bg = "#EFF6FF"; color = "#1B5BDA";
+                                  title = "Paiement partiel";
+                                } else {
+                                  label = "Facturée"; bg = "#EEF2FF"; color = "#4F46E5";
+                                  title = `${invs.length} facture(s) en attente`;
+                                }
+                              } else if (o.paymentStatus === "paid") {
+                                label = "Payée"; bg = "#F0FDF4"; color = "#059669";
+                                title = "Paiement enregistré (hors facture)";
+                              } else if (o.status === "draft" || o.status === "pending") {
+                                label = "—"; bg = "#F8FAFC"; color = "#94A3B8";
+                                title = "Facturation non applicable";
+                              }
+                              return (
+                                <td className="px-3 py-3">
+                                  <span
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+                                    style={{ backgroundColor: bg, color }}
+                                    title={title}
+                                  >
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
+                                    {label}
+                                  </span>
+                                </td>
+                              );
+                            })()}
                             <td className="px-3 py-3"><StatusBadge status={o.status} /></td>
                             <td className="px-3 py-3 text-right">
                               <div className="inline-flex items-center gap-1">
@@ -1082,7 +1151,7 @@ const AdminCommandes = () => {
                           </tr>
                           {isExpanded && o.lines.length > 0 && (
                             <tr key={`${o.rawId}-lines`}>
-                              <td colSpan={15} className="px-0 py-0">
+                              <td colSpan={16} className="px-0 py-0">
                                 <div className="mx-4 mb-3 rounded-lg overflow-hidden" style={{ border: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
                                   <table className="w-full text-left">
                                     <thead>
@@ -1151,7 +1220,7 @@ const AdminCommandes = () => {
                           )}
                           {isExpanded && o.lines.length === 0 && (
                             <tr key={`${o.rawId}-empty`}>
-                              <td colSpan={15} className="px-6 py-4 text-center text-[12px]" style={{ color: "#8B95A5" }}>
+                              <td colSpan={16} className="px-6 py-4 text-center text-[12px]" style={{ color: "#8B95A5" }}>
                                 Aucune ligne de commande enregistrée.
                               </td>
                             </tr>
@@ -1161,7 +1230,7 @@ const AdminCommandes = () => {
                     })}
                     {filtered.length === 0 && selectedVendorIds.length > 0 && (
                       <tr>
-                        <td colSpan={15} className="px-6 py-10 text-center">
+                        <td colSpan={16} className="px-6 py-10 text-center">
                           <div className="flex flex-col items-center gap-3">
                             <Filter size={24} style={{ color: "#CBD5E1" }} />
                             <p className="text-[13px] font-medium" style={{ color: "#1D2530" }}>
@@ -1220,7 +1289,7 @@ const AdminCommandes = () => {
                               <div className="text-[10px]" style={{ color: "#8B95A5" }}>{tCommissionPct.toFixed(2)} %</div>
                             </div>
                           </td>
-                          <td colSpan={4}></td>
+                          <td colSpan={5}></td>
                         </tr>
                       </tfoot>
                     );

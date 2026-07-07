@@ -139,6 +139,16 @@ const AdminCommandes = () => {
   const [buyerType, setBuyerType] = useState<string>("all");
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("all");
   const [billingStatusFilter, setBillingStatusFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"date" | "total" | "payment" | "billing">("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const toggleSort = (key: "date" | "total" | "payment" | "billing") => {
+    if (sortBy === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(key);
+      setSortDir(key === "date" ? "desc" : "asc");
+    }
+  };
   const [vendorFilterOpen, setVendorFilterOpen] = useState(false);
   const [vendorSearch, setVendorSearch] = useState("");
   const [purgeOpen, setPurgeOpen] = useState(false);
@@ -199,6 +209,8 @@ const AdminCommandes = () => {
       buyerType,
       paymentStatus: paymentStatusFilter,
       billingStatus: billingStatusFilter,
+      sortBy,
+      sortDir,
     },
     page,
     pageSize,
@@ -932,9 +944,32 @@ const AdminCommandes = () => {
                   <thead>
                     <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
                       <th className="px-2 py-3 w-8"></th>
-                      {["ID / Réf PO", "Acheteur", "Type", "Lignes", "Vendeurs", "Lignes uniques", "HT", "TVA", "TTC", "Marge HT", "Commission", "Cohérence", "Paiement", "Facturation", "Statut", ""].map((h) => (
-                        <th key={h} className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
-                      ))}
+                      {(() => {
+                        const sortable: Record<string, "date" | "total" | "payment" | "billing"> = {
+                          "ID / Réf PO": "date",
+                          "TTC": "total",
+                          "Paiement": "payment",
+                          "Facturation": "billing",
+                        };
+                        const headers = ["ID / Réf PO", "Acheteur", "Type", "Lignes", "Vendeurs", "Lignes uniques", "HT", "TVA", "TTC", "Marge HT", "Commission", "Cohérence", "Paiement", "Facturation", "Statut", ""];
+                        return headers.map((h) => {
+                          const key = sortable[h];
+                          if (!key) {
+                            return <th key={h} className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>;
+                          }
+                          const active = sortBy === key;
+                          const arrow = active ? (sortDir === "asc" ? " ▲" : " ▼") : " ↕";
+                          const label = h === "ID / Réf PO" ? "ID / Réf PO (date)" : h;
+                          return (
+                            <th key={h} className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider select-none cursor-pointer" style={{ color: active ? "#1C58D9" : "#8B95A5" }}
+                              onClick={() => toggleSort(key)}
+                              title={`Trier par ${label.toLowerCase()}${active ? (sortDir === "asc" ? " (croissant)" : " (décroissant)") : ""}`}
+                            >
+                              {label}<span className="ml-1 text-[9px]" style={{ opacity: active ? 1 : 0.5 }}>{arrow}</span>
+                            </th>
+                          );
+                        });
+                      })()}
                     </tr>
                   </thead>
                   <tbody>

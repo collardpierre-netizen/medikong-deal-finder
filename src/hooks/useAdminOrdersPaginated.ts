@@ -14,6 +14,8 @@ export type OrdersPageFilters = {
   buyerType?: string;                     // 'all' | customers.customer_type
   paymentStatus?: string;                 // 'all' | orders.payment_status
   billingStatus?: string;                 // 'all' | to_invoice/invoiced/partial/paid/overdue/cancelled/na
+  sortBy?: "date" | "total" | "payment" | "billing";
+  sortDir?: "asc" | "desc";
 };
 
 export type OrdersPage = {
@@ -62,6 +64,8 @@ export const useAdminOrdersPaginated = (
         _buyer_type: filters.buyerType ?? "all",
         _payment_status: filters.paymentStatus ?? "all",
         _billing_status: filters.billingStatus ?? "all",
+        _sort_by: filters.sortBy ?? "date",
+        _sort_dir: filters.sortDir ?? "desc",
       });
       if (error) throw error;
 

@@ -63,6 +63,8 @@ const AdminCommandeDetail = () => {
   // Suivi par ligne — édition admin
   const [lineTracks, setLineTracks] = useState<Record<string, { url: string; number: string }>>({});
   const [testEmail, setTestEmail] = useState<string>("collardpierre@gmail.com");
+  const [testUseRealToken, setTestUseRealToken] = useState<boolean>(false);
+
 
 
   const { data: order, isLoading, error: orderError } = useQuery({
@@ -1095,6 +1097,17 @@ const AdminCommandeDetail = () => {
                       }
                       setBusy("DELIVERY_CONF");
                       try {
+                        // Optionnellement, générer un vrai token de confirmation.
+                        // ATTENTION : cela invalide un éventuel lien déjà envoyé à l'acheteur.
+                        let confirmUrl = `${window.location.origin}/commande/confirmer/TEST-TOKEN-PREVIEW`;
+                        if (testUseRealToken) {
+                          const { data: rawToken, error: tokErr } = await supabase.rpc(
+                            "create_buyer_delivery_token" as any,
+                            { _order_id: order.id },
+                          );
+                          if (tokErr || !rawToken) throw new Error(tokErr?.message || "token_generation_failed");
+                          confirmUrl = `${window.location.origin}/commande/confirmer/${encodeURIComponent(String(rawToken))}`;
+                        }
                         const { data, error } = await supabase.functions.invoke("send-transactional-email", {
                           body: {
                             templateName: "order-delivery-confirmation",
@@ -1103,15 +1116,18 @@ const AdminCommandeDetail = () => {
                             templateData: {
                               orderNumber: order.order_number,
                               customerName: (order as any).customers?.company_name || "Test admin",
-                              confirmUrl: `${window.location.origin}/commande/confirmer/TEST-TOKEN-PREVIEW`,
+                              confirmUrl,
                               lineCount: (order as any).order_lines?.length ?? 3,
                             },
                           },
                         });
                         if (error) throw error;
-                        toast.success(`Email de test envoyé à ${email}`);
+                        toast.success(
+                          testUseRealToken
+                            ? `Email de test (token réel) envoyé à ${email} — l'ancien lien acheteur est invalidé.`
+                            : `Email de test envoyé à ${email}`,
+                        );
                         setTimeout(() => refetchDeliveryEmailLogs(), 1500);
-
                       } catch (e: any) {
                         toast.error("Échec test : " + (e?.message || "erreur"));
                       } finally {
@@ -1120,15 +1136,35 @@ const AdminCommandeDetail = () => {
                     }}
                     disabled={busy !== null}
                     variant="outline"
-                    title="Envoie le rendu du template à l'adresse saisie (lien de confirmation factice)"
+                    title={
+                      testUseRealToken
+                        ? "Génère un vrai token acheteur (invalide l'ancien lien) et envoie l'email de test"
+                        : "Envoie le rendu du template à l'adresse saisie (lien de confirmation factice)"
+                    }
                   >
                     ✉️ Envoyer test
                   </Button>
                 </div>
+                <label className="flex items-start gap-2 text-[12px] text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={testUseRealToken}
+                    onChange={(e) => setTestUseRealToken(e.target.checked)}
+                    disabled={busy !== null}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    Utiliser un <strong>vrai token de confirmation</strong> (lien cliquable qui marque réellement la commande).
+                    <span className="block text-[11px] text-amber-700">
+                      ⚠️ Régénère le token acheteur et invalide un éventuel lien déjà envoyé au client.
+                    </span>
+                  </span>
+                </label>
                 <p className="text-[11px] text-slate-400">
-                  Utilise les données réelles de la commande mais un token de confirmation factice — n'impacte pas l'acheteur.
+                  Sans cette option : token factice <code>TEST-TOKEN-PREVIEW</code>, aucun impact sur l'acheteur.
                 </p>
               </div>
+
 
               <Button
                 onClick={async () => {

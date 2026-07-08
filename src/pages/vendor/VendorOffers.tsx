@@ -2164,13 +2164,43 @@ export default function VendorOffers() {
                 );
               })()}
             </div>
-            <div>
-              <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>Pays</label>
-              <select className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
-                style={{ borderColor: "#E2E8F0" }} value={form.country_code} onChange={e => setForm(p => ({ ...p, country_code: e.target.value }))}>
-                <option value="BE">Belgique</option><option value="FR">France</option><option value="NL">Pays-Bas</option>
-                <option value="LU">Luxembourg</option><option value="DE">Allemagne</option>
-              </select>
+            <div className="md:col-span-2">
+              <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>Pays de livraison (multi-sélection)</label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { code: "BE", label: "Belgique" },
+                  { code: "FR", label: "France" },
+                  { code: "NL", label: "Pays-Bas" },
+                  { code: "LU", label: "Luxembourg" },
+                  { code: "DE", label: "Allemagne" },
+                ].map(({ code, label }) => {
+                  const active = form.country_codes.includes(code);
+                  return (
+                    <button
+                      key={code}
+                      type="button"
+                      onClick={() => setForm(p => {
+                        const next = active
+                          ? p.country_codes.filter(c => c !== code)
+                          : [...p.country_codes, code];
+                        const safe = next.length > 0 ? next : ["BE"];
+                        return { ...p, country_codes: safe, country_code: safe[0] };
+                      })}
+                      className="px-3 py-1.5 rounded-full text-[12px] font-medium border transition-colors"
+                      style={{
+                        backgroundColor: active ? "#1B5BDA" : "#fff",
+                        color: active ? "#fff" : "#1D2530",
+                        borderColor: active ? "#1B5BDA" : "#E2E8F0",
+                      }}
+                    >
+                      {active ? "✓ " : ""}{label} ({code})
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-1 text-[11px]" style={{ color: "#8B95A5" }}>
+                L'offre sera visible pour les acheteurs situés dans chaque pays coché. Au moins un pays est requis (BE par défaut).
+              </p>
             </div>
             <div className="md:col-span-2">
               <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>

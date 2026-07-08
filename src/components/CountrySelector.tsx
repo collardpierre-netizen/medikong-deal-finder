@@ -1,6 +1,6 @@
 import { useCountry } from "@/contexts/CountryContext";
 import { useState, useRef, useEffect, useMemo } from "react";
-import { ChevronDown, Truck, Info, MapPin, Eye, EyeOff } from "lucide-react";
+import { ChevronDown, Truck, Info, MapPin, Eye, EyeOff, Globe, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCountryOfferCounts } from "@/hooks/useCountryOfferCounts";
 
@@ -9,10 +9,13 @@ const fmt = (n: number) => new Intl.NumberFormat("fr-BE").format(n);
 export function CountrySelector() {
   const { country, setCountry, activeCountries, currentCountry } = useCountry();
   const [open, setOpen] = useState(false);
+  const [previewAll, setPreviewAll] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+
   const codes = useMemo(() => activeCountries.map((c) => c.code), [activeCountries]);
-  const { data: counts, isLoading: countsLoading } = useCountryOfferCounts(open ? codes : []);
+  const { data: counts, isLoading: countsLoading } = useCountryOfferCounts(open || previewAll ? codes : []);
+
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -124,6 +127,18 @@ export function CountrySelector() {
               </div>
             )}
 
+            {/* CTA aperçu tous pays */}
+            <button
+              onClick={() => {
+                setPreviewAll(true);
+                setOpen(false);
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2 border-t border-border text-[11.5px] font-semibold text-primary hover:bg-primary/5 transition-colors"
+            >
+              <Globe size={13} />
+              Aperçu « tous pays » — comparer la visibilité
+            </button>
+
             {/* Note bas de dropdown */}
             <div className="px-3 py-2 border-t border-border bg-slate-50 text-[10.5px] text-slate-500 leading-snug flex gap-1.5">
               <Info size={12} className="shrink-0 mt-0.5 text-slate-400" />
@@ -135,6 +150,111 @@ export function CountrySelector() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Modal aperçu tous pays */}
+      <AnimatePresence>
+        {previewAll && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-[100] flex items-start justify-center pt-16 px-4"
+            onClick={() => setPreviewAll(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: -12, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -12, scale: 0.98 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-xl shadow-2xl w-full max-w-xl overflow-hidden"
+            >
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-gradient-to-b from-slate-50 to-white">
+                <div className="flex items-center gap-2">
+                  <Globe size={16} className="text-primary" />
+                  <div>
+                    <div className="text-sm font-semibold text-foreground">Aperçu « tous pays »</div>
+                    <div className="text-[11px] text-slate-500">Comparaison temporaire de la visibilité de vos offres par pays.</div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setPreviewAll(false)}
+                  className="p-1 rounded-md hover:bg-slate-100 text-slate-500"
+                  aria-label="Fermer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="px-5 py-4">
+                {countsLoading || !counts ? (
+                  <div className="text-sm text-slate-500 py-6 text-center">Calcul en cours…</div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {activeCountries.map((c) => {
+                      const cc = counts[c.code] || { visible: 0, hidden: 0 };
+                      const total = cc.visible + cc.hidden;
+                      const pct = total > 0 ? Math.round((cc.visible / total) * 100) : 0;
+                      const isCurrent = c.code === country;
+                      return (
+                        <div
+                          key={c.code}
+                          className={`p-3 rounded-lg border ${isCurrent ? "border-primary/40 bg-primary/5" : "border-border bg-white"}`}
+                        >
+                          <div className="flex items-center gap-2.5 mb-2">
+                            <span className="text-lg leading-none">{c.flag_emoji}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                                {c.name}
+                                {isCurrent && <span className="text-[10px] font-bold text-primary uppercase">actif</span>}
+                              </div>
+                              <div className="text-[10.5px] text-slate-500">
+                                {fmt(cc.visible)} visibles / {fmt(total)} au total · {pct}%
+                              </div>
+                            </div>
+                            {!isCurrent && (
+                              <button
+                                onClick={() => {
+                                  setCountry(c.code);
+                                  setPreviewAll(false);
+                                }}
+                                className="text-[10.5px] font-semibold text-primary hover:underline shrink-0"
+                              >
+                                Basculer
+                              </button>
+                            )}
+                          </div>
+                          <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                            <div
+                              className="h-full bg-emerald-500 rounded-full transition-all"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <div className="flex items-center gap-3 mt-1.5 text-[10.5px]">
+                            <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+                              <Eye size={10} /> {fmt(cc.visible)} visibles
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-slate-500">
+                              <EyeOff size={10} /> {fmt(cc.hidden)} masquées
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="px-5 py-3 border-t border-border bg-slate-50 text-[11px] text-slate-500 flex items-start gap-1.5">
+                <Info size={12} className="shrink-0 mt-0.5" />
+                <span>
+                  Ce panneau ne modifie pas votre pays actif. Il compare, en lecture seule, combien d'offres sont visibles et masquées par pays afin d'identifier où votre catalogue est le mieux distribué.
+                </span>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
+

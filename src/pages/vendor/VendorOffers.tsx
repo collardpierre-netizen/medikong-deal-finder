@@ -1464,6 +1464,9 @@ export default function VendorOffers() {
       mov_amount: String(offer.mov_amount || 0),
       delivery_days: String(offer.delivery_days),
       country_code: offer.country_code || "BE",
+      country_codes: Array.isArray((offer as any).country_codes) && (offer as any).country_codes.length > 0
+        ? (offer as any).country_codes
+        : [offer.country_code || "BE"],
       category_ids: categoryIds,
       pack_size_override: offer.pack_size_override != null ? String(offer.pack_size_override) : "",
       product_pack_size_fallback: (offer.products as any)?.pack_size ?? null,

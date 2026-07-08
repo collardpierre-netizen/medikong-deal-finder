@@ -217,12 +217,13 @@ export default function CheckoutPage() {
   const formatAddr = (a: AddressForm) =>
     `${a.company}, ${a.street}${a.street2 ? ", " + a.street2 : ""}, ${a.postalCode} ${a.city}, ${a.country}`;
 
-  // Stripe Checkout hosted state — pas de Stripe.js, simple redirection
+  // Stripe Connect PaymentIntents flow — 1 PI par vendeur
   const [orderId, setOrderId] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [initLoading, setInitLoading] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
   const [initErrorStage, setInitErrorStage] = useState<"order" | "session" | null>(null);
+  const [paymentIntents, setPaymentIntents] = useState<PaymentIntentInfo[]>([]);
   const testMode = false;
 
   const handlePlaceOrder = useCallback(async () => {
@@ -286,32 +287,33 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Step 2 : create Stripe Checkout session
+      // Step 2 : create PaymentIntent(s) — 1 par vendeur (Stripe Connect mandataire)
       stage = "session";
       const { data, error } = await supabase.functions.invoke("stripe-checkout", {
-        body: { action: "create-checkout-session", order_id: oid },
+        body: { action: "create-payment-intent", order_id: oid },
       });
-      if (error || !data?.url) {
-        throw new Error(error?.message || data?.error || "Création de la session Stripe impossible");
+      if (error || !data?.payment_intents || data.payment_intents.length === 0) {
+        throw new Error(error?.message || data?.error || "Création des PaymentIntents impossible");
       }
-
-      // Step 3 : redirect to Stripe-hosted checkout
-      window.location.href = data.url as string;
+      setPaymentIntents(data.payment_intents as PaymentIntentInfo[]);
+      // On reste sur la page — le composant StripePaymentFlow prend le relais
     } catch (e: any) {
       setInitError(e.message || "Erreur");
       setInitErrorStage(stage);
       toast.error(
         stage === "order"
           ? "Création de commande impossible : " + (e.message || "Réessayez")
-          : "Redirection vers Stripe impossible : " + (e.message || "Réessayez")
+          : "Initialisation du paiement Stripe impossible : " + (e.message || "Réessayez")
       );
+    } finally {
       setSubmitting(false);
       setInitLoading(false);
     }
   }, [
     submitting, initLoading, orderId, orderNumber, sameAsBilling, shippingAddr, billingAddr,
-    paymentMethods, payment, subtotal, total, items, createOrder,
+    paymentMethods, payment, subtotal, total, items, createOrder, clearCart, navigate,
   ]);
+
 
 
 

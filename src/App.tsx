@@ -12,6 +12,8 @@ import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
 import { ActiveAccountProvider } from "@/contexts/ActiveAccountContext";
 import { CountryProvider } from "@/contexts/CountryContext";
 import { CountryUrlSync } from "@/components/CountryUrlSync";
+import { CountryOnboardingModal } from "@/components/CountryOnboardingModal";
+
 
 import { PriceDisplayProvider } from "@/contexts/PriceDisplayContext";
 import ImpersonationBanner from "@/components/admin/ImpersonationBanner";
@@ -365,7 +367,9 @@ const App = () => (
         <BrowserRouter>
           <EnvNoIndex />
           <CountryUrlSync />
+          <CountryOnboardingModal />
           <ImpersonationBanner />
+
 
           <ImpersonationPageTracker />
           <AccountSelectionGuard />

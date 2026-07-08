@@ -22,7 +22,10 @@ interface CountryContextType {
   activeCountries: Country[];
   currentCountry: Country | undefined;
   loading: boolean;
+  needsCountryChoice: boolean;
+  detectedCountry: string | null;
 }
+
 
 const CountryContext = createContext<CountryContextType | undefined>(undefined);
 
@@ -81,6 +84,9 @@ export function CountryProvider({ children }: { children: ReactNode }) {
     };
   }, [user?.id]);
 
+  const [needsCountryChoice, setNeedsCountryChoice] = useState(false);
+  const [detectedCountry, setDetectedCountry] = useState<string | null>(null);
+
   // Auto-detect country on first visit (only if no explicit choice)
   useEffect(() => {
     if (hasUserChoice) return;
@@ -90,13 +96,23 @@ export function CountryProvider({ children }: { children: ReactNode }) {
       try {
         const res = await fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(3000) });
         const data = await res.json();
-        const detected = data?.country_code;
-        if (detected && SUPPORTED.includes(detected) && countries.some(c => c.code === detected && c.is_active)) {
+        const detected = data?.country_code as string | undefined;
+        setDetectedCountry(detected || null);
+        if (
+          detected &&
+          SUPPORTED.includes(detected) &&
+          countries.some((c) => c.code === detected && c.is_active)
+        ) {
           setCountryState(detected);
           localStorage.setItem(STORAGE_KEY, detected);
+          setHasUserChoice(true);
+        } else {
+          // IP renvoie un pays non supporté (ou rien) → on demande à l'utilisateur
+          setNeedsCountryChoice(true);
         }
       } catch {
-        // fallback to BE
+        // Timeout / erreur réseau → popup de choix
+        setNeedsCountryChoice(true);
       }
     };
     detectCountry();
@@ -106,18 +122,31 @@ export function CountryProvider({ children }: { children: ReactNode }) {
     setCountryState(code);
     localStorage.setItem(STORAGE_KEY, code);
     setHasUserChoice(true);
+    setNeedsCountryChoice(false);
     if (user?.id) void persistRemote(code);
   };
 
-  const activeCountries = countries.filter(c => c.is_active);
-  const currentCountry = countries.find(c => c.code === country);
+  const activeCountries = countries.filter((c) => c.is_active);
+  const currentCountry = countries.find((c) => c.code === country);
 
   return (
-    <CountryContext.Provider value={{ country, setCountry, countries, activeCountries, currentCountry, loading }}>
+    <CountryContext.Provider
+      value={{
+        country,
+        setCountry,
+        countries,
+        activeCountries,
+        currentCountry,
+        loading,
+        needsCountryChoice,
+        detectedCountry,
+      }}
+    >
       {children}
     </CountryContext.Provider>
   );
 }
+
 
 export function useCountry() {
   const ctx = useContext(CountryContext);

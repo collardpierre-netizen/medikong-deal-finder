@@ -1,12 +1,18 @@
 import { useCountry } from "@/contexts/CountryContext";
-import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Truck, Info, MapPin } from "lucide-react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { ChevronDown, Truck, Info, MapPin, Eye, EyeOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useCountryOfferCounts } from "@/hooks/useCountryOfferCounts";
+
+const fmt = (n: number) => new Intl.NumberFormat("fr-BE").format(n);
 
 export function CountrySelector() {
   const { country, setCountry, activeCountries, currentCountry } = useCountry();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  const codes = useMemo(() => activeCountries.map((c) => c.code), [activeCountries]);
+  const { data: counts, isLoading: countsLoading } = useCountryOfferCounts(open ? codes : []);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -17,6 +23,8 @@ export function CountrySelector() {
   }, []);
 
   const hiddenCountries = activeCountries.filter((c) => c.code !== country);
+  const activeCounts = counts?.[country];
+
 
   return (
     <div ref={ref} className="relative">

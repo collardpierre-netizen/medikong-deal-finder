@@ -362,7 +362,7 @@ export default function AdminCommissions() {
                   <td className="py-2.5 px-4">
                     <Badge className="bg-blue-100 text-blue-700 border-0 text-[11px]">{r.margin_percentage}%</Badge>
                   </td>
-                  <td className="py-2.5 px-4 text-xs" style={{ color: "#8B95A5" }}>+{r.extra_delay_days}j délai</td>
+                  <td className="py-2.5 px-4 text-xs" style={{ color: "#8B95A5" }}>+{r.extra_delay_days}j délai · paiement {(r as any).commission_payment_delay_days ?? 30}j</td>
                   <td className="py-2.5 px-4 text-right space-x-1">
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(r.id)}><Trash2 className="h-3.5 w-3.5" /></Button>

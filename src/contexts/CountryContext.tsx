@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Country {
   code: string;
@@ -25,12 +26,25 @@ interface CountryContextType {
 
 const CountryContext = createContext<CountryContextType | undefined>(undefined);
 
+const STORAGE_KEY = "mk_country";
+const SUPPORTED = ["BE", "FR", "NL", "LU", "DE"];
+
+async function persistRemote(code: string) {
+  try {
+    await (supabase.rpc as any)("set_user_preference", { _key: "country", _value: code });
+  } catch {
+    // best-effort
+  }
+}
+
 export function CountryProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [country, setCountryState] = useState<string>(() => {
-    return localStorage.getItem("mk_country") || "BE";
+    return localStorage.getItem(STORAGE_KEY) || "BE";
   });
   const [countries, setCountries] = useState<Country[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasUserChoice, setHasUserChoice] = useState<boolean>(() => !!localStorage.getItem(STORAGE_KEY));
 
   useEffect(() => {
     const fetchCountries = async () => {
@@ -44,30 +58,55 @@ export function CountryProvider({ children }: { children: ReactNode }) {
     fetchCountries();
   }, []);
 
-  // Auto-detect country on first visit
+  // Load remote preference on login (takes priority over IP detect, not over explicit local choice made this session)
   useEffect(() => {
-    const stored = localStorage.getItem("mk_country");
-    if (stored) return; // already chosen
+    if (!user?.id) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("preferences")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const remote = (data?.preferences as any)?.country as string | undefined;
+      if (remote && SUPPORTED.includes(remote)) {
+        setCountryState(remote);
+        localStorage.setItem(STORAGE_KEY, remote);
+        setHasUserChoice(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  // Auto-detect country on first visit (only if no explicit choice)
+  useEffect(() => {
+    if (hasUserChoice) return;
+    if (countries.length === 0) return;
 
     const detectCountry = async () => {
       try {
         const res = await fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(3000) });
         const data = await res.json();
         const detected = data?.country_code;
-        if (detected && countries.some(c => c.code === detected && c.is_active)) {
+        if (detected && SUPPORTED.includes(detected) && countries.some(c => c.code === detected && c.is_active)) {
           setCountryState(detected);
-          localStorage.setItem("mk_country", detected);
+          localStorage.setItem(STORAGE_KEY, detected);
         }
       } catch {
         // fallback to BE
       }
     };
-    if (countries.length > 0) detectCountry();
-  }, [countries]);
+    detectCountry();
+  }, [countries, hasUserChoice]);
 
   const setCountry = (code: string) => {
     setCountryState(code);
-    localStorage.setItem("mk_country", code);
+    localStorage.setItem(STORAGE_KEY, code);
+    setHasUserChoice(true);
+    if (user?.id) void persistRemote(code);
   };
 
   const activeCountries = countries.filter(c => c.is_active);
@@ -85,3 +124,4 @@ export function useCountry() {
   if (!ctx) throw new Error("useCountry must be used within CountryProvider");
   return ctx;
 }
+

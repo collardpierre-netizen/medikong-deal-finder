@@ -1150,6 +1150,21 @@ const AdminCommandes = () => {
                                 <div className="text-[10px]" style={{ color: "#8B95A5" }}>{o.commissionPct.toFixed(2)} %</div>
                               </div>
                             </td>
+                            <td className="px-3 py-3 font-mono">
+                              {o.commissionDueDate ? (() => {
+                                const d = new Date(o.commissionDueDate.iso);
+                                const today = new Date();
+                                const overdue = d.getTime() < today.getTime();
+                                const soon = !overdue && (d.getTime() - today.getTime()) < 7 * 86400_000;
+                                const color = overdue ? "#B91C1C" : soon ? "#D97706" : "#0E7490";
+                                return (
+                                  <div className="leading-tight" title={`Date de commande (${o.date}) + ${o.commissionDueDate.delay} jours`}>
+                                    <div className="text-[12px] font-bold" style={{ color }}>{d.toLocaleDateString("fr-BE")}</div>
+                                    <div className="text-[10px]" style={{ color: "#8B95A5" }}>+{o.commissionDueDate.delay}j</div>
+                                  </div>
+                                );
+                              })() : <span className="text-[11px]" style={{ color: "#CBD5E1" }}>—</span>}
+                            </td>
                             {(() => {
                               const c = coherenceById.get(o.rawId);
                               const status = c?.coherence ?? "OK";

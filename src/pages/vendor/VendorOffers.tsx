@@ -2260,6 +2260,99 @@ export default function VendorOffers() {
                   </div>
                 );
               })()}
+              {/* Prévisualisation client par pays */}
+              <div className="mt-3 rounded-md border p-2.5" style={{ borderColor: "#E2E8F0", backgroundColor: "#F8FAFC" }}>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Eye className="w-3.5 h-3.5" style={{ color: "#1B5BDA" }} />
+                  <span className="text-[11px] font-medium" style={{ color: "#1D2530" }}>Prévisualiser côté client&nbsp;:</span>
+                  {["BE", "FR", "NL", "LU", "DE"].map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setPreviewCountry(previewCountry === c ? null : c)}
+                      className="px-2 py-1 rounded-md text-[11px] font-medium border transition-colors"
+                      style={{
+                        backgroundColor: previewCountry === c ? "#1B5BDA" : "#fff",
+                        color: previewCountry === c ? "#fff" : "#1D2530",
+                        borderColor: previewCountry === c ? "#1B5BDA" : "#CBD5E1",
+                      }}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                  {previewCountry && (
+                    <button
+                      type="button"
+                      onClick={() => setPreviewCountry(null)}
+                      className="ml-auto text-[10px] underline"
+                      style={{ color: "#8B95A5" }}
+                    >
+                      Fermer
+                    </button>
+                  )}
+                </div>
+                {previewCountry && (
+                  <div className="mt-2 text-[11px]">
+                    {previewLoading && <div style={{ color: "#8B95A5" }}>Analyse en cours…</div>}
+                    {!previewLoading && (() => {
+                      const cc = previewCountry;
+                      const selected = form.country_codes.length > 0 ? form.country_codes : [form.country_code || "BE"];
+                      const price = Number(form.price_excl_vat) || 0;
+                      const stock = form.stock_quantity === "" ? Infinity : Number(form.stock_quantity);
+                      const productActive = previewData?.product?.is_active !== false;
+                      const vendorActive = previewData?.vendor ? previewData.vendor.is_active !== false : true;
+                      const vendorApproved = previewData?.vendor
+                        ? ["approved", "accepted", "verified"].includes(String(previewData.vendor.kyc_status || "").toLowerCase())
+                        : true;
+                      const excl: any = previewData?.exclusivity;
+                      const exclusivityBlock = excl && excl.mode === "block" && excl.vendor_id && excl.vendor_id !== vendor?.id;
+                      const exclusivityHide = excl && excl.mode === "hide" && excl.vendor_id && excl.vendor_id !== vendor?.id;
+
+                      const checks = [
+                        { ok: !!editingId ? true : true, label: "Offre active", detail: editingId ? "Édition d'une offre existante" : "Nouvelle offre — sera active à la création" },
+                        { ok: selected.includes(cc), label: `Pays ${cc} coché`, detail: selected.includes(cc) ? `Livraison activée vers ${cc}` : `Ajoutez ${cc} dans les pays de livraison ci-dessus` },
+                        { ok: price > 0, label: "Prix HTVA renseigné", detail: price > 0 ? `${price.toFixed(2)} € HT` : "Le prix doit être > 0" },
+                        { ok: stock > 0, label: "Stock disponible", detail: stock === Infinity ? "Illimité" : stock > 0 ? `${stock} unités` : "Stock à 0 — l'offre est masquée" },
+                        { ok: productActive, label: "Produit actif au catalogue", detail: productActive ? previewData?.product?.name || "OK" : "Produit désactivé côté admin — contactez MediKong" },
+                        { ok: vendorActive && vendorApproved, label: "Compte vendeur validé", detail: !vendorActive ? "Vendeur désactivé" : !vendorApproved ? `KYC: ${previewData?.vendor?.kyc_status || "en attente"}` : "OK" },
+                        { ok: !exclusivityBlock && !exclusivityHide, label: "Aucune exclusivité bloquante", detail: exclusivityBlock ? `Un autre vendeur bloque la vente sur ${cc}` : exclusivityHide ? `Un autre vendeur masque les offres concurrentes sur ${cc}` : "OK" },
+                      ];
+                      const blockers = checks.filter(c => !c.ok);
+                      const visible = blockers.length === 0;
+                      return (
+                        <>
+                          <div
+                            className="mb-2 rounded-md p-2 font-medium"
+                            style={{
+                              backgroundColor: visible ? "#F0FDF4" : "#FEF2F2",
+                              color: visible ? "#166534" : "#991B1B",
+                              border: `1px solid ${visible ? "#86EFAC" : "#FCA5A5"}`,
+                            }}
+                          >
+                            {visible
+                              ? `✓ L'offre s'affichera pour un acheteur situé en ${cc} (fiche produit, catalogue, résultats de recherche).`
+                              : `✗ L'offre n'apparaîtra PAS pour un acheteur en ${cc}. ${blockers.length} bloqueur(s) ci-dessous.`}
+                          </div>
+                          <ul className="space-y-1">
+                            {checks.map((c, i) => (
+                              <li key={i} className="flex items-start gap-1.5">
+                                <span style={{ color: c.ok ? "#16A34A" : "#DC2626" }}>{c.ok ? "✓" : "✗"}</span>
+                                <span>
+                                  <strong>{c.label}</strong>
+                                  <span style={{ color: "#8B95A5" }}> — {c.detail}</span>
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                          <p className="mt-2 text-[10px]" style={{ color: "#8B95A5" }}>
+                            Simulation basée sur l'état actuel du formulaire (non enregistré) + produit / vendeur / règles d'exclusivité en base.
+                          </p>
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="md:col-span-2">
               <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>

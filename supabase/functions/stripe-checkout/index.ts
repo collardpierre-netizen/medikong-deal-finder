@@ -57,7 +57,24 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
     }
 
     const body = await req.json();
-    const { action, order_id } = body;
+    const { action, order_id, payment_intent_ids } = body;
+
+    if (action === "get-payment-intents-status") {
+      const ids: string[] = Array.isArray(payment_intent_ids) ? payment_intent_ids : [];
+      const statuses: Record<string, string> = {};
+      for (const pid of ids) {
+        try {
+          const pi = await stripe.paymentIntents.retrieve(pid);
+          statuses[pid] = pi.status;
+        } catch (_e) {
+          statuses[pid] = "unknown";
+        }
+      }
+      return new Response(JSON.stringify({ statuses }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
 
     if (action === "create-payment-intent") {
 

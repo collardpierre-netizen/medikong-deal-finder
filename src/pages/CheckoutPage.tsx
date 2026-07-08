@@ -15,8 +15,8 @@ import { ShoppingCart, Loader2, Truck, Pencil, AlertTriangle, CheckCircle2 } fro
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useQuery } from "@tanstack/react-query";
-// Stripe Checkout HOSTED : pas d'Elements ni de Stripe.js côté front.
-// Le front se contente de créer l'order puis de rediriger vers session.url.
+import { StripePaymentFlow, type PaymentIntentInfo } from "@/components/checkout/StripePaymentFlow";
+
 
 
 interface AddressForm {
@@ -217,12 +217,13 @@ export default function CheckoutPage() {
   const formatAddr = (a: AddressForm) =>
     `${a.company}, ${a.street}${a.street2 ? ", " + a.street2 : ""}, ${a.postalCode} ${a.city}, ${a.country}`;
 
-  // Stripe Checkout hosted state — pas de Stripe.js, simple redirection
+  // Stripe Connect PaymentIntents flow — 1 PI par vendeur
   const [orderId, setOrderId] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [initLoading, setInitLoading] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
   const [initErrorStage, setInitErrorStage] = useState<"order" | "session" | null>(null);
+  const [paymentIntents, setPaymentIntents] = useState<PaymentIntentInfo[]>([]);
   const testMode = false;
 
   const handlePlaceOrder = useCallback(async () => {
@@ -286,32 +287,33 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Step 2 : create Stripe Checkout session
+      // Step 2 : create PaymentIntent(s) — 1 par vendeur (Stripe Connect mandataire)
       stage = "session";
       const { data, error } = await supabase.functions.invoke("stripe-checkout", {
-        body: { action: "create-checkout-session", order_id: oid },
+        body: { action: "create-payment-intent", order_id: oid },
       });
-      if (error || !data?.url) {
-        throw new Error(error?.message || data?.error || "Création de la session Stripe impossible");
+      if (error || !data?.payment_intents || data.payment_intents.length === 0) {
+        throw new Error(error?.message || data?.error || "Création des PaymentIntents impossible");
       }
-
-      // Step 3 : redirect to Stripe-hosted checkout
-      window.location.href = data.url as string;
+      setPaymentIntents(data.payment_intents as PaymentIntentInfo[]);
+      // On reste sur la page — le composant StripePaymentFlow prend le relais
     } catch (e: any) {
       setInitError(e.message || "Erreur");
       setInitErrorStage(stage);
       toast.error(
         stage === "order"
           ? "Création de commande impossible : " + (e.message || "Réessayez")
-          : "Redirection vers Stripe impossible : " + (e.message || "Réessayez")
+          : "Initialisation du paiement Stripe impossible : " + (e.message || "Réessayez")
       );
+    } finally {
       setSubmitting(false);
       setInitLoading(false);
     }
   }, [
     submitting, initLoading, orderId, orderNumber, sameAsBilling, shippingAddr, billingAddr,
-    paymentMethods, payment, subtotal, total, items, createOrder,
+    paymentMethods, payment, subtotal, total, items, createOrder, clearCart, navigate,
   ]);
+
 
 
 
@@ -566,87 +568,101 @@ export default function CheckoutPage() {
                     })()}
 
                     <div className="border border-mk-line rounded-lg p-4 mb-6 space-y-4">
-                      <div>
-                        <h3 className="text-sm font-semibold text-mk-navy">Paiement sécurisé par Stripe</h3>
-                        <p className="text-xs text-mk-sec mt-1">
-                          Vous serez redirigé vers la page de paiement sécurisée stripe.com pour finaliser votre commande. Aucune donnée de carte n'est saisie sur MediKong.
-                        </p>
-                      </div>
-
-
-                      {!testMode && initError && !initLoading && (() => {
-                        const stage = initErrorStage ?? (orderId ? "session" : "order");
-                        const title =
-                          stage === "order"
-                            ? "Impossible de créer la commande"
-                            : "Impossible de démarrer le paiement Stripe";
-                        const hint =
-                          stage === "order"
-                            ? "Vérifiez votre adresse et votre connexion, puis réessayez. Aucune commande n'a été enregistrée."
-                            : `La commande ${orderNumber ?? ""} a bien été créée mais Stripe n'a pas pu démarrer la session. Vous pouvez réessayer.`;
-                        return (
-                          <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 space-y-3">
-                            <div className="flex items-start justify-between gap-2">
-                              <p className="text-sm font-semibold text-destructive">{title}</p>
-                              <span className="text-[11px] uppercase tracking-wide text-mk-sec">
-                                Étape : {stage === "order" ? "Commande" : "Stripe"}
-                              </span>
-                            </div>
-                            <p className="text-sm text-mk-navy">{initError}</p>
-                            <p className="text-xs text-mk-sec">{hint}</p>
-                            <div className="flex flex-wrap gap-2">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setInitError(null);
-                                  setInitErrorStage(null);
-                                  if (stage === "order") {
-                                    setOrderId(null);
-                                    setOrderNumber(null);
-                                  }
-                                  handlePlaceOrder();
-                                }}
-                                className="bg-mk-blue text-white font-bold text-sm px-4 py-2 rounded-md"
-                              >
-                                {stage === "order" ? "Recréer la commande" : "Relancer Stripe"}
-                              </button>
-                              {stage === "order" && (
-                                <button
-                                  type="button"
-                                  onClick={() => setStep(1)}
-                                  className="border border-mk-navy text-mk-navy font-bold text-sm px-4 py-2 rounded-md"
-                                >
-                                  Modifier l'adresse
-                                </button>
+                      {paymentIntents.length === 0 ? (
+                        <>
+                          <div>
+                            <h3 className="text-sm font-semibold text-mk-navy">Paiement sécurisé par Stripe</h3>
+                            <p className="text-xs text-mk-sec mt-1">
+                              Votre carte est saisie directement sur MediKong via Stripe Elements. Aucune donnée sensible ne transite par nos serveurs.
+                              {vendorIdsInCart.length > 1 && (
+                                <> Un paiement séparé sera présenté pour chacun des <strong>{vendorIdsInCart.length}</strong> fournisseurs de votre panier.</>
                               )}
-                            </div>
+                            </p>
                           </div>
-                        );
-                      })()}
 
-                      {!testMode && (
-                        <div className="flex gap-3 pt-2">
-                          <button
-                            type="button"
-                            onClick={() => setStep(2)}
-                            disabled={submitting || initLoading}
-                            className="border border-mk-navy text-mk-navy font-bold text-sm px-6 py-3 rounded-md disabled:opacity-50"
-                          >
-                            Retour
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handlePlaceOrder}
-                            disabled={submitting || initLoading || hasBlocking}
-                            title={hasBlocking ? "Résolvez les blocages vendeurs ci-dessus" : undefined}
-                            className="bg-mk-green text-white font-bold text-sm px-6 py-3 rounded-md flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                          >
-                            {(submitting || initLoading) && <Loader2 size={16} className="animate-spin" />}
-                            {initLoading ? "Redirection vers Stripe..." : "Passer la commande"}
-                          </button>
-                        </div>
+                          {!testMode && initError && !initLoading && (() => {
+                            const stage = initErrorStage ?? (orderId ? "session" : "order");
+                            const title =
+                              stage === "order"
+                                ? "Impossible de créer la commande"
+                                : "Impossible d'initialiser le paiement Stripe";
+                            const hint =
+                              stage === "order"
+                                ? "Vérifiez votre adresse et votre connexion, puis réessayez. Aucune commande n'a été enregistrée."
+                                : `La commande ${orderNumber ?? ""} a bien été créée mais Stripe n'a pas pu préparer le paiement. Vous pouvez réessayer.`;
+                            return (
+                              <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 space-y-3">
+                                <div className="flex items-start justify-between gap-2">
+                                  <p className="text-sm font-semibold text-destructive">{title}</p>
+                                  <span className="text-[11px] uppercase tracking-wide text-mk-sec">
+                                    Étape : {stage === "order" ? "Commande" : "Stripe"}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-mk-navy">{initError}</p>
+                                <p className="text-xs text-mk-sec">{hint}</p>
+                                <div className="flex flex-wrap gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setInitError(null);
+                                      setInitErrorStage(null);
+                                      if (stage === "order") {
+                                        setOrderId(null);
+                                        setOrderNumber(null);
+                                      }
+                                      handlePlaceOrder();
+                                    }}
+                                    className="bg-mk-blue text-white font-bold text-sm px-4 py-2 rounded-md"
+                                  >
+                                    {stage === "order" ? "Recréer la commande" : "Relancer Stripe"}
+                                  </button>
+                                  {stage === "order" && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setStep(1)}
+                                      className="border border-mk-navy text-mk-navy font-bold text-sm px-4 py-2 rounded-md"
+                                    >
+                                      Modifier l'adresse
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          <div className="flex gap-3 pt-2">
+                            <button
+                              type="button"
+                              onClick={() => setStep(2)}
+                              disabled={submitting || initLoading}
+                              className="border border-mk-navy text-mk-navy font-bold text-sm px-6 py-3 rounded-md disabled:opacity-50"
+                            >
+                              Retour
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handlePlaceOrder}
+                              disabled={submitting || initLoading || hasBlocking}
+                              title={hasBlocking ? "Résolvez les blocages vendeurs ci-dessus" : undefined}
+                              className="bg-mk-green text-white font-bold text-sm px-6 py-3 rounded-md flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
+                              {(submitting || initLoading) && <Loader2 size={16} className="animate-spin" />}
+                              {initLoading ? "Préparation du paiement..." : "Confirmer et payer"}
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <StripePaymentFlow
+                          orderId={orderId!}
+                          paymentIntents={paymentIntents}
+                          onAllPaid={() => {
+                            clearCart.mutate();
+                            navigate(`/commande/confirmation?order_id=${orderId}`);
+                          }}
+                        />
                       )}
                     </div>
+
 
                   </motion.div>
                 )}

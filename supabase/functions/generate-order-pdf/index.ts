@@ -225,7 +225,28 @@ Deno.serve(async (req) => {
       doc.text(fMode === "pickup" ? "Picking — retrait sur place" : "Livraison", M + 38, y);
       y += 5;
       if (fMode === "delivery") {
-        const ship = (order as any).shipping_address as any;
+        let ship = (order as any).shipping_address as any;
+        // Fallback 1 : snapshot manquant mais shipping_address_id présent → on va le chercher.
+        // Fallback 2 : ni snapshot ni id → on prend l'adresse par défaut du customer.
+        if (!ship) {
+          const shipId = (order as any).shipping_address_id as string | null | undefined;
+          if (shipId) {
+            const { data: addr } = await adminClient
+              .from("customer_shipping_addresses")
+              .select("label, address_l1, address_l2, postal_code, city, country_code")
+              .eq("id", shipId)
+              .maybeSingle();
+            if (addr) ship = addr;
+          } else if ((order as any).customer_id) {
+            const { data: addr } = await adminClient
+              .from("customer_shipping_addresses")
+              .select("label, address_l1, address_l2, postal_code, city, country_code")
+              .eq("customer_id", (order as any).customer_id)
+              .eq("is_default", true)
+              .maybeSingle();
+            if (addr) ship = addr;
+          }
+        }
         if (ship) {
           doc.setFontSize(8.5);
           doc.setTextColor(80, 80, 80);

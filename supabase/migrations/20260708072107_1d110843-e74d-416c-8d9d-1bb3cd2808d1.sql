@@ -1,0 +1,2 @@
+ALTER TABLE public.order_lines ADD COLUMN IF NOT EXISTS stripe_payment_intent_id text;
+CREATE INDEX IF NOT EXISTS idx_order_lines_stripe_pi ON public.order_lines(stripe_payment_intent_id) WHERE stripe_payment_intent_id IS NOT NULL;

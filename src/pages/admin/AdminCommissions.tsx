@@ -510,6 +510,25 @@ export default function AdminCommissions() {
               </div>
 
               <div>
+                <Label>Délai de paiement de la commission</Label>
+                <Select
+                  value={String((editingRule as any).commission_payment_delay_days ?? 30)}
+                  onValueChange={v => setEditingRule({ ...editingRule, commission_payment_delay_days: Number(v) } as any)}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7">7 jours</SelectItem>
+                    <SelectItem value="15">15 jours</SelectItem>
+                    <SelectItem value="30">30 jours (défaut)</SelectItem>
+                    <SelectItem value="45">45 jours</SelectItem>
+                    <SelectItem value="60">60 jours</SelectItem>
+                    <SelectItem value="90">90 jours</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground mt-1">Délai entre la vente et le versement de la commission au vendeur</p>
+              </div>
+
+              <div>
                 <Label>Catégorie (optionnel)</Label>
                 <Select value={editingRule.category_id || "__none__"} onValueChange={v => setEditingRule({ ...editingRule, category_id: v === "__none__" ? null : v })}>
                   <SelectTrigger><SelectValue placeholder="Toutes les catégories" /></SelectTrigger>

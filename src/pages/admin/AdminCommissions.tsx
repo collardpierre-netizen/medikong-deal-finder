@@ -190,6 +190,7 @@ export default function AdminCommissions() {
       margin_percentage: 15,
       priority: 0,
       extra_delay_days: 2,
+      commission_payment_delay_days: 30,
       round_price_to: 0.01,
       is_active: true,
       category_id: null,

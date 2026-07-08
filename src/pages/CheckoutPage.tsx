@@ -335,6 +335,31 @@ export default function CheckoutPage() {
         setOrderNumber(onum);
       }
 
+      // Enregistrement en adresse par défaut (best-effort)
+      if (saveAsDefault && customerId) {
+        try {
+          await supabase
+            .from("customer_shipping_addresses")
+            .update({ is_default: false })
+            .eq("customer_id", customerId)
+            .eq("is_default", true);
+          await supabase.from("customer_shipping_addresses").insert({
+            customer_id: customerId,
+            label: "Adresse par défaut",
+            address_l1: shippingAddr.street,
+            address_l2: shippingAddr.street2 || null,
+            postal_code: shippingAddr.postalCode,
+            city: shippingAddr.city,
+            country_code: shippingAddr.country,
+            is_default: true,
+          });
+          setSaveAsDefault(false);
+        } catch {
+          // best-effort — n'interrompt pas la commande
+        }
+      }
+
+
       // Invoice payment : pas de Stripe, redirection vers confirmation
       const selectedLabel = paymentMethods[payment].label;
       if (selectedLabel.startsWith("Paiement sur facture")) {

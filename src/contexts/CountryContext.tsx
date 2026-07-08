@@ -43,6 +43,7 @@ async function persistRemote(code: string) {
 
 export function CountryProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [country, setCountryState] = useState<string>(() => {
     return localStorage.getItem(STORAGE_KEY) || "BE";
   });

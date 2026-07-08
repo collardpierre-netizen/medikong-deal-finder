@@ -248,6 +248,26 @@ const AdminCommandes = () => {
     },
   });
 
+  // Délai de paiement de la commission par vendeur (via règles de marge). Défaut = 30 jours.
+  const { data: vendorCommissionDelayMap = new Map<string, number>() } = useQuery({
+    queryKey: ["admin-orders-vendor-commission-delays"],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("margin_rules")
+        .select("vendor_id, commission_payment_delay_days")
+        .not("vendor_id", "is", null)
+        .eq("is_active", true);
+      if (error) throw error;
+      const map = new Map<string, number>();
+      for (const r of (data as any[]) || []) {
+        if (r.vendor_id) map.set(r.vendor_id, Number(r.commission_payment_delay_days ?? 30));
+      }
+      return map;
+    },
+  });
+
+
   // Reset page to 1 whenever the filter signature changes.
   if (typeof window !== "undefined") {
     const w = window as any;

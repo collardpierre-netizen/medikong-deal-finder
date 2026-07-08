@@ -164,6 +164,73 @@ function AutoRefreshPreferenceToggle() {
   );
 }
 
+function CountryPreferencePanel() {
+  const { country, setCountry, activeCountries, currentCountry, loading } = useCountry();
+  const [saving, setSaving] = useState(false);
+
+  const handleChange = async (code: string) => {
+    if (code === country) return;
+    setSaving(true);
+    try {
+      setCountry(code); // persist localStorage + profile via CountryContext
+      toast.success("Pays enregistré dans vos préférences");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div>
+      <h2 className="text-xl font-bold text-mk-navy mb-2">Pays</h2>
+      <p className="text-sm text-mk-sec mb-5">
+        Le pays sélectionné filtre le catalogue, les prix, les offres et la devise affichés partout dans le portail. Ce choix est enregistré dans votre profil et vous suit sur tous vos appareils une fois connecté.
+      </p>
+
+      {loading ? (
+        <div className="text-sm text-mk-sec">Chargement…</div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {activeCountries.map((c) => {
+            const active = c.code === country;
+            return (
+              <button
+                key={c.code}
+                onClick={() => handleChange(c.code)}
+                disabled={saving}
+                className={`text-left p-4 rounded-lg border transition-colors ${
+                  active
+                    ? "border-primary bg-primary/5"
+                    : "border-mk-line hover:border-primary/40 hover:bg-slate-50"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl leading-none">{c.flag_emoji || "🌍"}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      {c.name}
+                      {active && <span className="text-[10px] font-bold text-primary uppercase">actif</span>}
+                    </div>
+                    <div className="text-[11px] text-mk-sec">
+                      Code {c.code} · Devise {c.currency} · TVA défaut {c.default_vat_rate ?? "—"}%
+                    </div>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {currentCountry && (
+        <div className="mt-6 text-[11.5px] text-mk-sec bg-slate-50 border border-mk-line rounded-md px-3 py-2">
+          Pays actuellement actif : <strong>{currentCountry.name}</strong> ({currentCountry.code}). Modifier ici met à jour immédiatement le filtre partout dans le portail.
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function DeleteAccountButton() {
   const { user } = useAuth();
   const navigate = useNavigate();

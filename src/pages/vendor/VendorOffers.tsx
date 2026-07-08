@@ -107,6 +107,8 @@ interface OfferForm {
   mov_amount: string;
   delivery_days: string;
   country_code: string;
+  /** Multi-pays de livraison. Une offre est visible dans chaque pays coché. */
+  country_codes: string[];
   category_ids: string[];
   /** Conditionnement override saisi par le vendeur sur l'offre (vide = fallback fiche produit). */
   pack_size_override: string;

@@ -224,6 +224,8 @@ export default function CheckoutPage() {
   const [initError, setInitError] = useState<string | null>(null);
   const [initErrorStage, setInitErrorStage] = useState<"order" | "session" | null>(null);
   const [paymentIntents, setPaymentIntents] = useState<PaymentIntentInfo[]>([]);
+  type ManualPaymentVendor = { vendor_id: string; vendor_name: string; reason: "no_stripe_account" | "charges_disabled"; amount: number };
+  const [manualPaymentVendors, setManualPaymentVendors] = useState<ManualPaymentVendor[]>([]);
   const testMode = false;
 
   const handlePlaceOrder = useCallback(async () => {
@@ -292,11 +294,25 @@ export default function CheckoutPage() {
       const { data, error } = await supabase.functions.invoke("stripe-checkout", {
         body: { action: "create-payment-intent", order_id: oid },
       });
-      if (error || !data?.payment_intents || data.payment_intents.length === 0) {
+      if (error) {
         throw new Error(error?.message || data?.error || "Création des PaymentIntents impossible");
       }
-      setPaymentIntents(data.payment_intents as PaymentIntentInfo[]);
-      // On reste sur la page — le composant StripePaymentFlow prend le relais
+      const manualVendors = (data?.manual_payment_vendors ?? []) as ManualPaymentVendor[];
+      const pis = (data?.payment_intents ?? []) as PaymentIntentInfo[];
+      setManualPaymentVendors(manualVendors);
+      setPaymentIntents(pis);
+
+      // Cas 100% manuel : aucun vendeur Stripe-ready → on saute Stripe et on va direct sur la confirmation
+      if (pis.length === 0 && manualVendors.length > 0) {
+        toast.success("Commande enregistrée — notre équipe vous contacte pour finaliser");
+        clearCart.mutate();
+        navigate(`/commande/confirmation?order_id=${oid}`);
+        return;
+      }
+      if (pis.length === 0) {
+        throw new Error("Aucun PaymentIntent créé pour cette commande");
+      }
+      // Sinon on reste sur la page — StripePaymentFlow prend le relais
     } catch (e: any) {
       setInitError(e.message || "Erreur");
       setInitErrorStage(stage);
@@ -652,15 +668,32 @@ export default function CheckoutPage() {
                           </div>
                         </>
                       ) : (
-                        <StripePaymentFlow
-                          orderId={orderId!}
-                          paymentIntents={paymentIntents}
-                          onAllPaid={() => {
-                            clearCart.mutate();
-                            navigate(`/commande/confirmation?order_id=${orderId}`);
-                          }}
-                        />
+                        <>
+                          {manualPaymentVendors.length > 0 && (
+                            <div className="rounded-md border border-amber-300 bg-amber-50 p-3 space-y-2">
+                              <p className="text-sm font-semibold text-amber-800">
+                                Paiement en ligne partiel — {manualPaymentVendors.length} fournisseur{manualPaymentVendors.length > 1 ? "s" : ""} traité{manualPaymentVendors.length > 1 ? "s" : ""} manuellement
+                              </p>
+                              <ul className="space-y-1">
+                                {manualPaymentVendors.map((v) => (
+                                  <li key={v.vendor_id} className="text-xs text-amber-900">
+                                    • Le paiement en ligne n'est pas encore disponible pour <strong>{v.vendor_name}</strong> — commande enregistrée, notre équipe vous contacte pour finaliser.
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          <StripePaymentFlow
+                            orderId={orderId!}
+                            paymentIntents={paymentIntents}
+                            onAllPaid={() => {
+                              clearCart.mutate();
+                              navigate(`/commande/confirmation?order_id=${orderId}`);
+                            }}
+                          />
+                        </>
                       )}
+
                     </div>
 
 

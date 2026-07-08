@@ -126,11 +126,13 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
       const vendorIds = Array.from(linesByVendor.keys());
       const { data: vendors } = await supabase
         .from("vendors")
-        .select("id, stripe_account_id, commission_rate, stripe_charges_enabled")
+        .select("id, name, company_name, stripe_account_id, commission_rate, stripe_charges_enabled")
         .in("id", vendorIds);
       const vendorMap = new Map<string, any>((vendors || []).map((v: any) => [v.id, v]));
 
-      // Build one PaymentIntent per vendor (Stripe Connect, mode mandataire)
+      // Build one PaymentIntent per vendor (Stripe Connect, mode mandataire).
+      // Les vendeurs sans Stripe Connect actif sont exclus du flux et bascul.
+      // en paiement manuel (traité par l'équipe MediKong).
       const results: Array<{
         vendor_id: string;
         payment_intent_id: string;
@@ -138,9 +140,16 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
         amount: number;
         commission: number;
       }> = [];
+      const manualPaymentVendors: Array<{
+        vendor_id: string;
+        vendor_name: string;
+        reason: "no_stripe_account" | "charges_disabled";
+        amount: number;
+      }> = [];
 
       for (const [vendorId, vLines] of linesByVendor.entries()) {
         const vendor = vendorMap.get(vendorId);
+        const vendorName: string = vendor?.company_name || vendor?.name || `Fournisseur ${vendorId.slice(0, 8)}`;
 
         // Le client paie TTC ; la commission MediKong s'applique sur HT uniquement.
         const totalTtcCents = vLines.reduce(
@@ -153,19 +162,23 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
         );
         if (totalTtcCents <= 0) continue;
 
+        // Vendeur pas encore prêt pour le paiement en ligne → bascule manuelle
+        if (!vendor?.stripe_account_id || !vendor?.stripe_charges_enabled) {
+          manualPaymentVendors.push({
+            vendor_id: vendorId,
+            vendor_name: vendorName,
+            reason: !vendor?.stripe_account_id ? "no_stripe_account" : "charges_disabled",
+            amount: totalTtcCents,
+          });
+          continue;
+        }
+
         const commRate = Number(vendor?.commission_rate ?? defaultCommission);
         // application_fee_amount = commission calculée sur le HT (jamais sur la TVA)
         const commissionCents = Math.round(totalHtCents * commRate);
         const transferCents = totalTtcCents - commissionCents;
         if (transferCents < 0) {
           throw new Error(`Commission > total pour vendor ${vendorId}`);
-        }
-
-        if (!vendor?.stripe_account_id) {
-          throw new Error(`Vendeur ${vendorId} sans compte Stripe Connect (stripe_account_id manquant)`);
-        }
-        if (!vendor?.stripe_charges_enabled) {
-          throw new Error(`Vendeur ${vendorId} : Stripe charges non activées`);
         }
 
         // Réutilise le PI existant si déjà présent sur les lignes de ce vendeur
@@ -210,16 +223,28 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
         });
       }
 
+      // Si au moins un vendeur bascule en paiement manuel, on marque la commande
+      // (partiellement ou totalement) en pending_payment_manual pour que l'équipe
+      // reprenne la main.
+      if (manualPaymentVendors.length > 0) {
+        await supabase
+          .from("orders")
+          .update({ payment_status: "pending_payment_manual" })
+          .eq("id", order.id);
+      }
+
       // Compat rétro : renvoie aussi le premier client_secret si mono-vendeur
       return new Response(
         JSON.stringify({
           payment_intents: results,
+          manual_payment_vendors: manualPaymentVendors,
           client_secret: results[0]?.client_secret ?? null,
           payment_intent_id: results[0]?.payment_intent_id ?? null,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+
 
 
     if (action === "create-checkout-session") {

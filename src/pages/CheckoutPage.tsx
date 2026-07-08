@@ -224,6 +224,8 @@ export default function CheckoutPage() {
   const [initError, setInitError] = useState<string | null>(null);
   const [initErrorStage, setInitErrorStage] = useState<"order" | "session" | null>(null);
   const [paymentIntents, setPaymentIntents] = useState<PaymentIntentInfo[]>([]);
+  type ManualPaymentVendor = { vendor_id: string; vendor_name: string; reason: "no_stripe_account" | "charges_disabled"; amount: number };
+  const [manualPaymentVendors, setManualPaymentVendors] = useState<ManualPaymentVendor[]>([]);
   const testMode = false;
 
   const handlePlaceOrder = useCallback(async () => {

@@ -248,6 +248,26 @@ const AdminCommandes = () => {
     },
   });
 
+  // Délai de paiement de la commission par vendeur (via règles de marge). Défaut = 30 jours.
+  const { data: vendorCommissionDelayMap = new Map<string, number>() } = useQuery({
+    queryKey: ["admin-orders-vendor-commission-delays"],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("margin_rules")
+        .select("vendor_id, commission_payment_delay_days")
+        .not("vendor_id", "is", null)
+        .eq("is_active", true);
+      if (error) throw error;
+      const map = new Map<string, number>();
+      for (const r of (data as any[]) || []) {
+        if (r.vendor_id) map.set(r.vendor_id, Number(r.commission_payment_delay_days ?? 30));
+      }
+      return map;
+    },
+  });
+
+
   // Reset page to 1 whenever the filter signature changes.
   if (typeof window !== "undefined") {
     const w = window as any;
@@ -385,6 +405,17 @@ const AdminCommandes = () => {
       hiddenFromList: Boolean((o as any).hidden_from_list),
       createdAtRaw: o.created_at,
       date: new Date(o.created_at).toLocaleDateString("fr-BE"),
+      commissionDueDate: (() => {
+        if (commissionEur <= 0) return null;
+        const vendorIds = Array.from(new Set((lines as any[]).map((l) => l.vendor_id).filter(Boolean))) as string[];
+        const delays = vendorIds
+          .map((vid) => (vendorCommissionDelayMap as Map<string, number>).get(vid))
+          .filter((d): d is number => typeof d === "number" && Number.isFinite(d));
+        const delay = delays.length > 0 ? Math.max(...delays) : 30;
+        const base = new Date(o.created_at);
+        base.setDate(base.getDate() + delay);
+        return { iso: base.toISOString(), delay };
+      })(),
       lines,
     };
   });
@@ -999,7 +1030,7 @@ const AdminCommandes = () => {
                           "Paiement": "payment",
                           "Facturation": "billing",
                         };
-                        const headers = ["ID / Réf PO", "Acheteur", "Type", "Lignes", "Vendeurs", "Lignes uniques", "HT", "TVA", "TTC", "Marge HT", "Commission", "Cohérence", "Paiement", "Facturation", "Statut", ""];
+                        const headers = ["ID / Réf PO", "Acheteur", "Type", "Lignes", "Vendeurs", "Lignes uniques", "HT", "TVA", "TTC", "Marge HT", "Commission", "Échéance commission", "Cohérence", "Paiement", "Facturation", "Statut", ""];
                         return headers.map((h) => {
                           const key = sortable[h];
                           if (!key) {
@@ -1118,6 +1149,21 @@ const AdminCommandes = () => {
                                 <div className="text-[12px] font-bold" style={{ color: "#059669" }}>{fmt(o.commissionEur)}</div>
                                 <div className="text-[10px]" style={{ color: "#8B95A5" }}>{o.commissionPct.toFixed(2)} %</div>
                               </div>
+                            </td>
+                            <td className="px-3 py-3 font-mono">
+                              {o.commissionDueDate ? (() => {
+                                const d = new Date(o.commissionDueDate.iso);
+                                const today = new Date();
+                                const overdue = d.getTime() < today.getTime();
+                                const soon = !overdue && (d.getTime() - today.getTime()) < 7 * 86400_000;
+                                const color = overdue ? "#B91C1C" : soon ? "#D97706" : "#0E7490";
+                                return (
+                                  <div className="leading-tight" title={`Date de commande (${o.date}) + ${o.commissionDueDate.delay} jours`}>
+                                    <div className="text-[12px] font-bold" style={{ color }}>{d.toLocaleDateString("fr-BE")}</div>
+                                    <div className="text-[10px]" style={{ color: "#8B95A5" }}>+{o.commissionDueDate.delay}j</div>
+                                  </div>
+                                );
+                              })() : <span className="text-[11px]" style={{ color: "#CBD5E1" }}>—</span>}
                             </td>
                             {(() => {
                               const c = coherenceById.get(o.rawId);

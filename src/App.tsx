@@ -395,6 +395,7 @@ const App = () => (
             <Route path="/espace-pharmacie/abonnement" element={<LP><PharmacieAbonnementPage /></LP>} />
             <Route path="/checkout" element={<LP><CheckoutPage /></LP>} />
             <Route path="/confirmation" element={<LP><ConfirmationPage /></LP>} />
+            <Route path="/commande/confirmation" element={<LP><OrderPaymentConfirmationPage /></LP>} />
             <Route path="/commande/:id" element={<LP><OrderDetailPage /></LP>} />
             <Route path="/commande/confirmer/:token" element={<LP><DeliveryConfirmationPage /></LP>} />
             <Route path="/commande/:id/confirmer" element={<LP><DeliveryConfirmationPage /></LP>} />

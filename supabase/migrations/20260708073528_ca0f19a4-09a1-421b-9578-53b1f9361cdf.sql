@@ -1,0 +1,1 @@
+ALTER TYPE public.payment_status_enum ADD VALUE IF NOT EXISTS 'pending_payment_manual';

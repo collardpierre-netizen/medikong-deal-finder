@@ -26696,7 +26696,12 @@ export type Database = {
         | "cancelled"
         | "error"
       payment_method_enum: "invoice" | "bank_transfer" | "card" | "mixed"
-      payment_status_enum: "pending" | "paid" | "overdue" | "refunded"
+      payment_status_enum:
+        | "pending"
+        | "paid"
+        | "overdue"
+        | "refunded"
+        | "pending_payment_manual"
       product_source:
         | "qogita"
         | "medikong"
@@ -27083,7 +27088,13 @@ export const Constants = {
         "error",
       ],
       payment_method_enum: ["invoice", "bank_transfer", "card", "mixed"],
-      payment_status_enum: ["pending", "paid", "overdue", "refunded"],
+      payment_status_enum: [
+        "pending",
+        "paid",
+        "overdue",
+        "refunded",
+        "pending_payment_manual",
+      ],
       product_source: [
         "qogita",
         "medikong",

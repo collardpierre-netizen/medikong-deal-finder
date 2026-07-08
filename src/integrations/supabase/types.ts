@@ -7353,6 +7353,7 @@ export type Database = {
           commission_valid_from: string | null
           commission_valid_until: string | null
           country_code: string | null
+          country_codes: string[]
           created_at: string
           delivery_days: number | null
           down_payment_pct: number | null
@@ -7419,6 +7420,7 @@ export type Database = {
           commission_valid_from?: string | null
           commission_valid_until?: string | null
           country_code?: string | null
+          country_codes?: string[]
           created_at?: string
           delivery_days?: number | null
           down_payment_pct?: number | null
@@ -7485,6 +7487,7 @@ export type Database = {
           commission_valid_from?: string | null
           commission_valid_until?: string | null
           country_code?: string | null
+          country_codes?: string[]
           created_at?: string
           delivery_days?: number | null
           down_payment_pct?: number | null
@@ -24506,6 +24509,7 @@ export type Database = {
           commission_valid_from: string | null
           commission_valid_until: string | null
           country_code: string | null
+          country_codes: string[]
           created_at: string
           delivery_days: number | null
           down_payment_pct: number | null

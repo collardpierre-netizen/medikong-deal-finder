@@ -791,9 +791,13 @@ const AdminCommandes = () => {
               <Trash2 size={14} /> Purger commandes test ({testCount})
             </button>
           )}
+          <button onClick={handleExportXlsx} disabled={exportingXlsx} className="flex items-center gap-2 px-4 py-2 rounded-md text-[13px] font-bold text-white disabled:opacity-60" style={{ backgroundColor: "#0F766E" }} title="Exporte toutes les commandes filtrées (multi-pages) avec toutes les colonnes + lignes détaillées">
+            <FileDown size={15} /> {exportingXlsx ? "Export…" : "Export XLSX"}
+          </button>
           <button onClick={handleExportCsv} className="flex items-center gap-2 px-4 py-2 rounded-md text-[13px] font-bold text-white" style={{ backgroundColor: "#1B5BDA" }}>
             <Download size={15} /> Export CSV
           </button>
+
         </div>
       } />
 

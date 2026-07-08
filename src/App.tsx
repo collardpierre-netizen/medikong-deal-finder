@@ -11,6 +11,8 @@ import { CartProvider } from "@/contexts/CartContext";
 import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
 import { ActiveAccountProvider } from "@/contexts/ActiveAccountContext";
 import { CountryProvider } from "@/contexts/CountryContext";
+import { CountryUrlSync } from "@/components/CountryUrlSync";
+
 import { PriceDisplayProvider } from "@/contexts/PriceDisplayContext";
 import ImpersonationBanner from "@/components/admin/ImpersonationBanner";
 import ImpersonationPageTracker from "@/components/admin/ImpersonationPageTracker";
@@ -362,7 +364,9 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <EnvNoIndex />
+          <CountryUrlSync />
           <ImpersonationBanner />
+
           <ImpersonationPageTracker />
           <AccountSelectionGuard />
           <LazyRouteBoundary>

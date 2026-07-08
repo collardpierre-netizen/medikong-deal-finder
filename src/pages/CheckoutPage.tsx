@@ -294,11 +294,25 @@ export default function CheckoutPage() {
       const { data, error } = await supabase.functions.invoke("stripe-checkout", {
         body: { action: "create-payment-intent", order_id: oid },
       });
-      if (error || !data?.payment_intents || data.payment_intents.length === 0) {
+      if (error) {
         throw new Error(error?.message || data?.error || "Création des PaymentIntents impossible");
       }
-      setPaymentIntents(data.payment_intents as PaymentIntentInfo[]);
-      // On reste sur la page — le composant StripePaymentFlow prend le relais
+      const manualVendors = (data?.manual_payment_vendors ?? []) as ManualPaymentVendor[];
+      const pis = (data?.payment_intents ?? []) as PaymentIntentInfo[];
+      setManualPaymentVendors(manualVendors);
+      setPaymentIntents(pis);
+
+      // Cas 100% manuel : aucun vendeur Stripe-ready → on saute Stripe et on va direct sur la confirmation
+      if (pis.length === 0 && manualVendors.length > 0) {
+        toast.success("Commande enregistrée — notre équipe vous contacte pour finaliser");
+        clearCart.mutate();
+        navigate(`/commande/confirmation?order_id=${oid}`);
+        return;
+      }
+      if (pis.length === 0) {
+        throw new Error("Aucun PaymentIntent créé pour cette commande");
+      }
+      // Sinon on reste sur la page — StripePaymentFlow prend le relais
     } catch (e: any) {
       setInitError(e.message || "Erreur");
       setInitErrorStage(stage);

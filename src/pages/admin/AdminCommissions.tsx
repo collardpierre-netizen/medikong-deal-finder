@@ -96,6 +96,7 @@ export default function AdminCommissions() {
         margin_percentage: rule.margin_percentage ?? 15,
         priority: rule.priority ?? 0,
         extra_delay_days: rule.extra_delay_days ?? 2,
+        commission_payment_delay_days: (rule as any).commission_payment_delay_days ?? 30,
         round_price_to: rule.round_price_to ?? 0.01,
         is_active: rule.is_active ?? true,
         category_id: rule.category_id || null,
@@ -163,6 +164,7 @@ export default function AdminCommissions() {
         margin_percentage: template.margin_percentage,
         priority: template.priority,
         extra_delay_days: template.extra_delay_days,
+        commission_payment_delay_days: (template as any).commission_payment_delay_days ?? 30,
         round_price_to: template.round_price_to,
         category_id: template.category_id,
         brand_id: template.brand_id,
@@ -188,6 +190,7 @@ export default function AdminCommissions() {
       margin_percentage: 15,
       priority: 0,
       extra_delay_days: 2,
+      commission_payment_delay_days: 30,
       round_price_to: 0.01,
       is_active: true,
       category_id: null,
@@ -232,6 +235,7 @@ export default function AdminCommissions() {
     if (r.min_base_price) parts.push(`≥${r.min_base_price}€`);
     if (r.max_base_price) parts.push(`≤${r.max_base_price}€`);
     parts.push(`+${r.extra_delay_days}j`);
+    parts.push(`paiement ${(r as any).commission_payment_delay_days ?? 30}j`);
     return parts.join(" · ");
   };
 
@@ -358,7 +362,7 @@ export default function AdminCommissions() {
                   <td className="py-2.5 px-4">
                     <Badge className="bg-blue-100 text-blue-700 border-0 text-[11px]">{r.margin_percentage}%</Badge>
                   </td>
-                  <td className="py-2.5 px-4 text-xs" style={{ color: "#8B95A5" }}>+{r.extra_delay_days}j délai</td>
+                  <td className="py-2.5 px-4 text-xs" style={{ color: "#8B95A5" }}>+{r.extra_delay_days}j délai · paiement {(r as any).commission_payment_delay_days ?? 30}j</td>
                   <td className="py-2.5 px-4 text-right space-x-1">
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate(r.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
@@ -503,6 +507,25 @@ export default function AdminCommissions() {
                   <Label>Arrondi prix à</Label>
                   <Input type="number" step="0.01" value={editingRule.round_price_to ?? 0.01} onChange={e => setEditingRule({ ...editingRule, round_price_to: Number(e.target.value) })} />
                 </div>
+              </div>
+
+              <div>
+                <Label>Délai de paiement de la commission</Label>
+                <Select
+                  value={String((editingRule as any).commission_payment_delay_days ?? 30)}
+                  onValueChange={v => setEditingRule({ ...editingRule, commission_payment_delay_days: Number(v) } as any)}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7">7 jours</SelectItem>
+                    <SelectItem value="15">15 jours</SelectItem>
+                    <SelectItem value="30">30 jours (défaut)</SelectItem>
+                    <SelectItem value="45">45 jours</SelectItem>
+                    <SelectItem value="60">60 jours</SelectItem>
+                    <SelectItem value="90">90 jours</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground mt-1">Délai entre la vente et le versement de la commission au vendeur</p>
               </div>
 
               <div>

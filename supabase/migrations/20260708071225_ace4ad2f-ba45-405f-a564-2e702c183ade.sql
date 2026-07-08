@@ -1,0 +1,1 @@
+ALTER TABLE public.margin_rules ADD COLUMN IF NOT EXISTS commission_payment_delay_days integer NOT NULL DEFAULT 30;

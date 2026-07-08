@@ -79,6 +79,56 @@ export default function CheckoutPage() {
   const [shipping, setShipping] = useState(0);
   const [payment, setPayment] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [prefillSource, setPrefillSource] = useState<"saved_address" | "customer_profile" | null>(null);
+
+  // Pré-remplissage automatique depuis le compte (adresse par défaut > profil client)
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const { data: cust } = await supabase
+        .from("customers")
+        .select("id, company_name, address_line1, address_line2, city, postal_code, country_code")
+        .eq("auth_user_id", user.id)
+        .maybeSingle();
+      if (cancelled || !cust) return;
+      const { data: savedAddrs } = await supabase
+        .from("customer_shipping_addresses")
+        .select("*")
+        .eq("customer_id", (cust as any).id)
+        .order("is_default", { ascending: false })
+        .order("updated_at", { ascending: false })
+        .limit(1);
+      if (cancelled) return;
+      const saved = savedAddrs?.[0] as any;
+      if (saved) {
+        const prefill: AddressForm = {
+          company: (cust as any).company_name || "",
+          street: saved.address_l1 || "",
+          street2: saved.address_l2 || "",
+          postalCode: saved.postal_code || "",
+          city: saved.city || "",
+          country: saved.country_code || "BE",
+        };
+        setShippingAddr((prev) => (prev.street || prev.city || prev.postalCode ? prev : prefill));
+        setBillingAddr((prev) => (prev.street || prev.city || prev.postalCode ? prev : prefill));
+        setPrefillSource("saved_address");
+      } else if ((cust as any).address_line1 || (cust as any).city) {
+        const prefill: AddressForm = {
+          company: (cust as any).company_name || "",
+          street: (cust as any).address_line1 || "",
+          street2: (cust as any).address_line2 || "",
+          postalCode: (cust as any).postal_code || "",
+          city: (cust as any).city || "",
+          country: (cust as any).country_code || "BE",
+        };
+        setShippingAddr((prev) => (prev.street || prev.city || prev.postalCode ? prev : prefill));
+        setBillingAddr((prev) => (prev.street || prev.city || prev.postalCode ? prev : prefill));
+        setPrefillSource("customer_profile");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
 
   const { data: shippingOpts = [] } = useQuery({
     queryKey: ["shipping-options", shippingAddr.country],

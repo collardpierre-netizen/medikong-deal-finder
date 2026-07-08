@@ -95,8 +95,10 @@ export default function CheckoutPage() {
         .eq("auth_user_id", user.id)
         .maybeSingle();
       if (cancelled || !cust) return;
+      setCustomerId((cust as any).id);
       const { data: savedAddrs } = await supabase
         .from("customer_shipping_addresses")
+
         .select("*")
         .eq("customer_id", (cust as any).id)
         .order("is_default", { ascending: false })

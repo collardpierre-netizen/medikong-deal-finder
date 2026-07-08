@@ -1030,7 +1030,7 @@ const AdminCommandes = () => {
                           "Paiement": "payment",
                           "Facturation": "billing",
                         };
-                        const headers = ["ID / Réf PO", "Acheteur", "Type", "Lignes", "Vendeurs", "Lignes uniques", "HT", "TVA", "TTC", "Marge HT", "Commission", "Cohérence", "Paiement", "Facturation", "Statut", ""];
+                        const headers = ["ID / Réf PO", "Acheteur", "Type", "Lignes", "Vendeurs", "Lignes uniques", "HT", "TVA", "TTC", "Marge HT", "Commission", "Échéance commission", "Cohérence", "Paiement", "Facturation", "Statut", ""];
                         return headers.map((h) => {
                           const key = sortable[h];
                           if (!key) {

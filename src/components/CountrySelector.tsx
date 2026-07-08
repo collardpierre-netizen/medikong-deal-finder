@@ -76,10 +76,19 @@ export function CountrySelector() {
                   <div className="text-[10px] text-slate-500">
                     Devise&nbsp;{currentCountry?.currency || "EUR"} · TVA par défaut {currentCountry?.default_vat_rate ?? "—"}%
                   </div>
+                  <div className="flex items-center gap-2 mt-1 text-[10.5px]">
+                    <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+                      <Eye size={11} /> {countsLoading || !activeCounts ? "…" : fmt(activeCounts.visible)} visibles
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-slate-500">
+                      <EyeOff size={11} /> {countsLoading || !activeCounts ? "…" : fmt(activeCounts.hidden)} masquées
+                    </span>
+                  </div>
                 </div>
                 <span className="text-primary text-xs font-bold">✓</span>
               </div>
             </div>
+
 
             {/* Autres pays disponibles */}
             {hiddenCountries.length > 0 && (
@@ -88,22 +97,29 @@ export function CountrySelector() {
                   Basculer vers un autre pays
                 </div>
                 <div className="space-y-0.5">
-                  {hiddenCountries.map((c) => (
-                    <button
-                      key={c.code}
-                      onClick={() => {
-                        setCountry(c.code);
-                        setOpen(false);
-                      }}
-                      className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm hover:bg-slate-100 transition-colors text-left"
-                    >
-                      <span className="text-base">{c.flag_emoji}</span>
-                      <span className="flex-1 text-foreground">{c.name}</span>
-                      <span className="text-[10px] text-slate-400 group-hover:text-slate-600">
-                        Voir le catalogue {c.code}
-                      </span>
-                    </button>
-                  ))}
+                  {hiddenCountries.map((c) => {
+                    const cc = counts?.[c.code];
+                    return (
+                      <button
+                        key={c.code}
+                        onClick={() => {
+                          setCountry(c.code);
+                          setOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm hover:bg-slate-100 transition-colors text-left"
+                      >
+                        <span className="text-base">{c.flag_emoji}</span>
+                        <span className="flex-1 text-foreground">{c.name}</span>
+                        <span className="inline-flex items-center gap-1 text-[10.5px] text-emerald-700 font-semibold">
+                          <Eye size={10} /> {countsLoading || !cc ? "…" : fmt(cc.visible)}
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-[10.5px] text-slate-400">
+                          <EyeOff size={10} /> {countsLoading || !cc ? "…" : fmt(cc.hidden)}
+                        </span>
+                      </button>
+                    );
+                  })}
+
                 </div>
               </div>
             )}

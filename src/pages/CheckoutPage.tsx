@@ -508,7 +508,25 @@ export default function CheckoutPage() {
               <AnimatePresence mode="wait">
                 {step === 1 && (
                   <motion.div key="step1" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.3 }}>
-                    <h2 className="text-xl font-bold text-mk-navy mb-5">Adresse de livraison</h2>
+                    <h2 className="text-xl font-bold text-mk-navy mb-3">Adresse de livraison</h2>
+                    {prefillSource && (
+                      <div className="mb-4 flex items-start gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-[12px] text-emerald-800">
+                        <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-emerald-600" />
+                        <div className="flex-1">
+                          <span className="font-semibold">Adresse pré-remplie depuis votre compte</span>
+                          <span className="text-emerald-700">
+                            {" "}— {prefillSource === "saved_address" ? "adresse de livraison par défaut" : "coordonnées de votre profil client"}. Modifiez librement les champs si besoin.
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => { setShippingAddr(emptyAddress); setBillingAddr(emptyAddress); setPrefillSource(null); }}
+                          className="text-[11px] font-medium underline text-emerald-700 hover:text-emerald-900 shrink-0"
+                        >
+                          Vider
+                        </button>
+                      </div>
+                    )}
                     <AddressFields value={shippingAddr} onChange={setShippingAddr} prefix="ship" />
 
                     <label className="flex items-center gap-2 mt-4 mb-4 cursor-pointer">

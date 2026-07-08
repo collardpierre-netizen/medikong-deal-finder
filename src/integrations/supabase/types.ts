@@ -5355,6 +5355,7 @@ export type Database = {
         Row: {
           brand_id: string | null
           category_id: string | null
+          commission_payment_delay_days: number
           created_at: string
           extra_delay_days: number
           gmv_window: string
@@ -5373,6 +5374,7 @@ export type Database = {
         Insert: {
           brand_id?: string | null
           category_id?: string | null
+          commission_payment_delay_days?: number
           created_at?: string
           extra_delay_days?: number
           gmv_window?: string
@@ -5391,6 +5393,7 @@ export type Database = {
         Update: {
           brand_id?: string | null
           category_id?: string | null
+          commission_payment_delay_days?: number
           created_at?: string
           extra_delay_days?: number
           gmv_window?: string

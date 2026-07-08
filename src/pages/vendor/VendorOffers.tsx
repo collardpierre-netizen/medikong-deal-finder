@@ -2198,9 +2198,45 @@ export default function VendorOffers() {
                   );
                 })}
               </div>
-              <p className="mt-1 text-[11px]" style={{ color: "#8B95A5" }}>
-                L'offre sera visible pour les acheteurs situés dans chaque pays coché. Au moins un pays est requis (BE par défaut).
-              </p>
+              {(() => {
+                const COUNTRY_LABELS: Record<string, string> = { BE: "Belgique", FR: "France", NL: "Pays-Bas", LU: "Luxembourg", DE: "Allemagne" };
+                const selected = form.country_codes.length > 0 ? form.country_codes : [form.country_code || "BE"];
+                const all = ["BE", "FR", "NL", "LU", "DE"];
+                const missing = all.filter(c => !selected.includes(c));
+                const visibleLabels = selected.map(c => COUNTRY_LABELS[c] || c).join(", ");
+                const hiddenLabels = missing.map(c => COUNTRY_LABELS[c] || c).join(", ");
+                const restricted = !selected.includes("BE") || missing.length > 0;
+                return (
+                  <div className="mt-2 space-y-1">
+                    <p className="text-[11px]" style={{ color: "#8B95A5" }}>
+                      L'offre sera visible pour les acheteurs situés dans chaque pays coché. Au moins un pays est requis (BE par défaut).
+                    </p>
+                    <div
+                      className="mt-1 rounded-md p-2 text-[11px] leading-snug border"
+                      style={{
+                        backgroundColor: restricted ? "#FFF7ED" : "#F0FDF4",
+                        borderColor: restricted ? "#FDBA74" : "#86EFAC",
+                        color: restricted ? "#9A3412" : "#166534",
+                      }}
+                      role="status"
+                    >
+                      {restricted ? (
+                        <>
+                          <strong>⚠ Visibilité restreinte.</strong> Affichée uniquement aux acheteurs livrés en&nbsp;: <strong>{visibleLabels}</strong>.
+                          {missing.length > 0 && (
+                            <> Les acheteurs en <strong>{hiddenLabels}</strong> ne verront pas cette offre sur la fiche produit, le catalogue ni les résultats de recherche.</>
+                          )}
+                          {!selected.includes("BE") && (
+                            <> <br />Cochez <strong>Belgique (BE)</strong> pour la rendre visible au marché principal MediKong.</>
+                          )}
+                        </>
+                      ) : (
+                        <><strong>✓ Visibilité maximale.</strong> Affichée aux acheteurs des 5 pays desservis (BE, FR, NL, LU, DE).</>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
             <div className="md:col-span-2">
               <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>

@@ -1328,7 +1328,10 @@ export default function AccountPage() {
                     </div>
                   )}
 
+                  {activeTab === "pays" && <CountryPreferencePanel />}
+
                   {activeTab === "portefeuille" && (
+
                     <div>
                       <h2 className="text-xl font-bold text-mk-navy mb-5">Portefeuille</h2>
                       <div className="text-center py-8">

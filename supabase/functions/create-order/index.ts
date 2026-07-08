@@ -56,11 +56,10 @@ Deno.serve(async (req) => {
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claims, error: claimsErr } = await userClient.auth.getClaims(token);
-    if (claimsErr || !claims?.claims?.sub) return json(401, { error: "Non autorisé" });
-    const userId = claims.claims.sub as string;
-    const userEmail = (claims.claims.email as string | undefined) ?? null;
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData?.user?.id) return json(401, { error: "Non autorisé" });
+    const userId = userData.user.id;
+    const userEmail = userData.user.email ?? null;
 
     // Privileged client for inserts (RLS-bypass; we authorize by userId scoping)
     const supabase = createClient(supabaseUrl, serviceKey);

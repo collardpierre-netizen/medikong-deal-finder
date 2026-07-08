@@ -70,16 +70,16 @@ export default function VendorOffersAudit() {
           .eq("is_active", true)
           .order("updated_at", { ascending: false })
           .limit(2000),
-        supabase.from("vendors").select("is_active, kyc_status").eq("id", vendor!.id).maybeSingle(),
+        supabase.from("vendors").select("is_active, validation_status").eq("id", vendor!.id).maybeSingle(),
       ]);
       return { offers: offers || [], vendorRow };
     },
   });
 
   const vendorApproved = data?.vendorRow
-    ? ["approved", "accepted", "verified"].includes(String(data.vendorRow.kyc_status || "").toLowerCase())
+    ? ["approved", "accepted", "verified"].includes(String((data.vendorRow as any).validation_status || "").toLowerCase())
     : true;
-  const vendorActive = data?.vendorRow ? data.vendorRow.is_active !== false : true;
+  const vendorActive = data?.vendorRow ? (data.vendorRow as any).is_active !== false : true;
 
   const rows = useMemo(() => {
     return (data?.offers || []).map((o: any) => ({

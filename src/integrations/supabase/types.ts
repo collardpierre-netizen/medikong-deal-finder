@@ -23822,6 +23822,7 @@ export type Database = {
       _cat_tokens: { Args: { _label: string }; Returns: string[] }
       _current_user_buyer_ids: { Args: never; Returns: string[] }
       _is_admin_or_service: { Args: never; Returns: boolean }
+      _is_privileged_actor: { Args: never; Returns: boolean }
       _qogita_apply_sweep: {
         Args: {
           _candidate_offers: string[]

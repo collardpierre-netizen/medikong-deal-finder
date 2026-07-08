@@ -405,6 +405,17 @@ const AdminCommandes = () => {
       hiddenFromList: Boolean((o as any).hidden_from_list),
       createdAtRaw: o.created_at,
       date: new Date(o.created_at).toLocaleDateString("fr-BE"),
+      commissionDueDate: (() => {
+        if (commissionEur <= 0) return null;
+        const vendorIds = Array.from(new Set((lines as any[]).map((l) => l.vendor_id).filter(Boolean))) as string[];
+        const delays = vendorIds
+          .map((vid) => (vendorCommissionDelayMap as Map<string, number>).get(vid))
+          .filter((d): d is number => typeof d === "number" && Number.isFinite(d));
+        const delay = delays.length > 0 ? Math.max(...delays) : 30;
+        const base = new Date(o.created_at);
+        base.setDate(base.getDate() + delay);
+        return { iso: base.toISOString(), delay };
+      })(),
       lines,
     };
   });

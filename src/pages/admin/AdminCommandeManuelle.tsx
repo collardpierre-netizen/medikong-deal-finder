@@ -1062,15 +1062,26 @@ const AdminCommandeManuelle = () => {
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <Label className="text-xs">Adresse de livraison</Label>
-                      <a
-                        href={`/admin/customers?id=${customerId}#shipping`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[11px] underline text-slate-500 hover:text-slate-700"
-                        title="Gérer les adresses de livraison du customer"
-                      >
-                        Gérer les sites
-                      </a>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => { void refetchShippingAddresses(); }}
+                          className="text-[11px] underline text-slate-500 hover:text-slate-700 disabled:opacity-50"
+                          title="Recharger la liste des adresses"
+                          disabled={isFetchingShippingAddresses}
+                        >
+                          {isFetchingShippingAddresses ? "Rafraîchissement…" : "Rafraîchir"}
+                        </button>
+                        <a
+                          href={`/admin/customers?id=${customerId}#shipping`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[11px] underline text-slate-500 hover:text-slate-700"
+                          title="Gérer les adresses de livraison du customer"
+                        >
+                          Gérer les sites
+                        </a>
+                      </div>
                     </div>
                     {shippingAddresses.length === 0 ? (
                       <p className="text-[11px] text-slate-500">

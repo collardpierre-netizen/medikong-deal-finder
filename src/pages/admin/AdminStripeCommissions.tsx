@@ -188,6 +188,71 @@ export default function AdminStripeCommissions() {
           </Table>
         )}
       </div>
+
+      {/* GO/NO-GO — PaymentIntents Stripe Connect par commande / vendeur */}
+      <div className="mt-8">
+        <div className="mb-3 flex items-baseline justify-between">
+          <div>
+            <h3 className="text-[15px] font-bold" style={{ color: "#1D2530" }}>PaymentIntents Stripe Connect (mandataire)</h3>
+            <p className="text-[12px]" style={{ color: "#8B95A5" }}>1 PaymentIntent par vendeur et par commande — cliquez pour ouvrir dans le dashboard Stripe.</p>
+          </div>
+          <Badge variant="outline" className="text-[11px]">{piRows.length} PI</Badge>
+        </div>
+        <div className="bg-white rounded-lg border overflow-hidden" style={{ borderColor: "#E2E8F0" }}>
+          {loadingPi ? (
+            <div className="py-12 text-center">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto" style={{ color: "#1B5BDA" }} />
+            </div>
+          ) : piRows.length === 0 ? (
+            <div className="py-10 text-center text-[12px]" style={{ color: "#8B95A5" }}>
+              Aucun PaymentIntent enregistré pour l'instant. Passez une commande de test pour valider le flux.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow style={{ backgroundColor: "#F8FAFC" }}>
+                  {["Date", "Commande", "Vendeur", "Total TTC", "PaymentIntent", ""].map(h => (
+                    <TableHead key={h} className="text-[11px] font-semibold" style={{ color: "#8B95A5" }}>{h}</TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {piRows.map((r) => (
+                  <TableRow key={r.key}>
+                    <TableCell className="text-[11px]" style={{ color: "#616B7C" }}>
+                      {new Date(r.created_at).toLocaleDateString("fr-BE")}
+                    </TableCell>
+                    <TableCell className="text-[12px] font-mono font-semibold" style={{ color: "#1D2530" }}>
+                      {r.order_number}
+                    </TableCell>
+                    <TableCell className="text-[12px]" style={{ color: "#1D2530" }}>
+                      {r.vendor_label}
+                    </TableCell>
+                    <TableCell className="text-[12px] font-mono font-bold" style={{ color: "#059669" }}>
+                      {r.total_ttc.toLocaleString("fr-BE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                    </TableCell>
+                    <TableCell className="text-[11px] font-mono" style={{ color: "#8B95A5" }}>
+                      {r.pi_id}
+                    </TableCell>
+                    <TableCell>
+                      <a
+                        href={stripePiUrl(r.pi_id)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold hover:underline"
+                        style={{ color: "#1B5BDA" }}
+                      >
+                        Ouvrir dans Stripe <ExternalLink size={12} />
+                      </a>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
+

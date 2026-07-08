@@ -107,6 +107,8 @@ interface OfferForm {
   mov_amount: string;
   delivery_days: string;
   country_code: string;
+  /** Multi-pays de livraison. Une offre est visible dans chaque pays coché. */
+  country_codes: string[];
   category_ids: string[];
   /** Conditionnement override saisi par le vendeur sur l'offre (vide = fallback fiche produit). */
   pack_size_override: string;
@@ -123,7 +125,7 @@ interface OfferForm {
 }
 
 const emptyForm: OfferForm = {
-  product_id: "", product_name: "", price_excl_vat: "", purchase_price_excl_vat: "", save_as_product_default: false, vat_rate: "21", stock_quantity: "", moq: "1", mov_amount: "0", delivery_days: "3", country_code: "BE", category_ids: [],
+  product_id: "", product_name: "", price_excl_vat: "", purchase_price_excl_vat: "", save_as_product_default: false, vat_rate: "21", stock_quantity: "", moq: "1", mov_amount: "0", delivery_days: "3", country_code: "BE", country_codes: ["BE"], category_ids: [],
   pack_size_override: "", product_pack_size_fallback: null, vendor_note: "",
   carton_size_override: "", packaging_languages: [],
   source_supplier: "",
@@ -1462,6 +1464,9 @@ export default function VendorOffers() {
       mov_amount: String(offer.mov_amount || 0),
       delivery_days: String(offer.delivery_days),
       country_code: offer.country_code || "BE",
+      country_codes: Array.isArray((offer as any).country_codes) && (offer as any).country_codes.length > 0
+        ? (offer as any).country_codes
+        : [offer.country_code || "BE"],
       category_ids: categoryIds,
       pack_size_override: offer.pack_size_override != null ? String(offer.pack_size_override) : "",
       product_pack_size_fallback: (offer.products as any)?.pack_size ?? null,
@@ -1633,7 +1638,9 @@ export default function VendorOffers() {
         purchase_price_excl_vat: purchaseValid,
         stock_quantity: parseInt(form.stock_quantity) || 0, moq: parseInt(form.moq) || 1,
         mov_amount: parseFloat(form.mov_amount) || 0, mov_currency: "EUR",
-        delivery_days: parseInt(form.delivery_days) || 3, country_code: form.country_code,
+        delivery_days: parseInt(form.delivery_days) || 3,
+        country_code: (form.country_codes[0] || form.country_code || "BE").toUpperCase(),
+        country_codes: (form.country_codes.length > 0 ? form.country_codes : [form.country_code || "BE"]).map(c => c.toUpperCase()),
         stock_status: parseInt(form.stock_quantity) > 0 ? "in_stock" as const : "out_of_stock" as const,
         pack_size_override: packOverride,
         vendor_note: form.vendor_note?.trim() ? form.vendor_note.trim().slice(0, 500) : null,
@@ -2157,13 +2164,43 @@ export default function VendorOffers() {
                 );
               })()}
             </div>
-            <div>
-              <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>Pays</label>
-              <select className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
-                style={{ borderColor: "#E2E8F0" }} value={form.country_code} onChange={e => setForm(p => ({ ...p, country_code: e.target.value }))}>
-                <option value="BE">Belgique</option><option value="FR">France</option><option value="NL">Pays-Bas</option>
-                <option value="LU">Luxembourg</option><option value="DE">Allemagne</option>
-              </select>
+            <div className="md:col-span-2">
+              <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>Pays de livraison (multi-sélection)</label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { code: "BE", label: "Belgique" },
+                  { code: "FR", label: "France" },
+                  { code: "NL", label: "Pays-Bas" },
+                  { code: "LU", label: "Luxembourg" },
+                  { code: "DE", label: "Allemagne" },
+                ].map(({ code, label }) => {
+                  const active = form.country_codes.includes(code);
+                  return (
+                    <button
+                      key={code}
+                      type="button"
+                      onClick={() => setForm(p => {
+                        const next = active
+                          ? p.country_codes.filter(c => c !== code)
+                          : [...p.country_codes, code];
+                        const safe = next.length > 0 ? next : ["BE"];
+                        return { ...p, country_codes: safe, country_code: safe[0] };
+                      })}
+                      className="px-3 py-1.5 rounded-full text-[12px] font-medium border transition-colors"
+                      style={{
+                        backgroundColor: active ? "#1B5BDA" : "#fff",
+                        color: active ? "#fff" : "#1D2530",
+                        borderColor: active ? "#1B5BDA" : "#E2E8F0",
+                      }}
+                    >
+                      {active ? "✓ " : ""}{label} ({code})
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-1 text-[11px]" style={{ color: "#8B95A5" }}>
+                L'offre sera visible pour les acheteurs situés dans chaque pays coché. Au moins un pays est requis (BE par défaut).
+              </p>
             </div>
             <div className="md:col-span-2">
               <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -42,6 +43,7 @@ async function persistRemote(code: string) {
 
 export function CountryProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [country, setCountryState] = useState<string>(() => {
     return localStorage.getItem(STORAGE_KEY) || "BE";
   });
@@ -119,11 +121,16 @@ export function CountryProvider({ children }: { children: ReactNode }) {
   }, [countries, hasUserChoice]);
 
   const setCountry = (code: string) => {
+    if (!SUPPORTED.includes(code)) return;
     setCountryState(code);
     localStorage.setItem(STORAGE_KEY, code);
     setHasUserChoice(true);
     setNeedsCountryChoice(false);
     if (user?.id) void persistRemote(code);
+    // Rafraîchit immédiatement tous les écrans dont les données dépendent du pays.
+    // La plupart des hooks incluent `country` dans leur queryKey → refetch auto,
+    // mais on invalide explicitement pour couvrir les caches sans clé pays.
+    void queryClient.invalidateQueries();
   };
 
   const activeCountries = countries.filter((c) => c.is_active);

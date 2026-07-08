@@ -15,8 +15,8 @@ import { ShoppingCart, Loader2, Truck, Pencil, AlertTriangle, CheckCircle2 } fro
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useQuery } from "@tanstack/react-query";
-// Stripe Checkout HOSTED : pas d'Elements ni de Stripe.js côté front.
-// Le front se contente de créer l'order puis de rediriger vers session.url.
+import { StripePaymentFlow, type PaymentIntentInfo } from "@/components/checkout/StripePaymentFlow";
+
 
 
 interface AddressForm {

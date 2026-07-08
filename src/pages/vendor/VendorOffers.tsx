@@ -1906,6 +1906,31 @@ export default function VendorOffers() {
               <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>Produit *</label>
               <ProductPicker value={form.product_id} productName={form.product_name}
                 onChange={(id, name) => setForm(p => ({ ...p, product_id: id, product_name: name }))} />
+              {form.product_id && (
+                <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
+                  {productCodes?.prod?.gtin && (
+                    <span className="px-2 py-0.5 rounded border bg-[#F8FAFC]" style={{ borderColor: "#E2E8F0", color: "#1D2530" }}>
+                      <span style={{ color: "#8B95A5" }}>EAN&nbsp;</span>
+                      <span className="font-mono font-semibold">{productCodes.prod.gtin}</span>
+                    </span>
+                  )}
+                  {productCodes?.prod?.cnk_code && (
+                    <span className="px-2 py-0.5 rounded border bg-[#F8FAFC]" style={{ borderColor: "#E2E8F0", color: "#1D2530" }}>
+                      <span style={{ color: "#8B95A5" }}>CNK&nbsp;</span>
+                      <span className="font-mono font-semibold">{productCodes.prod.cnk_code}</span>
+                    </span>
+                  )}
+                  {productCodes?.marketCodes?.map((mc: any, i: number) => (
+                    <span key={i} className="px-2 py-0.5 rounded border bg-[#F8FAFC]" style={{ borderColor: "#E2E8F0", color: "#1D2530" }}>
+                      <span style={{ color: "#8B95A5" }}>{mc.market_code_types?.code || mc.market_code_types?.label || "Code"}&nbsp;</span>
+                      <span className="font-mono font-semibold">{mc.code}</span>
+                    </span>
+                  ))}
+                  {!productCodes?.prod?.gtin && !productCodes?.prod?.cnk_code && (productCodes?.marketCodes?.length ?? 0) === 0 && (
+                    <span className="text-[11px]" style={{ color: "#8B95A5" }}>Aucun code produit renseigné (EAN/CNK)</span>
+                  )}
+                </div>
+              )}
             </div>
             <div>
               <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>Prix HT (€) *</label>

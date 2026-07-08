@@ -1403,8 +1403,8 @@ export default function VendorOffers() {
         previewCtx.vendorId
           ? supabase.from("vendors").select("id, is_active, kyc_status, company_name").eq("id", previewCtx.vendorId).maybeSingle()
           : Promise.resolve({ data: null } as any),
-        previewCtx.offerId
-          ? supabase.rpc("resolve_offer_exclusivity", { _offer_id: previewCtx.offerId, _country_code: previewCtx.country })
+        previewCtx.productId && previewCtx.country
+          ? supabase.rpc("resolve_offer_exclusivity", { _product_id: previewCtx.productId, _country: previewCtx.country })
           : Promise.resolve({ data: null } as any),
       ]);
       return { product, vendor: vendorRow, exclusivity: exclusivityRes?.data ?? null };

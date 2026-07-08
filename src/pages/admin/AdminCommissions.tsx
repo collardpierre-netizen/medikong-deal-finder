@@ -235,6 +235,7 @@ export default function AdminCommissions() {
     if (r.min_base_price) parts.push(`≥${r.min_base_price}€`);
     if (r.max_base_price) parts.push(`≤${r.max_base_price}€`);
     parts.push(`+${r.extra_delay_days}j`);
+    parts.push(`paiement ${(r as any).commission_payment_delay_days ?? 30}j`);
     return parts.join(" · ");
   };
 

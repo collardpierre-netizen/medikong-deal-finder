@@ -102,8 +102,9 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
       // Get order lines — need per-line ids so we can persist PI ids per ligne
       const { data: lines } = await supabase
         .from("order_lines")
-        .select("id, vendor_id, line_total_incl_vat, stripe_payment_intent_id")
+        .select("id, vendor_id, line_total_excl_vat, line_total_incl_vat, stripe_payment_intent_id")
         .eq("order_id", order_id);
+
 
       if (!lines || lines.length === 0) {
         return new Response(JSON.stringify({ error: "Commande sans articles" }), {
@@ -141,15 +142,20 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
       for (const [vendorId, vLines] of linesByVendor.entries()) {
         const vendor = vendorMap.get(vendorId);
 
-        // Total TTC en cents pour ce vendeur
+        // Le client paie TTC ; la commission MediKong s'applique sur HT uniquement.
         const totalTtcCents = vLines.reduce(
           (sum, l) => sum + Math.round(Number(l.line_total_incl_vat) * 100),
+          0,
+        );
+        const totalHtCents = vLines.reduce(
+          (sum, l) => sum + Math.round(Number(l.line_total_excl_vat) * 100),
           0,
         );
         if (totalTtcCents <= 0) continue;
 
         const commRate = Number(vendor?.commission_rate ?? defaultCommission);
-        const commissionCents = Math.round(totalTtcCents * commRate);
+        // application_fee_amount = commission calculée sur le HT (jamais sur la TVA)
+        const commissionCents = Math.round(totalHtCents * commRate);
         const transferCents = totalTtcCents - commissionCents;
         if (transferCents < 0) {
           throw new Error(`Commission > total pour vendor ${vendorId}`);
@@ -180,8 +186,12 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
               order_id: order.id,
               vendor_id: vendorId,
               billing_model: "mandataire",
+              total_ht_cents: String(totalHtCents),
+              total_ttc_cents: String(totalTtcCents),
+              commission_rate: String(commRate),
             },
           });
+
 
           // Persist PI id sur chaque ligne de ce vendeur
           const lineIds = vLines.map((l: any) => l.id);

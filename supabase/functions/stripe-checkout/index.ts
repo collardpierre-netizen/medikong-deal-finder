@@ -102,8 +102,9 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
       // Get order lines — need per-line ids so we can persist PI ids per ligne
       const { data: lines } = await supabase
         .from("order_lines")
-        .select("id, vendor_id, line_total_incl_vat, stripe_payment_intent_id")
+        .select("id, vendor_id, line_total_excl_vat, line_total_incl_vat, stripe_payment_intent_id")
         .eq("order_id", order_id);
+
 
       if (!lines || lines.length === 0) {
         return new Response(JSON.stringify({ error: "Commande sans articles" }), {

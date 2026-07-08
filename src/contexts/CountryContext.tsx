@@ -121,11 +121,16 @@ export function CountryProvider({ children }: { children: ReactNode }) {
   }, [countries, hasUserChoice]);
 
   const setCountry = (code: string) => {
+    if (!SUPPORTED.includes(code)) return;
     setCountryState(code);
     localStorage.setItem(STORAGE_KEY, code);
     setHasUserChoice(true);
     setNeedsCountryChoice(false);
     if (user?.id) void persistRemote(code);
+    // Rafraîchit immédiatement tous les écrans dont les données dépendent du pays.
+    // La plupart des hooks incluent `country` dans leur queryKey → refetch auto,
+    // mais on invalide explicitement pour couvrir les caches sans clé pays.
+    void queryClient.invalidateQueries();
   };
 
   const activeCountries = countries.filter((c) => c.is_active);

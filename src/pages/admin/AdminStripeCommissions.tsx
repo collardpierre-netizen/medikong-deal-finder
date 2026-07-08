@@ -4,8 +4,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, CreditCard, Save, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, CreditCard, Save, Loader2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+
+/** Lien Stripe Dashboard pour un PaymentIntent (route dashboard identique en test/live). */
+const stripePiUrl = (piId: string) => `https://dashboard.stripe.com/payments/${piId}`;
+
 
 export default function AdminStripeCommissions() {
   const queryClient = useQueryClient();

@@ -68,10 +68,10 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
         });
       }
 
-      // Get order with lines
+      // Get order
       const { data: order, error: orderErr } = await supabase
         .from("orders")
-        .select("id, total_incl_vat, customer_id, stripe_payment_intent_id")
+        .select("id, total_incl_vat, customer_id")
         .eq("id", order_id)
         .single();
 
@@ -82,19 +82,10 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
         });
       }
 
-      // If already has a PI, return its client_secret
-      if (order.stripe_payment_intent_id) {
-        const existingPI = await stripe.paymentIntents.retrieve(order.stripe_payment_intent_id);
-        return new Response(
-          JSON.stringify({ client_secret: existingPI.client_secret }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      // Get order lines grouped by vendor
+      // Get order lines — need per-line ids so we can persist PI ids per ligne
       const { data: lines } = await supabase
         .from("order_lines")
-        .select("vendor_id, line_total_incl_vat")
+        .select("id, vendor_id, line_total_incl_vat, stripe_payment_intent_id")
         .eq("order_id", order_id);
 
       if (!lines || lines.length === 0) {
@@ -104,68 +95,105 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
         });
       }
 
-      // Group by vendor
-      const vendorTotals: Record<string, number> = {};
-      for (const line of lines) {
-        vendorTotals[line.vendor_id] = (vendorTotals[line.vendor_id] || 0) + Number(line.line_total_incl_vat);
+      // Group lines by vendor
+      const linesByVendor = new Map<string, typeof lines>();
+      for (const l of lines) {
+        if (!l.vendor_id) continue;
+        const arr = linesByVendor.get(l.vendor_id) || [];
+        arr.push(l);
+        linesByVendor.set(l.vendor_id, arr);
       }
 
-      // Get vendor Stripe info
-      const vendorIds = Object.keys(vendorTotals);
+      // Fetch Stripe Connect info for each vendor
+      const vendorIds = Array.from(linesByVendor.keys());
       const { data: vendors } = await supabase
         .from("vendors")
         .select("id, stripe_account_id, commission_rate, stripe_charges_enabled")
         .in("id", vendorIds);
+      const vendorMap = new Map<string, any>((vendors || []).map((v: any) => [v.id, v]));
 
-      const vendorMap = new Map<string, any>(vendors?.map((v: any) => [v.id, v]) || []);
+      // Build one PaymentIntent per vendor (Stripe Connect, mode mandataire)
+      const results: Array<{
+        vendor_id: string;
+        payment_intent_id: string;
+        client_secret: string | null;
+        amount: number;
+        commission: number;
+      }> = [];
 
-      // Build vendor breakdown
-      const vendorBreakdown = vendorIds.map(vid => {
-        const vendor = vendorMap.get(vid);
-        const subtotalEur = vendorTotals[vid];
-        const subtotalCents = Math.round(subtotalEur * 100);
-        const commRate = vendor?.commission_rate ?? defaultCommission;
-        const commissionCents = Math.round(subtotalCents * Number(commRate) / 100);
-        const transferCents = subtotalCents - commissionCents;
-        if (transferCents < 0) throw new Error(`Negative transfer_amount: ${transferCents}`);
+      for (const [vendorId, vLines] of linesByVendor.entries()) {
+        const vendor = vendorMap.get(vendorId);
 
-        return {
-          vendor_id: vid,
-          stripe_account_id: vendor?.stripe_account_id || null,
-          subtotal: subtotalCents,
-          commission_rate: Number(commRate),
-          commission_amount: commissionCents,
-          transfer_amount: transferCents,
-        };
-      });
+        // Total TTC en cents pour ce vendeur
+        const totalTtcCents = vLines.reduce(
+          (sum, l) => sum + Math.round(Number(l.line_total_incl_vat) * 100),
+          0,
+        );
+        if (totalTtcCents <= 0) continue;
 
-      const totalCents = Math.round(Number(order.total_incl_vat) * 100);
+        const commRate = Number(vendor?.commission_rate ?? defaultCommission);
+        const commissionCents = Math.round(totalTtcCents * commRate);
+        const transferCents = totalTtcCents - commissionCents;
+        if (transferCents < 0) {
+          throw new Error(`Commission > total pour vendor ${vendorId}`);
+        }
 
-      // Create PaymentIntent
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: totalCents,
-        currency: "eur",
-        metadata: {
-          order_id: order_id,
-          platform: "medikong",
-          vendor_breakdown: JSON.stringify(vendorBreakdown),
-        },
-      });
+        if (!vendor?.stripe_account_id) {
+          throw new Error(`Vendeur ${vendorId} sans compte Stripe Connect (stripe_account_id manquant)`);
+        }
+        if (!vendor?.stripe_charges_enabled) {
+          throw new Error(`Vendeur ${vendorId} : Stripe charges non activées`);
+        }
 
-      // Save PI id on order
-      await supabase
-        .from("orders")
-        .update({ stripe_payment_intent_id: paymentIntent.id })
-        .eq("id", order_id);
+        // Réutilise le PI existant si déjà présent sur les lignes de ce vendeur
+        const existingPiId = vLines.find((l: any) => l.stripe_payment_intent_id)?.stripe_payment_intent_id ?? null;
+        let paymentIntent: any;
+        if (existingPiId) {
+          paymentIntent = await stripe.paymentIntents.retrieve(existingPiId);
+        } else {
+          paymentIntent = await stripe.paymentIntents.create({
+            amount: totalTtcCents,
+            currency: "eur",
+            payment_method_types: ["card", "bancontact", "sepa_debit"],
+            application_fee_amount: commissionCents,
+            transfer_data: {
+              destination: vendor.stripe_account_id,
+            },
+            metadata: {
+              order_id: order.id,
+              vendor_id: vendorId,
+              billing_model: "mandataire",
+            },
+          });
 
+          // Persist PI id sur chaque ligne de ce vendeur
+          const lineIds = vLines.map((l: any) => l.id);
+          await supabase
+            .from("order_lines")
+            .update({ stripe_payment_intent_id: paymentIntent.id })
+            .in("id", lineIds);
+        }
+
+        results.push({
+          vendor_id: vendorId,
+          payment_intent_id: paymentIntent.id,
+          client_secret: paymentIntent.client_secret ?? null,
+          amount: totalTtcCents,
+          commission: commissionCents,
+        });
+      }
+
+      // Compat rétro : renvoie aussi le premier client_secret si mono-vendeur
       return new Response(
         JSON.stringify({
-          client_secret: paymentIntent.client_secret,
-          payment_intent_id: paymentIntent.id,
+          payment_intents: results,
+          client_secret: results[0]?.client_secret ?? null,
+          payment_intent_id: results[0]?.payment_intent_id ?? null,
         }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+
 
     if (action === "create-checkout-session") {
       if (!order_id) {

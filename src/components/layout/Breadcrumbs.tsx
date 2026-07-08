@@ -1,8 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
-import { ChevronRight, Home } from "lucide-react";
+import { ChevronRight, Home, Truck } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useCountry } from "@/contexts/CountryContext";
+
+
 
 
 const routeLabels: Record<string, string> = {
@@ -45,7 +48,9 @@ const parentRoutes: Record<string, string> = {
 
 export function Breadcrumbs() {
   const location = useLocation();
+  const { currentCountry, country } = useCountry();
   const segments = location.pathname.split("/").filter(Boolean);
+
   const hideBreadcrumbs = segments.length === 0 || segments[0] === "admin" || segments[0] === "produit";
 
   // Fetch vendor display name when on /vendeur/:code
@@ -212,8 +217,20 @@ export function Breadcrumbs() {
             )}
           </li>
         ))}
+        <li className="inline-flex items-center gap-1.5 leading-4 ml-auto">
+          <span
+            className="inline-flex items-center gap-1 rounded-full border border-mk-line bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-mk-navy"
+            title={`Filtre pays actif : ${currentCountry?.name || country}. Les offres affichées sont livrables ici.`}
+            aria-label={`Pays actif : ${currentCountry?.name || country}`}
+          >
+            <Truck size={11} className="text-mk-sec" />
+            <span className="text-sm leading-none">{currentCountry?.flag_emoji || "🌍"}</span>
+            <span>{country}</span>
+          </span>
+        </li>
       </ol>
       </nav>
     </>
   );
 }
+

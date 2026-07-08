@@ -552,6 +552,154 @@ const AdminCommandes = () => {
     toast.success(`${filtered.length} commande(s) exportée(s)`);
   };
 
+  const [exportingXlsx, setExportingXlsx] = useState(false);
+  const handleExportXlsx = async () => {
+    setExportingXlsx(true);
+    try {
+      const XLSX = await import("xlsx");
+      const PAGE = 500;
+      const allRows: any[] = [];
+      let offset = 0;
+      // Boucle serveur — mêmes filtres que la vue courante.
+      // Cap défensif à 100k lignes.
+      for (let i = 0; i < 200; i++) {
+        const { data, error } = await supabase.rpc("admin_list_orders" as any, {
+          _status: statusFilter,
+          _date_from: periodStartIso,
+          _date_to: periodEndIso,
+          _vendor_ids: selectedVendorIds.length > 0 ? selectedVendorIds : null,
+          _search: search || null,
+          _only_with_commission: !!onlyWithCommission,
+          _forecast_filter: forecastFilter,
+          _hide_test: hideTest,
+          _hide_deleted: true,
+          _limit: PAGE,
+          _offset: offset,
+          _buyer_type: buyerType,
+          _payment_status: paymentStatusFilter,
+          _billing_status: billingStatusFilter,
+          _sort_by: sortBy,
+          _sort_dir: sortDir,
+          _billing_updated_from: billingUpdatedFrom ? new Date(billingUpdatedFrom + "T00:00:00").toISOString() : null,
+          _billing_updated_to: billingUpdatedTo ? new Date(billingUpdatedTo + "T23:59:59").toISOString() : null,
+        });
+        if (error) throw error;
+        const batch = ((data as any)?.rows ?? []) as any[];
+        allRows.push(...batch);
+        if (batch.length < PAGE) break;
+        offset += PAGE;
+      }
+
+      const num = (v: any) => (v === null || v === undefined || v === "" ? null : Number(v));
+      const iso = (v: any) => (v ? new Date(v).toISOString() : "");
+
+      // Onglet 1 : Commandes (une ligne par commande, toutes colonnes).
+      const orderRows = allRows.map((r: any) => {
+        const c = r.customer_row || {};
+        const subs = Array.isArray(r.subs_json) ? r.subs_json : [];
+        const lines = Array.isArray(r.lines_json) ? r.lines_json : [];
+        const vendorLabels = Array.from(new Set(lines.map((l: any) => vendorLabelById.get(l.vendor_id) || l.vendor_id).filter(Boolean))).join(" | ");
+        const commissionSum = subs.reduce((acc: number, s: any) => {
+          const amt = s.commission_amount_override;
+          if (amt != null && Number.isFinite(Number(amt))) return acc + Number(amt);
+          const rate = s.commission_rate_override;
+          const sub = Number(s.subtotal_incl_vat) || 0;
+          if (rate != null && Number.isFinite(Number(rate)) && sub > 0) return acc + (sub * Number(rate)) / 100;
+          return acc;
+        }, 0);
+        return {
+          order_number: r.order_number,
+          order_id: r.id,
+          created_at: iso(r.created_at),
+          status: r.status,
+          is_forecast: !!r.is_forecast,
+          was_forecast: !!r.was_forecast,
+          forecast_created_at: iso(r.forecast_created_at),
+          forecast_converted_at: iso(r.forecast_converted_at),
+          is_test: !!r.is_test,
+          hidden_from_list: !!r.hidden_from_list,
+          buyer_company: c.company_name || "",
+          buyer_type: c.customer_type || "",
+          buyer_email: c.email || "",
+          buyer_phone: c.phone || "",
+          buyer_vat: c.vat_number || "",
+          buyer_country: c.country || "",
+          buyer_city: c.city || "",
+          buyer_postal_code: c.postal_code || "",
+          buyer_address: c.street || c.address || "",
+          shipping_address: r.shipping_address || "",
+          billing_address: r.billing_address || "",
+          vendors: vendorLabels,
+          vendor_count: new Set(lines.map((l: any) => l.vendor_id).filter(Boolean)).size,
+          items_count: lines.length,
+          total_quantity: lines.reduce((s: number, l: any) => s + (Number(l.quantity) || 0), 0),
+          subtotal_excl_vat: num(r.subtotal_excl_vat),
+          shipping_cost: num(r.shipping_cost),
+          total_incl_vat: num(r.total_incl_vat),
+          vat_total: (Number(r.total_incl_vat) || 0) - (Number(r.subtotal_excl_vat) || 0),
+          commission_total: commissionSum,
+          commission_pct: (Number(r.subtotal_excl_vat) || 0) > 0 ? (commissionSum / Number(r.subtotal_excl_vat)) * 100 : null,
+          payment_method: r.payment_method || "",
+          payment_status: r.payment_status || "",
+          payment_due_date: r.payment_due_date ? iso(r.payment_due_date) : "",
+          billing_status: r.billing_status || "",
+          billing_updated_at: iso(r.billing_updated_at),
+          shipping_method: r.shipping_method || "",
+          shipping_status: r.shipping_status || "",
+          tracking_number: r.tracking_number || "",
+          notes: r.notes || "",
+          admin_notes: r.admin_notes || "",
+          forecast_snapshot_total_incl_vat: r.forecast_snapshot?.total_incl_vat != null ? Number(r.forecast_snapshot.total_incl_vat) : null,
+        };
+      });
+
+      // Onglet 2 : Lignes de commande (une ligne par order_line).
+      const lineRows: any[] = [];
+      allRows.forEach((r: any) => {
+        const lines = Array.isArray(r.lines_json) ? r.lines_json : [];
+        lines.forEach((l: any) => {
+          lineRows.push({
+            order_number: r.order_number,
+            order_id: r.id,
+            created_at: iso(r.created_at),
+            status: r.status,
+            buyer_company: r.customer_row?.company_name || "",
+            vendor: vendorLabelById.get(l.vendor_id) || l.vendor_id || "",
+            vendor_id: l.vendor_id || "",
+            product_id: l.product_id || "",
+            product_name: l.product_name || l.name || "",
+            gtin: l.gtin || l.product_gtin || "",
+            cnk_code: l.cnk_code || l.product_cnk || "",
+            sku: l.sku || "",
+            quantity: num(l.quantity),
+            unit_price_excl_vat: num(l.unit_price_excl_vat),
+            unit_price_incl_vat: num(l.unit_price_incl_vat),
+            vat_rate: num(l.vat_rate),
+            line_total_excl_vat: num(l.line_total_excl_vat),
+            line_total_incl_vat: num(l.line_total_incl_vat),
+            cost_price: num(l.cost_price ?? l.unit_cost_excl_vat),
+            line_cost: num(l.line_cost),
+            commission_rate: num(l.commission_rate),
+            commission_amount: num(l.commission_amount),
+          });
+        });
+      });
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(orderRows), "Commandes");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(lineRows), "Lignes");
+      const stamp = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(wb, `commandes-${stamp}.xlsx`, { compression: true });
+      toast.success(`${orderRows.length} commande(s), ${lineRows.length} ligne(s) exportée(s)`);
+    } catch (e: any) {
+      toast.error(e?.message || "Échec de l'export XLSX");
+    } finally {
+      setExportingXlsx(false);
+    }
+  };
+
+
+
 
   const timeline = displayOrders.slice(0, 6).map(o => ({
     time: new Date().toLocaleTimeString("fr-BE", { hour: "2-digit", minute: "2-digit" }),

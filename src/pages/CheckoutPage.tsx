@@ -668,15 +668,32 @@ export default function CheckoutPage() {
                           </div>
                         </>
                       ) : (
-                        <StripePaymentFlow
-                          orderId={orderId!}
-                          paymentIntents={paymentIntents}
-                          onAllPaid={() => {
-                            clearCart.mutate();
-                            navigate(`/commande/confirmation?order_id=${orderId}`);
-                          }}
-                        />
+                        <>
+                          {manualPaymentVendors.length > 0 && (
+                            <div className="rounded-md border border-amber-300 bg-amber-50 p-3 space-y-2">
+                              <p className="text-sm font-semibold text-amber-800">
+                                Paiement en ligne partiel — {manualPaymentVendors.length} fournisseur{manualPaymentVendors.length > 1 ? "s" : ""} traité{manualPaymentVendors.length > 1 ? "s" : ""} manuellement
+                              </p>
+                              <ul className="space-y-1">
+                                {manualPaymentVendors.map((v) => (
+                                  <li key={v.vendor_id} className="text-xs text-amber-900">
+                                    • Le paiement en ligne n'est pas encore disponible pour <strong>{v.vendor_name}</strong> — commande enregistrée, notre équipe vous contacte pour finaliser.
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          <StripePaymentFlow
+                            orderId={orderId!}
+                            paymentIntents={paymentIntents}
+                            onAllPaid={() => {
+                              clearCart.mutate();
+                              navigate(`/commande/confirmation?order_id=${orderId}`);
+                            }}
+                          />
+                        </>
                       )}
+
                     </div>
 
 

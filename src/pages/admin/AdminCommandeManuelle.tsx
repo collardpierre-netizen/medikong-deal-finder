@@ -219,9 +219,15 @@ const AdminCommandeManuelle = () => {
   }, [customersRaw, selectedCustomer]);
 
   // Adresses de livraison du customer sélectionné
-  const { data: shippingAddresses = [] } = useQuery({
+  const { data: shippingAddresses = [], refetch: refetchShippingAddresses, isFetching: isFetchingShippingAddresses } = useQuery({
     queryKey: ["admin-manual-order-shipping-addresses", customerId],
     enabled: !!customerId,
+    // Ces adresses sont souvent créées/mises à jour depuis une autre fenêtre
+    // (fiche customer). On force un refetch systématique pour éviter d'afficher
+    // "Aucun site enregistré" alors qu'une adresse vient d'être ajoutée.
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("customer_shipping_addresses")

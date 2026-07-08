@@ -559,6 +559,24 @@ export default function CheckoutPage() {
                     )}
                     <AddressFields value={shippingAddr} onChange={setShippingAddr} prefix="ship" />
 
+                    {user && customerId && (
+                      <label className="flex items-start gap-2 mt-3 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={saveAsDefault}
+                          onChange={(e) => setSaveAsDefault(e.target.checked)}
+                          className="w-4 h-4 mt-0.5 rounded border-input"
+                        />
+                        <span className="text-[13px] text-mk-text leading-snug">
+                          <span className="font-semibold">Enregistrer comme adresse par défaut du compte</span>
+                          <span className="block text-[11.5px] text-mk-sec">
+                            Elle sera pré-remplie automatiquement lors de vos prochaines commandes.
+                          </span>
+                        </span>
+                      </label>
+                    )}
+
+
                     <label className="flex items-center gap-2 mt-4 mb-4 cursor-pointer">
                       <input type="checkbox" checked={sameAsBilling} onChange={e => setSameAsBilling(e.target.checked)}
                         className="w-4 h-4 rounded border-input" />

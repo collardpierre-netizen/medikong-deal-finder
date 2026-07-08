@@ -164,6 +164,7 @@ export default function AdminCommissions() {
         margin_percentage: template.margin_percentage,
         priority: template.priority,
         extra_delay_days: template.extra_delay_days,
+        commission_payment_delay_days: (template as any).commission_payment_delay_days ?? 30,
         round_price_to: template.round_price_to,
         category_id: template.category_id,
         brand_id: template.brand_id,

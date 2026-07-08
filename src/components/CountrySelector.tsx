@@ -14,7 +14,8 @@ export function CountrySelector() {
 
 
   const codes = useMemo(() => activeCountries.map((c) => c.code), [activeCountries]);
-  const { data: counts, isLoading: countsLoading } = useCountryOfferCounts(open ? codes : []);
+  const { data: counts, isLoading: countsLoading } = useCountryOfferCounts(open || previewAll ? codes : []);
+
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {

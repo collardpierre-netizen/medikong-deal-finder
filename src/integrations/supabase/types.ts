@@ -8056,6 +8056,7 @@ export type Database = {
           quantity: number
           quantity_shipped: number | null
           refunded_amount_incl_vat: number | null
+          stripe_payment_intent_id: string | null
           stripe_refund_id: string | null
           tracking_number: string | null
           tracking_url: string | null
@@ -8096,6 +8097,7 @@ export type Database = {
           quantity: number
           quantity_shipped?: number | null
           refunded_amount_incl_vat?: number | null
+          stripe_payment_intent_id?: string | null
           stripe_refund_id?: string | null
           tracking_number?: string | null
           tracking_url?: string | null
@@ -8136,6 +8138,7 @@ export type Database = {
           quantity?: number
           quantity_shipped?: number | null
           refunded_amount_incl_vat?: number | null
+          stripe_payment_intent_id?: string | null
           stripe_refund_id?: string | null
           tracking_number?: string | null
           tracking_url?: string | null
@@ -26574,6 +26577,7 @@ export type Database = {
           quantity: number
           quantity_shipped: number | null
           refunded_amount_incl_vat: number | null
+          stripe_payment_intent_id: string | null
           stripe_refund_id: string | null
           tracking_number: string | null
           tracking_url: string | null

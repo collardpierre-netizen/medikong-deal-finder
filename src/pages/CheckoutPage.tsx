@@ -408,7 +408,9 @@ export default function CheckoutPage() {
   }, [
     submitting, initLoading, orderId, orderNumber, sameAsBilling, shippingAddr, billingAddr,
     paymentMethods, payment, subtotal, total, items, createOrder, clearCart, navigate,
+    saveAsDefault, customerId,
   ]);
+
 
 
 

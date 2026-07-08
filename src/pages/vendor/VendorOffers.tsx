@@ -1935,6 +1935,13 @@ export default function VendorOffers() {
               <Download size={14} /> Exporter
             </button>
           )}
+          <Link
+            to="/vendor/offers/audit"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-medium border transition-colors hover:bg-[#F8FAFC]"
+            style={{ borderColor: "#E2E8F0", color: "#616B7C" }}
+          >
+            <Eye size={14} /> Audit visibilité
+          </Link>
           <VBtn primary icon="Plus" onClick={openCreate}>Nouvelle offre</VBtn>
         </div>
       </div>

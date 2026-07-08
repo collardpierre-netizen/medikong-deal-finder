@@ -25,6 +25,8 @@ import { useCountry } from "@/contexts/CountryContext";
 const tabs = [
   { key: "profil", label: "Profil", icon: Users, disabled: false },
   { key: "adresses", label: "Adresses", icon: MapPin, disabled: false },
+  { key: "pays", label: "Pays", icon: Globe, disabled: false },
+
   { key: "commandes", label: "Commandes", icon: Package, disabled: false },
   { key: "reclamations", label: "Réclamations", icon: AlertCircle, disabled: false },
   { key: "favoris", label: "Favoris", icon: Heart, disabled: false },

@@ -39,11 +39,15 @@ export function CountrySelector() {
       >
         <Truck size={12} className="opacity-80" />
         <span className="text-base leading-none">{currentCountry?.flag_emoji || "🌍"}</span>
+        <span className="inline-flex items-center gap-1 rounded-md bg-white/15 px-1.5 py-0.5 text-[10.5px] font-bold tracking-wide">
+          {country}
+        </span>
         <span className="hidden sm:inline">
           <span className="opacity-70 mr-1 font-normal">Livrer vers</span>
           {currentCountry?.name || country}
         </span>
         <ChevronDown size={12} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+
       </button>
 
       <AnimatePresence>

@@ -1387,6 +1387,29 @@ export default function VendorOffers() {
   const [form, setForm] = useState<OfferForm>(emptyForm);
   // Snapshot capturé à l'ouverture en édition pour afficher "avant → après" (prix HT + pack effectif)
   const [initialSnapshot, setInitialSnapshot] = useState<{ priceExcl: number; effectivePack: number } | null>(null);
+  const [previewCountry, setPreviewCountry] = useState<string | null>(null);
+  const previewCtx = useMemo(() => ({
+    productId: form.product_id,
+    vendorId: vendor?.id,
+    offerId: editingId,
+    country: previewCountry,
+  }), [form.product_id, vendor?.id, editingId, previewCountry]);
+  const { data: previewData, isFetching: previewLoading } = useQuery({
+    queryKey: ["offer-visibility-preview", previewCtx],
+    enabled: !!previewCtx.country && !!previewCtx.productId,
+    queryFn: async () => {
+      const [{ data: product }, { data: vendorRow }, exclusivityRes] = await Promise.all([
+        supabase.from("products").select("id, name, is_active").eq("id", previewCtx.productId!).maybeSingle(),
+        previewCtx.vendorId
+          ? supabase.from("vendors").select("id, is_active, kyc_status, company_name").eq("id", previewCtx.vendorId).maybeSingle()
+          : Promise.resolve({ data: null } as any),
+        previewCtx.offerId
+          ? supabase.rpc("resolve_offer_exclusivity", { _offer_id: previewCtx.offerId, _country_code: previewCtx.country })
+          : Promise.resolve({ data: null } as any),
+      ]);
+      return { product, vendor: vendorRow, exclusivity: exclusivityRes?.data ?? null };
+    },
+  });
   const [search, setSearch] = useState("");
   const [filterBrand, setFilterBrand] = useState("");
   const [filterCountry, setFilterCountry] = useState("");

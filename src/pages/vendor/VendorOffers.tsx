@@ -1392,6 +1392,26 @@ export default function VendorOffers() {
   const [filterCategory, setFilterCategory] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+  // Identifiants produit (EAN/GTIN, CNK, codes marché) affichés dans le formulaire d'édition
+  const { data: productCodes } = useQuery({
+    queryKey: ["offer-form-product-codes", form.product_id],
+    enabled: !!form.product_id && showForm,
+    queryFn: async () => {
+      const [{ data: prod }, { data: marketCodes }] = await Promise.all([
+        supabase
+          .from("products")
+          .select("gtin, cnk_code")
+          .eq("id", form.product_id)
+          .maybeSingle(),
+        supabase
+          .from("product_market_codes")
+          .select("code, market_code_types(code, label)")
+          .eq("product_id", form.product_id),
+      ]);
+      return { prod, marketCodes: marketCodes || [] };
+    },
+  });
+
   const openCreate = () => { setForm(emptyForm); setInitialSnapshot(null); setEditingId(null); setShowForm(true); };
   const openEdit = async (offer: any) => {
     try {

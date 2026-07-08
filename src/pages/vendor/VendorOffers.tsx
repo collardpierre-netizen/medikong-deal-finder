@@ -1608,6 +1608,30 @@ export default function VendorOffers() {
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams, loadProductIntoForm]);
 
+  // Deep-link édition : /vendor/offers?edit=<offerId> (depuis la page Audit visibilité)
+  const editDeepLinkRef = useRef<string | null>(null);
+  useEffect(() => {
+    const editId = searchParams.get("edit");
+    if (!editId || editDeepLinkRef.current === editId) return;
+    editDeepLinkRef.current = editId;
+    (async () => {
+      const { data: offer, error } = await supabase
+        .from("offers")
+        .select("*, products(name, pack_size)")
+        .eq("id", editId)
+        .maybeSingle();
+      if (error || !offer) {
+        toast.error("Offre introuvable", { description: "Le lien d'édition pointe vers une offre qui n'existe plus." });
+      } else {
+        openEdit(offer);
+      }
+      const next = new URLSearchParams(searchParams);
+      next.delete("edit");
+      setSearchParams(next, { replace: true });
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   // Pré-remplit le prix d'achat avec le défaut produit en mode création quand on choisit un produit
   useEffect(() => {
     if (editingId || !vendor || !form.product_id) return;
@@ -1911,6 +1935,13 @@ export default function VendorOffers() {
               <Download size={14} /> Exporter
             </button>
           )}
+          <Link
+            to="/vendor/offers/audit"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-medium border transition-colors hover:bg-[#F8FAFC]"
+            style={{ borderColor: "#E2E8F0", color: "#616B7C" }}
+          >
+            <Eye size={14} /> Audit visibilité
+          </Link>
           <VBtn primary icon="Plus" onClick={openCreate}>Nouvelle offre</VBtn>
         </div>
       </div>

@@ -277,6 +277,7 @@ const VendorLayout = lazyWithRetry(() => import("./components/vendor/VendorLayou
 const VendorDashboard = lazyWithRetry(() => import("./pages/vendor/VendorDashboard"), "VendorDashboard");
 
 const VendorOffers = lazyWithRetry(() => import("./pages/vendor/VendorOffers"), "VendorOffers");
+const VendorOffersAudit = lazyWithRetry(() => import("./pages/vendor/VendorOffersAudit"), "VendorOffersAudit");
 const VendorCatalog = lazyWithRetry(() => import("./pages/vendor/VendorCatalog"), "VendorCatalog");
 const VendorProductSubmissionPage = lazyWithRetry(() => import("./pages/vendor/VendorProductSubmissionPage"), "VendorProductSubmissionPage");
 const VendorNotifications = lazyWithRetry(() => import("./pages/vendor/VendorNotifications"), "VendorNotifications");
@@ -632,6 +633,7 @@ const App = () => (
               <Route path="notifications" element={<LP><VendorNotifications /></LP>} />
               <Route path="interests" element={<Navigate to="/vendor/notifications" replace />} />
               <Route path="offers" element={<LP><VendorOffers /></LP>} />
+              <Route path="offers/audit" element={<LP><VendorOffersAudit /></LP>} />
               <Route path="orders" element={<LP><VendorOrders /></LP>} />
               <Route path="leads-rappel" element={<LP><VendorLeadsRappel /></LP>} />
               <Route path="opportunities" element={<LP><VendorOpportunities /></LP>} />

@@ -28,6 +28,49 @@ export default function AdminStripeCommissions() {
     },
   });
 
+  // GO/NO-GO : lignes de commande avec un PaymentIntent Stripe (Connect, mandataire)
+  const { data: recentPiLines = [], isLoading: loadingPi } = useQuery({
+    queryKey: ["admin-order-lines-stripe-pi"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("order_lines")
+        .select("id, order_id, vendor_id, line_total_incl_vat, stripe_payment_intent_id, created_at, orders:order_id(order_number, created_at), vendors:vendor_id(name, company_name)")
+        .not("stripe_payment_intent_id", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  // Agrège par (order_id, vendor_id, PI) pour une ligne par PaymentIntent
+  const piRows = (() => {
+    const map = new Map<string, { key: string; order_id: string; order_number: string; vendor_id: string; vendor_label: string; pi_id: string; total_ttc: number; created_at: string }>();
+    for (const l of recentPiLines) {
+      const pi = l.stripe_payment_intent_id as string;
+      const key = `${l.order_id}::${l.vendor_id}::${pi}`;
+      const cur = map.get(key);
+      const amt = Number(l.line_total_incl_vat) || 0;
+      if (cur) {
+        cur.total_ttc += amt;
+      } else {
+        map.set(key, {
+          key,
+          order_id: l.order_id,
+          order_number: l.orders?.order_number ?? l.order_id.slice(0, 8),
+          vendor_id: l.vendor_id,
+          vendor_label: l.vendors?.company_name || l.vendors?.name || l.vendor_id.slice(0, 8),
+          pi_id: pi,
+          total_ttc: amt,
+          created_at: l.orders?.created_at || l.created_at,
+        });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+  })();
+
+
+
   const updateMutation = useMutation({
     mutationFn: async ({ id, rate }: { id: string; rate: number }) => {
       const { error } = await supabase

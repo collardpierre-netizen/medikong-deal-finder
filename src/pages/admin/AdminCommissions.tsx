@@ -96,6 +96,7 @@ export default function AdminCommissions() {
         margin_percentage: rule.margin_percentage ?? 15,
         priority: rule.priority ?? 0,
         extra_delay_days: rule.extra_delay_days ?? 2,
+        commission_payment_delay_days: (rule as any).commission_payment_delay_days ?? 30,
         round_price_to: rule.round_price_to ?? 0.01,
         is_active: rule.is_active ?? true,
         category_id: rule.category_id || null,

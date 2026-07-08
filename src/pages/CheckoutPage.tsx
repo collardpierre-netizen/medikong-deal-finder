@@ -80,6 +80,9 @@ export default function CheckoutPage() {
   const [payment, setPayment] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [prefillSource, setPrefillSource] = useState<"saved_address" | "customer_profile" | null>(null);
+  const [saveAsDefault, setSaveAsDefault] = useState(false);
+  const [customerId, setCustomerId] = useState<string | null>(null);
+
 
   // Pré-remplissage automatique depuis le compte (adresse par défaut > profil client)
   useEffect(() => {
@@ -92,8 +95,10 @@ export default function CheckoutPage() {
         .eq("auth_user_id", user.id)
         .maybeSingle();
       if (cancelled || !cust) return;
+      setCustomerId((cust as any).id);
       const { data: savedAddrs } = await supabase
         .from("customer_shipping_addresses")
+
         .select("*")
         .eq("customer_id", (cust as any).id)
         .order("is_default", { ascending: false })
@@ -330,6 +335,31 @@ export default function CheckoutPage() {
         setOrderNumber(onum);
       }
 
+      // Enregistrement en adresse par défaut (best-effort)
+      if (saveAsDefault && customerId) {
+        try {
+          await supabase
+            .from("customer_shipping_addresses")
+            .update({ is_default: false })
+            .eq("customer_id", customerId)
+            .eq("is_default", true);
+          await supabase.from("customer_shipping_addresses").insert({
+            customer_id: customerId,
+            label: "Adresse par défaut",
+            address_l1: shippingAddr.street,
+            address_l2: shippingAddr.street2 || null,
+            postal_code: shippingAddr.postalCode,
+            city: shippingAddr.city,
+            country_code: shippingAddr.country,
+            is_default: true,
+          });
+          setSaveAsDefault(false);
+        } catch {
+          // best-effort — n'interrompt pas la commande
+        }
+      }
+
+
       // Invoice payment : pas de Stripe, redirection vers confirmation
       const selectedLabel = paymentMethods[payment].label;
       if (selectedLabel.startsWith("Paiement sur facture")) {
@@ -378,7 +408,9 @@ export default function CheckoutPage() {
   }, [
     submitting, initLoading, orderId, orderNumber, sameAsBilling, shippingAddr, billingAddr,
     paymentMethods, payment, subtotal, total, items, createOrder, clearCart, navigate,
+    saveAsDefault, customerId,
   ]);
+
 
 
 
@@ -528,6 +560,24 @@ export default function CheckoutPage() {
                       </div>
                     )}
                     <AddressFields value={shippingAddr} onChange={setShippingAddr} prefix="ship" />
+
+                    {user && customerId && (
+                      <label className="flex items-start gap-2 mt-3 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={saveAsDefault}
+                          onChange={(e) => setSaveAsDefault(e.target.checked)}
+                          className="w-4 h-4 mt-0.5 rounded border-input"
+                        />
+                        <span className="text-[13px] text-mk-text leading-snug">
+                          <span className="font-semibold">Enregistrer comme adresse par défaut du compte</span>
+                          <span className="block text-[11.5px] text-mk-sec">
+                            Elle sera pré-remplie automatiquement lors de vos prochaines commandes.
+                          </span>
+                        </span>
+                      </label>
+                    )}
+
 
                     <label className="flex items-center gap-2 mt-4 mb-4 cursor-pointer">
                       <input type="checkbox" checked={sameAsBilling} onChange={e => setSameAsBilling(e.target.checked)}

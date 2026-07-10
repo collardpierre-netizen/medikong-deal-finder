@@ -50,7 +50,11 @@ export default function VendorOrderDetail() {
       .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `id=eq.${id}` }, invalidate)
       .on("postgres_changes", { event: "*", schema: "public", table: "order_lines", filter: `order_id=eq.${id}` }, invalidate)
       .on("postgres_changes", { event: "*", schema: "public", table: "order_invoices", filter: `order_id=eq.${id}` }, invalidate)
-      .subscribe();
+      .subscribe((status) => {
+        // Resync dès qu'une (re)souscription aboutit — couvre les reconnexions
+        // Realtime après une coupure réseau ou une mise en veille de l'onglet.
+        if (status === "SUBSCRIBED") invalidate();
+      });
     return () => {
       cancelled = true;
       void channel.unsubscribe().finally(() => {

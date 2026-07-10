@@ -18,6 +18,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { getVendorPublicName } from "@/lib/vendor-display";
@@ -1244,24 +1245,84 @@ export function VendorOrderLineRow({
               <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
                 Modèle commission :
               </span>
-              {commissionCfg.commission_model === "flat_percentage" && (
-                <VBadge color="#B45309">
-                  Taux fixe {fmtPct(commissionCfg.commission_rate ?? 0)} du CA HT
-                </VBadge>
-              )}
-              {commissionCfg.commission_model === "margin_split" && (
-                <VBadge color="#7C3AED">
-                  Ventilation de marge · vendeur {fmtPct(commissionCfg.margin_split_pct ?? 0)} /
-                  MediKong {fmtPct(Math.max(0, 100 - (commissionCfg.margin_split_pct ?? 0)))}
-                </VBadge>
-              )}
-              {commissionCfg.commission_model === "fixed_amount" && (
-                <VBadge color="#B45309">
-                  Montant fixe {fmtEur(commissionCfg.fixed_commission_amount ?? 0)}&nbsp;€/unité
-                </VBadge>
-              )}
+              {(() => {
+                const model = commissionCfg.commission_model;
+                const rate = commissionCfg.commission_rate ?? 0;
+                const splitVendor = commissionCfg.margin_split_pct ?? 0;
+                const splitMk = Math.max(0, 100 - splitVendor);
+                const fixed = commissionCfg.fixed_commission_amount ?? 0;
+                const qty = line.quantity;
+                const revenue = Number(line.unit_price_excl_vat) || 0;
+                const cost = Number(line.cost_price) || 0;
+                const grossMargin = Math.max(0, revenue - cost);
+
+                let badgeColor = "#B45309";
+                let badgeText = "";
+                let tooltipTitle = "";
+                let tooltipLines: string[] = [];
+
+                if (model === "flat_percentage") {
+                  badgeText = `Taux fixe ${fmtPct(rate)} du CA HT`;
+                  tooltipTitle = "Taux fixe sur CA HT";
+                  tooltipLines = [
+                    `Formule : CA HT/u × ${fmtPct(rate)}`,
+                    `Calcul : ${fmtEur(revenue)} € × ${fmtPct(rate)} = ${fmtEur(breakdown.commission)} €/u`,
+                    `Total ligne (× ${qty}) : ${fmtEur(breakdown.commission * qty)} €`,
+                  ];
+                } else if (model === "margin_split") {
+                  badgeColor = "#7C3AED";
+                  badgeText = `Ventilation de marge · vendeur ${fmtPct(splitVendor)} / MediKong ${fmtPct(splitMk)}`;
+                  tooltipTitle = "Ventilation de marge brute";
+                  tooltipLines = breakdown.hasCost
+                    ? [
+                        `Marge brute/u : ${fmtEur(revenue)} − ${fmtEur(cost)} = ${fmtEur(grossMargin)} €`,
+                        `Part MediKong (${fmtPct(splitMk)}) : ${fmtEur(breakdown.commission)} €/u`,
+                        `Part vendeur (${fmtPct(splitVendor)}) : ${fmtEur(grossMargin - breakdown.commission)} €/u`,
+                        `Total commission ligne : ${fmtEur(breakdown.commission * qty)} €`,
+                      ]
+                    : [
+                        `Coût d'achat non renseigné.`,
+                        `Sans coût, la marge brute est inconnue et la commission est calculée à 0.`,
+                        `Renseignez le coût d'achat pour activer la ventilation ${fmtPct(splitVendor)} / ${fmtPct(splitMk)}.`,
+                      ];
+                } else if (model === "fixed_amount") {
+                  badgeText = `Montant fixe ${fmtEur(fixed)} €/unité`;
+                  tooltipTitle = "Montant fixe par unité";
+                  tooltipLines = [
+                    `Formule : montant fixe × quantité`,
+                    `Calcul : ${fmtEur(fixed)} €/u × ${qty} = ${fmtEur(fixed * qty)} €`,
+                  ];
+                }
+
+                return (
+                  <TooltipProvider delayDuration={150}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="cursor-help">
+                          <VBadge color={badgeColor}>{badgeText}</VBadge>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs text-[11px] leading-relaxed">
+                        <div className="font-semibold mb-1">{tooltipTitle}</div>
+                        <ul className="space-y-0.5">
+                          {tooltipLines.map((l, i) => (
+                            <li key={i}>{l}</li>
+                          ))}
+                        </ul>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                );
+              })()}
+              <button
+                type="button"
+                onClick={() => setShowMargin(true)}
+                className="text-[10.5px] font-medium text-primary hover:underline"
+              >
+                Voir le calcul →
+              </button>
               {commissionCfg.commission_model === "margin_split" && !breakdown.hasCost && (
-                <span className="text-[10.5px] italic text-muted-foreground">
+                <span className="text-[10.5px] italic text-muted-foreground w-full">
                   ⓘ ventilation basée sur le coût d'achat — non renseigné, commission calculée à 0
                 </span>
               )}

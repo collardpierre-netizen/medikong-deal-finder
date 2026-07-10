@@ -11,8 +11,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Plus, ShieldCheck, Search, Loader2, Calculator } from "lucide-react";
+import { Plus, ShieldCheck, Search, Loader2, Calculator, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Model = "flat_percentage" | "margin_split" | "fixed_amount";
 type Scope = "product" | "offer";

@@ -510,6 +510,15 @@ export default function VendorOrders() {
             Réinitialiser
           </Button>
         )}
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 text-[12px] gap-1.5"
+          onClick={() => exportOrdersCsv(visibleOrders)}
+          disabled={visibleOrders.length === 0}
+        >
+          <Download size={12} /> Exporter CSV
+        </Button>
       </div>
 
       {visibleOrders.length === 0 ? (

@@ -249,7 +249,7 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
   const hasOverlap = overlappingOverrides.length > 0;
 
   // Reset la confirmation dès que la cible ou les dates changent
-  useMemo(() => { setConfirmReplace(false); }, [scope, vendorId, productId, offerId, validFrom, validUntil]);
+  useEffect(() => { setConfirmReplace(false); }, [scope, vendorId, productId, offerId, validFrom, validUntil]);
 
   const reset = () => {
     setVendorId(null); setVendorLabel(""); setVendorQuery("");

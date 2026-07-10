@@ -23,6 +23,7 @@ import { fr } from "date-fns/locale";
 import { getVendorPublicName } from "@/lib/vendor-display";
 
 import { fmtEur } from "@/lib/format-currency";
+import { Link } from "react-router-dom";
 interface OrderLine {
   id: string;
   order_id: string;
@@ -48,7 +49,7 @@ interface OrderLine {
   refunded_amount_incl_vat: number | null;
 }
 
-interface OrderWithLines {
+export interface OrderWithLines {
   order_id: string;
   order_number: string;
   order_status: string;
@@ -71,6 +72,7 @@ interface OrderWithLines {
     product_cnk: string | null;
   })[];
 }
+
 
 const statusConfig: Record<string, { label: string; color: "info" | "success" | "warning" | "default" }> = {
   pending: { label: "En attente", color: "warning" },
@@ -558,9 +560,15 @@ export default function VendorOrders() {
               {isExpanded && (
                 <div className="border-t border-border">
                   <div className="flex items-center justify-end gap-2 px-4 pt-3">
+                    <Button asChild size="sm" variant="outline" className="h-7 text-[11px] gap-1.5">
+                      <Link to={`/vendor/commandes/${order.order_id}`} onClick={(e) => e.stopPropagation()}>
+                        <ExternalLink size={12} /> Ouvrir la fiche
+                      </Link>
+                    </Button>
                     <VendorOrderPdfButton orderId={order.order_id} orderNumber={order.order_number} />
                   </div>
                   <OrderInfoBlocks order={order} />
+
 
 
 
@@ -908,7 +916,7 @@ function paymentStatusLabel(s: string | null): string {
   return map[s] || s;
 }
 
-function OrderInfoBlocks({ order }: { order: OrderWithLines }) {
+export function OrderInfoBlocks({ order }: { order: OrderWithLines }) {
   const ship = order.shipping_address || {};
   const bill = order.billing_address || {};
   const shipName = (ship as any).label || (ship as any).name || (ship as any).company || "Acheteur";
@@ -1043,7 +1051,7 @@ function OrderInfoBlocks({ order }: { order: OrderWithLines }) {
 // ============================================================
 type LineWithProduct = OrderWithLines["lines"][number];
 
-function VendorOrderLineRow({
+export function VendorOrderLineRow({
   line,
   order,
   onShip,
@@ -1055,18 +1063,20 @@ function VendorOrderLineRow({
   acceptPending,
   forwardPending,
   deliverPending,
+  readOnly = false,
 }: {
   line: LineWithProduct;
   order: OrderWithLines;
-  onShip: (l: LineWithProduct) => void;
-  onCancel: (l: LineWithProduct) => void;
-  onRevert: (payload: { lineId: string; from: string; to: string }) => void;
-  onAccept: (l: LineWithProduct) => void;
-  onForward: (l: LineWithProduct) => void;
-  onDeliver: (l: LineWithProduct) => void;
-  acceptPending: boolean;
-  forwardPending: boolean;
-  deliverPending: boolean;
+  onShip?: (l: LineWithProduct) => void;
+  onCancel?: (l: LineWithProduct) => void;
+  onRevert?: (payload: { lineId: string; from: string; to: string }) => void;
+  onAccept?: (l: LineWithProduct) => void;
+  onForward?: (l: LineWithProduct) => void;
+  onDeliver?: (l: LineWithProduct) => void;
+  acceptPending?: boolean;
+  forwardPending?: boolean;
+  deliverPending?: boolean;
+  readOnly?: boolean;
 }) {
   const [showMargin, setShowMargin] = useState(false);
   const status = statusConfig[line.fulfillment_status] || statusConfig.pending;
@@ -1221,6 +1231,8 @@ function VendorOrderLineRow({
 
         <div className="flex flex-col items-end gap-2 shrink-0">
           <VBadge color={status.color}>{status.label}</VBadge>
+          {!readOnly && (
+            <>
           {(() => {
             const workflow = isQogita ? ["forwarded"] : ["processing", "shipped", "delivered"];
             const idx = workflow.indexOf(line.fulfillment_status);
@@ -1239,7 +1251,7 @@ function VendorOrderLineRow({
                     <DropdownMenuItem
                       key={s}
                       className="text-[12px]"
-                      onSelect={() => onRevert({ lineId: line.id, from: line.fulfillment_status, to: s })}
+                      onSelect={() => onRevert?.({ lineId: line.id, from: line.fulfillment_status, to: s })}
                     >
                       {statusConfig[s]?.label || s}
                     </DropdownMenuItem>
@@ -1252,7 +1264,7 @@ function VendorOrderLineRow({
           {canForward && (
             <Button size="sm" variant="outline" className="text-[11px] h-7 px-2"
               disabled={forwardPending}
-              onClick={() => onForward(line)}>
+              onClick={() => onForward?.(line)}>
               {forwardPending ? <Loader2 size={12} className="animate-spin mr-1" /> : <ExternalLink size={12} className="mr-1" />}
               Transmis fournisseur
             </Button>
@@ -1260,13 +1272,13 @@ function VendorOrderLineRow({
           {canAccept && (
             <Button size="sm" className="text-[11px] h-7 px-2 bg-primary"
               disabled={acceptPending}
-              onClick={() => onAccept(line)}>
+              onClick={() => onAccept?.(line)}>
               <Check size={12} className="mr-1" /> Accepter
             </Button>
           )}
           {canShip && remaining > 0 && (
             <Button size="sm" variant="outline" className="text-[11px] h-7 px-2"
-              onClick={() => onShip(line)}>
+              onClick={() => onShip?.(line)}>
               <Package size={12} className="mr-1" />
               {remaining < line.quantity ? "Expédier reliquat" : "Marquer expédié"}
             </Button>
@@ -1274,15 +1286,17 @@ function VendorOrderLineRow({
           {canDeliver && (
             <Button size="sm" variant="outline" className="text-[11px] h-7 px-2"
               disabled={deliverPending}
-              onClick={() => onDeliver(line)}>
+              onClick={() => onDeliver?.(line)}>
               <PackageCheck size={12} className="mr-1" /> Marquer livré
             </Button>
           )}
           {canCancel && (
             <Button size="sm" variant="ghost" className="text-[11px] h-7 px-2 text-destructive hover:bg-destructive/10"
-              onClick={() => onCancel(line)}>
+              onClick={() => onCancel?.(line)}>
               <X size={12} className="mr-1" /> Annuler / Refuser
             </Button>
+          )}
+            </>
           )}
         </div>
       </div>
@@ -1290,7 +1304,7 @@ function VendorOrderLineRow({
   );
 }
 
-function VendorOrderPdfButton({ orderId, orderNumber }: { orderId: string; orderNumber: string }) {
+export function VendorOrderPdfButton({ orderId, orderNumber }: { orderId: string; orderNumber: string }) {
   const gen = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke("generate-vendor-order-pdf", {

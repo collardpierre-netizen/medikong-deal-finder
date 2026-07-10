@@ -25604,6 +25604,8 @@ export type Database = {
       get_vendor_order_buyer_contact: {
         Args: { _order_id: string }
         Returns: {
+          company_name: string
+          customer_type: string
           email: string
           phone: string
         }[]

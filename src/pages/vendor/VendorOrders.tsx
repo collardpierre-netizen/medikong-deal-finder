@@ -954,12 +954,8 @@ function paymentStatusLabel(s: string | null): string {
 export function OrderInfoBlocks({ order }: { order: OrderWithLines }) {
   const ship = order.shipping_address || {};
   const bill = order.billing_address || {};
-  const shipName = (ship as any).label || (ship as any).name || (ship as any).company || "Acheteur";
-  const billName = (bill as any).label || (bill as any).name || (bill as any).company;
-  const billDiffers = billName && (billName !== shipName || formatFullAddress(bill) !== formatFullAddress(ship));
 
-  // Coordonnées acheteur (email + téléphone) — RLS bloque la lecture directe de customers,
-  // on passe par la RPC sécurisée qui vérifie que le vendeur a bien une ligne sur cette commande.
+  // Coordonnées acheteur (email + téléphone + société + type) via RPC sécurisée
   const { data: buyerContact } = useQuery({
     queryKey: ["vendor-order-buyer-contact", order.order_id],
     queryFn: async () => {
@@ -968,13 +964,40 @@ export function OrderInfoBlocks({ order }: { order: OrderWithLines }) {
       });
       if (error) throw error;
       const row = Array.isArray(data) ? data[0] : data;
-      return row as { email: string | null; phone: string | null } | null;
+      return row as {
+        email: string | null;
+        phone: string | null;
+        company_name: string | null;
+        customer_type: string | null;
+      } | null;
     },
     staleTime: 5 * 60 * 1000,
   });
 
+  const buyerCompany = buyerContact?.company_name || null;
   const buyerEmail = buyerContact?.email || null;
   const buyerPhone = buyerContact?.phone || (ship as any).phone || null;
+  const buyerType = buyerContact?.customer_type || null;
+
+  const shipName =
+    (ship as any).label ||
+    (ship as any).name ||
+    (ship as any).company ||
+    buyerCompany ||
+    "Acheteur";
+  const billName = (bill as any).label || (bill as any).name || (bill as any).company;
+  const shipAddress = formatFullAddress(ship);
+  const billDiffers =
+    billName && (billName !== shipName || formatFullAddress(bill) !== shipAddress);
+
+  const customerTypeLabel: Record<string, string> = {
+    pharmacy: "Pharmacie",
+    hospital: "Hôpital",
+    doctor: "Médecin",
+    wholesaler: "Grossiste",
+    retailer: "Détaillant",
+    other: "Client pro",
+  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 bg-muted/20 border-b border-border">
@@ -983,12 +1006,31 @@ export function OrderInfoBlocks({ order }: { order: OrderWithLines }) {
         <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           <MapPin size={12} /> Livraison
         </div>
-        <div className="mt-1.5 text-[13px] font-semibold text-foreground">{shipName}</div>
-        <div className="mt-0.5 text-[12px] text-muted-foreground leading-relaxed">
-          {formatFullAddress(ship)}
+        <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+          <div className="text-[13px] font-semibold text-foreground">{shipName}</div>
+          {buyerType && customerTypeLabel[buyerType] && (
+            <VBadge color="#475569">{customerTypeLabel[buyerType]}</VBadge>
+          )}
         </div>
-        {(buyerEmail || buyerPhone) && (
+        {shipAddress ? (
+          <div className="mt-0.5 text-[12px] text-muted-foreground leading-relaxed">
+            {shipAddress}
+          </div>
+        ) : (
+          <div className="mt-0.5 text-[11px] italic text-muted-foreground">
+            Adresse de livraison non renseignée
+          </div>
+        )}
+
+        {/* Bloc coordonnées — visible dès qu'on a email OU téléphone OU société */}
+        {(buyerEmail || buyerPhone || buyerCompany) && (
           <div className="mt-2 pt-2 border-t border-border space-y-1">
+            {buyerCompany && buyerCompany !== shipName && (
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <User size={11} className="shrink-0" />
+                <span className="truncate">{buyerCompany}</span>
+              </div>
+            )}
             {buyerEmail && (
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <Mail size={11} className="shrink-0" />
@@ -1008,6 +1050,7 @@ export function OrderInfoBlocks({ order }: { order: OrderWithLines }) {
           </div>
         )}
       </div>
+
 
 
       {/* Facturation */}
@@ -1187,6 +1230,32 @@ export function VendorOrderLineRow({
 
           {/* Décomposition économique ligne : Commission MK · Net vendeur · Marge nette (visible sans expand) */}
           <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] rounded-md border border-border bg-muted/10 px-2 py-2">
+            <div className="col-span-2 sm:col-span-4 flex items-center gap-1.5 flex-wrap -mb-0.5">
+              <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
+                Modèle commission :
+              </span>
+              {commissionCfg.commission_model === "flat_percentage" && (
+                <VBadge color="#B45309">
+                  Taux fixe {fmtPct(commissionCfg.commission_rate ?? 0)} du CA HT
+                </VBadge>
+              )}
+              {commissionCfg.commission_model === "margin_split" && (
+                <VBadge color="#7C3AED">
+                  Ventilation de marge · vendeur {fmtPct(commissionCfg.margin_split_pct ?? 0)} /
+                  MediKong {fmtPct(Math.max(0, 100 - (commissionCfg.margin_split_pct ?? 0)))}
+                </VBadge>
+              )}
+              {commissionCfg.commission_model === "fixed_amount" && (
+                <VBadge color="#B45309">
+                  Montant fixe {fmtEur(commissionCfg.fixed_commission_amount ?? 0)}&nbsp;€/unité
+                </VBadge>
+              )}
+              {commissionCfg.commission_model === "margin_split" && !breakdown.hasCost && (
+                <span className="text-[10.5px] italic text-muted-foreground">
+                  ⓘ ventilation basée sur le coût d'achat — non renseigné, commission calculée à 0
+                </span>
+              )}
+            </div>
             <div>
               <div className="text-muted-foreground">Commission MediKong</div>
               <div className="font-semibold text-amber-700">

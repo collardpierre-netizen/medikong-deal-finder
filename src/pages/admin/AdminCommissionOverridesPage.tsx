@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
+import { AdminCreateCommissionOverrideDialog } from "@/components/admin/AdminCreateCommissionOverrideDialog";
 
 type Status = "pending_approval" | "approved" | "rejected" | "draft" | "expired";
 

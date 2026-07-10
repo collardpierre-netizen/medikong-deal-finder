@@ -66,6 +66,7 @@ export interface OrderWithLines {
   order_tracking_carrier: string | null;
   shipped_at: string | null;
   notes: string | null;
+  invoices: Array<{ id: string; invoice_number: string | null; status: string | null; hosted_url: string | null; pdf_url: string | null }>;
   lines: (OrderLine & {
     product_name: string;
     product_image: string | null;
@@ -76,13 +77,44 @@ export interface OrderWithLines {
 
 
 const statusConfig: Record<string, { label: string; color: "info" | "success" | "warning" | "default" }> = {
+  draft: { label: "Brouillon", color: "default" },
   pending: { label: "En attente", color: "warning" },
+  confirmed: { label: "Confirmée", color: "info" },
   processing: { label: "En préparation", color: "info" },
   forwarded: { label: "Transmis au fournisseur", color: "success" },
-  shipped: { label: "Expédié", color: "info" },
-  delivered: { label: "Livré", color: "success" },
-  cancelled: { label: "Annulé", color: "default" },
+  partially_shipped: { label: "Partiellement expédiée", color: "info" },
+  shipped: { label: "Expédiée", color: "info" },
+  delivered: { label: "Livrée", color: "success" },
+  cancelled: { label: "Annulée", color: "default" },
 };
+
+// Statut de facturation dérivé (miroir de AdminCommandes) — synchronisé avec la vue admin.
+export function computeBillingStatus(order: OrderWithLines): {
+  label: string;
+  color: "info" | "success" | "warning" | "default";
+  title: string;
+} | null {
+  const invs = order.invoices || [];
+  if (order.order_status === "cancelled") {
+    return { label: "Annulée", color: "default", title: "Commande annulée" };
+  }
+  if (invs.length > 0) {
+    const allPaid = invs.every((i) => i.status === "paid");
+    const anyPaid = invs.some((i) => i.status === "paid");
+    const anyOverdue = invs.some((i) => i.status === "overdue" || i.status === "uncollectible");
+    if (allPaid || order.payment_status === "paid") {
+      return { label: "Payée", color: "success", title: `${invs.length} facture(s) payée(s)` };
+    }
+    if (anyOverdue) return { label: "En retard", color: "warning", title: "Facture(s) en retard" };
+    if (anyPaid) return { label: "Part. payée", color: "info", title: "Paiement partiel" };
+    return { label: "Facturée", color: "info", title: `${invs.length} facture(s) en attente` };
+  }
+  if (order.payment_status === "paid") {
+    return { label: "Payée", color: "success", title: "Paiement enregistré (hors facture)" };
+  }
+  if (order.order_status === "draft" || order.order_status === "pending") return null;
+  return { label: "À facturer", color: "warning", title: "Aucune facture émise" };
+}
 
 const APP_ORIGIN =
   typeof window !== "undefined" ? window.location.origin : "https://medikong.pro";
@@ -170,7 +202,7 @@ export default function VendorOrders() {
       const orderIds = [...new Set(lines.map(l => l.order_id))];
       const productIds = [...new Set(lines.map(l => l.product_id))];
 
-      const [ordersRes, productsRes] = await Promise.all([
+      const [ordersRes, productsRes, invoicesRes] = await Promise.all([
         supabase
           .from("orders")
           .select("id, order_number, status, created_at, shipping_address, billing_address, customer_id, hidden_from_list, deleted_at, payment_method, payment_status, payment_due_date, tracking_number, tracking_url, tracking_carrier, shipped_at, notes")
@@ -178,10 +210,21 @@ export default function VendorOrders() {
           .eq("hidden_from_list", false)
           .is("deleted_at", null),
         supabase.from("products").select("id, name, image_url, gtin, cnk_code").in("id", productIds),
+        supabase
+          .from("order_invoices")
+          .select("id, order_id, invoice_number, status, hosted_url, pdf_url")
+          .in("order_id", orderIds)
+          .eq("vendor_id", vendorId!),
       ]);
 
       const orderMap = new Map((ordersRes.data || []).map(o => [o.id, o]));
       const productMap = new Map((productsRes.data || []).map(p => [p.id, p]));
+      const invoicesByOrder = new Map<string, any[]>();
+      for (const inv of invoicesRes.data || []) {
+        const arr = invoicesByOrder.get(inv.order_id) || [];
+        arr.push(inv);
+        invoicesByOrder.set(inv.order_id, arr);
+      }
 
       const grouped = new Map<string, OrderWithLines>();
       for (const line of lines) {
@@ -205,6 +248,7 @@ export default function VendorOrders() {
             order_tracking_carrier: order.tracking_carrier ?? null,
             shipped_at: order.shipped_at ?? null,
             notes: order.notes ?? null,
+            invoices: invoicesByOrder.get(line.order_id) || [],
             lines: [],
           });
         }
@@ -244,6 +288,11 @@ export default function VendorOrders() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "order_lines", filter: `vendor_id=eq.${vendorId}` },
+        refreshVendorOrders,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "order_invoices", filter: `vendor_id=eq.${vendorId}` },
         refreshVendorOrders,
       )
       .subscribe();
@@ -668,6 +717,16 @@ export default function VendorOrders() {
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-bold text-foreground">{order.order_number}</span>
+                      {(() => {
+                        const cfg = statusConfig[order.order_status];
+                        if (!cfg) return null;
+                        return <VBadge color={cfg.color}>{cfg.label}</VBadge>;
+                      })()}
+                      {(() => {
+                        const bs = computeBillingStatus(order);
+                        if (!bs) return null;
+                        return <span title={bs.title}><VBadge color={bs.color}>{bs.label}</VBadge></span>;
+                      })()}
                       {hasQogita && (
                         <VBadge color={allForwarded ? "success" : "warning"}>
                           {allForwarded ? "Fournisseur transmis" : "À transmettre au fournisseur"}

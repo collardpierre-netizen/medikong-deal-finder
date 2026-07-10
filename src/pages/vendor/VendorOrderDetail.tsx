@@ -46,12 +46,16 @@ export default function VendorOrderDetail() {
       if (oErr) throw oErr;
       if (!order) return null;
 
-      const { data: lines, error: lErr } = await supabase
-        .from("order_lines")
-        .select("*")
-        .eq("order_id", id!)
-        .eq("vendor_id", vendorId!);
-      if (lErr) throw lErr;
+      const [linesRes, invoicesRes] = await Promise.all([
+        supabase.from("order_lines").select("*").eq("order_id", id!).eq("vendor_id", vendorId!),
+        supabase
+          .from("order_invoices")
+          .select("id, invoice_number, status, hosted_url, pdf_url")
+          .eq("order_id", id!)
+          .eq("vendor_id", vendorId!),
+      ]);
+      if (linesRes.error) throw linesRes.error;
+      const lines = linesRes.data;
       if (!lines || lines.length === 0) return null;
 
       const productIds = [...new Set(lines.map((l: any) => l.product_id).filter(Boolean))];
@@ -77,6 +81,7 @@ export default function VendorOrderDetail() {
         order_tracking_carrier: (order as any).tracking_carrier ?? null,
         shipped_at: (order as any).shipped_at ?? null,
         notes: (order as any).notes ?? null,
+        invoices: (invoicesRes.data as any) || [],
         lines: lines.map((l: any) => {
           const p: any = productMap.get(l.product_id);
           return {

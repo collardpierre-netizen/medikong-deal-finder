@@ -557,149 +557,25 @@ export default function VendorOrders() {
 
               {isExpanded && (
                 <div className="border-t border-border">
-                  <div className="px-4 py-3 bg-muted/20 flex items-center gap-2 text-[12px] text-muted-foreground">
-                    <Truck size={14} />
-                    <span>Livraison : {formatAddress(order.shipping_address)}</span>
-                  </div>
+                  <OrderInfoBlocks order={order} />
 
                   <div className="divide-y divide-border">
-                    {order.lines.map((line) => {
-                      const status = statusConfig[line.fulfillment_status] || statusConfig.pending;
-                      const isQogita = line.fulfillment_type === "qogita";
-                      const canForward = isQogita && line.fulfillment_status === "pending";
-                      const canAccept = !isQogita && line.fulfillment_status === "pending";
-                      const canShip = !isQogita && (line.fulfillment_status === "pending" || line.fulfillment_status === "processing");
-                      const canDeliver = !isQogita && line.fulfillment_status === "shipped";
-                      const canCancel = !isQogita && ["pending", "processing"].includes(line.fulfillment_status);
-                      const remaining = line.quantity - (line.quantity_shipped || 0);
-
-                      return (
-                        <div key={line.id} className="px-4 py-3 flex items-start gap-3">
-                          <div className="w-10 h-10 rounded bg-muted/30 shrink-0 overflow-hidden">
-                            {line.product_image ? (
-                              <img src={line.product_image} alt="" className="w-full h-full object-contain" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                                <PackageCheck size={16} />
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="flex-1 min-w-0">
-                            <div className="text-[13px] font-medium text-foreground truncate">{line.product_name}</div>
-                            <div className="text-[11px] text-muted-foreground mt-0.5">
-                              Qté: {line.quantity}
-                              {line.quantity_shipped ? <> · Expédié : {line.quantity_shipped}/{line.quantity}</> : null}
-                              {" · "}{fmtEur(line.unit_price_excl_vat)}&nbsp;€ HT/u · Total: {fmtEur(line.line_total_excl_vat)}&nbsp;€ HT
-                            </div>
-
-                            {line.tracking_number && (
-                              <div className="mt-1.5 text-[11px] text-muted-foreground flex items-center gap-1">
-                                <Truck size={12} />
-                                {line.tracking_url ? (
-                                  <a href={line.tracking_url} target="_blank" rel="noreferrer" className="underline hover:text-primary">
-                                    Suivi : {line.tracking_number}
-                                  </a>
-                                ) : (
-                                  <span>Suivi : {line.tracking_number}</span>
-                                )}
-                              </div>
-                            )}
-
-                            {line.cancellation_reason && (
-                              <div className="mt-1.5 p-1.5 rounded bg-destructive/10 text-[11px] text-destructive">
-                                Motif annulation : {line.cancellation_reason}
-                              </div>
-                            )}
-
-                            {isQogita && (
-                              <div className="mt-1.5 p-2 rounded bg-muted/30 text-[11px] space-y-0.5">
-                                <div className="font-semibold text-muted-foreground">Détails fournisseur :</div>
-                                {line.qogita_seller_fid && (
-                                  <div>Vendeur : <span className="font-mono text-foreground">{line.qogita_seller_fid}</span></div>
-                                )}
-                                {line.qogita_offer_qid && (
-                                  <div>Réf. offre : <span className="font-mono text-foreground">{line.qogita_offer_qid}</span></div>
-                                )}
-                                {line.cost_price != null && (
-                                  <div>Prix d'achat : <span className="font-semibold text-foreground">{fmtEur(line.cost_price)}&nbsp;€</span></div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="flex flex-col items-end gap-2 shrink-0">
-                            <VBadge color={status.color}>{status.label}</VBadge>
-                            {(() => {
-                              const workflow = isQogita
-                                ? ["forwarded"]
-                                : ["processing", "shipped", "delivered"];
-                              const idx = workflow.indexOf(line.fulfillment_status);
-                              const previous = idx > 0 ? workflow.slice(0, idx) : [];
-                              if (previous.length === 0) return null;
-                              return (
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <button className="text-[10px] text-muted-foreground hover:text-primary inline-flex items-center gap-1 underline underline-offset-2">
-                                      <Pencil size={10} /> Edit
-                                    </button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel className="text-[11px]">Revenir à…</DropdownMenuLabel>
-                                    {previous.map((s) => (
-                                      <DropdownMenuItem
-                                        key={s}
-                                        className="text-[12px]"
-                                        onSelect={() => setRevertConfirm({ lineId: line.id, from: line.fulfillment_status, to: s })}
-                                      >
-                                        {statusConfig[s]?.label || s}
-                                      </DropdownMenuItem>
-                                    ))}
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              );
-                            })()}
-
-
-                            {canForward && (
-                              <Button size="sm" variant="outline" className="text-[11px] h-7 px-2"
-                                disabled={markForwarded.isPending}
-                                onClick={() => markForwarded.mutate(line.id)}>
-                                {markForwarded.isPending ? <Loader2 size={12} className="animate-spin mr-1" /> : <ExternalLink size={12} className="mr-1" />}
-                                Transmis fournisseur
-                              </Button>
-                            )}
-                            {canAccept && (
-                              <Button size="sm" className="text-[11px] h-7 px-2 bg-primary"
-                                disabled={acceptLine.isPending}
-                                onClick={() => acceptLine.mutate({ ...line, order })}>
-                                <Check size={12} className="mr-1" /> Accepter
-                              </Button>
-                            )}
-                            {canShip && remaining > 0 && (
-                              <Button size="sm" variant="outline" className="text-[11px] h-7 px-2"
-                                onClick={() => setShipLine({ ...line, order })}>
-                                <Package size={12} className="mr-1" />
-                                {remaining < line.quantity ? "Expédier reliquat" : "Marquer expédié"}
-                              </Button>
-                            )}
-                            {canDeliver && (
-                              <Button size="sm" variant="outline" className="text-[11px] h-7 px-2"
-                                disabled={markDelivered.isPending}
-                                onClick={() => markDelivered.mutate({ ...line, order })}>
-                                <PackageCheck size={12} className="mr-1" /> Marquer livré
-                              </Button>
-                            )}
-                            {canCancel && (
-                              <Button size="sm" variant="ghost" className="text-[11px] h-7 px-2 text-destructive hover:bg-destructive/10"
-                                onClick={() => setCancelLine({ ...line, order })}>
-                                <X size={12} className="mr-1" /> Annuler / Refuser
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {order.lines.map((line) => (
+                      <VendorOrderLineRow
+                        key={line.id}
+                        line={line}
+                        order={order}
+                        onShip={(l) => setShipLine({ ...l, order })}
+                        onCancel={(l) => setCancelLine({ ...l, order })}
+                        onRevert={(payload) => setRevertConfirm(payload)}
+                        onAccept={(l) => acceptLine.mutate({ ...l, order })}
+                        onForward={(l) => markForwarded.mutate(l.id)}
+                        onDeliver={(l) => markDelivered.mutate({ ...l, order })}
+                        acceptPending={acceptLine.isPending}
+                        forwardPending={markForwarded.isPending}
+                        deliverPending={markDelivered.isPending}
+                      />
+                    ))}
                   </div>
                 </div>
               )}

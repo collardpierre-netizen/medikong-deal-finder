@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { format } from "date-fns";
@@ -31,6 +32,24 @@ export default function VendorOrderDetail() {
   const { id } = useParams<{ id: string }>();
   const vendorQuery = useCurrentVendor();
   const vendorId = vendorQuery.data?.id;
+  const queryClient = useQueryClient();
+
+  // Realtime : rafraîchir dès qu'orders (status/payment_status), order_lines
+  // ou order_invoices bougent sur cette commande.
+  useEffect(() => {
+    if (!vendorId || !id) return;
+    const invalidate = () =>
+      queryClient.invalidateQueries({ queryKey: ["vendor-order-detail", vendorId, id] });
+    const channel = supabase
+      .channel(`vendor-order-detail-${id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `id=eq.${id}` }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "order_lines", filter: `order_id=eq.${id}` }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "order_invoices", filter: `order_id=eq.${id}` }, invalidate)
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [queryClient, vendorId, id]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["vendor-order-detail", vendorId, id],

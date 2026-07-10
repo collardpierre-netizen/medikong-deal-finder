@@ -80,16 +80,14 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const orderId = body?.order_id;
     const trackingFilter: string | null = body?.tracking_number ? String(body.tracking_number) : null;
+    const preferredVendorId: string | null = body?.vendor_id ? String(body.vendor_id) : null;
     if (!orderId || typeof orderId !== "string") return json(400, { error: "order_id required" });
 
     const admin = createClient(supabaseUrl, serviceKey);
 
-    const { data: vendorRow, error: vErr } = await admin
-      .from("vendors")
-      .select("id, name, company_name, vat_number, address_line1, postal_code, city, country_code, phone, email, bank_name, iban, bic")
-      .eq("auth_user_id", userId)
-      .maybeSingle();
-    if (vErr || !vendorRow) return json(403, { error: "not_a_vendor" });
+    const { resolveVendorForUser } = await import("../_shared/resolve-vendor.ts");
+    const vendorRow = await resolveVendorForUser(admin, userId, preferredVendorId);
+    if (!vendorRow) return json(403, { error: "not_a_vendor" });
 
     const { data: order, error: oErr } = await admin
       .from("orders")

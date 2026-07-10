@@ -909,7 +909,7 @@ function paymentStatusLabel(s: string | null): string {
   return map[s] || s;
 }
 
-function OrderInfoBlocks({ order }: { order: OrderWithLines }) {
+export function OrderInfoBlocks({ order }: { order: OrderWithLines }) {
   const ship = order.shipping_address || {};
   const bill = order.billing_address || {};
   const shipName = (ship as any).label || (ship as any).name || (ship as any).company || "Acheteur";

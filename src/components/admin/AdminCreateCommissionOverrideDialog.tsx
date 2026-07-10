@@ -307,13 +307,25 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
       }
     },
     onSuccess: () => {
-      toast.success("Override créé et approuvé");
       qc.invalidateQueries({ queryKey: ["admin-commission-overrides"] });
       qc.invalidateQueries({ queryKey: ["effective-commission"] });
       qc.invalidateQueries({ queryKey: ["vpc"] });
-      reset();
-      setOpen(false);
+      const createdLabel =
+        scope === "product"
+          ? `${vendorLabel || "vendeur"} × ${productLabel || "produit"}`
+          : offerLabel || "offre";
+      if (quickMode) {
+        setSessionCount((n) => n + 1);
+        setLastCreatedLabel(createdLabel);
+        toast.success(`Override créé — prêt pour la cible suivante (${sessionCount + 1} au total)`);
+        resetTargetOnly();
+      } else {
+        toast.success("Override créé et approuvé");
+        reset();
+        setOpen(false);
+      }
     },
+
     onError: (e: any) => toast.error(e.message ?? "Erreur"),
   });
 

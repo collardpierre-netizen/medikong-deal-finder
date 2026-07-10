@@ -1009,7 +1009,7 @@ export function OrderInfoBlocks({ order }: { order: OrderWithLines }) {
         <div className="mt-1.5 flex items-center gap-2 flex-wrap">
           <div className="text-[13px] font-semibold text-foreground">{shipName}</div>
           {buyerType && customerTypeLabel[buyerType] && (
-            <VBadge color="slate">{customerTypeLabel[buyerType]}</VBadge>
+            <VBadge color="#475569">{customerTypeLabel[buyerType]}</VBadge>
           )}
         </div>
         {shipAddress ? (

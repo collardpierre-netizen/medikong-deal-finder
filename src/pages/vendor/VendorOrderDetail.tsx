@@ -63,6 +63,11 @@ export default function VendorOrderDetail() {
     };
   }, [queryClient, vendorId, id]);
 
+  useResyncOnReconnect(
+    [["vendor-order-detail", vendorId, id]],
+    !!vendorId && !!id,
+  );
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["vendor-order-detail", vendorId, id],
     enabled: !!vendorId && !!id,

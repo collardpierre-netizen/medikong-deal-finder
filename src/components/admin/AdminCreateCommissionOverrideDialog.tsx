@@ -495,32 +495,83 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
           {model === "flat_percentage" && (
             <div>
               <Label className="text-xs">Taux MediKong (%)</Label>
-              <Input type="number" min={0} max={50} step="0.1" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="ex. 12" />
+              <Input type="number" min={0} max={50} step="0.1" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="ex. 12"
+                aria-invalid={!!errors.rate} className={errors.rate ? "border-destructive" : ""} />
+              {errors.rate && <p className="text-[11px] text-destructive mt-1">{errors.rate}</p>}
             </div>
           )}
           {model === "margin_split" && (
             <div>
               <Label className="text-xs">Part vendeur (%)</Label>
-              <Input type="number" min={0} max={100} step="1" value={split} onChange={(e) => setSplit(e.target.value)} placeholder="ex. 60 (vendeur 60 / MediKong 40)" />
+              <Input type="number" min={0} max={100} step="1" value={split} onChange={(e) => setSplit(e.target.value)} placeholder="ex. 60 (vendeur 60 / MediKong 40)"
+                aria-invalid={!!errors.split} className={errors.split ? "border-destructive" : ""} />
+              {errors.split && <p className="text-[11px] text-destructive mt-1">{errors.split}</p>}
             </div>
           )}
           {model === "fixed_amount" && (
             <div>
               <Label className="text-xs">Montant € HTVA / unité</Label>
-              <Input type="number" min={0} step="0.01" value={fixed} onChange={(e) => setFixed(e.target.value)} placeholder="ex. 0.50" />
+              <Input type="number" min={0} step="0.01" value={fixed} onChange={(e) => setFixed(e.target.value)} placeholder="ex. 0.50"
+                aria-invalid={!!errors.fixed} className={errors.fixed ? "border-destructive" : ""} />
+              {errors.fixed && <p className="text-[11px] text-destructive mt-1">{errors.fixed}</p>}
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs">Valide du</Label>
-              <Input type="date" value={validFrom} onChange={(e) => setValidFrom(e.target.value)} />
+              <Input type="date" value={validFrom} onChange={(e) => setValidFrom(e.target.value)}
+                aria-invalid={!!errors.validFrom} className={errors.validFrom ? "border-destructive" : ""} />
+              {errors.validFrom && <p className="text-[11px] text-destructive mt-1">{errors.validFrom}</p>}
             </div>
             <div>
               <Label className="text-xs">Valide jusqu'au</Label>
-              <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
+              <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)}
+                aria-invalid={!!errors.validUntil} className={errors.validUntil ? "border-destructive" : ""} />
+              {errors.validUntil && <p className="text-[11px] text-destructive mt-1">{errors.validUntil}</p>}
             </div>
+            {errors.range && (
+              <p className="col-span-2 text-[11px] text-destructive -mt-1">{errors.range}</p>
+            )}
           </div>
+
+          {/* Bandeau conflit : override existant chevauchant la période */}
+          {previewEnabled && hasOverlap && (
+            <Alert variant="destructive" className="border-amber-400 bg-amber-50 text-amber-900 [&>svg]:text-amber-600">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle className="text-sm">
+                {existingLoading ? "Vérification…" : "Override existant sur une période chevauchante"}
+              </AlertTitle>
+              <AlertDescription className="text-xs space-y-1.5 mt-1">
+                {overlappingOverrides.map((ex) => (
+                  <div key={ex.id} className="flex flex-wrap items-center gap-2">
+                    <Badge variant="outline" className="uppercase text-[10px]">{ex.source}</Badge>
+                    <span className="font-medium">
+                      {ex.model === "flat_percentage" && `Taux fixe ${ex.rate ?? "?"} %`}
+                      {ex.model === "margin_split" && `Partage de marge — vendeur ${ex.split ?? "?"} %`}
+                      {ex.model === "fixed_amount" && `Montant fixe ${ex.fixed ?? "?"} €/u.`}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      du {ex.valid_from ? new Date(ex.valid_from).toLocaleDateString("fr-BE") : "—"}
+                      {" → "}
+                      {ex.valid_until ? new Date(ex.valid_until).toLocaleDateString("fr-BE") : "sans fin"}
+                    </span>
+                  </div>
+                ))}
+                <label className="flex items-start gap-2 pt-2 cursor-pointer">
+                  <Checkbox
+                    checked={confirmReplace}
+                    onCheckedChange={(v) => setConfirmReplace(v === true)}
+                    className="mt-0.5"
+                  />
+                  <span className="text-xs">
+                    Je confirme <strong>remplacer</strong> l'override existant par la nouvelle règle (les périodes ne peuvent pas être empilées).
+                  </span>
+                </label>
+              </AlertDescription>
+            </Alert>
+          )}
+
 
           <div>
             <Label className="text-xs">Note interne</Label>

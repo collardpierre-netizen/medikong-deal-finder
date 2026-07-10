@@ -13,6 +13,7 @@ import { CategoryTreeSelector } from "@/components/vendor/CategoryTreeSelector";
 import { MarginInsightCard } from "@/components/vendor/MarginInsightCard";
 import { MarginBreakdownDetails } from "@/components/vendor/MarginBreakdownDetails";
 import { useVendorCommissionConfig } from "@/hooks/useVendorCommissionConfig";
+import { useEffectiveCommission } from "@/hooks/useEffectiveCommission";
 import { computeMargin } from "@/lib/vendorMargin";
 import { toast } from "sonner";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
@@ -1385,6 +1386,8 @@ export default function VendorOffers() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<OfferForm>(emptyForm);
+  const { data: editingEffectiveCommission } = useEffectiveCommission(editingId);
+  const editingCommissionConfig = editingEffectiveCommission ?? commissionConfig;
   // Snapshot capturé à l'ouverture en édition pour afficher "avant → après" (prix HT + pack effectif)
   const [initialSnapshot, setInitialSnapshot] = useState<{ priceExcl: number; effectivePack: number } | null>(null);
   const [previewCountry, setPreviewCountry] = useState<string | null>(null);
@@ -1808,6 +1811,36 @@ export default function VendorOffers() {
       return true;
     });
   }, [offers, search, filterBrand, filterCountry, filterManufacturer, filterCategory]);
+
+  const visibleOfferIds = useMemo(
+    () => filteredOffers.map((o: any) => o.id).filter(Boolean),
+    [filteredOffers],
+  );
+
+  const { data: effectiveCommissionsByOffer = {} } = useQuery({
+    enabled: visibleOfferIds.length > 0,
+    queryKey: ["vendor-offers-effective-commissions", visibleOfferIds.join(",")],
+    queryFn: async (): Promise<Record<string, import("@/lib/vendorMargin").VendorCommissionConfig>> => {
+      const out: Record<string, import("@/lib/vendorMargin").VendorCommissionConfig> = {};
+      const CONCURRENCY = 20;
+      for (let i = 0; i < visibleOfferIds.length; i += CONCURRENCY) {
+        const chunk = visibleOfferIds.slice(i, i + CONCURRENCY);
+        await Promise.all(chunk.map(async (offerId) => {
+          const { data, error } = await supabase.rpc("resolve_effective_commission", { _offer_id: offerId });
+          if (error) return;
+          const row: any = Array.isArray(data) ? data[0] : data;
+          if (!row) return;
+          out[offerId] = {
+            commission_model: (row.commission_model ?? "flat_percentage") as any,
+            commission_rate: row.commission_rate ?? null,
+            margin_split_pct: row.margin_split_pct ?? null,
+            fixed_commission_amount: row.fixed_commission_amount ?? null,
+          };
+        }));
+      }
+      return out;
+    },
+  });
 
   // Nettoie la sélection si les ids ne sont plus dans la liste filtrée
   useEffect(() => {
@@ -2447,26 +2480,26 @@ export default function VendorOffers() {
                 Prix TTC : <strong style={{ color: "#1D2530" }}>{(parseFloat(form.price_excl_vat) * (1 + parseFloat(form.vat_rate) / 100)).toFixed(2)} €</strong>
                 {parseFloat(form.mov_amount) > 0 && <span className="ml-3">MOV : <strong style={{ color: "#1D2530" }}>{parseFloat(form.mov_amount).toFixed(0)} €</strong></span>}
               </div>
-              {commissionConfig && (
+              {editingCommissionConfig && (
                 <>
                   <MarginInsightCard
                     breakdown={computeMargin(
                       parseFloat(form.price_excl_vat) || 0,
                       form.purchase_price_excl_vat ? parseFloat(form.purchase_price_excl_vat) : null,
-                      commissionConfig,
+                      editingCommissionConfig,
                     )}
-                    commissionModel={commissionConfig.commission_model}
+                    commissionModel={editingCommissionConfig.commission_model}
                   />
                   <MarginBreakdownDetails
                     breakdown={computeMargin(
                       parseFloat(form.price_excl_vat) || 0,
                       form.purchase_price_excl_vat ? parseFloat(form.purchase_price_excl_vat) : null,
-                      commissionConfig,
+                      editingCommissionConfig,
                     )}
-                    commissionModel={commissionConfig.commission_model}
-                    commissionRate={commissionConfig.commission_rate}
-                    marginSplitPct={commissionConfig.margin_split_pct}
-                    fixedCommissionAmount={commissionConfig.fixed_commission_amount}
+                    commissionModel={editingCommissionConfig.commission_model}
+                    commissionRate={editingCommissionConfig.commission_rate}
+                    marginSplitPct={editingCommissionConfig.margin_split_pct}
+                    fixedCommissionAmount={editingCommissionConfig.fixed_commission_amount}
                     offerId={editingId}
                   />
                 </>
@@ -2741,8 +2774,9 @@ export default function VendorOffers() {
                       : offer.purchase_price != null
                         ? Number(offer.purchase_price)
                         : null;
-                  const margin = commissionConfig
-                    ? computeMargin(Number(offer.price_excl_vat) || 0, purchase, commissionConfig)
+                  const offerCommissionConfig = effectiveCommissionsByOffer[offer.id] ?? commissionConfig;
+                  const margin = offerCommissionConfig
+                    ? computeMargin(Number(offer.price_excl_vat) || 0, purchase, offerCommissionConfig)
                     : null;
                   return (
                     <tr

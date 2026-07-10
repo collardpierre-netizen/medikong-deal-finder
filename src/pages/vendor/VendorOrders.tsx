@@ -1289,3 +1289,36 @@ function VendorOrderLineRow({
     </div>
   );
 }
+
+function VendorOrderPdfButton({ orderId, orderNumber }: { orderId: string; orderNumber: string }) {
+  const gen = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("generate-vendor-order-pdf", {
+        body: { order_id: orderId },
+      });
+      if (error) throw error;
+      if (!data?.pdf_url) throw new Error("URL PDF indisponible");
+      return data.pdf_url as string;
+    },
+    onSuccess: (url) => {
+      window.open(url, "_blank", "noopener,noreferrer");
+      toast.success(`Bon de commande ${orderNumber} généré`);
+    },
+    onError: (e: any) => {
+      toast.error(`Génération PDF échouée — ${e?.message || "erreur"}`);
+    },
+  });
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="h-7 text-[11px] gap-1.5"
+      disabled={gen.isPending}
+      onClick={(e) => { e.stopPropagation(); gen.mutate(); }}
+    >
+      {gen.isPending ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+      Télécharger le PDF
+    </Button>
+  );
+}

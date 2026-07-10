@@ -136,25 +136,53 @@ export function MarginBreakdownDetails({
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-between gap-2 px-3 py-2 text-[12px] font-semibold"
+  const { data: effective } = useEffectiveCommission(offerId ?? null);
+  const sourceMeta = effective ? SOURCE_META[effective.source] : null;
+  const viaAdminShortcut = Boolean(effective?.via_admin_shortcut) && effective?.source !== "vendor";
+
+  const formula = formulaFor(
+    commissionModel,
+    commissionRate,
+    marginSplitPct,
+    fixedCommissionAmount,
+  );
+
+  return (
+    <div className="rounded-lg border" style={{ borderColor: "#E2E8F0", backgroundColor: "#FFFFFF" }}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between gap-2 px-3 py-2 text-[12px] font-semibold"
         style={{ color: "#1D2530" }}
         aria-expanded={open}
       >
-        <span className="flex items-center gap-2">
+        <span className="flex items-center gap-2 flex-wrap">
           <Calculator size={13} style={{ color: "#1B5BDA" }} />
           Détail du calcul du net en poche
           {sourceMeta && (
             <span
               className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
               style={{ backgroundColor: sourceMeta.bg, color: sourceMeta.fg }}
-              title={sourceMeta.help}
+              title={viaAdminShortcut ? sourceMeta.adminHelp : sourceMeta.help}
             >
               <Layers size={9} />
-              {sourceMeta.label}
+              {viaAdminShortcut ? sourceMeta.adminLabel : sourceMeta.label}
+            </span>
+          )}
+          {viaAdminShortcut && (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+              style={{ backgroundColor: "#DCFCE7", color: "#15803D" }}
+              title="Cet override a été créé directement par un admin MediKong via /admin/commission-overrides (raccourci admin, auto-approuvé)."
+            >
+              <ShieldCheck size={9} />
+              via admin
             </span>
           )}
         </span>
         {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
       </button>
+
 
       {open && (
         <div className="px-3 pb-3 pt-1 space-y-3 text-[12px]" style={{ color: "#1D2530" }}>

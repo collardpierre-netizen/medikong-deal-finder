@@ -23,6 +23,7 @@ import { fr } from "date-fns/locale";
 import { getVendorPublicName } from "@/lib/vendor-display";
 
 import { fmtEur } from "@/lib/format-currency";
+import { Link } from "react-router-dom";
 interface OrderLine {
   id: string;
   order_id: string;

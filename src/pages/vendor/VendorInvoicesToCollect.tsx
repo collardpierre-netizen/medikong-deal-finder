@@ -56,21 +56,30 @@ export default function VendorInvoicesToCollect() {
 
   useEffect(() => {
     if (!vendorId) return;
+    let cancelled = false;
+    const invalidate = () => {
+      if (cancelled) return;
+      qc.invalidateQueries({ queryKey: ["vendor-invoices-to-collect", vendorId] });
+    };
+    const suffix = (globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2));
     const channel = supabase
-      .channel(`vendor-invoices-${vendorId}`)
+      .channel(`vendor-invoices-${vendorId}-${suffix}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "sub_orders", filter: `vendor_id=eq.${vendorId}` },
-        () => qc.invalidateQueries({ queryKey: ["vendor-invoices-to-collect", vendorId] }),
+        invalidate,
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "order_invoices", filter: `vendor_id=eq.${vendorId}` },
-        () => qc.invalidateQueries({ queryKey: ["vendor-invoices-to-collect", vendorId] }),
+        invalidate,
       )
       .subscribe();
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      void channel.unsubscribe().finally(() => {
+        void supabase.removeChannel(channel);
+      });
     };
   }, [vendorId, qc]);
 

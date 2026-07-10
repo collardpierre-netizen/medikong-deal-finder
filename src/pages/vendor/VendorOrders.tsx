@@ -272,14 +272,17 @@ export default function VendorOrders() {
 
   useEffect(() => {
     if (!vendorId) return;
+    let cancelled = false;
 
     const refreshVendorOrders = () => {
+      if (cancelled) return;
       queryClient.invalidateQueries({ queryKey: vendorOrdersQueryKey });
       queryClient.invalidateQueries({ queryKey: ["action-center", "vendor"] });
     };
 
+    const suffix = (globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2));
     const channel = supabase
-      .channel(`vendor-orders-${vendorId}`)
+      .channel(`vendor-orders-${vendorId}-${suffix}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "orders" },
@@ -298,7 +301,10 @@ export default function VendorOrders() {
       .subscribe();
 
     return () => {
-      void supabase.removeChannel(channel);
+      cancelled = true;
+      void channel.unsubscribe().finally(() => {
+        void supabase.removeChannel(channel);
+      });
     };
   }, [queryClient, vendorId, vendorOrdersQueryKey]);
 

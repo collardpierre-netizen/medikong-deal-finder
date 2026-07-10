@@ -1033,33 +1033,43 @@ export function OrderInfoBlocks({ order }: { order: OrderWithLines }) {
           </div>
         )}
 
-        {/* Bloc coordonnées — visible dès qu'on a email OU téléphone OU société */}
-        {(buyerEmail || buyerPhone || buyerCompany) && (
-          <div className="mt-2 pt-2 border-t border-border space-y-1">
-            {buyerCompany && buyerCompany !== shipName && (
-              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                <User size={11} className="shrink-0" />
-                <span className="truncate">{buyerCompany}</span>
-              </div>
-            )}
-            {buyerEmail && (
-              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                <Mail size={11} className="shrink-0" />
-                <a href={`mailto:${buyerEmail}`} className="underline hover:text-primary truncate">
-                  {buyerEmail}
-                </a>
-              </div>
-            )}
-            {buyerPhone && (
-              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                <Phone size={11} className="shrink-0" />
-                <a href={`tel:${buyerPhone}`} className="underline hover:text-primary">
-                  {buyerPhone}
-                </a>
-              </div>
+        {/* Bloc coordonnées acheteur — toujours affiché avec états vides explicites */}
+        <div className="mt-2 pt-2 border-t border-border space-y-1">
+          {buyerCompany && buyerCompany !== shipName && (
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <User size={11} className="shrink-0" />
+              <span className="truncate">{buyerCompany}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <Mail size={11} className="shrink-0" />
+            {buyerEmail ? (
+              <a href={`mailto:${buyerEmail}`} className="underline hover:text-primary truncate">
+                {buyerEmail}
+              </a>
+            ) : (
+              <span className="italic text-muted-foreground/70">Email non renseigné</span>
             )}
           </div>
-        )}
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <Phone size={11} className="shrink-0" />
+            {buyerPhone ? (
+              <a href={`tel:${buyerPhone}`} className="underline hover:text-primary">
+                {buyerPhone}
+              </a>
+            ) : (
+              <span className="italic text-muted-foreground/70">Téléphone non renseigné</span>
+            )}
+          </div>
+          {!buyerEmail && !buyerPhone && (
+            <div className="mt-1 flex items-start gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-[10.5px] text-amber-900">
+              <AlertCircle size={11} className="shrink-0 mt-0.5 text-amber-600" />
+              <span>
+                Aucun contact acheteur disponible — la commande a été passée sans coordonnées vérifiées. Contactez le support MediKong si besoin.
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
 

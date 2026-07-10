@@ -130,7 +130,10 @@ export default function VendorOrderDetail() {
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         {backLink}
-        <VendorOrderPdfButton orderId={order.order_id} orderNumber={order.order_number} />
+        <div className="flex items-center gap-2 flex-wrap">
+          <VendorOrderPdfButton orderId={order.order_id} orderNumber={order.order_number} />
+          <VendorPayoutPdfButton orderId={order.order_id} orderNumber={order.order_number} label="Décompte fournisseur" />
+        </div>
       </div>
 
       <VCard className="overflow-hidden">

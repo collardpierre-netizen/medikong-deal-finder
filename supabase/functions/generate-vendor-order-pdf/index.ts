@@ -74,12 +74,50 @@ Deno.serve(async (req) => {
 
     const { data: lines, error: lErr } = await admin
       .from("order_lines")
-      .select("id, quantity, unit_price_excl_vat, vat_rate, line_total_excl_vat, manual_label, cnk_code, tracking_number, tracking_url, tracking_carrier, status, products(name, gtin, cnk_code)")
+      .select("id, offer_id, quantity, unit_price_excl_vat, vat_rate, line_total_excl_vat, cost_price, manual_label, cnk_code, tracking_number, tracking_url, tracking_carrier, status, products(name, gtin, cnk_code)")
       .eq("order_id", orderId)
       .eq("vendor_id", vendorRow.id);
 
     if (lErr) return json(500, { error: "lines_fetch_failed", details: lErr.message });
     if (!lines || lines.length === 0) return json(403, { error: "no_lines_for_vendor" });
+
+    // Résolution commission effective par offre (dédoublonnée)
+    const offerIds = [...new Set((lines as any[]).map((l) => l.offer_id).filter(Boolean))];
+    const commissionMap = new Map<string, any>();
+    await Promise.all(offerIds.map(async (oid) => {
+      const { data } = await admin.rpc("resolve_effective_commission", { _offer_id: oid });
+      const row: any = Array.isArray(data) ? data[0] : data;
+      if (row) commissionMap.set(oid, row);
+    }));
+
+    const computeLineBreakdown = (l: any) => {
+      const sell = Number(l.unit_price_excl_vat) || 0;
+      const cost = Number(l.cost_price) || 0;
+      const hasCost = cost > 0;
+      const cfg: any = commissionMap.get(l.offer_id) ?? { commission_model: "flat_percentage" };
+      let commission = 0;
+      const model = cfg.commission_model as string;
+      if (model === "flat_percentage") {
+        commission = (sell * (Number(cfg.commission_rate) || 0)) / 100;
+      } else if (model === "margin_split") {
+        if (hasCost) {
+          const gross = Math.max(0, sell - cost);
+          const mkPct = Math.max(0, 100 - (Number(cfg.margin_split_pct) || 0));
+          commission = (gross * mkPct) / 100;
+        }
+      } else if (model === "fixed_amount") {
+        commission = Number(cfg.fixed_commission_amount) || 0;
+      }
+      commission = Math.max(0, commission);
+      const netRevenue = sell - commission;
+      const netMargin = sell - cost - commission;
+      const modelLabel =
+        model === "flat_percentage" ? `Taux fixe ${Number(cfg.commission_rate) || 0}%`
+        : model === "margin_split" ? `Ventilation vendeur ${Number(cfg.margin_split_pct) || 0}% / MK ${Math.max(0, 100 - (Number(cfg.margin_split_pct) || 0))}%`
+        : model === "fixed_amount" ? `Montant fixe ${(Number(cfg.fixed_commission_amount) || 0).toFixed(2)} €/u`
+        : "—";
+      return { commission, netRevenue, netMargin, hasCost, modelLabel, model };
+    };
 
     // Buyer contact (email/phone)
     let buyer: any = null;

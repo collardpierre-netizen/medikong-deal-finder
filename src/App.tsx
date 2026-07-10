@@ -648,6 +648,7 @@ const App = () => (
               <Route path="offers/audit" element={<LP><VendorOffersAudit /></LP>} />
               <Route path="orders" element={<LP><VendorOrders /></LP>} />
               <Route path="commandes/:id" element={<LP><VendorOrderDetail /></LP>} />
+              <Route path="acheteurs/:customerId" element={<LP><VendorBuyerProfile /></LP>} />
               <Route path="leads-rappel" element={<LP><VendorLeadsRappel /></LP>} />
               <Route path="opportunities" element={<LP><VendorOpportunities /></LP>} />
               <Route path="alerts" element={<LP><VendorMarketIntelHub /></LP>} />

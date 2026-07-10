@@ -23976,6 +23976,27 @@ export type Database = {
         }[]
       }
       admin_category_mapping_dashboard: { Args: never; Returns: Json }
+      admin_category_source_aliases_list: {
+        Args: {
+          _limit?: number
+          _locale?: string
+          _only_unmapped_products?: boolean
+          _search?: string
+        }
+        Returns: {
+          category_id: string
+          category_is_active: boolean
+          category_name: string
+          category_slug: string
+          created_at: string
+          id: string
+          notes: string
+          pending_products: number
+          source_locale: string
+          source_path: string
+          total_products: number
+        }[]
+      }
       admin_change_buyer_profile: {
         Args: {
           _auth_user_id: string
@@ -24127,6 +24148,10 @@ export type Database = {
           status: string
           total_count: number
         }[]
+      }
+      admin_delete_category_source_alias: {
+        Args: { _id: string }
+        Returns: undefined
       }
       admin_delete_manual_order_draft: {
         Args: { _id: string }
@@ -24374,6 +24399,14 @@ export type Database = {
         Returns: undefined
       }
       admin_notifications_unread_count: { Args: never; Returns: number }
+      admin_preview_apply_category_aliases: {
+        Args: never
+        Returns: {
+          matching_aliases: number
+          total_pending_products: number
+          would_update_products: number
+        }[]
+      }
       admin_price_cockpit_gaps: {
         Args: { _brand_id?: string; _country?: string; _limit?: number }
         Returns: {
@@ -24762,6 +24795,16 @@ export type Database = {
           _vat_rate: number
         }
         Returns: Json
+      }
+      admin_upsert_category_source_alias: {
+        Args: {
+          _category_id: string
+          _id: string
+          _notes: string
+          _source_locale: string
+          _source_path: string
+        }
+        Returns: string
       }
       admin_upsert_offer_commission: {
         Args: {

@@ -299,7 +299,9 @@ export default function VendorOrders() {
         { event: "*", schema: "public", table: "order_invoices", filter: `vendor_id=eq.${vendorId}` },
         refreshVendorOrders,
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") refreshVendorOrders();
+      });
 
     return () => {
       cancelled = true;

@@ -15,6 +15,7 @@ import {
   OrderInfoBlocks,
   VendorOrderLineRow,
   VendorOrderPdfButton,
+  VendorPayoutPdfButton,
   type OrderWithLines,
 } from "./VendorOrders";
 
@@ -129,7 +130,10 @@ export default function VendorOrderDetail() {
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         {backLink}
-        <VendorOrderPdfButton orderId={order.order_id} orderNumber={order.order_number} />
+        <div className="flex items-center gap-2 flex-wrap">
+          <VendorOrderPdfButton orderId={order.order_id} orderNumber={order.order_number} />
+          <VendorPayoutPdfButton orderId={order.order_id} orderNumber={order.order_number} label="Décompte fournisseur" />
+        </div>
       </div>
 
       <VCard className="overflow-hidden">
@@ -148,6 +152,27 @@ export default function VendorOrderDetail() {
         </div>
 
         <OrderInfoBlocks order={order} />
+
+        {(() => {
+          const trackings = [
+            ...new Set(order.lines.map((l) => l.tracking_number).filter((t): t is string => !!t)),
+          ];
+          if (trackings.length === 0) return null;
+          return (
+            <div className="px-4 py-2 border-b border-border bg-muted/10 flex flex-wrap items-center gap-2">
+              <span className="text-[11px] text-muted-foreground">Décompte par expédition :</span>
+              {trackings.map((t) => (
+                <VendorPayoutPdfButton
+                  key={t}
+                  orderId={order.order_id}
+                  orderNumber={order.order_number}
+                  trackingNumber={t}
+                  label={t}
+                />
+              ))}
+            </div>
+          );
+        })()}
 
         <div className="divide-y divide-border">
           {order.lines.map((line) => (

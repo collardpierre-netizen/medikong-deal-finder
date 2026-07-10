@@ -559,15 +559,50 @@ export default function VendorOrders() {
 
               {isExpanded && (
                 <div className="border-t border-border">
-                  <div className="flex items-center justify-end gap-2 px-4 pt-3">
+                  <div className="flex items-center justify-end gap-2 px-4 pt-3 flex-wrap">
                     <Button asChild size="sm" variant="outline" className="h-7 text-[11px] gap-1.5">
                       <Link to={`/vendor/commandes/${order.order_id}`} onClick={(e) => e.stopPropagation()}>
                         <ExternalLink size={12} /> Ouvrir la fiche
                       </Link>
                     </Button>
                     <VendorOrderPdfButton orderId={order.order_id} orderNumber={order.order_number} />
+                    <VendorPayoutPdfButton
+                      orderId={order.order_id}
+                      orderNumber={order.order_number}
+                      label="Décompte fournisseur"
+                    />
                   </div>
                   <OrderInfoBlocks order={order} />
+
+                  {/* Décomptes par expédition (si plusieurs numéros de tracking distincts) */}
+                  {(() => {
+                    const trackings = [
+                      ...new Set(
+                        order.lines
+                          .map((l) => l.tracking_number)
+                          .filter((t): t is string => !!t),
+                      ),
+                    ];
+                    if (trackings.length === 0) return null;
+                    return (
+                      <div className="px-4 py-2 border-b border-border bg-muted/10 flex flex-wrap items-center gap-2">
+                        <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
+                          <Truck size={11} /> Décompte par expédition :
+                        </span>
+                        {trackings.map((t) => (
+                          <VendorPayoutPdfButton
+                            key={t}
+                            orderId={order.order_id}
+                            orderNumber={order.order_number}
+                            trackingNumber={t}
+                            label={t}
+                          />
+                        ))}
+                      </div>
+                    );
+                  })()}
+
+
 
 
 
@@ -1333,6 +1368,53 @@ export function VendorOrderPdfButton({ orderId, orderNumber }: { orderId: string
     >
       {gen.isPending ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
       Télécharger le PDF
+    </Button>
+  );
+}
+
+export function VendorPayoutPdfButton({
+  orderId,
+  orderNumber,
+  trackingNumber,
+  label,
+}: {
+  orderId: string;
+  orderNumber: string;
+  trackingNumber?: string;
+  label?: string;
+}) {
+  const gen = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("generate-vendor-payout-pdf", {
+        body: { order_id: orderId, tracking_number: trackingNumber ?? null },
+      });
+      if (error) throw error;
+      if (!data?.pdf_url) throw new Error("URL PDF indisponible");
+      return data.pdf_url as string;
+    },
+    onSuccess: (url) => {
+      window.open(url, "_blank", "noopener,noreferrer");
+      toast.success(
+        trackingNumber
+          ? `Décompte ${orderNumber} · ${trackingNumber} généré`
+          : `Décompte ${orderNumber} généré`,
+      );
+    },
+    onError: (e: any) => {
+      toast.error(`Décompte échoué — ${e?.message || "erreur"}`);
+    },
+  });
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="h-7 text-[11px] gap-1.5"
+      disabled={gen.isPending}
+      onClick={(e) => { e.stopPropagation(); gen.mutate(); }}
+    >
+      {gen.isPending ? <Loader2 size={12} className="animate-spin" /> : <FileText size={12} />}
+      {label || "Décompte"}
     </Button>
   );
 }

@@ -1,0 +1,390 @@
+// @ts-nocheck — Deno runtime
+// Generate a PDF purchase order restricted to the calling vendor's own lines.
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2.58.0";
+import { jsPDF } from "npm:jspdf@2.5.2";
+import { MEDIKONG_LOGO_PNG_BASE64 } from "../_shared/medikong-logo.ts";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+const BUCKET = "order-pdfs";
+const SIGNED_URL_TTL = 60 * 60 * 24 * 7; // 7 days
+
+function fmtEur(cents: number, currency = "EUR"): string {
+  const amount = (cents || 0) / 100;
+  return new Intl.NumberFormat("fr-BE", { style: "currency", currency })
+    .format(amount)
+    .replace(/\u202F/g, ".");
+}
+
+function json(status: number, body: unknown) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) return json(401, { error: "Unauthorized" });
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: claims, error: authErr } = await userClient.auth.getClaims(
+      authHeader.replace("Bearer ", ""),
+    );
+    if (authErr || !claims?.claims?.sub) return json(401, { error: "Unauthorized" });
+    const userId = claims.claims.sub as string;
+
+    const body = await req.json().catch(() => ({}));
+    const orderId = body?.order_id;
+    if (!orderId || typeof orderId !== "string") {
+      return json(400, { error: "order_id required" });
+    }
+
+    const admin = createClient(supabaseUrl, serviceKey);
+
+    // Resolve vendor from user
+    const { data: vendorRow, error: vErr } = await admin
+      .from("vendors")
+      .select("id, name, company_name, vat_number, address_line1, postal_code, city, country_code, phone, email, bank_name, iban, bic")
+      .eq("auth_user_id", userId)
+      .maybeSingle();
+    if (vErr || !vendorRow) return json(403, { error: "not_a_vendor" });
+
+    // Load order and vendor's own lines
+    const { data: order, error: oErr } = await admin
+      .from("orders")
+      .select("id, order_number, status, created_at, shipping_address, billing_address, notes, payment_method, payment_status, payment_due_date, tracking_number, tracking_url, tracking_carrier, customer_id")
+      .eq("id", orderId)
+      .maybeSingle();
+    if (oErr || !order) return json(404, { error: "order_not_found" });
+
+    const { data: lines, error: lErr } = await admin
+      .from("order_lines")
+      .select("id, quantity, unit_price_excl_vat, vat_rate, line_total_excl_vat, manual_label, cnk_code, tracking_number, tracking_url, tracking_carrier, status, products(name, gtin, cnk_code)")
+      .eq("order_id", orderId)
+      .eq("vendor_id", vendorRow.id);
+
+    if (lErr) return json(500, { error: "lines_fetch_failed", details: lErr.message });
+    if (!lines || lines.length === 0) return json(403, { error: "no_lines_for_vendor" });
+
+    // Buyer contact (email/phone)
+    let buyer: any = null;
+    if (order.customer_id) {
+      const { data } = await admin
+        .from("customers")
+        .select("company_name, email, phone, vat_number")
+        .eq("id", order.customer_id)
+        .maybeSingle();
+      buyer = data;
+    }
+
+    // Totaux vendeur uniquement
+    const totalHt = lines.reduce((a: number, l: any) => a + (Number(l.line_total_excl_vat) || 0), 0);
+    const totalTva = lines.reduce((a: number, l: any) => {
+      const ht = Number(l.line_total_excl_vat) || 0;
+      const r = Number(l.vat_rate) || 0;
+      return a + (ht * r) / 100;
+    }, 0);
+    const totalTtc = totalHt + totalTva;
+    const currency = "EUR";
+
+    // ─── PDF ───────────────────────────────────────────────────────────
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const pageW = 210;
+    const pageH = 297;
+    const M = 15;
+
+    const BRAND: [number, number, number] = [28, 88, 217];
+    const NAVY: [number, number, number] = [30, 37, 47];
+    const MUTED: [number, number, number] = [100, 116, 139];
+    const LINE: [number, number, number] = [226, 232, 240];
+    const SOFT: [number, number, number] = [248, 250, 252];
+
+    doc.setFillColor(...BRAND);
+    doc.rect(0, 0, pageW, 4, "F");
+
+    let y = 12;
+    try {
+      doc.addImage(MEDIKONG_LOGO_PNG_BASE64, "PNG", M, y + 5, 58, 12.1);
+    } catch (_) { /* non bloquant */ }
+
+    // Bloc vendeur (droite)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...NAVY);
+    doc.text(String(vendorRow.company_name || vendorRow.name || "Fournisseur"), pageW - M, y + 3, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...MUTED);
+    let vy = y + 7.5;
+    if (vendorRow.address_line1) { doc.text(String(vendorRow.address_line1), pageW - M, vy, { align: "right" }); vy += 4; }
+    if (vendorRow.postal_code || vendorRow.city) {
+      doc.text(`${vendorRow.postal_code ?? ""} ${vendorRow.city ?? ""} ${vendorRow.country_code ? `(${vendorRow.country_code})` : ""}`.trim(), pageW - M, vy, { align: "right" });
+      vy += 4;
+    }
+    if (vendorRow.vat_number) { doc.text(`TVA : ${vendorRow.vat_number}`, pageW - M, vy, { align: "right" }); vy += 4; }
+    if (vendorRow.email) { doc.text(String(vendorRow.email), pageW - M, vy, { align: "right" }); vy += 4; }
+
+    y += 30;
+    doc.setDrawColor(...LINE);
+    doc.setLineWidth(0.3);
+    doc.line(M, y, pageW - M, y);
+    y += 6;
+
+    // Titre + méta
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.setTextColor(...BRAND);
+    doc.text("BON DE COMMANDE", M, y + 4);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...MUTED);
+    doc.text("N° de commande", M, y + 11);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10.5);
+    doc.setTextColor(...NAVY);
+    doc.text(String(order.order_number || "—"), M, y + 16);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...MUTED);
+    doc.text("Date", M, y + 22);
+    doc.setTextColor(...NAVY);
+    doc.text(new Date(order.created_at).toLocaleDateString("fr-BE"), M + 18, y + 22);
+    doc.setTextColor(...MUTED);
+    doc.text("Statut", M, y + 27);
+    doc.setTextColor(...NAVY);
+    doc.text(String(order.status || "—"), M + 18, y + 27);
+
+    // Carte acheteur (livraison)
+    const ship: any = order.shipping_address || {};
+    const bill: any = order.billing_address || {};
+    const cardX = pageW - M - 85;
+    const cardW = 85;
+    doc.setFillColor(...SOFT);
+    doc.setDrawColor(...LINE);
+    doc.roundedRect(cardX, y, cardW, 40, 1.5, 1.5, "FD");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...MUTED);
+    doc.text("LIVRAISON", cardX + 4, y + 5);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10.5);
+    doc.setTextColor(...NAVY);
+    const shipName = ship.label || ship.name || ship.company || buyer?.company_name || "—";
+    doc.text(String(shipName), cardX + 4, y + 11);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(80, 80, 80);
+    let cy = y + 16;
+    if (ship.address_l1 || ship.line1) { doc.text(String(ship.address_l1 || ship.line1), cardX + 4, cy); cy += 4; }
+    if (ship.address_l2 || ship.line2) { doc.text(String(ship.address_l2 || ship.line2), cardX + 4, cy); cy += 4; }
+    if (ship.postal_code || ship.city) {
+      doc.text(`${ship.postal_code ?? ""} ${ship.city ?? ""} ${ship.country_code ? `(${ship.country_code})` : ""}`.trim(), cardX + 4, cy);
+      cy += 4;
+    }
+    if (buyer?.email) { doc.text(String(buyer.email), cardX + 4, cy); cy += 4; }
+    if (buyer?.phone || ship.phone) { doc.text(`Tél. ${buyer?.phone || ship.phone}`, cardX + 4, cy); cy += 4; }
+    if (buyer?.vat_number) { doc.text(`TVA : ${buyer.vat_number}`, cardX + 4, cy); cy += 4; }
+
+    y += 46;
+
+    // Notes acheteur
+    if (order.notes) {
+      doc.setFillColor(239, 246, 255);
+      const noteLines = doc.splitTextToSize(`Note acheteur : ${order.notes}`, pageW - 2 * M - 6);
+      const noteH = noteLines.length * 4 + 6;
+      doc.rect(M, y, pageW - 2 * M, noteH, "F");
+      doc.setFontSize(9);
+      doc.setTextColor(...NAVY);
+      doc.text(noteLines, M + 3, y + 5);
+      y += noteH + 4;
+    }
+
+    // ─── Tableau lignes ────────────────────────────────────────────────
+    const COLS = {
+      article: M + 2,
+      articleWidth: 92,
+      qty: M + 108,
+      puHt: M + 130,
+      vat: M + 148,
+      puTtc: M + 168,
+      total: pageW - M - 2,
+    };
+
+    doc.setFillColor(...NAVY);
+    doc.rect(M, y, pageW - 2 * M, 7, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.setTextColor(255, 255, 255);
+    doc.text("ARTICLE", COLS.article, y + 4.7);
+    doc.text("QTÉ", COLS.qty, y + 4.7, { align: "right" });
+    doc.text("PU HT", COLS.puHt, y + 4.7, { align: "right" });
+    doc.text("TVA", COLS.vat, y + 4.7, { align: "right" });
+    doc.text("PU TTC", COLS.puTtc, y + 4.7, { align: "right" });
+    doc.text("TOTAL HT", COLS.total, y + 4.7, { align: "right" });
+    y += 7;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    let rowIdx = 0;
+    for (const l of lines) {
+      const label = doc.splitTextToSize(String((l as any).manual_label || l.products?.name || "—"), COLS.articleWidth);
+      const cnk = (l as any).cnk_code || l.products?.cnk_code || null;
+      const gtin = l.products?.gtin || null;
+      const codeParts: string[] = [];
+      if (cnk) codeParts.push(`CNK ${cnk}`);
+      if (gtin) codeParts.push(`EAN ${gtin}`);
+      const codeLine = codeParts.length ? codeParts.join(" · ") : null;
+      const extraLines = codeLine ? 1 : 0;
+      const rowH = Math.max(6, (label.length + extraLines) * 3.4 + 2.5);
+
+      if (y + rowH > pageH - 50) {
+        doc.addPage();
+        y = 20;
+      }
+
+      if (rowIdx % 2 === 0) {
+        doc.setFillColor(...SOFT);
+        doc.rect(M, y, pageW - 2 * M, rowH, "F");
+      }
+
+      const puHt = Number(l.unit_price_excl_vat) || 0;
+      const vatR = Number(l.vat_rate) || 0;
+      const puTtc = puHt * (1 + vatR / 100);
+
+      doc.setTextColor(...NAVY);
+      doc.text(label, COLS.article, y + 3.5);
+      if (codeLine) {
+        doc.setFontSize(6.5);
+        doc.setTextColor(...MUTED);
+        doc.text(codeLine, COLS.article, y + 3.5 + label.length * 3.4);
+        doc.setFontSize(7.5);
+      }
+      doc.setTextColor(...NAVY);
+      doc.text(String(l.quantity || 0), COLS.qty, y + 3.5, { align: "right" });
+      doc.text(fmtEur(Math.round(puHt * 100), currency), COLS.puHt, y + 3.5, { align: "right" });
+      doc.setTextColor(...MUTED);
+      doc.text(`${vatR.toFixed(0)}%`, COLS.vat, y + 3.5, { align: "right" });
+      doc.setTextColor(80, 80, 80);
+      doc.text(fmtEur(Math.round(puTtc * 100), currency), COLS.puTtc, y + 3.5, { align: "right" });
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...NAVY);
+      doc.text(fmtEur(Math.round(Number(l.line_total_excl_vat || 0) * 100), currency), COLS.total, y + 3.5, { align: "right" });
+      doc.setFont("helvetica", "normal");
+
+      y += rowH;
+      rowIdx += 1;
+    }
+
+    doc.setDrawColor(...LINE);
+    doc.line(M, y, pageW - M, y);
+    y += 8;
+
+    if (y > pageH - 60) { doc.addPage(); y = 20; }
+
+    // Totaux
+    const totBoxW = 80;
+    const totBoxX = pageW - M - totBoxW;
+    const totLabelX = totBoxX + 4;
+    const totValueX = totBoxX + totBoxW - 4;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...MUTED);
+    doc.text("Total HT", totLabelX, y);
+    doc.setTextColor(...NAVY);
+    doc.text(fmtEur(Math.round(totalHt * 100), currency), totValueX, y, { align: "right" });
+    y += 5.5;
+    doc.setTextColor(...MUTED);
+    doc.text("TVA", totLabelX, y);
+    doc.setTextColor(...NAVY);
+    doc.text(fmtEur(Math.round(totalTva * 100), currency), totValueX, y, { align: "right" });
+    y += 4;
+    doc.setDrawColor(...LINE);
+    doc.line(totBoxX, y, totBoxX + totBoxW, y);
+    y += 4;
+
+    doc.setFillColor(...BRAND);
+    doc.rect(totBoxX, y - 4, totBoxW, 11, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(255, 255, 255);
+    doc.text("Total TTC", totLabelX, y + 3);
+    doc.text(fmtEur(Math.round(totalTtc * 100), currency), totValueX, y + 3, { align: "right" });
+    y += 14;
+
+    // Suivi commande
+    if (order.tracking_number || order.tracking_url) {
+      if (y > pageH - 40) { doc.addPage(); y = 20; }
+      doc.setFillColor(...SOFT);
+      doc.setDrawColor(...LINE);
+      doc.roundedRect(M, y, pageW - 2 * M, 18, 1.5, 1.5, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(...MUTED);
+      doc.text("SUIVI D'EXPÉDITION", M + 5, y + 5);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(...NAVY);
+      const parts: string[] = [];
+      if (order.tracking_carrier) parts.push(String(order.tracking_carrier));
+      if (order.tracking_number) parts.push(String(order.tracking_number));
+      doc.text(parts.join(" · ") || "—", M + 5, y + 11);
+      if (order.tracking_url) {
+        doc.setTextColor(...BRAND);
+        doc.textWithLink(String(order.tracking_url).slice(0, 90), M + 5, y + 15.5, { url: String(order.tracking_url) });
+      }
+      y += 22;
+    }
+
+    // Footer
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let p = 1; p <= pageCount; p++) {
+      doc.setPage(p);
+      doc.setDrawColor(...LINE);
+      doc.line(M, pageH - 14, pageW - M, pageH - 14);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(...MUTED);
+      doc.text(`Bon de commande ${order.order_number} — vue vendeur`, M, pageH - 9);
+      doc.text("MediKong — Balooh SRL · TVA BE 1005.771.323 · medikong.pro", pageW / 2, pageH - 9, { align: "center" });
+      doc.text(`Page ${p} / ${pageCount}`, pageW - M, pageH - 9, { align: "right" });
+    }
+
+    // Upload
+    const pdfBytes = doc.output("arraybuffer");
+    const pdfPath = `${order.id}/vendor-${vendorRow.id}-${order.order_number}.pdf`;
+    const { error: upErr } = await admin.storage
+      .from(BUCKET)
+      .upload(pdfPath, new Uint8Array(pdfBytes), { contentType: "application/pdf", upsert: true });
+    if (upErr) return json(500, { error: "upload_failed", details: upErr.message });
+
+    const { data: signed } = await admin.storage.from(BUCKET).createSignedUrl(pdfPath, SIGNED_URL_TTL);
+
+    return json(200, {
+      ok: true,
+      pdf_path: pdfPath,
+      pdf_url: signed?.signedUrl,
+      order_number: order.order_number,
+    });
+  } catch (e) {
+    console.error("generate-vendor-order-pdf error", e);
+    return json(500, { error: "internal", message: String((e as any)?.message ?? e) });
+  }
+});

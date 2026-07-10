@@ -257,15 +257,22 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
   // Reset la confirmation dès que la cible ou les dates changent
   useEffect(() => { setConfirmReplace(false); }, [scope, vendorId, productId, offerId, validFrom, validUntil]);
 
-  const reset = () => {
+  const resetTargetOnly = () => {
     setVendorId(null); setVendorLabel(""); setVendorQuery("");
     setProductId(null); setProductLabel(""); setProductQuery("");
     setOfferId(null); setOfferLabel(""); setOfferQuery("");
+    setConfirmReplace(false);
+  };
+
+  const reset = () => {
+    resetTargetOnly();
     setRate(""); setSplit(""); setFixed("");
     setValidFrom(""); setValidUntil(""); setNote("");
     setModel("margin_split");
-    setConfirmReplace(false);
+    setSessionCount(0);
+    setLastCreatedLabel(null);
   };
+
 
 
   const submitMutation = useMutation({

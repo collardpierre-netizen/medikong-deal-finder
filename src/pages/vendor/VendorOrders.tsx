@@ -1321,10 +1321,26 @@ export function VendorOrderLineRow({
               >
                 Voir le calcul →
               </button>
-              {commissionCfg.commission_model === "margin_split" && !breakdown.hasCost && (
-                <span className="text-[10.5px] italic text-muted-foreground w-full">
-                  ⓘ ventilation basée sur le coût d'achat — non renseigné, commission calculée à 0
-                </span>
+              {!breakdown.hasCost && (
+                <div className="w-full mt-1 flex items-start gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-[10.5px] text-amber-900">
+                  <AlertCircle size={12} className="shrink-0 mt-0.5 text-amber-600" />
+                  <div className="flex-1">
+                    <div className="font-semibold">Prix d'achat non renseigné</div>
+                    <div className="text-amber-800/90">
+                      {commissionCfg.commission_model === "margin_split"
+                        ? "La ventilation de marge ne peut pas être calculée — commission affichée à 0. Renseignez le coût d'achat pour activer le contrôle de marge."
+                        : "La marge brute et la marge nette ne peuvent pas être calculées. Renseignez le coût d'achat pour un contrôle de marge fiable."}
+                    </div>
+                    {line.offer_id && (
+                      <a
+                        href={`/vendor/offers?product=${line.product_id}`}
+                        className="mt-0.5 inline-block font-medium text-amber-900 underline hover:text-amber-950"
+                      >
+                        Mettre à jour le coût d'achat →
+                      </a>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
             <div>

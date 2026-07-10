@@ -51,8 +51,22 @@ interface OrderWithLines {
   order_status: string;
   order_date: string;
   shipping_address: any;
+  billing_address: any;
   customer_id: string;
-  lines: (OrderLine & { product_name: string; product_image: string | null })[];
+  payment_method: string | null;
+  payment_status: string | null;
+  payment_due_date: string | null;
+  order_tracking_number: string | null;
+  order_tracking_url: string | null;
+  order_tracking_carrier: string | null;
+  shipped_at: string | null;
+  notes: string | null;
+  lines: (OrderLine & {
+    product_name: string;
+    product_image: string | null;
+    product_gtin: string | null;
+    product_cnk: string | null;
+  })[];
 }
 
 const statusConfig: Record<string, { label: string; color: "info" | "success" | "warning" | "default" }> = {

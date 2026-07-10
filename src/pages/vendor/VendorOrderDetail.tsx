@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VBadge } from "@/components/vendor/ui/VBadge";
 import { fmtEur } from "@/lib/format-currency";
+import { useResyncOnReconnect } from "@/hooks/useResyncOnReconnect";
 
 import {
   OrderInfoBlocks,

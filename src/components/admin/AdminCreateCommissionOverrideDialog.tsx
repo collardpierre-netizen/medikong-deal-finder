@@ -94,6 +94,68 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
     },
   });
 
+  // ---- Preview : offres impactées ----
+  type PreviewOffer = {
+    id: string;
+    vendor_label: string;
+    product_label: string;
+    price_ht: number | null;
+    purchase_ht: number | null;
+  };
+
+  const previewEnabled =
+    open && (
+      (scope === "product" && !!vendorId && !!productId) ||
+      (scope === "offer" && !!offerId)
+    );
+
+  const { data: previewOffers = [], isFetching: previewLoading } = useQuery({
+    enabled: previewEnabled,
+    queryKey: ["admin-cco-preview", scope, vendorId, productId, offerId],
+    queryFn: async (): Promise<PreviewOffer[]> => {
+      const base = supabase
+        .from("offers")
+        .select(
+          "id, price_excl_vat, purchase_price_excl_vat, purchase_price, vendors:vendor_id(name, company_name), products:product_id(name, gtin)"
+        );
+      const q = scope === "product"
+        ? base.eq("vendor_id", vendorId!).eq("product_id", productId!)
+        : base.eq("id", offerId!);
+      const { data, error } = await q.limit(20);
+      if (error) throw error;
+      return (data ?? []).map((o: any) => ({
+        id: o.id,
+        vendor_label: o.vendors?.company_name || o.vendors?.name || "—",
+        product_label: `${o.products?.name ?? "—"}${o.products?.gtin ? ` · ${o.products.gtin}` : ""}`,
+        price_ht: o.price_excl_vat != null ? Number(o.price_excl_vat) : null,
+        purchase_ht: o.purchase_price_excl_vat != null
+          ? Number(o.purchase_price_excl_vat)
+          : o.purchase_price != null ? Number(o.purchase_price) : null,
+      }));
+    },
+  });
+
+  const computePreview = (o: PreviewOffer) => {
+    const pv = o.price_ht;
+    const cost = o.purchase_ht;
+    const grossMargin = pv != null && cost != null ? pv - cost : null;
+    let commission: number | null = null;
+    if (model === "flat_percentage" && rate !== "" && pv != null) {
+      commission = pv * (Number(rate) / 100);
+    } else if (model === "margin_split" && split !== "" && grossMargin != null) {
+      commission = grossMargin * ((100 - Number(split)) / 100); // part MediKong
+    } else if (model === "fixed_amount" && fixed !== "") {
+      commission = Number(fixed);
+    }
+    const netVendor = grossMargin != null && commission != null ? grossMargin - commission : null;
+    const netPct = netVendor != null && pv ? (netVendor / pv) * 100 : null;
+    return { pv, cost, grossMargin, commission, netVendor, netPct };
+  };
+
+  const fmt = (n: number | null | undefined, suffix = " €") =>
+    n == null || Number.isNaN(n) ? "—" : `${n.toFixed(2)}${suffix}`;
+
+
   const reset = () => {
     setVendorId(null); setVendorLabel(""); setVendorQuery("");
     setProductId(null); setProductLabel(""); setProductQuery("");

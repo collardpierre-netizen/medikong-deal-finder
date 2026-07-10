@@ -392,30 +392,45 @@ Deno.serve(async (req) => {
     }
 
     // ─── Récapitulatif acheteur ────────────────────────────────────────
-    if (buyer) {
-      if (y > pageH - 55) { doc.addPage(); y = 20; }
-      doc.setFillColor(...SOFT);
-      doc.setDrawColor(...LINE);
-      const buyerH = 26;
-      doc.roundedRect(M, y, pageW - 2 * M, buyerH, 1.5, 1.5, "FD");
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      doc.setTextColor(...MUTED);
-      doc.text("RÉCAPITULATIF ACHETEUR", M + 5, y + 5);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10.5);
-      doc.setTextColor(...NAVY);
-      doc.text(String(buyer.company_name || "—"), M + 5, y + 11);
+    const missingBuyerFields: string[] = [];
+    if (!buyer?.company_name) missingBuyerFields.push("raison sociale");
+    if (!buyer?.email) missingBuyerFields.push("email");
+    if (!buyer?.phone) missingBuyerFields.push("téléphone");
+
+    if (y > pageH - 55) { doc.addPage(); y = 20; }
+    doc.setFillColor(...SOFT);
+    doc.setDrawColor(...LINE);
+    const buyerH = missingBuyerFields.length > 0 ? 34 : 26;
+    doc.roundedRect(M, y, pageW - 2 * M, buyerH, 1.5, 1.5, "FD");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(...MUTED);
+    doc.text("RÉCAPITULATIF ACHETEUR", M + 5, y + 5);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10.5);
+    doc.setTextColor(...NAVY);
+    doc.text(String(buyer?.company_name || "Raison sociale non renseignée"), M + 5, y + 11);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(80, 80, 80);
+    const bLine1: string[] = [];
+    if (buyer?.email) bLine1.push(String(buyer.email));
+    else bLine1.push("Email non renseigné");
+    if (buyer?.phone) bLine1.push(`Tél. ${buyer.phone}`);
+    else bLine1.push("Téléphone non renseigné");
+    doc.text(bLine1.join("  ·  "), M + 5, y + 17);
+    if (buyer?.vat_number) doc.text(`TVA : ${buyer.vat_number}`, M + 5, y + 22);
+
+    if (missingBuyerFields.length > 0) {
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(8);
+      doc.setTextColor(180, 83, 9); // amber
+      const warningText = `Avertissement : ${missingBuyerFields.join(", ")} ${missingBuyerFields.length > 1 ? "manquants" : "manquant"} — la commande n'a pas été associée à des coordonnées vérifiées.`;
+      const warningLines = doc.splitTextToSize(warningText, pageW - 2 * M - 10);
+      doc.text(warningLines, M + 5, y + 27);
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(80, 80, 80);
-      const bLine1: string[] = [];
-      if (buyer.email) bLine1.push(String(buyer.email));
-      if (buyer.phone) bLine1.push(`Tél. ${buyer.phone}`);
-      if (bLine1.length) doc.text(bLine1.join("  ·  "), M + 5, y + 17);
-      if (buyer.vat_number) doc.text(`TVA : ${buyer.vat_number}`, M + 5, y + 22);
-      y += buyerH + 6;
     }
+    y += buyerH + 6;
 
     // ─── Ventilation de marge (commission MediKong / Net vendeur) ──────
     if (y > pageH - 60) { doc.addPage(); y = 20; }

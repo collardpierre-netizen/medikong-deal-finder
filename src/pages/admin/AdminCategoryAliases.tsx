@@ -183,10 +183,11 @@ export default function AdminCategoryAliases() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Alias supprimé" });
+      toast({ title: "Alias supprimé", description: "Rattachement automatique des produits en cours…" });
       setConfirmDelete(null);
       qc.invalidateQueries({ queryKey: ["admin-category-aliases"] });
       qc.invalidateQueries({ queryKey: ["admin-category-aliases-preview"] });
+      runApply.mutate();
     },
     onError: (e: any) => {
       toast({ title: "Suppression impossible", description: e?.message ?? String(e), variant: "destructive" });

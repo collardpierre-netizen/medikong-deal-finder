@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Plus, ShieldCheck, Search, Loader2 } from "lucide-react";
+import { Plus, ShieldCheck, Search, Loader2, Calculator } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 type Model = "flat_percentage" | "margin_split" | "fixed_amount";
 type Scope = "product" | "offer";
@@ -92,6 +93,68 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
       return (data ?? []) as any[];
     },
   });
+
+  // ---- Preview : offres impactées ----
+  type PreviewOffer = {
+    id: string;
+    vendor_label: string;
+    product_label: string;
+    price_ht: number | null;
+    purchase_ht: number | null;
+  };
+
+  const previewEnabled =
+    open && (
+      (scope === "product" && !!vendorId && !!productId) ||
+      (scope === "offer" && !!offerId)
+    );
+
+  const { data: previewOffers = [], isFetching: previewLoading } = useQuery({
+    enabled: previewEnabled,
+    queryKey: ["admin-cco-preview", scope, vendorId, productId, offerId],
+    queryFn: async (): Promise<PreviewOffer[]> => {
+      const base = supabase
+        .from("offers")
+        .select(
+          "id, price_excl_vat, purchase_price_excl_vat, purchase_price, vendors:vendor_id(name, company_name), products:product_id(name, gtin)"
+        );
+      const q = scope === "product"
+        ? base.eq("vendor_id", vendorId!).eq("product_id", productId!)
+        : base.eq("id", offerId!);
+      const { data, error } = await q.limit(20);
+      if (error) throw error;
+      return (data ?? []).map((o: any) => ({
+        id: o.id,
+        vendor_label: o.vendors?.company_name || o.vendors?.name || "—",
+        product_label: `${o.products?.name ?? "—"}${o.products?.gtin ? ` · ${o.products.gtin}` : ""}`,
+        price_ht: o.price_excl_vat != null ? Number(o.price_excl_vat) : null,
+        purchase_ht: o.purchase_price_excl_vat != null
+          ? Number(o.purchase_price_excl_vat)
+          : o.purchase_price != null ? Number(o.purchase_price) : null,
+      }));
+    },
+  });
+
+  const computePreview = (o: PreviewOffer) => {
+    const pv = o.price_ht;
+    const cost = o.purchase_ht;
+    const grossMargin = pv != null && cost != null ? pv - cost : null;
+    let commission: number | null = null;
+    if (model === "flat_percentage" && rate !== "" && pv != null) {
+      commission = pv * (Number(rate) / 100);
+    } else if (model === "margin_split" && split !== "" && grossMargin != null) {
+      commission = grossMargin * ((100 - Number(split)) / 100); // part MediKong
+    } else if (model === "fixed_amount" && fixed !== "") {
+      commission = Number(fixed);
+    }
+    const netVendor = grossMargin != null && commission != null ? grossMargin - commission : null;
+    const netPct = netVendor != null && pv ? (netVendor / pv) * 100 : null;
+    return { pv, cost, grossMargin, commission, netVendor, netPct };
+  };
+
+  const fmt = (n: number | null | undefined, suffix = " €") =>
+    n == null || Number.isNaN(n) ? "—" : `${n.toFixed(2)}${suffix}`;
+
 
   const reset = () => {
     setVendorId(null); setVendorLabel(""); setVendorQuery("");
@@ -348,7 +411,72 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
             <Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)}
               placeholder="Ex : négociation MediKong, campagne Q3, etc." />
           </div>
+
+          {/* Preview commission effective / marge nette */}
+          {previewEnabled && (
+            <div className="rounded-md border bg-muted/30 p-3 space-y-2">
+              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                <Calculator size={13} /> Prévisualisation
+                {previewLoading && <Loader2 size={12} className="animate-spin" />}
+              </div>
+              {!previewLoading && previewOffers.length === 0 && (
+                <div className="text-xs text-muted-foreground">
+                  {scope === "product"
+                    ? "Ce vendeur n'a pas encore d'offre pour ce produit — l'override s'appliquera dès qu'une offre sera créée."
+                    : "Offre introuvable."}
+                </div>
+              )}
+              {previewOffers.map((o) => {
+                const c = computePreview(o);
+                const netColor =
+                  c.netVendor == null ? "text-muted-foreground"
+                  : c.netVendor < 0 ? "text-destructive"
+                  : "text-emerald-600";
+                return (
+                  <div key={o.id} className="rounded border bg-background p-2 text-xs space-y-1.5">
+                    {scope === "product" && (
+                      <div className="text-[11px] text-muted-foreground truncate">
+                        {o.vendor_label} · {o.product_label}
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-3 gap-y-1">
+                      <PreviewCell label="PV HTVA" value={fmt(c.pv)} />
+                      <PreviewCell label="Prix achat" value={fmt(c.cost)} />
+                      <PreviewCell label="Marge brute" value={fmt(c.grossMargin)} />
+                      <PreviewCell
+                        label="Commission MK"
+                        value={
+                          c.commission == null
+                            ? "—"
+                            : model === "flat_percentage"
+                              ? `${fmt(c.commission)} (${rate || 0}% PV)`
+                              : model === "margin_split"
+                                ? `${fmt(c.commission)} (${100 - Number(split || 0)}% marge)`
+                                : `${fmt(c.commission)} /u.`
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center justify-between pt-1 border-t">
+                      <span className="text-[11px] text-muted-foreground">Marge nette vendeur</span>
+                      <span className={`font-semibold ${netColor}`}>
+                        {fmt(c.netVendor)}{c.netPct != null && ` (${c.netPct.toFixed(1)}%)`}
+                      </span>
+                    </div>
+                    {c.cost == null && (
+                      <Badge variant="outline" className="text-[10px]">
+                        Prix d'achat manquant — marge nette indisponible
+                      </Badge>
+                    )}
+                  </div>
+                );
+              })}
+              <div className="text-[10px] text-muted-foreground italic pt-1">
+                Estimation indicative (hors frais logistique, TVA, remises multi-paliers).
+              </div>
+            </div>
+          )}
         </div>
+
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
@@ -359,5 +487,14 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function PreviewCell({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="font-medium">{value}</div>
+    </div>
   );
 }

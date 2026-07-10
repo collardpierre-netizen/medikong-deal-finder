@@ -19,6 +19,8 @@ import RevenueTrendCard from "@/components/vendor/dashboard/RevenueTrendCard";
 import CustomerTypeBreakdownCard from "@/components/vendor/dashboard/CustomerTypeBreakdownCard";
 import ReconciliationCard from "@/components/vendor/dashboard/ReconciliationCard";
 import VendorTotalsConsistencyAlert from "@/components/vendor/dashboard/VendorTotalsConsistencyAlert";
+import TopProductsCard from "@/components/vendor/dashboard/TopProductsCard";
+import VendorWaterfallCard from "@/components/vendor/dashboard/VendorWaterfallCard";
 import { checkVendorTotalsConsistency } from "@/lib/vendor-gmv-consistency";
 import { useMoneyFormat } from "@/lib/money-format";
 

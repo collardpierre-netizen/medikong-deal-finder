@@ -8,6 +8,7 @@ export interface EffectiveCommission extends VendorCommissionConfig {
   source: EffectiveCommissionSource;
   valid_from: string | null;
   valid_until: string | null;
+  via_admin_shortcut: boolean;
 }
 
 /**
@@ -29,14 +30,16 @@ export function useEffectiveCommission(offerId: string | null | undefined) {
       const row = Array.isArray(data) ? data[0] : data;
       if (!row) return null;
       return {
-        source: row.source as EffectiveCommissionSource,
-        commission_model: (row.commission_model as any) ?? "flat_percentage",
-        commission_rate: row.commission_rate as number | null,
-        margin_split_pct: row.margin_split_pct as number | null,
-        fixed_commission_amount: row.fixed_commission_amount as number | null,
-        valid_from: row.valid_from as string | null,
-        valid_until: row.valid_until as string | null,
+        source: (row as any).source as EffectiveCommissionSource,
+        commission_model: ((row as any).commission_model as any) ?? "flat_percentage",
+        commission_rate: (row as any).commission_rate as number | null,
+        margin_split_pct: (row as any).margin_split_pct as number | null,
+        fixed_commission_amount: (row as any).fixed_commission_amount as number | null,
+        valid_from: (row as any).valid_from as string | null,
+        valid_until: (row as any).valid_until as string | null,
+        via_admin_shortcut: Boolean((row as any).via_admin_shortcut),
       };
     },
   });
 }
+

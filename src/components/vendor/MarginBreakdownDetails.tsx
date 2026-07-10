@@ -1,17 +1,36 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronUp, Calculator, History, Loader2, Layers } from "lucide-react";
+import { ChevronDown, ChevronUp, Calculator, History, Loader2, Layers, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtEur, fmtPct, type CommissionModel, type MarginBreakdown } from "@/lib/vendorMargin";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useEffectiveCommission, type EffectiveCommissionSource } from "@/hooks/useEffectiveCommission";
 
-const SOURCE_META: Record<EffectiveCommissionSource, { label: string; help: string; bg: string; fg: string }> = {
-  offer:   { label: "Override offre",   help: "Règle spécifique appliquée à cette offre.",                     bg: "#FEF3C7", fg: "#B45309" },
-  product: { label: "Override produit", help: "Règle vendeur × produit (vendor_product_commissions).",         bg: "#EDE9FE", fg: "#6D28D9" },
-  vendor:  { label: "Défaut vendeur",   help: "Aucun override : commission par défaut de votre fiche vendeur.", bg: "#EEF2FF", fg: "#1B5BDA" },
+const SOURCE_META: Record<EffectiveCommissionSource, { label: string; adminLabel: string; help: string; adminHelp: string; bg: string; fg: string }> = {
+  offer: {
+    label: "Override offre",
+    adminLabel: "Override offre (admin)",
+    help: "Règle spécifique appliquée à cette offre.",
+    adminHelp: "Règle spécifique à cette offre, créée directement par un admin MediKong via le raccourci /admin/commission-overrides (auto-approuvée, sans passer par une demande vendeur).",
+    bg: "#FEF3C7", fg: "#B45309",
+  },
+  product: {
+    label: "Override produit",
+    adminLabel: "Override produit (admin)",
+    help: "Règle vendeur × produit (vendor_product_commissions).",
+    adminHelp: "Règle vendeur × produit créée directement par un admin MediKong via le raccourci /admin/commission-overrides (auto-approuvée, sans passer par une demande vendeur).",
+    bg: "#EDE9FE", fg: "#6D28D9",
+  },
+  vendor: {
+    label: "Défaut vendeur",
+    adminLabel: "Défaut vendeur",
+    help: "Aucun override : commission par défaut de votre fiche vendeur.",
+    adminHelp: "Aucun override : commission par défaut de votre fiche vendeur.",
+    bg: "#EEF2FF", fg: "#1B5BDA",
+  },
 };
+
 
 
 interface Props {
@@ -103,6 +122,7 @@ export function MarginBreakdownDetails({
 
   const { data: effective } = useEffectiveCommission(offerId ?? null);
   const sourceMeta = effective ? SOURCE_META[effective.source] : null;
+  const viaAdminShortcut = Boolean(effective?.via_admin_shortcut) && effective?.source !== "vendor";
 
   const formula = formulaFor(
     commissionModel,
@@ -113,6 +133,7 @@ export function MarginBreakdownDetails({
 
   return (
     <div className="rounded-lg border" style={{ borderColor: "#E2E8F0", backgroundColor: "#FFFFFF" }}>
+
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -120,22 +141,33 @@ export function MarginBreakdownDetails({
         style={{ color: "#1D2530" }}
         aria-expanded={open}
       >
-        <span className="flex items-center gap-2">
+        <span className="flex items-center gap-2 flex-wrap">
           <Calculator size={13} style={{ color: "#1B5BDA" }} />
           Détail du calcul du net en poche
           {sourceMeta && (
             <span
               className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
               style={{ backgroundColor: sourceMeta.bg, color: sourceMeta.fg }}
-              title={sourceMeta.help}
+              title={viaAdminShortcut ? sourceMeta.adminHelp : sourceMeta.help}
             >
               <Layers size={9} />
-              {sourceMeta.label}
+              {viaAdminShortcut ? sourceMeta.adminLabel : sourceMeta.label}
+            </span>
+          )}
+          {viaAdminShortcut && (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+              style={{ backgroundColor: "#DCFCE7", color: "#15803D" }}
+              title="Cet override a été créé directement par un admin MediKong via /admin/commission-overrides (raccourci admin, auto-approuvé)."
+            >
+              <ShieldCheck size={9} />
+              via admin
             </span>
           )}
         </span>
         {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
       </button>
+
 
       {open && (
         <div className="px-3 pb-3 pt-1 space-y-3 text-[12px]" style={{ color: "#1D2530" }}>
@@ -188,14 +220,18 @@ export function MarginBreakdownDetails({
                 {sourceMeta && (
                   <Row
                     label="↳ Source de la commission"
-                    value={
-                      effective?.valid_until
-                        ? `${sourceMeta.label} · valide jusqu'au ${new Date(effective.valid_until).toLocaleDateString("fr-FR")}`
-                        : sourceMeta.label
-                    }
+                    value={(() => {
+                      const base = viaAdminShortcut ? sourceMeta.adminLabel : sourceMeta.label;
+                      const admin = viaAdminShortcut ? " · créé via raccourci admin MediKong" : "";
+                      const until = effective?.valid_until
+                        ? ` · valide jusqu'au ${new Date(effective.valid_until).toLocaleDateString("fr-FR")}`
+                        : "";
+                      return `${base}${admin}${until}`;
+                    })()}
                     muted
                   />
                 )}
+
                 <Row
                   label="= Net en poche"
                   value={fmtEur(breakdown.netRevenue)}

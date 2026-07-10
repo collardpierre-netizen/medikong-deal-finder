@@ -7343,6 +7343,7 @@ export type Database = {
           campaign_id: string | null
           carton_size_override: number | null
           commission_model: string | null
+          commission_override_created_via_admin_shortcut: boolean
           commission_override_reason: string | null
           commission_override_status:
             | Database["public"]["Enums"]["commission_override_status"]
@@ -7410,6 +7411,7 @@ export type Database = {
           campaign_id?: string | null
           carton_size_override?: number | null
           commission_model?: string | null
+          commission_override_created_via_admin_shortcut?: boolean
           commission_override_reason?: string | null
           commission_override_status?:
             | Database["public"]["Enums"]["commission_override_status"]
@@ -7477,6 +7479,7 @@ export type Database = {
           campaign_id?: string | null
           carton_size_override?: number | null
           commission_model?: string | null
+          commission_override_created_via_admin_shortcut?: boolean
           commission_override_reason?: string | null
           commission_override_status?:
             | Database["public"]["Enums"]["commission_override_status"]
@@ -19431,6 +19434,7 @@ export type Database = {
           commission_rate: number | null
           created_at: string
           created_by: string | null
+          created_via_admin_shortcut: boolean
           fixed_commission_amount: number | null
           id: string
           margin_split_pct: number | null
@@ -19450,6 +19454,7 @@ export type Database = {
           commission_rate?: number | null
           created_at?: string
           created_by?: string | null
+          created_via_admin_shortcut?: boolean
           fixed_commission_amount?: number | null
           id?: string
           margin_split_pct?: number | null
@@ -19469,6 +19474,7 @@ export type Database = {
           commission_rate?: number | null
           created_at?: string
           created_by?: string | null
+          created_via_admin_shortcut?: boolean
           fixed_commission_amount?: number | null
           id?: string
           margin_split_pct?: number | null
@@ -24501,6 +24507,7 @@ export type Database = {
           campaign_id: string | null
           carton_size_override: number | null
           commission_model: string | null
+          commission_override_created_via_admin_shortcut: boolean
           commission_override_reason: string | null
           commission_override_status:
             | Database["public"]["Enums"]["commission_override_status"]
@@ -24574,6 +24581,7 @@ export type Database = {
           commission_rate: number | null
           created_at: string
           created_by: string | null
+          created_via_admin_shortcut: boolean
           fixed_commission_amount: number | null
           id: string
           margin_split_pct: number | null
@@ -24776,6 +24784,7 @@ export type Database = {
           campaign_id: string | null
           carton_size_override: number | null
           commission_model: string | null
+          commission_override_created_via_admin_shortcut: boolean
           commission_override_reason: string | null
           commission_override_status:
             | Database["public"]["Enums"]["commission_override_status"]
@@ -24859,6 +24868,7 @@ export type Database = {
           commission_rate: number | null
           created_at: string
           created_by: string | null
+          created_via_admin_shortcut: boolean
           fixed_commission_amount: number | null
           id: string
           margin_split_pct: number | null
@@ -25998,6 +26008,7 @@ export type Database = {
           source: string
           valid_from: string
           valid_until: string
+          via_admin_shortcut: boolean
         }[]
       }
       resolve_effective_pack_size: {

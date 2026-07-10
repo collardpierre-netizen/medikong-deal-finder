@@ -5,7 +5,7 @@ import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VBadge } from "@/components/vendor/ui/VBadge";
 import { VEmptyState } from "@/components/vendor/ui/VEmptyState";
-import { ShoppingCart, PackageCheck, Loader2, ChevronDown, ChevronUp, Truck, ExternalLink, Package, X, Check, Pencil, Search, Clock, AlertCircle, CheckCircle2, Ban, ArrowUpDown, User, MapPin, CreditCard, Barcode, FileText, Calculator, Mail, Phone } from "lucide-react";
+import { ShoppingCart, PackageCheck, Loader2, ChevronDown, ChevronUp, Truck, ExternalLink, Package, X, Check, Pencil, Search, Clock, AlertCircle, CheckCircle2, Ban, ArrowUpDown, User, MapPin, CreditCard, Barcode, FileText, Calculator, Mail, Phone, Download } from "lucide-react";
 import { useEffectiveCommission } from "@/hooks/useEffectiveCommission";
 import { computeMargin, fmtPct } from "@/lib/vendorMargin";
 import { MarginBreakdownDetails } from "@/components/vendor/MarginBreakdownDetails";
@@ -557,7 +557,12 @@ export default function VendorOrders() {
 
               {isExpanded && (
                 <div className="border-t border-border">
+                  <div className="flex items-center justify-end gap-2 px-4 pt-3">
+                    <VendorOrderPdfButton orderId={order.order_id} orderNumber={order.order_number} />
+                  </div>
                   <OrderInfoBlocks order={order} />
+
+
 
                   <div className="divide-y divide-border">
                     {order.lines.map((line) => (
@@ -1282,5 +1287,38 @@ function VendorOrderLineRow({
         </div>
       </div>
     </div>
+  );
+}
+
+function VendorOrderPdfButton({ orderId, orderNumber }: { orderId: string; orderNumber: string }) {
+  const gen = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("generate-vendor-order-pdf", {
+        body: { order_id: orderId },
+      });
+      if (error) throw error;
+      if (!data?.pdf_url) throw new Error("URL PDF indisponible");
+      return data.pdf_url as string;
+    },
+    onSuccess: (url) => {
+      window.open(url, "_blank", "noopener,noreferrer");
+      toast.success(`Bon de commande ${orderNumber} généré`);
+    },
+    onError: (e: any) => {
+      toast.error(`Génération PDF échouée — ${e?.message || "erreur"}`);
+    },
+  });
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="h-7 text-[11px] gap-1.5"
+      disabled={gen.isPending}
+      onClick={(e) => { e.stopPropagation(); gen.mutate(); }}
+    >
+      {gen.isPending ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+      Télécharger le PDF
+    </Button>
   );
 }

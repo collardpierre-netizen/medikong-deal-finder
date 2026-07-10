@@ -954,12 +954,8 @@ function paymentStatusLabel(s: string | null): string {
 export function OrderInfoBlocks({ order }: { order: OrderWithLines }) {
   const ship = order.shipping_address || {};
   const bill = order.billing_address || {};
-  const shipName = (ship as any).label || (ship as any).name || (ship as any).company || "Acheteur";
-  const billName = (bill as any).label || (bill as any).name || (bill as any).company;
-  const billDiffers = billName && (billName !== shipName || formatFullAddress(bill) !== formatFullAddress(ship));
 
-  // Coordonnées acheteur (email + téléphone) — RLS bloque la lecture directe de customers,
-  // on passe par la RPC sécurisée qui vérifie que le vendeur a bien une ligne sur cette commande.
+  // Coordonnées acheteur (email + téléphone + société + type) via RPC sécurisée
   const { data: buyerContact } = useQuery({
     queryKey: ["vendor-order-buyer-contact", order.order_id],
     queryFn: async () => {
@@ -968,13 +964,40 @@ export function OrderInfoBlocks({ order }: { order: OrderWithLines }) {
       });
       if (error) throw error;
       const row = Array.isArray(data) ? data[0] : data;
-      return row as { email: string | null; phone: string | null } | null;
+      return row as {
+        email: string | null;
+        phone: string | null;
+        company_name: string | null;
+        customer_type: string | null;
+      } | null;
     },
     staleTime: 5 * 60 * 1000,
   });
 
+  const buyerCompany = buyerContact?.company_name || null;
   const buyerEmail = buyerContact?.email || null;
   const buyerPhone = buyerContact?.phone || (ship as any).phone || null;
+  const buyerType = buyerContact?.customer_type || null;
+
+  const shipName =
+    (ship as any).label ||
+    (ship as any).name ||
+    (ship as any).company ||
+    buyerCompany ||
+    "Acheteur";
+  const billName = (bill as any).label || (bill as any).name || (bill as any).company;
+  const shipAddress = formatFullAddress(ship);
+  const billDiffers =
+    billName && (billName !== shipName || formatFullAddress(bill) !== shipAddress);
+
+  const customerTypeLabel: Record<string, string> = {
+    pharmacy: "Pharmacie",
+    hospital: "Hôpital",
+    doctor: "Médecin",
+    wholesaler: "Grossiste",
+    retailer: "Détaillant",
+    other: "Client pro",
+  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 bg-muted/20 border-b border-border">
@@ -983,12 +1006,31 @@ export function OrderInfoBlocks({ order }: { order: OrderWithLines }) {
         <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           <MapPin size={12} /> Livraison
         </div>
-        <div className="mt-1.5 text-[13px] font-semibold text-foreground">{shipName}</div>
-        <div className="mt-0.5 text-[12px] text-muted-foreground leading-relaxed">
-          {formatFullAddress(ship)}
+        <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+          <div className="text-[13px] font-semibold text-foreground">{shipName}</div>
+          {buyerType && customerTypeLabel[buyerType] && (
+            <VBadge color="slate">{customerTypeLabel[buyerType]}</VBadge>
+          )}
         </div>
-        {(buyerEmail || buyerPhone) && (
+        {shipAddress ? (
+          <div className="mt-0.5 text-[12px] text-muted-foreground leading-relaxed">
+            {shipAddress}
+          </div>
+        ) : (
+          <div className="mt-0.5 text-[11px] italic text-muted-foreground">
+            Adresse de livraison non renseignée
+          </div>
+        )}
+
+        {/* Bloc coordonnées — visible dès qu'on a email OU téléphone OU société */}
+        {(buyerEmail || buyerPhone || buyerCompany) && (
           <div className="mt-2 pt-2 border-t border-border space-y-1">
+            {buyerCompany && buyerCompany !== shipName && (
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <User size={11} className="shrink-0" />
+                <span className="truncate">{buyerCompany}</span>
+              </div>
+            )}
             {buyerEmail && (
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <Mail size={11} className="shrink-0" />
@@ -1008,6 +1050,7 @@ export function OrderInfoBlocks({ order }: { order: OrderWithLines }) {
           </div>
         )}
       </div>
+
 
 
       {/* Facturation */}

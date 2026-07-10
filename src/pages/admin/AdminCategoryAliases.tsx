@@ -165,11 +165,12 @@ export default function AdminCategoryAliases() {
       return data as string;
     },
     onSuccess: () => {
-      toast({ title: "Alias enregistré" });
+      toast({ title: "Alias enregistré", description: "Rattachement automatique des produits en cours…" });
       setEdit(null);
       setCatSearch("");
       qc.invalidateQueries({ queryKey: ["admin-category-aliases"] });
       qc.invalidateQueries({ queryKey: ["admin-category-aliases-preview"] });
+      runApply.mutate();
     },
     onError: (e: any) => {
       toast({ title: "Échec de l'enregistrement", description: e?.message ?? String(e), variant: "destructive" });

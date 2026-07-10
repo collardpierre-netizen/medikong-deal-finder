@@ -54,6 +54,26 @@ export default function VendorInvoicesToCollect() {
     },
   });
 
+  useEffect(() => {
+    if (!vendorId) return;
+    const channel = supabase
+      .channel(`vendor-invoices-${vendorId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "sub_orders", filter: `vendor_id=eq.${vendorId}` },
+        () => qc.invalidateQueries({ queryKey: ["vendor-invoices-to-collect", vendorId] }),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "order_invoices", filter: `vendor_id=eq.${vendorId}` },
+        () => qc.invalidateQueries({ queryKey: ["vendor-invoices-to-collect", vendorId] }),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [vendorId, qc]);
+
   const markPaid = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase

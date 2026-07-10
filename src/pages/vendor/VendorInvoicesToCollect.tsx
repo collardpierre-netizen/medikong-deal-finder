@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { toast } from "sonner";
 import { Loader2, CheckCircle2, AlertTriangle, Mail } from "lucide-react";
 import { formatPrice } from "@/data/mock";
+import { useResyncOnReconnect } from "@/hooks/useResyncOnReconnect";
 
 type Row = {
   id: string;
@@ -74,7 +75,9 @@ export default function VendorInvoicesToCollect() {
         { event: "*", schema: "public", table: "order_invoices", filter: `vendor_id=eq.${vendorId}` },
         invalidate,
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") invalidate();
+      });
     return () => {
       cancelled = true;
       void channel.unsubscribe().finally(() => {
@@ -82,6 +85,11 @@ export default function VendorInvoicesToCollect() {
       });
     };
   }, [vendorId, qc]);
+
+  useResyncOnReconnect(
+    [["vendor-invoices-to-collect", vendorId]],
+    !!vendorId,
+  );
 
   const markPaid = useMutation({
     mutationFn: async (id: string) => {

@@ -24754,6 +24754,129 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_upsert_offer_commission: {
+        Args: {
+          _commission_model: string
+          _commission_override_reason?: string
+          _commission_rate?: number
+          _commission_valid_from?: string
+          _commission_valid_until?: string
+          _fixed_commission_amount?: number
+          _margin_split_pct?: number
+          _offer_id: string
+        }
+        Returns: {
+          admin_hidden: boolean
+          admin_hidden_at: string | null
+          admin_hidden_by: string | null
+          admin_hidden_reason: string | null
+          applied_margin_percentage: number | null
+          applied_margin_rule_id: string | null
+          campaign_id: string | null
+          carton_size_override: number | null
+          commission_model: string | null
+          commission_override_reason: string | null
+          commission_override_status:
+            | Database["public"]["Enums"]["commission_override_status"]
+            | null
+          commission_override_updated_at: string | null
+          commission_override_updated_by: string | null
+          commission_rate: number | null
+          commission_valid_from: string | null
+          commission_valid_until: string | null
+          country_code: string | null
+          country_codes: string[]
+          created_at: string
+          delivery_days: number | null
+          down_payment_pct: number | null
+          estimated_delivery_days: number | null
+          fixed_commission_amount: number | null
+          has_extended_delivery: boolean | null
+          id: string
+          is_active: boolean
+          is_qogita_backed: boolean
+          is_top_seller: boolean | null
+          is_traceable: boolean | null
+          last_sync_run_id: string | null
+          margin_amount: number | null
+          margin_split_pct: number | null
+          max_delivery_days: number | null
+          min_delivery_days: number | null
+          moq: number
+          mov: number | null
+          mov_amount: number | null
+          mov_currency: string | null
+          pack_size_override: number | null
+          packaging_languages: string[] | null
+          price_excl_vat: number
+          price_incl_vat: number
+          price_tiers: Json | null
+          product_id: string
+          purchase_price: number | null
+          purchase_price_excl_vat: number | null
+          qogita_base_delay_days: number | null
+          qogita_base_price: number | null
+          qogita_offer_qid: string | null
+          qogita_seller_fid: string | null
+          shipping_from_country: string | null
+          source_supplier: string | null
+          stock_quantity: number
+          stock_status: Database["public"]["Enums"]["stock_status_enum"]
+          suggested_retail_price_cents: number | null
+          suggested_retail_price_source:
+            | Database["public"]["Enums"]["pvp_source_enum"]
+            | null
+          synced_at: string | null
+          updated_at: string
+          vat_rate: number
+          vendor_id: string
+          vendor_note: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "offers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_upsert_product_commission: {
+        Args: {
+          _commission_model: string
+          _commission_rate?: number
+          _fixed_commission_amount?: number
+          _margin_split_pct?: number
+          _note?: string
+          _product_id: string
+          _valid_from?: string
+          _valid_until?: string
+          _vendor_id: string
+        }
+        Returns: {
+          approved_at: string | null
+          approved_by: string | null
+          commission_model: string
+          commission_rate: number | null
+          created_at: string
+          created_by: string | null
+          fixed_commission_amount: number | null
+          id: string
+          margin_split_pct: number | null
+          note: string | null
+          product_id: string
+          rejected_reason: string | null
+          status: Database["public"]["Enums"]["commission_override_status"]
+          updated_at: string
+          valid_from: string | null
+          valid_until: string | null
+          vendor_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "vendor_product_commissions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       apply_category_aliases: {
         Args: never
         Returns: {

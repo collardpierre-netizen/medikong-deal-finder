@@ -11,8 +11,10 @@ function monthly(over: Partial<VendorMonthlyDashboard> = {}): VendorMonthlyDashb
     commissionCents: 1_000,
     netMarginCents: 2_000,
     ordersCount: 2,
+    avgBasketCents: 5_000,
     dailySeries: [],
     customerTypeBreakdown: [],
+    topProducts: [],
     ...over,
   };
 }

@@ -77,13 +77,44 @@ export interface OrderWithLines {
 
 
 const statusConfig: Record<string, { label: string; color: "info" | "success" | "warning" | "default" }> = {
+  draft: { label: "Brouillon", color: "default" },
   pending: { label: "En attente", color: "warning" },
+  confirmed: { label: "Confirmée", color: "info" },
   processing: { label: "En préparation", color: "info" },
   forwarded: { label: "Transmis au fournisseur", color: "success" },
-  shipped: { label: "Expédié", color: "info" },
-  delivered: { label: "Livré", color: "success" },
-  cancelled: { label: "Annulé", color: "default" },
+  partially_shipped: { label: "Partiellement expédiée", color: "info" },
+  shipped: { label: "Expédiée", color: "info" },
+  delivered: { label: "Livrée", color: "success" },
+  cancelled: { label: "Annulée", color: "default" },
 };
+
+// Statut de facturation dérivé (miroir de AdminCommandes) — synchronisé avec la vue admin.
+export function computeBillingStatus(order: OrderWithLines): {
+  label: string;
+  color: "info" | "success" | "warning" | "default";
+  title: string;
+} | null {
+  const invs = order.invoices || [];
+  if (order.order_status === "cancelled") {
+    return { label: "Annulée", color: "default", title: "Commande annulée" };
+  }
+  if (invs.length > 0) {
+    const allPaid = invs.every((i) => i.status === "paid");
+    const anyPaid = invs.some((i) => i.status === "paid");
+    const anyOverdue = invs.some((i) => i.status === "overdue" || i.status === "uncollectible");
+    if (allPaid || order.payment_status === "paid") {
+      return { label: "Payée", color: "success", title: `${invs.length} facture(s) payée(s)` };
+    }
+    if (anyOverdue) return { label: "En retard", color: "warning", title: "Facture(s) en retard" };
+    if (anyPaid) return { label: "Part. payée", color: "info", title: "Paiement partiel" };
+    return { label: "Facturée", color: "info", title: `${invs.length} facture(s) en attente` };
+  }
+  if (order.payment_status === "paid") {
+    return { label: "Payée", color: "success", title: "Paiement enregistré (hors facture)" };
+  }
+  if (order.order_status === "draft" || order.order_status === "pending") return null;
+  return { label: "À facturer", color: "warning", title: "Aucune facture émise" };
+}
 
 const APP_ORIGIN =
   typeof window !== "undefined" ? window.location.origin : "https://medikong.pro";

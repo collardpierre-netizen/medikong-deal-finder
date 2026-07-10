@@ -1044,7 +1044,7 @@ export function OrderInfoBlocks({ order }: { order: OrderWithLines }) {
 // ============================================================
 type LineWithProduct = OrderWithLines["lines"][number];
 
-function VendorOrderLineRow({
+export function VendorOrderLineRow({
   line,
   order,
   onShip,
@@ -1056,18 +1056,20 @@ function VendorOrderLineRow({
   acceptPending,
   forwardPending,
   deliverPending,
+  readOnly = false,
 }: {
   line: LineWithProduct;
   order: OrderWithLines;
-  onShip: (l: LineWithProduct) => void;
-  onCancel: (l: LineWithProduct) => void;
-  onRevert: (payload: { lineId: string; from: string; to: string }) => void;
-  onAccept: (l: LineWithProduct) => void;
-  onForward: (l: LineWithProduct) => void;
-  onDeliver: (l: LineWithProduct) => void;
-  acceptPending: boolean;
-  forwardPending: boolean;
-  deliverPending: boolean;
+  onShip?: (l: LineWithProduct) => void;
+  onCancel?: (l: LineWithProduct) => void;
+  onRevert?: (payload: { lineId: string; from: string; to: string }) => void;
+  onAccept?: (l: LineWithProduct) => void;
+  onForward?: (l: LineWithProduct) => void;
+  onDeliver?: (l: LineWithProduct) => void;
+  acceptPending?: boolean;
+  forwardPending?: boolean;
+  deliverPending?: boolean;
+  readOnly?: boolean;
 }) {
   const [showMargin, setShowMargin] = useState(false);
   const status = statusConfig[line.fulfillment_status] || statusConfig.pending;

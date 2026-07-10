@@ -30,6 +30,10 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [scope, setScope] = useState<Scope>(defaultScope);
+  const [quickMode, setQuickMode] = useState(false);
+  const [sessionCount, setSessionCount] = useState(0);
+  const [lastCreatedLabel, setLastCreatedLabel] = useState<string | null>(null);
+
 
   // shared rule state
   const [model, setModel] = useState<Model>("margin_split");

@@ -74,12 +74,50 @@ Deno.serve(async (req) => {
 
     const { data: lines, error: lErr } = await admin
       .from("order_lines")
-      .select("id, quantity, unit_price_excl_vat, vat_rate, line_total_excl_vat, manual_label, cnk_code, tracking_number, tracking_url, tracking_carrier, status, products(name, gtin, cnk_code)")
+      .select("id, offer_id, quantity, unit_price_excl_vat, vat_rate, line_total_excl_vat, cost_price, manual_label, cnk_code, tracking_number, tracking_url, tracking_carrier, status, products(name, gtin, cnk_code)")
       .eq("order_id", orderId)
       .eq("vendor_id", vendorRow.id);
 
     if (lErr) return json(500, { error: "lines_fetch_failed", details: lErr.message });
     if (!lines || lines.length === 0) return json(403, { error: "no_lines_for_vendor" });
+
+    // Résolution commission effective par offre (dédoublonnée)
+    const offerIds = [...new Set((lines as any[]).map((l) => l.offer_id).filter(Boolean))];
+    const commissionMap = new Map<string, any>();
+    await Promise.all(offerIds.map(async (oid) => {
+      const { data } = await admin.rpc("resolve_effective_commission", { _offer_id: oid });
+      const row: any = Array.isArray(data) ? data[0] : data;
+      if (row) commissionMap.set(oid, row);
+    }));
+
+    const computeLineBreakdown = (l: any) => {
+      const sell = Number(l.unit_price_excl_vat) || 0;
+      const cost = Number(l.cost_price) || 0;
+      const hasCost = cost > 0;
+      const cfg: any = commissionMap.get(l.offer_id) ?? { commission_model: "flat_percentage" };
+      let commission = 0;
+      const model = cfg.commission_model as string;
+      if (model === "flat_percentage") {
+        commission = (sell * (Number(cfg.commission_rate) || 0)) / 100;
+      } else if (model === "margin_split") {
+        if (hasCost) {
+          const gross = Math.max(0, sell - cost);
+          const mkPct = Math.max(0, 100 - (Number(cfg.margin_split_pct) || 0));
+          commission = (gross * mkPct) / 100;
+        }
+      } else if (model === "fixed_amount") {
+        commission = Number(cfg.fixed_commission_amount) || 0;
+      }
+      commission = Math.max(0, commission);
+      const netRevenue = sell - commission;
+      const netMargin = sell - cost - commission;
+      const modelLabel =
+        model === "flat_percentage" ? `Taux fixe ${Number(cfg.commission_rate) || 0}%`
+        : model === "margin_split" ? `Ventilation vendeur ${Number(cfg.margin_split_pct) || 0}% / MK ${Math.max(0, 100 - (Number(cfg.margin_split_pct) || 0))}%`
+        : model === "fixed_amount" ? `Montant fixe ${(Number(cfg.fixed_commission_amount) || 0).toFixed(2)} €/u`
+        : "—";
+      return { commission, netRevenue, netMargin, hasCost, modelLabel, model };
+    };
 
     // Buyer contact (email/phone)
     let buyer: any = null;
@@ -351,6 +389,139 @@ Deno.serve(async (req) => {
         doc.textWithLink(String(order.tracking_url).slice(0, 90), M + 5, y + 15.5, { url: String(order.tracking_url) });
       }
       y += 22;
+    }
+
+    // ─── Récapitulatif acheteur ────────────────────────────────────────
+    if (buyer) {
+      if (y > pageH - 55) { doc.addPage(); y = 20; }
+      doc.setFillColor(...SOFT);
+      doc.setDrawColor(...LINE);
+      const buyerH = 26;
+      doc.roundedRect(M, y, pageW - 2 * M, buyerH, 1.5, 1.5, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(...MUTED);
+      doc.text("RÉCAPITULATIF ACHETEUR", M + 5, y + 5);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10.5);
+      doc.setTextColor(...NAVY);
+      doc.text(String(buyer.company_name || "—"), M + 5, y + 11);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(80, 80, 80);
+      const bLine1: string[] = [];
+      if (buyer.email) bLine1.push(String(buyer.email));
+      if (buyer.phone) bLine1.push(`Tél. ${buyer.phone}`);
+      if (bLine1.length) doc.text(bLine1.join("  ·  "), M + 5, y + 17);
+      if (buyer.vat_number) doc.text(`TVA : ${buyer.vat_number}`, M + 5, y + 22);
+      y += buyerH + 6;
+    }
+
+    // ─── Ventilation de marge (commission MediKong / Net vendeur) ──────
+    if (y > pageH - 60) { doc.addPage(); y = 20; }
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...NAVY);
+    doc.text("VENTILATION DE MARGE", M, y);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...MUTED);
+    doc.text("Détail commission MediKong et net vendeur par ligne (HT)", M, y + 4);
+    y += 7;
+
+    const MCOLS = {
+      article: M + 2,
+      articleWidth: 62,
+      model: M + 66,
+      qty: M + 118,
+      commUnit: M + 135,
+      commTot: M + 152,
+      netTot: pageW - M - 2,
+    };
+
+    doc.setFillColor(...NAVY);
+    doc.rect(M, y, pageW - 2 * M, 7, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6.8);
+    doc.setTextColor(255, 255, 255);
+    doc.text("ARTICLE", MCOLS.article, y + 4.7);
+    doc.text("MODÈLE", MCOLS.model, y + 4.7);
+    doc.text("QTÉ", MCOLS.qty, y + 4.7, { align: "right" });
+    doc.text("COMM./U", MCOLS.commUnit, y + 4.7, { align: "right" });
+    doc.text("COMM. TOT.", MCOLS.commTot, y + 4.7, { align: "right" });
+    doc.text("NET VENDEUR", MCOLS.netTot, y + 4.7, { align: "right" });
+    y += 7;
+
+    let totalCommission = 0;
+    let totalNet = 0;
+    let missingCost = false;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    let mIdx = 0;
+    for (const l of lines as any[]) {
+      const b = computeLineBreakdown(l);
+      const qty = Number(l.quantity) || 0;
+      const commTot = b.commission * qty;
+      const netTot = b.netRevenue * qty;
+      totalCommission += commTot;
+      totalNet += netTot;
+      if (b.model === "margin_split" && !b.hasCost) missingCost = true;
+
+      const label = doc.splitTextToSize(String(l.manual_label || l.products?.name || "—"), MCOLS.articleWidth);
+      const modelText = doc.splitTextToSize(b.modelLabel, MCOLS.qty - MCOLS.model - 2);
+      const rowH = Math.max(6, Math.max(label.length, modelText.length) * 3.4 + 2.5);
+
+      if (y + rowH > pageH - 40) { doc.addPage(); y = 20; }
+
+      if (mIdx % 2 === 0) {
+        doc.setFillColor(...SOFT);
+        doc.rect(M, y, pageW - 2 * M, rowH, "F");
+      }
+      doc.setTextColor(...NAVY);
+      doc.text(label, MCOLS.article, y + 3.5);
+      doc.setTextColor(...MUTED);
+      doc.text(modelText, MCOLS.model, y + 3.5);
+      doc.setTextColor(...NAVY);
+      doc.text(String(qty), MCOLS.qty, y + 3.5, { align: "right" });
+      doc.text(fmtEur(Math.round(b.commission * 100), currency), MCOLS.commUnit, y + 3.5, { align: "right" });
+      doc.setTextColor(180, 83, 9); // amber
+      doc.text(fmtEur(Math.round(commTot * 100), currency), MCOLS.commTot, y + 3.5, { align: "right" });
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...BRAND);
+      doc.text(fmtEur(Math.round(netTot * 100), currency), MCOLS.netTot, y + 3.5, { align: "right" });
+      doc.setFont("helvetica", "normal");
+
+      y += rowH;
+      mIdx += 1;
+    }
+
+    // Totaux ventilation
+    doc.setDrawColor(...LINE);
+    doc.line(M, y, pageW - M, y);
+    y += 5;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(...MUTED);
+    doc.text("Total commission MediKong", MCOLS.model, y);
+    doc.setTextColor(180, 83, 9);
+    doc.text(fmtEur(Math.round(totalCommission * 100), currency), MCOLS.commTot, y, { align: "right" });
+    doc.setTextColor(...MUTED);
+    doc.text("Net vendeur", MCOLS.commTot + 6, y + 5, { align: "right" });
+    doc.setTextColor(...BRAND);
+    doc.text(fmtEur(Math.round(totalNet * 100), currency), MCOLS.netTot, y + 5, { align: "right" });
+    y += 10;
+
+    if (missingCost) {
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(7.5);
+      doc.setTextColor(180, 83, 9);
+      doc.text(
+        "Note : coût d'achat manquant sur certaines lignes en ventilation de marge — commission calculée à 0.",
+        M,
+        y,
+      );
+      y += 5;
+      doc.setFont("helvetica", "normal");
     }
 
     // Footer

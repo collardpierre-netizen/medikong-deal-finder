@@ -311,6 +311,13 @@ export default function VendorOrders() {
     };
   }, [queryClient, vendorId, vendorOrdersQueryKey]);
 
+  useResyncOnReconnect(
+    [vendorOrdersQueryKey, ["action-center", "vendor"]],
+    !!vendorId,
+  );
+
+
+
   // ----- Mutations -----
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["vendor-order-lines"] });
 

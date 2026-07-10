@@ -19,6 +19,8 @@ import RevenueTrendCard from "@/components/vendor/dashboard/RevenueTrendCard";
 import CustomerTypeBreakdownCard from "@/components/vendor/dashboard/CustomerTypeBreakdownCard";
 import ReconciliationCard from "@/components/vendor/dashboard/ReconciliationCard";
 import VendorTotalsConsistencyAlert from "@/components/vendor/dashboard/VendorTotalsConsistencyAlert";
+import TopProductsCard from "@/components/vendor/dashboard/TopProductsCard";
+import VendorWaterfallCard from "@/components/vendor/dashboard/VendorWaterfallCard";
 import { checkVendorTotalsConsistency } from "@/lib/vendor-gmv-consistency";
 import { useMoneyFormat } from "@/lib/money-format";
 
@@ -201,6 +203,54 @@ export default function VendorDashboard() {
             />
           </div>
 
+          {/* Deuxième bandeau KPI : commission, net vendeur, panier moyen, marge nette % */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <VStat
+              label="Commission MediKong"
+              value={formatMoney((monthly?.commissionCents ?? 0) / 100, { fractionDigits: 0 })}
+              icon="Percent"
+              color="#F59E0B"
+              sub={
+                (monthly?.revenueExclVatCents ?? 0) > 0
+                  ? `${(((monthly?.commissionCents ?? 0) / (monthly!.revenueExclVatCents)) * 100).toFixed(1)}% du CA HTVA`
+                  : "—"
+              }
+            />
+            <VStat
+              label="Net vendeur"
+              value={formatMoney(((monthly?.revenueExclVatCents ?? 0) - (monthly?.commissionCents ?? 0)) / 100, { fractionDigits: 0 })}
+              icon="Wallet"
+              color="#1B5BDA"
+              sub="CA HTVA − commission MK"
+            />
+            <VStat
+              label="Marge nette"
+              value={
+                (monthly?.netMarginCents ?? 0) !== 0
+                  ? formatMoney((monthly?.netMarginCents ?? 0) / 100, { fractionDigits: 0 })
+                  : "—"
+              }
+              icon="TrendingUp"
+              color="#059669"
+              sub={
+                (monthly?.revenueExclVatCents ?? 0) > 0 && (monthly?.netMarginCents ?? 0) !== 0
+                  ? `${(((monthly?.netMarginCents ?? 0) / (monthly!.revenueExclVatCents)) * 100).toFixed(1)}% du CA HTVA`
+                  : "prix d'achat manquant"
+              }
+            />
+            <VStat
+              label="Panier moyen"
+              value={
+                (monthly?.avgBasketCents ?? 0) > 0
+                  ? formatMoney((monthly?.avgBasketCents ?? 0) / 100, { fractionDigits: 0 })
+                  : "—"
+              }
+              icon="ShoppingBag"
+              color="#7C3AED"
+              sub={ordersCount > 0 ? `sur ${ordersCount} commande${ordersCount > 1 ? "s" : ""}` : "—"}
+            />
+          </div>
+
           {(forecastRevenueEur > 0 || forecastOrders > 0) && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <VStat
@@ -219,6 +269,16 @@ export default function VendorDashboard() {
               />
             </div>
           )}
+
+          {/* Waterfall : où va chaque euro */}
+          <VendorWaterfallCard
+            gmvCents={monthly?.gmvCents ?? 0}
+            revenueExclVatCents={monthly?.revenueExclVatCents ?? 0}
+            grossMarginCents={monthly?.grossMarginCents ?? 0}
+            commissionCents={monthly?.commissionCents ?? 0}
+            netMarginCents={monthly?.netMarginCents ?? 0}
+            loading={monthlyLoading}
+          />
 
           {/* Bloc GMV / Commission MediKong / Marge nette + jauge palier négocié */}
           <MediKongCommissionCard
@@ -240,7 +300,7 @@ export default function VendorDashboard() {
           />
 
 
-          {/* Courbe CA + ventilation par profil client */}
+          {/* Pilotage financier + Top produits + Profils clients */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="lg:col-span-2">
               <RevenueTrendCard data={monthly?.dailySeries ?? []} loading={monthlyLoading} />
@@ -250,6 +310,8 @@ export default function VendorDashboard() {
               loading={monthlyLoading}
             />
           </div>
+
+          <TopProductsCard products={monthly?.topProducts ?? []} loading={monthlyLoading} />
 
 
           {/* Shipping section — adapts to vendor's shipping mode */}

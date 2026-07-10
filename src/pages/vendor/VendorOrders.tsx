@@ -1185,42 +1185,72 @@ export function VendorOrderLineRow({
             </div>
           </div>
 
-          {/* Marge nette (résumé + toggle détails) */}
-          <div className="mt-2 rounded-md border border-border bg-muted/10 px-2 py-1.5">
-            <button
-              type="button"
-              onClick={() => setShowMargin((v) => !v)}
-              className="w-full flex items-center justify-between gap-2 text-[11px]"
-            >
-              <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                <Calculator size={11} /> Marge nette / u.
-              </span>
-              <span className="flex items-center gap-2">
-                {!breakdown.hasCost ? (
-                  <span className="text-muted-foreground italic">coût non renseigné</span>
-                ) : (
-                  <>
-                    <span className={`font-semibold ${breakdown.netMargin >= 0 ? "text-emerald-700" : "text-destructive"}`}>
-                      {fmtEur(breakdown.netMargin)}&nbsp;€
-                    </span>
-                    <span className="text-muted-foreground">({fmtPct(breakdown.netMarginPct)})</span>
-                  </>
-                )}
-                {showMargin ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-              </span>
-            </button>
-            {showMargin && (
-              <div className="mt-2">
-                <MarginBreakdownDetails
-                  breakdown={breakdown}
-                  commissionModel={commissionCfg.commission_model}
-                  commissionRate={commissionCfg.commission_rate}
-                  marginSplitPct={commissionCfg.margin_split_pct}
-                  fixedCommissionAmount={commissionCfg.fixed_commission_amount}
-                  offerId={line.offer_id}
-                />
+          {/* Décomposition économique ligne : Commission MK · Net vendeur · Marge nette (visible sans expand) */}
+          <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] rounded-md border border-border bg-muted/10 px-2 py-2">
+            <div>
+              <div className="text-muted-foreground">Commission MediKong</div>
+              <div className="font-semibold text-amber-700">
+                {fmtEur(breakdown.commission * line.quantity)}&nbsp;€
+                <span className="ml-1 font-normal text-muted-foreground">
+                  ({fmtEur(breakdown.commission)}/u · {fmtPct(breakdown.commissionPct)})
+                </span>
               </div>
-            )}
+            </div>
+            <div>
+              <div className="text-muted-foreground">Net vendeur (HT)</div>
+              <div className="font-semibold text-[#1B5BDA]">
+                {fmtEur(breakdown.netRevenue * line.quantity)}&nbsp;€
+                <span className="ml-1 font-normal text-muted-foreground">
+                  ({fmtEur(breakdown.netRevenue)}/u)
+                </span>
+              </div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Marge brute</div>
+              <div className={`font-semibold ${breakdown.hasCost ? (breakdown.grossMargin >= 0 ? "text-foreground" : "text-destructive") : "text-muted-foreground italic"}`}>
+                {breakdown.hasCost ? (
+                  <>
+                    {fmtEur(breakdown.grossMargin * line.quantity)}&nbsp;€
+                    <span className="ml-1 font-normal text-muted-foreground">({fmtPct(breakdown.grossMarginPct)})</span>
+                  </>
+                ) : "coût manquant"}
+              </div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Marge nette</div>
+              <div className={`font-semibold ${breakdown.hasCost ? (breakdown.netMargin >= 0 ? "text-emerald-700" : "text-destructive") : "text-muted-foreground italic"}`}>
+                {breakdown.hasCost ? (
+                  <>
+                    {fmtEur(breakdown.netMargin * line.quantity)}&nbsp;€
+                    <span className="ml-1 font-normal text-muted-foreground">({fmtPct(breakdown.netMarginPct)})</span>
+                  </>
+                ) : "coût manquant"}
+              </div>
+            </div>
+            <div className="col-span-2 sm:col-span-4 pt-1 border-t border-border/60">
+              <button
+                type="button"
+                onClick={() => setShowMargin((v) => !v)}
+                className="w-full flex items-center justify-between gap-2 text-[10.5px] text-muted-foreground hover:text-foreground"
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  <Calculator size={11} /> Détail du calcul commission &amp; marge
+                </span>
+                {showMargin ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+              </button>
+              {showMargin && (
+                <div className="mt-2">
+                  <MarginBreakdownDetails
+                    breakdown={breakdown}
+                    commissionModel={commissionCfg.commission_model}
+                    commissionRate={commissionCfg.commission_rate}
+                    marginSplitPct={commissionCfg.margin_split_pct}
+                    fixedCommissionAmount={commissionCfg.fixed_commission_amount}
+                    offerId={line.offer_id}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Tracking ligne */}

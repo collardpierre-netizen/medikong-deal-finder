@@ -290,6 +290,11 @@ export default function VendorOrders() {
         { event: "*", schema: "public", table: "order_lines", filter: `vendor_id=eq.${vendorId}` },
         refreshVendorOrders,
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "order_invoices", filter: `vendor_id=eq.${vendorId}` },
+        refreshVendorOrders,
+      )
       .subscribe();
 
     return () => {

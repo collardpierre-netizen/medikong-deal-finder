@@ -48,7 +48,7 @@ interface OrderLine {
   refunded_amount_incl_vat: number | null;
 }
 
-interface OrderWithLines {
+export interface OrderWithLines {
   order_id: string;
   order_number: string;
   order_status: string;
@@ -71,6 +71,7 @@ interface OrderWithLines {
     product_cnk: string | null;
   })[];
 }
+
 
 const statusConfig: Record<string, { label: string; color: "info" | "success" | "warning" | "default" }> = {
   pending: { label: "En attente", color: "warning" },

@@ -287,6 +287,7 @@ const VendorCatalog = lazyWithRetry(() => import("./pages/vendor/VendorCatalog")
 const VendorProductSubmissionPage = lazyWithRetry(() => import("./pages/vendor/VendorProductSubmissionPage"), "VendorProductSubmissionPage");
 const VendorNotifications = lazyWithRetry(() => import("./pages/vendor/VendorNotifications"), "VendorNotifications");
 const VendorOrders = lazyWithRetry(() => import("./pages/vendor/VendorOrders"), "VendorOrders");
+const VendorOrderDetail = lazyWithRetry(() => import("./pages/vendor/VendorOrderDetail"), "VendorOrderDetail");
 const VendorOpportunities = lazyWithRetry(() => import("./pages/vendor/VendorOpportunities"), "VendorOpportunities");
 const VendorCompetitorAlerts = lazyWithRetry(() => import("./pages/vendor/VendorCompetitorAlerts"), "VendorCompetitorAlerts");
 const VendorMarketIntelHub = lazyWithRetry(() => import("./pages/vendor/VendorMarketIntelHub"), "VendorMarketIntelHub");

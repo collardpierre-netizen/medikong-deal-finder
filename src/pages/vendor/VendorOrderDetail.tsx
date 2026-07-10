@@ -153,6 +153,27 @@ export default function VendorOrderDetail() {
 
         <OrderInfoBlocks order={order} />
 
+        {(() => {
+          const trackings = [
+            ...new Set(order.lines.map((l) => l.tracking_number).filter((t): t is string => !!t)),
+          ];
+          if (trackings.length === 0) return null;
+          return (
+            <div className="px-4 py-2 border-b border-border bg-muted/10 flex flex-wrap items-center gap-2">
+              <span className="text-[11px] text-muted-foreground">Décompte par expédition :</span>
+              {trackings.map((t) => (
+                <VendorPayoutPdfButton
+                  key={t}
+                  orderId={order.order_id}
+                  orderNumber={order.order_number}
+                  trackingNumber={t}
+                  label={t}
+                />
+              ))}
+            </div>
+          );
+        })()}
+
         <div className="divide-y divide-border">
           {order.lines.map((line) => (
             <VendorOrderLineRow key={line.id} line={line} order={order} readOnly />

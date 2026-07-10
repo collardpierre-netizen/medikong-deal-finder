@@ -563,6 +563,7 @@ const App = () => (
               <Route path="media-library" element={<LP><AdminMediaLibrary /></LP>} />
               <Route path="cms/partenaires-invest" element={<LP><AdminCmsPartnerLogos /></LP>} />
               <Route path="categories/non-mappees" element={<LP><AdminUnmappedCategories /></LP>} />
+              <Route path="categories/aliases" element={<LP><AdminCategoryAliases /></LP>} />
               <Route path="sourcing/pipeline" element={<LP><AdminSourcingPipeline /></LP>} />
               <Route path="categories/anomalies" element={<LP><AdminCategoryAnomalies /></LP>} />
               <Route path="categories/anomalies/:id" element={<LP><AdminCategoryAnomalyDetail /></LP>} />

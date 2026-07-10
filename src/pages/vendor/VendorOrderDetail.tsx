@@ -15,6 +15,7 @@ import {
   OrderInfoBlocks,
   VendorOrderLineRow,
   VendorOrderPdfButton,
+  VendorPayoutPdfButton,
   type OrderWithLines,
 } from "./VendorOrders";
 

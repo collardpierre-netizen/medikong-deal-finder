@@ -1138,8 +1138,8 @@ function paymentMethodLabel(m: string | null): string {
 
 function paymentStatusColor(s: string | null): "success" | "warning" | "info" | "default" {
   if (s === "paid") return "success";
-  if (s === "pending") return "warning";
-  if (s === "failed" || s === "refunded") return "default";
+  if (s === "pending" || s === "overdue" || s === "partially_paid") return "warning";
+  if (s === "failed" || s === "refunded" || s === "partially_refunded") return "default";
   return "info";
 }
 
@@ -1148,6 +1148,8 @@ function paymentStatusLabel(s: string | null): string {
   const map: Record<string, string> = {
     paid: "Payé",
     pending: "En attente",
+    overdue: "En retard",
+    partially_paid: "Partiel",
     failed: "Échec",
     refunded: "Remboursé",
     partially_refunded: "Remb. partiel",

@@ -1235,18 +1235,18 @@ export function VendorOrderLineRow({
                 Modèle commission :
               </span>
               {commissionCfg.commission_model === "flat_percentage" && (
-                <VBadge color="amber">
+                <VBadge color="#B45309">
                   Taux fixe {fmtPct(commissionCfg.commission_rate ?? 0)} du CA HT
                 </VBadge>
               )}
               {commissionCfg.commission_model === "margin_split" && (
-                <VBadge color="violet">
+                <VBadge color="#7C3AED">
                   Ventilation de marge · vendeur {fmtPct(commissionCfg.margin_split_pct ?? 0)} /
                   MediKong {fmtPct(Math.max(0, 100 - (commissionCfg.margin_split_pct ?? 0)))}
                 </VBadge>
               )}
               {commissionCfg.commission_model === "fixed_amount" && (
-                <VBadge color="amber">
+                <VBadge color="#B45309">
                   Montant fixe {fmtEur(commissionCfg.fixed_commission_amount ?? 0)}&nbsp;€/unité
                 </VBadge>
               )}

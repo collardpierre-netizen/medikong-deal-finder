@@ -1007,7 +1007,17 @@ export function OrderInfoBlocks({ order }: { order: OrderWithLines }) {
           <MapPin size={12} /> Livraison
         </div>
         <div className="mt-1.5 flex items-center gap-2 flex-wrap">
-          <div className="text-[13px] font-semibold text-foreground">{shipName}</div>
+          {order.customer_id ? (
+            <Link
+              to={`/vendor/acheteurs/${order.customer_id}`}
+              className="text-[13px] font-semibold text-foreground hover:text-primary underline-offset-2 hover:underline"
+              title="Voir le profil acheteur"
+            >
+              {shipName}
+            </Link>
+          ) : (
+            <div className="text-[13px] font-semibold text-foreground">{shipName}</div>
+          )}
           {buyerType && customerTypeLabel[buyerType] && (
             <VBadge color="#475569">{customerTypeLabel[buyerType]}</VBadge>
           )}

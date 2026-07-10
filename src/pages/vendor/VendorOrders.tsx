@@ -5,7 +5,7 @@ import { useCurrentVendor } from "@/hooks/useCurrentVendor";
 import { VCard } from "@/components/vendor/ui/VCard";
 import { VBadge } from "@/components/vendor/ui/VBadge";
 import { VEmptyState } from "@/components/vendor/ui/VEmptyState";
-import { ShoppingCart, PackageCheck, Loader2, ChevronDown, ChevronUp, Truck, ExternalLink, Package, X, Check, Pencil, Search, Clock, AlertCircle, CheckCircle2, Ban, ArrowUpDown, User, MapPin, CreditCard, Barcode, FileText, Calculator } from "lucide-react";
+import { ShoppingCart, PackageCheck, Loader2, ChevronDown, ChevronUp, Truck, ExternalLink, Package, X, Check, Pencil, Search, Clock, AlertCircle, CheckCircle2, Ban, ArrowUpDown, User, MapPin, CreditCard, Barcode, FileText, Calculator, Mail, Phone } from "lucide-react";
 import { useEffectiveCommission } from "@/hooks/useEffectiveCommission";
 import { computeMargin, fmtPct } from "@/lib/vendorMargin";
 import { MarginBreakdownDetails } from "@/components/vendor/MarginBreakdownDetails";
@@ -910,6 +910,24 @@ function OrderInfoBlocks({ order }: { order: OrderWithLines }) {
   const billName = (bill as any).label || (bill as any).name || (bill as any).company;
   const billDiffers = billName && (billName !== shipName || formatFullAddress(bill) !== formatFullAddress(ship));
 
+  // Coordonnées acheteur (email + téléphone) — RLS bloque la lecture directe de customers,
+  // on passe par la RPC sécurisée qui vérifie que le vendeur a bien une ligne sur cette commande.
+  const { data: buyerContact } = useQuery({
+    queryKey: ["vendor-order-buyer-contact", order.order_id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_vendor_order_buyer_contact", {
+        _order_id: order.order_id,
+      });
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      return row as { email: string | null; phone: string | null } | null;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const buyerEmail = buyerContact?.email || null;
+  const buyerPhone = buyerContact?.phone || (ship as any).phone || null;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 bg-muted/20 border-b border-border">
       {/* Acheteur / livraison */}
@@ -921,10 +939,28 @@ function OrderInfoBlocks({ order }: { order: OrderWithLines }) {
         <div className="mt-0.5 text-[12px] text-muted-foreground leading-relaxed">
           {formatFullAddress(ship)}
         </div>
-        {(ship as any).phone && (
-          <div className="mt-1 text-[11px] text-muted-foreground">Tél. {(ship as any).phone}</div>
+        {(buyerEmail || buyerPhone) && (
+          <div className="mt-2 pt-2 border-t border-border space-y-1">
+            {buyerEmail && (
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <Mail size={11} className="shrink-0" />
+                <a href={`mailto:${buyerEmail}`} className="underline hover:text-primary truncate">
+                  {buyerEmail}
+                </a>
+              </div>
+            )}
+            {buyerPhone && (
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <Phone size={11} className="shrink-0" />
+                <a href={`tel:${buyerPhone}`} className="underline hover:text-primary">
+                  {buyerPhone}
+                </a>
+              </div>
+            )}
+          </div>
         )}
       </div>
+
 
       {/* Facturation */}
       <div className="rounded-lg border border-border bg-card p-3">

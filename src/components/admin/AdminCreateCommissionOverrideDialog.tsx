@@ -697,12 +697,15 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
 
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            {quickMode && sessionCount > 0 ? `Terminer (${sessionCount})` : "Annuler"}
+          </Button>
           <Button onClick={onSubmit} disabled={!canSubmit || submitMutation.isPending}>
             {submitMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Créer et approuver
+            {quickMode ? "Créer et enchaîner" : "Créer et approuver"}
           </Button>
         </DialogFooter>
+
       </DialogContent>
     </Dialog>
   );

@@ -38,16 +38,23 @@ export default function VendorOrderDetail() {
   // ou order_invoices bougent sur cette commande.
   useEffect(() => {
     if (!vendorId || !id) return;
-    const invalidate = () =>
+    let cancelled = false;
+    const invalidate = () => {
+      if (cancelled) return;
       queryClient.invalidateQueries({ queryKey: ["vendor-order-detail", vendorId, id] });
+    };
+    const suffix = (globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2));
     const channel = supabase
-      .channel(`vendor-order-detail-${id}`)
+      .channel(`vendor-order-detail-${id}-${suffix}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `id=eq.${id}` }, invalidate)
       .on("postgres_changes", { event: "*", schema: "public", table: "order_lines", filter: `order_id=eq.${id}` }, invalidate)
       .on("postgres_changes", { event: "*", schema: "public", table: "order_invoices", filter: `order_id=eq.${id}` }, invalidate)
       .subscribe();
     return () => {
-      void supabase.removeChannel(channel);
+      cancelled = true;
+      void channel.unsubscribe().finally(() => {
+        void supabase.removeChannel(channel);
+      });
     };
   }, [queryClient, vendorId, id]);
 

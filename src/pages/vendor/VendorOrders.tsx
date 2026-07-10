@@ -1371,3 +1371,50 @@ export function VendorOrderPdfButton({ orderId, orderNumber }: { orderId: string
     </Button>
   );
 }
+
+export function VendorPayoutPdfButton({
+  orderId,
+  orderNumber,
+  trackingNumber,
+  label,
+}: {
+  orderId: string;
+  orderNumber: string;
+  trackingNumber?: string;
+  label?: string;
+}) {
+  const gen = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("generate-vendor-payout-pdf", {
+        body: { order_id: orderId, tracking_number: trackingNumber ?? null },
+      });
+      if (error) throw error;
+      if (!data?.pdf_url) throw new Error("URL PDF indisponible");
+      return data.pdf_url as string;
+    },
+    onSuccess: (url) => {
+      window.open(url, "_blank", "noopener,noreferrer");
+      toast.success(
+        trackingNumber
+          ? `Décompte ${orderNumber} · ${trackingNumber} généré`
+          : `Décompte ${orderNumber} généré`,
+      );
+    },
+    onError: (e: any) => {
+      toast.error(`Décompte échoué — ${e?.message || "erreur"}`);
+    },
+  });
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="h-7 text-[11px] gap-1.5"
+      disabled={gen.isPending}
+      onClick={(e) => { e.stopPropagation(); gen.mutate(); }}
+    >
+      {gen.isPending ? <Loader2 size={12} className="animate-spin" /> : <FileText size={12} />}
+      {label || "Décompte"}
+    </Button>
+  );
+}

@@ -15,6 +15,8 @@ import { Plus, ShieldCheck, Search, Loader2, Calculator, AlertTriangle } from "l
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Zap } from "lucide-react";
 
 type Model = "flat_percentage" | "margin_split" | "fixed_amount";
 type Scope = "product" | "offer";
@@ -28,6 +30,10 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [scope, setScope] = useState<Scope>(defaultScope);
+  const [quickMode, setQuickMode] = useState(false);
+  const [sessionCount, setSessionCount] = useState(0);
+  const [lastCreatedLabel, setLastCreatedLabel] = useState<string | null>(null);
+
 
   // shared rule state
   const [model, setModel] = useState<Model>("margin_split");
@@ -251,15 +257,22 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
   // Reset la confirmation dès que la cible ou les dates changent
   useEffect(() => { setConfirmReplace(false); }, [scope, vendorId, productId, offerId, validFrom, validUntil]);
 
-  const reset = () => {
+  const resetTargetOnly = () => {
     setVendorId(null); setVendorLabel(""); setVendorQuery("");
     setProductId(null); setProductLabel(""); setProductQuery("");
     setOfferId(null); setOfferLabel(""); setOfferQuery("");
+    setConfirmReplace(false);
+  };
+
+  const reset = () => {
+    resetTargetOnly();
     setRate(""); setSplit(""); setFixed("");
     setValidFrom(""); setValidUntil(""); setNote("");
     setModel("margin_split");
-    setConfirmReplace(false);
+    setSessionCount(0);
+    setLastCreatedLabel(null);
   };
+
 
 
   const submitMutation = useMutation({
@@ -294,13 +307,25 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
       }
     },
     onSuccess: () => {
-      toast.success("Override créé et approuvé");
       qc.invalidateQueries({ queryKey: ["admin-commission-overrides"] });
       qc.invalidateQueries({ queryKey: ["effective-commission"] });
       qc.invalidateQueries({ queryKey: ["vpc"] });
-      reset();
-      setOpen(false);
+      const createdLabel =
+        scope === "product"
+          ? `${vendorLabel || "vendeur"} × ${productLabel || "produit"}`
+          : offerLabel || "offre";
+      if (quickMode) {
+        setSessionCount((n) => n + 1);
+        setLastCreatedLabel(createdLabel);
+        toast.success(`Override créé — prêt pour la cible suivante (${sessionCount + 1} au total)`);
+        resetTargetOnly();
+      } else {
+        toast.success("Override créé et approuvé");
+        reset();
+        setOpen(false);
+      }
     },
+
     onError: (e: any) => toast.error(e.message ?? "Erreur"),
   });
 
@@ -372,6 +397,32 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
             Raccourci MediKong : la règle est créée <strong>directement approuvée</strong>, sans passer par le compte vendeur.
           </DialogDescription>
         </DialogHeader>
+
+        {/* Toggle mode création rapide + compteur session */}
+        <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/30 px-3 py-2">
+          <label htmlFor="cco-quick-mode" className="flex items-center gap-2 cursor-pointer text-sm">
+            <Zap size={14} className={quickMode ? "text-amber-500" : "text-muted-foreground"} />
+            <span className="font-medium">Mode création rapide</span>
+            <span className="text-[11px] text-muted-foreground">
+              conserve modèle + période + note, ne réinitialise que la cible
+            </span>
+          </label>
+          <div className="flex items-center gap-2">
+            {sessionCount > 0 && (
+              <Badge variant="secondary" className="text-[11px]">
+                {sessionCount} créé{sessionCount > 1 ? "s" : ""}
+              </Badge>
+            )}
+            <Switch id="cco-quick-mode" checked={quickMode} onCheckedChange={setQuickMode} />
+          </div>
+        </div>
+        {quickMode && lastCreatedLabel && (
+          <div className="text-[11px] text-muted-foreground -mt-1 px-1">
+            Dernier : <span className="font-medium text-foreground">{lastCreatedLabel}</span> — sélectionnez la prochaine cible pour enchaîner.
+          </div>
+        )}
+
+
 
         <Tabs value={scope} onValueChange={(v) => setScope(v as Scope)}>
           <TabsList className="w-full">
@@ -646,12 +697,15 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
 
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            {quickMode && sessionCount > 0 ? `Terminer (${sessionCount})` : "Annuler"}
+          </Button>
           <Button onClick={onSubmit} disabled={!canSubmit || submitMutation.isPending}>
             {submitMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Créer et approuver
+            {quickMode ? "Créer et enchaîner" : "Créer et approuver"}
           </Button>
         </DialogFooter>
+
       </DialogContent>
     </Dialog>
   );

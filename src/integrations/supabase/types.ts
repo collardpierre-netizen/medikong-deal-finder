@@ -25495,6 +25495,10 @@ export type Database = {
           total_count: number
         }[]
       }
+      get_vendor_buyer_profile: {
+        Args: { _customer_id: string }
+        Returns: Json
+      }
       get_vendor_competitive_position: {
         Args: { _vendor_id: string }
         Returns: {

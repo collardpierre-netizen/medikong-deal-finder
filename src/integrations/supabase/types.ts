@@ -25601,6 +25601,13 @@ export type Database = {
           total_offers: number
         }[]
       }
+      get_vendor_order_buyer_contact: {
+        Args: { _order_id: string }
+        Returns: {
+          email: string
+          phone: string
+        }[]
+      }
       grant_subscription_extension: {
         Args: { _months?: number; _notes?: string; _req_id: string }
         Returns: undefined

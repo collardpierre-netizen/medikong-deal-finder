@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TrendingDown, Equal, Sparkles, Loader2 } from "lucide-react";
 import { useVendorCommissionConfig } from "@/hooks/useVendorCommissionConfig";
+import { useEffectiveCommission } from "@/hooks/useEffectiveCommission";
 import { computeMargin } from "@/lib/vendorMargin";
 import { MarginInsightCard } from "@/components/vendor/MarginInsightCard";
 import { MarginBreakdownDetails } from "@/components/vendor/MarginBreakdownDetails";
@@ -58,8 +59,10 @@ export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys, onPr
   const qc = useQueryClient();
   const [newPrice, setNewPrice] = useState<string>("");
 
-  // Vendor commission config (used to compute net & margin breakdown live)
-  const { data: commissionConfig } = useVendorCommissionConfig(ctx?.vendorId ?? null);
+  // Commission effective de l'offre (override offre > override produit > défaut vendeur)
+  const { data: vendorCommissionConfig } = useVendorCommissionConfig(ctx?.vendorId ?? null);
+  const { data: effectiveCommissionConfig } = useEffectiveCommission(ctx?.offerId ?? null);
+  const commissionConfig = effectiveCommissionConfig ?? vendorCommissionConfig;
 
   // Vendor's purchase price for this product (offer override > vendor default)
   const { data: purchasePrice } = useQuery({

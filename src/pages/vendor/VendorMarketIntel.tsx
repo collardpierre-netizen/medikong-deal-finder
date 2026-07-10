@@ -39,6 +39,7 @@ import { AdjustPriceModal, type AdjustPriceContext } from "@/components/vendor/A
 import { MarginInsightCard } from "@/components/vendor/MarginInsightCard";
 import { MarginBreakdownDetails } from "@/components/vendor/MarginBreakdownDetails";
 import { useVendorCommissionConfig } from "@/hooks/useVendorCommissionConfig";
+import { useEffectiveCommission } from "@/hooks/useEffectiveCommission";
 import { computeMargin, fmtEur } from "@/lib/vendorMargin";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -327,7 +328,9 @@ export default function VendorMarketIntel() {
 
   // Commission config + purchase price for the currently opened product
   // (used to display MediKong commission and net-in-pocket inside the detail popup)
-  const { data: commissionConfig } = useVendorCommissionConfig(vendorId ?? null);
+  const { data: vendorCommissionConfig } = useVendorCommissionConfig(vendorId ?? null);
+  const { data: effectiveCommissionConfig } = useEffectiveCommission(openRow?.my_offer_id ?? null);
+  const commissionConfig = effectiveCommissionConfig ?? vendorCommissionConfig;
   const { data: openRowPurchasePrice } = useQuery({
     enabled: !!openRow?.my_offer_id && !!vendorId && !!openRow?.product_id,
     queryKey: [

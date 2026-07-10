@@ -309,6 +309,7 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-commission-overrides"] });
       qc.invalidateQueries({ queryKey: ["effective-commission"] });
+      qc.invalidateQueries({ queryKey: ["vendor-offers-effective-commissions"] });
       qc.invalidateQueries({ queryKey: ["vpc"] });
       const createdLabel =
         scope === "product"

@@ -720,7 +720,7 @@ export default function VendorOrders() {
                       {(() => {
                         const bs = computeBillingStatus(order);
                         if (!bs) return null;
-                        return <VBadge color={bs.color} title={bs.title}>{bs.label}</VBadge>;
+                        return <span title={bs.title}><VBadge color={bs.color}>{bs.label}</VBadge></span>;
                       })()}
                       {hasQogita && (
                         <VBadge color={allForwarded ? "success" : "warning"}>

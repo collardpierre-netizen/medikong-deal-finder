@@ -559,15 +559,50 @@ export default function VendorOrders() {
 
               {isExpanded && (
                 <div className="border-t border-border">
-                  <div className="flex items-center justify-end gap-2 px-4 pt-3">
+                  <div className="flex items-center justify-end gap-2 px-4 pt-3 flex-wrap">
                     <Button asChild size="sm" variant="outline" className="h-7 text-[11px] gap-1.5">
                       <Link to={`/vendor/commandes/${order.order_id}`} onClick={(e) => e.stopPropagation()}>
                         <ExternalLink size={12} /> Ouvrir la fiche
                       </Link>
                     </Button>
                     <VendorOrderPdfButton orderId={order.order_id} orderNumber={order.order_number} />
+                    <VendorPayoutPdfButton
+                      orderId={order.order_id}
+                      orderNumber={order.order_number}
+                      label="Décompte fournisseur"
+                    />
                   </div>
                   <OrderInfoBlocks order={order} />
+
+                  {/* Décomptes par expédition (si plusieurs numéros de tracking distincts) */}
+                  {(() => {
+                    const trackings = [
+                      ...new Set(
+                        order.lines
+                          .map((l) => l.tracking_number)
+                          .filter((t): t is string => !!t),
+                      ),
+                    ];
+                    if (trackings.length === 0) return null;
+                    return (
+                      <div className="px-4 py-2 border-b border-border bg-muted/10 flex flex-wrap items-center gap-2">
+                        <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
+                          <Truck size={11} /> Décompte par expédition :
+                        </span>
+                        {trackings.map((t) => (
+                          <VendorPayoutPdfButton
+                            key={t}
+                            orderId={order.order_id}
+                            orderNumber={order.order_number}
+                            trackingNumber={t}
+                            label={t}
+                          />
+                        ))}
+                      </div>
+                    );
+                  })()}
+
+
 
 
 

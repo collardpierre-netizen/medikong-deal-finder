@@ -159,6 +159,98 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
     n == null || Number.isNaN(n) ? "—" : `${n.toFixed(2)}${suffix}`;
 
 
+  // ---- Détection d'override existant / chevauchement de période ----
+  type ExistingOverride = {
+    id: string;
+    model: string;
+    rate: number | null;
+    split: number | null;
+    fixed: number | null;
+    valid_from: string | null;
+    valid_until: string | null;
+    source: "product" | "offer";
+    context?: string;
+  };
+
+  const { data: existingOverrides = [], isFetching: existingLoading } = useQuery({
+    enabled: previewEnabled,
+    queryKey: ["admin-cco-existing", scope, vendorId, productId, offerId],
+    queryFn: async (): Promise<ExistingOverride[]> => {
+      if (scope === "product") {
+        const { data, error } = await supabase
+          .from("vendor_product_commissions")
+          .select("id, commission_model, commission_rate, margin_split_pct, fixed_commission_amount, valid_from, valid_until, status")
+          .eq("vendor_id", vendorId!)
+          .eq("product_id", productId!)
+          .eq("status", "approved");
+        if (error) throw error;
+        return (data ?? []).map((r: any) => ({
+          id: r.id,
+          model: r.commission_model,
+          rate: r.commission_rate,
+          split: r.margin_split_pct,
+          fixed: r.fixed_commission_amount,
+          valid_from: r.valid_from,
+          valid_until: r.valid_until,
+          source: "product",
+        }));
+      }
+      const { data, error } = await supabase
+        .from("offers")
+        .select("id, commission_model, commission_rate, margin_split_pct, fixed_commission_amount, commission_valid_from, commission_valid_until, commission_override_status")
+        .eq("id", offerId!)
+        .not("commission_model", "is", null)
+        .eq("commission_override_status", "approved");
+      if (error) throw error;
+      return (data ?? []).map((r: any) => ({
+        id: r.id,
+        model: r.commission_model,
+        rate: r.commission_rate,
+        split: r.margin_split_pct,
+        fixed: r.fixed_commission_amount,
+        valid_from: r.commission_valid_from,
+        valid_until: r.commission_valid_until,
+        source: "offer",
+      }));
+    },
+  });
+
+  // Deux intervalles ouverts se chevauchent si from1 < until2 ET from2 < until1
+  // (NULL = ouvert de ce côté)
+  const overlapsWith = (
+    fromA: Date | null, untilA: Date | null,
+    fromB: Date | null, untilB: Date | null,
+  ): boolean => {
+    const aStart = fromA ? fromA.getTime() : -Infinity;
+    const aEnd = untilA ? untilA.getTime() : Infinity;
+    const bStart = fromB ? fromB.getTime() : -Infinity;
+    const bEnd = untilB ? untilB.getTime() : Infinity;
+    return aStart < bEnd && bStart < aEnd;
+  };
+
+  const parseDate = (s: string): Date | null => {
+    if (!s) return null;
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  const overlappingOverrides = useMemo(() => {
+    const newFrom = parseDate(validFrom);
+    const newUntil = parseDate(validUntil);
+    return existingOverrides.filter((ex) =>
+      overlapsWith(
+        newFrom, newUntil,
+        ex.valid_from ? new Date(ex.valid_from) : null,
+        ex.valid_until ? new Date(ex.valid_until) : null,
+      ),
+    );
+  }, [existingOverrides, validFrom, validUntil]);
+
+  const hasOverlap = overlappingOverrides.length > 0;
+
+  // Reset la confirmation dès que la cible ou les dates changent
+  useMemo(() => { setConfirmReplace(false); }, [scope, vendorId, productId, offerId, validFrom, validUntil]);
+
   const reset = () => {
     setVendorId(null); setVendorLabel(""); setVendorQuery("");
     setProductId(null); setProductLabel(""); setProductQuery("");
@@ -166,7 +258,9 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
     setRate(""); setSplit(""); setFixed("");
     setValidFrom(""); setValidUntil(""); setNote("");
     setModel("margin_split");
+    setConfirmReplace(false);
   };
+
 
   const submitMutation = useMutation({
     mutationFn: async () => {

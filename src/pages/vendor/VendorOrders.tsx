@@ -66,6 +66,7 @@ export interface OrderWithLines {
   order_tracking_carrier: string | null;
   shipped_at: string | null;
   notes: string | null;
+  invoices: Array<{ id: string; invoice_number: string | null; status: string | null; hosted_url: string | null; pdf_url: string | null }>;
   lines: (OrderLine & {
     product_name: string;
     product_image: string | null;

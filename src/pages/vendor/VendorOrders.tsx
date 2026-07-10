@@ -1230,6 +1230,32 @@ export function VendorOrderLineRow({
 
           {/* Décomposition économique ligne : Commission MK · Net vendeur · Marge nette (visible sans expand) */}
           <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] rounded-md border border-border bg-muted/10 px-2 py-2">
+            <div className="col-span-2 sm:col-span-4 flex items-center gap-1.5 flex-wrap -mb-0.5">
+              <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
+                Modèle commission :
+              </span>
+              {commissionCfg.commission_model === "flat_percentage" && (
+                <VBadge color="amber">
+                  Taux fixe {fmtPct(commissionCfg.commission_rate ?? 0)} du CA HT
+                </VBadge>
+              )}
+              {commissionCfg.commission_model === "margin_split" && (
+                <VBadge color="violet">
+                  Ventilation de marge · vendeur {fmtPct(commissionCfg.margin_split_pct ?? 0)} /
+                  MediKong {fmtPct(Math.max(0, 100 - (commissionCfg.margin_split_pct ?? 0)))}
+                </VBadge>
+              )}
+              {commissionCfg.commission_model === "fixed_amount" && (
+                <VBadge color="amber">
+                  Montant fixe {fmtEur(commissionCfg.fixed_commission_amount ?? 0)}&nbsp;€/unité
+                </VBadge>
+              )}
+              {commissionCfg.commission_model === "margin_split" && !breakdown.hasCost && (
+                <span className="text-[10.5px] italic text-muted-foreground">
+                  ⓘ ventilation basée sur le coût d'achat — non renseigné, commission calculée à 0
+                </span>
+              )}
+            </div>
             <div>
               <div className="text-muted-foreground">Commission MediKong</div>
               <div className="font-semibold text-amber-700">

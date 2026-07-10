@@ -398,6 +398,32 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
           </DialogDescription>
         </DialogHeader>
 
+        {/* Toggle mode création rapide + compteur session */}
+        <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/30 px-3 py-2">
+          <label htmlFor="cco-quick-mode" className="flex items-center gap-2 cursor-pointer text-sm">
+            <Zap size={14} className={quickMode ? "text-amber-500" : "text-muted-foreground"} />
+            <span className="font-medium">Mode création rapide</span>
+            <span className="text-[11px] text-muted-foreground">
+              conserve modèle + période + note, ne réinitialise que la cible
+            </span>
+          </label>
+          <div className="flex items-center gap-2">
+            {sessionCount > 0 && (
+              <Badge variant="secondary" className="text-[11px]">
+                {sessionCount} créé{sessionCount > 1 ? "s" : ""}
+              </Badge>
+            )}
+            <Switch id="cco-quick-mode" checked={quickMode} onCheckedChange={setQuickMode} />
+          </div>
+        </div>
+        {quickMode && lastCreatedLabel && (
+          <div className="text-[11px] text-muted-foreground -mt-1 px-1">
+            Dernier : <span className="font-medium text-foreground">{lastCreatedLabel}</span> — sélectionnez la prochaine cible pour enchaîner.
+          </div>
+        )}
+
+
+
         <Tabs value={scope} onValueChange={(v) => setScope(v as Scope)}>
           <TabsList className="w-full">
             <TabsTrigger value="product" className="flex-1">Produit (vendeur × produit)</TabsTrigger>

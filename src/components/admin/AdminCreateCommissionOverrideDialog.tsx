@@ -411,7 +411,72 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
             <Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)}
               placeholder="Ex : négociation MediKong, campagne Q3, etc." />
           </div>
+
+          {/* Preview commission effective / marge nette */}
+          {previewEnabled && (
+            <div className="rounded-md border bg-muted/30 p-3 space-y-2">
+              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                <Calculator size={13} /> Prévisualisation
+                {previewLoading && <Loader2 size={12} className="animate-spin" />}
+              </div>
+              {!previewLoading && previewOffers.length === 0 && (
+                <div className="text-xs text-muted-foreground">
+                  {scope === "product"
+                    ? "Ce vendeur n'a pas encore d'offre pour ce produit — l'override s'appliquera dès qu'une offre sera créée."
+                    : "Offre introuvable."}
+                </div>
+              )}
+              {previewOffers.map((o) => {
+                const c = computePreview(o);
+                const netColor =
+                  c.netVendor == null ? "text-muted-foreground"
+                  : c.netVendor < 0 ? "text-destructive"
+                  : "text-emerald-600";
+                return (
+                  <div key={o.id} className="rounded border bg-background p-2 text-xs space-y-1.5">
+                    {scope === "product" && (
+                      <div className="text-[11px] text-muted-foreground truncate">
+                        {o.vendor_label} · {o.product_label}
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-3 gap-y-1">
+                      <PreviewCell label="PV HTVA" value={fmt(c.pv)} />
+                      <PreviewCell label="Prix achat" value={fmt(c.cost)} />
+                      <PreviewCell label="Marge brute" value={fmt(c.grossMargin)} />
+                      <PreviewCell
+                        label="Commission MK"
+                        value={
+                          c.commission == null
+                            ? "—"
+                            : model === "flat_percentage"
+                              ? `${fmt(c.commission)} (${rate || 0}% PV)`
+                              : model === "margin_split"
+                                ? `${fmt(c.commission)} (${100 - Number(split || 0)}% marge)`
+                                : `${fmt(c.commission)} /u.`
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center justify-between pt-1 border-t">
+                      <span className="text-[11px] text-muted-foreground">Marge nette vendeur</span>
+                      <span className={`font-semibold ${netColor}`}>
+                        {fmt(c.netVendor)}{c.netPct != null && ` (${c.netPct.toFixed(1)}%)`}
+                      </span>
+                    </div>
+                    {c.cost == null && (
+                      <Badge variant="outline" className="text-[10px]">
+                        Prix d'achat manquant — marge nette indisponible
+                      </Badge>
+                    )}
+                  </div>
+                );
+              })}
+              <div className="text-[10px] text-muted-foreground italic pt-1">
+                Estimation indicative (hors frais logistique, TVA, remises multi-paliers).
+              </div>
+            </div>
+          )}
         </div>
+
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>

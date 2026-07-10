@@ -420,6 +420,127 @@ export default function VendorOrders() {
     return addr.line1 || `${addr.street || ""} ${addr.postal_code || ""} ${addr.city || ""}`.trim() || "—";
   };
 
+  const exportOrdersCsv = async (rows: OrderWithLines[]) => {
+    if (rows.length === 0) return;
+    const toastId = toast.loading("Génération de l'export CSV…");
+    try {
+      // Résolution commissions par offre (dédoublonnage)
+      const offerIds = [...new Set(rows.flatMap(o => o.lines.map(l => l.offer_id)).filter(Boolean) as string[])];
+      const commissionMap = new Map<string, {
+        model: string;
+        rate: number | null;
+        splitPct: number | null;
+        fixed: number | null;
+      }>();
+      await Promise.all(offerIds.map(async (offerId) => {
+        try {
+          const { data } = await supabase.rpc("resolve_effective_commission", { _offer_id: offerId });
+          const row: any = Array.isArray(data) ? data[0] : data;
+          if (row) {
+            commissionMap.set(offerId, {
+              model: row.commission_model ?? "flat_percentage",
+              rate: row.commission_rate ?? null,
+              splitPct: row.margin_split_pct ?? null,
+              fixed: row.fixed_commission_amount ?? null,
+            });
+          }
+        } catch { /* ignore */ }
+      }));
+
+      const modelLabel = (m: string) => m === "flat_percentage" ? "Taux fixe"
+        : m === "margin_split" ? "Ventilation de marge"
+        : m === "fixed_amount" ? "Montant fixe" : m;
+
+      const escape = (v: unknown) => {
+        if (v === null || v === undefined) return "";
+        const s = String(v).replace(/"/g, '""');
+        return /[",;\n\r]/.test(s) ? `"${s}"` : s;
+      };
+      const num = (n: number) => (Math.round(n * 100) / 100).toFixed(2).replace(".", ",");
+
+      const headers = [
+        "Commande", "Date", "Statut commande",
+        "Produit", "GTIN", "CNK", "SKU",
+        "Quantité", "PU HT (€)", "PU TTC (€)", "TVA (%)",
+        "Total HT (€)", "Total TVA (€)", "Total TTC (€)",
+        "Coût achat unit. (€)",
+        "Modèle commission", "Taux / Split / Montant",
+        "Commission MK unit. (€)", "Commission MK total (€)",
+        "Net vendeur unit. (€)", "Net vendeur total (€)",
+        "Marge brute total (€)", "Marge nette total (€)",
+        "Statut ligne", "Tracking",
+      ];
+
+      const csvRows: string[] = [headers.map(escape).join(";")];
+
+      for (const order of rows) {
+        for (const l of order.lines) {
+          const cfg = commissionMap.get(l.offer_id) ?? { model: "flat_percentage", rate: null, splitPct: null, fixed: null };
+          const breakdown = computeMargin(l.unit_price_excl_vat, l.cost_price, {
+            commission_model: cfg.model as any,
+            commission_rate: cfg.rate,
+            margin_split_pct: cfg.splitPct,
+            fixed_commission_amount: cfg.fixed,
+          });
+          const qty = l.quantity;
+          const totalHT = l.line_total_excl_vat;
+          const totalTTC = totalHT * (1 + (l.vat_rate || 0) / 100);
+          const totalTVA = totalTTC - totalHT;
+          const puTTC = l.unit_price_excl_vat * (1 + (l.vat_rate || 0) / 100);
+          const rateLabel =
+            cfg.model === "flat_percentage" ? `${cfg.rate ?? 0}%`
+            : cfg.model === "margin_split" ? `vendeur ${cfg.splitPct ?? 0}% / MK ${Math.max(0, 100 - (cfg.splitPct ?? 0))}%`
+            : cfg.model === "fixed_amount" ? `${num(cfg.fixed ?? 0)} €/u`
+            : "";
+
+          csvRows.push([
+            order.order_number,
+            new Date(order.order_date).toISOString(),
+            statusConfig[order.order_status]?.label ?? order.order_status,
+            l.product_name,
+            l.product_gtin ?? "",
+            l.product_cnk ?? "",
+            (l as any).sku ?? "",
+            qty,
+            num(l.unit_price_excl_vat),
+            num(puTTC),
+            l.vat_rate,
+            num(totalHT),
+            num(totalTVA),
+            num(totalTTC),
+            l.cost_price != null ? num(l.cost_price) : "",
+            modelLabel(cfg.model),
+            rateLabel,
+            num(breakdown.commission),
+            num(breakdown.commission * qty),
+            num(breakdown.netRevenue),
+            num(breakdown.netRevenue * qty),
+            breakdown.hasCost ? num(breakdown.grossMargin * qty) : "",
+            breakdown.hasCost ? num(breakdown.netMargin * qty) : "",
+            statusConfig[l.fulfillment_status]?.label ?? l.fulfillment_status,
+            l.tracking_number ?? "",
+          ].map(escape).join(";"));
+        }
+      }
+
+      const csv = "\uFEFF" + csvRows.join("\r\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const ts = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `commandes-vendeur-${ts}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success(`Export CSV généré (${csvRows.length - 1} lignes)`, { id: toastId });
+    } catch (e: any) {
+      toast.error(`Export CSV échoué — ${e?.message || "erreur inconnue"}`, { id: toastId });
+    }
+  };
+
 
   const statusTabs: { key: string; label: string; count: number; icon: any; color: string }[] = [
     { key: "all",        label: "Toutes",       count: kpis.total,     icon: ShoppingCart,  color: "text-foreground" },
@@ -510,6 +631,15 @@ export default function VendorOrders() {
             Réinitialiser
           </Button>
         )}
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 text-[12px] gap-1.5"
+          onClick={() => exportOrdersCsv(visibleOrders)}
+          disabled={visibleOrders.length === 0}
+        >
+          <Download size={12} /> Exporter CSV
+        </Button>
       </div>
 
       {visibleOrders.length === 0 ? (

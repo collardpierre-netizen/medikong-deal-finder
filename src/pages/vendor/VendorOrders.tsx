@@ -1297,7 +1297,7 @@ export function VendorOrderLineRow({
   );
 }
 
-function VendorOrderPdfButton({ orderId, orderNumber }: { orderId: string; orderNumber: string }) {
+export function VendorOrderPdfButton({ orderId, orderNumber }: { orderId: string; orderNumber: string }) {
   const gen = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke("generate-vendor-order-pdf", {

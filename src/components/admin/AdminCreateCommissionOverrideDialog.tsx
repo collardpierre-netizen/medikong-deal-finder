@@ -15,6 +15,8 @@ import { Plus, ShieldCheck, Search, Loader2, Calculator, AlertTriangle } from "l
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Zap } from "lucide-react";
 
 type Model = "flat_percentage" | "margin_split" | "fixed_amount";
 type Scope = "product" | "offer";

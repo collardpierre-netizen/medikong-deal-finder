@@ -193,6 +193,7 @@ const AdminCmsHomeShowcase = lazyWithRetry(() => import("./pages/admin/AdminCmsH
 const AdminMedia = lazyWithRetry(() => import("./pages/admin/AdminMedia"), "AdminMedia");
 const AdminMediaLibrary = lazyWithRetry(() => import("./pages/admin/AdminMediaLibrary"), "AdminMediaLibrary");
 const AdminUnmappedCategories = lazyWithRetry(() => import("./pages/admin/AdminUnmappedCategories"), "AdminUnmappedCategories");
+const AdminCategoryAliases = lazyWithRetry(() => import("./pages/admin/AdminCategoryAliases"), "AdminCategoryAliases");
 const AdminSourcingPipeline = lazyWithRetry(() => import("./pages/admin/AdminSourcingPipeline"), "AdminSourcingPipeline");
 const AdminCategoryAnomalies = lazyWithRetry(() => import("./pages/admin/AdminCategoryAnomalies"), "AdminCategoryAnomalies");
 const AdminCategoryAnomalyDetail = lazyWithRetry(() => import("./pages/admin/AdminCategoryAnomalyDetail"), "AdminCategoryAnomalyDetail");
@@ -562,6 +563,7 @@ const App = () => (
               <Route path="media-library" element={<LP><AdminMediaLibrary /></LP>} />
               <Route path="cms/partenaires-invest" element={<LP><AdminCmsPartnerLogos /></LP>} />
               <Route path="categories/non-mappees" element={<LP><AdminUnmappedCategories /></LP>} />
+              <Route path="categories/aliases" element={<LP><AdminCategoryAliases /></LP>} />
               <Route path="sourcing/pipeline" element={<LP><AdminSourcingPipeline /></LP>} />
               <Route path="categories/anomalies" element={<LP><AdminCategoryAnomalies /></LP>} />
               <Route path="categories/anomalies/:id" element={<LP><AdminCategoryAnomalyDetail /></LP>} />

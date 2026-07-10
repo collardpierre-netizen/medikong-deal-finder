@@ -7,6 +7,7 @@ import { VBadge } from "@/components/vendor/ui/VBadge";
 import { VEmptyState } from "@/components/vendor/ui/VEmptyState";
 import { ShoppingCart, PackageCheck, Loader2, ChevronDown, ChevronUp, Truck, ExternalLink, Package, X, Check, Pencil, Search, Clock, AlertCircle, CheckCircle2, Ban, ArrowUpDown, User, MapPin, CreditCard, Barcode, FileText, Calculator, Mail, Phone, Download } from "lucide-react";
 import { useEffectiveCommission } from "@/hooks/useEffectiveCommission";
+import { useResyncOnReconnect } from "@/hooks/useResyncOnReconnect";
 import { computeMargin, fmtPct } from "@/lib/vendorMargin";
 import { MarginBreakdownDetails } from "@/components/vendor/MarginBreakdownDetails";
 import { Button } from "@/components/ui/button";

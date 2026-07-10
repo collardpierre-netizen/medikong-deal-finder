@@ -220,14 +220,18 @@ export function MarginBreakdownDetails({
                 {sourceMeta && (
                   <Row
                     label="↳ Source de la commission"
-                    value={
-                      effective?.valid_until
-                        ? `${sourceMeta.label} · valide jusqu'au ${new Date(effective.valid_until).toLocaleDateString("fr-FR")}`
-                        : sourceMeta.label
-                    }
+                    value={(() => {
+                      const base = viaAdminShortcut ? sourceMeta.adminLabel : sourceMeta.label;
+                      const admin = viaAdminShortcut ? " · créé via raccourci admin MediKong" : "";
+                      const until = effective?.valid_until
+                        ? ` · valide jusqu'au ${new Date(effective.valid_until).toLocaleDateString("fr-FR")}`
+                        : "";
+                      return `${base}${admin}${until}`;
+                    })()}
                     muted
                   />
                 )}
+
                 <Row
                   label="= Net en poche"
                   value={fmtEur(breakdown.netRevenue)}

@@ -712,6 +712,16 @@ export default function VendorOrders() {
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-bold text-foreground">{order.order_number}</span>
+                      {(() => {
+                        const cfg = statusConfig[order.order_status];
+                        if (!cfg) return null;
+                        return <VBadge color={cfg.color}>{cfg.label}</VBadge>;
+                      })()}
+                      {(() => {
+                        const bs = computeBillingStatus(order);
+                        if (!bs) return null;
+                        return <VBadge color={bs.color} title={bs.title}>{bs.label}</VBadge>;
+                      })()}
                       {hasQogita && (
                         <VBadge color={allForwarded ? "success" : "warning"}>
                           {allForwarded ? "Fournisseur transmis" : "À transmettre au fournisseur"}

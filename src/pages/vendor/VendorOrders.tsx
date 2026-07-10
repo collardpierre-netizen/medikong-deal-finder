@@ -378,19 +378,18 @@ export default function VendorOrders() {
   });
 
   // ---- KPIs sur tout le portefeuille (avant filtres) ----
+  // Alignés sur orders.status (vue admin/CMS), plus sur fulfillment_status ligne.
   const kpis = useMemo(() => {
     const acc = { total: 0, toTreat: 0, processing: 0, shipped: 0, delivered: 0, cancelled: 0, revenueHT: 0 };
     for (const o of orders ?? []) {
-      for (const l of o.lines) {
-        acc.total += 1;
-        acc.revenueHT += l.line_total_excl_vat || 0;
-        const s = l.fulfillment_status;
-        if (s === "pending") acc.toTreat += 1;
-        else if (s === "processing" || s === "forwarded") acc.processing += 1;
-        else if (s === "shipped") acc.shipped += 1;
-        else if (s === "delivered") acc.delivered += 1;
-        else if (s === "cancelled") acc.cancelled += 1;
-      }
+      acc.total += 1;
+      for (const l of o.lines) acc.revenueHT += l.line_total_excl_vat || 0;
+      const s = o.order_status;
+      if (s === "pending" || s === "confirmed") acc.toTreat += 1;
+      else if (s === "processing" || s === "partially_shipped") acc.processing += 1;
+      else if (s === "shipped") acc.shipped += 1;
+      else if (s === "delivered") acc.delivered += 1;
+      else if (s === "cancelled") acc.cancelled += 1;
     }
     return acc;
   }, [orders]);

@@ -224,7 +224,7 @@ Deno.serve(async (req) => {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10.5);
     doc.setTextColor(...NAVY);
-    const shipName = ship.label || ship.name || ship.company || buyer?.company_name || "—";
+    const shipName = ship.label || ship.name || ship.company || buyer?.company_name || "Raison sociale non renseignée";
     doc.text(String(shipName), cardX + 4, y + 11);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8.5);

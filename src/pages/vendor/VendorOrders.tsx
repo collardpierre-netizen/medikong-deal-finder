@@ -1138,8 +1138,8 @@ function paymentMethodLabel(m: string | null): string {
 
 function paymentStatusColor(s: string | null): "success" | "warning" | "info" | "default" {
   if (s === "paid") return "success";
-  if (s === "pending") return "warning";
-  if (s === "failed" || s === "refunded") return "default";
+  if (s === "pending" || s === "overdue" || s === "partially_paid") return "warning";
+  if (s === "failed" || s === "refunded" || s === "partially_refunded") return "default";
   return "info";
 }
 
@@ -1148,6 +1148,8 @@ function paymentStatusLabel(s: string | null): string {
   const map: Record<string, string> = {
     paid: "Payé",
     pending: "En attente",
+    overdue: "En retard",
+    partially_paid: "Partiel",
     failed: "Échec",
     refunded: "Remboursé",
     partially_refunded: "Remb. partiel",
@@ -1306,9 +1308,32 @@ export function OrderInfoBlocks({ order }: { order: OrderWithLines }) {
           </div>
           <div className="mt-1 flex items-center gap-2 flex-wrap">
             <span className="text-[13px] text-foreground">{paymentMethodLabel(order.payment_method)}</span>
-            <VBadge color={paymentStatusColor(order.payment_status)}>
-              {paymentStatusLabel(order.payment_status)}
-            </VBadge>
+            {(() => {
+              // Badge unifié : combine order_invoices + orders.payment_status
+              // (miroir de la vue admin, cf. computeBillingStatus).
+              const billing = computeBillingStatus(order);
+              if (billing) {
+                return (
+                  <span title={billing.title}>
+                    <VBadge color={billing.color}>{billing.label}</VBadge>
+                  </span>
+                );
+              }
+              return (
+                <VBadge color={paymentStatusColor(order.payment_status)}>
+                  {paymentStatusLabel(order.payment_status)}
+                </VBadge>
+              );
+            })()}
+            {/* Statut brut payment_status en second si distinct pour transparence */}
+            {order.payment_status && order.payment_status !== "paid" && (order.invoices?.length ?? 0) > 0 && (
+              <span
+                className="text-[10px] text-muted-foreground"
+                title="Statut brut orders.payment_status"
+              >
+                · {paymentStatusLabel(order.payment_status)}
+              </span>
+            )}
           </div>
           {order.payment_due_date && (
             <div className="mt-0.5 text-[11px] text-muted-foreground">

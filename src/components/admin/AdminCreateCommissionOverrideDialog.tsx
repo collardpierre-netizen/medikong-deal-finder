@@ -37,6 +37,7 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
   const [validFrom, setValidFrom] = useState("");
   const [validUntil, setValidUntil] = useState("");
   const [note, setNote] = useState("");
+  const [confirmReplace, setConfirmReplace] = useState(false);
 
   // scope=product : vendor + product
   const [vendorQuery, setVendorQuery] = useState("");

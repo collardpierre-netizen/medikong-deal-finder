@@ -539,6 +539,59 @@ Deno.serve(async (req) => {
       doc.setFont("helvetica", "normal");
     }
 
+    // ─── Récapitulatif financier vendeur ───────────────────────────────
+    if (y > pageH - 50) { doc.addPage(); y = 20; }
+    const summaryW = pageW - 2 * M;
+    const summaryH = 44;
+    doc.setFillColor(...SOFT);
+    doc.setDrawColor(...LINE);
+    doc.roundedRect(M, y, summaryW, summaryH, 1.5, 1.5, "FD");
+    doc.setFillColor(...BRAND);
+    doc.rect(M, y, summaryW, 8, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(255, 255, 255);
+    doc.text("RÉCAPITULATIF FINANCIER VENDEUR", M + 5, y + 5);
+
+    const valX = M + summaryW - 5;
+    let sy = y + 13;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...MUTED);
+    doc.text("Total HT", M + 5, sy);
+    doc.setTextColor(...NAVY);
+    doc.text(fmtEur(Math.round(totalHt * 100), currency), valX, sy, { align: "right" });
+    sy += 5.5;
+
+    doc.setTextColor(...MUTED);
+    doc.text("TVA", M + 5, sy);
+    doc.setTextColor(...NAVY);
+    doc.text(fmtEur(Math.round(totalTva * 100), currency), valX, sy, { align: "right" });
+    sy += 5.5;
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...NAVY);
+    doc.text("Total TTC", M + 5, sy);
+    doc.text(fmtEur(Math.round(totalTtc * 100), currency), valX, sy, { align: "right" });
+    sy += 7;
+
+    doc.setDrawColor(...LINE);
+    doc.line(M + 5, sy - 2, M + summaryW - 5, sy - 2);
+    sy += 4;
+
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(180, 83, 9);
+    doc.text("Commission totale MediKong", M + 5, sy);
+    doc.text(fmtEur(Math.round(totalCommission * 100), currency), valX, sy, { align: "right" });
+    sy += 5.5;
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...BRAND);
+    doc.text("Net vendeur total", M + 5, sy);
+    doc.text(fmtEur(Math.round(totalNet * 100), currency), valX, sy, { align: "right" });
+
+    y += summaryH + 6;
+
     // Footer
     const pageCount = (doc as any).internal.getNumberOfPages();
     for (let p = 1; p <= pageCount; p++) {

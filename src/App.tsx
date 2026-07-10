@@ -498,6 +498,7 @@ const App = () => (
               <Route path="produits/mapping" element={<LP><AdminSourceMapping /></LP>} />
               <Route path="produits-soumis" element={<LP><AdminProductSubmissions /></LP>} />
               <Route path="produits/:id" element={<LP><AdminProduitDetail /></LP>} />
+              <Route path="produits/doublons" element={<LP><AdminProductDuplicates /></LP>} />
               <Route path="categories" element={<LP><AdminCategories /></LP>} />
               <Route path="marques" element={<LP><AdminMarques /></LP>} />
               <Route path="marques/doublons" element={<LP><AdminBrandDuplicates /></LP>} />

@@ -304,35 +304,54 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
     onError: (e: any) => toast.error(e.message ?? "Erreur"),
   });
 
-  const validate = (): string | null => {
+  type Errors = Partial<Record<"rate" | "split" | "fixed" | "validFrom" | "validUntil" | "range", string>>;
+
+  const errors = useMemo<Errors>(() => {
+    const e: Errors = {};
     if (model === "flat_percentage") {
-      if (rate === "" || isNaN(Number(rate)) || Number(rate) < 0 || Number(rate) > 50)
-        return "Taux entre 0 et 50 %";
+      const v = Number(rate);
+      if (rate === "" || isNaN(v) || v < 0 || v > 50) e.rate = "Taux entre 0 et 50 %";
     }
     if (model === "margin_split") {
-      if (split === "" || isNaN(Number(split)) || Number(split) < 0 || Number(split) > 100)
-        return "Part vendeur entre 0 et 100 %";
+      const v = Number(split);
+      if (split === "" || isNaN(v) || v < 0 || v > 100) e.split = "Part vendeur entre 0 et 100 %";
     }
     if (model === "fixed_amount") {
-      if (fixed === "" || isNaN(Number(fixed)) || Number(fixed) < 0)
-        return "Montant ≥ 0";
+      const v = Number(fixed);
+      if (fixed === "" || isNaN(v) || v < 0) e.fixed = "Montant ≥ 0";
     }
-    if (validFrom && validUntil && new Date(validUntil) <= new Date(validFrom)) {
-      return "La fin doit être postérieure au début";
+    const dFrom = parseDate(validFrom);
+    const dUntil = parseDate(validUntil);
+    if (validFrom && !dFrom) e.validFrom = "Date invalide";
+    if (validUntil && !dUntil) e.validUntil = "Date invalide";
+    if (dFrom && dUntil && dUntil.getTime() <= dFrom.getTime()) {
+      e.range = "La date de fin doit être strictement postérieure à la date de début";
     }
-    return null;
-  };
+    return e;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [model, rate, split, fixed, validFrom, validUntil]);
+
+  const hasErrors = Object.keys(errors).length > 0;
 
   const canSubmit = useMemo(() => {
-    if (scope === "product") return !!vendorId && !!productId;
-    return !!offerId;
-  }, [scope, vendorId, productId, offerId]);
+    const targetOk = scope === "product" ? !!vendorId && !!productId : !!offerId;
+    if (!targetOk || hasErrors) return false;
+    if (hasOverlap && !confirmReplace) return false;
+    return true;
+  }, [scope, vendorId, productId, offerId, hasErrors, hasOverlap, confirmReplace]);
 
   const onSubmit = () => {
-    const err = validate();
-    if (err) { toast.error(err); return; }
+    if (hasErrors) {
+      toast.error(Object.values(errors)[0]!);
+      return;
+    }
+    if (hasOverlap && !confirmReplace) {
+      toast.error("Confirmez le remplacement de l'override existant");
+      return;
+    }
     submitMutation.mutate();
   };
+
 
   return (
     <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>

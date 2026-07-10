@@ -109,7 +109,8 @@ export function useVendorMonthlyDashboard(
       const { data, error } = await supabase
         .from("order_lines")
         .select(
-          `line_total_incl_vat, line_total_excl_vat, line_margin, commission_amount,
+          `product_id, quantity, line_total_incl_vat, line_total_excl_vat, line_margin, commission_amount,
+           products:product_id ( name ),
            orders!inner ( ${VENDOR_GMV_ORDER_COLUMNS},
                           customers:customer_id ( customer_type ) )`,
         )
@@ -122,27 +123,47 @@ export function useVendorMonthlyDashboard(
 
       const billable = (data ?? []).filter((l: any) => isBillableOrder(l.orders));
 
-
-
       const toCents = (v: unknown) => Math.round(Number(v ?? 0) * 100);
 
       let gmvCents = 0;
       let revenueExclVatCents = 0;
       let grossMarginCents = 0;
       let commissionCents = 0;
-      const daily = new Array(dayCount).fill(0);
+      const daily = Array.from({ length: dayCount }, () => ({
+        revenue: 0,
+        commission: 0,
+        netMargin: 0,
+      }));
       const perType = new Map<string, number>();
       const orderIds = new Set<string>();
+      const perProduct = new Map<
+        string,
+        {
+          productId: string;
+          productName: string;
+          quantity: number;
+          revenueCents: number;
+          commissionCents: number;
+          netMarginCents: number;
+          costKnown: boolean;
+        }
+      >();
 
       for (const l of billable as any[]) {
         const incl = Number(l.line_total_incl_vat ?? 0);
         const excl = Number(l.line_total_excl_vat ?? 0);
         const margin = Number(l.line_margin ?? 0);
         const commission = Number(l.commission_amount ?? 0);
-        gmvCents += toCents(incl);
-        revenueExclVatCents += toCents(excl);
-        grossMarginCents += toCents(margin);
-        commissionCents += toCents(commission);
+        const qty = Number(l.quantity ?? 0);
+        const inclC = toCents(incl);
+        const exclC = toCents(excl);
+        const marginC = toCents(margin);
+        const commC = toCents(commission);
+        const netC = marginC - commC;
+        gmvCents += inclC;
+        revenueExclVatCents += exclC;
+        grossMarginCents += marginC;
+        commissionCents += commC;
 
         const oid = l.orders?.id;
         if (oid) orderIds.add(oid);
@@ -153,26 +174,64 @@ export function useVendorMonthlyDashboard(
             (createdAt.getTime() - start.getTime()) / (24 * 3600 * 1000),
           );
           if (dayIdx >= 0 && dayIdx < dayCount) {
-            daily[dayIdx] += toCents(excl);
+            daily[dayIdx].revenue += exclC;
+            daily[dayIdx].commission += commC;
+            daily[dayIdx].netMargin += netC;
           }
         }
         const t = l.orders?.customers?.customer_type || "other";
-        perType.set(t, (perType.get(t) || 0) + toCents(incl));
+        perType.set(t, (perType.get(t) || 0) + inclC);
+
+        const pid = l.product_id as string | null;
+        if (pid) {
+          const prev = perProduct.get(pid) ?? {
+            productId: pid,
+            productName: l.products?.name || "Produit",
+            quantity: 0,
+            revenueCents: 0,
+            commissionCents: 0,
+            netMarginCents: 0,
+            costKnown: false,
+          };
+          prev.quantity += qty;
+          prev.revenueCents += exclC;
+          prev.commissionCents += commC;
+          prev.netMarginCents += netC;
+          if (marginC !== 0) prev.costKnown = true;
+          perProduct.set(pid, prev);
+        }
       }
 
       const netMarginCents = grossMarginCents - commissionCents;
-      const dailySeries = daily.map((cents: number, i: number) => {
-        const d = new Date(start.getTime() + i * 24 * 3600 * 1000);
+      const dailySeries = daily.map((d, i) => {
+        const dt = new Date(start.getTime() + i * 24 * 3600 * 1000);
         return {
           day: i + 1,
-          date: d.toISOString().slice(0, 10),
-          revenueCents: cents,
+          date: dt.toISOString().slice(0, 10),
+          revenueCents: d.revenue,
+          commissionCents: d.commission,
+          netMarginCents: d.netMargin,
         };
       });
 
       const customerTypeBreakdown: CustomerTypeSlice[] = Array.from(perType.entries())
         .map(([type, amountCents]) => ({ type, amountCents }))
         .sort((a, b) => b.amountCents - a.amountCents);
+
+      const topProducts: TopProductSlice[] = Array.from(perProduct.values())
+        .map((p) => ({
+          productId: p.productId,
+          productName: p.productName,
+          quantity: p.quantity,
+          revenueCents: p.revenueCents,
+          commissionCents: p.commissionCents,
+          netMarginCents: p.netMarginCents,
+          hasCost: p.costKnown,
+        }))
+        .sort((a, b) => b.revenueCents - a.revenueCents)
+        .slice(0, 8);
+
+      const avgBasketCents = orderIds.size > 0 ? Math.round(revenueExclVatCents / orderIds.size) : 0;
 
       return {
         gmvCents,
@@ -181,8 +240,10 @@ export function useVendorMonthlyDashboard(
         commissionCents,
         netMarginCents,
         ordersCount: orderIds.size,
+        avgBasketCents,
         dailySeries,
         customerTypeBreakdown,
+        topProducts,
       };
     },
   });

@@ -855,3 +855,396 @@ function CancelLineDialog({
     </Dialog>
   );
 }
+
+// ============================================================
+// Info blocks (acheteur / livraison / facturation / paiement / suivi)
+// ============================================================
+function formatFullAddress(addr: any): string {
+  if (!addr) return "—";
+  if (typeof addr === "string") return addr;
+  const parts = [
+    addr.address_l1 || addr.line1 || addr.street,
+    addr.address_l2 || addr.line2,
+    [addr.postal_code, addr.city].filter(Boolean).join(" "),
+    addr.country_code || addr.country,
+  ].filter(Boolean);
+  return parts.length ? parts.join(" · ") : "—";
+}
+
+function paymentMethodLabel(m: string | null): string {
+  if (!m) return "—";
+  const map: Record<string, string> = {
+    card: "Carte bancaire",
+    bank_transfer: "Virement bancaire",
+    invoice: "Facture (paiement différé)",
+    check: "Chèque",
+    cash: "Espèces",
+  };
+  return map[m] || m;
+}
+
+function paymentStatusColor(s: string | null): "success" | "warning" | "info" | "default" {
+  if (s === "paid") return "success";
+  if (s === "pending") return "warning";
+  if (s === "failed" || s === "refunded") return "default";
+  return "info";
+}
+
+function paymentStatusLabel(s: string | null): string {
+  if (!s) return "—";
+  const map: Record<string, string> = {
+    paid: "Payé",
+    pending: "En attente",
+    failed: "Échec",
+    refunded: "Remboursé",
+    partially_refunded: "Remb. partiel",
+    processing: "En cours",
+  };
+  return map[s] || s;
+}
+
+function OrderInfoBlocks({ order }: { order: OrderWithLines }) {
+  const ship = order.shipping_address || {};
+  const bill = order.billing_address || {};
+  const shipName = (ship as any).label || (ship as any).name || (ship as any).company || "Acheteur";
+  const billName = (bill as any).label || (bill as any).name || (bill as any).company;
+  const billDiffers = billName && (billName !== shipName || formatFullAddress(bill) !== formatFullAddress(ship));
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 bg-muted/20 border-b border-border">
+      {/* Acheteur / livraison */}
+      <div className="rounded-lg border border-border bg-card p-3">
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <MapPin size={12} /> Livraison
+        </div>
+        <div className="mt-1.5 text-[13px] font-semibold text-foreground">{shipName}</div>
+        <div className="mt-0.5 text-[12px] text-muted-foreground leading-relaxed">
+          {formatFullAddress(ship)}
+        </div>
+        {(ship as any).phone && (
+          <div className="mt-1 text-[11px] text-muted-foreground">Tél. {(ship as any).phone}</div>
+        )}
+      </div>
+
+      {/* Facturation */}
+      <div className="rounded-lg border border-border bg-card p-3">
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <User size={12} /> Facturation
+        </div>
+        {billDiffers ? (
+          <>
+            <div className="mt-1.5 text-[13px] font-semibold text-foreground">{billName}</div>
+            <div className="mt-0.5 text-[12px] text-muted-foreground leading-relaxed">
+              {formatFullAddress(bill)}
+            </div>
+            {(bill as any).vat_number && (
+              <div className="mt-1 text-[11px] text-muted-foreground">TVA : {(bill as any).vat_number}</div>
+            )}
+          </>
+        ) : (
+          <div className="mt-1.5 text-[12px] text-muted-foreground italic">Identique à la livraison</div>
+        )}
+      </div>
+
+      {/* Paiement + suivi commande */}
+      <div className="rounded-lg border border-border bg-card p-3 space-y-2">
+        <div>
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <CreditCard size={12} /> Paiement
+          </div>
+          <div className="mt-1 flex items-center gap-2 flex-wrap">
+            <span className="text-[13px] text-foreground">{paymentMethodLabel(order.payment_method)}</span>
+            <VBadge color={paymentStatusColor(order.payment_status)}>
+              {paymentStatusLabel(order.payment_status)}
+            </VBadge>
+          </div>
+          {order.payment_due_date && (
+            <div className="mt-0.5 text-[11px] text-muted-foreground">
+              Échéance : {format(new Date(order.payment_due_date), "dd MMM yyyy", { locale: fr })}
+            </div>
+          )}
+        </div>
+
+        {(order.order_tracking_number || order.order_tracking_url) && (
+          <div className="pt-2 border-t border-border">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <Truck size={12} /> Suivi (commande)
+            </div>
+            <div className="mt-1 text-[12px] text-foreground">
+              {order.order_tracking_carrier && <span className="mr-1">{order.order_tracking_carrier}</span>}
+              {order.order_tracking_url ? (
+                <a href={order.order_tracking_url} target="_blank" rel="noreferrer" className="underline hover:text-primary inline-flex items-center gap-1">
+                  {order.order_tracking_number || "Lien de suivi"}
+                  <ExternalLink size={11} />
+                </a>
+              ) : (
+                <span className="font-mono">{order.order_tracking_number}</span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {order.notes && (
+          <div className="pt-2 border-t border-border">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <FileText size={12} /> Note acheteur
+            </div>
+            <div className="mt-1 text-[12px] text-muted-foreground italic line-clamp-3">{order.notes}</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Ligne détaillée (prix, TVA, marge nette avec commission effective)
+// ============================================================
+type LineWithProduct = OrderWithLines["lines"][number];
+
+function VendorOrderLineRow({
+  line,
+  order,
+  onShip,
+  onCancel,
+  onRevert,
+  onAccept,
+  onForward,
+  onDeliver,
+  acceptPending,
+  forwardPending,
+  deliverPending,
+}: {
+  line: LineWithProduct;
+  order: OrderWithLines;
+  onShip: (l: LineWithProduct) => void;
+  onCancel: (l: LineWithProduct) => void;
+  onRevert: (payload: { lineId: string; from: string; to: string }) => void;
+  onAccept: (l: LineWithProduct) => void;
+  onForward: (l: LineWithProduct) => void;
+  onDeliver: (l: LineWithProduct) => void;
+  acceptPending: boolean;
+  forwardPending: boolean;
+  deliverPending: boolean;
+}) {
+  const [showMargin, setShowMargin] = useState(false);
+  const status = statusConfig[line.fulfillment_status] || statusConfig.pending;
+  const isQogita = line.fulfillment_type === "qogita";
+  const canForward = isQogita && line.fulfillment_status === "pending";
+  const canAccept = !isQogita && line.fulfillment_status === "pending";
+  const canShip = !isQogita && (line.fulfillment_status === "pending" || line.fulfillment_status === "processing");
+  const canDeliver = !isQogita && line.fulfillment_status === "shipped";
+  const canCancel = !isQogita && ["pending", "processing"].includes(line.fulfillment_status);
+  const remaining = line.quantity - (line.quantity_shipped || 0);
+
+  const { data: effectiveCommission } = useEffectiveCommission(line.offer_id);
+  const commissionCfg = effectiveCommission ?? {
+    commission_model: "flat_percentage" as const,
+    commission_rate: null,
+    margin_split_pct: null,
+    fixed_commission_amount: null,
+  };
+  const breakdown = computeMargin(line.unit_price_excl_vat, line.cost_price, commissionCfg);
+
+  return (
+    <div className="px-4 py-3">
+      <div className="flex items-start gap-3">
+        <div className="w-12 h-12 rounded bg-muted/30 shrink-0 overflow-hidden border border-border">
+          {line.product_image ? (
+            <img src={line.product_image} alt="" className="w-full h-full object-contain" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+              <PackageCheck size={16} />
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="text-[13px] font-medium text-foreground">{line.product_name}</div>
+          {(line.product_gtin || line.product_cnk) && (
+            <div className="mt-0.5 flex items-center gap-2 flex-wrap text-[10.5px] text-muted-foreground">
+              {line.product_gtin && (
+                <span className="inline-flex items-center gap-1"><Barcode size={10} /> EAN {line.product_gtin}</span>
+              )}
+              {line.product_cnk && (
+                <span className="inline-flex items-center gap-1">CNK {line.product_cnk}</span>
+              )}
+            </div>
+          )}
+
+          {/* Grille prix */}
+          <div className="mt-2 grid grid-cols-2 sm:grid-cols-5 gap-2 text-[11px]">
+            <div>
+              <div className="text-muted-foreground">Qté</div>
+              <div className="font-semibold text-foreground">
+                {line.quantity}
+                {line.quantity_shipped ? <span className="text-muted-foreground font-normal"> · exp. {line.quantity_shipped}</span> : null}
+              </div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">PU HT</div>
+              <div className="font-semibold text-foreground">{fmtEur(line.unit_price_excl_vat)}&nbsp;€</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">PU TTC</div>
+              <div className="font-semibold text-foreground">{fmtEur(line.unit_price_incl_vat)}&nbsp;€</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">TVA</div>
+              <div className="font-semibold text-foreground">{Number(line.vat_rate || 0).toFixed(0)} %</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Total HT</div>
+              <div className="font-semibold text-foreground">{fmtEur(line.line_total_excl_vat)}&nbsp;€</div>
+            </div>
+          </div>
+
+          {/* Marge nette (résumé + toggle détails) */}
+          <div className="mt-2 rounded-md border border-border bg-muted/10 px-2 py-1.5">
+            <button
+              type="button"
+              onClick={() => setShowMargin((v) => !v)}
+              className="w-full flex items-center justify-between gap-2 text-[11px]"
+            >
+              <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                <Calculator size={11} /> Marge nette / u.
+              </span>
+              <span className="flex items-center gap-2">
+                {!breakdown.hasCost ? (
+                  <span className="text-muted-foreground italic">coût non renseigné</span>
+                ) : (
+                  <>
+                    <span className={`font-semibold ${breakdown.netMargin >= 0 ? "text-emerald-700" : "text-destructive"}`}>
+                      {fmtEur(breakdown.netMargin)}&nbsp;€
+                    </span>
+                    <span className="text-muted-foreground">({fmtPct(breakdown.netMarginPct)})</span>
+                  </>
+                )}
+                {showMargin ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+              </span>
+            </button>
+            {showMargin && (
+              <div className="mt-2">
+                <MarginBreakdownDetails
+                  breakdown={breakdown}
+                  commissionModel={commissionCfg.commission_model}
+                  commissionRate={commissionCfg.commission_rate}
+                  marginSplitPct={commissionCfg.margin_split_pct}
+                  fixedCommissionAmount={commissionCfg.fixed_commission_amount}
+                  offerId={line.offer_id}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Tracking ligne */}
+          {line.tracking_number && (
+            <div className="mt-2 text-[11px] text-foreground flex items-center gap-1.5">
+              <Truck size={12} className="text-muted-foreground" />
+              <span className="text-muted-foreground">Suivi ligne :</span>
+              {line.tracking_url ? (
+                <a href={line.tracking_url} target="_blank" rel="noreferrer" className="underline hover:text-primary inline-flex items-center gap-1">
+                  {line.tracking_number}
+                  <ExternalLink size={10} />
+                </a>
+              ) : (
+                <span className="font-mono">{line.tracking_number}</span>
+              )}
+            </div>
+          )}
+
+          {line.cancellation_reason && (
+            <div className="mt-2 p-1.5 rounded bg-destructive/10 text-[11px] text-destructive">
+              Motif annulation : {line.cancellation_reason}
+              {line.refunded_amount_incl_vat != null && (
+                <span className="ml-1">· Remboursé {fmtEur(line.refunded_amount_incl_vat)}&nbsp;€ TTC</span>
+              )}
+            </div>
+          )}
+
+          {isQogita && (
+            <div className="mt-2 p-2 rounded bg-muted/30 text-[11px] space-y-0.5">
+              <div className="font-semibold text-muted-foreground">Détails fournisseur Qogita :</div>
+              {line.qogita_seller_fid && (
+                <div>Vendeur : <span className="font-mono text-foreground">{line.qogita_seller_fid}</span></div>
+              )}
+              {line.qogita_offer_qid && (
+                <div>Réf. offre : <span className="font-mono text-foreground">{line.qogita_offer_qid}</span></div>
+              )}
+              {line.cost_price != null && (
+                <div>Prix d'achat : <span className="font-semibold text-foreground">{fmtEur(line.cost_price)}&nbsp;€</span></div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          <VBadge color={status.color}>{status.label}</VBadge>
+          {(() => {
+            const workflow = isQogita ? ["forwarded"] : ["processing", "shipped", "delivered"];
+            const idx = workflow.indexOf(line.fulfillment_status);
+            const previous = idx > 0 ? workflow.slice(0, idx) : [];
+            if (previous.length === 0) return null;
+            return (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="text-[10px] text-muted-foreground hover:text-primary inline-flex items-center gap-1 underline underline-offset-2">
+                    <Pencil size={10} /> Edit
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel className="text-[11px]">Revenir à…</DropdownMenuLabel>
+                  {previous.map((s) => (
+                    <DropdownMenuItem
+                      key={s}
+                      className="text-[12px]"
+                      onSelect={() => onRevert({ lineId: line.id, from: line.fulfillment_status, to: s })}
+                    >
+                      {statusConfig[s]?.label || s}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            );
+          })()}
+
+          {canForward && (
+            <Button size="sm" variant="outline" className="text-[11px] h-7 px-2"
+              disabled={forwardPending}
+              onClick={() => onForward(line)}>
+              {forwardPending ? <Loader2 size={12} className="animate-spin mr-1" /> : <ExternalLink size={12} className="mr-1" />}
+              Transmis fournisseur
+            </Button>
+          )}
+          {canAccept && (
+            <Button size="sm" className="text-[11px] h-7 px-2 bg-primary"
+              disabled={acceptPending}
+              onClick={() => onAccept(line)}>
+              <Check size={12} className="mr-1" /> Accepter
+            </Button>
+          )}
+          {canShip && remaining > 0 && (
+            <Button size="sm" variant="outline" className="text-[11px] h-7 px-2"
+              onClick={() => onShip(line)}>
+              <Package size={12} className="mr-1" />
+              {remaining < line.quantity ? "Expédier reliquat" : "Marquer expédié"}
+            </Button>
+          )}
+          {canDeliver && (
+            <Button size="sm" variant="outline" className="text-[11px] h-7 px-2"
+              disabled={deliverPending}
+              onClick={() => onDeliver(line)}>
+              <PackageCheck size={12} className="mr-1" /> Marquer livré
+            </Button>
+          )}
+          {canCancel && (
+            <Button size="sm" variant="ghost" className="text-[11px] h-7 px-2 text-destructive hover:bg-destructive/10"
+              onClick={() => onCancel(line)}>
+              <X size={12} className="mr-1" /> Annuler / Refuser
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1224,6 +1224,8 @@ export function VendorOrderLineRow({
 
         <div className="flex flex-col items-end gap-2 shrink-0">
           <VBadge color={status.color}>{status.label}</VBadge>
+          {!readOnly && (
+            <>
           {(() => {
             const workflow = isQogita ? ["forwarded"] : ["processing", "shipped", "delivered"];
             const idx = workflow.indexOf(line.fulfillment_status);
@@ -1242,7 +1244,7 @@ export function VendorOrderLineRow({
                     <DropdownMenuItem
                       key={s}
                       className="text-[12px]"
-                      onSelect={() => onRevert({ lineId: line.id, from: line.fulfillment_status, to: s })}
+                      onSelect={() => onRevert?.({ lineId: line.id, from: line.fulfillment_status, to: s })}
                     >
                       {statusConfig[s]?.label || s}
                     </DropdownMenuItem>
@@ -1255,7 +1257,7 @@ export function VendorOrderLineRow({
           {canForward && (
             <Button size="sm" variant="outline" className="text-[11px] h-7 px-2"
               disabled={forwardPending}
-              onClick={() => onForward(line)}>
+              onClick={() => onForward?.(line)}>
               {forwardPending ? <Loader2 size={12} className="animate-spin mr-1" /> : <ExternalLink size={12} className="mr-1" />}
               Transmis fournisseur
             </Button>
@@ -1263,13 +1265,13 @@ export function VendorOrderLineRow({
           {canAccept && (
             <Button size="sm" className="text-[11px] h-7 px-2 bg-primary"
               disabled={acceptPending}
-              onClick={() => onAccept(line)}>
+              onClick={() => onAccept?.(line)}>
               <Check size={12} className="mr-1" /> Accepter
             </Button>
           )}
           {canShip && remaining > 0 && (
             <Button size="sm" variant="outline" className="text-[11px] h-7 px-2"
-              onClick={() => onShip(line)}>
+              onClick={() => onShip?.(line)}>
               <Package size={12} className="mr-1" />
               {remaining < line.quantity ? "Expédier reliquat" : "Marquer expédié"}
             </Button>
@@ -1277,15 +1279,17 @@ export function VendorOrderLineRow({
           {canDeliver && (
             <Button size="sm" variant="outline" className="text-[11px] h-7 px-2"
               disabled={deliverPending}
-              onClick={() => onDeliver(line)}>
+              onClick={() => onDeliver?.(line)}>
               <PackageCheck size={12} className="mr-1" /> Marquer livré
             </Button>
           )}
           {canCancel && (
             <Button size="sm" variant="ghost" className="text-[11px] h-7 px-2 text-destructive hover:bg-destructive/10"
-              onClick={() => onCancel(line)}>
+              onClick={() => onCancel?.(line)}>
               <X size={12} className="mr-1" /> Annuler / Refuser
             </Button>
+          )}
+            </>
           )}
         </div>
       </div>

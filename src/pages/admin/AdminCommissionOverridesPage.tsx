@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
+import { AdminCreateCommissionOverrideDialog } from "@/components/admin/AdminCreateCommissionOverrideDialog";
 
 type Status = "pending_approval" | "approved" | "rejected" | "draft" | "expired";
 
@@ -190,12 +191,15 @@ export default function AdminCommissionOverridesPage() {
     <div className="space-y-6">
       <Helmet><title>Commissions personnalisées — Admin MediKong</title></Helmet>
 
-      <div>
-        <h1 className="text-2xl font-bold text-mk-navy">Commissions personnalisées</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Validez ou rejetez les règles de commission proposées par les vendeurs sur des produits
-          spécifiques. La cascade appliquée est : <strong>offre &gt; produit &gt; vendeur</strong>.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-mk-navy">Commissions personnalisées</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Validez ou rejetez les règles de commission proposées par les vendeurs sur des produits
+            spécifiques. La cascade appliquée est : <strong>offre &gt; produit &gt; vendeur</strong>.
+          </p>
+        </div>
+        <AdminCreateCommissionOverrideDialog defaultScope={scope} />
       </div>
 
       <Card>

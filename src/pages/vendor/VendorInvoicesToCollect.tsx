@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { toast } from "sonner";
 import { Loader2, CheckCircle2, AlertTriangle, Mail } from "lucide-react";
 import { formatPrice } from "@/data/mock";
+import { useResyncOnReconnect } from "@/hooks/useResyncOnReconnect";
 
 type Row = {
   id: string;

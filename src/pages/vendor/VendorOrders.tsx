@@ -557,7 +557,12 @@ export default function VendorOrders() {
 
               {isExpanded && (
                 <div className="border-t border-border">
+                  <div className="flex items-center justify-end gap-2 px-4 pt-3">
+                    <VendorOrderPdfButton orderId={order.order_id} orderNumber={order.order_number} />
+                  </div>
                   <OrderInfoBlocks order={order} />
+
+
 
                   <div className="divide-y divide-border">
                     {order.lines.map((line) => (

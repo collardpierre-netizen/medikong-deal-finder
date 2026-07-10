@@ -120,34 +120,6 @@ export function MarginBreakdownDetails({
     },
   });
 
-  const { data: effective } = useEffectiveCommission(offerId ?? null);
-  const sourceMeta = effective ? SOURCE_META[effective.source] : null;
-
-  const formula = formulaFor(
-    commissionModel,
-    commissionRate,
-    marginSplitPct,
-    fixedCommissionAmount,
-  );
-
-  return (
-    <div className="rounded-lg border" style={{ borderColor: "#E2E8F0", backgroundColor: "#FFFFFF" }}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-2 px-3 py-2 text-[12px] font-semibold"
-  const { data: effective } = useEffectiveCommission(offerId ?? null);
-  const sourceMeta = effective ? SOURCE_META[effective.source] : null;
-  const viaAdminShortcut = Boolean(effective?.via_admin_shortcut) && effective?.source !== "vendor";
-
-  const formula = formulaFor(
-    commissionModel,
-    commissionRate,
-    marginSplitPct,
-    fixedCommissionAmount,
-  );
-
-  return (
     <div className="rounded-lg border" style={{ borderColor: "#E2E8F0", backgroundColor: "#FFFFFF" }}>
       <button
         type="button"

@@ -97,16 +97,26 @@ Deno.serve(async (req) => {
       const cfg: any = commissionMap.get(l.offer_id) ?? { commission_model: "flat_percentage" };
       let commission = 0;
       const model = cfg.commission_model as string;
+      let formula = "";
       if (model === "flat_percentage") {
-        commission = (sell * (Number(cfg.commission_rate) || 0)) / 100;
+        const rate = Number(cfg.commission_rate) || 0;
+        commission = (sell * rate) / 100;
+        formula = `${rate.toFixed(0)}% × ${fmtEur(Math.round(sell * 100), currency)} = ${fmtEur(Math.round(commission * 100), currency)}`;
       } else if (model === "margin_split") {
+        const vendorPct = Number(cfg.margin_split_pct) || 0;
+        const mkPct = Math.max(0, 100 - vendorPct);
         if (hasCost) {
           const gross = Math.max(0, sell - cost);
-          const mkPct = Math.max(0, 100 - (Number(cfg.margin_split_pct) || 0));
           commission = (gross * mkPct) / 100;
+          formula = `(${fmtEur(Math.round(sell * 100), currency)} − ${fmtEur(Math.round(cost * 100), currency)}) × ${mkPct.toFixed(0)}% = ${fmtEur(Math.round(commission * 100), currency)}`;
+        } else {
+          commission = 0;
+          formula = "Coût d'achat manquant — commission à 0";
         }
       } else if (model === "fixed_amount") {
-        commission = Number(cfg.fixed_commission_amount) || 0;
+        const fixed = Number(cfg.fixed_commission_amount) || 0;
+        commission = fixed;
+        formula = `${fmtEur(Math.round(fixed * 100), currency)}/u`;
       }
       commission = Math.max(0, commission);
       const netRevenue = sell - commission;
@@ -116,7 +126,7 @@ Deno.serve(async (req) => {
         : model === "margin_split" ? `Ventilation vendeur ${Number(cfg.margin_split_pct) || 0}% / MK ${Math.max(0, 100 - (Number(cfg.margin_split_pct) || 0))}%`
         : model === "fixed_amount" ? `Montant fixe ${(Number(cfg.fixed_commission_amount) || 0).toFixed(2)} €/u`
         : "—";
-      return { commission, netRevenue, netMargin, hasCost, modelLabel, model };
+      return { commission, netRevenue, netMargin, hasCost, modelLabel, model, formula };
     };
 
     // Buyer contact (email/phone)

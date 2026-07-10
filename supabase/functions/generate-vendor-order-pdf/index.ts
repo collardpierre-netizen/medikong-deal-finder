@@ -494,7 +494,8 @@ Deno.serve(async (req) => {
 
       const label = doc.splitTextToSize(String(l.manual_label || l.products?.name || "—"), MCOLS.articleWidth);
       const modelText = doc.splitTextToSize(b.modelLabel, MCOLS.qty - MCOLS.model - 2);
-      const rowH = Math.max(6, Math.max(label.length, modelText.length) * 3.4 + 2.5);
+      const formulaText = doc.splitTextToSize(b.formula, MCOLS.qty - MCOLS.model - 2);
+      const rowH = Math.max(8, Math.max(label.length, modelText.length + formulaText.length + 0.5) * 3.4 + 2.5);
 
       if (y + rowH > pageH - 40) { doc.addPage(); y = 20; }
 
@@ -506,6 +507,9 @@ Deno.serve(async (req) => {
       doc.text(label, MCOLS.article, y + 3.5);
       doc.setTextColor(...MUTED);
       doc.text(modelText, MCOLS.model, y + 3.5);
+      doc.setFontSize(6.5);
+      doc.text(formulaText, MCOLS.model, y + 3.5 + modelText.length * 3.4 + 1);
+      doc.setFontSize(7.5);
       doc.setTextColor(...NAVY);
       doc.text(String(qty), MCOLS.qty, y + 3.5, { align: "right" });
       doc.text(fmtEur(Math.round(b.commission * 100), currency), MCOLS.commUnit, y + 3.5, { align: "right" });

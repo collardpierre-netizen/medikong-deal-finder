@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -11,8 +11,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Plus, ShieldCheck, Search, Loader2, Calculator } from "lucide-react";
+import { Plus, ShieldCheck, Search, Loader2, Calculator, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Model = "flat_percentage" | "margin_split" | "fixed_amount";
 type Scope = "product" | "offer";
@@ -35,6 +37,7 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
   const [validFrom, setValidFrom] = useState("");
   const [validUntil, setValidUntil] = useState("");
   const [note, setNote] = useState("");
+  const [confirmReplace, setConfirmReplace] = useState(false);
 
   // scope=product : vendor + product
   const [vendorQuery, setVendorQuery] = useState("");
@@ -156,6 +159,98 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
     n == null || Number.isNaN(n) ? "—" : `${n.toFixed(2)}${suffix}`;
 
 
+  // ---- Détection d'override existant / chevauchement de période ----
+  type ExistingOverride = {
+    id: string;
+    model: string;
+    rate: number | null;
+    split: number | null;
+    fixed: number | null;
+    valid_from: string | null;
+    valid_until: string | null;
+    source: "product" | "offer";
+    context?: string;
+  };
+
+  const { data: existingOverrides = [], isFetching: existingLoading } = useQuery({
+    enabled: previewEnabled,
+    queryKey: ["admin-cco-existing", scope, vendorId, productId, offerId],
+    queryFn: async (): Promise<ExistingOverride[]> => {
+      if (scope === "product") {
+        const { data, error } = await supabase
+          .from("vendor_product_commissions")
+          .select("id, commission_model, commission_rate, margin_split_pct, fixed_commission_amount, valid_from, valid_until, status")
+          .eq("vendor_id", vendorId!)
+          .eq("product_id", productId!)
+          .eq("status", "approved");
+        if (error) throw error;
+        return (data ?? []).map((r: any) => ({
+          id: r.id,
+          model: r.commission_model,
+          rate: r.commission_rate,
+          split: r.margin_split_pct,
+          fixed: r.fixed_commission_amount,
+          valid_from: r.valid_from,
+          valid_until: r.valid_until,
+          source: "product",
+        }));
+      }
+      const { data, error } = await supabase
+        .from("offers")
+        .select("id, commission_model, commission_rate, margin_split_pct, fixed_commission_amount, commission_valid_from, commission_valid_until, commission_override_status")
+        .eq("id", offerId!)
+        .not("commission_model", "is", null)
+        .eq("commission_override_status", "approved");
+      if (error) throw error;
+      return (data ?? []).map((r: any) => ({
+        id: r.id,
+        model: r.commission_model,
+        rate: r.commission_rate,
+        split: r.margin_split_pct,
+        fixed: r.fixed_commission_amount,
+        valid_from: r.commission_valid_from,
+        valid_until: r.commission_valid_until,
+        source: "offer",
+      }));
+    },
+  });
+
+  // Deux intervalles ouverts se chevauchent si from1 < until2 ET from2 < until1
+  // (NULL = ouvert de ce côté)
+  const overlapsWith = (
+    fromA: Date | null, untilA: Date | null,
+    fromB: Date | null, untilB: Date | null,
+  ): boolean => {
+    const aStart = fromA ? fromA.getTime() : -Infinity;
+    const aEnd = untilA ? untilA.getTime() : Infinity;
+    const bStart = fromB ? fromB.getTime() : -Infinity;
+    const bEnd = untilB ? untilB.getTime() : Infinity;
+    return aStart < bEnd && bStart < aEnd;
+  };
+
+  const parseDate = (s: string): Date | null => {
+    if (!s) return null;
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  const overlappingOverrides = useMemo(() => {
+    const newFrom = parseDate(validFrom);
+    const newUntil = parseDate(validUntil);
+    return existingOverrides.filter((ex) =>
+      overlapsWith(
+        newFrom, newUntil,
+        ex.valid_from ? new Date(ex.valid_from) : null,
+        ex.valid_until ? new Date(ex.valid_until) : null,
+      ),
+    );
+  }, [existingOverrides, validFrom, validUntil]);
+
+  const hasOverlap = overlappingOverrides.length > 0;
+
+  // Reset la confirmation dès que la cible ou les dates changent
+  useEffect(() => { setConfirmReplace(false); }, [scope, vendorId, productId, offerId, validFrom, validUntil]);
+
   const reset = () => {
     setVendorId(null); setVendorLabel(""); setVendorQuery("");
     setProductId(null); setProductLabel(""); setProductQuery("");
@@ -163,7 +258,9 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
     setRate(""); setSplit(""); setFixed("");
     setValidFrom(""); setValidUntil(""); setNote("");
     setModel("margin_split");
+    setConfirmReplace(false);
   };
+
 
   const submitMutation = useMutation({
     mutationFn: async () => {
@@ -207,35 +304,54 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
     onError: (e: any) => toast.error(e.message ?? "Erreur"),
   });
 
-  const validate = (): string | null => {
+  type Errors = Partial<Record<"rate" | "split" | "fixed" | "validFrom" | "validUntil" | "range", string>>;
+
+  const errors = useMemo<Errors>(() => {
+    const e: Errors = {};
     if (model === "flat_percentage") {
-      if (rate === "" || isNaN(Number(rate)) || Number(rate) < 0 || Number(rate) > 50)
-        return "Taux entre 0 et 50 %";
+      const v = Number(rate);
+      if (rate === "" || isNaN(v) || v < 0 || v > 50) e.rate = "Taux entre 0 et 50 %";
     }
     if (model === "margin_split") {
-      if (split === "" || isNaN(Number(split)) || Number(split) < 0 || Number(split) > 100)
-        return "Part vendeur entre 0 et 100 %";
+      const v = Number(split);
+      if (split === "" || isNaN(v) || v < 0 || v > 100) e.split = "Part vendeur entre 0 et 100 %";
     }
     if (model === "fixed_amount") {
-      if (fixed === "" || isNaN(Number(fixed)) || Number(fixed) < 0)
-        return "Montant ≥ 0";
+      const v = Number(fixed);
+      if (fixed === "" || isNaN(v) || v < 0) e.fixed = "Montant ≥ 0";
     }
-    if (validFrom && validUntil && new Date(validUntil) <= new Date(validFrom)) {
-      return "La fin doit être postérieure au début";
+    const dFrom = parseDate(validFrom);
+    const dUntil = parseDate(validUntil);
+    if (validFrom && !dFrom) e.validFrom = "Date invalide";
+    if (validUntil && !dUntil) e.validUntil = "Date invalide";
+    if (dFrom && dUntil && dUntil.getTime() <= dFrom.getTime()) {
+      e.range = "La date de fin doit être strictement postérieure à la date de début";
     }
-    return null;
-  };
+    return e;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [model, rate, split, fixed, validFrom, validUntil]);
+
+  const hasErrors = Object.keys(errors).length > 0;
 
   const canSubmit = useMemo(() => {
-    if (scope === "product") return !!vendorId && !!productId;
-    return !!offerId;
-  }, [scope, vendorId, productId, offerId]);
+    const targetOk = scope === "product" ? !!vendorId && !!productId : !!offerId;
+    if (!targetOk || hasErrors) return false;
+    if (hasOverlap && !confirmReplace) return false;
+    return true;
+  }, [scope, vendorId, productId, offerId, hasErrors, hasOverlap, confirmReplace]);
 
   const onSubmit = () => {
-    const err = validate();
-    if (err) { toast.error(err); return; }
+    if (hasErrors) {
+      toast.error(Object.values(errors)[0]!);
+      return;
+    }
+    if (hasOverlap && !confirmReplace) {
+      toast.error("Confirmez le remplacement de l'override existant");
+      return;
+    }
     submitMutation.mutate();
   };
+
 
   return (
     <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
@@ -379,32 +495,83 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
           {model === "flat_percentage" && (
             <div>
               <Label className="text-xs">Taux MediKong (%)</Label>
-              <Input type="number" min={0} max={50} step="0.1" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="ex. 12" />
+              <Input type="number" min={0} max={50} step="0.1" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="ex. 12"
+                aria-invalid={!!errors.rate} className={errors.rate ? "border-destructive" : ""} />
+              {errors.rate && <p className="text-[11px] text-destructive mt-1">{errors.rate}</p>}
             </div>
           )}
           {model === "margin_split" && (
             <div>
               <Label className="text-xs">Part vendeur (%)</Label>
-              <Input type="number" min={0} max={100} step="1" value={split} onChange={(e) => setSplit(e.target.value)} placeholder="ex. 60 (vendeur 60 / MediKong 40)" />
+              <Input type="number" min={0} max={100} step="1" value={split} onChange={(e) => setSplit(e.target.value)} placeholder="ex. 60 (vendeur 60 / MediKong 40)"
+                aria-invalid={!!errors.split} className={errors.split ? "border-destructive" : ""} />
+              {errors.split && <p className="text-[11px] text-destructive mt-1">{errors.split}</p>}
             </div>
           )}
           {model === "fixed_amount" && (
             <div>
               <Label className="text-xs">Montant € HTVA / unité</Label>
-              <Input type="number" min={0} step="0.01" value={fixed} onChange={(e) => setFixed(e.target.value)} placeholder="ex. 0.50" />
+              <Input type="number" min={0} step="0.01" value={fixed} onChange={(e) => setFixed(e.target.value)} placeholder="ex. 0.50"
+                aria-invalid={!!errors.fixed} className={errors.fixed ? "border-destructive" : ""} />
+              {errors.fixed && <p className="text-[11px] text-destructive mt-1">{errors.fixed}</p>}
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs">Valide du</Label>
-              <Input type="date" value={validFrom} onChange={(e) => setValidFrom(e.target.value)} />
+              <Input type="date" value={validFrom} onChange={(e) => setValidFrom(e.target.value)}
+                aria-invalid={!!errors.validFrom} className={errors.validFrom ? "border-destructive" : ""} />
+              {errors.validFrom && <p className="text-[11px] text-destructive mt-1">{errors.validFrom}</p>}
             </div>
             <div>
               <Label className="text-xs">Valide jusqu'au</Label>
-              <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
+              <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)}
+                aria-invalid={!!errors.validUntil} className={errors.validUntil ? "border-destructive" : ""} />
+              {errors.validUntil && <p className="text-[11px] text-destructive mt-1">{errors.validUntil}</p>}
             </div>
+            {errors.range && (
+              <p className="col-span-2 text-[11px] text-destructive -mt-1">{errors.range}</p>
+            )}
           </div>
+
+          {/* Bandeau conflit : override existant chevauchant la période */}
+          {previewEnabled && hasOverlap && (
+            <Alert variant="destructive" className="border-amber-400 bg-amber-50 text-amber-900 [&>svg]:text-amber-600">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle className="text-sm">
+                {existingLoading ? "Vérification…" : "Override existant sur une période chevauchante"}
+              </AlertTitle>
+              <AlertDescription className="text-xs space-y-1.5 mt-1">
+                {overlappingOverrides.map((ex) => (
+                  <div key={ex.id} className="flex flex-wrap items-center gap-2">
+                    <Badge variant="outline" className="uppercase text-[10px]">{ex.source}</Badge>
+                    <span className="font-medium">
+                      {ex.model === "flat_percentage" && `Taux fixe ${ex.rate ?? "?"} %`}
+                      {ex.model === "margin_split" && `Partage de marge — vendeur ${ex.split ?? "?"} %`}
+                      {ex.model === "fixed_amount" && `Montant fixe ${ex.fixed ?? "?"} €/u.`}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      du {ex.valid_from ? new Date(ex.valid_from).toLocaleDateString("fr-BE") : "—"}
+                      {" → "}
+                      {ex.valid_until ? new Date(ex.valid_until).toLocaleDateString("fr-BE") : "sans fin"}
+                    </span>
+                  </div>
+                ))}
+                <label className="flex items-start gap-2 pt-2 cursor-pointer">
+                  <Checkbox
+                    checked={confirmReplace}
+                    onCheckedChange={(v) => setConfirmReplace(v === true)}
+                    className="mt-0.5"
+                  />
+                  <span className="text-xs">
+                    Je confirme <strong>remplacer</strong> l'override existant par la nouvelle règle (les périodes ne peuvent pas être empilées).
+                  </span>
+                </label>
+              </AlertDescription>
+            </Alert>
+          )}
+
 
           <div>
             <Label className="text-xs">Note interne</Label>

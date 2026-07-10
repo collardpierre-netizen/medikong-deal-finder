@@ -167,11 +167,11 @@ export default function VendorOrders() {
       const [ordersRes, productsRes] = await Promise.all([
         supabase
           .from("orders")
-          .select("id, order_number, status, created_at, shipping_address, customer_id, hidden_from_list, deleted_at")
+          .select("id, order_number, status, created_at, shipping_address, billing_address, customer_id, hidden_from_list, deleted_at, payment_method, payment_status, payment_due_date, tracking_number, tracking_url, tracking_carrier, shipped_at, notes")
           .in("id", orderIds)
           .eq("hidden_from_list", false)
           .is("deleted_at", null),
-        supabase.from("products").select("id, name, image_url").in("id", productIds),
+        supabase.from("products").select("id, name, image_url, gtin, cnk_code").in("id", productIds),
       ]);
 
       const orderMap = new Map((ordersRes.data || []).map(o => [o.id, o]));
@@ -179,7 +179,7 @@ export default function VendorOrders() {
 
       const grouped = new Map<string, OrderWithLines>();
       for (const line of lines) {
-        const order = orderMap.get(line.order_id);
+        const order: any = orderMap.get(line.order_id);
         if (!order) continue;
 
         if (!grouped.has(line.order_id)) {
@@ -189,18 +189,30 @@ export default function VendorOrders() {
             order_status: order.status,
             order_date: order.created_at,
             shipping_address: order.shipping_address,
+            billing_address: order.billing_address,
             customer_id: order.customer_id,
+            payment_method: order.payment_method ?? null,
+            payment_status: order.payment_status ?? null,
+            payment_due_date: order.payment_due_date ?? null,
+            order_tracking_number: order.tracking_number ?? null,
+            order_tracking_url: order.tracking_url ?? null,
+            order_tracking_carrier: order.tracking_carrier ?? null,
+            shipped_at: order.shipped_at ?? null,
+            notes: order.notes ?? null,
             lines: [],
           });
         }
 
-        const product = productMap.get(line.product_id);
+        const product: any = productMap.get(line.product_id);
         grouped.get(line.order_id)!.lines.push({
           ...(line as any),
           product_name: product?.name || "Produit inconnu",
           product_image: product?.image_url || null,
+          product_gtin: product?.gtin || null,
+          product_cnk: product?.cnk_code || null,
         });
       }
+
 
       return Array.from(grouped.values()).sort(
         (a, b) => new Date(b.order_date).getTime() - new Date(a.order_date).getTime()

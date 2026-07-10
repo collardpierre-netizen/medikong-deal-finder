@@ -8,7 +8,7 @@ import { VEmptyState } from "@/components/vendor/ui/VEmptyState";
 import { ShoppingCart, PackageCheck, Loader2, ChevronDown, ChevronUp, Truck, ExternalLink, Package, X, Check, Pencil, Search, Clock, AlertCircle, CheckCircle2, Ban, ArrowUpDown, User, MapPin, CreditCard, Barcode, FileText, Calculator } from "lucide-react";
 import { useEffectiveCommission } from "@/hooks/useEffectiveCommission";
 import { computeMargin, fmtPct } from "@/lib/vendorMargin";
-import MarginBreakdownDetails from "@/components/vendor/MarginBreakdownDetails";
+import { MarginBreakdownDetails } from "@/components/vendor/MarginBreakdownDetails";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

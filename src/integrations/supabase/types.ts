@@ -24329,6 +24329,7 @@ export type Database = {
             }
             Returns: string
           }
+      admin_normalize_product_gtins: { Args: never; Returns: Json }
       admin_notifications_get: {
         Args: { _id: string }
         Returns: {
@@ -24919,6 +24920,10 @@ export type Database = {
         Args: { _dry_run?: boolean }
         Returns: Json
       }
+      auto_merge_product_duplicates: {
+        Args: { _dry_run?: boolean }
+        Returns: Json
+      }
       auto_promote_proprietary_codes: { Args: never; Returns: number }
       bulk_override_requested: { Args: never; Returns: boolean }
       bulk_set_cnk_codes: { Args: { pairs: Json }; Returns: number }
@@ -25213,6 +25218,21 @@ export type Database = {
           brand_names: string[]
           norm_key: string
           product_counts: number[]
+          variant_count: number
+        }[]
+      }
+      find_product_duplicates: {
+        Args: never
+        Returns: {
+          cnks: string[]
+          gtins: string[]
+          has_images: boolean[]
+          is_active_flags: boolean[]
+          match_key: string
+          match_type: string
+          offer_counts: number[]
+          product_ids: string[]
+          product_names: string[]
           variant_count: number
         }[]
       }
@@ -25740,6 +25760,7 @@ export type Database = {
         }[]
       }
       merge_brands: { Args: { _drop: string; _keep: string }; Returns: Json }
+      merge_products: { Args: { _drop: string; _keep: string }; Returns: Json }
       move_to_dlq: {
         Args: {
           dlq_name: string
@@ -25750,6 +25771,7 @@ export type Database = {
         Returns: number
       }
       normalize_brand_name: { Args: { _name: string }; Returns: string }
+      normalize_product_gtin: { Args: { _gtin: string }; Returns: string }
       offer_exclusivity_flags: {
         Args: {
           p_country_code?: string

@@ -25,6 +25,16 @@ export interface CustomerTypeSlice {
   amountCents: number;
 }
 
+export interface TopProductSlice {
+  productId: string;
+  productName: string;
+  quantity: number;
+  revenueCents: number;
+  commissionCents: number;
+  netMarginCents: number;
+  hasCost: boolean;
+}
+
 export interface VendorMonthlyDashboard {
   gmvCents: number;
   revenueExclVatCents: number;
@@ -32,8 +42,16 @@ export interface VendorMonthlyDashboard {
   commissionCents: number;
   netMarginCents: number;
   ordersCount: number;
-  dailySeries: Array<{ day: number; date: string; revenueCents: number }>;
+  avgBasketCents: number;
+  dailySeries: Array<{
+    day: number;
+    date: string;
+    revenueCents: number;
+    commissionCents: number;
+    netMarginCents: number;
+  }>;
   customerTypeBreakdown: CustomerTypeSlice[];
+  topProducts: TopProductSlice[];
 }
 
 /**

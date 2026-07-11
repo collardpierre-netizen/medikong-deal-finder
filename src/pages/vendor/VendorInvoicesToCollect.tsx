@@ -207,9 +207,12 @@ export default function VendorInvoicesToCollect() {
         <p className="text-sm text-mk-sec mt-1">Sous-commandes réglées par facture, en attente de paiement.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2"><CardDescription>En attente</CardDescription><CardTitle>{stats.pendingCount} · {formatPrice(stats.pendingAmt)} EUR</CardTitle></CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2"><CardDescription className="text-primary">Partiellement payées</CardDescription><CardTitle className="text-primary">{stats.partialCount} · {formatPrice(stats.partialAmt)} EUR</CardTitle></CardHeader>
         </Card>
         <Card className="border-destructive/40">
           <CardHeader className="pb-2"><CardDescription className="text-destructive">En retard</CardDescription><CardTitle className="text-destructive">{stats.overdueCount} · {formatPrice(stats.overdueAmt)} EUR</CardTitle></CardHeader>

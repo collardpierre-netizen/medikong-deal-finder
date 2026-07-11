@@ -18,6 +18,7 @@ import {
   VendorOrderLineRow,
   VendorOrderPdfButton,
   VendorPayoutPdfButton,
+  computeBillingStatus,
   type OrderWithLines,
 } from "./VendorOrders";
 
@@ -183,6 +184,16 @@ export default function VendorOrderDetail() {
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-lg font-bold text-foreground">Commande {order.order_number}</h1>
               <VBadge color={status.color}>{status.label}</VBadge>
+              {(() => {
+                // Badge Paiement/Facturation unifié (miroir de la vue admin + liste vendeur).
+                const billing = computeBillingStatus(order);
+                if (!billing) return null;
+                return (
+                  <span title={billing.title}>
+                    <VBadge color={billing.color}>{billing.label}</VBadge>
+                  </span>
+                );
+              })()}
             </div>
             <div className="text-[12px] text-muted-foreground mt-0.5">
               {format(new Date(order.order_date), "dd MMM yyyy à HH:mm", { locale: fr })} · {order.lines.length}{" "}

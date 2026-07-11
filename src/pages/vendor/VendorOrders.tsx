@@ -1138,7 +1138,9 @@ function paymentMethodLabel(m: string | null): string {
 
 function paymentStatusColor(s: string | null): "success" | "warning" | "info" | "default" {
   if (s === "paid") return "success";
-  if (s === "pending" || s === "overdue" || s === "partially_paid") return "warning";
+  if (s === "overdue") return "warning";
+  if (s === "partially_paid") return "info"; // aligné avec computeBillingStatus ("Part. payée" = info)
+  if (s === "pending") return "warning";
   if (s === "failed" || s === "refunded" || s === "partially_refunded") return "default";
   return "info";
 }

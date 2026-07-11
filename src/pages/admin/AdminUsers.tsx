@@ -26,8 +26,10 @@ interface UserRow {
   type: "vendor" | "buyer";
   company: string;
   plan: string;
+  profile: string | null;
   status: string;
   lastLogin: string | null;
+  createdAt: string | null;
   linked: boolean;
 }
 
@@ -81,7 +83,7 @@ export default function AdminUsers() {
 
     const { data: vendors } = await supabase
       .from("vendors")
-      .select("id, auth_user_id, email, company_name, type, is_active")
+      .select("id, auth_user_id, email, company_name, type, is_active, created_at")
       .order("company_name");
 
     vendors?.forEach(v => {
@@ -92,15 +94,17 @@ export default function AdminUsers() {
         type: "vendor",
         company: v.company_name || v.id,
         plan: v.type || "real",
+        profile: v.type || null,
         status: v.is_active ? "active" : "inactive",
         lastLogin: null,
+        createdAt: v.created_at ?? null,
         linked: !!v.auth_user_id,
       });
     });
 
     const { data: customers } = await supabase
       .from("customers")
-      .select("id, auth_user_id, email, company_name, customer_type, is_verified")
+      .select("id, auth_user_id, email, company_name, customer_type, is_verified, created_at")
       .order("company_name");
 
     customers?.forEach(b => {
@@ -111,8 +115,10 @@ export default function AdminUsers() {
         type: "buyer",
         company: b.company_name,
         plan: b.customer_type || "pharmacy",
+        profile: b.customer_type || null,
         status: b.is_verified ? "active" : "pending",
         lastLogin: null,
+        createdAt: b.created_at ?? null,
         linked: !!b.auth_user_id,
       });
     });
@@ -317,15 +323,17 @@ export default function AdminUsers() {
                 <th className="text-left px-4 py-3">Entreprise</th>
                 <th className="text-left px-4 py-3">Email</th>
                 <th className="text-left px-4 py-3">Type</th>
+                <th className="text-left px-4 py-3">Profil</th>
+                <th className="text-left px-4 py-3">Inscrit le</th>
                 <th className="text-left px-4 py-3">Statut</th>
                 <th className="text-right px-4 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Chargement…</td></tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Chargement…</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Aucun utilisateur trouvé</td></tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Aucun utilisateur trouvé</td></tr>
               ) : filtered.map(u => (
                 <tr key={u.id}
                   onClick={() => openDetail(u)}
@@ -336,6 +344,12 @@ export default function AdminUsers() {
                     <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${u.type === "vendor" ? "bg-amber-50 text-amber-700" : "bg-blue-50 text-blue-700"}`}>
                       {u.type === "vendor" ? "Vendeur" : "Acheteur"}
                     </span>
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground text-[12px]">{u.profile || "—"}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-[12px] whitespace-nowrap">
+                    {u.createdAt
+                      ? new Date(u.createdAt).toLocaleString("fr-BE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+                      : "—"}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">

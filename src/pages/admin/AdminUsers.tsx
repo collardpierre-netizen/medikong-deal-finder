@@ -64,6 +64,11 @@ export default function AdminUsers() {
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [typeFilter, setTypeFilter] = useState<"all" | "vendor" | "buyer" | "pending">("all");
+  const [profileFilter, setProfileFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive" | "pending">("all");
+  const [linkedFilter, setLinkedFilter] = useState<"all" | "linked" | "unlinked">("all");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
   const [buyerDetail, setBuyerDetail] = useState<BuyerDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -260,12 +265,39 @@ export default function AdminUsers() {
   const filtered = users.filter(u => {
     if (typeFilter === "pending") { if (u.status !== "pending") return false; }
     else if (typeFilter !== "all" && u.type !== typeFilter) return false;
+    if (profileFilter !== "all" && (u.profile || "—") !== profileFilter) return false;
+    if (statusFilter !== "all" && u.status !== statusFilter) return false;
+    if (linkedFilter === "linked" && !u.linked) return false;
+    if (linkedFilter === "unlinked" && u.linked) return false;
+    if (dateFrom && (!u.createdAt || u.createdAt < dateFrom)) return false;
+    if (dateTo && (!u.createdAt || u.createdAt > dateTo + "T23:59:59")) return false;
     if (search) {
       const q = search.toLowerCase();
       return u.company.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
     }
     return true;
   });
+
+  const profileOptions = Array.from(new Set(users.map(u => u.profile).filter(Boolean) as string[])).sort();
+  const activeFiltersCount = [
+    typeFilter !== "all",
+    profileFilter !== "all",
+    statusFilter !== "all",
+    linkedFilter !== "all",
+    !!dateFrom,
+    !!dateTo,
+    !!search,
+  ].filter(Boolean).length;
+
+  function resetFilters() {
+    setTypeFilter("all");
+    setProfileFilter("all");
+    setStatusFilter("all");
+    setLinkedFilter("all");
+    setDateFrom("");
+    setDateTo("");
+    setSearch("");
+  }
 
   const vendorCount = users.filter(u => u.type === "vendor" && u.status === "active").length;
   const buyerCount = users.filter(u => u.type === "buyer" && u.status === "active").length;
@@ -300,18 +332,67 @@ export default function AdminUsers() {
         </button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value as any)}
-          className="px-3 py-2 text-sm border border-border rounded-md bg-background">
-          <option value="all">Tous</option>
-          <option value="vendor">Vendeurs</option>
-          <option value="buyer">Acheteurs</option>
-          <option value="pending">🔴 En attente ({pendingCount})</option>
-        </select>
-        <div className="relative flex-1 max-w-md">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher par nom ou email…" className="pl-9" />
+      <div className="flex flex-col gap-3 bg-card border border-border rounded-lg p-3">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] uppercase tracking-wide text-muted-foreground">Type</label>
+            <select value={typeFilter} onChange={e => setTypeFilter(e.target.value as any)}
+              className="px-3 py-2 text-sm border border-border rounded-md bg-background">
+              <option value="all">Tous</option>
+              <option value="vendor">Vendeurs</option>
+              <option value="buyer">Acheteurs</option>
+              <option value="pending">🔴 En attente ({pendingCount})</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] uppercase tracking-wide text-muted-foreground">Profil</label>
+            <select value={profileFilter} onChange={e => setProfileFilter(e.target.value)}
+              className="px-3 py-2 text-sm border border-border rounded-md bg-background">
+              <option value="all">Tous</option>
+              {profileOptions.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] uppercase tracking-wide text-muted-foreground">Statut</label>
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as any)}
+              className="px-3 py-2 text-sm border border-border rounded-md bg-background">
+              <option value="all">Tous</option>
+              <option value="active">Actif</option>
+              <option value="pending">En attente</option>
+              <option value="inactive">Inactif</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] uppercase tracking-wide text-muted-foreground">Accès auth</label>
+            <select value={linkedFilter} onChange={e => setLinkedFilter(e.target.value as any)}
+              className="px-3 py-2 text-sm border border-border rounded-md bg-background">
+              <option value="all">Tous</option>
+              <option value="linked">Compte créé</option>
+              <option value="unlinked">Compte non créé</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] uppercase tracking-wide text-muted-foreground">Inscrit du</label>
+            <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="h-[38px]" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] uppercase tracking-wide text-muted-foreground">au</label>
+            <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="h-[38px]" />
+          </div>
+          <div className="relative flex-1 min-w-[220px]">
+            <label className="text-[11px] uppercase tracking-wide text-muted-foreground block mb-1">Recherche</label>
+            <Search size={16} className="absolute left-3 top-[34px] text-muted-foreground" />
+            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nom ou email…" className="pl-9" />
+          </div>
+          {activeFiltersCount > 0 && (
+            <Button variant="ghost" size="sm" onClick={resetFilters} className="gap-1 h-[38px]">
+              <X size={14} /> Réinitialiser ({activeFiltersCount})
+            </Button>
+          )}
         </div>
+        <p className="text-[12px] text-muted-foreground">
+          {filtered.length} résultat{filtered.length > 1 ? "s" : ""} sur {users.length}
+        </p>
       </div>
 
       <div className="flex gap-6">

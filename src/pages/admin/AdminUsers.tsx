@@ -64,6 +64,11 @@ export default function AdminUsers() {
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [typeFilter, setTypeFilter] = useState<"all" | "vendor" | "buyer" | "pending">("all");
+  const [profileFilter, setProfileFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive" | "pending">("all");
+  const [linkedFilter, setLinkedFilter] = useState<"all" | "linked" | "unlinked">("all");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
   const [buyerDetail, setBuyerDetail] = useState<BuyerDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);

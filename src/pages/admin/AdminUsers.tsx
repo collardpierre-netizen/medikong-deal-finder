@@ -26,8 +26,10 @@ interface UserRow {
   type: "vendor" | "buyer";
   company: string;
   plan: string;
+  profile: string | null;
   status: string;
   lastLogin: string | null;
+  createdAt: string | null;
   linked: boolean;
 }
 

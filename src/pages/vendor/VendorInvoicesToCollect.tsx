@@ -100,7 +100,28 @@ export default function VendorInvoicesToCollect() {
         .eq("payment_method", "invoice")
         .order("payment_due_date", { ascending: true, nullsFirst: false });
       if (error) throw error;
-      return (data || []) as unknown as Row[];
+      const list = (data || []) as unknown as Row[];
+
+      // Charge en parallèle les factures MediKong pour tous les order_id du vendeur,
+      // pour dériver un statut unifié (miroir de computeBillingStatus).
+      const orderIds = Array.from(new Set(list.map((r) => r.order_id).filter(Boolean)));
+      if (orderIds.length > 0) {
+        const { data: invs } = await supabase
+          .from("order_invoices")
+          .select("id, order_id, status")
+          .eq("vendor_id", vendorId!)
+          .in("order_id", orderIds);
+        const byOrder = new Map<string, Array<{ id: string; status: string }>>();
+        (invs || []).forEach((i: any) => {
+          const arr = byOrder.get(i.order_id) ?? [];
+          arr.push({ id: i.id, status: i.status });
+          byOrder.set(i.order_id, arr);
+        });
+        list.forEach((r) => {
+          r.invoices = byOrder.get(r.order_id) ?? [];
+        });
+      }
+      return list;
     },
   });
 

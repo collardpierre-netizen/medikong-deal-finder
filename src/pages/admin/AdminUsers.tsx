@@ -265,12 +265,39 @@ export default function AdminUsers() {
   const filtered = users.filter(u => {
     if (typeFilter === "pending") { if (u.status !== "pending") return false; }
     else if (typeFilter !== "all" && u.type !== typeFilter) return false;
+    if (profileFilter !== "all" && (u.profile || "—") !== profileFilter) return false;
+    if (statusFilter !== "all" && u.status !== statusFilter) return false;
+    if (linkedFilter === "linked" && !u.linked) return false;
+    if (linkedFilter === "unlinked" && u.linked) return false;
+    if (dateFrom && (!u.createdAt || u.createdAt < dateFrom)) return false;
+    if (dateTo && (!u.createdAt || u.createdAt > dateTo + "T23:59:59")) return false;
     if (search) {
       const q = search.toLowerCase();
       return u.company.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
     }
     return true;
   });
+
+  const profileOptions = Array.from(new Set(users.map(u => u.profile).filter(Boolean) as string[])).sort();
+  const activeFiltersCount = [
+    typeFilter !== "all",
+    profileFilter !== "all",
+    statusFilter !== "all",
+    linkedFilter !== "all",
+    !!dateFrom,
+    !!dateTo,
+    !!search,
+  ].filter(Boolean).length;
+
+  function resetFilters() {
+    setTypeFilter("all");
+    setProfileFilter("all");
+    setStatusFilter("all");
+    setLinkedFilter("all");
+    setDateFrom("");
+    setDateTo("");
+    setSearch("");
+  }
 
   const vendorCount = users.filter(u => u.type === "vendor" && u.status === "active").length;
   const buyerCount = users.filter(u => u.type === "buyer" && u.status === "active").length;

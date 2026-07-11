@@ -26,7 +26,56 @@ type Row = {
     customer_id: string;
     customers: { id: string; email: string; company_name: string; country_code: string } | null;
   } | null;
+  /** Toutes les factures MediKong liées à (order_id, vendor_id). Alimenté côté client. */
+  invoices?: Array<{ id: string; status: string }>;
 };
+
+/**
+ * Statut de facturation dérivé, miroir de `computeBillingStatus` (VendorOrders)
+ * appliqué au niveau sub-order. On combine `sub_orders.payment_status` et le
+ * statut des `order_invoices` pour rester cohérent avec les badges des listes
+ * de commandes et de la fiche commande.
+ */
+type BillingStatus = {
+  label: string;
+  color: "success" | "warning" | "info" | "default";
+  title: string;
+};
+
+function computeInvoiceBillingStatus(r: Row): BillingStatus {
+  const invs = r.invoices ?? [];
+  const anyInv = invs.length > 0;
+  const allPaid = anyInv && invs.every((i) => i.status === "paid");
+  const anyPaid = anyInv && invs.some((i) => i.status === "paid");
+  const anyOverdueInv = invs.some((i) => i.status === "overdue" || i.status === "uncollectible");
+
+  if (allPaid || r.payment_status === "paid") {
+    return { label: "Payée", color: "success", title: "Paiement enregistré" };
+  }
+  if (r.payment_status === "overdue" || anyOverdueInv) {
+    return { label: "En retard", color: "warning", title: "Facture en retard" };
+  }
+  if (r.payment_status === "partially_paid" || anyPaid) {
+    return { label: "Part. payée", color: "info", title: "Paiement partiel" };
+  }
+  if (anyInv) {
+    return { label: "Facturée", color: "info", title: `${invs.length} facture(s) en attente` };
+  }
+  return { label: "En attente", color: "warning", title: "En attente de facturation" };
+}
+
+function billingBadgeClasses(color: BillingStatus["color"]): string {
+  switch (color) {
+    case "success":
+      return "bg-mk-green text-white hover:bg-mk-green";
+    case "warning":
+      return "bg-destructive text-destructive-foreground hover:bg-destructive";
+    case "info":
+      return "bg-primary/10 text-primary hover:bg-primary/10";
+    default:
+      return "bg-muted text-muted-foreground hover:bg-muted";
+  }
+}
 
 export default function VendorInvoicesToCollect() {
   const qc = useQueryClient();

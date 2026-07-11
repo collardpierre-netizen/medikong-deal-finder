@@ -26,7 +26,56 @@ type Row = {
     customer_id: string;
     customers: { id: string; email: string; company_name: string; country_code: string } | null;
   } | null;
+  /** Toutes les factures MediKong liées à (order_id, vendor_id). Alimenté côté client. */
+  invoices?: Array<{ id: string; status: string }>;
 };
+
+/**
+ * Statut de facturation dérivé, miroir de `computeBillingStatus` (VendorOrders)
+ * appliqué au niveau sub-order. On combine `sub_orders.payment_status` et le
+ * statut des `order_invoices` pour rester cohérent avec les badges des listes
+ * de commandes et de la fiche commande.
+ */
+type BillingStatus = {
+  label: string;
+  color: "success" | "warning" | "info" | "default";
+  title: string;
+};
+
+function computeInvoiceBillingStatus(r: Row): BillingStatus {
+  const invs = r.invoices ?? [];
+  const anyInv = invs.length > 0;
+  const allPaid = anyInv && invs.every((i) => i.status === "paid");
+  const anyPaid = anyInv && invs.some((i) => i.status === "paid");
+  const anyOverdueInv = invs.some((i) => i.status === "overdue" || i.status === "uncollectible");
+
+  if (allPaid || r.payment_status === "paid") {
+    return { label: "Payée", color: "success", title: "Paiement enregistré" };
+  }
+  if (r.payment_status === "overdue" || anyOverdueInv) {
+    return { label: "En retard", color: "warning", title: "Facture en retard" };
+  }
+  if (r.payment_status === "partially_paid" || anyPaid) {
+    return { label: "Part. payée", color: "info", title: "Paiement partiel" };
+  }
+  if (anyInv) {
+    return { label: "Facturée", color: "info", title: `${invs.length} facture(s) en attente` };
+  }
+  return { label: "En attente", color: "warning", title: "En attente de facturation" };
+}
+
+function billingBadgeClasses(color: BillingStatus["color"]): string {
+  switch (color) {
+    case "success":
+      return "bg-mk-green text-white hover:bg-mk-green";
+    case "warning":
+      return "bg-destructive text-destructive-foreground hover:bg-destructive";
+    case "info":
+      return "bg-primary/10 text-primary hover:bg-primary/10";
+    default:
+      return "bg-muted text-muted-foreground hover:bg-muted";
+  }
+}
 
 export default function VendorInvoicesToCollect() {
   const qc = useQueryClient();
@@ -51,7 +100,28 @@ export default function VendorInvoicesToCollect() {
         .eq("payment_method", "invoice")
         .order("payment_due_date", { ascending: true, nullsFirst: false });
       if (error) throw error;
-      return (data || []) as unknown as Row[];
+      const list = (data || []) as unknown as Row[];
+
+      // Charge en parallèle les factures MediKong pour tous les order_id du vendeur,
+      // pour dériver un statut unifié (miroir de computeBillingStatus).
+      const orderIds = Array.from(new Set(list.map((r) => r.order_id).filter(Boolean)));
+      if (orderIds.length > 0) {
+        const { data: invs } = await supabase
+          .from("order_invoices")
+          .select("id, order_id, status")
+          .eq("vendor_id", vendorId!)
+          .in("order_id", orderIds);
+        const byOrder = new Map<string, Array<{ id: string; status: string }>>();
+        (invs || []).forEach((i: any) => {
+          const arr = byOrder.get(i.order_id) ?? [];
+          arr.push({ id: i.id, status: i.status });
+          byOrder.set(i.order_id, arr);
+        });
+        list.forEach((r) => {
+          r.invoices = byOrder.get(r.order_id) ?? [];
+        });
+      }
+      return list;
     },
   });
 
@@ -106,11 +176,24 @@ export default function VendorInvoicesToCollect() {
     onError: (e: any) => toast.error(e.message || "Erreur"),
   });
 
+  // Statistiques dérivées du statut unifié (miroir de computeBillingStatus).
+  // - "En attente"  = statut billing "En attente" ou "Facturée" (non payée, non en retard)
+  // - "En retard"   = statut billing "En retard"
+  // - "Part. payée" = statut billing "Part. payée" (comptée à part pour rester lisible)
   const stats = useMemo(() => {
-    const pending = rows.filter((r) => r.payment_status === "pending");
-    const overdue = rows.filter((r) => r.payment_status === "overdue");
-    const sum = (list: Row[]) => list.reduce((s, r) => s + Number(r.subtotal_incl_vat || 0), 0);
-    return { pendingCount: pending.length, overdueCount: overdue.length, pendingAmt: sum(pending), overdueAmt: sum(overdue) };
+    const enriched = rows.map((r) => ({ r, b: computeInvoiceBillingStatus(r) }));
+    const pending = enriched.filter(({ b }) => b.label === "En attente" || b.label === "Facturée");
+    const overdue = enriched.filter(({ b }) => b.label === "En retard");
+    const partial = enriched.filter(({ b }) => b.label === "Part. payée");
+    const sum = (list: typeof enriched) => list.reduce((s, { r }) => s + Number(r.subtotal_incl_vat || 0), 0);
+    return {
+      pendingCount: pending.length,
+      overdueCount: overdue.length,
+      partialCount: partial.length,
+      pendingAmt: sum(pending),
+      overdueAmt: sum(overdue),
+      partialAmt: sum(partial),
+    };
   }, [rows]);
 
   if (isLoading) {
@@ -124,9 +207,12 @@ export default function VendorInvoicesToCollect() {
         <p className="text-sm text-mk-sec mt-1">Sous-commandes réglées par facture, en attente de paiement.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2"><CardDescription>En attente</CardDescription><CardTitle>{stats.pendingCount} · {formatPrice(stats.pendingAmt)} EUR</CardTitle></CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2"><CardDescription className="text-primary">Partiellement payées</CardDescription><CardTitle className="text-primary">{stats.partialCount} · {formatPrice(stats.partialAmt)} EUR</CardTitle></CardHeader>
         </Card>
         <Card className="border-destructive/40">
           <CardHeader className="pb-2"><CardDescription className="text-destructive">En retard</CardDescription><CardTitle className="text-destructive">{stats.overdueCount} · {formatPrice(stats.overdueAmt)} EUR</CardTitle></CardHeader>
@@ -152,35 +238,44 @@ export default function VendorInvoicesToCollect() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((r) => (
-                    <tr key={r.id} className="border-t border-mk-line">
-                      <td className="px-3 py-2 font-mono text-xs text-mk-navy">{r.orders?.order_number}</td>
-                      <td className="px-3 py-2">
-                        <div className="font-medium text-mk-navy">{r.orders?.customers?.company_name}</div>
-                        <div className="text-[11px] text-mk-sec">{r.orders?.customers?.email}</div>
-                      </td>
-                      <td className="px-3 py-2 text-right font-medium">{formatPrice(Number(r.subtotal_incl_vat))} EUR</td>
-                      <td className="px-3 py-2">{r.payment_due_date ?? "—"}</td>
-                      <td className="px-3 py-2">
-                        {r.payment_status === "paid" && <Badge className="bg-mk-green text-white">Payée</Badge>}
-                        {r.payment_status === "pending" && <Badge variant="secondary">En attente</Badge>}
-                        {r.payment_status === "overdue" && <Badge variant="destructive"><AlertTriangle size={11} className="mr-1" />En retard</Badge>}
-                      </td>
-                      <td className="px-3 py-2 text-xs text-mk-sec">
-                        <Mail size={11} className="inline mr-1" />{r.invoice_reminder_count}
-                        {r.invoice_last_reminder_at && (
-                          <div className="text-[10px]">{new Date(r.invoice_last_reminder_at).toLocaleDateString("fr-BE")}</div>
-                        )}
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        {r.payment_status !== "paid" && (
-                          <Button size="sm" variant="outline" onClick={() => markPaid.mutate(r.id)} disabled={markPaid.isPending}>
-                            <CheckCircle2 size={13} className="mr-1" /> Marquer payée
-                          </Button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                  {rows.map((r) => {
+                    const billing = computeInvoiceBillingStatus(r);
+                    const isPaid = billing.label === "Payée";
+                    return (
+                      <tr key={r.id} className="border-t border-mk-line">
+                        <td className="px-3 py-2 font-mono text-xs text-mk-navy">{r.orders?.order_number}</td>
+                        <td className="px-3 py-2">
+                          <div className="font-medium text-mk-navy">{r.orders?.customers?.company_name}</div>
+                          <div className="text-[11px] text-mk-sec">{r.orders?.customers?.email}</div>
+                        </td>
+                        <td className="px-3 py-2 text-right font-medium">{formatPrice(Number(r.subtotal_incl_vat))} EUR</td>
+                        <td className="px-3 py-2">{r.payment_due_date ?? "—"}</td>
+                        <td className="px-3 py-2">
+                          <span title={billing.title}>
+                            <Badge className={billingBadgeClasses(billing.color)}>
+                              {billing.color === "warning" && billing.label === "En retard" && (
+                                <AlertTriangle size={11} className="mr-1" />
+                              )}
+                              {billing.label}
+                            </Badge>
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-xs text-mk-sec">
+                          <Mail size={11} className="inline mr-1" />{r.invoice_reminder_count}
+                          {r.invoice_last_reminder_at && (
+                            <div className="text-[10px]">{new Date(r.invoice_last_reminder_at).toLocaleDateString("fr-BE")}</div>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {!isPaid && (
+                            <Button size="sm" variant="outline" onClick={() => markPaid.mutate(r.id)} disabled={markPaid.isPending}>
+                              <CheckCircle2 size={13} className="mr-1" /> Marquer payée
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

@@ -176,11 +176,24 @@ export default function VendorInvoicesToCollect() {
     onError: (e: any) => toast.error(e.message || "Erreur"),
   });
 
+  // Statistiques dérivées du statut unifié (miroir de computeBillingStatus).
+  // - "En attente"  = statut billing "En attente" ou "Facturée" (non payée, non en retard)
+  // - "En retard"   = statut billing "En retard"
+  // - "Part. payée" = statut billing "Part. payée" (comptée à part pour rester lisible)
   const stats = useMemo(() => {
-    const pending = rows.filter((r) => r.payment_status === "pending");
-    const overdue = rows.filter((r) => r.payment_status === "overdue");
-    const sum = (list: Row[]) => list.reduce((s, r) => s + Number(r.subtotal_incl_vat || 0), 0);
-    return { pendingCount: pending.length, overdueCount: overdue.length, pendingAmt: sum(pending), overdueAmt: sum(overdue) };
+    const enriched = rows.map((r) => ({ r, b: computeInvoiceBillingStatus(r) }));
+    const pending = enriched.filter(({ b }) => b.label === "En attente" || b.label === "Facturée");
+    const overdue = enriched.filter(({ b }) => b.label === "En retard");
+    const partial = enriched.filter(({ b }) => b.label === "Part. payée");
+    const sum = (list: typeof enriched) => list.reduce((s, { r }) => s + Number(r.subtotal_incl_vat || 0), 0);
+    return {
+      pendingCount: pending.length,
+      overdueCount: overdue.length,
+      partialCount: partial.length,
+      pendingAmt: sum(pending),
+      overdueAmt: sum(overdue),
+      partialAmt: sum(partial),
+    };
   }, [rows]);
 
   if (isLoading) {

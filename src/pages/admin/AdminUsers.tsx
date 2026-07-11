@@ -83,7 +83,7 @@ export default function AdminUsers() {
 
     const { data: vendors } = await supabase
       .from("vendors")
-      .select("id, auth_user_id, email, company_name, type, is_active")
+      .select("id, auth_user_id, email, company_name, type, is_active, created_at")
       .order("company_name");
 
     vendors?.forEach(v => {
@@ -94,15 +94,17 @@ export default function AdminUsers() {
         type: "vendor",
         company: v.company_name || v.id,
         plan: v.type || "real",
+        profile: v.type || null,
         status: v.is_active ? "active" : "inactive",
         lastLogin: null,
+        createdAt: v.created_at ?? null,
         linked: !!v.auth_user_id,
       });
     });
 
     const { data: customers } = await supabase
       .from("customers")
-      .select("id, auth_user_id, email, company_name, customer_type, is_verified")
+      .select("id, auth_user_id, email, company_name, customer_type, is_verified, created_at")
       .order("company_name");
 
     customers?.forEach(b => {
@@ -113,8 +115,10 @@ export default function AdminUsers() {
         type: "buyer",
         company: b.company_name,
         plan: b.customer_type || "pharmacy",
+        profile: b.customer_type || null,
         status: b.is_verified ? "active" : "pending",
         lastLogin: null,
+        createdAt: b.created_at ?? null,
         linked: !!b.auth_user_id,
       });
     });

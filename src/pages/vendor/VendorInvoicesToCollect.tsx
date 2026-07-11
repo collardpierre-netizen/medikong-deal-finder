@@ -238,35 +238,44 @@ export default function VendorInvoicesToCollect() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((r) => (
-                    <tr key={r.id} className="border-t border-mk-line">
-                      <td className="px-3 py-2 font-mono text-xs text-mk-navy">{r.orders?.order_number}</td>
-                      <td className="px-3 py-2">
-                        <div className="font-medium text-mk-navy">{r.orders?.customers?.company_name}</div>
-                        <div className="text-[11px] text-mk-sec">{r.orders?.customers?.email}</div>
-                      </td>
-                      <td className="px-3 py-2 text-right font-medium">{formatPrice(Number(r.subtotal_incl_vat))} EUR</td>
-                      <td className="px-3 py-2">{r.payment_due_date ?? "—"}</td>
-                      <td className="px-3 py-2">
-                        {r.payment_status === "paid" && <Badge className="bg-mk-green text-white">Payée</Badge>}
-                        {r.payment_status === "pending" && <Badge variant="secondary">En attente</Badge>}
-                        {r.payment_status === "overdue" && <Badge variant="destructive"><AlertTriangle size={11} className="mr-1" />En retard</Badge>}
-                      </td>
-                      <td className="px-3 py-2 text-xs text-mk-sec">
-                        <Mail size={11} className="inline mr-1" />{r.invoice_reminder_count}
-                        {r.invoice_last_reminder_at && (
-                          <div className="text-[10px]">{new Date(r.invoice_last_reminder_at).toLocaleDateString("fr-BE")}</div>
-                        )}
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        {r.payment_status !== "paid" && (
-                          <Button size="sm" variant="outline" onClick={() => markPaid.mutate(r.id)} disabled={markPaid.isPending}>
-                            <CheckCircle2 size={13} className="mr-1" /> Marquer payée
-                          </Button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                  {rows.map((r) => {
+                    const billing = computeInvoiceBillingStatus(r);
+                    const isPaid = billing.label === "Payée";
+                    return (
+                      <tr key={r.id} className="border-t border-mk-line">
+                        <td className="px-3 py-2 font-mono text-xs text-mk-navy">{r.orders?.order_number}</td>
+                        <td className="px-3 py-2">
+                          <div className="font-medium text-mk-navy">{r.orders?.customers?.company_name}</div>
+                          <div className="text-[11px] text-mk-sec">{r.orders?.customers?.email}</div>
+                        </td>
+                        <td className="px-3 py-2 text-right font-medium">{formatPrice(Number(r.subtotal_incl_vat))} EUR</td>
+                        <td className="px-3 py-2">{r.payment_due_date ?? "—"}</td>
+                        <td className="px-3 py-2">
+                          <span title={billing.title}>
+                            <Badge className={billingBadgeClasses(billing.color)}>
+                              {billing.color === "warning" && billing.label === "En retard" && (
+                                <AlertTriangle size={11} className="mr-1" />
+                              )}
+                              {billing.label}
+                            </Badge>
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-xs text-mk-sec">
+                          <Mail size={11} className="inline mr-1" />{r.invoice_reminder_count}
+                          {r.invoice_last_reminder_at && (
+                            <div className="text-[10px]">{new Date(r.invoice_last_reminder_at).toLocaleDateString("fr-BE")}</div>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {!isPaid && (
+                            <Button size="sm" variant="outline" onClick={() => markPaid.mutate(r.id)} disabled={markPaid.isPending}>
+                              <CheckCircle2 size={13} className="mr-1" /> Marquer payée
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

@@ -38,7 +38,7 @@ const AdminFinances = () => {
     <div>
       <AdminTopBar title={t("finances")} subtitle="Revenus, commissions et fiscalité" />
 
-      <div className="grid grid-cols-5 gap-3 mb-5">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-5">
         <KpiCard icon={TrendingUp} label="GMV mois" value={`${fmt(totalHT + totalTVA)} EUR`} />
         <KpiCard icon={DollarSign} label="Factures HT" value={`${fmt(totalHT)} EUR`} iconColor="#059669" iconBg="#F0FDF4" />
         <KpiCard icon={Receipt} label="TVA collectée" value={`${fmt(totalTVA)} EUR`} iconColor="#7C3AED" iconBg="#F5F3FF" />
@@ -46,10 +46,10 @@ const AdminFinances = () => {
         <KpiCard icon={RotateCcw} label="Payées" value={String(paidInvoices.length)} iconColor="#059669" iconBg="#F0FDF4" />
       </div>
 
-      <div className="flex items-center gap-1 mb-4 p-1 rounded-lg" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", display: "inline-flex" }}>
+      <div className="flex items-center gap-1 mb-4 p-1 rounded-lg overflow-x-auto" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", display: "inline-flex", maxWidth: "100%" }}>
         {tabs.map((tab) => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            className="px-4 py-2 rounded-md text-[12px] font-semibold transition-colors"
+            className="px-3 md:px-4 py-2 rounded-md text-[12px] font-semibold transition-colors whitespace-nowrap"
             style={{ backgroundColor: activeTab === tab.key ? "#1B5BDA" : "transparent", color: activeTab === tab.key ? "#fff" : "#616B7C" }}>
             {tab.label}
           </button>
@@ -57,7 +57,7 @@ const AdminFinances = () => {
       </div>
 
       {activeTab === "overview" && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
             <h3 className="text-[14px] font-bold mb-4" style={{ color: "#1D2530" }}>Taux commission par vendeur</h3>
             <ResponsiveContainer width="100%" height={220}>
@@ -88,7 +88,7 @@ const AdminFinances = () => {
       )}
 
       {activeTab === "invoices" && (
-        <div className="rounded-[10px] overflow-hidden" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+        <div className="rounded-[10px] overflow-x-auto" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
           {isLoading ? <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Chargement...</div> : (
             <table className="w-full text-left">
               <thead>
@@ -127,7 +127,7 @@ const AdminFinances = () => {
       )}
 
       {activeTab === "payouts" && (
-        <div className="rounded-[10px] overflow-hidden" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+        <div className="rounded-[10px] overflow-x-auto" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
           <table className="w-full text-left">
             <thead>
               <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>

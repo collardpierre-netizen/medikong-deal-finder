@@ -322,7 +322,7 @@ const AdminDashboard = () => {
           ? ((realPct * s.gmv) + (fcstPct * s.forecastGmv)) / (s.gmv + s.forecastGmv)
           : realPct;
         return (
-          <div className="grid grid-cols-6 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 mb-6">
             <KpiCard
               icon={DollarSign}
               label={t("gmvMonth")}
@@ -358,7 +358,7 @@ const AdminDashboard = () => {
       })()}
 
       {/* Shipping KPIs */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
         <KpiCard icon={Truck} label="Expéditions totales" value={String(ss?.totalShipments ?? 0)} iconColor="#1B5BDA" iconBg="#EFF6FF" />
         <KpiCard icon={Store} label="Vendeurs par mode" value={`WL: ${ss?.modes?.medikong_whitelabel ?? 0} | SC: ${ss?.modes?.own_sendcloud ?? 0} | M: ${ss?.modes?.no_shipping ?? 0}`} iconColor="#7C3AED" iconBg="#F5F3FF" />
         <KpiCard icon={DollarSign} label="Revenu marge WL" value={`${fmtEur(ss?.totalMarginRevenue ?? 0)} EUR`} iconColor="#059669" iconBg="#F0FDF4" />
@@ -488,7 +488,7 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* GMV Chart */}
         <GmvEvolutionChart title={t("gmvEvolution")} orders={(ordersQuery.data || []) as any} includeForecast={includeForecast} onIncludeForecastChange={setIncludeForecast} />
 

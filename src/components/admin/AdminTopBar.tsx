@@ -86,18 +86,18 @@ const AdminTopBar = ({ title, subtitle, actions }: AdminTopBarProps) => {
         </nav>
       )}
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-[22px] font-bold" style={{ color: "#1D2530" }}>
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-[18px] md:text-[22px] font-bold truncate" style={{ color: "#1D2530" }}>
             {title}
           </h1>
           {subtitle && (
-            <p className="text-[13px] mt-0.5" style={{ color: "#616B7C" }}>
+            <p className="text-[12px] md:text-[13px] mt-0.5" style={{ color: "#616B7C" }}>
               {subtitle}
             </p>
           )}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3 flex-wrap">
           {actions}
           <AccountSwitcher />
           <ImpersonateBuyerCommand />

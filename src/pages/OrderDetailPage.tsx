@@ -4,7 +4,7 @@ import { Download, FileText, FileSpreadsheet } from "lucide-react";
 import { formatPrice } from "@/data/mock";
 import { useOrderDetail } from "@/hooks/useOrders";
 import { ORDER_WORKFLOW_STEPS, getOrderStatusMeta, formatOrderDateTime } from "@/lib/order-status";
-import { getVendorPublicName } from "@/lib/vendor-display";
+import { useVendorLabels } from "@/hooks/useVendorLabels";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 

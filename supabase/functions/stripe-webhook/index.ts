@@ -474,6 +474,7 @@ async function handleBankTransferSucceeded(pi: Stripe.PaymentIntent) {
 }
 
 
+async function handlePaymentSucceeded(pi: Stripe.PaymentIntent) {
   const orderId = pi.metadata?.order_id;
   if (!orderId) {
     console.log("No order_id in PI metadata, skipping");

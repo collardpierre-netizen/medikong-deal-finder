@@ -15,6 +15,8 @@ export default function OrderDetailPage() {
   const meta = getOrderStatusMeta(order?.status);
   const currentStep = meta.step; // -1 si hors workflow
   const items: any[] = (order as any)?.items || [];
+  const itemVendorIds = items.map((it: any) => it.vendor_id).filter(Boolean) as string[];
+  const { getLabel: getVendorLabel } = useVendorLabels(itemVendorIds);
   const subtotal = Number((order as any)?.subtotal_excl_vat || 0);
   const vat = Number((order as any)?.vat_amount || 0);
   const shipping = Number((order as any)?.shipping_cost || 0);

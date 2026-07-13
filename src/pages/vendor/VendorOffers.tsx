@@ -1992,6 +1992,8 @@ export default function VendorOffers() {
       {/* Form */}
       {showForm && (
         <VCard>
+          <div ref={formRef} />
+
           {catalogReturn && (
             <button
               type="button"

@@ -1468,9 +1468,11 @@ export default function VendorOffers() {
   });
 
   const openCreate = () => { setForm(emptyForm); setInitialSnapshot(null); setEditingId(null); setShowForm(true); };
+  const [openingOfferId, setOpeningOfferId] = useState<string | null>(null);
   const openEdit = async (offer: any) => {
     console.log("[VendorOffers.openEdit] click", { offerId: offer?.id, productId: offer?.product_id, vendorId: vendor?.id });
     toast.info("Ouverture de l'offre…", { id: `open-edit-${offer?.id}`, duration: 1500 });
+    setOpeningOfferId(offer.id);
     const basePurchase = offer.purchase_price_excl_vat != null ? String(offer.purchase_price_excl_vat) : "";
     const baseCategoryIds: string[] = [];
     const initialOverride = offer.pack_size_override;
@@ -1562,6 +1564,8 @@ export default function VendorOffers() {
       toast.error("Formulaire ouvert, données complémentaires incomplètes", {
         description: e?.message || "Certaines catégories ou coûts par défaut n'ont pas pu être chargés.",
       });
+    } finally {
+      setOpeningOfferId((current) => (current === offer.id ? null : current));
     }
   };
   const navigate = useNavigate();
@@ -2030,7 +2034,14 @@ export default function VendorOffers() {
             </button>
           )}
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold" style={{ color: "#1D2530" }}>{editingId ? "Modifier l'offre" : "Nouvelle offre"}</h3>
+            <h3 className="text-sm font-semibold flex items-center gap-2" style={{ color: "#1D2530" }}>
+              {editingId ? "Modifier l'offre" : "Nouvelle offre"}
+              {openingOfferId && openingOfferId === editingId && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#1B5BDA]">
+                  <Loader2 size={12} className="animate-spin" /> Chargement des données…
+                </span>
+              )}
+            </h3>
             <button onClick={closeForm} className="p-1 hover:bg-[#F1F5F9] rounded"><X size={16} style={{ color: "#8B95A5" }} /></button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2868,9 +2879,11 @@ export default function VendorOffers() {
                           <button
                             type="button"
                             onClick={() => openEdit(offer)}
-                            className="text-[11px] underline decoration-dotted hover:text-[#1B5BDA]"
+                            disabled={openingOfferId === offer.id}
+                            className="text-[11px] underline decoration-dotted hover:text-[#1B5BDA] disabled:opacity-60 disabled:cursor-wait inline-flex items-center gap-1"
                             style={{ color: "#8B95A5" }}
                           >
+                            {openingOfferId === offer.id && <Loader2 size={10} className="animate-spin" />}
                             Saisir
                           </button>
                         )}
@@ -2927,8 +2940,8 @@ export default function VendorOffers() {
                               }
                             />
                           )}
-                          <button type="button" onClick={() => openEdit(offer)} className="p-1.5 hover:bg-[#EFF6FF] rounded" title="Modifier">
-                            <Pencil size={14} style={{ color: "#1B5BDA" }} />
+                          <button type="button" onClick={() => openEdit(offer)} disabled={openingOfferId === offer.id} className="p-1.5 hover:bg-[#EFF6FF] rounded disabled:opacity-60 disabled:cursor-wait" title="Modifier">
+                            {openingOfferId === offer.id ? <Loader2 size={14} className="animate-spin" style={{ color: "#1B5BDA" }} /> : <Pencil size={14} style={{ color: "#1B5BDA" }} />}
                           </button>
                           {offer.product_id && vendor?.id && (
                             <VendorCommissionOverrideDialog

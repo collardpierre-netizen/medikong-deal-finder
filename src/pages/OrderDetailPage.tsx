@@ -4,7 +4,7 @@ import { Download, FileText, FileSpreadsheet } from "lucide-react";
 import { formatPrice } from "@/data/mock";
 import { useOrderDetail } from "@/hooks/useOrders";
 import { ORDER_WORKFLOW_STEPS, getOrderStatusMeta, formatOrderDateTime } from "@/lib/order-status";
-import { getVendorPublicName } from "@/lib/vendor-display";
+import { useVendorLabels } from "@/hooks/useVendorLabels";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -15,6 +15,8 @@ export default function OrderDetailPage() {
   const meta = getOrderStatusMeta(order?.status);
   const currentStep = meta.step; // -1 si hors workflow
   const items: any[] = (order as any)?.items || [];
+  const itemVendorIds = items.map((it: any) => it.vendor_id).filter(Boolean) as string[];
+  const { getLabel: getVendorLabel } = useVendorLabels(itemVendorIds);
   const subtotal = Number((order as any)?.subtotal_excl_vat || 0);
   const vat = Number((order as any)?.vat_amount || 0);
   const shipping = Number((order as any)?.shipping_cost || 0);
@@ -27,8 +29,8 @@ export default function OrderDetailPage() {
     items.map((it: any) => {
       const qty = Number(it.quantity || 0);
       const unit = Number(it.unit_price_excl_vat || 0);
-      // 🔒 Anonymisation : libellé public uniquement, jamais vendor_name brut.
-      const vendorLabel = getVendorPublicName({ display_code: it.vendor_display_code });
+      // 🟢 CMS-driven via useVendorLabels — cohérent avec panier/checkout/confirmation.
+      const vendorLabel = getVendorLabel(it.vendor_id);
       return {
         name: it.product_name || it.name || "—",
         ean: it.product_gtin || "",
@@ -185,8 +187,8 @@ export default function OrderDetailPage() {
           ) : items.length === 0 ? (
             <div className="px-4 py-6 text-sm text-mk-sec">Aucun article</div>
           ) : items.map((it, idx) => {
-            // 🔒 Anonymisation : libellé public uniquement, jamais it.vendor_name brut.
-            const vLabel = getVendorPublicName({ display_code: it.vendor_display_code });
+            // 🟢 CMS-driven via useVendorLabels — cohérent avec panier/checkout/confirmation.
+            const vLabel = getVendorLabel(it.vendor_id);
             const lineStatus = (it.fulfillment_status as string) || "pending";
             const lineStatusMeta: Record<string, { label: string; cls: string }> = {
               pending: { label: "En attente vendeur", cls: "bg-amber-100 text-amber-800" },

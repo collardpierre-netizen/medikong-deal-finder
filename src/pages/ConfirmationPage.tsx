@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
+import { useVendorLabels } from "@/hooks/useVendorLabels";
 
 export default function ConfirmationPage() {
   const [searchParams] = useSearchParams();
@@ -182,15 +183,20 @@ export default function ConfirmationPage() {
       return 5000;
     },
     queryFn: async () => {
+      // 🔒 On ne sélectionne PAS vendor.name — le libellé est résolu via
+      // useVendorLabels (CMS-driven, cohérent avec panier/checkout).
       const { data, error } = await supabase
         .from("order_invoices")
-        .select("id, invoice_number, amount_incl_vat, pdf_url, hosted_url, status, vendor:vendors!order_invoices_vendor_id_fkey(name)")
+        .select("id, invoice_number, amount_incl_vat, pdf_url, hosted_url, status, vendor_id")
         .eq("order_id", orderId!)
         .in("status", ["finalized", "paid"]);
       if (error) throw error;
       return data ?? [];
     },
   });
+
+  const invoiceVendorIds = (invoices || []).map((i: any) => i.vendor_id).filter(Boolean) as string[];
+  const { getLabel: getVendorLabel } = useVendorLabels(invoiceVendorIds);
 
 
   const headline = failed
@@ -376,7 +382,7 @@ export default function ConfirmationPage() {
                   {invoices.map((inv: any) => (
                     <li key={inv.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-mk-alt/40 rounded-md">
                       <div>
-                        <div className="text-sm font-semibold text-mk-navy">{inv.vendor?.name ?? "Vendeur"}</div>
+                        <div className="text-sm font-semibold text-mk-navy">{getVendorLabel(inv.vendor_id)}</div>
                         <div className="text-xs text-mk-sec">
                           Facture {inv.invoice_number ?? "—"} · {formatPrice(Number(inv.amount_incl_vat))} EUR TTC
                         </div>

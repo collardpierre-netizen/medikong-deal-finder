@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle2, Loader2, AlertTriangle, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatPrice } from "@/data/mock";
+import { useVendorLabels } from "@/hooks/useVendorLabels";
 
 type PIStatus = "succeeded" | "processing" | "requires_payment_method" | "requires_action" | "canceled" | string;
 
@@ -94,6 +95,7 @@ export default function OrderPaymentConfirmationPage() {
 
   const order = (data as any)?.order;
   const pis = ((data as any)?.payment_intents || []) as Array<{ id: string; vendor_id: string | null; amount: number; status: PIStatus }>;
+  const { getLabel: getVendorLabel } = useVendorLabels(pis.map((p) => p.vendor_id));
   const allSucceeded = pis.length > 0 && pis.every((p) => p.status === "succeeded");
   const anyFailed = pis.some((p) => p.status === "requires_payment_method" || p.status === "canceled");
 
@@ -152,7 +154,8 @@ export default function OrderPaymentConfirmationPage() {
               {pis.map((pi) => (
                 <div key={pi.id} className="px-4 py-3 border-b border-mk-line last:border-0 flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-mk-navy truncate">{formatPrice(pi.amount)} EUR</p>
+                    <p className="text-sm font-medium text-mk-navy truncate">{getVendorLabel(pi.vendor_id)}</p>
+                    <p className="text-[11px] text-mk-sec">{formatPrice(pi.amount)} EUR</p>
                     <p className="text-[11px] text-mk-sec font-mono truncate">{pi.id}</p>
                   </div>
                   <StatusBadge status={pi.status} />

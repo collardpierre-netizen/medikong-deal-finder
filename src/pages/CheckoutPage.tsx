@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { useQuery } from "@tanstack/react-query";
 import { StripePaymentFlow, type PaymentIntentInfo } from "@/components/checkout/StripePaymentFlow";
 import { BankTransferInstructions } from "@/components/checkout/BankTransferInstructions";
+import { useVendorLabels } from "@/hooks/useVendorLabels";
 
 
 
@@ -284,6 +285,21 @@ export default function CheckoutPage() {
   const [manualPaymentVendors, setManualPaymentVendors] = useState<ManualPaymentVendor[]>([]);
   const testMode = false;
 
+  // 🟢 Résolution unifiée du libellé vendeur (panier + checkout + confirmation).
+  // On regroupe tous les vendor_ids présents sur la page pour un seul fetch.
+  const allVendorIdsOnPage = useMemo(() => {
+    const set = new Set<string>(vendorIdsInCart);
+    for (const v of validation?.vendors || []) if (v.vendor_id) set.add(v.vendor_id);
+    for (const e of validation?.errors || []) {
+      const vid = (e.details as any)?.vendor_id;
+      if (vid) set.add(vid);
+    }
+    for (const v of manualPaymentVendors) if (v.vendor_id) set.add(v.vendor_id);
+    for (const pi of paymentIntents) if (pi.vendor_id) set.add(pi.vendor_id);
+    return Array.from(set);
+  }, [vendorIdsInCart, validation, manualPaymentVendors, paymentIntents]);
+  const { labelsById: vendorLabelById, getLabel: getVendorLabel } = useVendorLabels(allVendorIdsOnPage);
+
   const handlePlaceOrder = useCallback(async () => {
     if (submitting || initLoading) return;
     setSubmitting(true);
@@ -298,7 +314,7 @@ export default function CheckoutPage() {
       const validation = await validateCartNow(items.map(it => ({ offer_id: it.offer_id, quantity: it.quantity })));
       if (!validation.valid) {
         const reasons = validation.errors.map(e => {
-          if (e.type === "vendor_mov_not_reached") return `MOV non atteint pour ${e.vendor_name} (manque ${Number(e.details.missing).toFixed(2)} €)`;
+          if (e.type === "vendor_mov_not_reached") return `MOV non atteint pour ${getVendorLabel((e.details as any)?.vendor_id, e.vendor_name)} (manque ${Number(e.details.missing).toFixed(2)} €)`;
           if (e.type === "below_moq") return `Quantité minimum non respectée (${e.details.current}/${e.details.required})`;
           if (e.type === "exceeds_stock") return `Stock insuffisant (${e.details.current}/${e.details.available})`;
           if (e.type === "offer_not_available") return `Offre indisponible`;
@@ -490,7 +506,7 @@ export default function CheckoutPage() {
                         {blockedVendors.map(v => (
                           <li key={v.vendor_id} className="bg-white border border-destructive/20 rounded-md px-3 py-2">
                             <div className="flex items-center justify-between gap-3 flex-wrap">
-                              <span className="text-sm font-semibold text-mk-navy">{v.vendor_name}</span>
+                              <span className="text-sm font-semibold text-mk-navy">{getVendorLabel(v.vendor_id, v.vendor_name)}</span>
                               {typeof v.missing === "number" && v.missing > 0 && (
                                 <span className="text-xs font-medium text-destructive">
                                   +{v.missing.toFixed(2)} € pour atteindre le minimum
@@ -801,7 +817,7 @@ export default function CheckoutPage() {
                               <ul className="space-y-1">
                                 {manualPaymentVendors.map((v) => (
                                   <li key={v.vendor_id} className="text-xs text-amber-900">
-                                    • Le paiement en ligne n'est pas encore disponible pour <strong>{v.vendor_name}</strong> — commande enregistrée, notre équipe vous contacte pour finaliser.
+                                    • Le paiement en ligne n'est pas encore disponible pour <strong>{getVendorLabel(v.vendor_id, v.vendor_name)}</strong> — commande enregistrée, notre équipe vous contacte pour finaliser.
                                   </li>
                                 ))}
                               </ul>
@@ -809,7 +825,7 @@ export default function CheckoutPage() {
                           )}
                           {paymentMethods[payment].label.startsWith("Virement bancaire") ? (
                             <>
-                              <BankTransferInstructions paymentIntents={paymentIntents} />
+                              <BankTransferInstructions paymentIntents={paymentIntents} vendorLabelById={vendorLabelById} />
                               <button
                                 type="button"
                                 onClick={() => {
@@ -825,6 +841,7 @@ export default function CheckoutPage() {
                             <StripePaymentFlow
                               orderId={orderId!}
                               paymentIntents={paymentIntents}
+                              vendorLabelById={vendorLabelById}
                               onAllPaid={() => {
                                 clearCart.mutate();
                                 navigate(`/commande/confirmation?order_id=${orderId}`);
@@ -877,7 +894,7 @@ export default function CheckoutPage() {
                       {blockedVendors.map(v => (
                         <div key={v.vendor_id} className="border border-destructive/20 rounded-md bg-destructive/5 p-2.5 space-y-1.5">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs font-medium text-mk-navy truncate">{v.vendor_name}</span>
+                            <span className="text-xs font-medium text-mk-navy truncate">{getVendorLabel(v.vendor_id, v.vendor_name)}</span>
                             {typeof v.missing === "number" && v.missing > 0 && (
                               <span className="text-[10px] font-bold text-destructive shrink-0">+{v.missing.toFixed(2)} €</span>
                             )}

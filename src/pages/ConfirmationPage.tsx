@@ -382,7 +382,7 @@ export default function ConfirmationPage() {
                   {invoices.map((inv: any) => (
                     <li key={inv.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-mk-alt/40 rounded-md">
                       <div>
-                        <div className="text-sm font-semibold text-mk-navy">{inv.vendor?.name ?? "Vendeur"}</div>
+                        <div className="text-sm font-semibold text-mk-navy">{getVendorLabel(inv.vendor_id)}</div>
                         <div className="text-xs text-mk-sec">
                           Facture {inv.invoice_number ?? "—"} · {formatPrice(Number(inv.amount_incl_vat))} EUR TTC
                         </div>

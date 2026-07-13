@@ -1386,6 +1386,16 @@ export default function VendorOffers() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<OfferForm>(emptyForm);
+  const formRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!showForm) return;
+    // Le formulaire est rendu au-dessus du tableau des offres.
+    // Sans scroll, le clic sur "Modifier" depuis une ligne basse donne l'impression que rien ne se passe.
+    const t = window.setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+    return () => window.clearTimeout(t);
+  }, [showForm, editingId]);
   const { data: editingEffectiveCommission } = useEffectiveCommission(editingId);
   const editingCommissionConfig = editingEffectiveCommission ?? commissionConfig;
   // Snapshot capturé à l'ouverture en édition pour afficher "avant → après" (prix HT + pack effectif)

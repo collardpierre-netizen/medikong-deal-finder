@@ -38,7 +38,7 @@ const AdminFinances = () => {
     <div>
       <AdminTopBar title={t("finances")} subtitle="Revenus, commissions et fiscalité" />
 
-      <div className="grid grid-cols-5 gap-3 mb-5">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-5">
         <KpiCard icon={TrendingUp} label="GMV mois" value={`${fmt(totalHT + totalTVA)} EUR`} />
         <KpiCard icon={DollarSign} label="Factures HT" value={`${fmt(totalHT)} EUR`} iconColor="#059669" iconBg="#F0FDF4" />
         <KpiCard icon={Receipt} label="TVA collectée" value={`${fmt(totalTVA)} EUR`} iconColor="#7C3AED" iconBg="#F5F3FF" />

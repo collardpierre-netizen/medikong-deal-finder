@@ -2909,7 +2909,7 @@ export default function VendorOffers() {
                               }
                             />
                           )}
-                          <button onClick={() => openEdit(offer)} className="p-1.5 hover:bg-[#EFF6FF] rounded" title="Modifier">
+                          <button type="button" onClick={() => openEdit(offer)} className="p-1.5 hover:bg-[#EFF6FF] rounded" title="Modifier">
                             <Pencil size={14} style={{ color: "#1B5BDA" }} />
                           </button>
                           {offer.product_id && vendor?.id && (

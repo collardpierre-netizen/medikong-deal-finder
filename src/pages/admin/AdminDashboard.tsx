@@ -488,7 +488,7 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* GMV Chart */}
         <GmvEvolutionChart title={t("gmvEvolution")} orders={(ordersQuery.data || []) as any} includeForecast={includeForecast} onIncludeForecastChange={setIncludeForecast} />
 

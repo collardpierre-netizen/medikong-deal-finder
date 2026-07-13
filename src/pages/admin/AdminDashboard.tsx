@@ -358,7 +358,7 @@ const AdminDashboard = () => {
       })()}
 
       {/* Shipping KPIs */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
         <KpiCard icon={Truck} label="Expéditions totales" value={String(ss?.totalShipments ?? 0)} iconColor="#1B5BDA" iconBg="#EFF6FF" />
         <KpiCard icon={Store} label="Vendeurs par mode" value={`WL: ${ss?.modes?.medikong_whitelabel ?? 0} | SC: ${ss?.modes?.own_sendcloud ?? 0} | M: ${ss?.modes?.no_shipping ?? 0}`} iconColor="#7C3AED" iconBg="#F5F3FF" />
         <KpiCard icon={DollarSign} label="Revenu marge WL" value={`${fmtEur(ss?.totalMarginRevenue ?? 0)} EUR`} iconColor="#059669" iconBg="#F0FDF4" />

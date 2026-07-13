@@ -57,7 +57,10 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
     }
 
     const body = await req.json();
-    const { action, order_id, payment_intent_ids } = body;
+    const { action, order_id, payment_intent_ids, payment_method } = body;
+    // "bank_transfer" = Flux B (SEPA Bank Transfer / customer_balance, sans transfer_data).
+    // sinon = Flux A (card / bancontact / sepa_debit, avec transfer_data.destination).
+    const isBankTransfer = payment_method === "bank_transfer";
 
     if (action === "get-payment-intents-status") {
       const ids: string[] = Array.isArray(payment_intent_ids) ? payment_intent_ids : [];

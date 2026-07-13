@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
+import { useVendorLabels } from "@/hooks/useVendorLabels";
 
 export default function ConfirmationPage() {
   const [searchParams] = useSearchParams();

@@ -20,17 +20,17 @@ export function SubNav() {
 
   return (
     <div className="border-b border-border bg-white">
-      <div className="mk-container flex items-center gap-1 overflow-x-auto scrollbar-hide">
+      <div className="mk-container flex items-center gap-0.5 md:gap-1 overflow-x-auto scrollbar-hide">
         {/* Categories button */}
         <Link
           to="/categories"
-          className={`flex items-center gap-2 px-4 py-2.5 my-1 rounded-lg text-sm font-semibold transition-colors shrink-0 ${
+          className={`flex items-center gap-1.5 md:gap-2 px-2.5 md:px-4 py-2 md:py-2.5 my-1 rounded-lg text-[13px] md:text-sm font-semibold transition-colors shrink-0 ${
             pathname === "/categories"
               ? "bg-primary text-primary-foreground"
               : "bg-primary text-primary-foreground hover:opacity-90"
           }`}
         >
-          <LayoutGrid size={16} />
+          <LayoutGrid size={15} />
           {t("nav.categories")}
         </Link>
 
@@ -48,7 +48,7 @@ export function SubNav() {
             <Link
               key={tab.path}
               to={tab.path}
-              className={`px-3 md:px-4 py-3 text-sm font-medium transition-colors relative whitespace-nowrap ${
+              className={`px-2.5 md:px-4 py-2.5 md:py-3 text-[13px] md:text-sm font-medium transition-colors relative whitespace-nowrap ${
                 active ? "text-foreground font-semibold" : "text-muted-foreground hover:text-foreground"
               }`}
             >

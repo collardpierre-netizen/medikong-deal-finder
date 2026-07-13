@@ -372,6 +372,14 @@ async function handlePaymentSucceeded(pi: Stripe.PaymentIntent) {
     return;
   }
 
+  // ===== Flux B : SEPA Bank Transfer (customer_balance) =====
+  // PI créé sans transfer_data.destination → on crée le Transfer vers le
+  // connected account du vendeur ici, après confirmation du virement.
+  if (pi.metadata?.transfer_pending === "true") {
+    await handleBankTransferSucceeded(pi);
+    return;
+  }
+
   const breakdownStr = pi.metadata?.vendor_breakdown;
   if (!breakdownStr) {
     console.log("No vendor_breakdown in PI metadata");

@@ -286,6 +286,9 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
           client_secret: paymentIntent.client_secret ?? null,
           amount: totalTtcCents,
           commission: commissionCents,
+          bank_transfer_instructions: isBankTransfer
+            ? paymentIntent.next_action?.display_bank_transfer_instructions ?? null
+            : undefined,
         });
       }
 

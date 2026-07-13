@@ -2938,8 +2938,8 @@ export default function VendorOffers() {
                               }
                             />
                           )}
-                          <button type="button" onClick={() => openEdit(offer)} className="p-1.5 hover:bg-[#EFF6FF] rounded" title="Modifier">
-                            <Pencil size={14} style={{ color: "#1B5BDA" }} />
+                          <button type="button" onClick={() => openEdit(offer)} disabled={openingOfferId === offer.id} className="p-1.5 hover:bg-[#EFF6FF] rounded disabled:opacity-60 disabled:cursor-wait" title="Modifier">
+                            {openingOfferId === offer.id ? <Loader2 size={14} className="animate-spin" style={{ color: "#1B5BDA" }} /> : <Pencil size={14} style={{ color: "#1B5BDA" }} />}
                           </button>
                           {offer.product_id && vendor?.id && (
                             <VendorCommissionOverrideDialog

@@ -366,36 +366,80 @@ export async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Se
 }
 
 /**
- * Flux B — SEPA Bank Transfer (customer_balance).
- * Le PI a été créé sans transfer_data.destination. Après le succès du virement,
- * on crée un Transfer séparé vers le connected account du vendeur, en réutilisant
- * la table order_transfers pour l'idempotence.
+ * Flux B — SEPA Bank Transfer (customer_balance), UN SEUL PI pour le total panier.
+ * Le PI n'a pas de transfer_data.destination. Après réception du virement, on
+ * reconstruit les splits par vendeur depuis order_lines + vendors, puis on crée
+ * N Transfers séparés (un par vendeur éligible Stripe Connect). La commission
+ * MediKong = ce qui reste sur la plateforme (total_ttc - Σ net_cents transférés).
+ * Idempotence via order_transfers (contrainte unique order_id+vendor_id) et
+ * idempotency_key Stripe `bt_transfer_<order_id>_<vendor_id>`.
  */
 async function handleBankTransferSucceeded(pi: Stripe.PaymentIntent) {
   ensureDeps();
   const orderId = pi.metadata?.order_id as string;
-  const vendorId = pi.metadata?.vendor_id as string | undefined;
-  const vendorStripeAccount = pi.metadata?.vendor_stripe_account as string | undefined;
-  const commissionCents = Number(pi.metadata?.commission_cents ?? "0");
-  const totalTtcCents = Number(pi.metadata?.total_ttc_cents ?? pi.amount ?? 0);
-  const transferAmount = Math.max(0, totalTtcCents - commissionCents);
-  const commRate = Number(pi.metadata?.commission_rate ?? "0");
-  const latestCharge = pi.latest_charge as string | null;
+  if (!orderId) {
+    console.warn(`[bank_transfer] PI ${pi.id} sans order_id, skip`);
+    return;
+  }
 
-  if (!vendorId || !vendorStripeAccount) {
-    console.warn(`[bank_transfer] PI ${pi.id} manque vendor_id/vendor_stripe_account, skip transfer`);
-  } else if (transferAmount > 0) {
-    // Idempotence via order_transfers
-    const { data: existing } = await supabase
-      .from("order_transfers")
-      .select("id, status, stripe_transfer_id")
-      .eq("order_id", orderId)
-      .eq("vendor_id", vendorId)
-      .maybeSingle();
+  const defaultCommission = parseFloat(Deno.env.get("DEFAULT_COMMISSION_RATE") || "0.20");
+  const latestCharge = (pi.latest_charge as string | null) ?? null;
 
-    if (existing?.stripe_transfer_id || existing?.status === "completed") {
-      console.log(`[bank_transfer] Transfer déjà présent pour order ${orderId} vendor ${vendorId}, skip`);
-    } else {
+  // Reconstruit les splits depuis la DB (source de vérité, évite la limite
+  // 500 chars des metadata Stripe pour paniers multi-vendeurs).
+  const { data: lines, error: linesErr } = await supabase
+    .from("order_lines")
+    .select("vendor_id, line_total_excl_vat, line_total_incl_vat, stripe_payment_intent_id")
+    .eq("order_id", orderId)
+    .eq("stripe_payment_intent_id", pi.id);
+
+  if (linesErr || !lines || lines.length === 0) {
+    console.error(`[bank_transfer] Aucune order_line liée au PI ${pi.id} pour order ${orderId}`, linesErr);
+  } else {
+    // Group by vendor
+    const byVendor = new Map<string, { ttc: number; ht: number }>();
+    for (const l of lines as any[]) {
+      if (!l.vendor_id) continue;
+      const agg = byVendor.get(l.vendor_id) ?? { ttc: 0, ht: 0 };
+      agg.ttc += Math.round(Number(l.line_total_incl_vat) * 100);
+      agg.ht += Math.round(Number(l.line_total_excl_vat) * 100);
+      byVendor.set(l.vendor_id, agg);
+    }
+
+    const vendorIds = Array.from(byVendor.keys());
+    const { data: vendors } = await supabase
+      .from("vendors")
+      .select("id, stripe_account_id, commission_rate, stripe_charges_enabled")
+      .in("id", vendorIds);
+    const vendorMap = new Map<string, any>((vendors || []).map((v: any) => [v.id, v]));
+
+    for (const [vendorId, agg] of byVendor.entries()) {
+      const vendor = vendorMap.get(vendorId);
+      if (!vendor?.stripe_account_id || !vendor?.stripe_charges_enabled) {
+        console.warn(`[bank_transfer] Vendor ${vendorId} sans Stripe Connect actif, skip transfer`);
+        continue;
+      }
+      const commRate = Number(vendor?.commission_rate ?? defaultCommission);
+      const commissionCents = Math.round(agg.ht * commRate);
+      const transferAmount = agg.ttc - commissionCents;
+      if (transferAmount <= 0) {
+        console.warn(`[bank_transfer] transfer_amount<=0 pour vendor ${vendorId}, skip`);
+        continue;
+      }
+
+      // Idempotence DB via order_transfers (unique order_id+vendor_id)
+      const { data: existing } = await supabase
+        .from("order_transfers")
+        .select("id, status, stripe_transfer_id")
+        .eq("order_id", orderId)
+        .eq("vendor_id", vendorId)
+        .maybeSingle();
+
+      if (existing?.stripe_transfer_id || existing?.status === "completed") {
+        console.log(`[bank_transfer] Transfer déjà présent pour order ${orderId} vendor ${vendorId}, skip`);
+        continue;
+      }
+
       let rowId = existing?.id as string | undefined;
       if (!rowId) {
         const { data: inserted, error: insertErr } = await supabase
@@ -411,7 +455,15 @@ async function handleBankTransferSucceeded(pi: Stripe.PaymentIntent) {
           .select("id")
           .single();
         if (insertErr) {
-          console.error("[bank_transfer] order_transfers insert failed", insertErr);
+          console.warn(`[bank_transfer] insert race, refetch:`, insertErr.code);
+          const { data: refetched } = await supabase
+            .from("order_transfers")
+            .select("id, status")
+            .eq("order_id", orderId)
+            .eq("vendor_id", vendorId)
+            .single();
+          if (refetched?.status === "completed") continue;
+          rowId = refetched?.id;
         } else {
           rowId = inserted.id;
         }
@@ -421,7 +473,7 @@ async function handleBankTransferSucceeded(pi: Stripe.PaymentIntent) {
         const transferPayload: any = {
           amount: transferAmount,
           currency: "eur",
-          destination: vendorStripeAccount,
+          destination: vendor.stripe_account_id,
           metadata: {
             order_id: orderId,
             vendor_id: vendorId,
@@ -429,10 +481,13 @@ async function handleBankTransferSucceeded(pi: Stripe.PaymentIntent) {
             payment_method: "bank_transfer",
           },
         };
+        // source_transaction requiert le charge id du PI virement (dispo dès succeeded)
         if (latestCharge) transferPayload.source_transaction = latestCharge;
+
         const transfer = await stripe.transfers.create(transferPayload, {
           idempotencyKey: `bt_transfer_${orderId}_${vendorId}`,
         });
+
         if (rowId) {
           await supabase
             .from("order_transfers")
@@ -443,10 +498,20 @@ async function handleBankTransferSucceeded(pi: Stripe.PaymentIntent) {
             })
             .eq("id", rowId);
         }
-        console.log(`[bank_transfer] Transfer ${transfer.id} créé pour vendor ${vendorId}`);
+        console.log(`[bank_transfer] Transfer ${transfer.id} OK order=${orderId} vendor=${vendorId} (${transferAmount}c)`);
       } catch (err: any) {
         console.error(`[bank_transfer] Transfer FAILED order=${orderId} vendor=${vendorId}:`, err);
         if (rowId) {
+          // Re-fetch avant écrasement destructif
+          const { data: current } = await supabase
+            .from("order_transfers")
+            .select("status, stripe_transfer_id")
+            .eq("id", rowId)
+            .single();
+          if (current?.status === "completed" || current?.stripe_transfer_id) {
+            console.warn(`[bank_transfer] Erreur Stripe sur retry mais transfer déjà completed (tr_id=${current.stripe_transfer_id}), IGNORE`);
+            continue;
+          }
           await supabase
             .from("order_transfers")
             .update({

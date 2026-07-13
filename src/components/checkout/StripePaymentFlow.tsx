@@ -11,6 +11,8 @@ export interface PaymentIntentInfo {
   amount: number;      // cents TTC
   commission: number;  // cents
   bank_transfer_instructions?: any;
+  /** Flux B (virement) uniquement : liste des vendeurs couverts par le PI agrégé. */
+  vendor_names?: string[];
 }
 
 interface Props {

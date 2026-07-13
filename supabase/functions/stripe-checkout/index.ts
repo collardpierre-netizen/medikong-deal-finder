@@ -188,6 +188,7 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
         amount: number;
         commission: number;
         bank_transfer_instructions?: any;
+        vendor_names?: string[];
       }> = [];
       const manualPaymentVendors: Array<{
         vendor_id: string;
@@ -196,55 +197,86 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
         amount: number;
       }> = [];
 
-      for (const [vendorId, vLines] of linesByVendor.entries()) {
-        const vendor = vendorMap.get(vendorId);
-        const vendorName: string = vendor?.company_name || vendor?.name || `Fournisseur ${vendorId.slice(0, 8)}`;
-
-        // Le client paie TTC ; la commission MediKong s'applique sur HT uniquement.
-        const totalTtcCents = vLines.reduce(
-          (sum, l) => sum + Math.round(Number(l.line_total_incl_vat) * 100),
-          0,
-        );
-        const totalHtCents = vLines.reduce(
-          (sum, l) => sum + Math.round(Number(l.line_total_excl_vat) * 100),
-          0,
-        );
-        if (totalTtcCents <= 0) continue;
-
-        // Vendeur pas encore prêt pour le paiement en ligne → bascule manuelle
-        if (!vendor?.stripe_account_id || !vendor?.stripe_charges_enabled) {
-          manualPaymentVendors.push({
-            vendor_id: vendorId,
-            vendor_name: vendorName,
-            reason: !vendor?.stripe_account_id ? "no_stripe_account" : "charges_disabled",
-            amount: totalTtcCents,
-          });
-          continue;
+      // ============================================================
+      // Flux B — SEPA Bank Transfer : UN SEUL PI pour le total panier.
+      // Pas de transfer_data.destination : le paiement arrive sur la plateforme
+      // MediKong, puis le webhook payment_intent.succeeded crée N Transfers
+      // (un par vendeur) en reconstruisant les splits depuis order_lines.
+      // ============================================================
+      if (isBankTransfer) {
+        if (!stripeCustomerId) {
+          throw new Error("Stripe customer requis pour un virement bancaire");
         }
 
-        const commRate = Number(vendor?.commission_rate ?? defaultCommission);
-        // application_fee_amount = commission calculée sur le HT (jamais sur la TVA)
-        const commissionCents = Math.round(totalHtCents * commRate);
-        const transferCents = totalTtcCents - commissionCents;
-        if (transferCents < 0) {
-          throw new Error(`Commission > total pour vendor ${vendorId}`);
+        let aggregateTtcCents = 0;
+        let aggregateCommissionCents = 0;
+        const eligibleVendorNames: string[] = [];
+
+        for (const [vendorId, vLines] of linesByVendor.entries()) {
+          const vendor = vendorMap.get(vendorId);
+          const vendorName: string = vendor?.company_name || vendor?.name || `Fournisseur ${vendorId.slice(0, 8)}`;
+
+          const totalTtcCents = vLines.reduce(
+            (sum, l) => sum + Math.round(Number(l.line_total_incl_vat) * 100),
+            0,
+          );
+          const totalHtCents = vLines.reduce(
+            (sum, l) => sum + Math.round(Number(l.line_total_excl_vat) * 100),
+            0,
+          );
+          if (totalTtcCents <= 0) continue;
+
+          // Vendeur pas prêt Stripe → bascule manuelle (hors PI virement)
+          if (!vendor?.stripe_account_id || !vendor?.stripe_charges_enabled) {
+            manualPaymentVendors.push({
+              vendor_id: vendorId,
+              vendor_name: vendorName,
+              reason: !vendor?.stripe_account_id ? "no_stripe_account" : "charges_disabled",
+              amount: totalTtcCents,
+            });
+            continue;
+          }
+
+          const commRate = Number(vendor?.commission_rate ?? defaultCommission);
+          const commissionCents = Math.round(totalHtCents * commRate);
+          if (totalTtcCents - commissionCents < 0) {
+            throw new Error(`Commission > total pour vendor ${vendorId}`);
+          }
+          aggregateTtcCents += totalTtcCents;
+          aggregateCommissionCents += commissionCents;
+          eligibleVendorNames.push(vendorName);
         }
 
-        // Réutilise le PI existant si déjà présent sur les lignes de ce vendeur
-        const existingPiId = vLines.find((l: any) => l.stripe_payment_intent_id)?.stripe_payment_intent_id ?? null;
+        if (aggregateTtcCents <= 0) {
+          // Aucun vendeur éligible online → tout bascule manuel, on renvoie vide
+          if (manualPaymentVendors.length > 0) {
+            await supabase
+              .from("orders")
+              .update({ payment_status: "pending_payment_manual" })
+              .eq("id", order.id);
+          }
+          return new Response(
+            JSON.stringify({
+              payment_intents: [],
+              manual_payment_vendors: manualPaymentVendors,
+              client_secret: null,
+              payment_intent_id: null,
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+
+        // Réutilise un PI existant si déjà présent (idempotence panier)
+        // On considère qu'un PI virement est partagé entre toutes les lignes online.
+        const existingPiId = (lines as any[])
+          .find((l) => l.stripe_payment_intent_id)?.stripe_payment_intent_id ?? null;
+
         let paymentIntent: any;
         if (existingPiId) {
           paymentIntent = await stripe.paymentIntents.retrieve(existingPiId);
-        } else if (isBankTransfer) {
-          // ===== Flux B : SEPA Bank Transfer (customer_balance) =====
-          // Pas de transfer_data.destination : le paiement arrive sur la plateforme
-          // MediKong. Le webhook payment_intent.succeeded déclenchera le Transfer
-          // vers le connected account du vendeur (metadata.transfer_pending=true).
-          if (!stripeCustomerId) {
-            throw new Error("Stripe customer requis pour un virement bancaire");
-          }
+        } else {
           paymentIntent = await stripe.paymentIntents.create({
-            amount: totalTtcCents,
+            amount: aggregateTtcCents,
             currency: "eur",
             customer: stripeCustomerId,
             payment_method_types: ["customer_balance"],
@@ -261,54 +293,115 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
             confirm: true,
             metadata: {
               order_id: order.id,
-              vendor_id: vendorId,
               billing_model: "mandataire",
-              total_ht_cents: String(totalHtCents),
-              total_ttc_cents: String(totalTtcCents),
-              commission_rate: String(commRate),
-              commission_cents: String(commissionCents),
+              payment_method: "bank_transfer",
               transfer_pending: "true",
-              vendor_stripe_account: vendor.stripe_account_id,
+              total_ttc_cents: String(aggregateTtcCents),
+              total_commission_cents: String(aggregateCommissionCents),
+              // splits reconstruits côté webhook depuis order_lines (évite la
+              // limite 500 chars des metadata Stripe pour paniers multi-vendeurs)
             },
           });
-        } else {
-          // ===== Flux A : Carte / Bancontact / SEPA Debit (destination charge) =====
-          paymentIntent = await stripe.paymentIntents.create({
-            amount: totalTtcCents,
-            currency: "eur",
-            payment_method_types: ["card", "bancontact", "sepa_debit"],
-            application_fee_amount: commissionCents,
-            transfer_data: { destination: vendor.stripe_account_id },
-            metadata: {
-              order_id: order.id,
-              vendor_id: vendorId,
-              billing_model: "mandataire",
-              total_ht_cents: String(totalHtCents),
-              total_ttc_cents: String(totalTtcCents),
-              commission_rate: String(commRate),
-            },
-          });
-        }
 
-        if (!existingPiId) {
-          // Persist PI id sur chaque ligne de ce vendeur
-          const lineIds = vLines.map((l: any) => l.id);
-          await supabase
-            .from("order_lines")
-            .update({ stripe_payment_intent_id: paymentIntent.id })
-            .in("id", lineIds);
+          // Persist PI id sur toutes les lignes des vendeurs éligibles
+          const eligibleVendorIds = Array.from(linesByVendor.entries())
+            .filter(([vid]) => {
+              const v = vendorMap.get(vid);
+              return v?.stripe_account_id && v?.stripe_charges_enabled;
+            })
+            .map(([vid]) => vid);
+          const eligibleLineIds = (lines as any[])
+            .filter((l) => eligibleVendorIds.includes(l.vendor_id))
+            .map((l) => l.id);
+          if (eligibleLineIds.length > 0) {
+            await supabase
+              .from("order_lines")
+              .update({ stripe_payment_intent_id: paymentIntent.id })
+              .in("id", eligibleLineIds);
+          }
         }
 
         results.push({
-          vendor_id: vendorId,
+          vendor_id: "__mandataire__",
           payment_intent_id: paymentIntent.id,
           client_secret: paymentIntent.client_secret ?? null,
-          amount: totalTtcCents,
-          commission: commissionCents,
-          bank_transfer_instructions: isBankTransfer
-            ? paymentIntent.next_action?.display_bank_transfer_instructions ?? null
-            : undefined,
+          amount: aggregateTtcCents,
+          commission: aggregateCommissionCents,
+          bank_transfer_instructions:
+            paymentIntent.next_action?.display_bank_transfer_instructions ?? null,
+          vendor_names: eligibleVendorNames,
         });
+      } else {
+        // ============================================================
+        // Flux A — Carte / Bancontact / SEPA Debit : 1 PI par vendeur
+        // avec transfer_data.destination (destination charge classique).
+        // ============================================================
+        for (const [vendorId, vLines] of linesByVendor.entries()) {
+          const vendor = vendorMap.get(vendorId);
+          const vendorName: string = vendor?.company_name || vendor?.name || `Fournisseur ${vendorId.slice(0, 8)}`;
+
+          const totalTtcCents = vLines.reduce(
+            (sum, l) => sum + Math.round(Number(l.line_total_incl_vat) * 100),
+            0,
+          );
+          const totalHtCents = vLines.reduce(
+            (sum, l) => sum + Math.round(Number(l.line_total_excl_vat) * 100),
+            0,
+          );
+          if (totalTtcCents <= 0) continue;
+
+          if (!vendor?.stripe_account_id || !vendor?.stripe_charges_enabled) {
+            manualPaymentVendors.push({
+              vendor_id: vendorId,
+              vendor_name: vendorName,
+              reason: !vendor?.stripe_account_id ? "no_stripe_account" : "charges_disabled",
+              amount: totalTtcCents,
+            });
+            continue;
+          }
+
+          const commRate = Number(vendor?.commission_rate ?? defaultCommission);
+          const commissionCents = Math.round(totalHtCents * commRate);
+          const transferCents = totalTtcCents - commissionCents;
+          if (transferCents < 0) {
+            throw new Error(`Commission > total pour vendor ${vendorId}`);
+          }
+
+          const existingPiId = vLines.find((l: any) => l.stripe_payment_intent_id)?.stripe_payment_intent_id ?? null;
+          let paymentIntent: any;
+          if (existingPiId) {
+            paymentIntent = await stripe.paymentIntents.retrieve(existingPiId);
+          } else {
+            paymentIntent = await stripe.paymentIntents.create({
+              amount: totalTtcCents,
+              currency: "eur",
+              payment_method_types: ["card", "bancontact", "sepa_debit"],
+              application_fee_amount: commissionCents,
+              transfer_data: { destination: vendor.stripe_account_id },
+              metadata: {
+                order_id: order.id,
+                vendor_id: vendorId,
+                billing_model: "mandataire",
+                total_ht_cents: String(totalHtCents),
+                total_ttc_cents: String(totalTtcCents),
+                commission_rate: String(commRate),
+              },
+            });
+            const lineIds = vLines.map((l: any) => l.id);
+            await supabase
+              .from("order_lines")
+              .update({ stripe_payment_intent_id: paymentIntent.id })
+              .in("id", lineIds);
+          }
+
+          results.push({
+            vendor_id: vendorId,
+            payment_intent_id: paymentIntent.id,
+            client_secret: paymentIntent.client_secret ?? null,
+            amount: totalTtcCents,
+            commission: commissionCents,
+          });
+        }
       }
 
       // Si au moins un vendeur bascule en paiement manuel, on marque la commande

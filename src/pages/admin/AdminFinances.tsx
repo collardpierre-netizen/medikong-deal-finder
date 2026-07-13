@@ -46,10 +46,10 @@ const AdminFinances = () => {
         <KpiCard icon={RotateCcw} label="Payées" value={String(paidInvoices.length)} iconColor="#059669" iconBg="#F0FDF4" />
       </div>
 
-      <div className="flex items-center gap-1 mb-4 p-1 rounded-lg" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", display: "inline-flex" }}>
+      <div className="flex items-center gap-1 mb-4 p-1 rounded-lg overflow-x-auto" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", display: "inline-flex", maxWidth: "100%" }}>
         {tabs.map((tab) => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            className="px-4 py-2 rounded-md text-[12px] font-semibold transition-colors"
+            className="px-3 md:px-4 py-2 rounded-md text-[12px] font-semibold transition-colors whitespace-nowrap"
             style={{ backgroundColor: activeTab === tab.key ? "#1B5BDA" : "transparent", color: activeTab === tab.key ? "#fff" : "#616B7C" }}>
             {tab.label}
           </button>
@@ -57,7 +57,7 @@ const AdminFinances = () => {
       </div>
 
       {activeTab === "overview" && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
             <h3 className="text-[14px] font-bold mb-4" style={{ color: "#1D2530" }}>Taux commission par vendeur</h3>
             <ResponsiveContainer width="100%" height={220}>

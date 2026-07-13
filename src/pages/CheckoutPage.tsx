@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { useQuery } from "@tanstack/react-query";
 import { StripePaymentFlow, type PaymentIntentInfo } from "@/components/checkout/StripePaymentFlow";
 import { BankTransferInstructions } from "@/components/checkout/BankTransferInstructions";
+import { useVendorLabels } from "@/hooks/useVendorLabels";
 
 
 

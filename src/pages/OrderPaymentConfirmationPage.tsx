@@ -154,7 +154,8 @@ export default function OrderPaymentConfirmationPage() {
               {pis.map((pi) => (
                 <div key={pi.id} className="px-4 py-3 border-b border-mk-line last:border-0 flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-mk-navy truncate">{formatPrice(pi.amount)} EUR</p>
+                    <p className="text-sm font-medium text-mk-navy truncate">{getVendorLabel(pi.vendor_id)}</p>
+                    <p className="text-[11px] text-mk-sec">{formatPrice(pi.amount)} EUR</p>
                     <p className="text-[11px] text-mk-sec font-mono truncate">{pi.id}</p>
                   </div>
                   <StatusBadge status={pi.status} />

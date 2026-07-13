@@ -111,6 +111,25 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
         .maybeSingle();
 
       let stripeCustomerId: string | null = buyer?.stripe_customer_id ?? null;
+
+      // SEPA Bank Transfer (customer_balance) exige un Stripe Customer avec email.
+      // En B2B pharma tous les acheteurs ont un email (obligatoire à l'inscription),
+      // mais on garde un garde-fou explicite ici pour ne pas créer un PI cassé.
+      if (isBankTransfer && !buyer?.email) {
+        console.error("[stripe-checkout] Bank transfer refused — buyer has no email", {
+          order_id,
+          customer_id: order.customer_id,
+        });
+        return new Response(
+          JSON.stringify({
+            error:
+              "Virement bancaire indisponible pour votre compte, contactez support@medikong.pro",
+            code: "bank_transfer_requires_email",
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
       if (!stripeCustomerId && buyer?.email) {
         try {
           const created = await stripe.customers.create({

@@ -365,7 +365,115 @@ export async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Se
   }
 }
 
-async function handlePaymentSucceeded(pi: Stripe.PaymentIntent) {
+/**
+ * Flux B — SEPA Bank Transfer (customer_balance).
+ * Le PI a été créé sans transfer_data.destination. Après le succès du virement,
+ * on crée un Transfer séparé vers le connected account du vendeur, en réutilisant
+ * la table order_transfers pour l'idempotence.
+ */
+async function handleBankTransferSucceeded(pi: Stripe.PaymentIntent) {
+  ensureDeps();
+  const orderId = pi.metadata?.order_id as string;
+  const vendorId = pi.metadata?.vendor_id as string | undefined;
+  const vendorStripeAccount = pi.metadata?.vendor_stripe_account as string | undefined;
+  const commissionCents = Number(pi.metadata?.commission_cents ?? "0");
+  const totalTtcCents = Number(pi.metadata?.total_ttc_cents ?? pi.amount ?? 0);
+  const transferAmount = Math.max(0, totalTtcCents - commissionCents);
+  const commRate = Number(pi.metadata?.commission_rate ?? "0");
+  const latestCharge = pi.latest_charge as string | null;
+
+  if (!vendorId || !vendorStripeAccount) {
+    console.warn(`[bank_transfer] PI ${pi.id} manque vendor_id/vendor_stripe_account, skip transfer`);
+  } else if (transferAmount > 0) {
+    // Idempotence via order_transfers
+    const { data: existing } = await supabase
+      .from("order_transfers")
+      .select("id, status, stripe_transfer_id")
+      .eq("order_id", orderId)
+      .eq("vendor_id", vendorId)
+      .maybeSingle();
+
+    if (existing?.stripe_transfer_id || existing?.status === "completed") {
+      console.log(`[bank_transfer] Transfer déjà présent pour order ${orderId} vendor ${vendorId}, skip`);
+    } else {
+      let rowId = existing?.id as string | undefined;
+      if (!rowId) {
+        const { data: inserted, error: insertErr } = await supabase
+          .from("order_transfers")
+          .insert({
+            order_id: orderId,
+            vendor_id: vendorId,
+            amount: transferAmount,
+            commission_amount: commissionCents,
+            commission_rate: commRate,
+            status: "pending",
+          })
+          .select("id")
+          .single();
+        if (insertErr) {
+          console.error("[bank_transfer] order_transfers insert failed", insertErr);
+        } else {
+          rowId = inserted.id;
+        }
+      }
+
+      try {
+        const transferPayload: any = {
+          amount: transferAmount,
+          currency: "eur",
+          destination: vendorStripeAccount,
+          metadata: {
+            order_id: orderId,
+            vendor_id: vendorId,
+            billing_model: "mandataire",
+            payment_method: "bank_transfer",
+          },
+        };
+        if (latestCharge) transferPayload.source_transaction = latestCharge;
+        const transfer = await stripe.transfers.create(transferPayload, {
+          idempotencyKey: `bt_transfer_${orderId}_${vendorId}`,
+        });
+        if (rowId) {
+          await supabase
+            .from("order_transfers")
+            .update({
+              stripe_transfer_id: transfer.id,
+              status: "completed",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", rowId);
+        }
+        console.log(`[bank_transfer] Transfer ${transfer.id} créé pour vendor ${vendorId}`);
+      } catch (err: any) {
+        console.error(`[bank_transfer] Transfer FAILED order=${orderId} vendor=${vendorId}:`, err);
+        if (rowId) {
+          await supabase
+            .from("order_transfers")
+            .update({
+              status: "failed",
+              error_message: err?.message || String(err),
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", rowId);
+        }
+      }
+    }
+  }
+
+  // Marque la commande payée + fan-out vendeurs + confirmation acheteur
+  await supabase.from("orders").update({
+    status: "confirmed",
+    payment_status: "paid",
+  }).eq("id", orderId);
+  try {
+    await supabase.functions.invoke("notify-vendors-new-order", { body: { orderId } });
+  } catch (e) {
+    console.error("[bank_transfer] notify-vendors-new-order failed", e);
+  }
+  await sendBuyerOrderConfirmation(orderId);
+}
+
+
   const orderId = pi.metadata?.order_id;
   if (!orderId) {
     console.log("No order_id in PI metadata, skipping");

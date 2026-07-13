@@ -24,7 +24,7 @@ const AdminAnalytics = () => {
     <div>
       <AdminTopBar title="Analytics" subtitle="Intelligence commerciale et comportementale" />
 
-      <div className="grid grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-6">
         <KpiCard icon={Users} label="Acheteurs actifs" value={String(totalCustomers)} iconColor="#1B5BDA" iconBg="#EFF6FF" />
         <KpiCard icon={ShoppingCart} label="Commandes" value={String(totalOrders)} iconColor="#7C3AED" iconBg="#F3F0FF" />
         <KpiCard icon={TrendingUp} label="GMV total" value={`${fmtEur(gmv)} EUR`} iconColor="#059669" iconBg="#ECFDF5" />

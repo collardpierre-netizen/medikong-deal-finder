@@ -1468,9 +1468,11 @@ export default function VendorOffers() {
   });
 
   const openCreate = () => { setForm(emptyForm); setInitialSnapshot(null); setEditingId(null); setShowForm(true); };
+  const [openingOfferId, setOpeningOfferId] = useState<string | null>(null);
   const openEdit = async (offer: any) => {
     console.log("[VendorOffers.openEdit] click", { offerId: offer?.id, productId: offer?.product_id, vendorId: vendor?.id });
     toast.info("Ouverture de l'offre…", { id: `open-edit-${offer?.id}`, duration: 1500 });
+    setOpeningOfferId(offer.id);
     const basePurchase = offer.purchase_price_excl_vat != null ? String(offer.purchase_price_excl_vat) : "";
     const baseCategoryIds: string[] = [];
     const initialOverride = offer.pack_size_override;
@@ -1562,6 +1564,8 @@ export default function VendorOffers() {
       toast.error("Formulaire ouvert, données complémentaires incomplètes", {
         description: e?.message || "Certaines catégories ou coûts par défaut n'ont pas pu être chargés.",
       });
+    } finally {
+      setOpeningOfferId((current) => (current === offer.id ? null : current));
     }
   };
   const navigate = useNavigate();

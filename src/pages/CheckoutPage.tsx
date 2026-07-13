@@ -825,7 +825,7 @@ export default function CheckoutPage() {
                           )}
                           {paymentMethods[payment].label.startsWith("Virement bancaire") ? (
                             <>
-                              <BankTransferInstructions paymentIntents={paymentIntents} />
+                              <BankTransferInstructions paymentIntents={paymentIntents} vendorLabelById={vendorLabelById} />
                               <button
                                 type="button"
                                 onClick={() => {
@@ -841,6 +841,7 @@ export default function CheckoutPage() {
                             <StripePaymentFlow
                               orderId={orderId!}
                               paymentIntents={paymentIntents}
+                              vendorLabelById={vendorLabelById}
                               onAllPaid={() => {
                                 clearCart.mutate();
                                 navigate(`/commande/confirmation?order_id=${orderId}`);

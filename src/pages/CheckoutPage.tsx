@@ -371,8 +371,13 @@ export default function CheckoutPage() {
 
       // Step 2 : create PaymentIntent(s) — 1 par vendeur (Stripe Connect mandataire)
       stage = "session";
+      const isBankTransfer = selectedLabel.startsWith("Virement bancaire");
       const { data, error } = await supabase.functions.invoke("stripe-checkout", {
-        body: { action: "create-payment-intent", order_id: oid },
+        body: {
+          action: "create-payment-intent",
+          order_id: oid,
+          payment_method: isBankTransfer ? "bank_transfer" : "card",
+        },
       });
       if (error) {
         throw new Error(error?.message || data?.error || "Création des PaymentIntents impossible");

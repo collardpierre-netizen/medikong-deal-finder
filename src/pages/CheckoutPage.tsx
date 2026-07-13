@@ -285,6 +285,21 @@ export default function CheckoutPage() {
   const [manualPaymentVendors, setManualPaymentVendors] = useState<ManualPaymentVendor[]>([]);
   const testMode = false;
 
+  // 🟢 Résolution unifiée du libellé vendeur (panier + checkout + confirmation).
+  // On regroupe tous les vendor_ids présents sur la page pour un seul fetch.
+  const allVendorIdsOnPage = useMemo(() => {
+    const set = new Set<string>(vendorIdsInCart);
+    for (const v of validation?.vendors || []) if (v.vendor_id) set.add(v.vendor_id);
+    for (const e of validation?.errors || []) {
+      const vid = (e.details as any)?.vendor_id;
+      if (vid) set.add(vid);
+    }
+    for (const v of manualPaymentVendors) if (v.vendor_id) set.add(v.vendor_id);
+    for (const pi of paymentIntents) if (pi.vendor_id) set.add(pi.vendor_id);
+    return Array.from(set);
+  }, [vendorIdsInCart, validation, manualPaymentVendors, paymentIntents]);
+  const { labelsById: vendorLabelById, getLabel: getVendorLabel } = useVendorLabels(allVendorIdsOnPage);
+
   const handlePlaceOrder = useCallback(async () => {
     if (submitting || initLoading) return;
     setSubmitting(true);

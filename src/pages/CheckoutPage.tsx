@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useQuery } from "@tanstack/react-query";
 import { StripePaymentFlow, type PaymentIntentInfo } from "@/components/checkout/StripePaymentFlow";
+import { BankTransferInstructions } from "@/components/checkout/BankTransferInstructions";
 
 
 
@@ -188,7 +189,7 @@ export default function CheckoutPage() {
   const paymentMethods = [
     { label: "Carte bancaire", enabled: true },
     { label: `Paiement sur facture${invoiceEligibleCount ? ` (${invoiceEligibleCount} vendeur${invoiceEligibleCount > 1 ? "s" : ""} éligible${invoiceEligibleCount > 1 ? "s" : ""})` : ""}`, enabled: invoiceAvailable },
-    { label: "Virement SEPA", enabled: false },
+    { label: "Virement bancaire (SEPA)", enabled: true },
   ];
 
   const getItemPrice = (item: typeof items[0]) => item.price_excl_vat || item.product?.price || 0;
@@ -371,8 +372,13 @@ export default function CheckoutPage() {
 
       // Step 2 : create PaymentIntent(s) — 1 par vendeur (Stripe Connect mandataire)
       stage = "session";
+      const isBankTransfer = selectedLabel.startsWith("Virement bancaire");
       const { data, error } = await supabase.functions.invoke("stripe-checkout", {
-        body: { action: "create-payment-intent", order_id: oid },
+        body: {
+          action: "create-payment-intent",
+          order_id: oid,
+          payment_method: isBankTransfer ? "bank_transfer" : "card",
+        },
       });
       if (error) {
         throw new Error(error?.message || data?.error || "Création des PaymentIntents impossible");
@@ -801,14 +807,30 @@ export default function CheckoutPage() {
                               </ul>
                             </div>
                           )}
-                          <StripePaymentFlow
-                            orderId={orderId!}
-                            paymentIntents={paymentIntents}
-                            onAllPaid={() => {
-                              clearCart.mutate();
-                              navigate(`/commande/confirmation?order_id=${orderId}`);
-                            }}
-                          />
+                          {paymentMethods[payment].label.startsWith("Virement bancaire") ? (
+                            <>
+                              <BankTransferInstructions paymentIntents={paymentIntents} />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  clearCart.mutate();
+                                  navigate(`/commande/confirmation?order_id=${orderId}`);
+                                }}
+                                className="w-full bg-mk-navy text-white font-bold text-sm px-6 py-3 rounded-md"
+                              >
+                                J'ai noté les instructions — voir ma commande
+                              </button>
+                            </>
+                          ) : (
+                            <StripePaymentFlow
+                              orderId={orderId!}
+                              paymentIntents={paymentIntents}
+                              onAllPaid={() => {
+                                clearCart.mutate();
+                                navigate(`/commande/confirmation?order_id=${orderId}`);
+                              }}
+                            />
+                          )}
                         </>
                       )}
 

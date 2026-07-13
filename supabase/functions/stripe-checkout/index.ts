@@ -57,7 +57,10 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
     }
 
     const body = await req.json();
-    const { action, order_id, payment_intent_ids } = body;
+    const { action, order_id, payment_intent_ids, payment_method } = body;
+    // "bank_transfer" = Flux B (SEPA Bank Transfer / customer_balance, sans transfer_data).
+    // sinon = Flux A (card / bancontact / sepa_debit, avec transfer_data.destination).
+    const isBankTransfer = payment_method === "bank_transfer";
 
     if (action === "get-payment-intents-status") {
       const ids: string[] = Array.isArray(payment_intent_ids) ? payment_intent_ids : [];
@@ -165,6 +168,7 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
         client_secret: string | null;
         amount: number;
         commission: number;
+        bank_transfer_instructions?: any;
       }> = [];
       const manualPaymentVendors: Array<{
         vendor_id: string;
@@ -212,19 +216,50 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
         let paymentIntent: any;
         if (existingPiId) {
           paymentIntent = await stripe.paymentIntents.retrieve(existingPiId);
-        } else {
-          // SEPA Bank Transfer (customer_balance) requiert un Customer Stripe.
-          const methods = ["card", "bancontact", "sepa_debit"];
-          if (stripeCustomerId) methods.push("customer_balance");
-
-          const piPayload: any = {
+        } else if (isBankTransfer) {
+          // ===== Flux B : SEPA Bank Transfer (customer_balance) =====
+          // Pas de transfer_data.destination : le paiement arrive sur la plateforme
+          // MediKong. Le webhook payment_intent.succeeded déclenchera le Transfer
+          // vers le connected account du vendeur (metadata.transfer_pending=true).
+          if (!stripeCustomerId) {
+            throw new Error("Stripe customer requis pour un virement bancaire");
+          }
+          paymentIntent = await stripe.paymentIntents.create({
             amount: totalTtcCents,
             currency: "eur",
-            payment_method_types: methods,
-            application_fee_amount: commissionCents,
-            transfer_data: {
-              destination: vendor.stripe_account_id,
+            customer: stripeCustomerId,
+            payment_method_types: ["customer_balance"],
+            payment_method_data: { type: "customer_balance" },
+            payment_method_options: {
+              customer_balance: {
+                funding_type: "bank_transfer",
+                bank_transfer: {
+                  type: "eu_bank_transfer",
+                  eu_bank_transfer: { country: "BE" },
+                },
+              },
             },
+            confirm: true,
+            metadata: {
+              order_id: order.id,
+              vendor_id: vendorId,
+              billing_model: "mandataire",
+              total_ht_cents: String(totalHtCents),
+              total_ttc_cents: String(totalTtcCents),
+              commission_rate: String(commRate),
+              commission_cents: String(commissionCents),
+              transfer_pending: "true",
+              vendor_stripe_account: vendor.stripe_account_id,
+            },
+          });
+        } else {
+          // ===== Flux A : Carte / Bancontact / SEPA Debit (destination charge) =====
+          paymentIntent = await stripe.paymentIntents.create({
+            amount: totalTtcCents,
+            currency: "eur",
+            payment_method_types: ["card", "bancontact", "sepa_debit"],
+            application_fee_amount: commissionCents,
+            transfer_data: { destination: vendor.stripe_account_id },
             metadata: {
               order_id: order.id,
               vendor_id: vendorId,
@@ -233,22 +268,10 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
               total_ttc_cents: String(totalTtcCents),
               commission_rate: String(commRate),
             },
-          };
-          if (stripeCustomerId) {
-            piPayload.customer = stripeCustomerId;
-            piPayload.payment_method_options = {
-              customer_balance: {
-                funding_type: "bank_transfer",
-                bank_transfer: {
-                  type: "eu_bank_transfer",
-                  eu_bank_transfer: { country: "BE" },
-                },
-              },
-            };
-          }
-          paymentIntent = await stripe.paymentIntents.create(piPayload);
+          });
+        }
 
-
+        if (!existingPiId) {
           // Persist PI id sur chaque ligne de ce vendeur
           const lineIds = vLines.map((l: any) => l.id);
           await supabase
@@ -263,6 +286,9 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
           client_secret: paymentIntent.client_secret ?? null,
           amount: totalTtcCents,
           commission: commissionCents,
+          bank_transfer_instructions: isBankTransfer
+            ? paymentIntent.next_action?.display_bank_transfer_instructions ?? null
+            : undefined,
         });
       }
 

@@ -10,6 +10,7 @@ export interface PaymentIntentInfo {
   client_secret: string | null;
   amount: number;      // cents TTC
   commission: number;  // cents
+  bank_transfer_instructions?: any;
 }
 
 interface Props {

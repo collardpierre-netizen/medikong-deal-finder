@@ -322,7 +322,7 @@ const AdminDashboard = () => {
           ? ((realPct * s.gmv) + (fcstPct * s.forecastGmv)) / (s.gmv + s.forecastGmv)
           : realPct;
         return (
-          <div className="grid grid-cols-6 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 mb-6">
             <KpiCard
               icon={DollarSign}
               label={t("gmvMonth")}

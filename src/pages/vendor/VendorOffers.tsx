@@ -1453,47 +1453,22 @@ export default function VendorOffers() {
   const openCreate = () => { setForm(emptyForm); setInitialSnapshot(null); setEditingId(null); setShowForm(true); };
   const openEdit = async (offer: any) => {
     console.log("[VendorOffers.openEdit] click", { offerId: offer?.id, productId: offer?.product_id, vendorId: vendor?.id });
-    try {
-    // Charger les catégories liées à l'offre + le coût par défaut produit/vendeur
-    const [{ data: linkedCats }, { data: defaultCost }] = await Promise.all([
-      supabase
-        .from("offer_categories")
-        .select("category_id")
-        .eq("offer_id", offer.id),
-      vendor
-        ? supabase
-            .from("vendor_product_costs")
-            .select("default_purchase_price_excl_vat")
-            .eq("vendor_id", vendor.id)
-            .eq("product_id", offer.product_id)
-            .maybeSingle()
-        : Promise.resolve({ data: null } as any),
-    ]);
-    // Source de vérité prix d'achat : override offre > défaut produit > vide
-    const purchase =
-      offer.purchase_price_excl_vat != null
-        ? String(offer.purchase_price_excl_vat)
-        : defaultCost?.default_purchase_price_excl_vat != null
-          ? String(defaultCost.default_purchase_price_excl_vat)
-          : "";
-    // Catégories liées à l'offre. Si vide, fallback auto sur la catégorie native du produit
-    // (primary_category_id puis category_id legacy) pour éviter d'imposer au vendeur de cocher
-    // manuellement dans l'arbre de 4000+ catégories à chaque édition.
-    let categoryIds: string[] = (linkedCats || []).map((c: any) => c.category_id);
-    if (categoryIds.length === 0 && offer.product_id) {
-      const { data: prodCat } = await supabase
-        .from("products")
-        .select("primary_category_id, category_id")
-        .eq("id", offer.product_id)
-        .maybeSingle();
-      const fallbackCat = (prodCat as any)?.primary_category_id || (prodCat as any)?.category_id;
-      if (fallbackCat) categoryIds = [fallbackCat];
-    }
+    const basePurchase = offer.purchase_price_excl_vat != null ? String(offer.purchase_price_excl_vat) : "";
+    const baseCategoryIds: string[] = [];
+    const initialOverride = offer.pack_size_override;
+    const initialFallback = (offer.products as any)?.pack_size;
+    const initialEffectivePack =
+      initialOverride && initialOverride > 0
+        ? Number(initialOverride)
+        : initialFallback && initialFallback > 0
+          ? Number(initialFallback)
+          : 1;
+
     setForm({
       product_id: offer.product_id,
       product_name: (offer.products as any)?.name || "",
       price_excl_vat: String(offer.price_excl_vat),
-      purchase_price_excl_vat: purchase,
+      purchase_price_excl_vat: basePurchase,
       save_as_product_default: false,
       vat_rate: String(offer.vat_rate),
       stock_quantity: String(offer.stock_quantity),
@@ -1504,7 +1479,7 @@ export default function VendorOffers() {
       country_codes: Array.isArray((offer as any).country_codes) && (offer as any).country_codes.length > 0
         ? (offer as any).country_codes
         : [offer.country_code || "BE"],
-      category_ids: categoryIds,
+      category_ids: baseCategoryIds,
       pack_size_override: offer.pack_size_override != null ? String(offer.pack_size_override) : "",
       product_pack_size_fallback: (offer.products as any)?.pack_size ?? null,
       vendor_note: (offer as any).vendor_note ?? "",
@@ -1512,31 +1487,63 @@ export default function VendorOffers() {
       packaging_languages: Array.isArray((offer as any).packaging_languages) ? (offer as any).packaging_languages : [],
       source_supplier: (offer as any).source_supplier ?? "",
     });
-    // Snapshot "avant" : prix HT + pack effectif au moment de l'ouverture
-    const initialOverride = offer.pack_size_override;
-    const initialFallback = (offer.products as any)?.pack_size;
-    const initialEffectivePack =
-      initialOverride && initialOverride > 0
-        ? Number(initialOverride)
-        : initialFallback && initialFallback > 0
-          ? Number(initialFallback)
-          : 1;
     setInitialSnapshot({
       priceExcl: Number(offer.price_excl_vat) || 0,
       effectivePack: initialEffectivePack,
     });
     setEditingId(offer.id);
     setShowForm(true);
+
+    try {
+      // Charger les catégories liées à l'offre + le coût par défaut produit/vendeur après l'ouverture.
+      // Ces données enrichissent le formulaire mais ne doivent jamais bloquer son affichage.
+      const [{ data: linkedCats }, { data: defaultCost }] = await Promise.all([
+        supabase
+          .from("offer_categories")
+          .select("category_id")
+          .eq("offer_id", offer.id),
+        vendor
+          ? supabase
+              .from("vendor_product_costs")
+              .select("default_purchase_price_excl_vat")
+              .eq("vendor_id", vendor.id)
+              .eq("product_id", offer.product_id)
+              .maybeSingle()
+          : Promise.resolve({ data: null } as any),
+      ]);
+      // Source de vérité prix d'achat : override offre > défaut produit > vide
+      const purchase =
+        offer.purchase_price_excl_vat != null
+          ? String(offer.purchase_price_excl_vat)
+          : defaultCost?.default_purchase_price_excl_vat != null
+            ? String(defaultCost.default_purchase_price_excl_vat)
+            : "";
+      // Catégories liées à l'offre. Si vide, fallback auto sur la catégorie native du produit
+      // (primary_category_id puis category_id legacy) pour éviter d'imposer au vendeur de cocher
+      // manuellement dans l'arbre de 4000+ catégories à chaque édition.
+      let categoryIds: string[] = (linkedCats || []).map((c: any) => c.category_id);
+      if (categoryIds.length === 0 && offer.product_id) {
+        const { data: prodCat } = await supabase
+          .from("products")
+          .select("primary_category_id, category_id")
+          .eq("id", offer.product_id)
+          .maybeSingle();
+        const fallbackCat = (prodCat as any)?.primary_category_id || (prodCat as any)?.category_id;
+        if (fallbackCat) categoryIds = [fallbackCat];
+      }
+      setForm((current) => {
+        if (current.product_id !== offer.product_id) return current;
+        return {
+          ...current,
+          purchase_price_excl_vat: purchase,
+          category_ids: categoryIds,
+        };
+      });
     } catch (e: any) {
       console.error("[VendorOffers.openEdit] failed", e);
-      toast.error("Impossible d'ouvrir cette offre en édition", {
-        description: e?.message || "Erreur inconnue. Recharge la page et réessaye.",
+      toast.error("Formulaire ouvert, données complémentaires incomplètes", {
+        description: e?.message || "Certaines catégories ou coûts par défaut n'ont pas pu être chargés.",
       });
-      // Reset l'état pour éviter un editingId figé qui bloquerait les éditions suivantes
-      setShowForm(false);
-      setEditingId(null);
-      setForm(emptyForm);
-      setInitialSnapshot(null);
     }
   };
   const navigate = useNavigate();
@@ -2902,7 +2909,7 @@ export default function VendorOffers() {
                               }
                             />
                           )}
-                          <button onClick={() => openEdit(offer)} className="p-1.5 hover:bg-[#EFF6FF] rounded" title="Modifier">
+                          <button type="button" onClick={() => openEdit(offer)} className="p-1.5 hover:bg-[#EFF6FF] rounded" title="Modifier">
                             <Pencil size={14} style={{ color: "#1B5BDA" }} />
                           </button>
                           {offer.product_id && vendor?.id && (

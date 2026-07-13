@@ -152,6 +152,7 @@ const AdminVendeurs = lazyWithRetry(() => import("./pages/admin/AdminVendeurs"),
 const AdminAbonnements = lazyWithRetry(() => import("./pages/admin/AdminAbonnements"), "AdminAbonnements");
 const AdminVendors = lazyWithRetry(() => import("./pages/admin/AdminVendors"), "AdminVendors");
 const AdminVendeurDetail = lazyWithRetry(() => import("./pages/admin/AdminVendeurDetail"), "AdminVendeurDetail");
+const AdminVendorVisibility = lazyWithRetry(() => import("./pages/admin/AdminVendorVisibility"), "AdminVendorVisibility");
 const AdminOnboarding = lazyWithRetry(() => import("./pages/admin/AdminOnboarding"), "AdminOnboarding");
 const AdminProduits = lazyWithRetry(() => import("./pages/admin/AdminProduits"), "AdminProduits");
 const AdminProduitDetail = lazyWithRetry(() => import("./pages/admin/AdminProduitDetail"), "AdminProduitDetail");
@@ -495,6 +496,7 @@ const App = () => (
               <Route path="analytics-clients" element={<LP><AdminAnalyticsClients /></LP>} />
               <Route path="vendeurs" element={<LP><AdminVendeurs /></LP>} />
               <Route path="vendeurs/:id" element={<LP><AdminVendeurDetail /></LP>} />
+              <Route path="vendor-visibility" element={<LP><AdminVendorVisibility /></LP>} />
               <Route path="vendors-stripe" element={<LP><AdminVendors /></LP>} />
               <Route path="onboarding" element={<LP><AdminOnboarding /></LP>} />
               <Route path="produits" element={<LP><AdminProduits /></LP>} />

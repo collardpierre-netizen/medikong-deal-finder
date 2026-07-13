@@ -56,7 +56,7 @@ export function AnnouncementBar() {
       {[...messages, ...messages].map((msg, i) => (
         <span
           key={i}
-          className="inline-flex items-center gap-2 text-xs text-white font-medium mx-12"
+          className="inline-flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-white font-medium mx-5 sm:mx-12"
         >
           <msg.icon size={13} strokeWidth={2.5} className="text-white/70" />
           {msg.text}

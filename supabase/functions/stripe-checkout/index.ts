@@ -99,6 +99,32 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
         });
       }
 
+      // Résout (ou crée) le Stripe Customer pour l'acheteur — requis pour SEPA
+      // Bank Transfer (customer_balance).
+      const { data: buyer } = await supabase
+        .from("customers")
+        .select("id, email, company_name, stripe_customer_id")
+        .eq("id", order.customer_id)
+        .maybeSingle();
+
+      let stripeCustomerId: string | null = buyer?.stripe_customer_id ?? null;
+      if (!stripeCustomerId && buyer?.email) {
+        try {
+          const created = await stripe.customers.create({
+            email: buyer.email,
+            name: buyer.company_name || undefined,
+            metadata: { medikong_customer_id: buyer.id },
+          });
+          stripeCustomerId = created.id;
+          await supabase
+            .from("customers")
+            .update({ stripe_customer_id: stripeCustomerId })
+            .eq("id", buyer.id);
+        } catch (e) {
+          console.error("Stripe customer create failed:", e);
+        }
+      }
+
       // Get order lines — need per-line ids so we can persist PI ids per ligne
       const { data: lines } = await supabase
         .from("order_lines")
@@ -187,10 +213,14 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
         if (existingPiId) {
           paymentIntent = await stripe.paymentIntents.retrieve(existingPiId);
         } else {
-          paymentIntent = await stripe.paymentIntents.create({
+          // SEPA Bank Transfer (customer_balance) requiert un Customer Stripe.
+          const methods = ["card", "bancontact", "sepa_debit"];
+          if (stripeCustomerId) methods.push("customer_balance");
+
+          const piPayload: any = {
             amount: totalTtcCents,
             currency: "eur",
-            payment_method_types: ["card", "bancontact", "sepa_debit"],
+            payment_method_types: methods,
             application_fee_amount: commissionCents,
             transfer_data: {
               destination: vendor.stripe_account_id,
@@ -203,7 +233,20 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
               total_ttc_cents: String(totalTtcCents),
               commission_rate: String(commRate),
             },
-          });
+          };
+          if (stripeCustomerId) {
+            piPayload.customer = stripeCustomerId;
+            piPayload.payment_method_options = {
+              customer_balance: {
+                funding_type: "bank_transfer",
+                bank_transfer: {
+                  type: "eu_bank_transfer",
+                  eu_bank_transfer: { country: "BE" },
+                },
+              },
+            };
+          }
+          paymentIntent = await stripe.paymentIntents.create(piPayload);
 
 
           // Persist PI id sur chaque ligne de ce vendeur

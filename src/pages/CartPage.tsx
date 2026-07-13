@@ -92,7 +92,7 @@ export default function CartPage() {
       ]);
       return {
         vendors: (vRes.data || []) as any[],
-        rules: (rRes.data || []) as VendorVisibilityRule[],
+        rules: ((rRes.data || []) as unknown) as VendorVisibilityRule[],
       };
     },
     enabled: vendorIds.length > 0,

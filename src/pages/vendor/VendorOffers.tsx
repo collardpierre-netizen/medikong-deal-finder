@@ -2034,7 +2034,14 @@ export default function VendorOffers() {
             </button>
           )}
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold" style={{ color: "#1D2530" }}>{editingId ? "Modifier l'offre" : "Nouvelle offre"}</h3>
+            <h3 className="text-sm font-semibold flex items-center gap-2" style={{ color: "#1D2530" }}>
+              {editingId ? "Modifier l'offre" : "Nouvelle offre"}
+              {openingOfferId && openingOfferId === editingId && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#1B5BDA]">
+                  <Loader2 size={12} className="animate-spin" /> Chargement des données…
+                </span>
+              )}
+            </h3>
             <button onClick={closeForm} className="p-1 hover:bg-[#F1F5F9] rounded"><X size={16} style={{ color: "#8B95A5" }} /></button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

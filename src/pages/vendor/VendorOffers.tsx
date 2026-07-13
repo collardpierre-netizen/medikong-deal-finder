@@ -1453,6 +1453,7 @@ export default function VendorOffers() {
   const openCreate = () => { setForm(emptyForm); setInitialSnapshot(null); setEditingId(null); setShowForm(true); };
   const openEdit = async (offer: any) => {
     console.log("[VendorOffers.openEdit] click", { offerId: offer?.id, productId: offer?.product_id, vendorId: vendor?.id });
+    toast.info("Ouverture de l'offre…", { id: `open-edit-${offer?.id}`, duration: 1500 });
     const basePurchase = offer.purchase_price_excl_vat != null ? String(offer.purchase_price_excl_vat) : "";
     const baseCategoryIds: string[] = [];
     const initialOverride = offer.pack_size_override;

@@ -807,14 +807,30 @@ export default function CheckoutPage() {
                               </ul>
                             </div>
                           )}
-                          <StripePaymentFlow
-                            orderId={orderId!}
-                            paymentIntents={paymentIntents}
-                            onAllPaid={() => {
-                              clearCart.mutate();
-                              navigate(`/commande/confirmation?order_id=${orderId}`);
-                            }}
-                          />
+                          {paymentMethods[payment].label.startsWith("Virement bancaire") ? (
+                            <>
+                              <BankTransferInstructions paymentIntents={paymentIntents} />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  clearCart.mutate();
+                                  navigate(`/commande/confirmation?order_id=${orderId}`);
+                                }}
+                                className="w-full bg-mk-navy text-white font-bold text-sm px-6 py-3 rounded-md"
+                              >
+                                J'ai noté les instructions — voir ma commande
+                              </button>
+                            </>
+                          ) : (
+                            <StripePaymentFlow
+                              orderId={orderId!}
+                              paymentIntents={paymentIntents}
+                              onAllPaid={() => {
+                                clearCart.mutate();
+                                navigate(`/commande/confirmation?order_id=${orderId}`);
+                              }}
+                            />
+                          )}
                         </>
                       )}
 

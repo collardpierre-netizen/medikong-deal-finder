@@ -188,7 +188,7 @@ export default function CheckoutPage() {
   const paymentMethods = [
     { label: "Carte bancaire", enabled: true },
     { label: `Paiement sur facture${invoiceEligibleCount ? ` (${invoiceEligibleCount} vendeur${invoiceEligibleCount > 1 ? "s" : ""} éligible${invoiceEligibleCount > 1 ? "s" : ""})` : ""}`, enabled: invoiceAvailable },
-    { label: "Virement SEPA", enabled: false },
+    { label: "Virement bancaire (SEPA)", enabled: true },
   ];
 
   const getItemPrice = (item: typeof items[0]) => item.price_excl_vat || item.product?.price || 0;

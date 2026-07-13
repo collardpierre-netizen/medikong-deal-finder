@@ -46,7 +46,7 @@ const AdminAnalytics = () => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Buyer distribution */}
           <div className="bg-white rounded-lg border p-5" style={{ borderColor: "#E2E8F0" }}>
             <h3 className="text-[14px] font-semibold mb-4" style={{ color: "#1D2530" }}>Répartition acheteurs</h3>

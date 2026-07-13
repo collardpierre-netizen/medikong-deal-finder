@@ -2879,9 +2879,11 @@ export default function VendorOffers() {
                           <button
                             type="button"
                             onClick={() => openEdit(offer)}
-                            className="text-[11px] underline decoration-dotted hover:text-[#1B5BDA]"
+                            disabled={openingOfferId === offer.id}
+                            className="text-[11px] underline decoration-dotted hover:text-[#1B5BDA] disabled:opacity-60 disabled:cursor-wait inline-flex items-center gap-1"
                             style={{ color: "#8B95A5" }}
                           >
+                            {openingOfferId === offer.id && <Loader2 size={10} className="animate-spin" />}
                             Saisir
                           </button>
                         )}

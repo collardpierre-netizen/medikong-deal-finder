@@ -817,7 +817,7 @@ export default function CheckoutPage() {
                               <ul className="space-y-1">
                                 {manualPaymentVendors.map((v) => (
                                   <li key={v.vendor_id} className="text-xs text-amber-900">
-                                    • Le paiement en ligne n'est pas encore disponible pour <strong>{v.vendor_name}</strong> — commande enregistrée, notre équipe vous contacte pour finaliser.
+                                    • Le paiement en ligne n'est pas encore disponible pour <strong>{getVendorLabel(v.vendor_id, v.vendor_name)}</strong> — commande enregistrée, notre équipe vous contacte pour finaliser.
                                   </li>
                                 ))}
                               </ul>

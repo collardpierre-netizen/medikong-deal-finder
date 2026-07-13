@@ -187,8 +187,8 @@ export default function OrderDetailPage() {
           ) : items.length === 0 ? (
             <div className="px-4 py-6 text-sm text-mk-sec">Aucun article</div>
           ) : items.map((it, idx) => {
-            // 🔒 Anonymisation : libellé public uniquement, jamais it.vendor_name brut.
-            const vLabel = getVendorPublicName({ display_code: it.vendor_display_code });
+            // 🟢 CMS-driven via useVendorLabels — cohérent avec panier/checkout/confirmation.
+            const vLabel = getVendorLabel(it.vendor_id);
             const lineStatus = (it.fulfillment_status as string) || "pending";
             const lineStatusMeta: Record<string, { label: string; cls: string }> = {
               pending: { label: "En attente vendeur", cls: "bg-amber-100 text-amber-800" },

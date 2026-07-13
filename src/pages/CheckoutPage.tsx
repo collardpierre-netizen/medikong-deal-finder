@@ -506,7 +506,7 @@ export default function CheckoutPage() {
                         {blockedVendors.map(v => (
                           <li key={v.vendor_id} className="bg-white border border-destructive/20 rounded-md px-3 py-2">
                             <div className="flex items-center justify-between gap-3 flex-wrap">
-                              <span className="text-sm font-semibold text-mk-navy">{v.vendor_name}</span>
+                              <span className="text-sm font-semibold text-mk-navy">{getVendorLabel(v.vendor_id, v.vendor_name)}</span>
                               {typeof v.missing === "number" && v.missing > 0 && (
                                 <span className="text-xs font-medium text-destructive">
                                   +{v.missing.toFixed(2)} € pour atteindre le minimum

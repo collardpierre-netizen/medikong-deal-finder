@@ -168,6 +168,7 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
         client_secret: string | null;
         amount: number;
         commission: number;
+        bank_transfer_instructions?: any;
       }> = [];
       const manualPaymentVendors: Array<{
         vendor_id: string;

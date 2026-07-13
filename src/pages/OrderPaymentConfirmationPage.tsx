@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle2, Loader2, AlertTriangle, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatPrice } from "@/data/mock";
+import { useVendorLabels } from "@/hooks/useVendorLabels";
 
 type PIStatus = "succeeded" | "processing" | "requires_payment_method" | "requires_action" | "canceled" | string;
 

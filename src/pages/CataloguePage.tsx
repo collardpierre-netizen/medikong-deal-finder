@@ -70,7 +70,8 @@ export default function CataloguePage() {
     <Layout>
       <HreflangTags />
       <div className="mk-container py-4">
-        <Breadcrumbs />
+
+
 
         <div className="flex items-center justify-between mb-4 mt-2">
           <div className="space-y-1">

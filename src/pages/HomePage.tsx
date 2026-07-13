@@ -389,14 +389,14 @@ export default function HomePage() {
       <TrustLogosBanner placement="invest" />
 
       {/* ═══ 3 VALUE PROPS ═══ */}
-      <AnimatedSection className="py-14 md:py-20 border-t border-mk-line">
-        <StaggerContainer className="mk-container grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+      <AnimatedSection className="py-10 md:py-20 border-t border-mk-line">
+        <StaggerContainer className="mk-container grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-12">
           {valueProps.map(vp => (
             <StaggerItem key={vp.title} className="text-center">
-              <div className="w-14 h-14 rounded-2xl bg-mk-alt flex items-center justify-center mx-auto mb-5 text-mk-navy">
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-mk-alt flex items-center justify-center mx-auto mb-3 md:mb-5 text-mk-navy">
                 {vp.icon}
               </div>
-              <h3 className="text-lg font-bold text-mk-navy mb-2">{vp.title}</h3>
+              <h3 className="text-base md:text-lg font-bold text-mk-navy mb-1.5 md:mb-2">{vp.title}</h3>
               <p className="text-sm text-mk-sec leading-relaxed max-w-xs mx-auto">{vp.desc}</p>
             </StaggerItem>
           ))}

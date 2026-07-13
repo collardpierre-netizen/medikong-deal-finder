@@ -1452,6 +1452,7 @@ export default function VendorOffers() {
 
   const openCreate = () => { setForm(emptyForm); setInitialSnapshot(null); setEditingId(null); setShowForm(true); };
   const openEdit = async (offer: any) => {
+    console.log("[VendorOffers.openEdit] click", { offerId: offer?.id, productId: offer?.product_id, vendorId: vendor?.id });
     try {
     // Charger les catégories liées à l'offre + le coût par défaut produit/vendeur
     const [{ data: linkedCats }, { data: defaultCost }] = await Promise.all([

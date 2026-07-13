@@ -99,6 +99,32 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
         });
       }
 
+      // Résout (ou crée) le Stripe Customer pour l'acheteur — requis pour SEPA
+      // Bank Transfer (customer_balance).
+      const { data: buyer } = await supabase
+        .from("customers")
+        .select("id, email, company_name, stripe_customer_id")
+        .eq("id", order.customer_id)
+        .maybeSingle();
+
+      let stripeCustomerId: string | null = buyer?.stripe_customer_id ?? null;
+      if (!stripeCustomerId && buyer?.email) {
+        try {
+          const created = await stripe.customers.create({
+            email: buyer.email,
+            name: buyer.company_name || undefined,
+            metadata: { medikong_customer_id: buyer.id },
+          });
+          stripeCustomerId = created.id;
+          await supabase
+            .from("customers")
+            .update({ stripe_customer_id: stripeCustomerId })
+            .eq("id", buyer.id);
+        } catch (e) {
+          console.error("Stripe customer create failed:", e);
+        }
+      }
+
       // Get order lines — need per-line ids so we can persist PI ids per ligne
       const { data: lines } = await supabase
         .from("order_lines")

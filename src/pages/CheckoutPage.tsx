@@ -893,7 +893,7 @@ export default function CheckoutPage() {
                       {blockedVendors.map(v => (
                         <div key={v.vendor_id} className="border border-destructive/20 rounded-md bg-destructive/5 p-2.5 space-y-1.5">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs font-medium text-mk-navy truncate">{v.vendor_name}</span>
+                            <span className="text-xs font-medium text-mk-navy truncate">{getVendorLabel(v.vendor_id, v.vendor_name)}</span>
                             {typeof v.missing === "number" && v.missing > 0 && (
                               <span className="text-[10px] font-bold text-destructive shrink-0">+{v.missing.toFixed(2)} €</span>
                             )}

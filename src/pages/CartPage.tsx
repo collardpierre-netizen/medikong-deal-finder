@@ -10,10 +10,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { getVendorPublicName } from "@/lib/vendor-display";
+import { getVendorPublicName, resolveVendorLabel, type VendorVisibilityRule } from "@/lib/vendor-display";
 import { useCountry } from "@/contexts/CountryContext";
 import { useVendorMov } from "@/hooks/useVendorMov";
 import { useCartValidation } from "@/hooks/useCartValidation";
+import { useCurrentBuyerProfile } from "@/hooks/useCurrentBuyerProfile";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
 import VendorDelegateCompact from "@/components/vendor/VendorDelegateCompact";
 import { QuantityInput } from "@/components/cart/QuantityInput";
@@ -70,22 +71,37 @@ export default function CartPage() {
   // Fetch real vendor data for all vendor_ids in cart
   const vendorIds = useMemo(() => [...new Set(items.map(i => i.vendor_id).filter(Boolean))], [items]) as string[];
   const { getMovForVendor } = useVendorMov(vendorIds);
-  const { data: vendors = [] } = useQuery({
+  const { data: buyerProfileId } = useCurrentBuyerProfile();
+  const { data: vendorData = { vendors: [], rules: [] as VendorVisibilityRule[] } } = useQuery({
     queryKey: ["cart-vendors", vendorIds],
     queryFn: async () => {
-      if (vendorIds.length === 0) return [];
-      // 🔒 Anonymisation : on ne consomme JAMAIS name / company_name / show_real_name côté buyer.
-      const { data } = await supabase
-        .from("vendors")
-        .select("id, slug, is_verified, display_code")
-        .in("id", vendorIds as string[]);
-      return data || [];
+      if (vendorIds.length === 0) return { vendors: [], rules: [] as VendorVisibilityRule[] };
+      // 🟢 CMS-driven : on lit vendors_public + vendor_visibility_rules pour aligner
+      // l'affichage du libellé vendeur sur les surfaces publiques (shop, fiche produit).
+      // resolveVendorLabel décide en fonction du pays + profil acheteur si le vrai nom
+      // peut être montré ; sinon retombe sur "Fournisseur <display_code>".
+      const [vRes, rRes] = await Promise.all([
+        supabase
+          .from("vendors_public" as any)
+          .select("id, slug, is_verified, display_code, name, company_name, show_real_name")
+          .in("id", vendorIds as string[]),
+        supabase
+          .from("vendor_visibility_rules" as any)
+          .select("vendor_id, country_code, customer_type, show_real_name, priority")
+          .in("vendor_id", vendorIds as string[]),
+      ]);
+      return {
+        vendors: (vRes.data || []) as any[],
+        rules: ((rRes.data || []) as unknown) as VendorVisibilityRule[],
+      };
     },
     enabled: vendorIds.length > 0,
   });
+  const vendors = vendorData.vendors;
+  const visibilityRules = vendorData.rules;
 
 
-  const vendorMap = useMemo(() => new Map(vendors.map(v => [v.id, v])), [vendors]);
+  const vendorMap = useMemo(() => new Map(vendors.map((v: any) => [v.id, v])), [vendors]);
 
   // Server-side validation: MOQ, stock, vendor MOV (floor 500€), tier prices
   const validationItems = useMemo(
@@ -118,9 +134,10 @@ export default function CartPage() {
       if (!groups[key]) groups[key] = [];
       groups[key].push(item);
     });
+    const visibilityContext = { country: country || undefined, customerType: buyerProfileId || undefined };
     return Object.entries(groups).map(([vendorId, groupItems]) => {
       const total = groupItems.reduce((s, i) => s + (i.price_excl_vat || i.product?.price || 0) * i.quantity, 0);
-      const vendor = vendorMap.get(vendorId);
+      const vendor: any = vendorMap.get(vendorId);
       const summary = vendorSummaryMap.get(vendorId);
       // Server-side MOV (with floor 500€) takes precedence; fallback to legacy hook before validation arrives.
       const currentMov = summary?.mov_required ?? getMovForVendor(vendorId);
@@ -128,14 +145,27 @@ export default function CartPage() {
       const remaining = summary?.amount_missing ?? Math.max(currentMov - subtotalForMov, 0);
       const progress = currentMov > 0 ? Math.min((subtotalForMov / currentMov) * 100, 100) : 100;
       const meetsMinimum = summary ? summary.mov_reached : subtotalForMov >= currentMov;
+      // 🟢 CMS-driven : vrai nom si une règle de visibilité l'autorise pour ce
+      // pays + profil acheteur, sinon "Fournisseur <display_code>". Aligne le
+      // panier sur le shop / la fiche produit.
+      const vendorDisplayName = vendor
+        ? resolveVendorLabel(
+            {
+              id: vendor.id,
+              display_code: vendor.display_code,
+              name: vendor.name,
+              company_name: vendor.company_name,
+              show_real_name: vendor.show_real_name,
+            },
+            visibilityRules,
+            visibilityContext,
+          )
+        : getVendorPublicName({ display_code: undefined });
       return {
         vendorId,
-        // 🔒 Anonymisation : libellé public uniquement, jamais name/company_name brut.
-        vendorDisplayName: vendor
-          ? getVendorPublicName({ display_code: (vendor as any).display_code })
-          : `Fournisseur #${vendorId.slice(0, 6).toUpperCase()}`,
+        vendorDisplayName,
         vendorSlug: vendor?.slug || undefined,
-        vendorDisplayCode: (vendor as any)?.display_code || undefined,
+        vendorDisplayCode: vendor?.display_code || undefined,
         isVerified: vendor?.is_verified || false,
         items: groupItems,
         total,
@@ -145,7 +175,8 @@ export default function CartPage() {
         meetsMinimum,
       };
     });
-  }, [items, vendorMap, getMovForVendor, country, vendorSummaryMap]);
+  }, [items, vendorMap, visibilityRules, getMovForVendor, country, buyerProfileId, vendorSummaryMap]);
+
 
   // Résolution dynamique des taux TVA (6% médicaments / 21% OTC) via RPC resolve_product_vat_rate
   const productIds = useMemo(() => [...new Set(items.map(i => i.product_id).filter(Boolean))] as string[], [items]);

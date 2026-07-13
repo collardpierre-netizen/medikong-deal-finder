@@ -88,7 +88,7 @@ const AdminFinances = () => {
       )}
 
       {activeTab === "invoices" && (
-        <div className="rounded-[10px] overflow-hidden" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+        <div className="rounded-[10px] overflow-x-auto" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
           {isLoading ? <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Chargement...</div> : (
             <table className="w-full text-left">
               <thead>
@@ -127,7 +127,7 @@ const AdminFinances = () => {
       )}
 
       {activeTab === "payouts" && (
-        <div className="rounded-[10px] overflow-hidden" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+        <div className="rounded-[10px] overflow-x-auto" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
           <table className="w-full text-left">
             <thead>
               <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>

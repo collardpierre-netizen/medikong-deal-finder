@@ -41,7 +41,7 @@ const AdminLogs = () => {
     <div>
       <AdminTopBar title="Logs & Audit" subtitle="Journal d'activité de la plateforme" />
 
-      <div className="bg-white rounded-lg border overflow-hidden" style={{ borderColor: "#E2E8F0" }}>
+      <div className="bg-white rounded-lg border overflow-x-auto" style={{ borderColor: "#E2E8F0" }}>
         {isLoading ? (
           <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Chargement...</div>
         ) : (

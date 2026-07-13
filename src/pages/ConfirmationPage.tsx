@@ -183,15 +183,20 @@ export default function ConfirmationPage() {
       return 5000;
     },
     queryFn: async () => {
+      // 🔒 On ne sélectionne PAS vendor.name — le libellé est résolu via
+      // useVendorLabels (CMS-driven, cohérent avec panier/checkout).
       const { data, error } = await supabase
         .from("order_invoices")
-        .select("id, invoice_number, amount_incl_vat, pdf_url, hosted_url, status, vendor:vendors!order_invoices_vendor_id_fkey(name)")
+        .select("id, invoice_number, amount_incl_vat, pdf_url, hosted_url, status, vendor_id")
         .eq("order_id", orderId!)
         .in("status", ["finalized", "paid"]);
       if (error) throw error;
       return data ?? [];
     },
   });
+
+  const invoiceVendorIds = (invoices || []).map((i: any) => i.vendor_id).filter(Boolean) as string[];
+  const { getLabel: getVendorLabel } = useVendorLabels(invoiceVendorIds);
 
 
   const headline = failed

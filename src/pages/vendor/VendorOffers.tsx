@@ -1390,11 +1390,28 @@ export default function VendorOffers() {
   useEffect(() => {
     if (!showForm) return;
     // Le formulaire est rendu au-dessus du tableau des offres.
-    // Sans scroll, le clic sur "Modifier" depuis une ligne basse donne l'impression que rien ne se passe.
-    const t = window.setTimeout(() => {
-      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 50);
-    return () => window.clearTimeout(t);
+    // Depuis une ligne basse, un simple scrollIntoView() peut échouer (élément pas encore mesurable,
+    // header sticky qui masque, layout shift). On calcule la position absolue avec un petit offset
+    // et on retente sur plusieurs frames pour absorber le rendu progressif du formulaire.
+    let cancelled = false;
+    const HEADER_OFFSET = 96;
+    const scrollNow = () => {
+      const el = formRef.current;
+      if (!el || cancelled) return;
+      const top = el.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET;
+      window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+    };
+    const timers = [
+      window.requestAnimationFrame(scrollNow),
+      window.setTimeout(scrollNow, 120) as unknown as number,
+      window.setTimeout(scrollNow, 350) as unknown as number,
+    ];
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(timers[0]);
+      window.clearTimeout(timers[1]);
+      window.clearTimeout(timers[2]);
+    };
   }, [showForm, editingId]);
   const { data: editingEffectiveCommission } = useEffectiveCommission(editingId);
   const editingCommissionConfig = editingEffectiveCommission ?? commissionConfig;

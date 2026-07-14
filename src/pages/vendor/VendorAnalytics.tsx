@@ -252,12 +252,38 @@ function TypologyTab({ period, vendorId }: { period: AnalyticsPeriod; vendorId: 
     emptyLabel: "Aucune commande sur la période.",
   });
   if (globalNotice) return <>{globalNotice}</>;
+
+  const typeRows = byType.map((r) => ({
+    profil: CUSTOMER_TYPE_LABEL[r.customer_type] ?? r.customer_type,
+    ca_htva_eur: Number((Number(r.ca_htva_cents) / 100).toFixed(2)),
+    part_pct: Number(Number(r.share).toFixed(2)),
+    commandes: Number(r.orders_count),
+  }));
+  const countryRows = byCountry.map((r) => ({
+    pays: COUNTRY_LABEL[r.country_code] ?? r.country_code,
+    code_pays: r.country_code,
+    ca_htva_eur: Number((Number(r.ca_htva_cents) / 100).toFixed(2)),
+    part_pct: Number(Number(r.share).toFixed(2)),
+    commandes: Number(r.orders_count),
+  }));
+  const doExportType = (fmt: "csv" | "xlsx") =>
+    exportAnalyticsRows(typeRows, `medikong-analytics-typologie-${period}`, fmt, "Typologie");
+  const doExportCountry = (fmt: "csv" | "xlsx") =>
+    exportAnalyticsRows(countryRows, `medikong-analytics-pays-${period}`, fmt, "Pays");
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div className={cardStyle}>
-        <div className="flex items-center gap-2 mb-1">
-          <Building2 size={14} className="text-[#8B95A5]" />
-          <h3 className="text-[14px] font-semibold text-[#1D2530]">Par typologie de client</h3>
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <div className="flex items-center gap-2">
+            <Building2 size={14} className="text-[#8B95A5]" />
+            <h3 className="text-[14px] font-semibold text-[#1D2530]">Par typologie de client</h3>
+          </div>
+          <AnalyticsExportButtons
+            disabled={typeRows.length === 0}
+            onCsv={() => doExportType("csv")}
+            onXlsx={() => doExportType("xlsx")}
+          />
         </div>
         <p className="text-[11px] text-[#8B95A5] mb-4">Part du CA HTVA par profil</p>
         {l1 ? (

@@ -109,6 +109,15 @@ export interface SelfBillingParams {
   }>;
   invoiceNumber: string;
   paidAt: Date;
+  mandateSignedAt?: Date | string | null;
+}
+
+/** Fixed legal mention required by BE self-billing rules (mandat de facturation). */
+export function buildSelfBillingMandateMention(vendor: any, mandateSignedAt: Date | string | null | undefined): string {
+  const name = vendor?.company_name || vendor?.name || "—";
+  const vat = vendor?.vat_number ? String(vendor.vat_number) : "N° TVA non renseigné";
+  const date = mandateSignedAt ? fmtDateBE(mandateSignedAt) : "date à confirmer";
+  return `Facture émise par Balooh SRL (BE1005771323) au nom et pour le compte de ${name} — N° TVA fournisseur : ${vat} — Conformément au mandat de facturation signé le ${date}.`;
 }
 
 export function buildSelfBillingPdf(p: SelfBillingParams): Uint8Array {

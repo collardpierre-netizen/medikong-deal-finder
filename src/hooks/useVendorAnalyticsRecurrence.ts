@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { computeRange, type AnalyticsPeriod } from "./useVendorAnalytics";
+import { computeRange, useAnalyticsVendorId, type AnalyticsPeriod } from "./useVendorAnalytics";
 
 export interface RecurrenceRow {
   new_customers: number;
@@ -13,10 +13,14 @@ export interface RecurrenceRow {
 
 export function useVendorAnalyticsRecurrence(period: AnalyticsPeriod) {
   const { from, to } = computeRange(period);
+  const vendorId = useAnalyticsVendorId();
   return useQuery({
-    queryKey: ["vendor-analytics-recurrence", period],
+    queryKey: ["vendor-analytics-recurrence", period, vendorId],
+    enabled: !!vendorId,
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("vendor_analytics_recurrence", { _from: from, _to: to });
+      const { data, error } = await (supabase.rpc as any)("vendor_analytics_recurrence", {
+        _from: from, _to: to, _vendor_id: vendorId,
+      });
       if (error) throw error;
       return (Array.isArray(data) ? data[0] : data) as RecurrenceRow | null;
     },
@@ -33,10 +37,14 @@ export interface CohortRow {
 }
 
 export function useVendorAnalyticsCohorts(months = 12) {
+  const vendorId = useAnalyticsVendorId();
   return useQuery({
-    queryKey: ["vendor-analytics-cohorts", months],
+    queryKey: ["vendor-analytics-cohorts", months, vendorId],
+    enabled: !!vendorId,
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("vendor_analytics_cohorts", { _months: months });
+      const { data, error } = await (supabase.rpc as any)("vendor_analytics_cohorts", {
+        _months: months, _vendor_id: vendorId,
+      });
       if (error) throw error;
       return (data ?? []) as CohortRow[];
     },
@@ -55,10 +63,14 @@ export interface CustomerLocationRow {
 
 export function useVendorAnalyticsCustomerLocations(period: AnalyticsPeriod) {
   const { from, to } = computeRange(period);
+  const vendorId = useAnalyticsVendorId();
   return useQuery({
-    queryKey: ["vendor-analytics-locations", period],
+    queryKey: ["vendor-analytics-locations", period, vendorId],
+    enabled: !!vendorId,
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("vendor_analytics_customer_locations", { _from: from, _to: to });
+      const { data, error } = await (supabase.rpc as any)("vendor_analytics_customer_locations", {
+        _from: from, _to: to, _vendor_id: vendorId,
+      });
       if (error) throw error;
       return (data ?? []) as CustomerLocationRow[];
     },

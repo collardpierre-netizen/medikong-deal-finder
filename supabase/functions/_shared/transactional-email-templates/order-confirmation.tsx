@@ -14,6 +14,7 @@ interface OrderConfirmationProps {
   itemCount?: number
   shippingAddress?: string
   paymentMethod?: string
+  invoiceLinks?: Array<{ label: string; url: string }>
 }
 
 const OrderConfirmationEmail = ({

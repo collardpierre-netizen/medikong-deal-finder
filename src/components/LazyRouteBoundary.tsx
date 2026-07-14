@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from "react";
+import { useLocation } from "react-router-dom";
 import { AlertTriangle, RefreshCw, Trash2 } from "lucide-react";
 import { report as reportClientError } from "@/lib/errorReporter";
 import {
@@ -9,20 +10,35 @@ import {
 
 interface Props {
   children: ReactNode;
+  /** Passed by the functional wrapper so `getDerivedStateFromProps` can reset on route change. */
+  locationKey?: string;
 }
 interface State {
   error: Error | null;
+  lastLocationKey: string | undefined;
 }
 
 /**
  * Boundary spécifique aux routes lazy : si un chunk échoue à charger
  * (déploiement, réseau coupé, cache obsolète) on affiche un écran
  * de retry au lieu d'un blank screen.
+ *
+ * Se réinitialise automatiquement au changement de route : sans ça, l'écran
+ * d'erreur persistait quand l'utilisateur cliquait sur un autre item du menu
+ * (l'URL changeait mais l'état d'erreur restait, d'où l'impression qu'il
+ * fallait cliquer plusieurs fois pour afficher la nouvelle page).
  */
-export class LazyRouteBoundary extends Component<Props, State> {
-  state: State = { error: null };
+class LazyRouteBoundaryClass extends Component<Props, State> {
+  state: State = { error: null, lastLocationKey: this.props.locationKey };
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromProps(nextProps: Props, prevState: State): State | null {
+    if (nextProps.locationKey !== prevState.lastLocationKey) {
+      return { error: null, lastLocationKey: nextProps.locationKey };
+    }
+    return null;
+  }
+
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return { error };
   }
 

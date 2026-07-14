@@ -197,17 +197,15 @@ function KpiTile({
 
 function OverviewTab({ period, vendorId }: { period: AnalyticsPeriod; vendorId: string | null }) {
   const { data, isLoading, error } = useVendorAnalyticsKpis(period);
-  const notice = (
-    <AnalyticsStateNotice
-      hasVendorId={!!vendorId}
-      isLoading={isLoading}
-      error={error}
-      isEmpty={!!data && Number(data.orders_count) === 0 && Number(data.ca_htva_cents) === 0}
-      loadingLabel="Chargement des KPIs…"
-      emptyLabel="Aucune commande sur la période."
-    />
-  );
-  if (notice) return notice;
+  const notice = analyticsStateNotice({
+    hasVendorId: !!vendorId,
+    isLoading,
+    error,
+    isEmpty: !!data && Number(data.orders_count) === 0 && Number(data.ca_htva_cents) === 0,
+    loadingLabel: "Chargement des KPIs…",
+    emptyLabel: "Aucune commande sur la période.",
+  });
+  if (notice) return <>{notice}</>;
   if (!data) return null;
   return (
     <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">

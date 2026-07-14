@@ -60,6 +60,86 @@ const COUNTRY_LABEL: Record<string, string> = {
 
 const cardStyle = "p-5 rounded-[10px] bg-white border border-[#E2E8F0]";
 
+/**
+ * Explicit state notice for vendor_analytics_* hooks.
+ * Distinguishes: no vendor_id | loading | error | empty.
+ * Returns null when the caller should render its normal content.
+ */
+function AnalyticsStateNotice({
+  hasVendorId,
+  isLoading,
+  error,
+  isEmpty,
+  loadingLabel = "Chargement des données…",
+  emptyLabel = "Aucune donnée sur la période.",
+}: {
+  hasVendorId: boolean;
+  isLoading: boolean;
+  error?: unknown;
+  isEmpty: boolean;
+  loadingLabel?: string;
+  emptyLabel?: string;
+}) {
+  if (!hasVendorId) {
+    return (
+      <div
+        className="rounded-[10px] border px-4 py-3 flex items-start gap-2 text-[13px]"
+        style={{ borderColor: "#DC2626", backgroundColor: "#FEF2F2", color: "#7F1D1D" }}
+      >
+        <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+        <div>
+          <div className="font-semibold">Aucun vendor_id résolu</div>
+          <div className="text-[12px] mt-0.5">
+            Les RPC <code className="font-mono">vendor_analytics_*</code> ne sont pas appelés (paramètre <code className="font-mono">_vendor_id</code> manquant).
+            Vérifiez que vous êtes connecté en tant que vendeur, ou passez en mode impersonation via
+            <code className="font-mono"> ?impersonation_vendor_id=…</code>.
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (isLoading) {
+    return (
+      <div className={`${cardStyle} py-8 flex items-center justify-center gap-2 text-[13px] text-[#616B7C]`}>
+        <Loader2 size={16} className="animate-spin" />
+        <span>{loadingLabel}</span>
+      </div>
+    );
+  }
+  if (error) {
+    const message = (error as { message?: string })?.message ?? String(error);
+    return (
+      <div
+        className="rounded-[10px] border px-4 py-3 flex items-start gap-2 text-[13px]"
+        style={{ borderColor: "#DC2626", backgroundColor: "#FEF2F2", color: "#7F1D1D" }}
+      >
+        <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+        <div className="min-w-0">
+          <div className="font-semibold">Erreur lors de la récupération des données</div>
+          <div className="text-[12px] mt-0.5 font-mono break-all">{message}</div>
+        </div>
+      </div>
+    );
+  }
+  if (isEmpty) {
+    return (
+      <div
+        className="rounded-[10px] border px-4 py-3 flex items-start gap-2 text-[13px]"
+        style={{ borderColor: "#E2E8F0", backgroundColor: "#F8FAFC", color: "#616B7C" }}
+      >
+        <Info size={16} className="mt-0.5 shrink-0" />
+        <div>
+          <div className="font-semibold text-[#1D2530]">{emptyLabel}</div>
+          <div className="text-[12px] mt-0.5">
+            Le RPC a répondu correctement mais n'a retourné aucune ligne pour ce vendor_id et cette période.
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
+
 function pctDelta(cur: number, prev: number): number | null {
   if (!prev || prev === 0) return cur > 0 ? 100 : null;
   return ((cur - prev) / prev) * 100;

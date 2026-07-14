@@ -1,59 +1,128 @@
 ## Objectif
 
-Remplacer le barème indicatif codé en dur du dashboard vendeur par de vrais paliers de commission négociée, pilotables depuis `/admin/commissions`, et afficher au vendeur sa progression GMV en valeur et % vers le prochain palier (avec conservation/perte du taux préférentiel).
+Créer une page dédiée **`/vendor/analytics`** (accessible depuis la sidebar vendeur, remplace l'entrée "Analytics BIENTÔT") qui devient un vrai outil d'analyse des ventes MediKong, avec en plus un module de comparaison **sell-in (MediKong) vs sell-out (données remontées par les clients)**.
 
-## Modèle de données
+## Découpage en 3 lots livrables séparément
 
-Nouvelle table `margin_rule_tiers` (paliers optionnels attachés à une règle `margin_rules`) :
+### Lot 1 — Analytics ventes MediKong (lecture seule, données déjà en base)
 
-- `margin_rule_id` (FK)
-- `min_gmv_cents` (bigint) — seuil GMV cumulé à atteindre
-- `margin_percentage` (numeric) — taux appliqué au-delà du seuil
-- `label` (text, optionnel — ex. "Palier négocié 1M€")
-- `sort_order` (int)
+Une page unique en onglets :
 
-Convention : la règle parente (`margin_rules.margin_percentage`) reste le taux "base" (palier 0). Les `margin_rule_tiers` définissent les paliers supérieurs.
+**a) Vue d'ensemble**
+- Bandeau KPIs période (30j / 90j / 12m / custom) :
+  - CA HTVA, marge nette, commission MediKong
+  - Nb commandes, panier moyen, nb clients actifs
+  - Δ vs période précédente (flèche + %)
+- Série journalière/hebdo/mensuelle (déjà existante, réutilisée)
 
-Deux nouveaux champs sur `margin_rules` :
-- `gmv_window` enum (`calendar_year` | `rolling_12m`) — défaut `calendar_year`
-- `tiers_direction` enum (`decreasing` | `increasing`) — défaut `decreasing` (plus de GMV = taux plus bas)
+**b) Typologie clients** (déjà partiellement dans "Ventation par profil")
+- Répartition CA par profil (retail, pharmacie, MR/MRS, hôpital, vétérinaire, dentiste, cabinet)
+- Répartition CA par pays (BE/FR/LU)
+- Répartition CA par région (BE : provinces via `be_city_to_province` ; FR : régions ; LU : cantons)
+- Top 10 clients par CA + part de portefeuille (% du CA total)
 
-RPC `get_vendor_gmv_progress(_vendor_id uuid)` :
-retourne `{ current_gmv_cents, current_tier_percentage, next_tier_min_gmv_cents, next_tier_percentage, progress_pct, window_start, window_end }` en s'appuyant sur `order_lines` (mêmes filtres que le dashboard) et la règle vendeur active (fallback règle globale).
+**c) Récurrence & fidélité**
+- Cohortes acquisition mois par mois (heatmap rétention)
+- % nouveaux vs récurrents sur la période
+- Fréquence moyenne de commande par client (jours entre commandes)
+- Clients à risque de churn : dernier achat > moyenne × 2
 
-RLS : lecture par admin ou par le vendeur concerné (via `current_vendor_id()`).
+**d) Carte des clients**
+- Carte interactive (leaflet + OpenStreetMap, pas de clé API)
+- Cluster de points par code postal client
+- Taille = CA, couleur = profil
+- Popup au clic : nom pharmacie, CA période, dernière commande
+- Toggle : bulles proportionnelles au % ventes par province
 
-## Admin `/admin/commissions`
+**e) Produits & offres**
+- Top 20 SKU (CA, marge, unités)
+- SKU en déclin (Δ négatif > 30% vs période précédente)
+- Ruptures détectées (offres actives sans commande depuis 60j)
 
-Dans l'éditeur de règle (dialog) :
-- Section "Paliers négociés" repliable (visible seulement quand une règle vendeur est éditée, ou activable via un toggle sur les templates globaux).
-- Tableau éditable : GMV min (€) | Taux (%) | Label.
-- Sélecteurs : fenêtre GMV (année civile / 12 mois glissants), direction (dégressif / progressif).
-- Aperçu : "À partir de X € de GMV, taux Y %".
+### Lot 2 — Sell-in vs Sell-out (nouveau module d'encodage)
 
-Sur la table des règles vendeurs : afficher une petite pastille "N paliers" quand `margin_rule_tiers` > 0.
+Le vendeur encode le **sell-out** communiqué par ses clients pour comparer avec le **sell-in** enregistré sur MediKong.
 
-## Dashboard vendeur (`MediKongCommissionCard`)
+**Modèle de données**
+```
+vendor_sell_out_reports
+  vendor_id, customer_id (facultatif si client hors MediKong), customer_label,
+  period_start, period_end, granularity (month/quarter),
+  currency, source (manual/csv/api), created_by, notes
 
-- Supprimer le barème local indicatif.
-- Appeler le RPC `get_vendor_gmv_progress`.
-- Afficher :
-  - Taux actuel (badge) + libellé du palier.
-  - GMV cumulé (€) sur la fenêtre.
-  - Prochain palier : "Encore X € pour passer à Y %" (ou "Palier max atteint").
-  - Barre de progression (% vers prochain palier).
-  - Note conditionnelle si la règle est `decreasing` : "Sous ce seuil, le taux repasse à Z %".
+vendor_sell_out_lines
+  report_id, product_id (nullable), gtin, cnk_code, external_ref,
+  product_label, units_sold, gross_revenue_cents, net_revenue_cents
+```
+- RLS : lecture/écriture pour le vendor propriétaire + admin
+- GRANT authenticated + service_role
 
-Si le vendeur n'a aucun palier configuré : afficher juste le taux fixe actuel (aucune barre, aucun barème indicatif).
+**UI dans l'onglet "Sell-in vs Sell-out"**
+- Bouton "Nouveau rapport sell-out" : sélection client (autocomplete customers MediKong ou saisie libre), période, upload XLSX/CSV avec colonnes `GTIN|CNK|Libellé|Unités|CA HTVA`
+- Résolution auto GTIN/CNK → `product_id` MediKong via `product_market_codes`
+- Tableau comparatif par produit :
+  - Sell-in MediKong (unités, CA HTVA, dernière commande)
+  - Sell-out client (unités, CA HTVA)
+  - Δ unités, ratio sell-through (%), alerte si sell-out > sell-in (surstock ou fuite marché)
+- Vue agrégée client : sell-in vs sell-out total, coefficient de rotation
+- Export XLSX de la comparaison
 
-## Décisions par défaut appliquées
+### Lot 3 — Vue admin globale (facultatif, à confirmer)
 
-- **GMV = HTVA** (`line_total_excl_vat`) — cohérent avec la négociation commerciale. Bascule TTC possible plus tard si tu veux.
-- **Fenêtre par défaut = année civile** (reset au 1er janvier), configurable par règle.
-- **Commission** : le taux résolu s'applique aux **commandes suivantes** après franchissement du palier (pas de rétroactif). Le RPC calcule uniquement l'affichage ; l'application effective aux `order_lines.commission_amount` reste sur le trigger existant (à faire évoluer dans un second temps si tu valides ce comportement).
+Miroir de la page vendeur côté `/admin/analytics-vendeurs` avec filtre par vendeur, pour comparer les vendeurs entre eux. **Non couvert par ce plan** — à demander séparément.
 
-## Questions bloquantes avant migration
+## Détails techniques
 
-1. **Application au calcul réel des commissions** : je limite ce lot à **l'affichage dashboard + config admin** (le taux effectif dans `order_lines.commission_amount` continue d'utiliser `margin_rules.margin_percentage` "base"). OK ou tu veux aussi que le trigger de commission consulte les paliers dès maintenant ?
-2. **HTVA confirmé** pour la GMV ?
-3. **Fenêtre par défaut = année civile** OK ?
+**Nouveaux fichiers**
+```
+src/pages/vendor/VendorAnalyticsPage.tsx     (shell + tabs)
+src/components/vendor/analytics/
+  KpiRow.tsx
+  TypologyBreakdown.tsx
+  RecurrenceCohorts.tsx
+  CustomerMap.tsx                             (react-leaflet)
+  ProductPerformance.tsx
+  SellInVsSellOut/
+    ReportsList.tsx
+    NewReportDialog.tsx
+    ComparisonTable.tsx
+    parseSellOutXlsx.ts
+src/hooks/
+  useVendorAnalyticsKpis.ts
+  useVendorCustomerBreakdown.ts
+  useVendorCustomerLocations.ts
+  useVendorRecurrence.ts
+  useVendorSellOutReports.ts
+```
+
+**Réutilisé**
+- `useVendorMonthlyDashboard`, `useVendorSalesBreakdowns`, `useVendorGmvProgress`
+- Recharts (déjà installé)
+- Nouvelles deps : `react-leaflet` + `leaflet` + types + `xlsx` (déjà présent)
+
+**Migrations SQL**
+1. Vues `vendor_analytics_*_v` (security_invoker = true) pour KPIs, typologie, cohortes, geo
+2. RPCs `vendor_analytics_kpis(_from, _to, _prev_from, _prev_to)`, `vendor_customer_locations(_from, _to)`, `vendor_recurrence_cohorts(_months)`
+3. Tables `vendor_sell_out_reports` + `vendor_sell_out_lines` (RLS vendor-scoped + service_role, GRANT authenticated)
+4. RPC `vendor_sell_in_vs_sell_out(_report_id)` qui joint sell-out lines avec `order_lines` MediKong sur produit + période
+
+**Navigation**
+- Sidebar vendeur : entrée "Analytics" (Lucide `BarChart3`), badge retiré
+- Suppression du placeholder "BIENTÔT"
+
+## Ordre de livraison proposé
+
+1. **Lot 1a** (2 sprints d'itération) : shell page + KPIs + typologie + top clients + top produits (aucun package neuf)
+2. **Lot 1b** : récurrence/cohortes + carte react-leaflet
+3. **Lot 2** : tables + UI encodage + comparaison
+
+Chaque lot est livré séparément et validé avant de passer au suivant, conformément à ta règle de scope strict.
+
+## Questions pour toi avant de démarrer
+
+1. **Périmètre du Lot 1** : on part sur les 5 blocs listés (KPIs / typologie / récurrence / carte / produits) ou tu veux qu'on démarre plus resserré (KPIs + typologie + carte seulement) ?
+2. **Sell-out** : sources acceptées = manuel + upload XLSX/CSV suffisant pour V1 ? (API vendeur = plus tard)
+3. **Carte** : react-leaflet + OpenStreetMap OK (gratuit, sans clé) ou tu préfères Mapbox ?
+4. **Vue admin globale** (Lot 3) : je l'inclus dans ce chantier ou on la traite plus tard ?
+
+Je n'écris pas une ligne de code tant que tu n'as pas validé le périmètre.

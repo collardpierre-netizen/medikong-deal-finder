@@ -26790,6 +26790,67 @@ export type Database = {
         Args: { _version_id: string }
         Returns: string
       }
+      vendor_analytics_by_country: {
+        Args: { _from: string; _to: string }
+        Returns: {
+          ca_htva_cents: number
+          country_code: string
+          orders_count: number
+          share: number
+        }[]
+      }
+      vendor_analytics_by_customer_type: {
+        Args: { _from: string; _to: string }
+        Returns: {
+          ca_htva_cents: number
+          customer_type: string
+          orders_count: number
+          share: number
+        }[]
+      }
+      vendor_analytics_kpis: {
+        Args: { _from: string; _to: string }
+        Returns: {
+          active_customers: number
+          avg_basket_cents: number
+          ca_htva_cents: number
+          commission_cents: number
+          margin_cents: number
+          orders_count: number
+          prev_active_customers: number
+          prev_avg_basket_cents: number
+          prev_ca_htva_cents: number
+          prev_commission_cents: number
+          prev_margin_cents: number
+          prev_orders_count: number
+        }[]
+      }
+      vendor_analytics_top_customers: {
+        Args: { _from: string; _limit?: number; _to: string }
+        Returns: {
+          ca_htva_cents: number
+          city: string
+          company_name: string
+          country_code: string
+          customer_id: string
+          customer_type: string
+          last_order_at: string
+          orders_count: number
+          postal_code: string
+          share: number
+        }[]
+      }
+      vendor_analytics_top_products: {
+        Args: { _from: string; _limit?: number; _to: string }
+        Returns: {
+          ca_htva_cents: number
+          commission_cents: number
+          margin_cents: number
+          product_id: string
+          product_name: string
+          units: number
+        }[]
+      }
       vendor_gmv_filters_self_test: {
         Args: never
         Returns: {

@@ -10,8 +10,9 @@ import {
   DollarSign, Package, Tag, Factory, Activity, Eye, Plus, Trash2,
   CheckCircle2, XCircle, Clock, Globe, Phone, FileText, Loader2,
   Pencil, Power, AlertTriangle, Save, ExternalLink, Link2, Send, Copy, Users,
-  Info,
+  Info, SlidersHorizontal,
 } from "lucide-react";
+import AdminVendorMovMoqModal from "@/components/admin/AdminVendorMovMoqModal";
 import { AccountMembersPanel } from "@/components/account/AccountMembersPanel";
 import { useImpersonation } from "@/contexts/impersonation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -50,6 +51,7 @@ const AdminVendeurDetail = () => {
   const [showDelete, setShowDelete] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [togglingStatus, setTogglingStatus] = useState(false);
+  const [showMovMoq, setShowMovMoq] = useState(false);
   const queryClient = useQueryClient();
   const { startImpersonation } = useImpersonation();
   const { data: vendor, isLoading } = useQuery({
@@ -288,6 +290,14 @@ const AdminVendeurDetail = () => {
           >
             <Power size={14} />
             {togglingStatus ? "..." : vendor.is_active ? "Désactiver" : "Activer"}
+          </button>
+          <button
+            onClick={() => setShowMovMoq(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold transition-opacity hover:opacity-90"
+            style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA", border: "1px solid #BFDBFE" }}
+            title="Configurer MOV / MOQ (par acheteur, profil, offre)"
+          >
+            <SlidersHorizontal size={14} /> MOV/MOQ
           </button>
           <button onClick={() => setShowEdit(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold text-white" style={{ backgroundColor: "#1B5BDA" }}>
             <Pencil size={14} /> Modifier
@@ -601,6 +611,13 @@ const AdminVendeurDetail = () => {
 
       {/* Invitation dialog */}
       <VendorInviteDialog open={showInvite} onOpenChange={setShowInvite} vendor={vendor} />
+
+      <AdminVendorMovMoqModal
+        vendorId={vendor.id}
+        vendorName={vendor.company_name || vendor.name}
+        open={showMovMoq}
+        onOpenChange={setShowMovMoq}
+      />
     </div>
   );
 };

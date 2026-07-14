@@ -17,6 +17,8 @@ import { useVendorAnalyticsCustomerLocations } from "@/hooks/useVendorAnalyticsR
 import { RecurrencePanel } from "@/components/vendor/analytics/RecurrencePanel";
 import { CustomerMap } from "@/components/vendor/analytics/CustomerMap";
 import { SellOutPanel } from "@/components/vendor/analytics/SellOutPanel";
+import { AnalyticsExportButtons } from "@/components/vendor/analytics/AnalyticsExportButtons";
+import { exportAnalyticsRows } from "@/lib/analytics-export";
 
 const PERIOD_OPTIONS: { value: AnalyticsPeriod; label: string }[] = [
   { value: "30d", label: "30 jours" },

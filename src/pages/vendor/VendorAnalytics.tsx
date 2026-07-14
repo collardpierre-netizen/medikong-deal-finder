@@ -239,9 +239,17 @@ function ShareBar({ label, ca, share, extra }: { label: string; ca: number; shar
   );
 }
 
-function TypologyTab({ period }: { period: AnalyticsPeriod }) {
-  const { data: byType = [], isLoading: l1 } = useVendorAnalyticsByCustomerType(period);
-  const { data: byCountry = [], isLoading: l2 } = useVendorAnalyticsByCountry(period);
+function TypologyTab({ period, vendorId }: { period: AnalyticsPeriod; vendorId: string | null }) {
+  const { data: byType = [], isLoading: l1, error: e1 } = useVendorAnalyticsByCustomerType(period);
+  const { data: byCountry = [], isLoading: l2, error: e2 } = useVendorAnalyticsByCountry(period);
+  const globalNotice = analyticsStateNotice({
+    hasVendorId: !!vendorId,
+    isLoading: false,
+    error: e1 ?? e2,
+    isEmpty: !l1 && !l2 && byType.length === 0 && byCountry.length === 0,
+    emptyLabel: "Aucune commande sur la période.",
+  });
+  if (globalNotice) return <>{globalNotice}</>;
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div className={cardStyle}>

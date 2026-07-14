@@ -76,7 +76,27 @@ export default function AdminFalcoStatus() {
     }
   };
 
+  const seedCronSecret = async () => {
+    setSeeding(true);
+    setSeedResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("seed-cron-secret-vault", { body: {} });
+      if (error) throw error;
+      const d = data as { ok?: boolean; vault_secret_name?: string; vault_secret_id?: string; error?: string; details?: string };
+      if (d?.ok) {
+        setSeedResult({ ok: true, message: `Secret « ${d.vault_secret_name} » écrit dans le coffre-fort (id ${d.vault_secret_id?.slice(0, 8)}…). Le cron pg_cron y lira désormais le Bearer.` });
+      } else {
+        setSeedResult({ ok: false, message: d?.details || d?.error || "Échec inconnu" });
+      }
+    } catch (e: any) {
+      setSeedResult({ ok: false, message: e?.message || "Erreur inconnue" });
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   useEffect(() => { load(); }, []);
+
 
 
   const Row = ({ label, ok }: { label: string; ok: boolean }) => (

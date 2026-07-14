@@ -51,6 +51,7 @@ const AdminVendeurDetail = () => {
   const [showDelete, setShowDelete] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [togglingStatus, setTogglingStatus] = useState(false);
+  const [showMovMoq, setShowMovMoq] = useState(false);
   const queryClient = useQueryClient();
   const { startImpersonation } = useImpersonation();
   const { data: vendor, isLoading } = useQuery({

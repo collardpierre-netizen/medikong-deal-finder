@@ -10,6 +10,12 @@ import {
   type AnalyticsPeriod,
 } from "@/hooks/useVendorAnalytics";
 
+import { useCurrentVendor } from "@/hooks/useCurrentVendor";
+import { useVendorAnalyticsCustomerLocations } from "@/hooks/useVendorAnalyticsRecurrence";
+import { RecurrencePanel } from "@/components/vendor/analytics/RecurrencePanel";
+import { CustomerMap } from "@/components/vendor/analytics/CustomerMap";
+import { SellOutPanel } from "@/components/vendor/analytics/SellOutPanel";
+
 const PERIOD_OPTIONS: { value: AnalyticsPeriod; label: string }[] = [
   { value: "30d", label: "30 jours" },
   { value: "90d", label: "90 jours" },
@@ -20,8 +26,11 @@ const PERIOD_OPTIONS: { value: AnalyticsPeriod; label: string }[] = [
 const TABS = [
   { key: "overview", label: "Vue d'ensemble" },
   { key: "typology", label: "Typologie clients" },
+  { key: "recurrence", label: "Récurrence & cohortes" },
   { key: "customers", label: "Top clients" },
+  { key: "map", label: "Carte clients" },
   { key: "products", label: "Top produits" },
+  { key: "sellout", label: "Sell-in vs Sell-out" },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
 

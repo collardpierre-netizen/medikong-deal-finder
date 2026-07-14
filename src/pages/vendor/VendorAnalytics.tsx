@@ -357,17 +357,21 @@ function TopCustomersTab({ period, vendorId }: { period: AnalyticsPeriod; vendor
   );
 }
 
-function TopProductsTab({ period }: { period: AnalyticsPeriod }) {
-  const { data = [], isLoading } = useVendorAnalyticsTopProducts(period, 25);
+function TopProductsTab({ period, vendorId }: { period: AnalyticsPeriod; vendorId: string | null }) {
+  const { data = [], isLoading, error } = useVendorAnalyticsTopProducts(period, 25);
+  const notice = analyticsStateNotice({
+    hasVendorId: !!vendorId,
+    isLoading,
+    error,
+    isEmpty: data.length === 0,
+    loadingLabel: "Chargement du top produits…",
+    emptyLabel: "Aucune vente sur la période.",
+  });
   return (
     <div className={cardStyle}>
       <h3 className="text-[14px] font-semibold text-[#1D2530] mb-1">Top produits (25)</h3>
       <p className="text-[11px] text-[#8B95A5] mb-4">Classement par CA HTVA — unités vendues, marge et commission</p>
-      {isLoading ? (
-        <div className="space-y-2">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-8 animate-pulse bg-[#F1F5F9] rounded" />)}</div>
-      ) : data.length === 0 ? (
-        <p className="text-[13px] text-[#8B95A5] py-8 text-center">Aucune vente sur la période</p>
-      ) : (
+      {notice ? notice : (
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead className="text-[11px] uppercase tracking-wide text-[#8B95A5] border-b border-[#E2E8F0]">

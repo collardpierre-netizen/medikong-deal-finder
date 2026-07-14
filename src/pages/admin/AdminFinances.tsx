@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
+import PeppolStatusBadge from "@/components/admin/PeppolStatusBadge";
 import { useI18n } from "@/contexts/I18nContext";
 import { useInvoices, useVendors } from "@/hooks/useAdminData";
 import {
@@ -19,6 +21,20 @@ const AdminFinances = () => {
   const { data: invoicesData = [], isLoading } = useInvoices();
   const { data: vendors = [] } = useVendors();
   const [activeTab, setActiveTab] = useState<"overview" | "invoices" | "payouts">("overview");
+  const queryClient = useQueryClient();
+
+  // Realtime: refresh invoices list whenever the Falco webhook updates peppol_status.
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-finances-peppol")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "order_invoices" },
+        () => queryClient.invalidateQueries({ queryKey: ["admin-order-invoices"] }),
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
 
   const totalHT = invoicesData.reduce((a, inv) => a + Number(inv.amount_ht), 0);
   const totalTVA = invoicesData.reduce((a, inv) => a + Number(inv.tva_amount || 0), 0);
@@ -95,7 +111,7 @@ const AdminFinances = () => {
             <table className="w-full text-left">
               <thead>
                 <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                  {["N° Facture", "Commande", "Vendeur", "Type", "HT", "TVA", "TTC", "Émise le", "Statut", ""].map((h) => (
+                  {["N° Facture", "Commande", "Vendeur", "Type", "HT", "TVA", "TTC", "Émise le", "Statut", "Peppol", ""].map((h) => (
                     <th key={h} className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                   ))}
                 </tr>
@@ -123,6 +139,13 @@ const AdminFinances = () => {
                       />
                     </td>
                     <td className="px-4 py-3">
+                      <PeppolStatusBadge
+                        status={inv.peppol_status as any}
+                        error={inv.peppol_error}
+                        retryCount={inv.peppol_retry_count}
+                      />
+                    </td>
+                    <td className="px-4 py-3">
                       {inv.pdf_path && (
                         <button
                           onClick={async () => {
@@ -140,7 +163,7 @@ const AdminFinances = () => {
                   </tr>
                 ))}
                 {invoicesData.length === 0 && (
-                  <tr><td colSpan={10} className="px-4 py-12 text-center text-[12px]" style={{ color: "#8B95A5" }}>Aucune facture pour le moment.</td></tr>
+                  <tr><td colSpan={11} className="px-4 py-12 text-center text-[12px]" style={{ color: "#8B95A5" }}>Aucune facture pour le moment.</td></tr>
                 )}
               </tbody>
             </table>

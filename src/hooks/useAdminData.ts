@@ -242,7 +242,7 @@ export const useInvoices = () =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("order_invoices")
-        .select("id, order_id, vendor_id, type, invoice_number, status, amount_excl_vat, vat_amount, amount_incl_vat, pdf_path, issued_at, paid_at, created_at, orders:orders!order_invoices_order_id_fkey(order_number), vendors:vendors!order_invoices_vendor_id_fkey(company_name, name)")
+        .select("id, order_id, vendor_id, type, invoice_number, status, amount_excl_vat, vat_amount, amount_incl_vat, pdf_path, issued_at, paid_at, created_at, peppol_status, peppol_error, peppol_document_id, peppol_last_attempt_at, peppol_retry_count, orders:orders!order_invoices_order_id_fkey(order_number), vendors:vendors!order_invoices_vendor_id_fkey(company_name, name)")
         .order("created_at", { ascending: false })
         .limit(500);
       if (error) throw error;
@@ -260,6 +260,11 @@ export const useInvoices = () =>
         pdf_path: r.pdf_path,
         order_number: r.orders?.order_number,
         vendor_label: r.vendors?.company_name || r.vendors?.name,
+        peppol_status: r.peppol_status || null,
+        peppol_error: r.peppol_error || null,
+        peppol_document_id: r.peppol_document_id || null,
+        peppol_last_attempt_at: r.peppol_last_attempt_at || null,
+        peppol_retry_count: r.peppol_retry_count ?? 0,
       }));
     },
   });

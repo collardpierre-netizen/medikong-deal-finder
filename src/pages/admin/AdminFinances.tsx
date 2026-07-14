@@ -139,6 +139,13 @@ const AdminFinances = () => {
                       />
                     </td>
                     <td className="px-4 py-3">
+                      <PeppolStatusBadge
+                        status={inv.peppol_status as any}
+                        error={inv.peppol_error}
+                        retryCount={inv.peppol_retry_count}
+                      />
+                    </td>
+                    <td className="px-4 py-3">
                       {inv.pdf_path && (
                         <button
                           onClick={async () => {

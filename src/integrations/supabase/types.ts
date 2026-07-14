@@ -7708,6 +7708,7 @@ export type Database = {
           peppol_error: string | null
           peppol_identifier: string | null
           peppol_last_attempt_at: string | null
+          peppol_retry_count: number
           peppol_status: string | null
           peppol_submitted_at: string | null
           status: string
@@ -7735,6 +7736,7 @@ export type Database = {
           peppol_error?: string | null
           peppol_identifier?: string | null
           peppol_last_attempt_at?: string | null
+          peppol_retry_count?: number
           peppol_status?: string | null
           peppol_submitted_at?: string | null
           status?: string
@@ -7762,6 +7764,7 @@ export type Database = {
           peppol_error?: string | null
           peppol_identifier?: string | null
           peppol_last_attempt_at?: string | null
+          peppol_retry_count?: number
           peppol_status?: string | null
           peppol_submitted_at?: string | null
           status?: string
@@ -20179,6 +20182,7 @@ export type Database = {
           last_sync_run_id: string | null
           linkedin_url: string | null
           logo_url: string | null
+          mandate_signed_at: string | null
           margin_split_pct: number
           max_open_rfqs: number | null
           name: string
@@ -20265,6 +20269,7 @@ export type Database = {
           last_sync_run_id?: string | null
           linkedin_url?: string | null
           logo_url?: string | null
+          mandate_signed_at?: string | null
           margin_split_pct?: number
           max_open_rfqs?: number | null
           name: string
@@ -20351,6 +20356,7 @@ export type Database = {
           last_sync_run_id?: string | null
           linkedin_url?: string | null
           logo_url?: string | null
+          mandate_signed_at?: string | null
           margin_split_pct?: number
           max_open_rfqs?: number | null
           name?: string

@@ -4,7 +4,7 @@
 // Auth: service_role only (called by stripe-webhook) or admin caller.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
-import { buildSelfBillingPdf } from "../_shared/invoice-pdf.ts";
+import { buildSelfBillingPdf, buildSelfBillingMandateMention } from "../_shared/invoice-pdf.ts";
 import {
   submitInvoiceToFalco,
   persistFalcoResult,
@@ -12,6 +12,19 @@ import {
   type FalcoLine,
   type FalcoTaxSubtotal,
 } from "../_shared/falco-peppol.ts";
+
+// Balooh SRL = legal issuer of every self-billing invoice on the marketplace.
+// Point 1 (Sprint 3): unified Peppol sender for all self-billing dispatches.
+const BALOOH_SELLER = {
+  name: "Balooh SRL",
+  vat_number: "BE1005771323",
+  address: {
+    line1: "23 rue de la Procession",
+    zip: "7822",
+    city: "Ath",
+    country: "BE",
+  },
+} as const;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -69,7 +82,7 @@ Deno.serve(async (req) => {
 
     const [{ data: order }, { data: vendor }] = await Promise.all([
       supabase.from("orders").select("id, order_number, created_at, customer_id, customers:customers!orders_customer_id_fkey(company_name, email, vat_number, address_line1, city, postal_code, country_code)").eq("id", orderId).maybeSingle(),
-      supabase.from("vendors").select("id, name, company_name, vat_number, address_line1, city, postal_code, country_code").eq("id", vendorId).maybeSingle(),
+      supabase.from("vendors").select("id, name, company_name, vat_number, address_line1, city, postal_code, country_code, mandate_signed_at").eq("id", vendorId).maybeSingle(),
     ]);
     if (!order) return json(404, { error: "order_not_found" });
     if (!vendor) return json(404, { error: "vendor_not_found" });
@@ -102,6 +115,7 @@ Deno.serve(async (req) => {
       })),
       invoiceNumber,
       paidAt: paidAtInput,
+      mandateSignedAt: vendor.mandate_signed_at,
     });
 
     const pdfPath = `${orderId}/self_billing-${vendorId}.pdf`;
@@ -175,20 +189,17 @@ Deno.serve(async (req) => {
           tax_regime_type: "standard",
         }));
 
+        const mandateMention = buildSelfBillingMandateMention(vendor, vendor.mandate_signed_at);
         const falcoRes = await submitInvoiceToFalco(pdfBytes, {
           document_type: "sale_invoice",
           document_date: new Date().toISOString().slice(0, 10),
           number: invoiceNumber,
-          note: "Self-billing invoice issued by MediKong (Balooh SRL) on behalf of the vendor.",
+          // Point 1: mandate mention required by BE self-billing regulation, embedded in UBL note.
+          note: mandateMention,
           sender: {
-            name: vendor.company_name || vendor.name,
-            vat_number: vendor.vat_number || undefined,
-            address: {
-              line1: vendor.address_line1 || "—",
-              zip: vendor.postal_code || undefined,
-              city: vendor.city || undefined,
-              country: vendor.country_code || "BE",
-            },
+            name: BALOOH_SELLER.name,
+            vat_number: BALOOH_SELLER.vat_number,
+            address: { ...BALOOH_SELLER.address },
           },
           receiver: {
             name: cust.company_name || cust.email || "Client",

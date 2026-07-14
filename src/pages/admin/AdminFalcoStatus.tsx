@@ -148,6 +148,71 @@ export default function AdminFalcoStatus() {
             </CardContent>
           </Card>
 
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <PlugZap className="h-5 w-5" />
+                Test de connexion Falco
+              </CardTitle>
+              <CardDescription>
+                Lance un appel <code className="text-xs">GET /organization/whoami</code> avec les secrets configurés.
+                Aucun document n'est envoyé sur Peppol.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button onClick={runTest} disabled={testing} className="gap-2">
+                <PlugZap className={`h-4 w-4 ${testing ? "animate-pulse" : ""}`} />
+                {testing ? "Test en cours…" : "Lancer le test"}
+              </Button>
+
+              {testError && (
+                <Alert variant="destructive">
+                  <ShieldAlert className="h-4 w-4" />
+                  <AlertTitle>Impossible d'exécuter le test</AlertTitle>
+                  <AlertDescription>{testError}</AlertDescription>
+                </Alert>
+              )}
+
+              {testResult && (
+                <Alert variant={testResult.ok ? "default" : "destructive"}>
+                  {testResult.ok ? (
+                    <CheckCircle2 className="h-4 w-4" />
+                  ) : (
+                    <XCircle className="h-4 w-4" />
+                  )}
+                  <AlertTitle>
+                    {testResult.ok ? "Succès" : "Échec"}
+                    {typeof testResult.http_status === "number" && testResult.http_status > 0
+                      ? ` — HTTP ${testResult.http_status}`
+                      : ""}
+                    {typeof testResult.latency_ms === "number" ? ` (${testResult.latency_ms} ms)` : ""}
+                  </AlertTitle>
+                  <AlertDescription className="space-y-2">
+                    <div>{testResult.message}</div>
+                    {testResult.organization && (
+                      <div className="text-xs bg-muted/50 rounded p-2 space-y-0.5">
+                        <div><span className="font-medium">Organisation :</span> {testResult.organization.name || "—"}</div>
+                        <div><span className="font-medium">TVA :</span> {testResult.organization.vat_number || "—"}</div>
+                        <div><span className="font-medium">Peppol ID :</span> {testResult.organization.peppol_identifier || "—"}</div>
+                        <div><span className="font-medium">Pays :</span> {testResult.organization.country || "—"}</div>
+                      </div>
+                    )}
+                    {testResult.missing_secrets && testResult.missing_secrets.length > 0 && (
+                      <div className="text-xs">
+                        Secrets manquants : <span className="font-mono">{testResult.missing_secrets.join(", ")}</span>
+                      </div>
+                    )}
+                    {testResult.base_url && (
+                      <div className="text-xs text-muted-foreground">
+                        Endpoint : <code>{testResult.base_url}{testResult.endpoint}</code>
+                      </div>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+
           {!status.active && (
             <Alert variant="destructive">
               <ShieldAlert className="h-4 w-4" />

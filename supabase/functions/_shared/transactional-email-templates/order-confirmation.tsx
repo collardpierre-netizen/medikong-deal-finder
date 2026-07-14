@@ -24,6 +24,7 @@ const OrderConfirmationEmail = ({
   itemCount = 0,
   shippingAddress,
   paymentMethod,
+  invoiceLinks = [],
 }: OrderConfirmationProps) => (
   <Html lang="fr" dir="ltr">
     <Head />

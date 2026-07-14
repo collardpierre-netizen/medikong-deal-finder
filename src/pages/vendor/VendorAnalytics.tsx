@@ -553,11 +553,39 @@ function MapTab({ period, vendorId }: { period: AnalyticsPeriod; vendorId: strin
             Réinitialiser
           </button>
         )}
-        <div className="ml-auto text-[12px] text-[#616B7C]">
-          {filtered.length} zone{filtered.length > 1 ? "s" : ""} affichée{filtered.length > 1 ? "s" : ""}
-          {filtered.length !== allRows.length ? ` sur ${allRows.length}` : ""}
+        <div className="ml-auto flex items-center gap-3">
+          <div className="text-[12px] text-[#616B7C]">
+            {filtered.length} zone{filtered.length > 1 ? "s" : ""} affichée{filtered.length > 1 ? "s" : ""}
+            {filtered.length !== allRows.length ? ` sur ${allRows.length}` : ""}
+          </div>
+          <AnalyticsExportButtons
+            disabled={filtered.length === 0}
+            onCsv={() => {
+              const rows = filtered.map((r) => ({
+                pays: r.country_code,
+                code_postal: r.postal_code,
+                ville: r.city,
+                clients: Number(r.customers_count),
+                commandes: Number(r.orders_count),
+                ca_htva_eur: Number((Number(r.ca_htva_cents) / 100).toFixed(2)),
+              }));
+              exportAnalyticsRows(rows, `medikong-analytics-carte-${period}`, "csv", "Carte clients");
+            }}
+            onXlsx={() => {
+              const rows = filtered.map((r) => ({
+                pays: r.country_code,
+                code_postal: r.postal_code,
+                ville: r.city,
+                clients: Number(r.customers_count),
+                commandes: Number(r.orders_count),
+                ca_htva_eur: Number((Number(r.ca_htva_cents) / 100).toFixed(2)),
+              }));
+              exportAnalyticsRows(rows, `medikong-analytics-carte-${period}`, "xlsx", "Carte clients");
+            }}
+          />
         </div>
       </div>
+
 
       {(() => {
         const notice = analyticsStateNotice({

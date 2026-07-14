@@ -157,6 +157,24 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Fallback : si la commande est payée mais qu'aucun sub_order n'a été créé
+    // (webhook Stripe manqué), on rejoue le fan-out vendeurs ici. Idempotent
+    // côté RPC fanout_order_to_vendors + email (idempotencyKey par sub_order).
+    if (nextPaymentStatus === "paid") {
+      try {
+        const { count: subCount } = await supabase
+          .from("sub_orders")
+          .select("id", { count: "exact", head: true })
+          .eq("order_id", order.id);
+        if ((subCount ?? 0) === 0) {
+          console.log("[check-session-status] no sub_orders found, replaying vendor fan-out", order.id);
+          await supabase.functions.invoke("notify-vendors-new-order", { body: { orderId: order.id } });
+        }
+      } catch (e) {
+        console.error("[check-session-status] vendor fan-out fallback failed", e);
+      }
+    }
+
     return json(200, {
       order_id: order.id,
       order_number: order.order_number,

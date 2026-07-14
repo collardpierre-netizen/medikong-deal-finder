@@ -189,20 +189,17 @@ Deno.serve(async (req) => {
           tax_regime_type: "standard",
         }));
 
+        const mandateMention = buildSelfBillingMandateMention(vendor, vendor.mandate_signed_at);
         const falcoRes = await submitInvoiceToFalco(pdfBytes, {
           document_type: "sale_invoice",
           document_date: new Date().toISOString().slice(0, 10),
           number: invoiceNumber,
-          note: "Self-billing invoice issued by MediKong (Balooh SRL) on behalf of the vendor.",
+          // Point 1: mandate mention required by BE self-billing regulation, embedded in UBL note.
+          note: mandateMention,
           sender: {
-            name: vendor.company_name || vendor.name,
-            vat_number: vendor.vat_number || undefined,
-            address: {
-              line1: vendor.address_line1 || "—",
-              zip: vendor.postal_code || undefined,
-              city: vendor.city || undefined,
-              country: vendor.country_code || "BE",
-            },
+            name: BALOOH_SELLER.name,
+            vat_number: BALOOH_SELLER.vat_number,
+            address: { ...BALOOH_SELLER.address },
           },
           receiver: {
             name: cust.company_name || cust.email || "Client",

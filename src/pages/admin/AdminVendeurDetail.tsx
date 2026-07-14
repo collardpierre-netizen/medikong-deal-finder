@@ -10,8 +10,9 @@ import {
   DollarSign, Package, Tag, Factory, Activity, Eye, Plus, Trash2,
   CheckCircle2, XCircle, Clock, Globe, Phone, FileText, Loader2,
   Pencil, Power, AlertTriangle, Save, ExternalLink, Link2, Send, Copy, Users,
-  Info,
+  Info, SlidersHorizontal,
 } from "lucide-react";
+import AdminVendorMovMoqModal from "@/components/admin/AdminVendorMovMoqModal";
 import { AccountMembersPanel } from "@/components/account/AccountMembersPanel";
 import { useImpersonation } from "@/contexts/impersonation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";

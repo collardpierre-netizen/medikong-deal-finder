@@ -43,8 +43,12 @@ Deno.serve(async (req) => {
     const baseUrl = baseUrlRaw || "https://api.sandbox.falco-app.be/v1";
     const environment = baseUrl.includes("sandbox") ? "sandbox" : "production";
 
+    const caller = "falco-test-connection";
+    const endpoint = "/organization/whoami";
+
     if (!apiKey || !appSecret) {
       const missing = [!apiKey && "FALCO_API_KEY", !appSecret && "FALCO_APP_SECRET"].filter(Boolean);
+      logFalco("error", "credentials_missing", { caller, environment, missing_secrets: missing });
       return json(200, {
         ok: false,
         reason: "missing_secrets",
@@ -55,13 +59,14 @@ Deno.serve(async (req) => {
       });
     }
 
+    logFalco("info", "request_start", { caller, environment, endpoint, base_url: baseUrl, method: "GET" });
     const startedAt = Date.now();
     let httpStatus = 0;
     let payload: any = null;
     let networkError: string | null = null;
 
     try {
-      const res = await fetch(`${baseUrl}/organization/whoami`, {
+      const res = await fetch(`${baseUrl}${endpoint}`, {
         method: "GET",
         headers: {
           "X-Falco-App-Secret": appSecret,
@@ -80,6 +85,18 @@ Deno.serve(async (req) => {
 
     const latencyMs = Date.now() - startedAt;
     const ok = httpStatus >= 200 && httpStatus < 300;
+
+    if (networkError) {
+      logFalco("error", "network_error", { caller, environment, endpoint, latency_ms: latencyMs, error: networkError });
+    } else if (!ok) {
+      const detail =
+        (payload && typeof payload === "object" && (payload.detail || payload.title)) ||
+        (typeof payload === "string" ? payload.slice(0, 200) : "");
+      logFalco("error", "request_failed", { caller, environment, endpoint, http_status: httpStatus, latency_ms: latencyMs, error: detail });
+    } else {
+      logFalco("info", "request_success", { caller, environment, endpoint, http_status: httpStatus, latency_ms: latencyMs });
+    }
+
 
     // Extract public, non-secret organization info to show admins.
     let org: any = null;

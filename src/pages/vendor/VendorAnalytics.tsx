@@ -423,9 +423,27 @@ function TopProductsTab({ period, vendorId }: { period: AnalyticsPeriod; vendorI
     loadingLabel: "Chargement du top produits…",
     emptyLabel: "Aucune vente sur la période.",
   });
+  const exportRows = data.map((r) => ({
+    produit: r.product_name || "",
+    product_id: r.product_id ?? "",
+    unites: Number(r.units),
+    ca_htva_eur: Number((Number(r.ca_htva_cents) / 100).toFixed(2)),
+    marge_eur: Number((Number(r.margin_cents) / 100).toFixed(2)),
+    commission_eur: Number((Number(r.commission_cents) / 100).toFixed(2)),
+  }));
+  const doExport = (fmt: "csv" | "xlsx") =>
+    exportAnalyticsRows(exportRows, `medikong-analytics-top-produits-${period}`, fmt, "Top produits");
+
   return (
     <div className={cardStyle}>
-      <h3 className="text-[14px] font-semibold text-[#1D2530] mb-1">Top produits (25)</h3>
+      <div className="flex items-start justify-between gap-2 mb-1">
+        <h3 className="text-[14px] font-semibold text-[#1D2530]">Top produits (25)</h3>
+        <AnalyticsExportButtons
+          disabled={exportRows.length === 0}
+          onCsv={() => doExport("csv")}
+          onXlsx={() => doExport("xlsx")}
+        />
+      </div>
       <p className="text-[11px] text-[#8B95A5] mb-4">Classement par CA HTVA — unités vendues, marge et commission</p>
       {notice ? notice : (
         <div className="overflow-x-auto">

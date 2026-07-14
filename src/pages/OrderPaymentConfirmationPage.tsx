@@ -176,7 +176,7 @@ export default function OrderPaymentConfirmationPage() {
           )}
 
           <div className="flex justify-center gap-3 mt-8">
-            <Link to="/account/orders" className="border border-mk-navy text-mk-navy font-bold text-sm px-5 py-2.5 rounded-md">
+            <Link to="/compte?tab=commandes" className="border border-mk-navy text-mk-navy font-bold text-sm px-5 py-2.5 rounded-md">
               Mes commandes
             </Link>
             <Link to="/" className="bg-mk-navy text-white font-bold text-sm px-5 py-2.5 rounded-md">

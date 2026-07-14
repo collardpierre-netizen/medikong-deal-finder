@@ -12,7 +12,7 @@ import {
   Shield, Upload, MessageSquare, Layout, Truck, ShieldCheck, Settings, FileText,
   LogOut, Users, ClipboardList, Percent, RefreshCw, Key, Book, Factory, Globe, Hash, ExternalLink,
   CreditCard, TrendingUp, TrendingDown, AlertTriangle, Zap, Recycle, LayoutGrid, Users2, Mail, ShieldCheck as ShieldCheckAlt,
-  Search, Image as ImageIcon, Activity, Bell, Plus, EyeOff,
+  Search, Image as ImageIcon, Activity, Bell, Plus, EyeOff, Send,
 } from "lucide-react";
 
 interface NavItem {
@@ -52,6 +52,7 @@ const sections: NavSection[] = [
       { label: "Nouvelle commande manuelle", path: "/admin/commandes/nouvelle", icon: Plus },
       { label: "Devis", path: "/admin/devis", icon: FileText },
       { label: "Commandes en retard", path: "/admin/commandes-en-retard", icon: AlertTriangle },
+      { label: "Fan-out vendeurs", path: "/admin/vendor-fanout", icon: Send },
       { label: "Customers", path: "/admin/customers", icon: Users },
       { labelKey: "disputes", path: "/admin/litiges", icon: AlertCircle },
       { labelKey: "finances", path: "/admin/finances", icon: DollarSign },

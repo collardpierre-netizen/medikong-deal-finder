@@ -24943,6 +24943,26 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_vendor_fanout_status: {
+        Args: { _days?: number; _limit?: number }
+        Returns: {
+          email_attempts: number
+          emails_failed: number
+          emails_sent: number
+          expected_vendors: number
+          last_attempt_at: string
+          last_error: string
+          last_error_at: string
+          missing_vendors: number
+          order_id: string
+          order_number: string
+          order_status: string
+          paid_at: string
+          payment_status: string
+          sub_orders_count: number
+          total_incl_vat: number
+        }[]
+      }
       apply_category_aliases: {
         Args: never
         Returns: {

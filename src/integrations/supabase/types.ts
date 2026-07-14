@@ -27066,6 +27066,22 @@ export type Database = {
               postal_code: string
             }[]
           }
+        | {
+            Args: {
+              _from: string
+              _product_id?: string
+              _to: string
+              _vendor_id?: string
+            }
+            Returns: {
+              ca_htva_cents: number
+              city: string
+              country_code: string
+              customers_count: number
+              orders_count: number
+              postal_code: string
+            }[]
+          }
       vendor_analytics_kpis:
         | {
             Args: { _from: string; _to: string }

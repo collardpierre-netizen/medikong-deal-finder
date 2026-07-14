@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { ArrowUpRight, ArrowDownRight, Minus, TrendingUp, Users, Package, Globe2, Building2 } from "lucide-react";
+import { useImpersonation } from "@/contexts/impersonation";
+import { useSearchParams } from "react-router-dom";
 import { fmtEur } from "@/lib/format-currency";
 import {
   useVendorAnalyticsKpis,
@@ -408,6 +410,17 @@ export default function VendorAnalytics() {
   const [period, setPeriod] = useState<AnalyticsPeriod>("30d");
   const [tab, setTab] = useState<TabKey>("overview");
   const { data: vendor } = useCurrentVendor();
+  const { state: impState } = useImpersonation();
+  const [searchParams] = useSearchParams();
+  const impersonationVendorIdFromUrl = searchParams.get("impersonation_vendor_id");
+  const isImpersonating =
+    (impState.isImpersonating && impState.session?.target_type === "vendor") ||
+    !!impersonationVendorIdFromUrl;
+  const impersonationSource = impersonationVendorIdFromUrl
+    ? "URL (?impersonation_vendor_id)"
+    : impState.isImpersonating
+      ? "Session admin"
+      : null;
 
   const rangeLabel = useMemo(() => PERIOD_OPTIONS.find((o) => o.value === period)?.label ?? "", [period]);
 
@@ -439,6 +452,37 @@ export default function VendorAnalytics() {
           })}
         </div>
       </div>
+
+      <div
+        className="rounded-[8px] border px-3 py-2 text-[12px] flex flex-wrap items-center gap-x-4 gap-y-1"
+        style={{
+          borderColor: isImpersonating ? "#F59E0B" : "#E2E8F0",
+          backgroundColor: isImpersonating ? "#FFFBEB" : "#F8FAFC",
+          color: "#1D2530",
+        }}
+      >
+        <span className="font-semibold uppercase tracking-wide text-[10px] text-[#616B7C]">
+          Debug analytics
+        </span>
+        <span>
+          <span className="text-[#616B7C]">Vendor ciblé :</span>{" "}
+          <span className="font-medium">{vendor?.name || vendor?.company_name || "—"}</span>
+        </span>
+        <span>
+          <span className="text-[#616B7C]">vendor_id :</span>{" "}
+          <code className="font-mono text-[11px] bg-white border border-[#E2E8F0] rounded px-1 py-0.5">
+            {vendor?.id ?? "null"}
+          </code>
+        </span>
+        <span>
+          <span className="text-[#616B7C]">Impersonation :</span>{" "}
+          <span className="font-medium" style={{ color: isImpersonating ? "#B45309" : "#047857" }}>
+            {isImpersonating ? `oui (${impersonationSource})` : "non"}
+          </span>
+        </span>
+      </div>
+
+
 
       <div className="border-b border-[#E2E8F0] flex gap-1 overflow-x-auto">
         {TABS.map((t) => {

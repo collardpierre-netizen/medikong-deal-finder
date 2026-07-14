@@ -37,9 +37,18 @@ Deno.serve(async (req) => {
     const { data: adm } = await supabase.rpc("is_admin", { _user_id: uid });
     if (!adm) return json(403, { error: "forbidden" });
 
-    const apiKey = (Deno.env.get("FALCO_API_KEY") || "").trim();
-    const appSecret = (Deno.env.get("FALCO_APP_SECRET") || "").trim();
-    const baseUrlRaw = (Deno.env.get("FALCO_BASE_URL") || "").trim();
+    // Sanitize header values: strip control chars, BOM, non-ASCII (avoid
+    // "headers of RequestInit is not a valid ByteString" on copy-pasted secrets).
+    const sanitize = (v: string) =>
+      (v || "")
+        .replace(/^\uFEFF/, "")
+        .replace(/[\r\n\t\v\f\0]/g, "")
+        // eslint-disable-next-line no-control-regex
+        .replace(/[^\x20-\x7E]/g, "")
+        .trim();
+    const apiKey = sanitize(Deno.env.get("FALCO_API_KEY") || "");
+    const appSecret = sanitize(Deno.env.get("FALCO_APP_SECRET") || "");
+    const baseUrlRaw = sanitize(Deno.env.get("FALCO_BASE_URL") || "");
     const baseUrl = baseUrlRaw || "https://api.sandbox.falco-app.be/v1";
     const environment = baseUrl.includes("sandbox") ? "sandbox" : "production";
 

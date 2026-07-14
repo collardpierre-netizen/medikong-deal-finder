@@ -24041,6 +24041,10 @@ export type Database = {
         Args: { _order_id: string }
         Returns: undefined
       }
+      _resolve_analytics_vendor: {
+        Args: { _vendor_id: string }
+        Returns: string
+      }
       _sub_is_admin: { Args: never; Returns: boolean }
       account_accept_invitation: {
         Args: { _join_code?: string; _token?: string }
@@ -26980,99 +26984,210 @@ export type Database = {
         Args: { _version_id: string }
         Returns: string
       }
-      vendor_analytics_by_country: {
-        Args: { _from: string; _to: string }
-        Returns: {
-          ca_htva_cents: number
-          country_code: string
-          orders_count: number
-          share: number
-        }[]
-      }
-      vendor_analytics_by_customer_type: {
-        Args: { _from: string; _to: string }
-        Returns: {
-          ca_htva_cents: number
-          customer_type: string
-          orders_count: number
-          share: number
-        }[]
-      }
-      vendor_analytics_cohorts: {
-        Args: { _months?: number }
-        Returns: {
-          active_m1: number
-          active_m2: number
-          active_m3: number
-          cohort_month: string
-          cohort_size: number
-        }[]
-      }
-      vendor_analytics_customer_locations: {
-        Args: { _from: string; _to: string }
-        Returns: {
-          ca_htva_cents: number
-          city: string
-          country_code: string
-          customers_count: number
-          orders_count: number
-          postal_code: string
-        }[]
-      }
-      vendor_analytics_kpis: {
-        Args: { _from: string; _to: string }
-        Returns: {
-          active_customers: number
-          avg_basket_cents: number
-          ca_htva_cents: number
-          commission_cents: number
-          margin_cents: number
-          orders_count: number
-          prev_active_customers: number
-          prev_avg_basket_cents: number
-          prev_ca_htva_cents: number
-          prev_commission_cents: number
-          prev_margin_cents: number
-          prev_orders_count: number
-        }[]
-      }
-      vendor_analytics_recurrence: {
-        Args: { _from: string; _to: string }
-        Returns: {
-          avg_days_between_orders: number
-          avg_orders_per_customer: number
-          churn_risk_count: number
-          new_customers: number
-          returning_customers: number
-          total_customers: number
-        }[]
-      }
-      vendor_analytics_top_customers: {
-        Args: { _from: string; _limit?: number; _to: string }
-        Returns: {
-          ca_htva_cents: number
-          city: string
-          company_name: string
-          country_code: string
-          customer_id: string
-          customer_type: string
-          last_order_at: string
-          orders_count: number
-          postal_code: string
-          share: number
-        }[]
-      }
-      vendor_analytics_top_products: {
-        Args: { _from: string; _limit?: number; _to: string }
-        Returns: {
-          ca_htva_cents: number
-          commission_cents: number
-          margin_cents: number
-          product_id: string
-          product_name: string
-          units: number
-        }[]
-      }
+      vendor_analytics_by_country:
+        | {
+            Args: { _from: string; _to: string }
+            Returns: {
+              ca_htva_cents: number
+              country_code: string
+              orders_count: number
+              share: number
+            }[]
+          }
+        | {
+            Args: { _from: string; _to: string; _vendor_id?: string }
+            Returns: {
+              ca_htva_cents: number
+              country_code: string
+              orders_count: number
+              share: number
+            }[]
+          }
+      vendor_analytics_by_customer_type:
+        | {
+            Args: { _from: string; _to: string }
+            Returns: {
+              ca_htva_cents: number
+              customer_type: string
+              orders_count: number
+              share: number
+            }[]
+          }
+        | {
+            Args: { _from: string; _to: string; _vendor_id?: string }
+            Returns: {
+              ca_htva_cents: number
+              customer_type: string
+              orders_count: number
+              share: number
+            }[]
+          }
+      vendor_analytics_cohorts:
+        | {
+            Args: { _months?: number }
+            Returns: {
+              active_m1: number
+              active_m2: number
+              active_m3: number
+              cohort_month: string
+              cohort_size: number
+            }[]
+          }
+        | {
+            Args: { _months?: number; _vendor_id?: string }
+            Returns: {
+              active_m1: number
+              active_m2: number
+              active_m3: number
+              cohort_month: string
+              cohort_size: number
+            }[]
+          }
+      vendor_analytics_customer_locations:
+        | {
+            Args: { _from: string; _to: string }
+            Returns: {
+              ca_htva_cents: number
+              city: string
+              country_code: string
+              customers_count: number
+              orders_count: number
+              postal_code: string
+            }[]
+          }
+        | {
+            Args: { _from: string; _to: string; _vendor_id?: string }
+            Returns: {
+              ca_htva_cents: number
+              city: string
+              country_code: string
+              customers_count: number
+              orders_count: number
+              postal_code: string
+            }[]
+          }
+      vendor_analytics_kpis:
+        | {
+            Args: { _from: string; _to: string }
+            Returns: {
+              active_customers: number
+              avg_basket_cents: number
+              ca_htva_cents: number
+              commission_cents: number
+              margin_cents: number
+              orders_count: number
+              prev_active_customers: number
+              prev_avg_basket_cents: number
+              prev_ca_htva_cents: number
+              prev_commission_cents: number
+              prev_margin_cents: number
+              prev_orders_count: number
+            }[]
+          }
+        | {
+            Args: { _from: string; _to: string; _vendor_id?: string }
+            Returns: {
+              active_customers: number
+              avg_basket_cents: number
+              ca_htva_cents: number
+              commission_cents: number
+              margin_cents: number
+              orders_count: number
+              prev_active_customers: number
+              prev_avg_basket_cents: number
+              prev_ca_htva_cents: number
+              prev_commission_cents: number
+              prev_margin_cents: number
+              prev_orders_count: number
+            }[]
+          }
+      vendor_analytics_recurrence:
+        | {
+            Args: { _from: string; _to: string }
+            Returns: {
+              avg_days_between_orders: number
+              avg_orders_per_customer: number
+              churn_risk_count: number
+              new_customers: number
+              returning_customers: number
+              total_customers: number
+            }[]
+          }
+        | {
+            Args: { _from: string; _to: string; _vendor_id?: string }
+            Returns: {
+              avg_days_between_orders: number
+              avg_orders_per_customer: number
+              churn_risk_count: number
+              new_customers: number
+              returning_customers: number
+              total_customers: number
+            }[]
+          }
+      vendor_analytics_top_customers:
+        | {
+            Args: { _from: string; _limit?: number; _to: string }
+            Returns: {
+              ca_htva_cents: number
+              city: string
+              company_name: string
+              country_code: string
+              customer_id: string
+              customer_type: string
+              last_order_at: string
+              orders_count: number
+              postal_code: string
+              share: number
+            }[]
+          }
+        | {
+            Args: {
+              _from: string
+              _limit?: number
+              _to: string
+              _vendor_id?: string
+            }
+            Returns: {
+              ca_htva_cents: number
+              city: string
+              company_name: string
+              country_code: string
+              customer_id: string
+              customer_type: string
+              last_order_at: string
+              orders_count: number
+              postal_code: string
+              share: number
+            }[]
+          }
+      vendor_analytics_top_products:
+        | {
+            Args: { _from: string; _limit?: number; _to: string }
+            Returns: {
+              ca_htva_cents: number
+              commission_cents: number
+              margin_cents: number
+              product_id: string
+              product_name: string
+              units: number
+            }[]
+          }
+        | {
+            Args: {
+              _from: string
+              _limit?: number
+              _to: string
+              _vendor_id?: string
+            }
+            Returns: {
+              ca_htva_cents: number
+              commission_cents: number
+              margin_cents: number
+              product_id: string
+              product_name: string
+              units: number
+            }[]
+          }
       vendor_gmv_filters_self_test: {
         Args: never
         Returns: {

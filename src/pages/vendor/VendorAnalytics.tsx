@@ -485,13 +485,24 @@ function MapTab({ period, vendorId }: { period: AnalyticsPeriod; vendorId: strin
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="h-[480px] animate-pulse bg-[#F1F5F9] rounded-[10px]" />
-      ) : filtered.length === 0 ? (
-        <div className={`${cardStyle} py-12 text-center text-[13px] text-[#8B95A5]`}>
-          Aucune localisation client à afficher pour ces filtres.
-        </div>
-      ) : (
+      {(() => {
+        const notice = analyticsStateNotice({
+          hasVendorId: !!vendorId,
+          isLoading,
+          error,
+          isEmpty: allRows.length === 0,
+          loadingLabel: "Chargement des localisations…",
+          emptyLabel: "Aucune localisation client sur la période.",
+        });
+        if (notice) return notice;
+        if (filtered.length === 0) {
+          return (
+            <div className={`${cardStyle} py-12 text-center text-[13px] text-[#8B95A5]`}>
+              Aucune localisation client à afficher pour ces filtres.
+            </div>
+          );
+        }
+        return (
         <>
           <CustomerMap rows={filtered} />
           <p className="text-[11px] text-[#8B95A5]">

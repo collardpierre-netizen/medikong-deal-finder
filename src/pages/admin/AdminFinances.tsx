@@ -6,8 +6,10 @@ import { useI18n } from "@/contexts/I18nContext";
 import { useInvoices, useVendors } from "@/hooks/useAdminData";
 import {
   DollarSign, TrendingUp, Receipt, CreditCard, RotateCcw,
-  AlertTriangle,
+  AlertTriangle, Download,
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 const fmt = (n: number) => n.toLocaleString("fr-BE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });

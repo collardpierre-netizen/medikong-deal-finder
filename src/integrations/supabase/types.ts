@@ -14332,6 +14332,7 @@ export type Database = {
       }
       search_logs: {
         Row: {
+          buyer_profile_id: string | null
           clicked_id: string | null
           clicked_slug: string | null
           clicked_type: string | null
@@ -14341,6 +14342,10 @@ export type Database = {
           id: string
           locale: string | null
           normalized_query: string | null
+          profession_type_id: string | null
+          profile_country: string | null
+          profile_region: string | null
+          profile_sector: string | null
           query: string
           results_count: number | null
           session_id: string | null
@@ -14350,6 +14355,7 @@ export type Database = {
           zero_results: boolean | null
         }
         Insert: {
+          buyer_profile_id?: string | null
           clicked_id?: string | null
           clicked_slug?: string | null
           clicked_type?: string | null
@@ -14359,6 +14365,10 @@ export type Database = {
           id?: string
           locale?: string | null
           normalized_query?: string | null
+          profession_type_id?: string | null
+          profile_country?: string | null
+          profile_region?: string | null
+          profile_sector?: string | null
           query: string
           results_count?: number | null
           session_id?: string | null
@@ -14368,6 +14378,7 @@ export type Database = {
           zero_results?: boolean | null
         }
         Update: {
+          buyer_profile_id?: string | null
           clicked_id?: string | null
           clicked_slug?: string | null
           clicked_type?: string | null
@@ -14377,6 +14388,10 @@ export type Database = {
           id?: string
           locale?: string | null
           normalized_query?: string | null
+          profession_type_id?: string | null
+          profile_country?: string | null
+          profile_region?: string | null
+          profile_sector?: string | null
           query?: string
           results_count?: number | null
           session_id?: string | null

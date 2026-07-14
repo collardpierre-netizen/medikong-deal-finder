@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle2, XCircle, RefreshCw, ShieldAlert, Zap, PlugZap } from "lucide-react";
+import { CheckCircle2, XCircle, RefreshCw, ShieldAlert, Zap, PlugZap, KeyRound } from "lucide-react";
 
 type Status = {
   active: boolean;

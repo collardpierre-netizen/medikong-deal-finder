@@ -503,13 +503,14 @@ function MapTab({ period, vendorId }: { period: AnalyticsPeriod; vendorId: strin
           );
         }
         return (
-        <>
-          <CustomerMap rows={filtered} />
-          <p className="text-[11px] text-[#8B95A5]">
-            Taille des cercles proportionnelle au CA HTVA. Couleur selon la couverture (vert : forte, orange : moyenne, rouge : faible — tertiles du CA affiché). Géocodage OpenStreetMap.
-          </p>
-        </>
-      )}
+          <>
+            <CustomerMap rows={filtered} />
+            <p className="text-[11px] text-[#8B95A5]">
+              Taille des cercles proportionnelle au CA HTVA. Couleur selon la couverture (vert : forte, orange : moyenne, rouge : faible — tertiles du CA affiché). Géocodage OpenStreetMap.
+            </p>
+          </>
+        );
+      })()}
     </div>
   );
 }

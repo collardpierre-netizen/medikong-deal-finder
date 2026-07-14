@@ -401,13 +401,13 @@ function TopProductsTab({ period, vendorId }: { period: AnalyticsPeriod; vendorI
   );
 }
 
-function MapTab({ period }: { period: AnalyticsPeriod }) {
+function MapTab({ period, vendorId }: { period: AnalyticsPeriod; vendorId: string | null }) {
   const [productId, setProductId] = useState<string>("");
   const [minCa, setMinCa] = useState<string>("");
   const [minOrders, setMinOrders] = useState<string>("");
 
   const { data: products = [] } = useVendorAnalyticsTopProducts(period, 100);
-  const { data: allRows = [], isLoading } = useVendorAnalyticsCustomerLocations(
+  const { data: allRows = [], isLoading, error } = useVendorAnalyticsCustomerLocations(
     period,
     productId || null
   );

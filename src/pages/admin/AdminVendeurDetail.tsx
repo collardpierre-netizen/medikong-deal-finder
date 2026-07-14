@@ -291,6 +291,14 @@ const AdminVendeurDetail = () => {
             <Power size={14} />
             {togglingStatus ? "..." : vendor.is_active ? "Désactiver" : "Activer"}
           </button>
+          <button
+            onClick={() => setShowMovMoq(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold transition-opacity hover:opacity-90"
+            style={{ backgroundColor: "#EFF6FF", color: "#1B5BDA", border: "1px solid #BFDBFE" }}
+            title="Configurer MOV / MOQ (par acheteur, profil, offre)"
+          >
+            <SlidersHorizontal size={14} /> MOV/MOQ
+          </button>
           <button onClick={() => setShowEdit(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-bold text-white" style={{ backgroundColor: "#1B5BDA" }}>
             <Pencil size={14} /> Modifier
           </button>

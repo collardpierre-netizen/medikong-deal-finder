@@ -71,11 +71,25 @@ export type FalcoImportResult = {
   raw?: unknown;
 };
 
+/**
+ * Strip characters that break fetch()'s ByteString header validation:
+ * removes ALL control chars (incl. CR/LF/TAB/NUL) and any non-ASCII byte
+ * (smart quotes, BOM, NBSP, …) that can leak in via copy-paste of secrets.
+ */
+function sanitizeHeaderValue(v: string): string {
+  return (v || "")
+    .replace(/^\uFEFF/, "")            // BOM
+    .replace(/[\r\n\t\v\f\0]/g, "")    // control whitespace
+    // eslint-disable-next-line no-control-regex
+    .replace(/[^\x20-\x7E]/g, "")      // non-printable / non-ASCII
+    .trim();
+}
+
 export function getFalcoConfig() {
-  const appSecret = Deno.env.get("FALCO_APP_SECRET") || "";
-  const apiKey = Deno.env.get("FALCO_API_KEY") || "";
+  const appSecret = sanitizeHeaderValue(Deno.env.get("FALCO_APP_SECRET") || "");
+  const apiKey = sanitizeHeaderValue(Deno.env.get("FALCO_API_KEY") || "");
   const baseUrl =
-    Deno.env.get("FALCO_BASE_URL") || "https://api.sandbox.falco-app.be/v1";
+    sanitizeHeaderValue(Deno.env.get("FALCO_BASE_URL") || "") || "https://api.sandbox.falco-app.be/v1";
   return { appSecret, apiKey, baseUrl };
 }
 

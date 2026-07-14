@@ -143,6 +143,8 @@ Deno.serve(async (req) => {
       });
       peppol = { attempted: false, ok: false, error: msg, missing_secrets: missing.split(", ") };
     } else if (isFalcoConfigured()) {
+      try {
+        const cust: any = order.customers || {};
         const round2 = (n: number) => (Math.round(n * 100) / 100).toFixed(2);
 
         // Aggregate tax subtotals by rate (mix of 6% meds / 21% OTC possible).

@@ -84,14 +84,34 @@ export function isFalcoConfigured(): boolean {
   return Boolean(appSecret && apiKey);
 }
 
+/** One structured log line — safe to grep in Supabase edge-function logs. */
+export function logFalco(level: "info" | "warn" | "error", event: string, data: Record<string, unknown> = {}) {
+  const line = JSON.stringify({ tag: "falco", level, event, ts: new Date().toISOString(), ...data });
+  if (level === "error") console.error(line);
+  else if (level === "warn") console.warn(line);
+  else console.log(line);
+}
+
 /** Submit PDF + metadata to Falco. Best-effort: never throws — returns structured result. */
 export async function submitInvoiceToFalco(
   pdfBytes: Uint8Array,
   metadata: FalcoInvoiceMetadata,
-  opts: { pdfFilename?: string } = {},
+  opts: { pdfFilename?: string; caller?: string; invoiceId?: string } = {},
 ): Promise<FalcoImportResult> {
   const { appSecret, apiKey, baseUrl } = getFalcoConfig();
+  const caller = opts.caller || "unknown";
+  const invoiceId = opts.invoiceId || null;
+  const endpoint = "/invoices/imports/pdf";
+  const environment = baseUrl.includes("sandbox") ? "sandbox" : "production";
+
   if (!appSecret || !apiKey) {
+    logFalco("error", "credentials_missing", {
+      caller,
+      invoice_id: invoiceId,
+      invoice_number: metadata.number,
+      missing_secrets: [!apiKey && "FALCO_API_KEY", !appSecret && "FALCO_APP_SECRET"].filter(Boolean),
+      environment,
+    });
     return {
       ok: false,
       http_status: 0,
@@ -112,8 +132,25 @@ export async function submitInvoiceToFalco(
     "metadata.json",
   );
 
+  const commonLog = {
+    caller,
+    invoice_id: invoiceId,
+    invoice_number: metadata.number,
+    document_type: metadata.document_type,
+    environment,
+    endpoint,
+    base_url: baseUrl,
+    pdf_bytes: pdfBytes.byteLength,
+    total_amount: metadata.total_amount,
+    currency: metadata.currency || "EUR",
+    send_peppol: metadata.send_peppol ?? false,
+  };
+
+  logFalco("info", "request_start", commonLog);
+  const startedAt = Date.now();
+
   try {
-    const res = await fetch(`${baseUrl}/invoices/imports/pdf`, {
+    const res = await fetch(`${baseUrl}${endpoint}`, {
       method: "POST",
       headers: {
         "X-Falco-App-Secret": appSecret,
@@ -122,6 +159,7 @@ export async function submitInvoiceToFalco(
       body: form,
     });
 
+    const latencyMs = Date.now() - startedAt;
     const contentType = res.headers.get("content-type") || "";
     const payload = contentType.includes("json")
       ? await res.json().catch(() => null)
@@ -131,6 +169,12 @@ export async function submitInvoiceToFalco(
       const errMsg =
         (payload && typeof payload === "object" && (payload.detail || payload.title)) ||
         (typeof payload === "string" ? payload.slice(0, 500) : `HTTP ${res.status}`);
+      logFalco("error", "request_failed", {
+        ...commonLog,
+        http_status: res.status,
+        latency_ms: latencyMs,
+        error: String(errMsg),
+      });
       return {
         ok: false,
         http_status: res.status,
@@ -142,22 +186,43 @@ export async function submitInvoiceToFalco(
 
     const doc = (payload || {}) as any;
     const peppol = doc.peppol_status || {};
+    const peppolStatus = peppol.status;
+    const peppolError = peppol.error_message;
+
+    logFalco(peppolStatus === "failed" ? "warn" : "info", "request_success", {
+      ...commonLog,
+      http_status: res.status,
+      latency_ms: latencyMs,
+      document_id: doc.document_id,
+      peppol_status: peppolStatus,
+      peppol_identifier: peppol.peppol_identifier,
+      peppol_error: peppolError,
+    });
+
     return {
       ok: true,
       http_status: res.status,
       document_id: doc.document_id,
       peppol_identifier: peppol.peppol_identifier,
-      peppol_status: peppol.status,
-      peppol_error: peppol.error_message,
+      peppol_status: peppolStatus,
+      peppol_error: peppolError,
       raw: payload,
     };
   } catch (e) {
+    const latencyMs = Date.now() - startedAt;
+    const errStr = String((e as any)?.message || e);
+    logFalco("error", "network_error", {
+      ...commonLog,
+      latency_ms: latencyMs,
+      error: errStr,
+    });
     return {
       ok: false,
       http_status: 0,
       peppol_status: "failed",
-      peppol_error: `network_error: ${String((e as any)?.message || e)}`,
+      peppol_error: `network_error: ${errStr}`,
     };
+
   }
 }
 
@@ -182,6 +247,12 @@ export async function persistFalcoResult(
     .update(patch)
     .eq("id", invoiceId);
   if (error) {
-    console.error("[falco] persistFalcoResult failed", error.message);
+    logFalco("error", "persist_failed", { invoice_id: invoiceId, error: error.message });
+  } else {
+    logFalco("info", "persist_ok", {
+      invoice_id: invoiceId,
+      peppol_status: patch.peppol_status,
+      has_document_id: Boolean(patch.peppol_document_id),
+    });
   }
 }

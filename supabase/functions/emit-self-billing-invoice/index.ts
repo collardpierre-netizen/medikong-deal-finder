@@ -207,7 +207,7 @@ Deno.serve(async (req) => {
           tax_subtotals: taxSubtotals,
           lines: falcoLines,
           send_peppol: true,
-        }, { pdfFilename: `${invoiceNumber}.pdf` });
+        }, { pdfFilename: `${invoiceNumber}.pdf`, caller: "emit-self-billing-invoice", invoiceId: upserted.id });
 
         await persistFalcoResult(supabase, upserted.id, falcoRes);
         peppol = {

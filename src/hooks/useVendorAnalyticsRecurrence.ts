@@ -61,15 +61,15 @@ export interface CustomerLocationRow {
   ca_htva_cents: number;
 }
 
-export function useVendorAnalyticsCustomerLocations(period: AnalyticsPeriod) {
+export function useVendorAnalyticsCustomerLocations(period: AnalyticsPeriod, productId?: string | null) {
   const { from, to } = computeRange(period);
   const vendorId = useAnalyticsVendorId();
   return useQuery({
-    queryKey: ["vendor-analytics-locations", period, vendorId],
+    queryKey: ["vendor-analytics-locations", period, vendorId, productId ?? null],
     enabled: !!vendorId,
     queryFn: async () => {
       const { data, error } = await (supabase.rpc as any)("vendor_analytics_customer_locations", {
-        _from: from, _to: to, _vendor_id: vendorId,
+        _from: from, _to: to, _vendor_id: vendorId, _product_id: productId ?? null,
       });
       if (error) throw error;
       return (data ?? []) as CustomerLocationRow[];

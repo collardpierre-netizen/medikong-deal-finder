@@ -132,7 +132,17 @@ Deno.serve(async (req) => {
 
     // Best-effort Peppol dispatch via Falco.
     let peppol: any = { attempted: false };
-    if (isFalcoConfigured()) {
+    const falcoApiKey = (Deno.env.get("FALCO_API_KEY") || "").trim();
+    const falcoAppSecret = (Deno.env.get("FALCO_APP_SECRET") || "").trim();
+    if (!falcoApiKey || !falcoAppSecret) {
+      const missing = [!falcoApiKey && "FALCO_API_KEY", !falcoAppSecret && "FALCO_APP_SECRET"].filter(Boolean).join(", ");
+      const msg = `Peppol non envoyé : secret(s) manquant(s) — ${missing}. Ajoutez-le(s) dans Cloud → Secrets.`;
+      console.error("[emit-commission-invoice][falco]", msg);
+      await persistFalcoResult(supabase, upserted.id, {
+        ok: false, http_status: 0, peppol_status: "failed", peppol_error: msg,
+      });
+      peppol = { attempted: false, ok: false, error: msg, missing_secrets: missing.split(", ") };
+    } else if (isFalcoConfigured()) {
       try {
         const round2 = (n: number) => (Math.round(n * 100) / 100).toFixed(2);
         const rateStr = (commissionRate * 100 <= 100 ? commissionRate * 100 : commissionRate).toFixed(1);

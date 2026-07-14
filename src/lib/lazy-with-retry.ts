@@ -353,7 +353,15 @@ export function lazyWithRetry<T extends ComponentType<any>>(
   importer: () => Promise<{ default: T }>,
   key: string,
 ): LazyExoticComponent<T> {
-  return lazy(async () => {
+  // React.lazy caches the promise permanently — including a rejected one.
+  // We wrap it in a component that recreates the underlying lazy on failure,
+  // so a subsequent navigation to the same route retries the import instead of
+  // re-throwing the cached rejection (which would force the user to click twice).
+  let cachedLazy: LazyExoticComponent<T> | null = null;
+  let cachedImportPromise: Promise<{ default: T }> | null = null;
+  let bustToken = 0;
+
+  const buildImport = async (): Promise<{ default: T }> => {
     // ---- Phase 1: in-place retries with exponential backoff ------------
     let importError: unknown = null;
     let mod: { default: T } | null = null;

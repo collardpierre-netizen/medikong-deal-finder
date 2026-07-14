@@ -49,6 +49,7 @@ const VALIDATION_LABELS: Record<string, { label: string; color: string; bg: stri
 const AdminVendeurs = () => {
   const { t } = useI18n();
   const navigate = useNavigate();
+  const { data: effectiveCommissions } = useVendorEffectiveCommissions();
   const { data: vendors = [], isLoading, error } = useVendors();
   const [activeTab, setActiveTab] = useState<"all" | "medikong" | "qogita_virtual" | "real">("all");
   const [search, setSearch] = useState("");

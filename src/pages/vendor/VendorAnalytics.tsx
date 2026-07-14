@@ -306,9 +306,16 @@ function TypologyTab({ period, vendorId }: { period: AnalyticsPeriod; vendorId: 
       </div>
 
       <div className={cardStyle}>
-        <div className="flex items-center gap-2 mb-1">
-          <Globe2 size={14} className="text-[#8B95A5]" />
-          <h3 className="text-[14px] font-semibold text-[#1D2530]">Par pays</h3>
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <div className="flex items-center gap-2">
+            <Globe2 size={14} className="text-[#8B95A5]" />
+            <h3 className="text-[14px] font-semibold text-[#1D2530]">Par pays</h3>
+          </div>
+          <AnalyticsExportButtons
+            disabled={countryRows.length === 0}
+            onCsv={() => doExportCountry("csv")}
+            onXlsx={() => doExportCountry("xlsx")}
+          />
         </div>
         <p className="text-[11px] text-[#8B95A5] mb-4">Part du CA HTVA par pays de livraison</p>
         {l2 ? (

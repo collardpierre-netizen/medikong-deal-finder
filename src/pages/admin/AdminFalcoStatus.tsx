@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle2, XCircle, RefreshCw, ShieldAlert, Zap } from "lucide-react";
+import { CheckCircle2, XCircle, RefreshCw, ShieldAlert, Zap, PlugZap } from "lucide-react";
 
 type Status = {
   active: boolean;
@@ -17,10 +17,33 @@ type Status = {
   checked_at: string;
 };
 
+type TestResult = {
+  ok: boolean;
+  http_status?: number;
+  network_error?: string | null;
+  latency_ms?: number;
+  environment?: string;
+  base_url?: string;
+  endpoint?: string;
+  organization?: {
+    name?: string | null;
+    vat_number?: string | null;
+    peppol_identifier?: string | null;
+    country?: string | null;
+  } | null;
+  message: string;
+  missing_secrets?: string[];
+  reason?: string;
+  checked_at?: string;
+};
+
 export default function AdminFalcoStatus() {
   const [status, setStatus] = useState<Status | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
+  const [testError, setTestError] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -36,7 +59,23 @@ export default function AdminFalcoStatus() {
     }
   };
 
+  const runTest = async () => {
+    setTesting(true);
+    setTestError(null);
+    setTestResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("falco-test-connection", { body: {} });
+      if (error) throw error;
+      setTestResult(data as TestResult);
+    } catch (e: any) {
+      setTestError(e?.message || "Erreur inconnue");
+    } finally {
+      setTesting(false);
+    }
+  };
+
   useEffect(() => { load(); }, []);
+
 
   const Row = ({ label, ok }: { label: string; ok: boolean }) => (
     <div className="flex items-center justify-between py-2 border-b last:border-0">
@@ -106,6 +145,71 @@ export default function AdminFalcoStatus() {
                 Les valeurs des secrets ne sont jamais transmises au front — seul leur état de configuration est exposé.
                 Dernière vérification : {new Date(status.checked_at).toLocaleString("fr-BE")}.
               </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <PlugZap className="h-5 w-5" />
+                Test de connexion Falco
+              </CardTitle>
+              <CardDescription>
+                Lance un appel <code className="text-xs">GET /organization/whoami</code> avec les secrets configurés.
+                Aucun document n'est envoyé sur Peppol.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button onClick={runTest} disabled={testing} className="gap-2">
+                <PlugZap className={`h-4 w-4 ${testing ? "animate-pulse" : ""}`} />
+                {testing ? "Test en cours…" : "Lancer le test"}
+              </Button>
+
+              {testError && (
+                <Alert variant="destructive">
+                  <ShieldAlert className="h-4 w-4" />
+                  <AlertTitle>Impossible d'exécuter le test</AlertTitle>
+                  <AlertDescription>{testError}</AlertDescription>
+                </Alert>
+              )}
+
+              {testResult && (
+                <Alert variant={testResult.ok ? "default" : "destructive"}>
+                  {testResult.ok ? (
+                    <CheckCircle2 className="h-4 w-4" />
+                  ) : (
+                    <XCircle className="h-4 w-4" />
+                  )}
+                  <AlertTitle>
+                    {testResult.ok ? "Succès" : "Échec"}
+                    {typeof testResult.http_status === "number" && testResult.http_status > 0
+                      ? ` — HTTP ${testResult.http_status}`
+                      : ""}
+                    {typeof testResult.latency_ms === "number" ? ` (${testResult.latency_ms} ms)` : ""}
+                  </AlertTitle>
+                  <AlertDescription className="space-y-2">
+                    <div>{testResult.message}</div>
+                    {testResult.organization && (
+                      <div className="text-xs bg-muted/50 rounded p-2 space-y-0.5">
+                        <div><span className="font-medium">Organisation :</span> {testResult.organization.name || "—"}</div>
+                        <div><span className="font-medium">TVA :</span> {testResult.organization.vat_number || "—"}</div>
+                        <div><span className="font-medium">Peppol ID :</span> {testResult.organization.peppol_identifier || "—"}</div>
+                        <div><span className="font-medium">Pays :</span> {testResult.organization.country || "—"}</div>
+                      </div>
+                    )}
+                    {testResult.missing_secrets && testResult.missing_secrets.length > 0 && (
+                      <div className="text-xs">
+                        Secrets manquants : <span className="font-mono">{testResult.missing_secrets.join(", ")}</span>
+                      </div>
+                    )}
+                    {testResult.base_url && (
+                      <div className="text-xs text-muted-foreground">
+                        Endpoint : <code>{testResult.base_url}{testResult.endpoint}</code>
+                      </div>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
             </CardContent>
           </Card>
 

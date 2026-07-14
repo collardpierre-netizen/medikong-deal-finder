@@ -1,0 +1,127 @@
+// @ts-nocheck — Deno runtime
+// Admin-only Falco API connectivity test.
+// Calls GET /organization/whoami using the configured secrets and returns
+// a structured result — NEVER the secret values themselves.
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2.58.0";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+const json = (status: number, body: unknown) =>
+  new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  try {
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    // Admin gate
+    const authHeader = req.headers.get("Authorization") || "";
+    const token = authHeader.replace("Bearer ", "");
+    if (!token) return json(401, { error: "unauthorized" });
+    const user = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: claims } = await user.auth.getClaims(token);
+    const uid = claims?.claims?.sub;
+    if (!uid) return json(401, { error: "unauthorized" });
+    const { data: adm } = await supabase.rpc("is_admin", { _user_id: uid });
+    if (!adm) return json(403, { error: "forbidden" });
+
+    const apiKey = (Deno.env.get("FALCO_API_KEY") || "").trim();
+    const appSecret = (Deno.env.get("FALCO_APP_SECRET") || "").trim();
+    const baseUrlRaw = (Deno.env.get("FALCO_BASE_URL") || "").trim();
+    const baseUrl = baseUrlRaw || "https://api.sandbox.falco-app.be/v1";
+    const environment = baseUrl.includes("sandbox") ? "sandbox" : "production";
+
+    if (!apiKey || !appSecret) {
+      const missing = [!apiKey && "FALCO_API_KEY", !appSecret && "FALCO_APP_SECRET"].filter(Boolean);
+      return json(200, {
+        ok: false,
+        reason: "missing_secrets",
+        missing_secrets: missing,
+        environment,
+        base_url: baseUrl,
+        message: `Secret(s) manquant(s) : ${missing.join(", ")}.`,
+      });
+    }
+
+    const startedAt = Date.now();
+    let httpStatus = 0;
+    let payload: any = null;
+    let networkError: string | null = null;
+
+    try {
+      const res = await fetch(`${baseUrl}/organization/whoami`, {
+        method: "GET",
+        headers: {
+          "X-Falco-App-Secret": appSecret,
+          "X-Falco-Api-Key": apiKey,
+          "Accept": "application/json",
+        },
+      });
+      httpStatus = res.status;
+      const ct = res.headers.get("content-type") || "";
+      payload = ct.includes("json")
+        ? await res.json().catch(() => null)
+        : await res.text().catch(() => null);
+    } catch (e: any) {
+      networkError = String(e?.message || e);
+    }
+
+    const latencyMs = Date.now() - startedAt;
+    const ok = httpStatus >= 200 && httpStatus < 300;
+
+    // Extract public, non-secret organization info to show admins.
+    let org: any = null;
+    if (ok && payload && typeof payload === "object") {
+      org = {
+        name: payload.name || payload.organization_name || null,
+        vat_number: payload.vat_number || null,
+        peppol_identifier:
+          payload.peppol_identifier ||
+          payload?.peppol?.identifier ||
+          null,
+        country: payload.country || payload?.address?.country || null,
+      };
+    }
+
+    let message = "";
+    if (networkError) {
+      message = `Erreur réseau : ${networkError}`;
+    } else if (ok) {
+      message = `Connexion Falco OK (${latencyMs} ms).`;
+    } else if (httpStatus === 401 || httpStatus === 403) {
+      message = `Authentification refusée (HTTP ${httpStatus}) — vérifier FALCO_API_KEY / FALCO_APP_SECRET.`;
+    } else {
+      const detail =
+        (payload && typeof payload === "object" && (payload.detail || payload.title)) ||
+        (typeof payload === "string" ? payload.slice(0, 200) : "");
+      message = `Échec Falco (HTTP ${httpStatus})${detail ? " — " + detail : ""}.`;
+    }
+
+    return json(200, {
+      ok,
+      http_status: httpStatus,
+      network_error: networkError,
+      latency_ms: latencyMs,
+      environment,
+      base_url: baseUrl,
+      endpoint: "/organization/whoami",
+      organization: org,
+      message,
+      checked_at: new Date().toISOString(),
+    });
+  } catch (e) {
+    console.error("[falco-test-connection]", e);
+    return json(500, { error: "internal_error", details: String(e?.message || e) });
+  }
+});

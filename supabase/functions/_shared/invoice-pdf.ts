@@ -187,12 +187,16 @@ export function buildSelfBillingPdf(p: SelfBillingParams): Uint8Array {
   doc.setFont(undefined, "normal");
 
   y += 20;
+  // Legal mandate mention (BE self-billing) — bold, framed, mandatory.
+  const mandateText = buildSelfBillingMandateMention(p.vendor, p.mandateSignedAt);
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(200, 210, 225);
+  doc.rect(14, y, 182, 18, "FD");
   doc.setFontSize(8);
-  doc.setTextColor(139, 149, 165);
-  doc.text(
-    `Facture émise par ${MEDIKONG.name} au nom et pour le compte de ${p.vendor.company_name || p.vendor.name} (self-billing marketplace).`,
-    14, y, { maxWidth: 182 },
-  );
+  doc.setTextColor(29, 37, 48);
+  doc.setFont(undefined, "bold");
+  doc.text(mandateText, 17, y + 5, { maxWidth: 176 });
+  doc.setFont(undefined, "normal");
   return doc.output("arraybuffer") as any;
 }
 

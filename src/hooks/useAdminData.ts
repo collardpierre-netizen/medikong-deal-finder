@@ -236,7 +236,33 @@ export const useSourcingRequests = () =>
 
 // Stub hooks for removed tables (V5 migration)
 export const useBuyers = () => useQuery({ queryKey: ["stub-buyers"], queryFn: async () => [] as any[] });
-export const useInvoices = () => useQuery({ queryKey: ["stub-invoices"], queryFn: async () => [] as any[] });
+export const useInvoices = () =>
+  useQuery({
+    queryKey: ["admin-order-invoices"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("order_invoices")
+        .select("id, order_id, vendor_id, type, invoice_number, status, amount_excl_vat, vat_amount, amount_incl_vat, pdf_path, issued_at, paid_at, created_at, orders:orders!order_invoices_order_id_fkey(order_number), vendors:vendors!order_invoices_vendor_id_fkey(company_name, name)")
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return (data || []).map((r: any) => ({
+        id: r.id,
+        order_id: r.order_id,
+        vendor_id: r.vendor_id,
+        type: r.type,
+        invoice_number: r.invoice_number,
+        status: r.status,
+        amount_ht: r.amount_excl_vat,
+        tva_amount: r.vat_amount,
+        amount_ttc: r.amount_incl_vat,
+        due_date: r.paid_at || r.issued_at,
+        pdf_path: r.pdf_path,
+        order_number: r.orders?.order_number,
+        vendor_label: r.vendors?.company_name || r.vendors?.name,
+      }));
+    },
+  });
 export const useImportJobs = () => useQuery({ queryKey: ["stub-import-jobs"], queryFn: async () => [] as any[] });
 export const useLeadsPartners = () => useQuery({ queryKey: ["stub-leads"], queryFn: async () => [] as any[] });
 export const useOffersIndirect = () => useQuery({ queryKey: ["stub-offers-indirect"], queryFn: async () => [] as any[] });

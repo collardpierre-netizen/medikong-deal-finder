@@ -8,8 +8,32 @@ import { useVendors } from "@/hooks/useAdminData";
 import { getVendorAdminName } from "@/lib/vendor-display";
 import { Search, Plus, ExternalLink, Eye, EyeOff, LogIn, AlertTriangle, CheckCircle2, XCircle, Clock, ChevronDown, Trash2, ToggleLeft, ToggleRight, Hash, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+
+function useVendorEffectiveCommissions() {
+  return useQuery({
+    queryKey: ["admin-vendors-effective-commission"],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("margin_rules")
+        .select("vendor_id, margin_percentage, priority, name")
+        .eq("is_active", true)
+        .not("vendor_id", "is", null)
+        .is("brand_id", null)
+        .is("category_id", null)
+        .order("priority", { ascending: false });
+      if (error) throw error;
+      const map = new Map<string, { rate: number; name: string }>();
+      for (const r of data ?? []) {
+        const vid = (r as any).vendor_id as string;
+        if (!map.has(vid)) map.set(vid, { rate: Number((r as any).margin_percentage), name: (r as any).name });
+      }
+      return map;
+    },
+  });
+}
 
 type VStatus = "all" | "pending_review" | "under_review" | "accepted" | "approved" | "rejected";
 type ActiveFilter = "all" | "active" | "inactive";
@@ -25,6 +49,7 @@ const VALIDATION_LABELS: Record<string, { label: string; color: string; bg: stri
 const AdminVendeurs = () => {
   const { t } = useI18n();
   const navigate = useNavigate();
+  const { data: effectiveCommissions } = useVendorEffectiveCommissions();
   const { data: vendors = [], isLoading, error } = useVendors();
   const [activeTab, setActiveTab] = useState<"all" | "medikong" | "qogita_virtual" | "real">("all");
   const [search, setSearch] = useState("");
@@ -305,7 +330,23 @@ const AdminVendeurs = () => {
                       <span className="px-2 py-1 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#F1F5F9", color: "#616B7C" }}>{s.type}</span>
                     </td>
                     <td className="px-3 py-3 text-[12px]" style={{ color: "#616B7C" }} onClick={() => navigate(`/admin/vendeurs/${s.id}`)}>{s.city || "—"}, {s.country_code}</td>
-                    <td className="px-3 py-3 text-[13px]" style={{ color: "#616B7C" }} onClick={() => navigate(`/admin/vendeurs/${s.id}`)}>{s.commission_rate}%</td>
+                    <td className="px-3 py-3 text-[13px]" style={{ color: "#616B7C" }} onClick={() => navigate(`/admin/vendeurs/${s.id}`)}>
+                      {(() => {
+                        const eff = effectiveCommissions?.get(s.id);
+                        if (eff) {
+                          return (
+                            <span className="inline-flex items-center gap-1" title={eff.name}>
+                              <span className="font-semibold" style={{ color: "#1D2530" }}>{eff.rate}%</span>
+                            </span>
+                          );
+                        }
+                        return (
+                          <span title="Aucune règle active — valeur legacy vendors.commission_rate" style={{ color: "#8B95A5" }}>
+                            {s.commission_rate}% <span className="text-[10px]">(défaut)</span>
+                          </span>
+                        );
+                      })()}
+                    </td>
                     <td className="px-3 py-3" onClick={() => navigate(`/admin/vendeurs/${s.id}`)}>
                       {renderValidationBadge(vs)}
                     </td>

@@ -5,6 +5,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { buildSelfBillingPdf } from "../_shared/invoice-pdf.ts";
+import {
+  submitInvoiceToFalco,
+  persistFalcoResult,
+  isFalcoConfigured,
+  type FalcoLine,
+  type FalcoTaxSubtotal,
+} from "../_shared/falco-peppol.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -123,7 +130,101 @@ Deno.serve(async (req) => {
       .single();
     if (dbErr) return json(500, { error: "invoice_insert_failed", details: dbErr.message });
 
-    return json(200, { ok: true, invoice_id: upserted.id, invoice_number: upserted.invoice_number, pdf_path: pdfPath });
+    // Best-effort Peppol dispatch via Falco.
+    let peppol: any = { attempted: false };
+    if (isFalcoConfigured()) {
+      try {
+        const cust: any = order.customers || {};
+        const round2 = (n: number) => (Math.round(n * 100) / 100).toFixed(2);
+
+        // Aggregate tax subtotals by rate (mix of 6% meds / 21% OTC possible).
+        const bucket = new Map<number, { base: number; tax: number }>();
+        for (const l of lines as any[]) {
+          const rate = Number(l.vat_rate || 0);
+          const base = Number(l.line_total_excl_vat || 0);
+          const tax = Number(l.line_total_incl_vat || 0) - base;
+          const b = bucket.get(rate) || { base: 0, tax: 0 };
+          b.base += base;
+          b.tax += tax;
+          bucket.set(rate, b);
+        }
+        const taxSubtotals: FalcoTaxSubtotal[] = Array.from(bucket.entries()).map(([rate, v]) => ({
+          tax_rate: rate.toFixed(1),
+          base_amount: round2(v.base),
+          tax_amount: round2(v.tax),
+          tax_regime: { type: "standard" },
+        }));
+
+        const falcoLines: FalcoLine[] = (lines as any[]).map((l: any) => ({
+          name: (l.manual_label || l.products?.name || "—").slice(0, 200),
+          description: (l.manual_label || l.products?.name || "—").slice(0, 500),
+          quantity: String(Number(l.quantity || 0)),
+          unit_price: round2(Number(l.unit_price_excl_vat || 0)),
+          tax_rate: Number(l.vat_rate || 0).toFixed(1),
+          base_amount: round2(Number(l.line_total_excl_vat || 0)),
+          tax_regime_type: "standard",
+        }));
+
+        const falcoRes = await submitInvoiceToFalco(pdfBytes, {
+          document_type: "sale_invoice",
+          document_date: new Date().toISOString().slice(0, 10),
+          number: invoiceNumber,
+          note: "Self-billing invoice issued by MediKong (Balooh SRL) on behalf of the vendor.",
+          sender: {
+            name: vendor.company_name || vendor.name,
+            vat_number: vendor.vat_number || undefined,
+            address: {
+              line1: vendor.address_line1 || "—",
+              zip: vendor.postal_code || undefined,
+              city: vendor.city || undefined,
+              country: vendor.country_code || "BE",
+            },
+          },
+          receiver: {
+            name: cust.company_name || cust.email || "Client",
+            vat_number: cust.vat_number || undefined,
+            contact: cust.email ? { email: cust.email } : undefined,
+            address: {
+              line1: cust.address_line1 || "—",
+              zip: cust.postal_code || undefined,
+              city: cust.city || undefined,
+              country: cust.country_code || "BE",
+            },
+          },
+          currency: "EUR",
+          base_amount: round2(subtotal),
+          total_amount: round2(totalTtc),
+          tax_subtotals: taxSubtotals,
+          lines: falcoLines,
+          send_peppol: true,
+        }, { pdfFilename: `${invoiceNumber}.pdf` });
+
+        await persistFalcoResult(supabase, upserted.id, falcoRes);
+        peppol = {
+          attempted: true,
+          ok: falcoRes.ok,
+          status: falcoRes.peppol_status,
+          document_id: falcoRes.document_id,
+          error: falcoRes.peppol_error,
+        };
+      } catch (e) {
+        console.error("[emit-self-billing-invoice][falco]", e);
+        await persistFalcoResult(supabase, upserted.id, {
+          ok: false, http_status: 0,
+          peppol_status: "failed",
+          peppol_error: String((e as any)?.message || e),
+        });
+        peppol = { attempted: true, ok: false, error: String((e as any)?.message || e) };
+      }
+    }
+
+    return json(200, {
+      ok: true,
+      invoice_id: upserted.id,
+      invoice_number: upserted.invoice_number,
+      pdf_path: pdfPath,
+      peppol,
+    });
   } catch (e) {
     console.error("[emit-self-billing-invoice]", e);
     return json(500, { error: "internal_error", details: String(e?.message || e) });

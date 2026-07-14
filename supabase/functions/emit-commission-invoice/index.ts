@@ -4,6 +4,23 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { buildCommissionPdf } from "../_shared/invoice-pdf.ts";
+import {
+  submitInvoiceToFalco,
+  persistFalcoResult,
+  isFalcoConfigured,
+} from "../_shared/falco-peppol.ts";
+
+// MediKong legal seller identity (Balooh SRL) — used as sender on commission invoices.
+const MK_SELLER = {
+  name: "Balooh SRL",
+  vat_number: "BE1005771323",
+  address: {
+    line1: "23 rue de la Procession",
+    zip: "7822",
+    city: "Ath",
+    country: "BE",
+  },
+} as const;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -113,6 +130,73 @@ Deno.serve(async (req) => {
       .single();
     if (dbErr) return json(500, { error: "invoice_insert_failed", details: dbErr.message });
 
+    // Best-effort Peppol dispatch via Falco.
+    let peppol: any = { attempted: false };
+    if (isFalcoConfigured()) {
+      try {
+        const round2 = (n: number) => (Math.round(n * 100) / 100).toFixed(2);
+        const rateStr = (commissionRate * 100 <= 100 ? commissionRate * 100 : commissionRate).toFixed(1);
+        // Commission = B2B service, BE standard VAT 21%.
+        const falcoRes = await submitInvoiceToFalco(pdf, {
+          document_type: "sale_invoice",
+          document_date: new Date().toISOString().slice(0, 10),
+          number: invoiceNumber,
+          note: `MediKong marketplace commission (${rateStr}% on GMV HTVA ${round2(gmvExclVat)} EUR) for order ${order.order_number}.`,
+          sender: {
+            name: MK_SELLER.name,
+            vat_number: MK_SELLER.vat_number,
+            address: { ...MK_SELLER.address },
+          },
+          receiver: {
+            name: vendor.company_name || vendor.name,
+            vat_number: vendor.vat_number || undefined,
+            address: {
+              line1: vendor.address_line1 || "—",
+              zip: vendor.postal_code || undefined,
+              city: vendor.city || undefined,
+              country: vendor.country_code || "BE",
+            },
+          },
+          currency: "EUR",
+          base_amount: round2(commissionHt),
+          total_amount: round2(commissionTtc),
+          tax_subtotals: [{
+            tax_rate: "21.0",
+            base_amount: round2(commissionHt),
+            tax_amount: round2(vat),
+            tax_regime: { type: "standard" },
+          }],
+          lines: [{
+            name: "Commission marketplace MediKong",
+            description: `Commission ${rateStr}% sur commande ${order.order_number} (GMV HTVA ${round2(gmvExclVat)} EUR)`,
+            quantity: "1",
+            unit_price: round2(commissionHt),
+            tax_rate: "21.0",
+            base_amount: round2(commissionHt),
+            tax_regime_type: "standard",
+          }],
+          send_peppol: true,
+        }, { pdfFilename: `${invoiceNumber}.pdf` });
+
+        await persistFalcoResult(supabase, upserted.id, falcoRes);
+        peppol = {
+          attempted: true,
+          ok: falcoRes.ok,
+          status: falcoRes.peppol_status,
+          document_id: falcoRes.document_id,
+          error: falcoRes.peppol_error,
+        };
+      } catch (e) {
+        console.error("[emit-commission-invoice][falco]", e);
+        await persistFalcoResult(supabase, upserted.id, {
+          ok: false, http_status: 0,
+          peppol_status: "failed",
+          peppol_error: String((e as any)?.message || e),
+        });
+        peppol = { attempted: true, ok: false, error: String((e as any)?.message || e) };
+      }
+    }
+
     return json(200, {
       ok: true,
       invoice_id: upserted.id,
@@ -121,6 +205,7 @@ Deno.serve(async (req) => {
       vat, commission_ttc: commissionTtc,
       commission_rate: commissionRate,
       pdf_path: pdfPath,
+      peppol,
     });
   } catch (e) {
     console.error("[emit-commission-invoice]", e);

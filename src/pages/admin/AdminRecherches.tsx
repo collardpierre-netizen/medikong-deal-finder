@@ -92,6 +92,218 @@ function KpiCard({ icon: Icon, label, value, hint }: { icon: typeof Search; labe
   );
 }
 
+interface ByProfessionRow {
+  profession_type_id: string | null;
+  profession_name: string;
+  searches: number;
+  clicks: number;
+  zero_results: number;
+  click_rate: number;
+  zero_result_rate: number;
+  share: number;
+}
+
+interface ByCountryRow {
+  country_code: string;
+  searches: number;
+  clicks: number;
+  zero_results: number;
+  click_rate: number;
+  zero_result_rate: number;
+  share: number;
+}
+
+interface TopByGroupRow {
+  profession_type_id?: string | null;
+  profession_name?: string;
+  country_code?: string;
+  normalized_query: string;
+  sample_query: string;
+  searches: number;
+  click_rate: number;
+  zero_result_rate: number;
+  rank: number;
+}
+
+const COUNTRY_LABEL: Record<string, string> = {
+  BE: "Belgique", FR: "France", LU: "Luxembourg", NL: "Pays-Bas", DE: "Allemagne", UNK: "Non renseigné",
+};
+
+function ByProfileTab({ period }: { period: Period }) {
+  const byProf = useQuery({
+    queryKey: ["admin-search-by-prof", period],
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)("admin_search_by_profession", { _days: period });
+      if (error) throw error;
+      return (data ?? []) as ByProfessionRow[];
+    },
+  });
+  const byCountry = useQuery({
+    queryKey: ["admin-search-by-country", period],
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)("admin_search_by_country", { _days: period });
+      if (error) throw error;
+      return (data ?? []) as ByCountryRow[];
+    },
+  });
+  const topByProf = useQuery({
+    queryKey: ["admin-search-top-by-prof", period],
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)("admin_search_top_by_profession", { _days: period, _per_group: 8 });
+      if (error) throw error;
+      return (data ?? []) as TopByGroupRow[];
+    },
+  });
+  const topByCountry = useQuery({
+    queryKey: ["admin-search-top-by-country", period],
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)("admin_search_top_by_country", { _days: period, _per_group: 8 });
+      if (error) throw error;
+      return (data ?? []) as TopByGroupRow[];
+    },
+  });
+
+  const professionGroups = groupBy(topByProf.data ?? [], (r) => r.profession_name ?? "—");
+  const countryGroups = groupBy(topByCountry.data ?? [], (r) => COUNTRY_LABEL[r.country_code ?? "UNK"] ?? r.country_code ?? "—");
+
+  const anyLoading = byProf.isLoading || byCountry.isLoading || topByProf.isLoading || topByCountry.isLoading;
+
+  return (
+    <div className="space-y-4">
+      <div className="grid md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Répartition par profession</CardTitle>
+            <p className="text-xs text-muted-foreground">Volume et performance par type de profil.</p>
+          </CardHeader>
+          <CardContent>
+            {byProf.isLoading ? (
+              <div className="flex items-center justify-center py-8 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin mr-2" /> Chargement…</div>
+            ) : (byProf.data?.length ?? 0) === 0 ? (
+              <div className="text-center py-8 text-sm text-muted-foreground">Aucune donnée.</div>
+            ) : (
+              <ShareTable rows={byProf.data!.map((r) => ({ label: r.profession_name, ...r }))} />
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Répartition par pays</CardTitle>
+            <p className="text-xs text-muted-foreground">Volume et performance par pays de l'utilisateur.</p>
+          </CardHeader>
+          <CardContent>
+            {byCountry.isLoading ? (
+              <div className="flex items-center justify-center py-8 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin mr-2" /> Chargement…</div>
+            ) : (byCountry.data?.length ?? 0) === 0 ? (
+              <div className="text-center py-8 text-sm text-muted-foreground">Aucune donnée.</div>
+            ) : (
+              <ShareTable rows={byCountry.data!.map((r) => ({ label: COUNTRY_LABEL[r.country_code] ?? r.country_code, ...r }))} />
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Top mots-clés par profession</CardTitle>
+          <p className="text-xs text-muted-foreground">Top 8 requêtes par type de profil.</p>
+        </CardHeader>
+        <CardContent>
+          {anyLoading && professionGroups.length === 0 ? (
+            <div className="flex items-center justify-center py-8 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin mr-2" /> Chargement…</div>
+          ) : professionGroups.length === 0 ? (
+            <div className="text-center py-8 text-sm text-muted-foreground">Aucune donnée.</div>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-4">
+              {professionGroups.map(([name, rows]) => (
+                <GroupBox key={name} title={name} rows={rows} />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Top mots-clés par pays</CardTitle>
+          <p className="text-xs text-muted-foreground">Top 8 requêtes par pays.</p>
+        </CardHeader>
+        <CardContent>
+          {countryGroups.length === 0 ? (
+            <div className="text-center py-8 text-sm text-muted-foreground">Aucune donnée.</div>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-4">
+              {countryGroups.map(([name, rows]) => (
+                <GroupBox key={name} title={name} rows={rows} />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function groupBy<T>(arr: T[], key: (t: T) => string): Array<[string, T[]]> {
+  const map = new Map<string, T[]>();
+  for (const it of arr) {
+    const k = key(it);
+    if (!map.has(k)) map.set(k, []);
+    map.get(k)!.push(it);
+  }
+  return Array.from(map.entries());
+}
+
+function ShareTable({ rows }: { rows: Array<{ label: string; searches: number; click_rate: number; zero_result_rate: number; share: number }> }) {
+  return (
+    <div className="space-y-2">
+      {rows.map((r) => (
+        <div key={r.label} className="text-sm">
+          <div className="flex items-center justify-between mb-1">
+            <span className="font-medium truncate">{r.label}</span>
+            <span className="text-xs tabular-nums text-muted-foreground">
+              {r.searches.toLocaleString("fr-BE")} · {r.share}% · clic {r.click_rate}% · 0-résultat {r.zero_result_rate}%
+            </span>
+          </div>
+          <div className="h-1.5 rounded bg-muted overflow-hidden">
+            <div className="h-full bg-primary" style={{ width: `${Math.min(100, r.share)}%` }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function GroupBox({ title, rows }: { title: string; rows: TopByGroupRow[] }) {
+  return (
+    <div className="border rounded-lg p-3">
+      <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{title}</div>
+      <div className="space-y-1.5">
+        {rows.map((r) => (
+          <div key={`${title}-${r.normalized_query}`} className="flex items-center justify-between gap-2 text-sm">
+            <Link
+              to={`/catalogue?q=${encodeURIComponent(r.sample_query)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="truncate hover:underline"
+              title={r.sample_query}
+            >
+              {r.sample_query}
+            </Link>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-xs tabular-nums text-muted-foreground">{r.searches}</span>
+              {r.zero_result_rate >= 50 && (
+                <Badge variant="destructive" className="text-[10px] py-0 px-1">0-rés {r.zero_result_rate}%</Badge>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminRecherches() {
   const [period, setPeriod] = useState<Period>(7);
 

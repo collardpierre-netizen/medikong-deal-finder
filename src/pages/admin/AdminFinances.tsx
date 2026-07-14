@@ -21,6 +21,20 @@ const AdminFinances = () => {
   const { data: invoicesData = [], isLoading } = useInvoices();
   const { data: vendors = [] } = useVendors();
   const [activeTab, setActiveTab] = useState<"overview" | "invoices" | "payouts">("overview");
+  const queryClient = useQueryClient();
+
+  // Realtime: refresh invoices list whenever the Falco webhook updates peppol_status.
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-finances-peppol")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "order_invoices" },
+        () => queryClient.invalidateQueries({ queryKey: ["admin-order-invoices"] }),
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
 
   const totalHT = invoicesData.reduce((a, inv) => a + Number(inv.amount_ht), 0);
   const totalTVA = invoicesData.reduce((a, inv) => a + Number(inv.tva_amount || 0), 0);

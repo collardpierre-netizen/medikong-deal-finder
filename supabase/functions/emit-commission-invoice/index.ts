@@ -186,7 +186,7 @@ Deno.serve(async (req) => {
             tax_regime_type: "standard",
           }],
           send_peppol: true,
-        }, { pdfFilename: `${invoiceNumber}.pdf` });
+        }, { pdfFilename: `${invoiceNumber}.pdf`, caller: "emit-commission-invoice", invoiceId: upserted.id });
 
         await persistFalcoResult(supabase, upserted.id, falcoRes);
         peppol = {

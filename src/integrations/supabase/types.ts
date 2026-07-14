@@ -24830,7 +24830,57 @@ export type Database = {
           website_url: string
         }[]
       }
+      admin_search_by_country: {
+        Args: { _days?: number }
+        Returns: {
+          click_rate: number
+          clicks: number
+          country_code: string
+          searches: number
+          share: number
+          zero_result_rate: number
+          zero_results: number
+        }[]
+      }
+      admin_search_by_profession: {
+        Args: { _days?: number }
+        Returns: {
+          click_rate: number
+          clicks: number
+          profession_name: string
+          profession_type_id: string
+          searches: number
+          share: number
+          zero_result_rate: number
+          zero_results: number
+        }[]
+      }
       admin_search_kpis: { Args: { _days?: number }; Returns: Json }
+      admin_search_top_by_country: {
+        Args: { _days?: number; _per_group?: number }
+        Returns: {
+          click_rate: number
+          country_code: string
+          normalized_query: string
+          rank: number
+          sample_query: string
+          searches: number
+          zero_result_rate: number
+        }[]
+      }
+      admin_search_top_by_profession: {
+        Args: { _days?: number; _per_group?: number }
+        Returns: {
+          click_rate: number
+          normalized_query: string
+          profession_name: string
+          profession_type_id: string
+          rank: number
+          sample_query: string
+          searches: number
+          zero_result_rate: number
+        }[]
+      }
       admin_search_top_queries: {
         Args: { _days?: number; _limit?: number }
         Returns: {

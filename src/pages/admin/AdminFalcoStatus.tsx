@@ -235,6 +235,36 @@ export default function AdminFalcoStatus() {
             </CardContent>
           </Card>
 
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <KeyRound className="h-5 w-5" />
+                Secret partagé pg_cron ↔ edge functions
+              </CardTitle>
+              <CardDescription>
+                Copie <code className="text-xs">CRON_SHARED_SECRET</code> depuis les secrets Lovable
+                vers le coffre-fort Supabase (nom : <code className="text-xs">cron_shared_secret</code>).
+                Le cron horaire <code className="text-xs">retry-peppol-failed-hourly</code> lit ce coffre-fort
+                à l'exécution : aucun secret n'est stocké en clair dans le SQL.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button onClick={seedCronSecret} disabled={seeding} variant="outline" className="gap-2">
+                <KeyRound className={`h-4 w-4 ${seeding ? "animate-pulse" : ""}`} />
+                {seeding ? "Écriture…" : "Synchroniser vers le coffre-fort"}
+              </Button>
+              {seedResult && (
+                <Alert variant={seedResult.ok ? "default" : "destructive"}>
+                  {seedResult.ok ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+                  <AlertTitle>{seedResult.ok ? "Coffre-fort à jour" : "Échec"}</AlertTitle>
+                  <AlertDescription>{seedResult.message}</AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+
+
+
           {!status.active && (
             <Alert variant="destructive">
               <ShieldAlert className="h-4 w-4" />

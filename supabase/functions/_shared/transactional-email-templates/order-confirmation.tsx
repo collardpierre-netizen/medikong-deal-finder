@@ -14,6 +14,7 @@ interface OrderConfirmationProps {
   itemCount?: number
   shippingAddress?: string
   paymentMethod?: string
+  invoiceLinks?: Array<{ label: string; url: string }>
 }
 
 const OrderConfirmationEmail = ({
@@ -23,6 +24,7 @@ const OrderConfirmationEmail = ({
   itemCount = 0,
   shippingAddress,
   paymentMethod,
+  invoiceLinks = [],
 }: OrderConfirmationProps) => (
   <Html lang="fr" dir="ltr">
     <Head />
@@ -72,6 +74,21 @@ const OrderConfirmationEmail = ({
         <Button href="https://medikong.pro/compte?tab=commandes" style={button}>
           Suivre ma commande
         </Button>
+
+        {invoiceLinks.length > 0 && (
+          <Section style={{ marginTop: '4px', marginBottom: '24px' }}>
+            <Text style={{ ...footerText, fontWeight: 600, color: '#1e3a5f', margin: '0 0 8px' }}>
+              Vos factures
+            </Text>
+            {invoiceLinks.map((inv, i) => (
+              <Text key={i} style={{ margin: '0 0 6px' }}>
+                <a href={inv.url} style={{ color: '#1B5BDA', textDecoration: 'underline', fontSize: '13px' }}>
+                  Télécharger « {inv.label} » (lien valable 7 jours)
+                </a>
+              </Text>
+            ))}
+          </Section>
+        )}
 
         <Text style={footerText}>
           Si vous avez des questions, n'hésitez pas à nous contacter via notre centre d'aide.

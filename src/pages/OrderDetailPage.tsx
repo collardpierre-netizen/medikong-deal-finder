@@ -5,6 +5,9 @@ import { formatPrice } from "@/data/mock";
 import { useOrderDetail } from "@/hooks/useOrders";
 import { ORDER_WORKFLOW_STEPS, getOrderStatusMeta, formatOrderDateTime } from "@/lib/order-status";
 import { useVendorLabels } from "@/hooks/useVendorLabels";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -17,6 +20,26 @@ export default function OrderDetailPage() {
   const items: any[] = (order as any)?.items || [];
   const itemVendorIds = items.map((it: any) => it.vendor_id).filter(Boolean) as string[];
   const { getLabel: getVendorLabel } = useVendorLabels(itemVendorIds);
+
+  // Self-billing invoices for this order (RLS filters commission out for buyers)
+  const { data: invoices = [] } = useQuery({
+    queryKey: ["order-invoices-buyer", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("order_invoices")
+        .select("id, invoice_number, type, pdf_path")
+        .eq("order_id", id!)
+        .eq("type", "self_billing");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const handleDownloadInvoice = async (invoiceId: string) => {
+    const { data, error } = await supabase.functions.invoke("get-invoice-signed-url", { body: { invoice_id: invoiceId } });
+    if (error || !data?.signed_url) { toast.error("Impossible de générer le lien PDF"); return; }
+    window.open(data.signed_url, "_blank");
+  };
   const subtotal = Number((order as any)?.subtotal_excl_vat || 0);
   const vat = Number((order as any)?.vat_amount || 0);
   const shipping = Number((order as any)?.shipping_cost || 0);
@@ -135,9 +158,23 @@ export default function OrderDetailPage() {
             <button onClick={handleExportPDF} disabled={!items.length} className="border border-mk-line text-sm px-3 py-2 rounded-md text-mk-sec flex items-center gap-1.5 disabled:opacity-50">
               <FileText size={14} /> Export PDF
             </button>
-            <button className="border border-mk-line text-sm px-4 py-2 rounded-md text-mk-sec flex items-center gap-1.5">
-              <Download size={14} /> Télécharger facture
-            </button>
+            {invoices.length === 0 ? (
+              <button disabled className="border border-mk-line text-sm px-4 py-2 rounded-md text-mk-sec/60 flex items-center gap-1.5 cursor-not-allowed" title="Facture non encore générée">
+                <Download size={14} /> Télécharger facture
+              </button>
+            ) : invoices.length === 1 ? (
+              <button onClick={() => handleDownloadInvoice(invoices[0].id)} className="border border-mk-blue bg-mk-blue text-white text-sm px-4 py-2 rounded-md flex items-center gap-1.5 hover:opacity-90">
+                <Download size={14} /> Télécharger facture
+              </button>
+            ) : (
+              <div className="flex items-center gap-1 flex-wrap">
+                {invoices.map((inv: any, i: number) => (
+                  <button key={inv.id} onClick={() => handleDownloadInvoice(inv.id)} className="border border-mk-blue bg-mk-blue text-white text-sm px-3 py-2 rounded-md flex items-center gap-1.5 hover:opacity-90">
+                    <Download size={14} /> Facture {i + 1}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

@@ -6,8 +6,10 @@ import { useI18n } from "@/contexts/I18nContext";
 import { useInvoices, useVendors } from "@/hooks/useAdminData";
 import {
   DollarSign, TrendingUp, Receipt, CreditCard, RotateCcw,
-  AlertTriangle,
+  AlertTriangle, Download,
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 const fmt = (n: number) => n.toLocaleString("fr-BE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -93,20 +95,22 @@ const AdminFinances = () => {
             <table className="w-full text-left">
               <thead>
                 <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                  {["N° Facture", "Type", "HT", "TVA", "TTC", "Échéance", "Statut"].map((h) => (
+                  {["N° Facture", "Commande", "Vendeur", "Type", "HT", "TVA", "TTC", "Émise le", "Statut", ""].map((h) => (
                     <th key={h} className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {invoicesData.map((inv) => (
+                {invoicesData.map((inv: any) => (
                   <tr key={inv.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
                     <td className="px-4 py-3 text-[12px] font-bold font-mono" style={{ color: "#1B5BDA" }}>{inv.invoice_number}</td>
+                    <td className="px-4 py-3 text-[11px] font-mono" style={{ color: "#616B7C" }}>{inv.order_number || "—"}</td>
+                    <td className="px-4 py-3 text-[11px]" style={{ color: "#616B7C" }}>{inv.vendor_label || "—"}</td>
                     <td className="px-4 py-3">
                       <span className="px-2 py-0.5 rounded text-[10px] font-bold" style={{
                         backgroundColor: inv.type === "commission" ? "#EFF6FF" : "#F5F3FF",
                         color: inv.type === "commission" ? "#1B5BDA" : "#7C3AED",
-                      }}>{inv.type === "commission" ? "Commission" : inv.type === "lead_cpa" ? "Lead CPA" : inv.type}</span>
+                      }}>{inv.type === "commission" ? "Commission" : inv.type === "self_billing" ? "Self-billing" : inv.type}</span>
                     </td>
                     <td className="px-4 py-3 text-[12px] font-mono" style={{ color: "#1D2530" }}>{fmt(Number(inv.amount_ht))} EUR</td>
                     <td className="px-4 py-3 text-[11px] font-mono" style={{ color: "#8B95A5" }}>{fmt(Number(inv.tva_amount || 0))} EUR</td>
@@ -114,12 +118,30 @@ const AdminFinances = () => {
                     <td className="px-4 py-3 text-[11px]" style={{ color: "#8B95A5" }}>{inv.due_date ? new Date(inv.due_date).toLocaleDateString("fr-BE") : "—"}</td>
                     <td className="px-4 py-3">
                       <StatusBadge
-                        status={inv.status === "paid" ? "paid" : inv.status === "overdue" ? "cancelled" : inv.status === "draft" ? "pending" : "pending"}
-                        label={inv.status === "paid" ? "Payée" : inv.status === "overdue" ? "En retard" : inv.status === "draft" ? "Brouillon" : "En attente"}
+                        status={inv.status === "paid" ? "paid" : inv.status === "overdue" ? "cancelled" : inv.status === "draft" ? "pending" : inv.status === "generated" ? "paid" : "pending"}
+                        label={inv.status === "paid" ? "Payée" : inv.status === "overdue" ? "En retard" : inv.status === "draft" ? "Brouillon" : inv.status === "generated" ? "Générée" : "En attente"}
                       />
+                    </td>
+                    <td className="px-4 py-3">
+                      {inv.pdf_path && (
+                        <button
+                          onClick={async () => {
+                            const { data, error } = await supabase.functions.invoke("get-invoice-signed-url", { body: { invoice_id: inv.id } });
+                            if (error || !data?.signed_url) { toast.error("Impossible de générer le lien PDF"); return; }
+                            window.open(data.signed_url, "_blank");
+                          }}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded hover:bg-slate-100"
+                          style={{ color: "#1B5BDA" }}
+                        >
+                          <Download size={12} /> PDF
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
+                {invoicesData.length === 0 && (
+                  <tr><td colSpan={10} className="px-4 py-12 text-center text-[12px]" style={{ color: "#8B95A5" }}>Aucune facture pour le moment.</td></tr>
+                )}
               </tbody>
             </table>
           )}

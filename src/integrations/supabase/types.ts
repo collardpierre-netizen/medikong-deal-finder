@@ -7699,11 +7699,15 @@ export type Database = {
           hosted_url: string | null
           id: string
           invoice_number: string | null
+          issued_at: string | null
           order_id: string
+          paid_at: string | null
+          pdf_path: string | null
           pdf_url: string | null
           status: string
           stripe_customer_id: string | null
           stripe_invoice_id: string | null
+          type: string
           updated_at: string
           vat_amount: number
           vendor_id: string
@@ -7716,11 +7720,15 @@ export type Database = {
           hosted_url?: string | null
           id?: string
           invoice_number?: string | null
+          issued_at?: string | null
           order_id: string
+          paid_at?: string | null
+          pdf_path?: string | null
           pdf_url?: string | null
           status?: string
           stripe_customer_id?: string | null
           stripe_invoice_id?: string | null
+          type?: string
           updated_at?: string
           vat_amount?: number
           vendor_id: string
@@ -7733,11 +7741,15 @@ export type Database = {
           hosted_url?: string | null
           id?: string
           invoice_number?: string | null
+          issued_at?: string | null
           order_id?: string
+          paid_at?: string | null
+          pdf_path?: string | null
           pdf_url?: string | null
           status?: string
           stripe_customer_id?: string | null
           stripe_invoice_id?: string | null
+          type?: string
           updated_at?: string
           vat_amount?: number
           vendor_id?: string

@@ -613,12 +613,12 @@ export default function VendorAnalytics() {
         })}
       </div>
 
-      {tab === "overview" && <OverviewTab period={period} />}
-      {tab === "typology" && <TypologyTab period={period} />}
+      {tab === "overview" && <OverviewTab period={period} vendorId={vendor?.id ?? null} />}
+      {tab === "typology" && <TypologyTab period={period} vendorId={vendor?.id ?? null} />}
       {tab === "recurrence" && <RecurrencePanel period={period} />}
-      {tab === "customers" && <TopCustomersTab period={period} />}
-      {tab === "map" && <MapTab period={period} />}
-      {tab === "products" && <TopProductsTab period={period} />}
+      {tab === "customers" && <TopCustomersTab period={period} vendorId={vendor?.id ?? null} />}
+      {tab === "map" && <MapTab period={period} vendorId={vendor?.id ?? null} />}
+      {tab === "products" && <TopProductsTab period={period} vendorId={vendor?.id ?? null} />}
       {tab === "sellout" && <SellOutPanel vendorId={vendor?.id ?? null} />}
     </div>
   );

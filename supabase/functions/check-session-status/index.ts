@@ -110,6 +110,51 @@ Deno.serve(async (req) => {
       } catch (e) {
         console.error("[check-session-status] notify-vendors-new-order failed", e);
       }
+      // Email de confirmation acheteur (best-effort, idempotent via idempotencyKey)
+      try {
+        const { data: fullOrder } = await supabase
+          .from("orders")
+          .select("id, order_number, total_incl_vat, payment_method, shipping_address, customer:customers!orders_customer_id_fkey(email, company_name)")
+          .eq("id", order.id)
+          .maybeSingle();
+        const customerRow: any = (fullOrder as any)?.customer;
+        const recipientEmail = customerRow?.email;
+        if (recipientEmail) {
+          const { count: itemCount } = await supabase
+            .from("order_items")
+            .select("id", { count: "exact", head: true })
+            .eq("order_id", order.id);
+          const formatEUR = (n: number) =>
+            new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(n);
+          const addr: any = (fullOrder as any)?.shipping_address;
+          const shippingAddress = addr && typeof addr === "object"
+            ? [addr.line1 || addr.address_line1, addr.line2 || addr.address_line2, [addr.postal_code, addr.city].filter(Boolean).join(" "), addr.country || addr.country_code]
+                .filter(Boolean).join(", ")
+            : undefined;
+          const paymentMethodLabel: Record<string, string> = {
+            card: "Carte bancaire",
+            sepa: "Virement SEPA",
+            invoice: "Facture",
+          };
+          await supabase.functions.invoke("send-transactional-email", {
+            body: {
+              templateName: "order-confirmation",
+              recipientEmail,
+              idempotencyKey: `order-confirmation-${order.id}`,
+              templateData: {
+                orderNumber: (fullOrder as any)?.order_number,
+                customerName: customerRow?.company_name,
+                total: formatEUR(Number((fullOrder as any)?.total_incl_vat || 0)),
+                itemCount: itemCount ?? 0,
+                shippingAddress,
+                paymentMethod: paymentMethodLabel[(fullOrder as any)?.payment_method] || (fullOrder as any)?.payment_method,
+              },
+            },
+          });
+        }
+      } catch (e) {
+        console.error("[check-session-status] order-confirmation failed", e);
+      }
     }
 
     return json(200, {

@@ -4350,6 +4350,51 @@ export type Database = {
           },
         ]
       }
+      geocode_cache: {
+        Row: {
+          cache_key: string
+          city: string | null
+          country_code: string | null
+          created_at: string
+          hit_count: number
+          last_used_at: string
+          lat: number | null
+          lng: number | null
+          postal_code: string | null
+          provider: string
+          query: string
+          updated_at: string
+        }
+        Insert: {
+          cache_key: string
+          city?: string | null
+          country_code?: string | null
+          created_at?: string
+          hit_count?: number
+          last_used_at?: string
+          lat?: number | null
+          lng?: number | null
+          postal_code?: string | null
+          provider?: string
+          query: string
+          updated_at?: string
+        }
+        Update: {
+          cache_key?: string
+          city?: string | null
+          country_code?: string | null
+          created_at?: string
+          hit_count?: number
+          last_used_at?: string
+          lat?: number | null
+          lng?: number | null
+          postal_code?: string | null
+          provider?: string
+          query?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       home_featured_brands: {
         Row: {
           brand_id: string

@@ -350,9 +350,30 @@ function TopCustomersTab({ period, vendorId }: { period: AnalyticsPeriod; vendor
     loadingLabel: "Chargement du top clients…",
     emptyLabel: "Aucun client sur la période.",
   });
+  const exportRows = data.map((r) => ({
+    client: r.company_name || "",
+    profil: CUSTOMER_TYPE_LABEL[r.customer_type ?? "unknown"] ?? r.customer_type ?? "",
+    code_postal: r.postal_code || "",
+    ville: r.city || "",
+    pays: r.country_code || "",
+    ca_htva_eur: Number((Number(r.ca_htva_cents) / 100).toFixed(2)),
+    part_pct: Number(Number(r.share).toFixed(2)),
+    commandes: Number(r.orders_count),
+    derniere_commande: r.last_order_at ? new Date(r.last_order_at).toISOString().slice(0, 10) : "",
+  }));
+  const doExport = (fmt: "csv" | "xlsx") =>
+    exportAnalyticsRows(exportRows, `medikong-analytics-top-clients-${period}`, fmt, "Top clients");
+
   return (
     <div className={cardStyle}>
-      <h3 className="text-[14px] font-semibold text-[#1D2530] mb-1">Top clients (25)</h3>
+      <div className="flex items-start justify-between gap-2 mb-1">
+        <h3 className="text-[14px] font-semibold text-[#1D2530]">Top clients (25)</h3>
+        <AnalyticsExportButtons
+          disabled={exportRows.length === 0}
+          onCsv={() => doExport("csv")}
+          onXlsx={() => doExport("xlsx")}
+        />
+      </div>
       <p className="text-[11px] text-[#8B95A5] mb-4">Classement par CA HTVA sur la période</p>
       {notice ? notice : (
         <div className="overflow-x-auto">

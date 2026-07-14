@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useCurrentVendor } from "./useCurrentVendor";
 
 export type AnalyticsPeriod = "30d" | "90d" | "12m" | "ytd";
 
@@ -16,6 +17,11 @@ export function computeRange(period: AnalyticsPeriod): { from: string; to: strin
     from.setHours(0, 0, 0, 0);
   }
   return { from: from.toISOString(), to: to.toISOString() };
+}
+
+export function useAnalyticsVendorId(): string | null {
+  const { data } = useCurrentVendor();
+  return (data?.id as string | undefined) ?? null;
 }
 
 export interface AnalyticsKpis {
@@ -35,10 +41,14 @@ export interface AnalyticsKpis {
 
 export function useVendorAnalyticsKpis(period: AnalyticsPeriod) {
   const { from, to } = computeRange(period);
+  const vendorId = useAnalyticsVendorId();
   return useQuery({
-    queryKey: ["vendor-analytics-kpis", period],
+    queryKey: ["vendor-analytics-kpis", period, vendorId],
+    enabled: !!vendorId,
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("vendor_analytics_kpis", { _from: from, _to: to });
+      const { data, error } = await (supabase.rpc as any)("vendor_analytics_kpis", {
+        _from: from, _to: to, _vendor_id: vendorId,
+      });
       if (error) throw error;
       return (Array.isArray(data) ? data[0] : data) as AnalyticsKpis | null;
     },
@@ -54,10 +64,14 @@ export interface ByCustomerTypeRow {
 }
 export function useVendorAnalyticsByCustomerType(period: AnalyticsPeriod) {
   const { from, to } = computeRange(period);
+  const vendorId = useAnalyticsVendorId();
   return useQuery({
-    queryKey: ["vendor-analytics-by-type", period],
+    queryKey: ["vendor-analytics-by-type", period, vendorId],
+    enabled: !!vendorId,
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("vendor_analytics_by_customer_type", { _from: from, _to: to });
+      const { data, error } = await (supabase.rpc as any)("vendor_analytics_by_customer_type", {
+        _from: from, _to: to, _vendor_id: vendorId,
+      });
       if (error) throw error;
       return (data ?? []) as ByCustomerTypeRow[];
     },
@@ -73,10 +87,14 @@ export interface ByCountryRow {
 }
 export function useVendorAnalyticsByCountry(period: AnalyticsPeriod) {
   const { from, to } = computeRange(period);
+  const vendorId = useAnalyticsVendorId();
   return useQuery({
-    queryKey: ["vendor-analytics-by-country", period],
+    queryKey: ["vendor-analytics-by-country", period, vendorId],
+    enabled: !!vendorId,
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("vendor_analytics_by_country", { _from: from, _to: to });
+      const { data, error } = await (supabase.rpc as any)("vendor_analytics_by_country", {
+        _from: from, _to: to, _vendor_id: vendorId,
+      });
       if (error) throw error;
       return (data ?? []) as ByCountryRow[];
     },
@@ -98,11 +116,13 @@ export interface TopCustomerRow {
 }
 export function useVendorAnalyticsTopCustomers(period: AnalyticsPeriod, limit = 20) {
   const { from, to } = computeRange(period);
+  const vendorId = useAnalyticsVendorId();
   return useQuery({
-    queryKey: ["vendor-analytics-top-customers", period, limit],
+    queryKey: ["vendor-analytics-top-customers", period, limit, vendorId],
+    enabled: !!vendorId,
     queryFn: async () => {
       const { data, error } = await (supabase.rpc as any)("vendor_analytics_top_customers", {
-        _from: from, _to: to, _limit: limit,
+        _from: from, _to: to, _limit: limit, _vendor_id: vendorId,
       });
       if (error) throw error;
       return (data ?? []) as TopCustomerRow[];
@@ -121,11 +141,13 @@ export interface TopProductRow {
 }
 export function useVendorAnalyticsTopProducts(period: AnalyticsPeriod, limit = 20) {
   const { from, to } = computeRange(period);
+  const vendorId = useAnalyticsVendorId();
   return useQuery({
-    queryKey: ["vendor-analytics-top-products", period, limit],
+    queryKey: ["vendor-analytics-top-products", period, limit, vendorId],
+    enabled: !!vendorId,
     queryFn: async () => {
       const { data, error } = await (supabase.rpc as any)("vendor_analytics_top_products", {
-        _from: from, _to: to, _limit: limit,
+        _from: from, _to: to, _limit: limit, _vendor_id: vendorId,
       });
       if (error) throw error;
       return (data ?? []) as TopProductRow[];

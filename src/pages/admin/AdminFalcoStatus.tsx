@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle2, XCircle, RefreshCw, ShieldAlert, Zap, PlugZap } from "lucide-react";
+import { CheckCircle2, XCircle, RefreshCw, ShieldAlert, Zap, PlugZap, KeyRound } from "lucide-react";
 
 type Status = {
   active: boolean;
@@ -44,6 +44,8 @@ export default function AdminFalcoStatus() {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [testError, setTestError] = useState<string | null>(null);
+  const [seeding, setSeeding] = useState(false);
+  const [seedResult, setSeedResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -74,7 +76,27 @@ export default function AdminFalcoStatus() {
     }
   };
 
+  const seedCronSecret = async () => {
+    setSeeding(true);
+    setSeedResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("seed-cron-secret-vault", { body: {} });
+      if (error) throw error;
+      const d = data as { ok?: boolean; vault_secret_name?: string; vault_secret_id?: string; error?: string; details?: string };
+      if (d?.ok) {
+        setSeedResult({ ok: true, message: `Secret « ${d.vault_secret_name} » écrit dans le coffre-fort (id ${d.vault_secret_id?.slice(0, 8)}…). Le cron pg_cron y lira désormais le Bearer.` });
+      } else {
+        setSeedResult({ ok: false, message: d?.details || d?.error || "Échec inconnu" });
+      }
+    } catch (e: any) {
+      setSeedResult({ ok: false, message: e?.message || "Erreur inconnue" });
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   useEffect(() => { load(); }, []);
+
 
 
   const Row = ({ label, ok }: { label: string; ok: boolean }) => (
@@ -212,6 +234,36 @@ export default function AdminFalcoStatus() {
               )}
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <KeyRound className="h-5 w-5" />
+                Secret partagé pg_cron ↔ edge functions
+              </CardTitle>
+              <CardDescription>
+                Copie <code className="text-xs">CRON_SHARED_SECRET</code> depuis les secrets Lovable
+                vers le coffre-fort Supabase (nom : <code className="text-xs">cron_shared_secret</code>).
+                Le cron horaire <code className="text-xs">retry-peppol-failed-hourly</code> lit ce coffre-fort
+                à l'exécution : aucun secret n'est stocké en clair dans le SQL.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button onClick={seedCronSecret} disabled={seeding} variant="outline" className="gap-2">
+                <KeyRound className={`h-4 w-4 ${seeding ? "animate-pulse" : ""}`} />
+                {seeding ? "Écriture…" : "Synchroniser vers le coffre-fort"}
+              </Button>
+              {seedResult && (
+                <Alert variant={seedResult.ok ? "default" : "destructive"}>
+                  {seedResult.ok ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+                  <AlertTitle>{seedResult.ok ? "Coffre-fort à jour" : "Échec"}</AlertTitle>
+                  <AlertDescription>{seedResult.message}</AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+
+
 
           {!status.active && (
             <Alert variant="destructive">

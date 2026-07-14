@@ -26745,6 +26745,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      upsert_cron_shared_secret: {
+        Args: { _name: string; _secret: string }
+        Returns: string
+      }
       upsert_market_prices: { Args: { rows: Json }; Returns: number }
       upsert_sourcing_item: {
         Args: {

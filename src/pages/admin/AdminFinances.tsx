@@ -163,7 +163,7 @@ const AdminFinances = () => {
                   </tr>
                 ))}
                 {invoicesData.length === 0 && (
-                  <tr><td colSpan={10} className="px-4 py-12 text-center text-[12px]" style={{ color: "#8B95A5" }}>Aucune facture pour le moment.</td></tr>
+                  <tr><td colSpan={11} className="px-4 py-12 text-center text-[12px]" style={{ color: "#8B95A5" }}>Aucune facture pour le moment.</td></tr>
                 )}
               </tbody>
             </table>

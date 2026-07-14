@@ -397,6 +397,10 @@ export default function AdminRecherches() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="profile" className="mt-4">
+            <ByProfileTab period={period} />
+          </TabsContent>
         </Tabs>
       </div>
     </Layout>

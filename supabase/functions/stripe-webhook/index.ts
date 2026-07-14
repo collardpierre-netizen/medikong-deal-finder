@@ -106,6 +106,55 @@ Deno.serve(async (req) => {
   });
 });
 
+async function emitOrderInvoices(orderId: string, paidAtIso: string): Promise<Array<{ label: string; url: string }>> {
+  const links: Array<{ label: string; url: string }> = [];
+  try {
+    // Distinct vendors that have lines on this order
+    const { data: vendorRows, error } = await supabase
+      .from("order_lines")
+      .select("vendor_id")
+      .eq("order_id", orderId);
+    if (error || !vendorRows) {
+      console.error("[stripe-webhook] emitOrderInvoices: vendors fetch failed", error);
+      return links;
+    }
+    const vendorIds = Array.from(new Set(vendorRows.map((r: any) => r.vendor_id).filter(Boolean)));
+
+    for (const vendorId of vendorIds) {
+      // Self-billing (buyer-facing)
+      try {
+        const { data: sb, error: sbErr } = await supabase.functions.invoke("emit-self-billing-invoice", {
+          body: { order_id: orderId, vendor_id: vendorId, paid_at: paidAtIso },
+        });
+        if (sbErr) {
+          console.error(`[stripe-webhook] self-billing failed vendor=${vendorId}`, sbErr);
+        } else if (sb?.invoice_id) {
+          const { data: signed } = await supabase.storage
+            .from("invoices")
+            .createSignedUrl(`${orderId}/self_billing-${vendorId}.pdf`, 60 * 60 * 24 * 7, { download: `${sb.invoice_number}.pdf` });
+          if (signed?.signedUrl) {
+            links.push({ label: `Facture ${sb.invoice_number}`, url: signed.signedUrl });
+          }
+        }
+      } catch (e) {
+        console.error(`[stripe-webhook] self-billing exception vendor=${vendorId}`, e);
+      }
+      // Commission (MediKong → vendor, NOT sent to buyer)
+      try {
+        const { error: comErr } = await supabase.functions.invoke("emit-commission-invoice", {
+          body: { order_id: orderId, vendor_id: vendorId, paid_at: paidAtIso },
+        });
+        if (comErr) console.error(`[stripe-webhook] commission failed vendor=${vendorId}`, comErr);
+      } catch (e) {
+        console.error(`[stripe-webhook] commission exception vendor=${vendorId}`, e);
+      }
+    }
+  } catch (e) {
+    console.error("[stripe-webhook] emitOrderInvoices fatal", e);
+  }
+  return links;
+}
+
 async function sendBuyerOrderConfirmation(orderId: string) {
   try {
     const { data: order, error } = await supabase
@@ -142,6 +191,9 @@ async function sendBuyerOrderConfirmation(orderId: string) {
     };
     const customerName = customer?.company_name;
 
+    // Generate invoices (self-billing + commission) and get download links for the buyer email
+    const invoiceLinks = await emitOrderInvoices(orderId, new Date().toISOString());
+
     await supabase.functions.invoke("send-transactional-email", {
       body: {
         templateName: "order-confirmation",
@@ -154,10 +206,11 @@ async function sendBuyerOrderConfirmation(orderId: string) {
           itemCount: itemCount ?? 0,
           shippingAddress,
           paymentMethod: paymentMethodLabel[order.payment_method] || order.payment_method,
+          invoiceLinks,
         },
       },
     });
-    console.log(`[stripe-webhook] order-confirmation sent for ${orderId}`);
+    console.log(`[stripe-webhook] order-confirmation sent for ${orderId} (${invoiceLinks.length} invoice links)`);
   } catch (e) {
     console.error("[stripe-webhook] order-confirmation failed", e);
   }

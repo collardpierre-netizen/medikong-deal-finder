@@ -541,6 +541,8 @@ const App = () => (
               <Route path="devis/:id/editer" element={<LP><AdminDevisEditer /></LP>} />
               <Route path="commandes-en-retard" element={<LP><AdminCommandesEnRetard /></LP>} />
               <Route path="vendor-fanout" element={<LP><AdminVendorFanout /></LP>} />
+              <Route path="falco-status" element={<LP><AdminFalcoStatus /></LP>} />
+
               <Route path="notifications" element={<LP><AdminNotifications /></LP>} />
               <Route path="notifications/:id" element={<LP><AdminNotificationDetail /></LP>} />
               <Route path="litiges" element={<LP><AdminLitiges /></LP>} />

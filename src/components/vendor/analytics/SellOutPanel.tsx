@@ -161,15 +161,43 @@ export function SellOutPanel({ vendorId }: { vendorId: string | null }) {
 
       {selectedReport && (
         <div className={card}>
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
             <div className="text-[13px] font-semibold">
               Comparaison — {selectedReport.customer_label || "Client interne"} ({selectedReport.period_start} → {selectedReport.period_end})
             </div>
-            {totals && (
-              <div className="text-[11px] text-[#8B95A5]">
-                Sell-in {totals.si_units} u · {fmtEur(totals.si_ca / 100)} € · Sell-out {totals.so_units} u · {fmtEur(totals.so_net / 100)} €
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              {totals && (
+                <div className="text-[11px] text-[#8B95A5]">
+                  Sell-in {totals.si_units} u · {fmtEur(totals.si_ca / 100)} € · Sell-out {totals.so_units} u · {fmtEur(totals.so_net / 100)} €
+                </div>
+              )}
+              {(() => {
+                const disabled = !rows?.length;
+                const baseName = `sell-in-vs-sell-out_${safeSlug(selectedReport.customer_label)}_${selectedReport.period_start}_${selectedReport.period_end}`;
+                const sheetName = `${safeSlug(selectedReport.customer_label)}`;
+                const exportRows = buildRows(rows);
+                return (
+                  <>
+                    <button
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => exportCsv(exportRows, `${baseName}.csv`)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] border border-[#E2E8F0] text-[12px] font-medium text-[#1D2530] hover:bg-[#F8FAFC] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Download size={12} /> CSV
+                    </button>
+                    <button
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => exportXlsx(exportRows, `${baseName}.xlsx`, sheetName)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] bg-[#1C58D9] text-white text-[12px] font-medium hover:bg-[#164BB9] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Download size={12} /> XLSX
+                    </button>
+                  </>
+                );
+              })()}
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-[12px]">

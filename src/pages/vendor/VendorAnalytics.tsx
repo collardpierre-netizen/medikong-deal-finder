@@ -303,20 +303,100 @@ function TopProductsTab({ period }: { period: AnalyticsPeriod }) {
 }
 
 function MapTab({ period }: { period: AnalyticsPeriod }) {
-  const { data = [], isLoading } = useVendorAnalyticsCustomerLocations(period);
+  const [productId, setProductId] = useState<string>("");
+  const [minCa, setMinCa] = useState<string>("");
+  const [minOrders, setMinOrders] = useState<string>("");
+
+  const { data: products = [] } = useVendorAnalyticsTopProducts(period, 100);
+  const { data: allRows = [], isLoading } = useVendorAnalyticsCustomerLocations(
+    period,
+    productId || null
+  );
+
+  const minCaCents = Math.max(0, Number(minCa) || 0) * 100;
+  const minOrdersNum = Math.max(0, Number(minOrders) || 0);
+
+  const filtered = useMemo(
+    () =>
+      allRows.filter(
+        (r) =>
+          r.ca_htva_cents >= minCaCents && Number(r.orders_count) >= minOrdersNum
+      ),
+    [allRows, minCaCents, minOrdersNum]
+  );
+
   return (
     <div className="space-y-3">
+      <div className="flex flex-wrap items-end gap-3 p-3 rounded-[10px] border border-[#E2E8F0] bg-white">
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] text-[#616B7C] font-medium">Produit</label>
+          <select
+            className="h-9 px-2 rounded-md border border-[#E2E8F0] text-[13px] bg-white min-w-[220px]"
+            value={productId}
+            onChange={(e) => setProductId(e.target.value)}
+          >
+            <option value="">Tous les produits</option>
+            {products.map((p) => (
+              <option key={p.product_id ?? "unk"} value={p.product_id ?? ""}>
+                {p.product_name || "—"}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] text-[#616B7C] font-medium">CA HTVA min (€)</label>
+          <input
+            type="number"
+            min={0}
+            step={100}
+            className="h-9 px-2 rounded-md border border-[#E2E8F0] text-[13px] w-32"
+            value={minCa}
+            onChange={(e) => setMinCa(e.target.value)}
+            placeholder="0"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] text-[#616B7C] font-medium">Commandes min</label>
+          <input
+            type="number"
+            min={0}
+            step={1}
+            className="h-9 px-2 rounded-md border border-[#E2E8F0] text-[13px] w-28"
+            value={minOrders}
+            onChange={(e) => setMinOrders(e.target.value)}
+            placeholder="0"
+          />
+        </div>
+        {(productId || minCa || minOrders) && (
+          <button
+            type="button"
+            onClick={() => {
+              setProductId("");
+              setMinCa("");
+              setMinOrders("");
+            }}
+            className="h-9 px-3 rounded-md border border-[#E2E8F0] text-[12px] text-[#616B7C] hover:bg-[#F8FAFC]"
+          >
+            Réinitialiser
+          </button>
+        )}
+        <div className="ml-auto text-[12px] text-[#616B7C]">
+          {filtered.length} zone{filtered.length > 1 ? "s" : ""} affichée{filtered.length > 1 ? "s" : ""}
+          {filtered.length !== allRows.length ? ` sur ${allRows.length}` : ""}
+        </div>
+      </div>
+
       {isLoading ? (
         <div className="h-[480px] animate-pulse bg-[#F1F5F9] rounded-[10px]" />
-      ) : data.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className={`${cardStyle} py-12 text-center text-[13px] text-[#8B95A5]`}>
-          Aucune localisation client à afficher sur la période.
+          Aucune localisation client à afficher pour ces filtres.
         </div>
       ) : (
         <>
-          <CustomerMap rows={data} />
+          <CustomerMap rows={filtered} />
           <p className="text-[11px] text-[#8B95A5]">
-            Taille des cercles proportionnelle au CA HTVA. Géocodage OpenStreetMap (Nominatim), mis en cache dans votre navigateur.
+            Taille des cercles proportionnelle au CA HTVA. Couleur selon la couverture (vert : forte, orange : moyenne, rouge : faible — tertiles du CA affiché). Géocodage OpenStreetMap.
           </p>
         </>
       )}

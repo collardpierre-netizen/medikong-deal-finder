@@ -1,4 +1,11 @@
-import { lazy, type ComponentType, type LazyExoticComponent } from "react";
+import {
+  createElement,
+  forwardRef,
+  lazy,
+  useState,
+  type ComponentType,
+  type LazyExoticComponent,
+} from "react";
 
 const RETRY_TOKEN_PREFIX = "lazy-retry:";
 const CACHE_BUST_TOKEN_PREFIX = "lazy-cache-bust:";
@@ -346,7 +353,15 @@ export function lazyWithRetry<T extends ComponentType<any>>(
   importer: () => Promise<{ default: T }>,
   key: string,
 ): LazyExoticComponent<T> {
-  return lazy(async () => {
+  // React.lazy caches the promise permanently — including a rejected one.
+  // We wrap it in a component that recreates the underlying lazy on failure,
+  // so a subsequent navigation to the same route retries the import instead of
+  // re-throwing the cached rejection (which would force the user to click twice).
+  let cachedLazy: LazyExoticComponent<T> | null = null;
+  let cachedImportPromise: Promise<{ default: T }> | null = null;
+  let bustToken = 0;
+
+  const buildImport = async (): Promise<{ default: T }> => {
     // ---- Phase 1: in-place retries with exponential backoff ------------
     let importError: unknown = null;
     let mod: { default: T } | null = null;
@@ -433,6 +448,12 @@ export function lazyWithRetry<T extends ComponentType<any>>(
           }
         }
       }
+      // Invalidate the module-scoped lazy cache so the NEXT navigation to
+      // this route recreates a fresh `lazy(...)` and retries the import,
+      // instead of re-throwing React's cached rejected promise (which is
+      // what forces users to click the menu 2× to see the page).
+      cachedLazy = null;
+      cachedImportPromise = null;
       throw importError;
     }
 
@@ -457,7 +478,38 @@ export function lazyWithRetry<T extends ComponentType<any>>(
       }
     }
     return mod!;
+  };
+
+  const getLazy = (): LazyExoticComponent<T> => {
+    if (!cachedLazy) {
+      // Capture the same promise instance across renders while it's pending,
+      // so React's Suspense sees a consistent thenable per mount cycle.
+      const token = ++bustToken;
+      cachedImportPromise = buildImport().catch((e) => {
+        // Ensure any concurrent readers also see the invalidation.
+        if (bustToken === token) {
+          cachedLazy = null;
+          cachedImportPromise = null;
+        }
+        throw e;
+      });
+      const promise = cachedImportPromise;
+      cachedLazy = lazy(() => promise);
+    }
+    return cachedLazy;
+  };
+
+  // A forwardRef wrapper so downstream refs still work; the wrapper reads
+  // the (possibly recreated) inner lazy on each render.
+  const Wrapped = forwardRef<unknown, Record<string, unknown>>((props, ref) => {
+    // useState forces a re-render if the module-level cache was invalidated
+    // between mount and this render (no-op otherwise). Kept lightweight.
+    useState(0);
+    const Inner = getLazy() as unknown as ComponentType<any>;
+    return createElement(Inner, { ...props, ref });
   });
+  Wrapped.displayName = `LazyWithRetry(${key})`;
+  return Wrapped as unknown as LazyExoticComponent<T>;
 }
 
 export function installViteChunkReloadGuard() {

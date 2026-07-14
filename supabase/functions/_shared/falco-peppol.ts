@@ -247,6 +247,12 @@ export async function persistFalcoResult(
     .update(patch)
     .eq("id", invoiceId);
   if (error) {
-    console.error("[falco] persistFalcoResult failed", error.message);
+    logFalco("error", "persist_failed", { invoice_id: invoiceId, error: error.message });
+  } else {
+    logFalco("info", "persist_ok", {
+      invoice_id: invoiceId,
+      peppol_status: patch.peppol_status,
+      has_document_id: Boolean(patch.peppol_document_id),
+    });
   }
 }

@@ -1,89 +1,312 @@
-import { useEffect, useState } from "react";
-import { PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer, Legend } from "recharts";
-import { AlertTriangle, Info, RefreshCw } from "lucide-react";
-import { VCard } from "@/components/vendor/ui/VCard";
-import { useCurrentVendor } from "@/hooks/useCurrentVendor";
-import { useVendorSalesBreakdowns, type VendorAnalyticsPeriod } from "@/hooks/useVendorSalesBreakdowns";
+import { useMemo, useState } from "react";
+import { ArrowUpRight, ArrowDownRight, Minus, TrendingUp, Users, Package, Globe2, Building2 } from "lucide-react";
 import { fmtEur } from "@/lib/format-currency";
+import {
+  useVendorAnalyticsKpis,
+  useVendorAnalyticsByCustomerType,
+  useVendorAnalyticsByCountry,
+  useVendorAnalyticsTopCustomers,
+  useVendorAnalyticsTopProducts,
+  type AnalyticsPeriod,
+} from "@/hooks/useVendorAnalytics";
 
-const EmptyState = ({ message }: { message: string }) => (
-  <div className="flex flex-col items-center justify-center py-10 text-center">
-    <Info size={28} className="mb-2" style={{ color: "#8B95A5" }} />
-    <p className="text-[13px]" style={{ color: "#8B95A5" }}>{message}</p>
-  </div>
-);
-
-const ChartSkeleton = ({ slow }: { slow: boolean }) => (
-  <div className="py-4" role="status" aria-live="polite" aria-busy="true">
-    <div className="mx-auto rounded-full animate-pulse bg-[#E2E8F0]" style={{ width: 180, height: 180 }} />
-    <div className="mt-4 flex flex-wrap justify-center gap-2">
-      {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="h-3 w-20 rounded animate-pulse bg-[#E2E8F0]" />
-      ))}
-    </div>
-    {slow && (
-      <p className="mt-3 text-center text-[11px]" style={{ color: "#B45309" }}>
-        Le chargement prend plus de temps que prévu…
-      </p>
-    )}
-  </div>
-);
-
-const ErrorState = ({ message, onRetry }: { message: string; onRetry: () => void }) => (
-  <div className="flex flex-col items-center justify-center py-8 text-center" role="alert">
-    <AlertTriangle size={28} className="mb-2" style={{ color: "#DC2626" }} />
-    <p className="text-[13px] mb-3" style={{ color: "#991B1B" }}>{message}</p>
-    <button
-      type="button"
-      onClick={onRetry}
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-[6px] border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC]"
-      style={{ color: "#1D2530" }}
-    >
-      <RefreshCw size={12} /> Réessayer
-    </button>
-  </div>
-);
-
-
-const PERIOD_OPTIONS: { value: VendorAnalyticsPeriod; label: string }[] = [
-  { value: "7d", label: "7 jours" },
+const PERIOD_OPTIONS: { value: AnalyticsPeriod; label: string }[] = [
   { value: "30d", label: "30 jours" },
   { value: "90d", label: "90 jours" },
+  { value: "12m", label: "12 mois" },
   { value: "ytd", label: "Année en cours" },
-  { value: "all", label: "Tout" },
 ];
 
+const TABS = [
+  { key: "overview", label: "Vue d'ensemble" },
+  { key: "typology", label: "Typologie clients" },
+  { key: "customers", label: "Top clients" },
+  { key: "products", label: "Top produits" },
+] as const;
+type TabKey = (typeof TABS)[number]["key"];
+
+const CUSTOMER_TYPE_LABEL: Record<string, string> = {
+  retail: "Retail",
+  pharmacy: "Pharmacie",
+  wholesaler: "Grossiste",
+  hospital: "Hôpital",
+  nursing_home: "MR/MRS",
+  clinic: "Cabinet",
+  veterinary: "Vétérinaire",
+  dentist: "Dentiste",
+  other: "Autre",
+  unknown: "Non renseigné",
+};
+
+const COUNTRY_LABEL: Record<string, string> = {
+  BE: "Belgique",
+  FR: "France",
+  LU: "Luxembourg",
+  NL: "Pays-Bas",
+  DE: "Allemagne",
+  UNK: "Non renseigné",
+};
+
+const cardStyle = "p-5 rounded-[10px] bg-white border border-[#E2E8F0]";
+
+function pctDelta(cur: number, prev: number): number | null {
+  if (!prev || prev === 0) return cur > 0 ? 100 : null;
+  return ((cur - prev) / prev) * 100;
+}
+
+function DeltaBadge({ value }: { value: number | null }) {
+  if (value === null) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] text-[#8B95A5]">
+        <Minus size={12} /> —
+      </span>
+    );
+  }
+  const up = value >= 0;
+  return (
+    <span
+      className="inline-flex items-center gap-1 text-[11px] font-medium"
+      style={{ color: up ? "#047857" : "#B91C1C" }}
+    >
+      {up ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+      {value >= 0 ? "+" : ""}
+      {value.toFixed(1)}%
+    </span>
+  );
+}
+
+function KpiTile({
+  label,
+  value,
+  prev,
+  format,
+  icon,
+}: {
+  label: string;
+  value: number;
+  prev: number;
+  format: "eur" | "int";
+  icon: React.ReactNode;
+}) {
+  const display = format === "eur" ? `${fmtEur(value / 100)} €` : value.toLocaleString("fr-FR");
+  return (
+    <div className={cardStyle}>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[11px] font-medium uppercase tracking-wide text-[#8B95A5]">{label}</span>
+        <span className="text-[#8B95A5]">{icon}</span>
+      </div>
+      <div className="text-[22px] font-bold text-[#1D2530] leading-tight">{display}</div>
+      <div className="mt-1">
+        <DeltaBadge value={pctDelta(value, prev)} />
+        <span className="text-[10px] text-[#8B95A5] ml-1">vs période précédente</span>
+      </div>
+    </div>
+  );
+}
+
+function OverviewTab({ period }: { period: AnalyticsPeriod }) {
+  const { data, isLoading } = useVendorAnalyticsKpis(period);
+  if (isLoading || !data) {
+    return (
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className={`${cardStyle} animate-pulse h-[110px]`} />
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+      <KpiTile label="CA HTVA" value={Number(data.ca_htva_cents)} prev={Number(data.prev_ca_htva_cents)} format="eur" icon={<TrendingUp size={14} />} />
+      <KpiTile label="Marge nette" value={Number(data.margin_cents)} prev={Number(data.prev_margin_cents)} format="eur" icon={<TrendingUp size={14} />} />
+      <KpiTile label="Commission MediKong" value={Number(data.commission_cents)} prev={Number(data.prev_commission_cents)} format="eur" icon={<TrendingUp size={14} />} />
+      <KpiTile label="Commandes" value={Number(data.orders_count)} prev={Number(data.prev_orders_count)} format="int" icon={<Package size={14} />} />
+      <KpiTile label="Clients actifs" value={Number(data.active_customers)} prev={Number(data.prev_active_customers)} format="int" icon={<Users size={14} />} />
+      <KpiTile label="Panier moyen" value={Number(data.avg_basket_cents)} prev={Number(data.prev_avg_basket_cents)} format="eur" icon={<TrendingUp size={14} />} />
+    </div>
+  );
+}
+
+function ShareBar({ label, ca, share, extra }: { label: string; ca: number; share: number; extra?: string }) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[13px] font-medium text-[#1D2530]">
+          {label}
+          {extra && <span className="text-[11px] text-[#8B95A5] ml-2">{extra}</span>}
+        </span>
+        <span className="text-[13px] tabular-nums text-[#1D2530]">
+          {fmtEur(ca / 100)} €{" "}
+          <span className="text-[11px] text-[#8B95A5] ml-1">({share.toFixed(1)}%)</span>
+        </span>
+      </div>
+      <div className="h-2 rounded bg-[#F1F5F9] overflow-hidden">
+        <div className="h-full bg-[#1B5BDA] transition-all" style={{ width: `${Math.min(100, share)}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function TypologyTab({ period }: { period: AnalyticsPeriod }) {
+  const { data: byType = [], isLoading: l1 } = useVendorAnalyticsByCustomerType(period);
+  const { data: byCountry = [], isLoading: l2 } = useVendorAnalyticsByCountry(period);
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className={cardStyle}>
+        <div className="flex items-center gap-2 mb-1">
+          <Building2 size={14} className="text-[#8B95A5]" />
+          <h3 className="text-[14px] font-semibold text-[#1D2530]">Par typologie de client</h3>
+        </div>
+        <p className="text-[11px] text-[#8B95A5] mb-4">Part du CA HTVA par profil</p>
+        {l1 ? (
+          <div className="space-y-3">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-8 animate-pulse bg-[#F1F5F9] rounded" />)}</div>
+        ) : byType.length === 0 ? (
+          <p className="text-[13px] text-[#8B95A5] py-8 text-center">Aucune commande sur la période</p>
+        ) : (
+          <div className="space-y-3">
+            {byType.map((r) => (
+              <ShareBar
+                key={r.customer_type}
+                label={CUSTOMER_TYPE_LABEL[r.customer_type] ?? r.customer_type}
+                ca={Number(r.ca_htva_cents)}
+                share={Number(r.share)}
+                extra={`${r.orders_count} cmd`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className={cardStyle}>
+        <div className="flex items-center gap-2 mb-1">
+          <Globe2 size={14} className="text-[#8B95A5]" />
+          <h3 className="text-[14px] font-semibold text-[#1D2530]">Par pays</h3>
+        </div>
+        <p className="text-[11px] text-[#8B95A5] mb-4">Part du CA HTVA par pays de livraison</p>
+        {l2 ? (
+          <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-8 animate-pulse bg-[#F1F5F9] rounded" />)}</div>
+        ) : byCountry.length === 0 ? (
+          <p className="text-[13px] text-[#8B95A5] py-8 text-center">Aucune commande sur la période</p>
+        ) : (
+          <div className="space-y-3">
+            {byCountry.map((r) => (
+              <ShareBar
+                key={r.country_code}
+                label={COUNTRY_LABEL[r.country_code] ?? r.country_code}
+                ca={Number(r.ca_htva_cents)}
+                share={Number(r.share)}
+                extra={`${r.orders_count} cmd`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TopCustomersTab({ period }: { period: AnalyticsPeriod }) {
+  const { data = [], isLoading } = useVendorAnalyticsTopCustomers(period, 25);
+  return (
+    <div className={cardStyle}>
+      <h3 className="text-[14px] font-semibold text-[#1D2530] mb-1">Top clients (25)</h3>
+      <p className="text-[11px] text-[#8B95A5] mb-4">Classement par CA HTVA sur la période</p>
+      {isLoading ? (
+        <div className="space-y-2">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-8 animate-pulse bg-[#F1F5F9] rounded" />)}</div>
+      ) : data.length === 0 ? (
+        <p className="text-[13px] text-[#8B95A5] py-8 text-center">Aucun client sur la période</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-[13px]">
+            <thead className="text-[11px] uppercase tracking-wide text-[#8B95A5] border-b border-[#E2E8F0]">
+              <tr>
+                <th className="px-2 py-2 text-left">Client</th>
+                <th className="px-2 py-2 text-left">Profil</th>
+                <th className="px-2 py-2 text-left">Localisation</th>
+                <th className="px-2 py-2 text-right">CA HTVA</th>
+                <th className="px-2 py-2 text-right">Part</th>
+                <th className="px-2 py-2 text-right">Cmd</th>
+                <th className="px-2 py-2 text-right">Dernière</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((r) => (
+                <tr key={r.customer_id} className="border-b border-[#F1F5F9] last:border-0">
+                  <td className="px-2 py-2 font-medium text-[#1D2530]">{r.company_name || "—"}</td>
+                  <td className="px-2 py-2 text-[#616B7C]">{CUSTOMER_TYPE_LABEL[r.customer_type ?? "unknown"] ?? r.customer_type}</td>
+                  <td className="px-2 py-2 text-[#616B7C]">
+                    {[r.postal_code, r.city].filter(Boolean).join(" ")} {r.country_code ? `· ${r.country_code}` : ""}
+                  </td>
+                  <td className="px-2 py-2 text-right tabular-nums">{fmtEur(Number(r.ca_htva_cents) / 100)} €</td>
+                  <td className="px-2 py-2 text-right tabular-nums text-[#8B95A5]">{Number(r.share).toFixed(1)}%</td>
+                  <td className="px-2 py-2 text-right tabular-nums">{r.orders_count}</td>
+                  <td className="px-2 py-2 text-right text-[#8B95A5]">
+                    {r.last_order_at ? new Date(r.last_order_at).toLocaleDateString("fr-FR") : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TopProductsTab({ period }: { period: AnalyticsPeriod }) {
+  const { data = [], isLoading } = useVendorAnalyticsTopProducts(period, 25);
+  return (
+    <div className={cardStyle}>
+      <h3 className="text-[14px] font-semibold text-[#1D2530] mb-1">Top produits (25)</h3>
+      <p className="text-[11px] text-[#8B95A5] mb-4">Classement par CA HTVA — unités vendues, marge et commission</p>
+      {isLoading ? (
+        <div className="space-y-2">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-8 animate-pulse bg-[#F1F5F9] rounded" />)}</div>
+      ) : data.length === 0 ? (
+        <p className="text-[13px] text-[#8B95A5] py-8 text-center">Aucune vente sur la période</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-[13px]">
+            <thead className="text-[11px] uppercase tracking-wide text-[#8B95A5] border-b border-[#E2E8F0]">
+              <tr>
+                <th className="px-2 py-2 text-left">Produit</th>
+                <th className="px-2 py-2 text-right">Unités</th>
+                <th className="px-2 py-2 text-right">CA HTVA</th>
+                <th className="px-2 py-2 text-right">Marge</th>
+                <th className="px-2 py-2 text-right">Commission</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((r) => (
+                <tr key={r.product_id ?? Math.random()} className="border-b border-[#F1F5F9] last:border-0">
+                  <td className="px-2 py-2 font-medium text-[#1D2530]">{r.product_name || "—"}</td>
+                  <td className="px-2 py-2 text-right tabular-nums">{Number(r.units).toLocaleString("fr-FR")}</td>
+                  <td className="px-2 py-2 text-right tabular-nums">{fmtEur(Number(r.ca_htva_cents) / 100)} €</td>
+                  <td className="px-2 py-2 text-right tabular-nums text-[#047857]">{fmtEur(Number(r.margin_cents) / 100)} €</td>
+                  <td className="px-2 py-2 text-right tabular-nums text-[#8B95A5]">{fmtEur(Number(r.commission_cents) / 100)} €</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function VendorAnalytics() {
-  const { data: vendor } = useCurrentVendor();
-  const [period, setPeriod] = useState<VendorAnalyticsPeriod>("30d");
-  const { categoryBreakdown, customerTypeBreakdown, isLoading, isFetching, error, refetch } =
-    useVendorSalesBreakdowns(vendor?.id, period);
+  const [period, setPeriod] = useState<AnalyticsPeriod>("30d");
+  const [tab, setTab] = useState<TabKey>("overview");
 
-  // Slow-load hint: after 4s of loading/fetching, flag as "prend trop de temps"
-  const [slow, setSlow] = useState(false);
-  useEffect(() => {
-    if (!isLoading && !isFetching) {
-      setSlow(false);
-      return;
-    }
-    setSlow(false);
-    const t = window.setTimeout(() => setSlow(true), 4000);
-    return () => window.clearTimeout(t);
-  }, [isLoading, isFetching, period]);
-
-  const errorMessage = error ? (error.message || "Erreur lors du chargement des données.") : null;
-
-  const totalClients = customerTypeBreakdown.reduce((s, r) => s + r.value, 0);
-  const retail = customerTypeBreakdown.find((r) => r.name === "Retail");
-  const retailCount = retail?.value || 0;
-  const retailPct = totalClients > 0 ? ((retailCount / totalClients) * 100).toFixed(1) : "0";
+  const rangeLabel = useMemo(() => PERIOD_OPTIONS.find((o) => o.value === period)?.label ?? "", [period]);
 
   return (
     <div className="space-y-5">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-xl font-bold text-[#1D2530]">Analytics</h1>
-          <p className="text-[13px] text-[#616B7C] mt-0.5">Répartition de votre CA et de votre portefeuille clients</p>
+          <h1 className="text-xl font-bold text-[#1D2530]">Analytics ventes</h1>
+          <p className="text-[13px] text-[#616B7C] mt-0.5">
+            Outil d'analyse — KPIs, typologie, top clients et produits · <span className="font-medium">{rangeLabel}</span>
+          </p>
         </div>
         <div className="inline-flex rounded-[8px] border border-[#E2E8F0] bg-white p-0.5" role="tablist" aria-label="Période">
           {PERIOD_OPTIONS.map((opt) => {
@@ -96,10 +319,7 @@ export default function VendorAnalytics() {
                 aria-selected={active}
                 onClick={() => setPeriod(opt.value)}
                 className="px-3 py-1.5 text-[12px] font-medium rounded-[6px] transition-colors"
-                style={{
-                  backgroundColor: active ? "#1B5BDA" : "transparent",
-                  color: active ? "#fff" : "#616B7C",
-                }}
+                style={{ backgroundColor: active ? "#1B5BDA" : "transparent", color: active ? "#fff" : "#616B7C" }}
               >
                 {opt.label}
               </button>
@@ -108,108 +328,34 @@ export default function VendorAnalytics() {
         </div>
       </div>
 
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Catégories vendues */}
-        <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
-          <h3 className="text-[14px] font-semibold mb-1" style={{ color: "#1D2530" }}>Catégories vendues</h3>
-          <p className="text-[11px] mb-4" style={{ color: "#8B95A5" }}>
-            Répartition CA TTC par catégorie parent (commandes en cours + prévisionnelles)
-          </p>
-          {errorMessage ? (
-            <ErrorState message={errorMessage} onRetry={() => { void refetch(); }} />
-          ) : isLoading ? (
-            <ChartSkeleton slow={slow} />
-          ) : categoryBreakdown.length > 0 ? (
-            <div style={{ width: "100%", height: 260 }}>
-              <ResponsiveContainer>
-                <PieChart>
-                  <Pie
-                    data={categoryBreakdown}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={90}
-                    label={(e: any) => `${e.name} (${((e.percent || 0) * 100).toFixed(1)}%)`}
-                    labelLine={false}
-                  >
-                    {categoryBreakdown.map((d, i) => (
-                      <Cell key={i} fill={d.color} />
-                    ))}
-                  </Pie>
-                  <RTooltip formatter={(v: any) => `${fmtEur(Number(v))} EUR`} />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <EmptyState message="Aucune ligne de commande avec catégorie résolue" />
-          )}
-        </div>
-
-        {/* Clients par typologie */}
-        <div className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
-          <h3 className="text-[14px] font-semibold mb-1" style={{ color: "#1D2530" }}>Clients par typologie</h3>
-          <p className="text-[11px] mb-4" style={{ color: "#8B95A5" }}>
-            Répartition de vos commandes par typologie d'acheteur
-          </p>
-          {totalClients > 0 && (
-            <div className="mb-4 rounded-lg p-3 flex items-center justify-between" style={{ backgroundColor: "#FFF7ED", border: "1px solid #FDBA74" }}>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: "#F97316" }} />
-                <span className="text-[13px] font-semibold" style={{ color: "#7C2D12" }}>Retail</span>
-              </div>
-              <div className="text-right">
-                <span className="text-[16px] font-bold" style={{ color: "#C2410C" }}>{retailCount}</span>
-                <span className="text-[12px] ml-1 font-medium" style={{ color: "#9A3412" }}>({retailPct}%)</span>
-              </div>
-            </div>
-          )}
-          {errorMessage ? (
-            <ErrorState message={errorMessage} onRetry={() => { void refetch(); }} />
-          ) : isLoading ? (
-            <ChartSkeleton slow={slow} />
-          ) : customerTypeBreakdown.length > 0 ? (
-            <div style={{ width: "100%", height: 260 }}>
-              <ResponsiveContainer>
-                <PieChart>
-                  <Pie
-                    data={customerTypeBreakdown}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={75}
-                    label={(e: any) => `${e.name} ${(e.percent * 100).toFixed(1)}%`}
-                  >
-                    {customerTypeBreakdown.map((d, i) => (
-                      <Cell key={i} fill={d.color} />
-                    ))}
-                  </Pie>
-                  <RTooltip
-                    formatter={(v: any, n: any) => {
-                      const pct = totalClients > 0 ? ((Number(v) / totalClients) * 100).toFixed(1) : "0";
-                      return [`${v} commande${Number(v) > 1 ? "s" : ""} (${pct}%)`, n];
-                    }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <EmptyState message="Aucune commande enregistrée" />
-          )}
-        </div>
+      <div className="border-b border-[#E2E8F0] flex gap-1 overflow-x-auto">
+        {TABS.map((t) => {
+          const active = t.key === tab;
+          return (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTab(t.key)}
+              className="px-4 py-2 text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors -mb-px"
+              style={{
+                borderColor: active ? "#1B5BDA" : "transparent",
+                color: active ? "#1B5BDA" : "#616B7C",
+              }}
+            >
+              {t.label}
+            </button>
+          );
+        })}
       </div>
 
-      {!isLoading && categoryBreakdown.length === 0 && customerTypeBreakdown.length === 0 && (
-        <VCard>
-          <p className="text-[13px] text-[#8B95A5] text-center py-4">
-            Ces graphiques s'alimenteront automatiquement dès vos premières commandes.
-          </p>
-        </VCard>
-      )}
+      {tab === "overview" && <OverviewTab period={period} />}
+      {tab === "typology" && <TypologyTab period={period} />}
+      {tab === "customers" && <TopCustomersTab period={period} />}
+      {tab === "products" && <TopProductsTab period={period} />}
+
+      <p className="text-[11px] text-[#8B95A5] italic">
+        À venir (lots suivants) : récurrence & cohortes, carte interactive des clients, sell-in vs sell-out.
+      </p>
     </div>
   );
 }

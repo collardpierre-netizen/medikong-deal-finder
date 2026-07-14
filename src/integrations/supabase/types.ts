@@ -7704,6 +7704,12 @@ export type Database = {
           paid_at: string | null
           pdf_path: string | null
           pdf_url: string | null
+          peppol_document_id: string | null
+          peppol_error: string | null
+          peppol_identifier: string | null
+          peppol_last_attempt_at: string | null
+          peppol_status: string | null
+          peppol_submitted_at: string | null
           status: string
           stripe_customer_id: string | null
           stripe_invoice_id: string | null
@@ -7725,6 +7731,12 @@ export type Database = {
           paid_at?: string | null
           pdf_path?: string | null
           pdf_url?: string | null
+          peppol_document_id?: string | null
+          peppol_error?: string | null
+          peppol_identifier?: string | null
+          peppol_last_attempt_at?: string | null
+          peppol_status?: string | null
+          peppol_submitted_at?: string | null
           status?: string
           stripe_customer_id?: string | null
           stripe_invoice_id?: string | null
@@ -7746,6 +7758,12 @@ export type Database = {
           paid_at?: string | null
           pdf_path?: string | null
           pdf_url?: string | null
+          peppol_document_id?: string | null
+          peppol_error?: string | null
+          peppol_identifier?: string | null
+          peppol_last_attempt_at?: string | null
+          peppol_status?: string | null
+          peppol_submitted_at?: string | null
           status?: string
           stripe_customer_id?: string | null
           stripe_invoice_id?: string | null

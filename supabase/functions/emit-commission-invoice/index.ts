@@ -4,6 +4,23 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { buildCommissionPdf } from "../_shared/invoice-pdf.ts";
+import {
+  submitInvoiceToFalco,
+  persistFalcoResult,
+  isFalcoConfigured,
+} from "../_shared/falco-peppol.ts";
+
+// MediKong legal seller identity (Balooh SRL) — used as sender on commission invoices.
+const MK_SELLER = {
+  name: "Balooh SRL",
+  vat_number: "BE1005771323",
+  address: {
+    line1: "23 rue de la Procession",
+    zip: "7822",
+    city: "Ath",
+    country: "BE",
+  },
+} as const;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

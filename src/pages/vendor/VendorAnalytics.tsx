@@ -65,7 +65,7 @@ const cardStyle = "p-5 rounded-[10px] bg-white border border-[#E2E8F0]";
  * Distinguishes: no vendor_id | loading | error | empty.
  * Returns null when the caller should render its normal content.
  */
-function AnalyticsStateNotice({
+function analyticsStateNotice({
   hasVendorId,
   isLoading,
   error,
@@ -79,7 +79,7 @@ function AnalyticsStateNotice({
   isEmpty: boolean;
   loadingLabel?: string;
   emptyLabel?: string;
-}) {
+}): React.ReactNode | null {
   if (!hasVendorId) {
     return (
       <div

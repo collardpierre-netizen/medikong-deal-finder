@@ -111,7 +111,7 @@ const AdminFinances = () => {
             <table className="w-full text-left">
               <thead>
                 <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                  {["N° Facture", "Commande", "Vendeur", "Type", "HT", "TVA", "TTC", "Émise le", "Statut", ""].map((h) => (
+                  {["N° Facture", "Commande", "Vendeur", "Type", "HT", "TVA", "TTC", "Émise le", "Statut", "Peppol", ""].map((h) => (
                     <th key={h} className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                   ))}
                 </tr>

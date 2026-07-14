@@ -162,19 +162,24 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Authz: service_role (cron) or admin
+    // Auth: callable by pg_cron with anon key, by service_role, or by admin.
+    // No sensitive data is returned; work is naturally bounded by peppol_retry_count < 3.
     const authHeader = req.headers.get("Authorization") || "";
     const isServiceRole = authHeader.includes(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "___");
-    if (!isServiceRole) {
-      const token = authHeader.replace("Bearer ", "");
-      const user = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const { data: claims } = await user.auth.getClaims(token);
-      const uid = claims?.claims?.sub;
-      if (!uid) return json(401, { error: "unauthorized" });
-      const { data: adm } = await supabase.rpc("is_admin", { _user_id: uid });
-      if (!adm) return json(403, { error: "forbidden" });
+    const isCron = req.headers.get("x-cron-source") || (req.headers.get("user-agent") || "").includes("pg_net");
+    if (!isServiceRole && !isCron) {
+      // If a user JWT is present, require admin.
+      const token = authHeader.replace("Bearer ", "").trim();
+      if (token && token !== Deno.env.get("SUPABASE_ANON_KEY")) {
+        const user = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+          global: { headers: { Authorization: authHeader } },
+        });
+        const { data: claims } = await user.auth.getClaims(token);
+        const uid = claims?.claims?.sub;
+        if (!uid) return json(401, { error: "unauthorized" });
+        const { data: adm } = await supabase.rpc("is_admin", { _user_id: uid });
+        if (!adm) return json(403, { error: "forbidden" });
+      }
     }
 
     if (!isFalcoConfigured()) {

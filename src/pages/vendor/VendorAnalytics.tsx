@@ -410,6 +410,17 @@ export default function VendorAnalytics() {
   const [period, setPeriod] = useState<AnalyticsPeriod>("30d");
   const [tab, setTab] = useState<TabKey>("overview");
   const { data: vendor } = useCurrentVendor();
+  const { state: impState } = useImpersonation();
+  const [searchParams] = useSearchParams();
+  const impersonationVendorIdFromUrl = searchParams.get("impersonation_vendor_id");
+  const isImpersonating =
+    (impState.isImpersonating && impState.session?.target_type === "vendor") ||
+    !!impersonationVendorIdFromUrl;
+  const impersonationSource = impersonationVendorIdFromUrl
+    ? "URL (?impersonation_vendor_id)"
+    : impState.isImpersonating
+      ? "Session admin"
+      : null;
 
   const rangeLabel = useMemo(() => PERIOD_OPTIONS.find((o) => o.value === period)?.label ?? "", [period]);
 

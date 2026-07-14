@@ -10,6 +10,12 @@ import {
   type AnalyticsPeriod,
 } from "@/hooks/useVendorAnalytics";
 
+import { useCurrentVendor } from "@/hooks/useCurrentVendor";
+import { useVendorAnalyticsCustomerLocations } from "@/hooks/useVendorAnalyticsRecurrence";
+import { RecurrencePanel } from "@/components/vendor/analytics/RecurrencePanel";
+import { CustomerMap } from "@/components/vendor/analytics/CustomerMap";
+import { SellOutPanel } from "@/components/vendor/analytics/SellOutPanel";
+
 const PERIOD_OPTIONS: { value: AnalyticsPeriod; label: string }[] = [
   { value: "30d", label: "30 jours" },
   { value: "90d", label: "90 jours" },
@@ -20,8 +26,11 @@ const PERIOD_OPTIONS: { value: AnalyticsPeriod; label: string }[] = [
 const TABS = [
   { key: "overview", label: "Vue d'ensemble" },
   { key: "typology", label: "Typologie clients" },
+  { key: "recurrence", label: "Récurrence & cohortes" },
   { key: "customers", label: "Top clients" },
+  { key: "map", label: "Carte clients" },
   { key: "products", label: "Top produits" },
+  { key: "sellout", label: "Sell-in vs Sell-out" },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
 
@@ -293,9 +302,32 @@ function TopProductsTab({ period }: { period: AnalyticsPeriod }) {
   );
 }
 
+function MapTab({ period }: { period: AnalyticsPeriod }) {
+  const { data = [], isLoading } = useVendorAnalyticsCustomerLocations(period);
+  return (
+    <div className="space-y-3">
+      {isLoading ? (
+        <div className="h-[480px] animate-pulse bg-[#F1F5F9] rounded-[10px]" />
+      ) : data.length === 0 ? (
+        <div className={`${cardStyle} py-12 text-center text-[13px] text-[#8B95A5]`}>
+          Aucune localisation client à afficher sur la période.
+        </div>
+      ) : (
+        <>
+          <CustomerMap rows={data} />
+          <p className="text-[11px] text-[#8B95A5]">
+            Taille des cercles proportionnelle au CA HTVA. Géocodage OpenStreetMap (Nominatim), mis en cache dans votre navigateur.
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function VendorAnalytics() {
   const [period, setPeriod] = useState<AnalyticsPeriod>("30d");
   const [tab, setTab] = useState<TabKey>("overview");
+  const { data: vendor } = useCurrentVendor();
 
   const rangeLabel = useMemo(() => PERIOD_OPTIONS.find((o) => o.value === period)?.label ?? "", [period]);
 
@@ -305,7 +337,7 @@ export default function VendorAnalytics() {
         <div>
           <h1 className="text-xl font-bold text-[#1D2530]">Analytics ventes</h1>
           <p className="text-[13px] text-[#616B7C] mt-0.5">
-            Outil d'analyse — KPIs, typologie, top clients et produits · <span className="font-medium">{rangeLabel}</span>
+            Outil d'analyse — KPIs, typologie, récurrence, carte et sell-out · <span className="font-medium">{rangeLabel}</span>
           </p>
         </div>
         <div className="inline-flex rounded-[8px] border border-[#E2E8F0] bg-white p-0.5" role="tablist" aria-label="Période">
@@ -350,12 +382,11 @@ export default function VendorAnalytics() {
 
       {tab === "overview" && <OverviewTab period={period} />}
       {tab === "typology" && <TypologyTab period={period} />}
+      {tab === "recurrence" && <RecurrencePanel period={period} />}
       {tab === "customers" && <TopCustomersTab period={period} />}
+      {tab === "map" && <MapTab period={period} />}
       {tab === "products" && <TopProductsTab period={period} />}
-
-      <p className="text-[11px] text-[#8B95A5] italic">
-        À venir (lots suivants) : récurrence & cohortes, carte interactive des clients, sell-in vs sell-out.
-      </p>
+      {tab === "sellout" && <SellOutPanel vendorId={vendor?.id ?? null} />}
     </div>
   );
 }

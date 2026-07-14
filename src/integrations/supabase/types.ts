@@ -19849,6 +19849,101 @@ export type Database = {
           },
         ]
       }
+      vendor_sell_out_lines: {
+        Row: {
+          cnk_code: string | null
+          created_at: string
+          gross_revenue_cents: number
+          gtin: string | null
+          id: string
+          net_revenue_cents: number
+          product_id: string | null
+          raw_label: string | null
+          report_id: string
+          units: number
+        }
+        Insert: {
+          cnk_code?: string | null
+          created_at?: string
+          gross_revenue_cents?: number
+          gtin?: string | null
+          id?: string
+          net_revenue_cents?: number
+          product_id?: string | null
+          raw_label?: string | null
+          report_id: string
+          units?: number
+        }
+        Update: {
+          cnk_code?: string | null
+          created_at?: string
+          gross_revenue_cents?: number
+          gtin?: string | null
+          id?: string
+          net_revenue_cents?: number
+          product_id?: string | null
+          raw_label?: string | null
+          report_id?: string
+          units?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_sell_out_lines_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_sell_out_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_sell_out_reports: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          currency_code: string
+          customer_id: string | null
+          customer_label: string | null
+          file_name: string | null
+          id: string
+          notes: string | null
+          period_end: string
+          period_start: string
+          source: string
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          currency_code?: string
+          customer_id?: string | null
+          customer_label?: string | null
+          file_name?: string | null
+          id?: string
+          notes?: string | null
+          period_end: string
+          period_start: string
+          source?: string
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          currency_code?: string
+          customer_id?: string | null
+          customer_label?: string | null
+          file_name?: string | null
+          id?: string
+          notes?: string | null
+          period_end?: string
+          period_start?: string
+          source?: string
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: []
+      }
       vendor_sendcloud_credentials: {
         Row: {
           created_at: string
@@ -26808,6 +26903,27 @@ export type Database = {
           share: number
         }[]
       }
+      vendor_analytics_cohorts: {
+        Args: { _months?: number }
+        Returns: {
+          active_m1: number
+          active_m2: number
+          active_m3: number
+          cohort_month: string
+          cohort_size: number
+        }[]
+      }
+      vendor_analytics_customer_locations: {
+        Args: { _from: string; _to: string }
+        Returns: {
+          ca_htva_cents: number
+          city: string
+          country_code: string
+          customers_count: number
+          orders_count: number
+          postal_code: string
+        }[]
+      }
       vendor_analytics_kpis: {
         Args: { _from: string; _to: string }
         Returns: {
@@ -26823,6 +26939,17 @@ export type Database = {
           prev_commission_cents: number
           prev_margin_cents: number
           prev_orders_count: number
+        }[]
+      }
+      vendor_analytics_recurrence: {
+        Args: { _from: string; _to: string }
+        Returns: {
+          avg_days_between_orders: number
+          avg_orders_per_customer: number
+          churn_risk_count: number
+          new_customers: number
+          returning_customers: number
+          total_customers: number
         }[]
       }
       vendor_analytics_top_customers: {
@@ -26878,6 +27005,21 @@ export type Database = {
       vendor_market_intel_access: {
         Args: { _vendor_id: string }
         Returns: boolean
+      }
+      vendor_sell_in_vs_sell_out: {
+        Args: { _report_id: string }
+        Returns: {
+          cnk_code: string
+          delta_units: number
+          gtin: string
+          product_id: string
+          product_name: string
+          sell_in_ca_htva_cents: number
+          sell_in_units: number
+          sell_out_net_cents: number
+          sell_out_units: number
+          sell_through_pct: number
+        }[]
       }
       vendor_top_brands: {
         Args: { _limit?: number; _vendor_id: string }

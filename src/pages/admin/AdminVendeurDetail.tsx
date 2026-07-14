@@ -611,6 +611,13 @@ const AdminVendeurDetail = () => {
 
       {/* Invitation dialog */}
       <VendorInviteDialog open={showInvite} onOpenChange={setShowInvite} vendor={vendor} />
+
+      <AdminVendorMovMoqModal
+        vendorId={vendor.id}
+        vendorName={vendor.company_name || vendor.name}
+        open={showMovMoq}
+        onOpenChange={setShowMovMoq}
+      />
     </div>
   );
 };

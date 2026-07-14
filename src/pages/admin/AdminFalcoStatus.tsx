@@ -44,6 +44,8 @@ export default function AdminFalcoStatus() {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [testError, setTestError] = useState<string | null>(null);
+  const [seeding, setSeeding] = useState(false);
+  const [seedResult, setSeedResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   const load = async () => {
     setLoading(true);

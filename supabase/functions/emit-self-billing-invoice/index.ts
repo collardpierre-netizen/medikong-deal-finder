@@ -4,7 +4,7 @@
 // Auth: service_role only (called by stripe-webhook) or admin caller.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
-import { buildSelfBillingPdf } from "../_shared/invoice-pdf.ts";
+import { buildSelfBillingPdf, buildSelfBillingMandateMention } from "../_shared/invoice-pdf.ts";
 import {
   submitInvoiceToFalco,
   persistFalcoResult,
@@ -12,6 +12,19 @@ import {
   type FalcoLine,
   type FalcoTaxSubtotal,
 } from "../_shared/falco-peppol.ts";
+
+// Balooh SRL = legal issuer of every self-billing invoice on the marketplace.
+// Point 1 (Sprint 3): unified Peppol sender for all self-billing dispatches.
+const BALOOH_SELLER = {
+  name: "Balooh SRL",
+  vat_number: "BE1005771323",
+  address: {
+    line1: "23 rue de la Procession",
+    zip: "7822",
+    city: "Ath",
+    country: "BE",
+  },
+} as const;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

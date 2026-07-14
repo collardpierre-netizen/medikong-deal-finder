@@ -17,6 +17,8 @@ import { useVendorAnalyticsCustomerLocations } from "@/hooks/useVendorAnalyticsR
 import { RecurrencePanel } from "@/components/vendor/analytics/RecurrencePanel";
 import { CustomerMap } from "@/components/vendor/analytics/CustomerMap";
 import { SellOutPanel } from "@/components/vendor/analytics/SellOutPanel";
+import { AnalyticsExportButtons } from "@/components/vendor/analytics/AnalyticsExportButtons";
+import { exportAnalyticsRows } from "@/lib/analytics-export";
 
 const PERIOD_OPTIONS: { value: AnalyticsPeriod; label: string }[] = [
   { value: "30d", label: "30 jours" },
@@ -250,12 +252,38 @@ function TypologyTab({ period, vendorId }: { period: AnalyticsPeriod; vendorId: 
     emptyLabel: "Aucune commande sur la période.",
   });
   if (globalNotice) return <>{globalNotice}</>;
+
+  const typeRows = byType.map((r) => ({
+    profil: CUSTOMER_TYPE_LABEL[r.customer_type] ?? r.customer_type,
+    ca_htva_eur: Number((Number(r.ca_htva_cents) / 100).toFixed(2)),
+    part_pct: Number(Number(r.share).toFixed(2)),
+    commandes: Number(r.orders_count),
+  }));
+  const countryRows = byCountry.map((r) => ({
+    pays: COUNTRY_LABEL[r.country_code] ?? r.country_code,
+    code_pays: r.country_code,
+    ca_htva_eur: Number((Number(r.ca_htva_cents) / 100).toFixed(2)),
+    part_pct: Number(Number(r.share).toFixed(2)),
+    commandes: Number(r.orders_count),
+  }));
+  const doExportType = (fmt: "csv" | "xlsx") =>
+    exportAnalyticsRows(typeRows, `medikong-analytics-typologie-${period}`, fmt, "Typologie");
+  const doExportCountry = (fmt: "csv" | "xlsx") =>
+    exportAnalyticsRows(countryRows, `medikong-analytics-pays-${period}`, fmt, "Pays");
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div className={cardStyle}>
-        <div className="flex items-center gap-2 mb-1">
-          <Building2 size={14} className="text-[#8B95A5]" />
-          <h3 className="text-[14px] font-semibold text-[#1D2530]">Par typologie de client</h3>
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <div className="flex items-center gap-2">
+            <Building2 size={14} className="text-[#8B95A5]" />
+            <h3 className="text-[14px] font-semibold text-[#1D2530]">Par typologie de client</h3>
+          </div>
+          <AnalyticsExportButtons
+            disabled={typeRows.length === 0}
+            onCsv={() => doExportType("csv")}
+            onXlsx={() => doExportType("xlsx")}
+          />
         </div>
         <p className="text-[11px] text-[#8B95A5] mb-4">Part du CA HTVA par profil</p>
         {l1 ? (
@@ -278,9 +306,16 @@ function TypologyTab({ period, vendorId }: { period: AnalyticsPeriod; vendorId: 
       </div>
 
       <div className={cardStyle}>
-        <div className="flex items-center gap-2 mb-1">
-          <Globe2 size={14} className="text-[#8B95A5]" />
-          <h3 className="text-[14px] font-semibold text-[#1D2530]">Par pays</h3>
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <div className="flex items-center gap-2">
+            <Globe2 size={14} className="text-[#8B95A5]" />
+            <h3 className="text-[14px] font-semibold text-[#1D2530]">Par pays</h3>
+          </div>
+          <AnalyticsExportButtons
+            disabled={countryRows.length === 0}
+            onCsv={() => doExportCountry("csv")}
+            onXlsx={() => doExportCountry("xlsx")}
+          />
         </div>
         <p className="text-[11px] text-[#8B95A5] mb-4">Part du CA HTVA par pays de livraison</p>
         {l2 ? (
@@ -315,9 +350,30 @@ function TopCustomersTab({ period, vendorId }: { period: AnalyticsPeriod; vendor
     loadingLabel: "Chargement du top clients…",
     emptyLabel: "Aucun client sur la période.",
   });
+  const exportRows = data.map((r) => ({
+    client: r.company_name || "",
+    profil: CUSTOMER_TYPE_LABEL[r.customer_type ?? "unknown"] ?? r.customer_type ?? "",
+    code_postal: r.postal_code || "",
+    ville: r.city || "",
+    pays: r.country_code || "",
+    ca_htva_eur: Number((Number(r.ca_htva_cents) / 100).toFixed(2)),
+    part_pct: Number(Number(r.share).toFixed(2)),
+    commandes: Number(r.orders_count),
+    derniere_commande: r.last_order_at ? new Date(r.last_order_at).toISOString().slice(0, 10) : "",
+  }));
+  const doExport = (fmt: "csv" | "xlsx") =>
+    exportAnalyticsRows(exportRows, `medikong-analytics-top-clients-${period}`, fmt, "Top clients");
+
   return (
     <div className={cardStyle}>
-      <h3 className="text-[14px] font-semibold text-[#1D2530] mb-1">Top clients (25)</h3>
+      <div className="flex items-start justify-between gap-2 mb-1">
+        <h3 className="text-[14px] font-semibold text-[#1D2530]">Top clients (25)</h3>
+        <AnalyticsExportButtons
+          disabled={exportRows.length === 0}
+          onCsv={() => doExport("csv")}
+          onXlsx={() => doExport("xlsx")}
+        />
+      </div>
       <p className="text-[11px] text-[#8B95A5] mb-4">Classement par CA HTVA sur la période</p>
       {notice ? notice : (
         <div className="overflow-x-auto">
@@ -367,9 +423,27 @@ function TopProductsTab({ period, vendorId }: { period: AnalyticsPeriod; vendorI
     loadingLabel: "Chargement du top produits…",
     emptyLabel: "Aucune vente sur la période.",
   });
+  const exportRows = data.map((r) => ({
+    produit: r.product_name || "",
+    product_id: r.product_id ?? "",
+    unites: Number(r.units),
+    ca_htva_eur: Number((Number(r.ca_htva_cents) / 100).toFixed(2)),
+    marge_eur: Number((Number(r.margin_cents) / 100).toFixed(2)),
+    commission_eur: Number((Number(r.commission_cents) / 100).toFixed(2)),
+  }));
+  const doExport = (fmt: "csv" | "xlsx") =>
+    exportAnalyticsRows(exportRows, `medikong-analytics-top-produits-${period}`, fmt, "Top produits");
+
   return (
     <div className={cardStyle}>
-      <h3 className="text-[14px] font-semibold text-[#1D2530] mb-1">Top produits (25)</h3>
+      <div className="flex items-start justify-between gap-2 mb-1">
+        <h3 className="text-[14px] font-semibold text-[#1D2530]">Top produits (25)</h3>
+        <AnalyticsExportButtons
+          disabled={exportRows.length === 0}
+          onCsv={() => doExport("csv")}
+          onXlsx={() => doExport("xlsx")}
+        />
+      </div>
       <p className="text-[11px] text-[#8B95A5] mb-4">Classement par CA HTVA — unités vendues, marge et commission</p>
       {notice ? notice : (
         <div className="overflow-x-auto">
@@ -479,11 +553,39 @@ function MapTab({ period, vendorId }: { period: AnalyticsPeriod; vendorId: strin
             Réinitialiser
           </button>
         )}
-        <div className="ml-auto text-[12px] text-[#616B7C]">
-          {filtered.length} zone{filtered.length > 1 ? "s" : ""} affichée{filtered.length > 1 ? "s" : ""}
-          {filtered.length !== allRows.length ? ` sur ${allRows.length}` : ""}
+        <div className="ml-auto flex items-center gap-3">
+          <div className="text-[12px] text-[#616B7C]">
+            {filtered.length} zone{filtered.length > 1 ? "s" : ""} affichée{filtered.length > 1 ? "s" : ""}
+            {filtered.length !== allRows.length ? ` sur ${allRows.length}` : ""}
+          </div>
+          <AnalyticsExportButtons
+            disabled={filtered.length === 0}
+            onCsv={() => {
+              const rows = filtered.map((r) => ({
+                pays: r.country_code,
+                code_postal: r.postal_code,
+                ville: r.city,
+                clients: Number(r.customers_count),
+                commandes: Number(r.orders_count),
+                ca_htva_eur: Number((Number(r.ca_htva_cents) / 100).toFixed(2)),
+              }));
+              exportAnalyticsRows(rows, `medikong-analytics-carte-${period}`, "csv", "Carte clients");
+            }}
+            onXlsx={() => {
+              const rows = filtered.map((r) => ({
+                pays: r.country_code,
+                code_postal: r.postal_code,
+                ville: r.city,
+                clients: Number(r.customers_count),
+                commandes: Number(r.orders_count),
+                ca_htva_eur: Number((Number(r.ca_htva_cents) / 100).toFixed(2)),
+              }));
+              exportAnalyticsRows(rows, `medikong-analytics-carte-${period}`, "xlsx", "Carte clients");
+            }}
+          />
         </div>
       </div>
+
 
       {(() => {
         const notice = analyticsStateNotice({

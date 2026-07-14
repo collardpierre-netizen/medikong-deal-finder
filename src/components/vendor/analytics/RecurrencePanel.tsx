@@ -1,6 +1,8 @@
 import { useVendorAnalyticsRecurrence, useVendorAnalyticsCohorts } from "@/hooks/useVendorAnalyticsRecurrence";
 import type { AnalyticsPeriod } from "@/hooks/useVendorAnalytics";
 import { Repeat, UserPlus, AlertTriangle, Timer } from "lucide-react";
+import { AnalyticsExportButtons } from "@/components/vendor/analytics/AnalyticsExportButtons";
+import { exportAnalyticsRows, exportAnalyticsMultiSheet } from "@/lib/analytics-export";
 
 const card = "p-5 rounded-[10px] bg-white border border-[#E2E8F0]";
 
@@ -13,8 +15,63 @@ export function RecurrencePanel({ period }: { period: AnalyticsPeriod }) {
   const tot = r?.total_customers ?? 0;
   const retentionPct = tot > 0 ? Math.round((retC / tot) * 100) : 0;
 
+  const kpiRows = r
+    ? [
+        {
+          metric: "Nouveaux clients",
+          valeur: newC,
+          detail: `sur ${tot} actifs`,
+        },
+        {
+          metric: "Clients récurrents",
+          valeur: retC,
+          detail: `${retentionPct}% du total`,
+        },
+        {
+          metric: "Commandes / client (moyenne)",
+          valeur: r.avg_orders_per_customer ?? 0,
+          detail: `Ø ${r.avg_days_between_orders ?? 0} j entre commandes`,
+        },
+        {
+          metric: "Risque de churn",
+          valeur: r.churn_risk_count ?? 0,
+          detail: "Aucune commande depuis 60 j",
+        },
+      ]
+    : [];
+
+  const cohortRows = (cohorts ?? []).map((c) => ({
+    mois_acquisition: c.cohort_month,
+    taille: c.cohort_size,
+    actifs_m1: c.active_m1,
+    taux_m1_pct: c.cohort_size ? Number(((c.active_m1 / c.cohort_size) * 100).toFixed(1)) : 0,
+    actifs_m2: c.active_m2,
+    taux_m2_pct: c.cohort_size ? Number(((c.active_m2 / c.cohort_size) * 100).toFixed(1)) : 0,
+    actifs_m3: c.active_m3,
+    taux_m3_pct: c.cohort_size ? Number(((c.active_m3 / c.cohort_size) * 100).toFixed(1)) : 0,
+  }));
+
+  const onCsv = () =>
+    exportAnalyticsRows(cohortRows, `medikong-analytics-cohortes-${period}`, "csv", "Cohortes");
+  const onXlsx = () =>
+    exportAnalyticsMultiSheet(
+      [
+        { name: "KPIs", rows: kpiRows },
+        { name: "Cohortes", rows: cohortRows },
+      ],
+      `medikong-analytics-recurrence-${period}`
+    );
+
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-end">
+        <AnalyticsExportButtons
+          disabled={kpiRows.length === 0 && cohortRows.length === 0}
+          onCsv={onCsv}
+          onXlsx={onXlsx}
+        />
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Tile icon={<UserPlus size={16} />} label="Nouveaux clients" value={newC.toString()} sub={`sur ${tot} actifs`} />
         <Tile icon={<Repeat size={16} />} label="Clients récurrents" value={retC.toString()} sub={`${retentionPct}% du total`} />

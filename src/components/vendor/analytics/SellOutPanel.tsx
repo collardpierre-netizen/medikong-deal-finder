@@ -2,9 +2,75 @@ import { useMemo, useState } from "react";
 import { useVendorSellOutReports, useDeleteSellOutReport, useSellInVsSellOut } from "@/hooks/useVendorSellOut";
 import { NewSellOutReportDialog } from "./NewSellOutReportDialog";
 import { fmtEur } from "@/lib/format-currency";
-import { FileSpreadsheet, Plus, Trash2 } from "lucide-react";
+import { Download, FileSpreadsheet, Plus, Trash2 } from "lucide-react";
+import * as XLSX from "xlsx";
 
 const card = "p-5 rounded-[10px] bg-white border border-[#E2E8F0]";
+
+const EXPORT_HEADERS = [
+  "Produit",
+  "GTIN",
+  "CNK",
+  "Sell-in (unités)",
+  "Sell-in HTVA (€)",
+  "Sell-out (unités)",
+  "Sell-out net (€)",
+  "Delta unités",
+  "Sell-through (%)",
+] as const;
+
+type ExportRow = (string | number | null)[];
+
+function buildRows(rows: ReturnType<typeof useSellInVsSellOut>["data"]): ExportRow[] {
+  return (rows ?? []).map((r) => [
+    r.product_name || "Non résolu",
+    r.gtin || "",
+    r.cnk_code || "",
+    Number(r.sell_in_units || 0),
+    Number(r.sell_in_ca_htva_cents || 0) / 100,
+    Number(r.sell_out_units || 0),
+    Number(r.sell_out_net_cents || 0) / 100,
+    Number(r.delta_units || 0),
+    r.sell_through_pct != null ? Number(r.sell_through_pct) : null,
+  ]);
+}
+
+function safeSlug(s: string | null | undefined): string {
+  return (s || "rapport").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 40) || "rapport";
+}
+
+function triggerDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function exportCsv(rows: ExportRow[], filename: string) {
+  const escape = (v: string | number | null) => {
+    if (v == null) return "";
+    const s = typeof v === "number" ? String(v).replace(".", ",") : String(v);
+    return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lines = [EXPORT_HEADERS.join(";"), ...rows.map((r) => r.map(escape).join(";"))];
+  // BOM pour Excel FR
+  const blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  triggerDownload(blob, filename);
+}
+
+function exportXlsx(rows: ExportRow[], filename: string, sheetName: string) {
+  const aoa = [EXPORT_HEADERS as unknown as ExportRow, ...rows];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws["!cols"] = [{ wch: 40 }, { wch: 16 }, { wch: 12 }, { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 16 }, { wch: 12 }, { wch: 14 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0, 31) || "Comparaison");
+  const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" });
+  triggerDownload(new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), filename);
+}
 
 export function SellOutPanel({ vendorId }: { vendorId: string | null }) {
   const { data: reports, isLoading } = useVendorSellOutReports();

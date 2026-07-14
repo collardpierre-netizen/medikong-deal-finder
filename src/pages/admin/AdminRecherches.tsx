@@ -165,6 +165,7 @@ export default function AdminRecherches() {
             <TabsTrigger value="top">Top mots-clés</TabsTrigger>
             <TabsTrigger value="zero">Sans résultat</TabsTrigger>
             <TabsTrigger value="gaps">Trous catalogue</TabsTrigger>
+            <TabsTrigger value="profile">Par profil</TabsTrigger>
           </TabsList>
 
           <TabsContent value="top" className="mt-4">

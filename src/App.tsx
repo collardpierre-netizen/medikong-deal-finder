@@ -169,6 +169,7 @@ const AdminFinances = lazyWithRetry(() => import("./pages/admin/AdminFinances"),
 const AdminLitiges = lazyWithRetry(() => import("./pages/admin/AdminLitiges"), "AdminLitiges");
 const AdminCommandesEnRetard = lazyWithRetry(() => import("./pages/admin/AdminCommandesEnRetard"), "AdminCommandesEnRetard");
 const AdminVendorFanout = lazyWithRetry(() => import("./pages/admin/AdminVendorFanout"), "AdminVendorFanout");
+const AdminFalcoStatus = lazyWithRetry(() => import("./pages/admin/AdminFalcoStatus"), "AdminFalcoStatus");
 const AdminNotifications = lazyWithRetry(() => import("./pages/admin/AdminNotifications"), "AdminNotifications");
 const AdminNotificationDetail = lazyWithRetry(() => import("./pages/admin/AdminNotificationDetail"), "AdminNotificationDetail");
 const AdminVeillePrix = lazyWithRetry(() => import("./pages/admin/AdminVeillePrix"), "AdminVeillePrix");
@@ -540,6 +541,8 @@ const App = () => (
               <Route path="devis/:id/editer" element={<LP><AdminDevisEditer /></LP>} />
               <Route path="commandes-en-retard" element={<LP><AdminCommandesEnRetard /></LP>} />
               <Route path="vendor-fanout" element={<LP><AdminVendorFanout /></LP>} />
+              <Route path="falco-status" element={<LP><AdminFalcoStatus /></LP>} />
+
               <Route path="notifications" element={<LP><AdminNotifications /></LP>} />
               <Route path="notifications/:id" element={<LP><AdminNotificationDetail /></LP>} />
               <Route path="litiges" element={<LP><AdminLitiges /></LP>} />

@@ -20,6 +20,26 @@ export default function OrderDetailPage() {
   const items: any[] = (order as any)?.items || [];
   const itemVendorIds = items.map((it: any) => it.vendor_id).filter(Boolean) as string[];
   const { getLabel: getVendorLabel } = useVendorLabels(itemVendorIds);
+
+  // Self-billing invoices for this order (RLS filters commission out for buyers)
+  const { data: invoices = [] } = useQuery({
+    queryKey: ["order-invoices-buyer", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("order_invoices")
+        .select("id, invoice_number, type, pdf_path")
+        .eq("order_id", id!)
+        .eq("type", "self_billing");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const handleDownloadInvoice = async (invoiceId: string) => {
+    const { data, error } = await supabase.functions.invoke("get-invoice-signed-url", { body: { invoice_id: invoiceId } });
+    if (error || !data?.signed_url) { toast.error("Impossible de générer le lien PDF"); return; }
+    window.open(data.signed_url, "_blank");
+  };
   const subtotal = Number((order as any)?.subtotal_excl_vat || 0);
   const vat = Number((order as any)?.vat_amount || 0);
   const shipping = Number((order as any)?.shipping_cost || 0);

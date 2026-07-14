@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowUpRight, ArrowDownRight, Minus, TrendingUp, Users, Package, Globe2, Building2 } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Minus, TrendingUp, Users, Package, Globe2, Building2, AlertTriangle, Loader2, Info } from "lucide-react";
 import { useImpersonation } from "@/contexts/impersonation";
 import { useSearchParams } from "react-router-dom";
 import { fmtEur } from "@/lib/format-currency";
@@ -60,6 +60,86 @@ const COUNTRY_LABEL: Record<string, string> = {
 
 const cardStyle = "p-5 rounded-[10px] bg-white border border-[#E2E8F0]";
 
+/**
+ * Explicit state notice for vendor_analytics_* hooks.
+ * Distinguishes: no vendor_id | loading | error | empty.
+ * Returns null when the caller should render its normal content.
+ */
+function analyticsStateNotice({
+  hasVendorId,
+  isLoading,
+  error,
+  isEmpty,
+  loadingLabel = "Chargement des données…",
+  emptyLabel = "Aucune donnée sur la période.",
+}: {
+  hasVendorId: boolean;
+  isLoading: boolean;
+  error?: unknown;
+  isEmpty: boolean;
+  loadingLabel?: string;
+  emptyLabel?: string;
+}): React.ReactNode | null {
+  if (!hasVendorId) {
+    return (
+      <div
+        className="rounded-[10px] border px-4 py-3 flex items-start gap-2 text-[13px]"
+        style={{ borderColor: "#DC2626", backgroundColor: "#FEF2F2", color: "#7F1D1D" }}
+      >
+        <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+        <div>
+          <div className="font-semibold">Aucun vendor_id résolu</div>
+          <div className="text-[12px] mt-0.5">
+            Les RPC <code className="font-mono">vendor_analytics_*</code> ne sont pas appelés (paramètre <code className="font-mono">_vendor_id</code> manquant).
+            Vérifiez que vous êtes connecté en tant que vendeur, ou passez en mode impersonation via
+            <code className="font-mono"> ?impersonation_vendor_id=…</code>.
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (isLoading) {
+    return (
+      <div className={`${cardStyle} py-8 flex items-center justify-center gap-2 text-[13px] text-[#616B7C]`}>
+        <Loader2 size={16} className="animate-spin" />
+        <span>{loadingLabel}</span>
+      </div>
+    );
+  }
+  if (error) {
+    const message = (error as { message?: string })?.message ?? String(error);
+    return (
+      <div
+        className="rounded-[10px] border px-4 py-3 flex items-start gap-2 text-[13px]"
+        style={{ borderColor: "#DC2626", backgroundColor: "#FEF2F2", color: "#7F1D1D" }}
+      >
+        <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+        <div className="min-w-0">
+          <div className="font-semibold">Erreur lors de la récupération des données</div>
+          <div className="text-[12px] mt-0.5 font-mono break-all">{message}</div>
+        </div>
+      </div>
+    );
+  }
+  if (isEmpty) {
+    return (
+      <div
+        className="rounded-[10px] border px-4 py-3 flex items-start gap-2 text-[13px]"
+        style={{ borderColor: "#E2E8F0", backgroundColor: "#F8FAFC", color: "#616B7C" }}
+      >
+        <Info size={16} className="mt-0.5 shrink-0" />
+        <div>
+          <div className="font-semibold text-[#1D2530]">{emptyLabel}</div>
+          <div className="text-[12px] mt-0.5">
+            Le RPC a répondu correctement mais n'a retourné aucune ligne pour ce vendor_id et cette période.
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
+
 function pctDelta(cur: number, prev: number): number | null {
   if (!prev || prev === 0) return cur > 0 ? 100 : null;
   return ((cur - prev) / prev) * 100;
@@ -115,17 +195,18 @@ function KpiTile({
   );
 }
 
-function OverviewTab({ period }: { period: AnalyticsPeriod }) {
-  const { data, isLoading } = useVendorAnalyticsKpis(period);
-  if (isLoading || !data) {
-    return (
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className={`${cardStyle} animate-pulse h-[110px]`} />
-        ))}
-      </div>
-    );
-  }
+function OverviewTab({ period, vendorId }: { period: AnalyticsPeriod; vendorId: string | null }) {
+  const { data, isLoading, error } = useVendorAnalyticsKpis(period);
+  const notice = analyticsStateNotice({
+    hasVendorId: !!vendorId,
+    isLoading,
+    error,
+    isEmpty: !!data && Number(data.orders_count) === 0 && Number(data.ca_htva_cents) === 0,
+    loadingLabel: "Chargement des KPIs…",
+    emptyLabel: "Aucune commande sur la période.",
+  });
+  if (notice) return <>{notice}</>;
+  if (!data) return null;
   return (
     <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
       <KpiTile label="CA HTVA" value={Number(data.ca_htva_cents)} prev={Number(data.prev_ca_htva_cents)} format="eur" icon={<TrendingUp size={14} />} />
@@ -158,9 +239,17 @@ function ShareBar({ label, ca, share, extra }: { label: string; ca: number; shar
   );
 }
 
-function TypologyTab({ period }: { period: AnalyticsPeriod }) {
-  const { data: byType = [], isLoading: l1 } = useVendorAnalyticsByCustomerType(period);
-  const { data: byCountry = [], isLoading: l2 } = useVendorAnalyticsByCountry(period);
+function TypologyTab({ period, vendorId }: { period: AnalyticsPeriod; vendorId: string | null }) {
+  const { data: byType = [], isLoading: l1, error: e1 } = useVendorAnalyticsByCustomerType(period);
+  const { data: byCountry = [], isLoading: l2, error: e2 } = useVendorAnalyticsByCountry(period);
+  const globalNotice = analyticsStateNotice({
+    hasVendorId: !!vendorId,
+    isLoading: false,
+    error: e1 ?? e2,
+    isEmpty: !l1 && !l2 && byType.length === 0 && byCountry.length === 0,
+    emptyLabel: "Aucune commande sur la période.",
+  });
+  if (globalNotice) return <>{globalNotice}</>;
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div className={cardStyle}>
@@ -216,17 +305,21 @@ function TypologyTab({ period }: { period: AnalyticsPeriod }) {
   );
 }
 
-function TopCustomersTab({ period }: { period: AnalyticsPeriod }) {
-  const { data = [], isLoading } = useVendorAnalyticsTopCustomers(period, 25);
+function TopCustomersTab({ period, vendorId }: { period: AnalyticsPeriod; vendorId: string | null }) {
+  const { data = [], isLoading, error } = useVendorAnalyticsTopCustomers(period, 25);
+  const notice = analyticsStateNotice({
+    hasVendorId: !!vendorId,
+    isLoading,
+    error,
+    isEmpty: data.length === 0,
+    loadingLabel: "Chargement du top clients…",
+    emptyLabel: "Aucun client sur la période.",
+  });
   return (
     <div className={cardStyle}>
       <h3 className="text-[14px] font-semibold text-[#1D2530] mb-1">Top clients (25)</h3>
       <p className="text-[11px] text-[#8B95A5] mb-4">Classement par CA HTVA sur la période</p>
-      {isLoading ? (
-        <div className="space-y-2">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-8 animate-pulse bg-[#F1F5F9] rounded" />)}</div>
-      ) : data.length === 0 ? (
-        <p className="text-[13px] text-[#8B95A5] py-8 text-center">Aucun client sur la période</p>
-      ) : (
+      {notice ? notice : (
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead className="text-[11px] uppercase tracking-wide text-[#8B95A5] border-b border-[#E2E8F0]">
@@ -264,17 +357,21 @@ function TopCustomersTab({ period }: { period: AnalyticsPeriod }) {
   );
 }
 
-function TopProductsTab({ period }: { period: AnalyticsPeriod }) {
-  const { data = [], isLoading } = useVendorAnalyticsTopProducts(period, 25);
+function TopProductsTab({ period, vendorId }: { period: AnalyticsPeriod; vendorId: string | null }) {
+  const { data = [], isLoading, error } = useVendorAnalyticsTopProducts(period, 25);
+  const notice = analyticsStateNotice({
+    hasVendorId: !!vendorId,
+    isLoading,
+    error,
+    isEmpty: data.length === 0,
+    loadingLabel: "Chargement du top produits…",
+    emptyLabel: "Aucune vente sur la période.",
+  });
   return (
     <div className={cardStyle}>
       <h3 className="text-[14px] font-semibold text-[#1D2530] mb-1">Top produits (25)</h3>
       <p className="text-[11px] text-[#8B95A5] mb-4">Classement par CA HTVA — unités vendues, marge et commission</p>
-      {isLoading ? (
-        <div className="space-y-2">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-8 animate-pulse bg-[#F1F5F9] rounded" />)}</div>
-      ) : data.length === 0 ? (
-        <p className="text-[13px] text-[#8B95A5] py-8 text-center">Aucune vente sur la période</p>
-      ) : (
+      {notice ? notice : (
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead className="text-[11px] uppercase tracking-wide text-[#8B95A5] border-b border-[#E2E8F0]">
@@ -304,13 +401,13 @@ function TopProductsTab({ period }: { period: AnalyticsPeriod }) {
   );
 }
 
-function MapTab({ period }: { period: AnalyticsPeriod }) {
+function MapTab({ period, vendorId }: { period: AnalyticsPeriod; vendorId: string | null }) {
   const [productId, setProductId] = useState<string>("");
   const [minCa, setMinCa] = useState<string>("");
   const [minOrders, setMinOrders] = useState<string>("");
 
   const { data: products = [] } = useVendorAnalyticsTopProducts(period, 100);
-  const { data: allRows = [], isLoading } = useVendorAnalyticsCustomerLocations(
+  const { data: allRows = [], isLoading, error } = useVendorAnalyticsCustomerLocations(
     period,
     productId || null
   );
@@ -388,20 +485,32 @@ function MapTab({ period }: { period: AnalyticsPeriod }) {
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="h-[480px] animate-pulse bg-[#F1F5F9] rounded-[10px]" />
-      ) : filtered.length === 0 ? (
-        <div className={`${cardStyle} py-12 text-center text-[13px] text-[#8B95A5]`}>
-          Aucune localisation client à afficher pour ces filtres.
-        </div>
-      ) : (
-        <>
-          <CustomerMap rows={filtered} />
-          <p className="text-[11px] text-[#8B95A5]">
-            Taille des cercles proportionnelle au CA HTVA. Couleur selon la couverture (vert : forte, orange : moyenne, rouge : faible — tertiles du CA affiché). Géocodage OpenStreetMap.
-          </p>
-        </>
-      )}
+      {(() => {
+        const notice = analyticsStateNotice({
+          hasVendorId: !!vendorId,
+          isLoading,
+          error,
+          isEmpty: allRows.length === 0,
+          loadingLabel: "Chargement des localisations…",
+          emptyLabel: "Aucune localisation client sur la période.",
+        });
+        if (notice) return notice;
+        if (filtered.length === 0) {
+          return (
+            <div className={`${cardStyle} py-12 text-center text-[13px] text-[#8B95A5]`}>
+              Aucune localisation client à afficher pour ces filtres.
+            </div>
+          );
+        }
+        return (
+          <>
+            <CustomerMap rows={filtered} />
+            <p className="text-[11px] text-[#8B95A5]">
+              Taille des cercles proportionnelle au CA HTVA. Couleur selon la couverture (vert : forte, orange : moyenne, rouge : faible — tertiles du CA affiché). Géocodage OpenStreetMap.
+            </p>
+          </>
+        );
+      })()}
     </div>
   );
 }
@@ -504,12 +613,12 @@ export default function VendorAnalytics() {
         })}
       </div>
 
-      {tab === "overview" && <OverviewTab period={period} />}
-      {tab === "typology" && <TypologyTab period={period} />}
+      {tab === "overview" && <OverviewTab period={period} vendorId={vendor?.id ?? null} />}
+      {tab === "typology" && <TypologyTab period={period} vendorId={vendor?.id ?? null} />}
       {tab === "recurrence" && <RecurrencePanel period={period} />}
-      {tab === "customers" && <TopCustomersTab period={period} />}
-      {tab === "map" && <MapTab period={period} />}
-      {tab === "products" && <TopProductsTab period={period} />}
+      {tab === "customers" && <TopCustomersTab period={period} vendorId={vendor?.id ?? null} />}
+      {tab === "map" && <MapTab period={period} vendorId={vendor?.id ?? null} />}
+      {tab === "products" && <TopProductsTab period={period} vendorId={vendor?.id ?? null} />}
       {tab === "sellout" && <SellOutPanel vendorId={vendor?.id ?? null} />}
     </div>
   );

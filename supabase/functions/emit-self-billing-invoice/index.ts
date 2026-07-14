@@ -5,6 +5,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { buildSelfBillingPdf } from "../_shared/invoice-pdf.ts";
+import {
+  submitInvoiceToFalco,
+  persistFalcoResult,
+  isFalcoConfigured,
+  type FalcoLine,
+  type FalcoTaxSubtotal,
+} from "../_shared/falco-peppol.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

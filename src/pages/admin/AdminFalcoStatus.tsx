@@ -17,10 +17,33 @@ type Status = {
   checked_at: string;
 };
 
+type TestResult = {
+  ok: boolean;
+  http_status?: number;
+  network_error?: string | null;
+  latency_ms?: number;
+  environment?: string;
+  base_url?: string;
+  endpoint?: string;
+  organization?: {
+    name?: string | null;
+    vat_number?: string | null;
+    peppol_identifier?: string | null;
+    country?: string | null;
+  } | null;
+  message: string;
+  missing_secrets?: string[];
+  reason?: string;
+  checked_at?: string;
+};
+
 export default function AdminFalcoStatus() {
   const [status, setStatus] = useState<Status | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
+  const [testError, setTestError] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -36,7 +59,23 @@ export default function AdminFalcoStatus() {
     }
   };
 
+  const runTest = async () => {
+    setTesting(true);
+    setTestError(null);
+    setTestResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("falco-test-connection", { body: {} });
+      if (error) throw error;
+      setTestResult(data as TestResult);
+    } catch (e: any) {
+      setTestError(e?.message || "Erreur inconnue");
+    } finally {
+      setTesting(false);
+    }
+  };
+
   useEffect(() => { load(); }, []);
+
 
   const Row = ({ label, ok }: { label: string; ok: boolean }) => (
     <div className="flex items-center justify-between py-2 border-b last:border-0">

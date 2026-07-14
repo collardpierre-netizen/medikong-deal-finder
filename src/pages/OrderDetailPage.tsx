@@ -64,15 +64,45 @@ export default function OrderDetailPage() {
     URL.revokeObjectURL(url);
   };
 
-  const handleExportPDF = () => {
+  const LOGO_URL =
+    "https://iokwqxhhpblcbkrxgcje.supabase.co/storage/v1/object/public/cms-images/email-logo-horizontal.png";
+
+  const loadLogoDataUrl = async (): Promise<string | null> => {
+    try {
+      const res = await fetch(LOGO_URL, { mode: "cors" });
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      return await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve((reader.result as string) || null);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return null;
+    }
+  };
+
+  const handleExportPDF = async () => {
     const rows = buildRows();
     const doc = new jsPDF({ orientation: "landscape" });
+    const logo = await loadLogoDataUrl();
+    let headerBottom = 15;
+    if (logo) {
+      // 40mm wide, ratio preserved (~11mm high pour email-logo-horizontal)
+      try {
+        doc.addImage(logo, "PNG", 14, 10, 40, 11);
+        headerBottom = 25;
+      } catch {
+        /* ignore image errors */
+      }
+    }
     doc.setFontSize(14);
-    doc.text(`Commande #${orderNumber}`, 14, 15);
+    doc.text(`Commande #${orderNumber}`, logo ? 60 : 14, headerBottom);
     doc.setFontSize(10);
-    doc.text(`Date : ${formatOrderDateTime((order as any)?.created_at) || "—"}`, 14, 22);
+    doc.text(`Date : ${formatOrderDateTime((order as any)?.created_at) || "—"}`, logo ? 60 : 14, headerBottom + 7);
     autoTable(doc, {
-      startY: 28,
+      startY: headerBottom + 13,
       head: [["Produit", "EAN", "CNK", "SKU", "Vendeur", "Qté", "Prix HTVA", "Montant HTVA"]],
       body: rows.map(r => [r.name, r.ean, r.cnk, r.sku, r.vendor, r.qty, `${r.unit.toFixed(2)} EUR`, `${r.total.toFixed(2)} EUR`]),
       styles: { fontSize: 8 },

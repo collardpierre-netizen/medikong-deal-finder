@@ -2,9 +2,75 @@ import { useMemo, useState } from "react";
 import { useVendorSellOutReports, useDeleteSellOutReport, useSellInVsSellOut } from "@/hooks/useVendorSellOut";
 import { NewSellOutReportDialog } from "./NewSellOutReportDialog";
 import { fmtEur } from "@/lib/format-currency";
-import { FileSpreadsheet, Plus, Trash2 } from "lucide-react";
+import { Download, FileSpreadsheet, Plus, Trash2 } from "lucide-react";
+import * as XLSX from "xlsx";
 
 const card = "p-5 rounded-[10px] bg-white border border-[#E2E8F0]";
+
+const EXPORT_HEADERS = [
+  "Produit",
+  "GTIN",
+  "CNK",
+  "Sell-in (unités)",
+  "Sell-in HTVA (€)",
+  "Sell-out (unités)",
+  "Sell-out net (€)",
+  "Delta unités",
+  "Sell-through (%)",
+] as const;
+
+type ExportRow = (string | number | null)[];
+
+function buildRows(rows: ReturnType<typeof useSellInVsSellOut>["data"]): ExportRow[] {
+  return (rows ?? []).map((r) => [
+    r.product_name || "Non résolu",
+    r.gtin || "",
+    r.cnk_code || "",
+    Number(r.sell_in_units || 0),
+    Number(r.sell_in_ca_htva_cents || 0) / 100,
+    Number(r.sell_out_units || 0),
+    Number(r.sell_out_net_cents || 0) / 100,
+    Number(r.delta_units || 0),
+    r.sell_through_pct != null ? Number(r.sell_through_pct) : null,
+  ]);
+}
+
+function safeSlug(s: string | null | undefined): string {
+  return (s || "rapport").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 40) || "rapport";
+}
+
+function triggerDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function exportCsv(rows: ExportRow[], filename: string) {
+  const escape = (v: string | number | null) => {
+    if (v == null) return "";
+    const s = typeof v === "number" ? String(v).replace(".", ",") : String(v);
+    return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lines = [EXPORT_HEADERS.join(";"), ...rows.map((r) => r.map(escape).join(";"))];
+  // BOM pour Excel FR
+  const blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  triggerDownload(blob, filename);
+}
+
+function exportXlsx(rows: ExportRow[], filename: string, sheetName: string) {
+  const aoa = [EXPORT_HEADERS as unknown as ExportRow, ...rows];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws["!cols"] = [{ wch: 40 }, { wch: 16 }, { wch: 12 }, { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 16 }, { wch: 12 }, { wch: 14 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0, 31) || "Comparaison");
+  const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" });
+  triggerDownload(new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), filename);
+}
 
 export function SellOutPanel({ vendorId }: { vendorId: string | null }) {
   const { data: reports, isLoading } = useVendorSellOutReports();
@@ -95,15 +161,43 @@ export function SellOutPanel({ vendorId }: { vendorId: string | null }) {
 
       {selectedReport && (
         <div className={card}>
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
             <div className="text-[13px] font-semibold">
               Comparaison — {selectedReport.customer_label || "Client interne"} ({selectedReport.period_start} → {selectedReport.period_end})
             </div>
-            {totals && (
-              <div className="text-[11px] text-[#8B95A5]">
-                Sell-in {totals.si_units} u · {fmtEur(totals.si_ca / 100)} € · Sell-out {totals.so_units} u · {fmtEur(totals.so_net / 100)} €
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              {totals && (
+                <div className="text-[11px] text-[#8B95A5]">
+                  Sell-in {totals.si_units} u · {fmtEur(totals.si_ca / 100)} € · Sell-out {totals.so_units} u · {fmtEur(totals.so_net / 100)} €
+                </div>
+              )}
+              {(() => {
+                const disabled = !rows?.length;
+                const baseName = `sell-in-vs-sell-out_${safeSlug(selectedReport.customer_label)}_${selectedReport.period_start}_${selectedReport.period_end}`;
+                const sheetName = `${safeSlug(selectedReport.customer_label)}`;
+                const exportRows = buildRows(rows);
+                return (
+                  <>
+                    <button
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => exportCsv(exportRows, `${baseName}.csv`)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] border border-[#E2E8F0] text-[12px] font-medium text-[#1D2530] hover:bg-[#F8FAFC] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Download size={12} /> CSV
+                    </button>
+                    <button
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => exportXlsx(exportRows, `${baseName}.xlsx`, sheetName)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] bg-[#1C58D9] text-white text-[12px] font-medium hover:bg-[#164BB9] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Download size={12} /> XLSX
+                    </button>
+                  </>
+                );
+              })()}
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-[12px]">

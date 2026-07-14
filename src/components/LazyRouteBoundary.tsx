@@ -189,4 +189,15 @@ class LazyRouteBoundaryClass extends Component<Props, State> {
   }
 }
 
+export function LazyRouteBoundary({ children }: { children: ReactNode }) {
+  const location = useLocation();
+  // key = pathname (search intentionally excluded so ?_v=… cache-bust reloads
+  // don't count as a route change).
+  return (
+    <LazyRouteBoundaryClass locationKey={location.pathname}>
+      {children}
+    </LazyRouteBoundaryClass>
+  );
+}
+
 export default LazyRouteBoundary;

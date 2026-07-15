@@ -261,7 +261,7 @@ export default function AdminBePharmaciesPage() {
                   </td>
                 </tr>
               )}
-              {(data?.rows ?? []).map((p) => (
+              {(data?.rows ?? []).filter((p) => !provinceFilter || p.province === provinceFilter).map((p) => (
                 <tr key={p.id} className="border-b border-[#F1F5F9]">
                   <td className="py-2 font-mono">{p.apb_number}</td>
                   <td>{p.name}</td>

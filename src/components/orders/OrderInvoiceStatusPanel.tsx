@@ -589,11 +589,21 @@ function EditInvoiceDialog({
 
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" onClick={quickMarkSent} className="gap-1.5"><Send size={13} /> Marquer envoyée</Button>
-          <Button size="sm" variant="outline" onClick={quickMarkPaid} className="gap-1.5"><Wallet size={13} /> Marquer payée</Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={quickMarkPaid}
+            disabled={stripeLocked}
+            title={stripeLocked ? "Paiement carte confirmé par Stripe" : undefined}
+            className="gap-1.5"
+          >
+            <Wallet size={13} /> Marquer payée
+          </Button>
           <Button size="sm" variant="outline" onClick={() => remindMut.mutate()} disabled={remindMut.isPending} className="gap-1.5">
             <Bell size={13} /> Consigner une relance
           </Button>
         </div>
+
 
         <div className="grid grid-cols-2 gap-3 pt-2">
           <div>

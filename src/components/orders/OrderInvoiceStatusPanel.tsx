@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { fmtEur } from "@/lib/format-currency";
+import OrderPaymentTimeline from "@/components/orders/OrderPaymentTimeline";
 
 /**
  * Context describing a Stripe-confirmed card payment on the parent order.
@@ -242,6 +243,7 @@ export default function OrderInvoiceStatusPanel({ orderId, vendorId, defaultAmou
   }, [stripePaidCtx, invoices]);
 
   return (
+    <>
     <div className={`bg-white border rounded-lg ${className ?? ""}`} style={{ borderColor: "#E2E8F0" }}>
       <div className="p-4 border-b flex items-center justify-between gap-3 flex-wrap" style={{ borderColor: "#E2E8F0" }}>
         <div>
@@ -481,6 +483,12 @@ export default function OrderInvoiceStatusPanel({ orderId, vendorId, defaultAmou
         />
       )}
     </div>
+    <OrderPaymentTimeline
+      orderId={orderId}
+      paymentIntentId={orderQuery.data?.stripe_payment_intent_id ?? null}
+      stripeVerification={stripeVerification.data}
+    />
+    </>
   );
 }
 

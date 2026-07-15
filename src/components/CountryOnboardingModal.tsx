@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { MapPin, Truck } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useCountry } from "@/contexts/CountryContext";
 
 /**
@@ -10,6 +11,7 @@ import { useCountry } from "@/contexts/CountryContext";
  * Impossible à fermer sans choix. Le choix est persisté par CountryContext.setCountry.
  */
 export function CountryOnboardingModal() {
+  const { t } = useTranslation();
   const { needsCountryChoice, activeCountries, setCountry, detectedCountry, loading } = useCountry();
 
   if (loading || !needsCountryChoice || activeCountries.length === 0) return null;
@@ -37,14 +39,14 @@ export function CountryOnboardingModal() {
               <MapPin size={22} className="text-primary" />
             </div>
             <h2 id="country-onboarding-title" className="text-xl font-bold text-mk-navy">
-              Choisissez votre pays de livraison
+              {t("countryOnboarding.title")}
             </h2>
             <p className="text-sm text-mk-sec mt-2 leading-snug">
-              MediKong adapte le catalogue, les prix, la devise et les offres visibles selon votre pays. Ce choix reste modifiable à tout moment depuis l'en-tête.
+              {t("countryOnboarding.description")}
             </p>
             {detectedCountry && (
               <p className="text-[11.5px] text-mk-sec mt-2">
-                Nous avons détecté un pays non desservi ({detectedCountry}). Sélectionnez celui qui correspond à votre livraison.
+                {t("countryOnboarding.detectedUnsupported", { country: detectedCountry })}
               </p>
             )}
           </div>
@@ -60,7 +62,11 @@ export function CountryOnboardingModal() {
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold text-foreground">{c.name}</div>
                   <div className="text-[11px] text-mk-sec">
-                    {c.code} · {c.currency} · TVA {c.default_vat_rate ?? "—"}%
+                    {t("countryOnboarding.meta", {
+                      code: c.code,
+                      currency: c.currency,
+                      vat: c.default_vat_rate ?? "—",
+                    })}
                   </div>
                 </div>
               </button>
@@ -69,9 +75,7 @@ export function CountryOnboardingModal() {
 
           <div className="px-6 py-3 border-t border-border bg-slate-50 text-[11px] text-mk-sec flex items-start gap-1.5">
             <Truck size={12} className="shrink-0 mt-0.5" />
-            <span>
-              Seules les offres livrables dans le pays choisi seront affichées. Vous pourrez le modifier dans l'en-tête ou dans vos préférences de compte.
-            </span>
+            <span>{t("countryOnboarding.footer")}</span>
           </div>
         </motion.div>
       </motion.div>

@@ -14,6 +14,7 @@ import { fmtEur } from "@/lib/format-currency";
 import { useResyncOnReconnect } from "@/hooks/useResyncOnReconnect";
 import OrderInvoiceStatusPanel from "@/components/orders/OrderInvoiceStatusPanel";
 import StripePaymentStatusBadge from "@/components/orders/StripePaymentStatusBadge";
+import OrderSourceBadge from "@/components/orders/OrderSourceBadge";
 
 import {
   OrderInfoBlocks,

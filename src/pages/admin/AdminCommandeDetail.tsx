@@ -491,6 +491,17 @@ const AdminCommandeDetail = () => {
             )}
           </div>
 
+          <OrderInvoiceStatusPanel
+            orderId={order.id}
+            defaultAmounts={{
+              excl_vat: Number(order.subtotal_excl_vat) || 0,
+              vat: Number(order.vat_amount) || 0,
+              incl_vat: Number(order.total_incl_vat) || 0,
+            }}
+          />
+
+
+
 
           <div className="bg-white border rounded-lg overflow-hidden" style={{ borderColor: "#E2E8F0" }}>
             <table className="w-full text-sm">

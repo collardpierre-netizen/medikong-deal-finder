@@ -154,6 +154,7 @@ const AdminVendors = lazyWithRetry(() => import("./pages/admin/AdminVendors"), "
 const AdminVendeurDetail = lazyWithRetry(() => import("./pages/admin/AdminVendeurDetail"), "AdminVendeurDetail");
 const AdminVendorVisibility = lazyWithRetry(() => import("./pages/admin/AdminVendorVisibility"), "AdminVendorVisibility");
 const AdminOnboarding = lazyWithRetry(() => import("./pages/admin/AdminOnboarding"), "AdminOnboarding");
+const AdminBePharmaciesPage = lazyWithRetry(() => import("./pages/admin/AdminBePharmaciesPage"), "AdminBePharmaciesPage");
 const AdminProduits = lazyWithRetry(() => import("./pages/admin/AdminProduits"), "AdminProduits");
 const AdminProduitDetail = lazyWithRetry(() => import("./pages/admin/AdminProduitDetail"), "AdminProduitDetail");
 const AdminSchemasPIM = lazyWithRetry(() => import("./pages/admin/AdminSchemasPIM"), "AdminSchemasPIM");
@@ -501,6 +502,7 @@ const App = () => (
               <Route path="vendor-visibility" element={<LP><AdminVendorVisibility /></LP>} />
               <Route path="vendors-stripe" element={<LP><AdminVendors /></LP>} />
               <Route path="onboarding" element={<LP><AdminOnboarding /></LP>} />
+              <Route path="pharmacies-be" element={<LP><AdminBePharmaciesPage /></LP>} />
               <Route path="produits" element={<LP><AdminProduits /></LP>} />
               <Route path="produits/mapping" element={<LP><AdminSourceMapping /></LP>} />
               <Route path="produits-soumis" element={<LP><AdminProductSubmissions /></LP>} />

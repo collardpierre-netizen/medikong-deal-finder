@@ -48,6 +48,7 @@ import { template as vendorDelegateCallback } from './vendor-delegate-callback.t
 import { template as quoteSent } from './quote-sent.tsx'
 import { template as orderShipped } from './order-shipped.tsx'
 import { template as orderDeliveryConfirmation } from './order-delivery-confirmation.tsx'
+import { template as vendorStatementReady } from './vendor-statement-ready.tsx'
 
 
 

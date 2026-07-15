@@ -89,7 +89,8 @@
     "suppliers": "Geverifieerde leveranciers",
     "products": "Producten",
     "brands": "Merken",
-    "pharmacies": "Partnerapotheken"
+    "pharmacies": "Partnerapotheken",
+    "offers": "Aanbiedingen"
   },
   "valueProps": {
     "bestPrices": "Beste B2B-prijzen",
@@ -499,5 +500,9 @@
   "seo": {
     "homeTitle": "MediKong — De B2B-marktplaats voor zorgprofessionals in België",
     "homeDescription": "MediKong.pro: B2B-prijsvergelijker en marktplaats voor apotheken, medische praktijken en zorgprofessionals in België. Vergelijk aanbiedingen van honderden leveranciers, bestel in enkele klikken."
+  },
+  "homeCurated": {
+    "bestSellersPrefix": "Bestsellers — {{label}}",
+    "otherBestSellers": "Andere bestsellers"
   }
 }

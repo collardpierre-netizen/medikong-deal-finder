@@ -337,7 +337,7 @@ export default function HomePage() {
               <div className="text-lg sm:text-xl md:text-2xl font-bold text-mk-navy">
                 {renderCountryStat(countryStats?.offers)}
               </div>
-              <div className="text-[11px] sm:text-xs text-mk-sec mt-0.5">{t("stats.offers", "Offres")}</div>
+              <div className="text-[11px] sm:text-xs text-mk-sec mt-0.5">{t("stats.offers")}</div>
             </div>
           </motion.div>
 
@@ -530,7 +530,7 @@ export default function HomePage() {
         const groups = new Map<string, { label: string; priority: number; items: typeof curatedProducts }>();
         for (const p of curatedProducts) {
           const key = p.category_id ?? "__none__";
-          const label = p.category_name ?? "Autres best-sellers";
+          const label = p.category_name ?? t("homeCurated.otherBestSellers");
           if (!groups.has(key)) {
             groups.set(key, { label, priority: matchPriority(label), items: [] });
           }
@@ -548,7 +548,7 @@ export default function HomePage() {
                 <div key={g.label}>
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-bold text-mk-navy">
-                      {idx === 0 && g.priority < 999 ? `Best-sellers — ${g.label}` : g.label}
+                      {idx === 0 && g.priority < 999 ? t("homeCurated.bestSellersPrefix", { label: g.label }) : g.label}
                     </h2>
                     <Link to="/recherche" className="text-sm text-mk-blue hover:underline flex items-center gap-1">
                       {t("common.viewAll")} <ChevronRight size={14} />

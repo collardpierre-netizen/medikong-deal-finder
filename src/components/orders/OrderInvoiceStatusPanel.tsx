@@ -170,6 +170,39 @@ export default function OrderInvoiceStatusPanel({ orderId, vendorId, defaultAmou
     };
   }, [orderQuery.data]);
 
+  // Cross-check the Stripe PaymentIntent amount against the order TTC.
+  const stripeVerification = useQuery({
+    queryKey: ["stripe-verify", stripePaidCtx?.reference ?? null],
+    enabled: !!stripePaidCtx?.reference,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("verify-stripe-payment", {
+        body: { payment_intent_id: stripePaidCtx!.reference },
+      });
+      if (error) throw error;
+      return data as {
+        payment_intent_id: string;
+        status: string;
+        currency: string;
+        amount: number;
+        amount_received: number;
+        created: string | null;
+      };
+    },
+  });
+
+  const stripeMismatch = useMemo(() => {
+    if (!stripePaidCtx || !stripeVerification.data) return null;
+    const v = stripeVerification.data;
+    const expected = Number(stripePaidCtx.amount) || 0;
+    const received = Number(v.amount_received) || 0;
+    const deltaCents = Math.round((expected - received) * 100);
+    const currencyOk = v.currency === "eur";
+    const statusOk = v.status === "succeeded";
+    if (Math.abs(deltaCents) <= 1 && currencyOk && statusOk) return null;
+    return { expected, received, deltaCents, currency: v.currency, status: v.status, currencyOk, statusOk };
+  }, [stripePaidCtx, stripeVerification.data]);
+
   const invoices = invoicesQuery.data ?? [];
   const overduePending = useMemo(
     () => invoices.some((i) => i.status !== "paid" && i.due_date && new Date(i.due_date) < new Date()),

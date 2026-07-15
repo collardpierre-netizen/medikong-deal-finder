@@ -196,7 +196,7 @@ export function Navbar() {
 
         {/* Mobile icons */}
         <div className="flex md:hidden items-center gap-2 shrink-0 ml-auto">
-          <Link to="/panier" aria-label={t("common.cart", "Panier")} className="relative p-2">
+          <Link to="/panier" aria-label={t("common.cart")} className="relative p-2">
             <ShoppingCart className="text-foreground" size={20} aria-hidden="true" />
             {cartCount > 0 && (
               <span className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center">{cartCount}</span>
@@ -205,7 +205,8 @@ export function Navbar() {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label={mobileMenuOpen ? t("common.closeMenu", "Fermer le menu") : t("common.openMenu", "Ouvrir le menu")}
+            aria-label={mobileMenuOpen ? t("common.closeMenu") : t("common.openMenu")}
+
             aria-expanded={mobileMenuOpen}
             className="p-2 text-foreground"
           >

@@ -92,5 +92,6 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'quote-sent': quoteSent,
   'order-shipped': orderShipped,
   'order-delivery-confirmation': orderDeliveryConfirmation,
+  'vendor-statement-ready': vendorStatementReady,
 }
 

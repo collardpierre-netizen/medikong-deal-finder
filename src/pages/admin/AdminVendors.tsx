@@ -185,6 +185,7 @@ const AdminVendors = () => {
               <TableHead>Type</TableHead>
               <TableHead>Commission</TableHead>
               <TableHead>Stripe</TableHead>
+              <TableHead>Peppol</TableHead>
               <TableHead>Veille marché</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -192,7 +193,7 @@ const AdminVendors = () => {
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                   Chargement…
                 </TableCell>
               </TableRow>

@@ -196,14 +196,40 @@ Deno.serve(async (req) => {
       return json(400, { ok: false, error: "falco_not_configured", hint: "Configure FALCO_API_KEY and FALCO_APP_SECRET." });
     }
 
-    const { data: inv, error: invErr } = await supabase
+    let { data: inv, error: invErr } = await supabase
       .from("order_invoices")
       .select("id, order_id, vendor_id, type, invoice_number, pdf_path, amount_excl_vat, vat_amount, amount_incl_vat, issued_at, peppol_status, peppol_retry_count")
       .eq("id", invoiceId)
       .maybeSingle();
     if (invErr) return json(500, { error: "invoice_query_failed", details: invErr.message });
     if (!inv) return json(404, { error: "invoice_not_found" });
-    if (!inv.pdf_path) return json(400, { error: "invoice_pdf_missing" });
+
+    // Auto-regenerate PDF if missing (invoice row exists but pdf_path is null).
+    if (!inv.pdf_path) {
+      const emitFn = inv.type === "commission" ? "emit-commission-invoice" : "emit-self-billing-invoice";
+      logFalco("warn", "pdf_missing_auto_regenerate", { invoice_id: inv.id, type: inv.type, emit_fn: emitFn });
+      // Mark row as failed so the emit function actually regenerates (it early-returns when pdf_path exists AND status != 'failed').
+      await supabase.from("order_invoices").update({ status: "failed" }).eq("id", inv.id);
+      const emitRes = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/${emitFn}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({ order_id: inv.order_id, vendor_id: inv.vendor_id }),
+      });
+      const emitPayload = await emitRes.json().catch(() => ({}));
+      if (!emitRes.ok) {
+        return json(502, { error: "invoice_pdf_regenerate_failed", details: emitPayload });
+      }
+      const refetch = await supabase
+        .from("order_invoices")
+        .select("id, order_id, vendor_id, type, invoice_number, pdf_path, amount_excl_vat, vat_amount, amount_incl_vat, issued_at, peppol_status, peppol_retry_count")
+        .eq("id", invoiceId)
+        .maybeSingle();
+      inv = refetch.data as any;
+      if (!inv?.pdf_path) return json(400, { error: "invoice_pdf_missing", hint: "PDF regeneration ran but pdf_path still null." });
+    }
 
     if (!force && TERMINAL_OK_STATUSES.has(String(inv.peppol_status || "").toLowerCase())) {
       return json(409, {

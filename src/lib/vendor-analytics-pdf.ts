@@ -2,7 +2,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { fmtEur } from "@/lib/format-currency";
 import type { AnalyticsPeriod } from "@/hooks/useVendorAnalytics";
-import logoUrl from "@/assets/medikong-logo.png";
+import logoUrl from "@/assets/logo-medikong.png";
 
 // MediKong brand tokens (mirrors mem://style/*).
 const BRAND_BLUE: [number, number, number] = [27, 91, 218]; // #1B5BDA

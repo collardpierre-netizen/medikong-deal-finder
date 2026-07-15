@@ -146,7 +146,7 @@ const AdminFinances = () => {
                           error={inv.peppol_error}
                           retryCount={inv.peppol_retry_count}
                         />
-                        {(!inv.peppol_status || inv.peppol_status === "non_envoyé" || inv.peppol_status === "not_sent" || inv.peppol_status === "blocked_missing_id" || inv.peppol_status === "failed") && (
+                        {(!inv.peppol_status || inv.peppol_status === "non_envoyé" || inv.peppol_status === "not_sent" || inv.peppol_status === "blocked_missing_id" || inv.peppol_status === "blocked_not_registered" || inv.peppol_status === "failed") && (
                           <button
                             onClick={async () => {
                               const t = toast.loading("Envoi Peppol en cours…");

@@ -131,8 +131,9 @@ function stripDataUrl(dataUrl: string): string {
   return i >= 0 ? dataUrl.slice(i + 1) : dataUrl;
 }
 
-// Module-level cache for the DM Sans TTF (fetched once per session).
+// Module-level cache for DM Sans + Bricolage Grotesque TTFs (fetched once per session).
 let dmSansCache: { regular: string; bold: string } | null = null;
+let bricolageCache: { bold: string } | null = null;
 
 /**
  * Fetch DM Sans (regular + bold) from a stable CDN and cache the base64 payload.
@@ -152,6 +153,28 @@ async function loadDmSans(): Promise<{ regular: string; bold: string } | null> {
   }
 }
 
+/**
+ * Fetch Bricolage Grotesque Bold — used for titles to mirror the MediKong site
+ * (mem://style: titres en Bricolage Grotesque). Best-effort with fallback.
+ */
+async function loadBricolage(): Promise<{ bold: string } | null> {
+  if (bricolageCache) return bricolageCache;
+  const urls = [
+    "https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/bricolagegrotesque/static/BricolageGrotesque_24pt-Bold.ttf",
+    "https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/bricolagegrotesque/static/BricolageGrotesque-Bold.ttf",
+  ];
+  for (const u of urls) {
+    try {
+      const b = await urlToDataUrl(u);
+      bricolageCache = { bold: stripDataUrl(b) };
+      return bricolageCache;
+    } catch {
+      /* try next */
+    }
+  }
+  return null;
+}
+
 /** Register DM Sans in a jsPDF document if it has been loaded, else no-op. */
 function registerDmSans(doc: jsPDF, font: { regular: string; bold: string } | null): string {
   if (!font) return "helvetica";
@@ -160,6 +183,14 @@ function registerDmSans(doc: jsPDF, font: { regular: string; bold: string } | nu
   doc.addFont("DMSans-Regular.ttf", "DMSans", "normal");
   doc.addFont("DMSans-Bold.ttf", "DMSans", "bold");
   return "DMSans";
+}
+
+/** Register Bricolage Grotesque Bold for titles. Returns the family name or a fallback. */
+function registerBricolage(doc: jsPDF, font: { bold: string } | null, fallback: string): string {
+  if (!font) return fallback;
+  doc.addFileToVFS("BricolageGrotesque-Bold.ttf", font.bold);
+  doc.addFont("BricolageGrotesque-Bold.ttf", "Bricolage", "bold");
+  return "Bricolage";
 }
 
 function drawHeader(doc: jsPDF, vendorName: string, periodLabel: string, logoDataUrl: string | null, fontName: string) {

@@ -13,6 +13,7 @@ function fmtEur(cents: number) {
 export function NewSellOutReportDialog({ vendorId, onClose }: { vendorId: string; onClose: () => void }) {
   const create = useCreateSellOutReport();
   const [customerLabel, setCustomerLabel] = useState("");
+  const [pharmacyId, setPharmacyId] = useState<string | null>(null);
   const [pharmacyQuery, setPharmacyQuery] = useState("");
   const [pharmacyLocked, setPharmacyLocked] = useState(false);
   const [showPharmacyResults, setShowPharmacyResults] = useState(false);
@@ -61,6 +62,7 @@ export function NewSellOutReportDialog({ vendorId, onClose }: { vendorId: string
       await create.mutateAsync({
         vendor_id: vendorId,
         customer_label: customerLabel || null,
+        pharmacy_id: pharmacyId,
         period_start: periodStart,
         period_end: periodEnd,
         source: fileName ? "xlsx" : "manual",
@@ -110,6 +112,7 @@ export function NewSellOutReportDialog({ vendorId, onClose }: { vendorId: string
                   setCustomerLabel(e.target.value);
                   setPharmacyQuery(e.target.value);
                   setPharmacyLocked(false);
+                  setPharmacyId(null);
                   setShowPharmacyResults(true);
                 }}
                 onFocus={() => setShowPharmacyResults(true)}
@@ -133,6 +136,7 @@ export function NewSellOutReportDialog({ vendorId, onClose }: { vendorId: string
                       onClick={() => {
                         const label = `${p.name} — APB ${p.apb_number}${p.city ? ` · ${p.city}` : ""}`;
                         setCustomerLabel(label);
+                        setPharmacyId(p.id);
                         setPharmacyLocked(true);
                         setShowPharmacyResults(false);
                       }}

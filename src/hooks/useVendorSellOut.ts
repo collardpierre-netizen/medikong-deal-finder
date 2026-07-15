@@ -43,6 +43,7 @@ export interface CreateReportInput {
   vendor_id: string;
   customer_id?: string | null;
   customer_label?: string | null;
+  pharmacy_id?: string | null;
   period_start: string;
   period_end: string;
   currency_code?: string;

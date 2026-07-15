@@ -18,6 +18,7 @@ import { RecurrencePanel } from "@/components/vendor/analytics/RecurrencePanel";
 import { CustomerMap } from "@/components/vendor/analytics/CustomerMap";
 import { SellOutPanel } from "@/components/vendor/analytics/SellOutPanel";
 import { ManualSellInPanel } from "@/components/vendor/analytics/ManualSellInPanel";
+import { BeCoveragePanel } from "@/components/vendor/analytics/BeCoveragePanel";
 import { AnalyticsExportButtons } from "@/components/vendor/analytics/AnalyticsExportButtons";
 import { exportAnalyticsRows } from "@/lib/analytics-export";
 
@@ -37,6 +38,7 @@ const TABS = [
   { key: "products", label: "Top produits" },
   { key: "sellin_manual", label: "Sell-in manuel" },
   { key: "sellout", label: "Sell-in vs Sell-out" },
+  { key: "coverage_be", label: "Couverture BE" },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
 
@@ -725,6 +727,7 @@ export default function VendorAnalytics() {
       {tab === "products" && <TopProductsTab period={period} vendorId={vendor?.id ?? null} />}
       {tab === "sellin_manual" && <ManualSellInPanel vendorId={vendor?.id ?? null} />}
       {tab === "sellout" && <SellOutPanel vendorId={vendor?.id ?? null} />}
+      {tab === "coverage_be" && <BeCoveragePanel vendorId={vendor?.id ?? null} />}
     </div>
   );
 }

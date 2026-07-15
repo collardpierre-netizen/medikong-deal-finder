@@ -1,15 +1,31 @@
 import { useState } from "react";
-import { Upload, Search, MapPin, Building2 } from "lucide-react";
+import { Upload, Search, MapPin, Building2, Download, RefreshCw } from "lucide-react";
 import {
   useBePharmaciesList,
   useUpsertBePharmacies,
 } from "@/hooks/useBePharmacies";
 import { parseBePharmaciesXlsx, type ParseBePharmaciesResult } from "@/lib/parseBePharmaciesXlsx";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
+const BE_PROVINCES = [
+  "Bruxelles-Capitale",
+  "Brabant wallon",
+  "Brabant flamand",
+  "Anvers",
+  "Limbourg",
+  "Liège",
+  "Namur",
+  "Hainaut",
+  "Luxembourg",
+  "Flandre orientale",
+  "Flandre occidentale",
+];
 
 export default function AdminBePharmaciesPage() {
   const [search, setSearch] = useState("");
-  const { data, isLoading } = useBePharmaciesList({ search, limit: 200 });
+  const [provinceFilter, setProvinceFilter] = useState<string>("");
+  const { data, isLoading } = useBePharmaciesList({ search, limit: 500 });
   const upsert = useUpsertBePharmacies();
   const [parsed, setParsed] = useState<ParseBePharmaciesResult | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -44,6 +60,58 @@ export default function AdminBePharmaciesPage() {
     } catch (err: any) {
       toast({ title: "Erreur d'import", description: err.message, variant: "destructive" });
     }
+  }
+
+  async function onBackfill() {
+    try {
+      const { data, error } = await (supabase.rpc as any)("backfill_sell_out_pharmacy_ids");
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      toast({
+        title: `Rapprochement terminé`,
+        description: `${row?.updated_count ?? 0} rapport(s) reliés · ${row?.remaining_unmatched ?? 0} sans correspondance`,
+      });
+    } catch (err: any) {
+      toast({ title: "Erreur backfill", description: err.message, variant: "destructive" });
+    }
+  }
+
+  function onExportCsv() {
+    const rows = (data?.rows ?? []).filter(
+      (r) => !provinceFilter || r.province === provinceFilter,
+    );
+    if (!rows.length) {
+      toast({ title: "Aucune pharmacie à exporter", variant: "destructive" });
+      return;
+    }
+    const headers = [
+      "apb_number",
+      "name",
+      "address_line1",
+      "postal_code",
+      "city",
+      "province",
+      "phone",
+      "email",
+      "latitude",
+      "longitude",
+    ];
+    const escape = (v: unknown) => {
+      const s = v == null ? "" : String(v);
+      return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const csv = [
+      headers.join(","),
+      ...rows.map((r) => headers.map((h) => escape((r as any)[h])).join(",")),
+    ].join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `pharmacies-be${provinceFilter ? `-${provinceFilter}` : ""}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: `${rows.length} pharmacie(s) exportée(s)` });
   }
 
   return (
@@ -118,19 +186,52 @@ export default function AdminBePharmaciesPage() {
         ) : null}
       </div>
 
+      <div className="p-5 rounded-[10px] border border-[#E2E8F0] bg-white space-y-3">
+        <div className="text-[14px] font-semibold text-[#1D2530]">Actions</div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={onBackfill}
+            className="inline-flex items-center gap-1 px-3 py-2 border border-[#E2E8F0] rounded-[8px] text-[12px] hover:bg-[#F8FAFC]"
+          >
+            <RefreshCw size={12} /> Rapprocher les rapports sell-out existants
+          </button>
+          <button
+            onClick={onExportCsv}
+            className="inline-flex items-center gap-1 px-3 py-2 border border-[#E2E8F0] rounded-[8px] text-[12px] hover:bg-[#F8FAFC]"
+          >
+            <Download size={12} /> Exporter CSV {provinceFilter && `(${provinceFilter})`}
+          </button>
+          <span className="text-[11px] text-[#8B95A5]">
+            L'export CSV alimente une campagne d'invitation externe (Brevo, Mailchimp…).
+          </span>
+        </div>
+      </div>
+
       <div className="p-5 rounded-[10px] border border-[#E2E8F0] bg-white">
         <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
           <div className="text-[14px] font-semibold text-[#1D2530]">
             Officines en base ({data?.count ?? 0})
           </div>
-          <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8B95A5]" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher nom, APB, ville, CP…"
-              className="pl-8 pr-3 py-2 border border-[#E2E8F0] rounded-[8px] text-[12px] w-[280px]"
-            />
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              value={provinceFilter}
+              onChange={(e) => setProvinceFilter(e.target.value)}
+              className="px-3 py-2 border border-[#E2E8F0] rounded-[8px] text-[12px]"
+            >
+              <option value="">Toutes provinces</option>
+              {BE_PROVINCES.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8B95A5]" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Rechercher nom, APB, ville, CP…"
+                className="pl-8 pr-3 py-2 border border-[#E2E8F0] rounded-[8px] text-[12px] w-[280px]"
+              />
+            </div>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -160,7 +261,7 @@ export default function AdminBePharmaciesPage() {
                   </td>
                 </tr>
               )}
-              {(data?.rows ?? []).map((p) => (
+              {(data?.rows ?? []).filter((p) => !provinceFilter || p.province === provinceFilter).map((p) => (
                 <tr key={p.id} className="border-b border-[#F1F5F9]">
                   <td className="py-2 font-mono">{p.apb_number}</td>
                   <td>{p.name}</td>

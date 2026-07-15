@@ -93,6 +93,8 @@ Deno.serve(async (req) => {
     logFalco("info", "request_start", { caller, environment, endpoint, base_url: baseUrl, method: "GET" });
     const startedAt = Date.now();
     let httpStatus = 0;
+    let rawBody = "";
+    let responseHeaders: Record<string, string> = {};
     let payload: any = null;
     let networkError: string | null = null;
 
@@ -106,10 +108,12 @@ Deno.serve(async (req) => {
         },
       });
       httpStatus = res.status;
-      const ct = res.headers.get("content-type") || "";
-      payload = ct.includes("json")
-        ? await res.json().catch(() => null)
-        : await res.text().catch(() => null);
+      responseHeaders = Object.fromEntries(res.headers.entries());
+      rawBody = await res.text().catch(() => "");
+      console.log("[falco-test-connection] Falco response status:", httpStatus);
+      console.log("[falco-test-connection] Falco response body:", rawBody);
+      console.log("[falco-test-connection] Falco response headers:", responseHeaders);
+      try { payload = rawBody ? JSON.parse(rawBody) : null; } catch { payload = null; }
     } catch (e: any) {
       networkError = String(e?.message || e);
     }
@@ -120,10 +124,7 @@ Deno.serve(async (req) => {
     if (networkError) {
       logFalco("error", "network_error", { caller, environment, endpoint, latency_ms: latencyMs, error: networkError });
     } else if (!ok) {
-      const detail =
-        (payload && typeof payload === "object" && (payload.detail || payload.title)) ||
-        (typeof payload === "string" ? payload.slice(0, 200) : "");
-      logFalco("error", "request_failed", { caller, environment, endpoint, http_status: httpStatus, latency_ms: latencyMs, error: detail });
+      logFalco("error", "request_failed", { caller, environment, endpoint, http_status: httpStatus, latency_ms: latencyMs, error: rawBody.slice(0, 500) });
     } else {
       logFalco("info", "request_success", { caller, environment, endpoint, http_status: httpStatus, latency_ms: latencyMs });
     }
@@ -151,10 +152,7 @@ Deno.serve(async (req) => {
     } else if (httpStatus === 401 || httpStatus === 403) {
       message = `Authentification refusée (HTTP ${httpStatus}) — vérifier FALCO_API_KEY / FALCO_APP_SECRET.`;
     } else {
-      const detail =
-        (payload && typeof payload === "object" && (payload.detail || payload.title)) ||
-        (typeof payload === "string" ? payload.slice(0, 200) : "");
-      message = `Échec Falco (HTTP ${httpStatus})${detail ? " — " + detail : ""}.`;
+      message = `Échec Falco (HTTP ${httpStatus}).`;
     }
 
     return json(200, {
@@ -167,6 +165,8 @@ Deno.serve(async (req) => {
       endpoint: "/organization/whoami",
       organization: org,
       message,
+      response_body: rawBody,
+      response_headers: responseHeaders,
       checked_at: new Date().toISOString(),
     });
   } catch (e) {

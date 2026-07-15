@@ -417,7 +417,8 @@ function drawCoverageMap(
   y: number,
   points: GeoPoint[],
   outlines: Record<CountryCode, Ring[]>,
-  fontName: string
+  fontName: string,
+  raster?: { dataUrl: string; widthPx: number; heightPx: number } | null
 ): number {
   const w = doc.internal.pageSize.getWidth();
   const margin = 14;

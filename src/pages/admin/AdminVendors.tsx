@@ -23,6 +23,8 @@ interface VendorRow {
   stripe_onboarding_complete: boolean;
   stripe_charges_enabled: boolean;
   stripe_payouts_enabled: boolean;
+  country_code: string | null;
+  peppol_id: string | null;
 }
 
 function statusOf(v: VendorRow): StripeStatus {

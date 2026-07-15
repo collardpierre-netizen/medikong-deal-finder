@@ -186,19 +186,52 @@ export default function AdminBePharmaciesPage() {
         ) : null}
       </div>
 
+      <div className="p-5 rounded-[10px] border border-[#E2E8F0] bg-white space-y-3">
+        <div className="text-[14px] font-semibold text-[#1D2530]">Actions</div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={onBackfill}
+            className="inline-flex items-center gap-1 px-3 py-2 border border-[#E2E8F0] rounded-[8px] text-[12px] hover:bg-[#F8FAFC]"
+          >
+            <RefreshCw size={12} /> Rapprocher les rapports sell-out existants
+          </button>
+          <button
+            onClick={onExportCsv}
+            className="inline-flex items-center gap-1 px-3 py-2 border border-[#E2E8F0] rounded-[8px] text-[12px] hover:bg-[#F8FAFC]"
+          >
+            <Download size={12} /> Exporter CSV {provinceFilter && `(${provinceFilter})`}
+          </button>
+          <span className="text-[11px] text-[#8B95A5]">
+            L'export CSV alimente une campagne d'invitation externe (Brevo, Mailchimp…).
+          </span>
+        </div>
+      </div>
+
       <div className="p-5 rounded-[10px] border border-[#E2E8F0] bg-white">
         <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
           <div className="text-[14px] font-semibold text-[#1D2530]">
             Officines en base ({data?.count ?? 0})
           </div>
-          <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8B95A5]" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher nom, APB, ville, CP…"
-              className="pl-8 pr-3 py-2 border border-[#E2E8F0] rounded-[8px] text-[12px] w-[280px]"
-            />
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              value={provinceFilter}
+              onChange={(e) => setProvinceFilter(e.target.value)}
+              className="px-3 py-2 border border-[#E2E8F0] rounded-[8px] text-[12px]"
+            >
+              <option value="">Toutes provinces</option>
+              {BE_PROVINCES.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8B95A5]" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Rechercher nom, APB, ville, CP…"
+                className="pl-8 pr-3 py-2 border border-[#E2E8F0] rounded-[8px] text-[12px] w-[280px]"
+              />
+            </div>
           </div>
         </div>
         <div className="overflow-x-auto">

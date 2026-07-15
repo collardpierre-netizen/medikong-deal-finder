@@ -144,6 +144,9 @@ export default function VendorOnboardingWizard() {
         .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")
         || `vendor-${Date.now()}`;
 
+      const isBE = company.vat_number.trim().toUpperCase().startsWith("BE");
+      const peppolNormalized = normalizePeppolId(company.peppol_id);
+
       const { data: vendor, error: vendorErr } = await supabase
         .from("vendors")
         .insert({
@@ -152,6 +155,8 @@ export default function VendorOnboardingWizard() {
           email: company.email,
           phone: company.phone,
           vat_number: company.vat_number || null,
+          peppol_id: peppolNormalized || null,
+          country_code: isBE ? "BE" : (address.country || "BE"),
           slug,
           auth_user_id: user.id,
           type: "real" as any,

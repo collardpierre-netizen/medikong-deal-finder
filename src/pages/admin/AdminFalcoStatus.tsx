@@ -201,10 +201,11 @@ export default function AdminFalcoStatus() {
               <div className="space-y-1">
                 <div className="font-medium font-mono">FALCO_APP_SECRET</div>
                 <div className="text-muted-foreground">
-                  Format : commence par <code className="text-xs bg-muted px-1.5 py-0.5 rounded">app_</code> suivi de caractères alphanumériques.
+                  Format : <code className="text-xs bg-muted px-1.5 py-0.5 rounded">as_&lt;env&gt;_&lt;id&gt;_&lt;secret&gt;</code>
+                  {" "}où <code className="text-xs">&lt;env&gt;</code> vaut <code className="text-xs">live</code> ou <code className="text-xs">test</code>.
                 </div>
                 <div className="text-xs">
-                  Exemple générique : <code className="bg-muted px-1.5 py-0.5 rounded">app_XXXXXXXXXXXX</code>
+                  Exemple générique : <code className="bg-muted px-1.5 py-0.5 rounded">as_live_abc123_XXXXXXXXXXXXXXXX</code>
                 </div>
               </div>
 

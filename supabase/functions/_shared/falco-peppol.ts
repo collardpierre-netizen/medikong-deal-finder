@@ -110,11 +110,12 @@ export function isFalcoConfigured(): boolean {
 
 /**
  * Falco API key must match `sk_{env}_{id}_{secret}` where env is `live` or `test`.
- * App secret must start with `app_`. Returns null when valid, or an error code
+ * App secret must match `as_{env}_{id}_{secret}` where env is `live` or `test`.
+ * Returns null when valid, or an error code
  * suitable for logging / returning to the caller (never leaks the secret).
  */
 export const FALCO_API_KEY_PATTERN = /^sk_(live|test)_[A-Za-z0-9]+_[A-Za-z0-9]+$/;
-export const FALCO_APP_SECRET_PATTERN = /^app_[A-Za-z0-9]+$/;
+export const FALCO_APP_SECRET_PATTERN = /^as_(live|test)_[A-Za-z0-9]+_[A-Za-z0-9]+$/;
 
 export function validateFalcoCredentials(
   apiKey: string,
@@ -137,7 +138,7 @@ export function validateFalcoCredentials(
     return {
       ok: false,
       code: "app_secret_format_invalid",
-      message: "FALCO_APP_SECRET format invalid (expected app_...).",
+      message: "FALCO_APP_SECRET format invalid (expected as_{env}_{id}_{secret}).",
     };
   }
   return { ok: true };

@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { FileText, Send, Wallet, Bell, Plus, ExternalLink } from "lucide-react";
+import { FileText, Send, Wallet, Bell, Plus, ExternalLink, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { fmtEur } from "@/lib/format-currency";
+
+/**
+ * Context describing a Stripe-confirmed card payment on the parent order.
+ * When present, the "Paiement reçu" section is auto-filled and locked:
+ * the encaissement is the source of truth and cannot be edited manually.
+ */
+type StripePaidCtx = {
+  paidAt: string;         // ISO — best available Stripe confirmation timestamp
+  amount: number;         // TTC in EUR
+  method: "card";
+  reference: string;      // stripe_payment_intent_id
+};
+
 
 type Invoice = {
   id: string;

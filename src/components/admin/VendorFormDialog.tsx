@@ -161,7 +161,7 @@ export default function VendorFormDialog({ open, onOpenChange }: Props) {
           country_code: form.country_code || "BE",
           commission_rate: parseFloat(form.commission_rate) || 0,
           commission_model: form.commission_model as any,
-          margin_split_pct: parseFloat(form.margin_split_pct) || 50,
+          margin_split_pct: form.commission_model === 'margin_split' ? (parseFloat(form.margin_split_pct) || 50) : 0,
           fixed_commission_amount: form.commission_model === 'fixed_amount' ? (parseFloat(form.fixed_commission_amount) || 0) : null,
           description: form.description.trim() || null,
           type: form.type as any,

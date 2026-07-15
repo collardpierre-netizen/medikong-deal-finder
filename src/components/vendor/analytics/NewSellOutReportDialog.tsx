@@ -62,6 +62,7 @@ export function NewSellOutReportDialog({ vendorId, onClose }: { vendorId: string
       await create.mutateAsync({
         vendor_id: vendorId,
         customer_label: customerLabel || null,
+        pharmacy_id: pharmacyId,
         period_start: periodStart,
         period_end: periodEnd,
         source: fileName ? "xlsx" : "manual",

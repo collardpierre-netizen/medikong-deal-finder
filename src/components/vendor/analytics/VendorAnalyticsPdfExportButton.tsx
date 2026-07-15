@@ -1,5 +1,5 @@
-import { FileDown, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { FileDown, Loader2, Download, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   useVendorAnalyticsKpis,
@@ -12,7 +12,8 @@ import {
 } from "@/hooks/useVendorAnalytics";
 import { useVendorAnalyticsRecurrence } from "@/hooks/useVendorAnalyticsRecurrence";
 import { supabase } from "@/integrations/supabase/client";
-import { generateVendorAnalyticsPdf, type GeoPoint } from "@/lib/vendor-analytics-pdf";
+import { generateVendorAnalyticsPdf, type GeoPoint, type GeneratedPdf } from "@/lib/vendor-analytics-pdf";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Props {
   vendorName: string;
@@ -21,10 +22,6 @@ interface Props {
   periodLabel: string;
 }
 
-/**
- * Resolve geocoded points for the customer-location dataset used by CustomerMap.
- * Reuses the `geocode-locations` edge function (server-side cache).
- */
 async function fetchGeoPoints(vendorId: string, period: AnalyticsPeriod): Promise<GeoPoint[]> {
   const { from, to } = computeRange(period);
   const { data: locData, error: locErr } = await (supabase.rpc as any)(
@@ -45,7 +42,6 @@ async function fetchGeoPoints(vendorId: string, period: AnalyticsPeriod): Promis
   }));
 
   const geoByKey = new Map<string, { lat: number; lng: number }>();
-  // Poll the edge function until no more pending geocodes (bounded).
   for (let i = 0; i < 20; i++) {
     const { data, error } = await supabase.functions.invoke("geocode-locations", { body: { locations } });
     if (error) break;
@@ -76,6 +72,7 @@ async function fetchGeoPoints(vendorId: string, period: AnalyticsPeriod): Promis
 
 export function VendorAnalyticsPdfExportButton({ vendorName, vendorId, period, periodLabel }: Props) {
   const [busy, setBusy] = useState(false);
+  const [preview, setPreview] = useState<GeneratedPdf | null>(null);
   const kpis = useVendorAnalyticsKpis(period);
   const byType = useVendorAnalyticsByCustomerType(period);
   const byCountry = useVendorAnalyticsByCountry(period);
@@ -88,13 +85,25 @@ export function VendorAnalyticsPdfExportButton({ vendorName, vendorId, period, p
 
   const disabled = !vendorId || busy;
 
+  // Revoke blob URL when preview closes/changes
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview.blobUrl);
+    };
+  }, [preview]);
+
+  const closePreview = () => {
+    if (preview) URL.revokeObjectURL(preview.blobUrl);
+    setPreview(null);
+  };
+
   const onClick = async () => {
     if (!vendorId) {
       toast.error("Aucun vendor_id résolu — impossible d'exporter.");
       return;
     }
     setBusy(true);
-    const loadingId = toast.loading("Génération du PDF en cours…");
+    const loadingId = toast.loading("Génération de l'aperçu PDF…");
     try {
       await Promise.all([
         kpis.data ? null : kpis.refetch(),
@@ -109,47 +118,92 @@ export function VendorAnalyticsPdfExportButton({ vendorName, vendorId, period, p
       try {
         geoPoints = await fetchGeoPoints(vendorId, period);
       } catch {
-        // Coverage map is optional — carry on without it.
         geoPoints = [];
       }
 
-      await generateVendorAnalyticsPdf({
-        vendorName,
-        period,
-        periodLabel,
-        kpis: (kpis.data as any) ?? null,
-        byType: (byType.data as any) ?? [],
-        byCountry: (byCountry.data as any) ?? [],
-        topCustomers: (topCustomers.data as any) ?? [],
-        topProducts: (topProducts.data as any) ?? [],
-        recurrence: (recurrence.data as any) ?? null,
-        geoPoints,
-      });
-      toast.success("Export PDF généré", { id: loadingId });
+      const generated = await generateVendorAnalyticsPdf(
+        {
+          vendorName,
+          period,
+          periodLabel,
+          kpis: (kpis.data as any) ?? null,
+          byType: (byType.data as any) ?? [],
+          byCountry: (byCountry.data as any) ?? [],
+          topCustomers: (topCustomers.data as any) ?? [],
+          topProducts: (topProducts.data as any) ?? [],
+          recurrence: (recurrence.data as any) ?? null,
+          geoPoints,
+        },
+        { autoSave: false }
+      );
+      setPreview(generated);
+      toast.success("Aperçu prêt", { id: loadingId });
     } catch (err) {
       const msg = (err as { message?: string })?.message ?? String(err);
-      toast.error(`Échec de l'export PDF : ${msg}`, { id: loadingId });
+      toast.error(`Échec de la génération : ${msg}`, { id: loadingId });
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className="inline-flex items-center gap-2 h-9 px-3 rounded-[8px] text-[12px] font-semibold transition-colors border"
-      style={{
-        backgroundColor: disabled ? "#F1F5F9" : "#1B5BDA",
-        color: disabled ? "#8B95A5" : "#fff",
-        borderColor: disabled ? "#E2E8F0" : "#1B5BDA",
-        cursor: disabled ? "not-allowed" : "pointer",
-      }}
-      title="Exporter un rapport PDF des analytics"
-    >
-      {busy || anyLoading ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />}
-      Export PDF
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        className="inline-flex items-center gap-2 h-9 px-3 rounded-[8px] text-[12px] font-semibold transition-colors border"
+        style={{
+          backgroundColor: disabled ? "#F1F5F9" : "#1B5BDA",
+          color: disabled ? "#8B95A5" : "#fff",
+          borderColor: disabled ? "#E2E8F0" : "#1B5BDA",
+          cursor: disabled ? "not-allowed" : "pointer",
+        }}
+        title="Prévisualiser puis exporter le rapport PDF"
+      >
+        {busy || anyLoading ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />}
+        Export PDF
+      </button>
+
+      <Dialog open={!!preview} onOpenChange={(open) => { if (!open) closePreview(); }}>
+        <DialogContent className="max-w-5xl w-[95vw] h-[90vh] p-0 flex flex-col gap-0 overflow-hidden">
+          <DialogHeader className="px-5 py-3 border-b border-[#E2E8F0] flex-row items-center justify-between space-y-0">
+            <div className="flex flex-col">
+              <DialogTitle className="text-[15px] font-semibold text-[#1D2530]">
+                Aperçu du rapport PDF
+              </DialogTitle>
+              <span className="text-[11px] text-[#616B7C]">{vendorName} · {periodLabel}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => preview?.save()}
+                className="inline-flex items-center gap-2 h-9 px-3 rounded-[8px] text-[12px] font-semibold border bg-[#1B5BDA] text-white border-[#1B5BDA] hover:bg-[#164ab3]"
+              >
+                <Download size={14} />
+                Télécharger le PDF
+              </button>
+              <button
+                type="button"
+                onClick={closePreview}
+                aria-label="Fermer l'aperçu"
+                className="inline-flex items-center justify-center h-9 w-9 rounded-[8px] border border-[#E2E8F0] text-[#1D2530] hover:bg-[#F8FAFC]"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </DialogHeader>
+          <div className="flex-1 bg-[#F1F5F9]">
+            {preview && (
+              <iframe
+                title="Aperçu du PDF"
+                src={preview.blobUrl}
+                className="w-full h-full border-0"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

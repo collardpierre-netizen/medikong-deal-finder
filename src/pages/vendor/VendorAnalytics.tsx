@@ -20,6 +20,7 @@ import { SellOutPanel } from "@/components/vendor/analytics/SellOutPanel";
 import { ManualSellInPanel } from "@/components/vendor/analytics/ManualSellInPanel";
 import { BeCoveragePanel } from "@/components/vendor/analytics/BeCoveragePanel";
 import { AnalyticsExportButtons } from "@/components/vendor/analytics/AnalyticsExportButtons";
+import { VendorAnalyticsPdfExportButton } from "@/components/vendor/analytics/VendorAnalyticsPdfExportButton";
 import { exportAnalyticsRows } from "@/lib/analytics-export";
 
 const PERIOD_OPTIONS: { value: AnalyticsPeriod; label: string }[] = [

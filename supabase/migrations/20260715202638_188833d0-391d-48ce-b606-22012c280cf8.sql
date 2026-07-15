@@ -1,0 +1,1 @@
+UPDATE public.order_invoices SET status='failed' WHERE id='b8bc86aa-eae9-4202-9665-b1486dd81229';

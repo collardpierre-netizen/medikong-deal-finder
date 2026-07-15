@@ -289,6 +289,24 @@ export default function AdminFalcoStatus() {
                         Endpoint : <code>{testResult.base_url}{testResult.endpoint}</code>
                       </div>
                     )}
+                    {testResult.response_body && (
+                      <div className="space-y-1">
+                        <div className="text-xs font-medium">Réponse brute Falco :</div>
+                        <pre className="text-xs bg-muted/70 rounded p-2 overflow-auto max-h-64 whitespace-pre-wrap break-all">
+{testResult.response_body}
+                        </pre>
+                      </div>
+                    )}
+                    {testResult.response_headers && Object.keys(testResult.response_headers).length > 0 && (
+                      <details className="text-xs">
+                        <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                          Headers de réponse ({Object.keys(testResult.response_headers).length})
+                        </summary>
+                        <pre className="mt-1 bg-muted/50 rounded p-2 overflow-auto max-h-48 whitespace-pre-wrap break-all">
+{JSON.stringify(testResult.response_headers, null, 2)}
+                        </pre>
+                      </details>
+                    )}
                   </AlertDescription>
                 </Alert>
               )}

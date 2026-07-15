@@ -20828,6 +20828,7 @@ export type Database = {
           margin_split_pct: number
           max_open_rfqs: number | null
           name: string
+          peppol_id: string | null
           phone: string | null
           postal_code: string | null
           preferred_language: string | null
@@ -20915,6 +20916,7 @@ export type Database = {
           margin_split_pct?: number
           max_open_rfqs?: number | null
           name: string
+          peppol_id?: string | null
           phone?: string | null
           postal_code?: string | null
           preferred_language?: string | null
@@ -21002,6 +21004,7 @@ export type Database = {
           margin_split_pct?: number
           max_open_rfqs?: number | null
           name?: string
+          peppol_id?: string | null
           phone?: string | null
           postal_code?: string | null
           preferred_language?: string | null

@@ -27,6 +27,8 @@ import {
   VENDOR_ONBOARDING_MODE_META,
   getVendorOnboardingModeLabel,
 } from "@/lib/vendor-onboarding-mode-labels";
+import { isBelgianVendor, isValidBePeppolId, normalizePeppolId, PEPPOL_BE_EXAMPLE } from "@/lib/peppol";
+import { VendorPeppolBadge } from "@/components/admin/VendorPeppolBadge";
 
 type VendorValidationStatus = "pending_review" | "under_review" | "accepted" | "approved" | "rejected";
 
@@ -339,6 +341,20 @@ const AdminVendeurDetail = () => {
               <InfoRow label="ID Qogita" value={(vendor as any).qogita_seller_alias || "—"} />
               <InfoRow label="Raison sociale" value={vendor.company_name || ""} />
               <InfoRow label="N° TVA" value={vendor.vat_number || ""} />
+              <div className="flex justify-between items-center py-1.5 text-[12px] gap-3">
+                <span style={{ color: "#8B95A5" }}>Peppol ID</span>
+                <span className="text-right flex items-center gap-2">
+                  {(vendor as any).peppol_id && (
+                    <span className="font-mono text-[11px]" style={{ color: "#1D2530" }}>
+                      {(vendor as any).peppol_id}
+                    </span>
+                  )}
+                  <VendorPeppolBadge
+                    peppolId={(vendor as any).peppol_id ?? null}
+                    isBelgian={isBelgianVendor(vendor.country_code)}
+                  />
+                </span>
+              </div>
               <InfoRow label="Type" value={vendor.type} />
               <InfoRow label="Type d'activité" value={(vendor as any).business_type || "—"} />
               <InfoRow label="Langue" value={(vendor as any).preferred_language?.toUpperCase() || "FR"} />
@@ -1323,6 +1339,7 @@ function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boole
     city: vendor.city || "",
     postal_code: vendor.postal_code || "",
     country_code: vendor.country_code || "BE",
+    peppol_id: (vendor as any).peppol_id || "",
     commission_rate: String(vendor.commission_rate ?? 0),
     commission_model: (vendor as any).commission_model || "flat_percentage",
     fixed_commission_amount: String((vendor as any).fixed_commission_amount ?? 0),
@@ -1355,6 +1372,11 @@ function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boole
   };
 
   const handleSave = async () => {
+    // Peppol validation: if entered, must match BE format (avoids garbage in DB)
+    if (form.peppol_id.trim() && !isValidBePeppolId(form.peppol_id)) {
+      toast.error("Format Peppol invalide", { description: "Attendu : 0208:BE + 10 chiffres." });
+      return;
+    }
     setSaving(true);
     try {
       const { error } = await supabase.from("vendors").update({
@@ -1367,6 +1389,7 @@ function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boole
         city: form.city.trim() || null,
         postal_code: form.postal_code.trim() || null,
         country_code: form.country_code || "BE",
+        peppol_id: normalizePeppolId(form.peppol_id).trim() || null,
         commission_rate: parseFloat(form.commission_rate) || 0,
         commission_model: form.commission_model,
         fixed_commission_amount: form.commission_model === 'fixed_amount' ? parseFloat(form.fixed_commission_amount) || 0 : null,
@@ -1436,6 +1459,22 @@ function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boole
             <Input value={form.website_url} onChange={e => set("website_url", e.target.value)} placeholder="https://..." />
           </div>
           <div><Label>N° TVA</Label><Input value={form.vat_number} onChange={e => set("vat_number", e.target.value)} /></div>
+          <div>
+            <Label>
+              Identifiant Peppol
+              {isBelgianVendor(form.country_code) && <span className="text-destructive"> *</span>}
+              <span className="ml-1 text-xs font-normal text-muted-foreground">(BE — format 0208:BEXXXXXXXXXXX)</span>
+            </Label>
+            <Input
+              value={form.peppol_id}
+              onChange={e => set("peppol_id", e.target.value)}
+              placeholder={PEPPOL_BE_EXAMPLE}
+              aria-invalid={!!form.peppol_id && !isValidBePeppolId(form.peppol_id)}
+            />
+            {!!form.peppol_id && !isValidBePeppolId(form.peppol_id) && (
+              <p className="text-xs text-destructive mt-1">Format invalide — attendu <span className="font-mono">0208:BE</span> + 10 chiffres.</p>
+            )}
+          </div>
           <div><Label>Adresse</Label><Input value={form.address_line1} onChange={e => set("address_line1", e.target.value)} /></div>
           <div className="grid grid-cols-3 gap-3">
             <div><Label>Ville</Label><Input value={form.city} onChange={e => set("city", e.target.value)} /></div>

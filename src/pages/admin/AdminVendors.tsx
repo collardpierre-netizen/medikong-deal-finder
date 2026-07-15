@@ -8,6 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Copy, ExternalLink, Loader2, RefreshCw, Sparkles, SlidersHorizontal } from "lucide-react";
 import { formatUpdatedAt } from "@/lib/format-date";
 import AdminVendorMovMoqModal from "@/components/admin/AdminVendorMovMoqModal";
+import { VendorPeppolBadge } from "@/components/admin/VendorPeppolBadge";
+import { isBelgianVendor } from "@/lib/peppol";
 
 type StripeStatus = "none" | "pending" | "active";
 
@@ -21,6 +23,8 @@ interface VendorRow {
   stripe_onboarding_complete: boolean;
   stripe_charges_enabled: boolean;
   stripe_payouts_enabled: boolean;
+  country_code: string | null;
+  peppol_id: string | null;
 }
 
 function statusOf(v: VendorRow): StripeStatus {
@@ -66,7 +70,7 @@ const AdminVendors = () => {
       const { data, error } = await supabase
         .from("vendors")
         .select(
-          "id, name, slug, type, commission_rate, stripe_account_id, stripe_onboarding_complete, stripe_charges_enabled, stripe_payouts_enabled"
+          "id, name, slug, type, commission_rate, stripe_account_id, stripe_onboarding_complete, stripe_charges_enabled, stripe_payouts_enabled, country_code, peppol_id"
         )
         .order("name");
       if (error) throw error;
@@ -181,6 +185,7 @@ const AdminVendors = () => {
               <TableHead>Type</TableHead>
               <TableHead>Commission</TableHead>
               <TableHead>Stripe</TableHead>
+              <TableHead>Peppol</TableHead>
               <TableHead>Veille marché</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -188,14 +193,14 @@ const AdminVendors = () => {
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                   Chargement…
                 </TableCell>
               </TableRow>
             )}
             {!isLoading && vendors.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                   Aucun vendor.
                 </TableCell>
               </TableRow>
@@ -212,6 +217,9 @@ const AdminVendors = () => {
                     {v.commission_rate != null ? `${(v.commission_rate * 100).toFixed(1)}%` : "—"}
                   </TableCell>
                   <TableCell><StatusBadge status={st} /></TableCell>
+                  <TableCell>
+                    <VendorPeppolBadge peppolId={v.peppol_id} isBelgian={isBelgianVendor(v.country_code)} />
+                  </TableCell>
                   <TableCell>
                     {(() => {
                       const vmi = vmiByVendor[v.id];

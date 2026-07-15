@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentGuarantee } from "@/hooks/useGuarantee";
+import { isValidBePeppolId, normalizePeppolId, PEPPOL_BE_EXAMPLE } from "@/lib/peppol";
 
 /* ─── Types ─── */
 type ShippingMode = "no_shipping" | "own_sendcloud" | "medikong_whitelabel";
@@ -23,6 +24,7 @@ interface CompanyForm {
   email: string;
   phone: string;
   vat_number: string;
+  peppol_id: string;
 }
 
 interface AddressForm {
@@ -109,7 +111,7 @@ export default function VendorOnboardingWizard() {
 
   // Step 1 — Company
   const [company, setCompany] = useState<CompanyForm>({
-    company_name: "", name: "", email: user?.email || "", phone: "", vat_number: "",
+    company_name: "", name: "", email: user?.email || "", phone: "", vat_number: "", peppol_id: "",
   });
 
   // Step 2 — Shipping mode
@@ -142,6 +144,9 @@ export default function VendorOnboardingWizard() {
         .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")
         || `vendor-${Date.now()}`;
 
+      const isBE = company.vat_number.trim().toUpperCase().startsWith("BE");
+      const peppolNormalized = normalizePeppolId(company.peppol_id);
+
       const { data: vendor, error: vendorErr } = await supabase
         .from("vendors")
         .insert({
@@ -150,6 +155,8 @@ export default function VendorOnboardingWizard() {
           email: company.email,
           phone: company.phone,
           vat_number: company.vat_number || null,
+          peppol_id: peppolNormalized || null,
+          country_code: isBE ? "BE" : (address.country || "BE"),
           slug,
           auth_user_id: user.id,
           type: "real" as any,
@@ -280,8 +287,17 @@ export default function VendorOnboardingWizard() {
   };
 
   // Validation
+  const isBECompany = company.vat_number.trim().toUpperCase().startsWith("BE");
+  const peppolValid = !company.peppol_id.trim() || isValidBePeppolId(company.peppol_id);
   const canProceed = (): boolean => {
-    if (step === 1) return !!company.company_name && !!company.email;
+    if (step === 1) {
+      if (!company.company_name || !company.email) return false;
+      // BE company: peppol_id required + valid format
+      if (isBECompany && !isValidBePeppolId(company.peppol_id)) return false;
+      // Non-BE company: if peppol_id was typed anyway, it still must be valid
+      if (!peppolValid) return false;
+      return true;
+    }
     if (step === 2) return true; // mode always selected
     if (step === 3) {
       if (shippingMode === "no_shipping") return true;
@@ -355,6 +371,34 @@ export default function VendorOnboardingWizard() {
                   />
                 </div>
               </div>
+
+              {/* Peppol ID — required for Belgian companies */}
+              {isBECompany && (
+                <div className="space-y-1.5 rounded-lg border border-primary/30 bg-primary/5 p-4">
+                  <Label className="text-sm font-semibold text-foreground">
+                    Identifiant Peppol <span className="text-destructive">*</span>
+                    <span className="ml-1 text-xs font-normal text-muted-foreground">(obligatoire pour les entreprises belges)</span>
+                  </Label>
+                  <Input
+                    value={company.peppol_id}
+                    onChange={(e) => setCompany({ ...company, peppol_id: e.target.value })}
+                    placeholder={PEPPOL_BE_EXAMPLE}
+                    aria-invalid={!!company.peppol_id && !peppolValid}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Format&nbsp;: <span className="font-mono">0208:BEXXXXXXXXXXX</span> (votre n° TVA sans points ni tirets précédé de « 0208: »)<br />
+                    Exemple&nbsp;: <span className="font-mono">{PEPPOL_BE_EXAMPLE}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground italic">
+                    ℹ️ Votre comptable ou logiciel de facturation peut vous fournir cet identifiant.
+                  </p>
+                  {!!company.peppol_id && !peppolValid && (
+                    <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" /> Format invalide — vérifiez avec votre comptable.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -699,6 +743,9 @@ export default function VendorOnboardingWizard() {
                     <div><span className="text-muted-foreground">Email:</span> <span className="font-medium text-foreground">{company.email}</span></div>
                     <div><span className="text-muted-foreground">Téléphone:</span> <span className="font-medium text-foreground">{company.phone || "—"}</span></div>
                     <div><span className="text-muted-foreground">N° TVA:</span> <span className="font-medium text-foreground">{company.vat_number || "—"}</span></div>
+                    {isBECompany && (
+                      <div className="col-span-2"><span className="text-muted-foreground">Peppol ID:</span> <span className="font-mono font-medium text-foreground">{company.peppol_id || "—"}</span></div>
+                    )}
                   </div>
                 </div>
 

@@ -214,6 +214,35 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Guard: Belgian vendor must have a peppol_id — refuse to submit otherwise.
+    const { data: vendorCheck } = await supabase
+      .from("vendors")
+      .select("id, country_code, peppol_id, company_name")
+      .eq("id", inv.vendor_id)
+      .maybeSingle();
+    const vendorIsBE = String(vendorCheck?.country_code || "").toUpperCase() === "BE";
+    if (vendorIsBE && !vendorCheck?.peppol_id) {
+      await supabase
+        .from("order_invoices")
+        .update({
+          peppol_status: "blocked_missing_id",
+          peppol_error: "Peppol ID manquant pour ce vendeur — compléter sa fiche.",
+          peppol_last_attempt_at: new Date().toISOString(),
+        })
+        .eq("id", inv.id);
+      logFalco("warn", "send_blocked_missing_peppol_id", {
+        invoice_id: inv.id,
+        vendor_id: inv.vendor_id,
+        vendor_name: vendorCheck?.company_name || null,
+      });
+      return json(422, {
+        ok: false,
+        error: "blocked_missing_peppol_id",
+        vendor_id: inv.vendor_id,
+        hint: "Ajoutez le Peppol ID (0208:BEXXXXXXXXXXX) sur la fiche du vendeur avant d'envoyer.",
+      });
+    }
+
     const built = inv.type === "commission"
       ? await buildCommissionMetadata(supabase, inv)
       : await buildSelfBillingMetadata(supabase, inv);

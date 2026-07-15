@@ -49,6 +49,7 @@ import { template as quoteSent } from './quote-sent.tsx'
 import { template as orderShipped } from './order-shipped.tsx'
 import { template as orderDeliveryConfirmation } from './order-delivery-confirmation.tsx'
 import { template as vendorStatementReady } from './vendor-statement-ready.tsx'
+import { template as vendorPeppolIdReminder } from './vendor-peppol-id-reminder.tsx'
 
 
 
@@ -93,5 +94,6 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'order-shipped': orderShipped,
   'order-delivery-confirmation': orderDeliveryConfirmation,
   'vendor-statement-ready': vendorStatementReady,
+  'vendor-peppol-id-reminder': vendorPeppolIdReminder,
 }
 

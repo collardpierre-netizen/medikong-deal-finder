@@ -163,7 +163,8 @@ function drawTableHeader(doc: jsPDF, y: number, cols: Array<{ label: string; x: 
   doc.setFontSize(8.5);
   doc.setTextColor(255, 255, 255);
   cols.forEach((c) => doc.text(c.label, c.x, y + 5.6, { align: c.align || "left" }));
-  return y + 8.5;
+  // Return baseline for the first body row (leaves ~5 mm padding under the header bar).
+  return y + 8.5 + 5;
 }
 
 export interface SelfBillingParams {

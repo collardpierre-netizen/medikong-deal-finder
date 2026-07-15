@@ -521,6 +521,69 @@ export type Database = {
         }
         Relationships: []
       }
+      be_pharmacies: {
+        Row: {
+          address_line1: string | null
+          address_line2: string | null
+          apb_number: string
+          city: string | null
+          country_code: string
+          created_at: string
+          email: string | null
+          id: string
+          imported_at: string | null
+          is_active: boolean
+          latitude: number | null
+          longitude: number | null
+          name: string
+          phone: string | null
+          postal_code: string | null
+          province: string | null
+          source: string | null
+          updated_at: string
+        }
+        Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          apb_number: string
+          city?: string | null
+          country_code?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          imported_at?: string | null
+          is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          phone?: string | null
+          postal_code?: string | null
+          province?: string | null
+          source?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          apb_number?: string
+          city?: string | null
+          country_code?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          imported_at?: string | null
+          is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          phone?: string | null
+          postal_code?: string | null
+          province?: string | null
+          source?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       brand_official_distributors: {
         Row: {
           brand_id: string
@@ -17967,6 +18030,200 @@ export type Database = {
           },
           {
             foreignKeyName: "vendor_kyc_submissions_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_manual_sell_in_lines: {
+        Row: {
+          cnk_code: string | null
+          created_at: string
+          gross_revenue_cents: number
+          gtin: string | null
+          id: string
+          net_revenue_cents: number
+          product_id: string | null
+          raw_label: string | null
+          report_id: string
+          units: number
+        }
+        Insert: {
+          cnk_code?: string | null
+          created_at?: string
+          gross_revenue_cents?: number
+          gtin?: string | null
+          id?: string
+          net_revenue_cents?: number
+          product_id?: string | null
+          raw_label?: string | null
+          report_id: string
+          units?: number
+        }
+        Update: {
+          cnk_code?: string | null
+          created_at?: string
+          gross_revenue_cents?: number
+          gtin?: string | null
+          id?: string
+          net_revenue_cents?: number
+          product_id?: string | null
+          raw_label?: string | null
+          report_id?: string
+          units?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_manual_sell_in_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "vendor_manual_sell_in_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_manual_sell_in_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "vendor_manual_sell_in_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_manual_sell_in_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_manual_sell_in_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "vendor_manual_sell_in_lines_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_manual_sell_in_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_manual_sell_in_reports: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          currency_code: string
+          customer_label: string | null
+          file_name: string | null
+          id: string
+          notes: string | null
+          period_end: string
+          period_start: string
+          pharmacy_id: string | null
+          source: string
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          currency_code?: string
+          customer_label?: string | null
+          file_name?: string | null
+          id?: string
+          notes?: string | null
+          period_end: string
+          period_start: string
+          pharmacy_id?: string | null
+          source?: string
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          currency_code?: string
+          customer_label?: string | null
+          file_name?: string | null
+          id?: string
+          notes?: string | null
+          period_end?: string
+          period_start?: string
+          pharmacy_id?: string | null
+          source?: string
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_manual_sell_in_reports_pharmacy_id_fkey"
+            columns: ["pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "be_pharmacies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_manual_sell_in_reports_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_manual_sell_in_reports_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_manual_sell_in_reports_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_manual_sell_in_reports_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_manual_sell_in_reports_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_manual_sell_in_reports_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_manual_sell_in_reports_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendors_public"

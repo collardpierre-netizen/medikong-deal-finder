@@ -112,6 +112,7 @@ export function NewSellOutReportDialog({ vendorId, onClose }: { vendorId: string
                   setCustomerLabel(e.target.value);
                   setPharmacyQuery(e.target.value);
                   setPharmacyLocked(false);
+                  setPharmacyId(null);
                   setShowPharmacyResults(true);
                 }}
                 onFocus={() => setShowPharmacyResults(true)}

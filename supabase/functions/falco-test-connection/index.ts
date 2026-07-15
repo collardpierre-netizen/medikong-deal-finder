@@ -46,6 +46,8 @@ Deno.serve(async (req) => {
         // eslint-disable-next-line no-control-regex
         .replace(/[^\x20-\x7E]/g, "")
         .trim();
+    // Trigger debug log in getFalcoConfig (length + prefix only).
+    getFalcoConfig();
     const apiKey = sanitize(Deno.env.get("FALCO_API_KEY") || "");
     const appSecret = sanitize(Deno.env.get("FALCO_APP_SECRET") || "");
     const baseUrlRaw = sanitize(Deno.env.get("FALCO_BASE_URL") || "");

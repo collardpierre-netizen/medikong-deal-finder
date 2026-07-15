@@ -48,9 +48,12 @@ function drawHeader(doc: jsPDF, title: string, subtitle?: string) {
   setFill(doc, C.primary);
   doc.rect(0, 0, 210, 4, "F");
 
-  // Logo
+  // Logo — dimensions PNG source 398×83 (ratio ~4.795). On respecte le ratio
+  // pour éviter tout étirement (avant : 34×10 → écrasé verticalement).
   try {
-    doc.addImage(MEDIKONG_LOGO_PNG_BASE64, "PNG", M.left, 12, 34, 10);
+    const LOGO_W = 40;
+    const LOGO_H = LOGO_W / (398 / 83); // ≈ 8.34 mm
+    doc.addImage(MEDIKONG_LOGO_PNG_BASE64, "PNG", M.left, 12, LOGO_W, LOGO_H);
   } catch { /* logo optional */ }
 
   // Issuer block

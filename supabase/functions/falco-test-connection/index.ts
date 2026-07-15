@@ -4,7 +4,7 @@
 // a structured result — NEVER the secret values themselves.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
-import { logFalco } from "../_shared/falco-peppol.ts";
+import { logFalco, getFalcoConfig } from "../_shared/falco-peppol.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -46,6 +46,8 @@ Deno.serve(async (req) => {
         // eslint-disable-next-line no-control-regex
         .replace(/[^\x20-\x7E]/g, "")
         .trim();
+    // Trigger debug log in getFalcoConfig (length + prefix only).
+    getFalcoConfig();
     const apiKey = sanitize(Deno.env.get("FALCO_API_KEY") || "");
     const appSecret = sanitize(Deno.env.get("FALCO_APP_SECRET") || "");
     const baseUrlRaw = sanitize(Deno.env.get("FALCO_BASE_URL") || "");

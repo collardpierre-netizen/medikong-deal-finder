@@ -86,10 +86,20 @@ function sanitizeHeaderValue(v: string): string {
 }
 
 export function getFalcoConfig() {
-  const appSecret = sanitizeHeaderValue(Deno.env.get("FALCO_APP_SECRET") || "");
-  const apiKey = sanitizeHeaderValue(Deno.env.get("FALCO_API_KEY") || "");
+  const rawApiKey = Deno.env.get("FALCO_API_KEY")?.trim() ?? "";
+  const rawAppSecret = Deno.env.get("FALCO_APP_SECRET")?.trim() ?? "";
+  const rawBaseUrl = Deno.env.get("FALCO_BASE_URL") ?? "";
+  console.log("Falco debug:", {
+    apiKeyLength: rawApiKey.length,
+    apiKeyPrefix: rawApiKey.substring(0, 8),
+    appSecretLength: rawAppSecret.length,
+    appSecretPrefix: rawAppSecret.substring(0, 8),
+    baseUrl: rawBaseUrl,
+  });
+  const appSecret = sanitizeHeaderValue(rawAppSecret);
+  const apiKey = sanitizeHeaderValue(rawApiKey);
   const baseUrl =
-    sanitizeHeaderValue(Deno.env.get("FALCO_BASE_URL") || "") || "https://api.sandbox.falco-app.be/v1";
+    sanitizeHeaderValue(rawBaseUrl) || "https://api.sandbox.falco-app.be/v1";
   return { appSecret, apiKey, baseUrl };
 }
 

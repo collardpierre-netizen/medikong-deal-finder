@@ -217,6 +217,37 @@ export default function VendorOrderDetail() {
           <div className="text-sm font-bold text-foreground">{fmtEur(totalHT)}&nbsp;€ HT</div>
         </div>
 
+        {(order as any).fulfillment_mode && (
+          <div className="px-4 py-3 border-b border-border bg-muted/10">
+            <div className="text-[11px] uppercase text-muted-foreground font-semibold mb-1">Mode logistique</div>
+            <div className="font-medium text-sm text-foreground">
+              {(order as any).fulfillment_mode === "pickup" ? "🏬 Picking — retrait sur place" : "📦 Livraison"}
+            </div>
+            {(order as any).fulfillment_mode === "delivery" && (() => {
+              const sa = (order as any).shipping_address as any;
+              const hasMin = sa && (sa.address_l1 || sa.address_line1) && (sa.postal_code || sa.zip) && sa.city;
+              if (!hasMin) {
+                return (
+                  <div className="mt-2 text-xs rounded border border-rose-200 bg-rose-50 text-rose-800 px-2 py-1.5">
+                    ⚠️ Adresse de livraison manquante ou incomplète — impossible d'expédier en l'état.
+                  </div>
+                );
+              }
+              return (
+                <div className="mt-2 text-xs text-muted-foreground leading-snug">
+                  {sa.label && <div className="font-medium text-foreground">{sa.label}</div>}
+                  {(sa.address_l1 || sa.address_line1) && <div>{sa.address_l1 || sa.address_line1}</div>}
+                  {(sa.address_l2 || sa.address_line2) && <div>{sa.address_l2 || sa.address_line2}</div>}
+                  <div>
+                    {(sa.postal_code || sa.zip)} {sa.city}
+                    {sa.country_code ? ` (${sa.country_code})` : ""}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
         <OrderInfoBlocks order={order} />
 
         {(() => {

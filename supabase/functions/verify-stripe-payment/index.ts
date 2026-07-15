@@ -21,12 +21,45 @@ Deno.serve(async (req) => {
     });
     const { data: userData, error: userErr } = await userClient.auth.getUser();
     if (userErr || !userData?.user) return json({ error: 'unauthorized' }, 401);
+    const uid = userData.user.id;
 
     const body = await req.json().catch(() => ({}));
     const paymentIntentId = String(body?.payment_intent_id ?? '').trim();
     if (!/^pi_[A-Za-z0-9_]+$/.test(paymentIntentId)) {
       return json({ error: 'invalid_payment_intent_id' }, 400);
     }
+
+    // Authorization: caller must be admin, the order's owning customer,
+    // or a vendor with lines on the order matching this payment_intent_id.
+    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const { data: order } = await admin
+      .from('orders')
+      .select('id, customer_id, customers!orders_customer_id_fkey(auth_user_id)')
+      .eq('stripe_payment_intent_id', paymentIntentId)
+      .maybeSingle();
+    if (!order) return json({ error: 'forbidden' }, 403);
+
+    const { data: adm } = await admin.rpc('is_admin', { _user_id: uid });
+    let allowed = !!adm;
+    if (!allowed && (order as any)?.customers?.auth_user_id === uid) {
+      allowed = true;
+    }
+    if (!allowed) {
+      const { data: vendorRow } = await admin
+        .from('vendors')
+        .select('id')
+        .eq('auth_user_id', uid)
+        .maybeSingle();
+      if (vendorRow?.id) {
+        const { count } = await admin
+          .from('order_lines')
+          .select('id', { count: 'exact', head: true })
+          .eq('order_id', order.id)
+          .eq('vendor_id', vendorRow.id);
+        if ((count ?? 0) > 0) allowed = true;
+      }
+    }
+    if (!allowed) return json({ error: 'forbidden' }, 403);
 
     if (!STRIPE_SECRET_KEY) return json({ error: 'stripe_not_configured' }, 500);
 

@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
-import { X, Upload, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+import { X, Upload, AlertTriangle, CheckCircle2, XCircle, Search } from "lucide-react";
 import { parseSellOutXlsx, type ParseResult, type RejectedRow } from "@/lib/parseSellOutXlsx";
 import { useCreateSellOutReport, type SellOutLineInput } from "@/hooks/useVendorSellOut";
 import { useValidateSellOutLines } from "@/hooks/useValidateSellOutLines";
+import { useBePharmaciesSearch } from "@/hooks/useBePharmacies";
 import { toast } from "@/hooks/use-toast";
 
 function fmtEur(cents: number) {
@@ -12,6 +13,10 @@ function fmtEur(cents: number) {
 export function NewSellOutReportDialog({ vendorId, onClose }: { vendorId: string; onClose: () => void }) {
   const create = useCreateSellOutReport();
   const [customerLabel, setCustomerLabel] = useState("");
+  const [pharmacyQuery, setPharmacyQuery] = useState("");
+  const [pharmacyLocked, setPharmacyLocked] = useState(false);
+  const [showPharmacyResults, setShowPharmacyResults] = useState(false);
+  const pharmacyResults = useBePharmaciesSearch(pharmacyQuery, showPharmacyResults && !pharmacyLocked);
   const [periodStart, setPeriodStart] = useState(() => new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10));
   const [periodEnd, setPeriodEnd] = useState(() => new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState("");
@@ -95,14 +100,53 @@ export function NewSellOutReportDialog({ vendorId, onClose }: { vendorId: string
         </div>
 
         <div className="p-5 space-y-4">
-          <div>
-            <label className="text-[12px] text-[#8B95A5]">Nom du client</label>
-            <input
-              value={customerLabel}
-              onChange={(e) => setCustomerLabel(e.target.value)}
-              placeholder="Ex : Pharmacie Dupont"
-              className="w-full mt-1 px-3 py-2 border border-[#E2E8F0] rounded-[8px] text-[13px]"
-            />
+          <div className="relative">
+            <label className="text-[12px] text-[#8B95A5]">Pharmacie cliente (référentiel BE)</label>
+            <div className="relative mt-1">
+              <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8B95A5]" />
+              <input
+                value={customerLabel}
+                onChange={(e) => {
+                  setCustomerLabel(e.target.value);
+                  setPharmacyQuery(e.target.value);
+                  setPharmacyLocked(false);
+                  setShowPharmacyResults(true);
+                }}
+                onFocus={() => setShowPharmacyResults(true)}
+                placeholder="Rechercher par nom, APB, ville, CP… ou saisir un libellé libre"
+                className="w-full pl-8 pr-3 py-2 border border-[#E2E8F0] rounded-[8px] text-[13px]"
+              />
+              {showPharmacyResults && !pharmacyLocked && pharmacyQuery.trim().length >= 2 && (
+                <div className="absolute z-10 mt-1 w-full bg-white border border-[#E2E8F0] rounded-[8px] shadow-lg max-h-60 overflow-auto">
+                  {pharmacyResults.isFetching && (
+                    <div className="px-3 py-2 text-[12px] text-[#8B95A5]">Recherche…</div>
+                  )}
+                  {!pharmacyResults.isFetching && !pharmacyResults.data?.length && (
+                    <div className="px-3 py-2 text-[12px] text-[#8B95A5]">
+                      Aucun résultat — le texte saisi sera utilisé comme libellé libre.
+                    </div>
+                  )}
+                  {pharmacyResults.data?.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => {
+                        const label = `${p.name} — APB ${p.apb_number}${p.city ? ` · ${p.city}` : ""}`;
+                        setCustomerLabel(label);
+                        setPharmacyLocked(true);
+                        setShowPharmacyResults(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-[12px] hover:bg-[#F8FAFC]"
+                    >
+                      <div className="font-medium text-[#1D2530]">{p.name}</div>
+                      <div className="text-[11px] text-[#8B95A5]">
+                        APB {p.apb_number} · {p.postal_code} {p.city}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

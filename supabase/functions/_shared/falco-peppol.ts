@@ -179,6 +179,26 @@ export async function submitInvoiceToFalco(
     };
   }
 
+  const credCheck = validateFalcoCredentials(apiKey, appSecret);
+  if (!credCheck.ok) {
+    logFalco("error", "credentials_invalid_format", {
+      caller,
+      invoice_id: invoiceId,
+      invoice_number: metadata.number,
+      code: credCheck.code,
+      api_key_length: apiKey.length,
+      app_secret_length: appSecret.length,
+      environment,
+    });
+    return {
+      ok: false,
+      http_status: 0,
+      peppol_status: "failed",
+      peppol_error: `falco_${credCheck.code}`,
+    };
+  }
+
+
   const form = new FormData();
   form.append(
     "file",

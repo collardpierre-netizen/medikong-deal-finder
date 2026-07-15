@@ -341,6 +341,20 @@ const AdminVendeurDetail = () => {
               <InfoRow label="ID Qogita" value={(vendor as any).qogita_seller_alias || "—"} />
               <InfoRow label="Raison sociale" value={vendor.company_name || ""} />
               <InfoRow label="N° TVA" value={vendor.vat_number || ""} />
+              <div className="flex justify-between items-center py-1.5 text-[12px] gap-3">
+                <span style={{ color: "#8B95A5" }}>Peppol ID</span>
+                <span className="text-right flex items-center gap-2">
+                  {(vendor as any).peppol_id && (
+                    <span className="font-mono text-[11px]" style={{ color: "#1D2530" }}>
+                      {(vendor as any).peppol_id}
+                    </span>
+                  )}
+                  <VendorPeppolBadge
+                    peppolId={(vendor as any).peppol_id ?? null}
+                    isBelgian={isBelgianVendor(vendor.country_code)}
+                  />
+                </span>
+              </div>
               <InfoRow label="Type" value={vendor.type} />
               <InfoRow label="Type d'activité" value={(vendor as any).business_type || "—"} />
               <InfoRow label="Langue" value={(vendor as any).preferred_language?.toUpperCase() || "FR"} />

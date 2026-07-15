@@ -111,7 +111,7 @@ export default function VendorOnboardingWizard() {
 
   // Step 1 — Company
   const [company, setCompany] = useState<CompanyForm>({
-    company_name: "", name: "", email: user?.email || "", phone: "", vat_number: "",
+    company_name: "", name: "", email: user?.email || "", phone: "", vat_number: "", peppol_id: "",
   });
 
   // Step 2 — Shipping mode

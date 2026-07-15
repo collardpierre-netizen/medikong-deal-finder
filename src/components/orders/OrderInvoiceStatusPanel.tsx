@@ -243,8 +243,8 @@ export default function OrderInvoiceStatusPanel({ orderId, vendorId, defaultAmou
   }, [stripePaidCtx, invoices]);
 
   return (
-    <div className={`space-y-3 ${className ?? ""}`}>
-    <div className="bg-white border rounded-lg" style={{ borderColor: "#E2E8F0" }}>
+    <>
+    <div className={`bg-white border rounded-lg ${className ?? ""}`} style={{ borderColor: "#E2E8F0" }}>
       <div className="p-4 border-b flex items-center justify-between gap-3 flex-wrap" style={{ borderColor: "#E2E8F0" }}>
         <div>
           <div className="text-[11px] uppercase text-slate-400 font-semibold">Facturation & paiement</div>

@@ -113,7 +113,8 @@ export function Navbar() {
           {user && <NotificationsBell scope="buyer" variant="light" />}
           <Link
             to="/panier"
-            aria-label={t("common.cart", "Panier")}
+            aria-label={t("common.cart")}
+
             className="relative p-2 rounded-full hover:bg-muted transition-colors"
           >
             <ShoppingCart className="text-foreground" size={20} aria-hidden="true" />

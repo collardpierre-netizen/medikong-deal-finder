@@ -287,8 +287,17 @@ export default function VendorOnboardingWizard() {
   };
 
   // Validation
+  const isBECompany = company.vat_number.trim().toUpperCase().startsWith("BE");
+  const peppolValid = !company.peppol_id.trim() || isValidBePeppolId(company.peppol_id);
   const canProceed = (): boolean => {
-    if (step === 1) return !!company.company_name && !!company.email;
+    if (step === 1) {
+      if (!company.company_name || !company.email) return false;
+      // BE company: peppol_id required + valid format
+      if (isBECompany && !isValidBePeppolId(company.peppol_id)) return false;
+      // Non-BE company: if peppol_id was typed anyway, it still must be valid
+      if (!peppolValid) return false;
+      return true;
+    }
     if (step === 2) return true; // mode always selected
     if (step === 3) {
       if (shippingMode === "no_shipping") return true;

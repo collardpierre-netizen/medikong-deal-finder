@@ -18181,6 +18181,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "vendor_manual_sell_in_reports_pharmacy_id_fkey"
+            columns: ["pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "be_pharmacies_export_v"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "vendor_manual_sell_in_reports_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
@@ -20210,6 +20217,7 @@ export type Database = {
           notes: string | null
           period_end: string
           period_start: string
+          pharmacy_id: string | null
           source: string
           updated_at: string
           vendor_id: string
@@ -20225,6 +20233,7 @@ export type Database = {
           notes?: string | null
           period_end: string
           period_start: string
+          pharmacy_id?: string | null
           source?: string
           updated_at?: string
           vendor_id: string
@@ -20240,11 +20249,27 @@ export type Database = {
           notes?: string | null
           period_end?: string
           period_start?: string
+          pharmacy_id?: string | null
           source?: string
           updated_at?: string
           vendor_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "vendor_sell_out_reports_pharmacy_id_fkey"
+            columns: ["pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "be_pharmacies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_sell_out_reports_pharmacy_id_fkey"
+            columns: ["pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "be_pharmacies_export_v"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vendor_sendcloud_credentials: {
         Row: {
@@ -21171,6 +21196,48 @@ export type Database = {
           qogita_category_id: string | null
           qogita_name: string | null
           qogita_qid: string | null
+        }
+        Relationships: []
+      }
+      be_pharmacies_export_v: {
+        Row: {
+          address_line1: string | null
+          apb_number: string | null
+          city: string | null
+          email: string | null
+          id: string | null
+          latitude: number | null
+          longitude: number | null
+          name: string | null
+          phone: string | null
+          postal_code: string | null
+          province: string | null
+        }
+        Insert: {
+          address_line1?: string | null
+          apb_number?: string | null
+          city?: string | null
+          email?: string | null
+          id?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          name?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          province?: string | null
+        }
+        Update: {
+          address_line1?: string | null
+          apb_number?: string | null
+          city?: string | null
+          email?: string | null
+          id?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          name?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          province?: string | null
         }
         Relationships: []
       }
@@ -25500,6 +25567,13 @@ export type Database = {
         Returns: Json
       }
       auto_promote_proprietary_codes: { Args: never; Returns: number }
+      backfill_sell_out_pharmacy_ids: {
+        Args: never
+        Returns: {
+          remaining_unmatched: number
+          updated_count: number
+        }[]
+      }
       bulk_override_requested: { Args: never; Returns: boolean }
       bulk_set_cnk_codes: { Args: { pairs: Json }; Returns: number }
       bump_contract_template: {

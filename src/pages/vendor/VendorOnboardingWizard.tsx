@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentGuarantee } from "@/hooks/useGuarantee";
+import { isValidBePeppolId, normalizePeppolId, PEPPOL_BE_EXAMPLE } from "@/lib/peppol";
 
 /* ─── Types ─── */
 type ShippingMode = "no_shipping" | "own_sendcloud" | "medikong_whitelabel";

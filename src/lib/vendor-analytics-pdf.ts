@@ -710,7 +710,49 @@ export async function generateVendorAnalyticsPdf(
   drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName, titleFont);
   y = 50;
   y = sectionTitle(doc, y, "Carte de couverture clients", fontName, titleFont, `${payload.geoPoints.length} zones`);
-  y = drawCoverageMap(doc, y, payload.geoPoints, outlines, fontName);
+
+  // Try to render a real CARTO Positron basemap raster for the coverage box.
+  // Falls back to vector outlines if tiles or canvas readback fail.
+  let mapRaster: { dataUrl: string; widthPx: number; heightPx: number } | null = null;
+  if (payload.geoPoints.length > 0) {
+    let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+    for (const p of payload.geoPoints) {
+      if (p.lat < minLat) minLat = p.lat;
+      if (p.lat > maxLat) maxLat = p.lat;
+      if (p.lng < minLng) minLng = p.lng;
+      if (p.lng > maxLng) maxLng = p.lng;
+    }
+    // Pad the bbox so points aren't stuck against the edges.
+    const padLat = Math.max(0.4, (maxLat - minLat) * 0.15);
+    const padLng = Math.max(0.4, (maxLng - minLng) * 0.15);
+    const sortedCa = payload.geoPoints.map((p) => p.ca_htva_cents).sort((a, b) => a - b);
+    const q = (arr: number[], p: number) => {
+      if (!arr.length) return 0;
+      const pos = (arr.length - 1) * p;
+      const base = Math.floor(pos);
+      const rest = pos - base;
+      return arr[base + 1] !== undefined ? arr[base] + rest * (arr[base + 1] - arr[base]) : arr[base];
+    };
+    const p33m = q(sortedCa, 1 / 3);
+    const p66m = q(sortedCa, 2 / 3);
+    const maxCam = Math.max(1, ...sortedCa);
+    const mapPts: MapPoint[] = payload.geoPoints.map((p) => ({
+      lat: p.lat,
+      lng: p.lng,
+      color:
+        p.ca_htva_cents >= p66m ? TIER_HIGH : p.ca_htva_cents >= p33m ? TIER_MID : TIER_LOW,
+      radius: 4 + 14 * (p.ca_htva_cents / maxCam),
+    }));
+    mapRaster = await renderCartoStaticMap({
+      bbox: [minLng - padLng, minLat - padLat, maxLng + padLng, maxLat + padLat],
+      widthPx: 1600,
+      heightPx: 1000,
+      points: mapPts,
+      style: "light_all",
+    }).catch(() => null);
+  }
+
+  y = drawCoverageMap(doc, y, payload.geoPoints, outlines, fontName, mapRaster);
 
   // Top clients
   if (payload.topCustomers.length > 0) {

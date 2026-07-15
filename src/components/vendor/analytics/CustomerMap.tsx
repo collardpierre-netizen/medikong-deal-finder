@@ -113,7 +113,11 @@ export function CustomerMap({ rows }: { rows: CustomerLocationRow[] }) {
   const p33 = quantile(sortedCa, 1 / 3);
   const p66 = quantile(sortedCa, 2 / 3);
 
-  const tileStyle = (typeof window !== "undefined" && (localStorage.getItem("vendor-map-tile") as "sober" | "gray" | "standard" | null)) || "sober";
+  const [tileStyle, setTileStyle] = useState<"sober" | "gray" | "standard">(() => {
+    if (typeof window === "undefined") return "sober";
+    const v = localStorage.getItem("vendor-map-tile");
+    return v === "gray" || v === "standard" ? v : "sober";
+  });
   const tiles = {
     sober: {
       url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
@@ -131,16 +135,14 @@ export function CustomerMap({ rows }: { rows: CustomerLocationRow[] }) {
 
   return (
     <div className="rounded-[10px] overflow-hidden border border-[#E2E8F0] relative" style={{ height: 480 }}>
-      <div className="absolute top-2 right-2 z-[1000] flex gap-1 bg-white/95 border border-[#E2E8F0] rounded-md shadow-sm p-1 text-[11px]">
+      <div className="absolute top-2 left-2 z-[1000] flex gap-1 bg-white/95 border border-[#E2E8F0] rounded-md shadow-sm p-1 text-[11px]">
         {(["sober", "gray", "standard"] as const).map((k) => (
           <button
             key={k}
             type="button"
             onClick={() => {
-              localStorage.setItem("vendor-map-tile", k);
-              // force re-render
-              window.dispatchEvent(new Event("storage"));
-              location.reload();
+              try { localStorage.setItem("vendor-map-tile", k); } catch { /* ignore */ }
+              setTileStyle(k);
             }}
             className={`px-2 py-1 rounded ${tileStyle === k ? "bg-[#1E252F] text-white" : "text-[#475569] hover:bg-[#F1F5F9]"}`}
           >
@@ -148,7 +150,7 @@ export function CustomerMap({ rows }: { rows: CustomerLocationRow[] }) {
           </button>
         ))}
       </div>
-      <MapContainer center={[50.5, 4.5]} zoom={6} style={{ height: "100%", width: "100%" }}>
+      <MapContainer key={tileStyle} center={[50.5, 4.5]} zoom={6} style={{ height: "100%", width: "100%" }}>
         <TileLayer attribution={tiles.attribution} url={tiles.url} />
         {points.map((p) => {
           const tier = tierFor(p.row.ca_htva_cents, p66, p33);

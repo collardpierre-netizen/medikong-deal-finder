@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { fmtEur } from "@/lib/format-currency";
 import { ArrowLeft, FileDown, Pencil, Copy, Link2, ExternalLink, Lock, Wallet, ShieldCheck, AlertTriangle, CheckCircle2, Truck, Send } from "lucide-react";
+import OrderInvoiceStatusPanel from "@/components/orders/OrderInvoiceStatusPanel";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { lineMetrics, type ManualLineInput } from "@/lib/manual-order-metrics";
 import { VendorsEmbedError } from "@/lib/vendors-embed-error";
@@ -489,6 +490,17 @@ const AdminCommandeDetail = () => {
               <div className="bg-blue-50/60 border-l-2 border-blue-400 px-3 py-2 rounded text-sm italic text-slate-700">{order.notes}</div>
             )}
           </div>
+
+          <OrderInvoiceStatusPanel
+            orderId={order.id}
+            defaultAmounts={{
+              excl_vat: Number(order.subtotal_excl_vat) || 0,
+              vat: Number(order.vat_amount) || 0,
+              incl_vat: Number(order.total_incl_vat) || 0,
+            }}
+          />
+
+
 
 
           <div className="bg-white border rounded-lg overflow-hidden" style={{ borderColor: "#E2E8F0" }}>

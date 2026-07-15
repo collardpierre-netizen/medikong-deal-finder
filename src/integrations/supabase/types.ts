@@ -7803,13 +7803,19 @@ export type Database = {
           amount_excl_vat: number
           amount_incl_vat: number
           created_at: string
+          due_date: string | null
           error_message: string | null
           hosted_url: string | null
           id: string
+          internal_notes: string | null
           invoice_number: string | null
           issued_at: string | null
+          last_reminder_at: string | null
           order_id: string
           paid_at: string | null
+          payment_amount_received: number | null
+          payment_method_received: string | null
+          payment_reference: string | null
           pdf_path: string | null
           pdf_url: string | null
           peppol_document_id: string | null
@@ -7819,6 +7825,11 @@ export type Database = {
           peppol_retry_count: number
           peppol_status: string | null
           peppol_submitted_at: string | null
+          reminder_count: number
+          sent_at: string | null
+          sent_by: string | null
+          sent_channel: string | null
+          sent_to: string | null
           status: string
           stripe_customer_id: string | null
           stripe_invoice_id: string | null
@@ -7831,13 +7842,19 @@ export type Database = {
           amount_excl_vat?: number
           amount_incl_vat?: number
           created_at?: string
+          due_date?: string | null
           error_message?: string | null
           hosted_url?: string | null
           id?: string
+          internal_notes?: string | null
           invoice_number?: string | null
           issued_at?: string | null
+          last_reminder_at?: string | null
           order_id: string
           paid_at?: string | null
+          payment_amount_received?: number | null
+          payment_method_received?: string | null
+          payment_reference?: string | null
           pdf_path?: string | null
           pdf_url?: string | null
           peppol_document_id?: string | null
@@ -7847,6 +7864,11 @@ export type Database = {
           peppol_retry_count?: number
           peppol_status?: string | null
           peppol_submitted_at?: string | null
+          reminder_count?: number
+          sent_at?: string | null
+          sent_by?: string | null
+          sent_channel?: string | null
+          sent_to?: string | null
           status?: string
           stripe_customer_id?: string | null
           stripe_invoice_id?: string | null
@@ -7859,13 +7881,19 @@ export type Database = {
           amount_excl_vat?: number
           amount_incl_vat?: number
           created_at?: string
+          due_date?: string | null
           error_message?: string | null
           hosted_url?: string | null
           id?: string
+          internal_notes?: string | null
           invoice_number?: string | null
           issued_at?: string | null
+          last_reminder_at?: string | null
           order_id?: string
           paid_at?: string | null
+          payment_amount_received?: number | null
+          payment_method_received?: string | null
+          payment_reference?: string | null
           pdf_path?: string | null
           pdf_url?: string | null
           peppol_document_id?: string | null
@@ -7875,6 +7903,11 @@ export type Database = {
           peppol_retry_count?: number
           peppol_status?: string | null
           peppol_submitted_at?: string | null
+          reminder_count?: number
+          sent_at?: string | null
+          sent_by?: string | null
+          sent_channel?: string | null
+          sent_to?: string | null
           status?: string
           stripe_customer_id?: string | null
           stripe_invoice_id?: string | null
@@ -27285,8 +27318,26 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      update_order_invoice_billing: {
+        Args: { _invoice_id: string; _patch: Json }
+        Returns: undefined
+      }
       upsert_cron_shared_secret: {
         Args: { _name: string; _secret: string }
+        Returns: string
+      }
+      upsert_manual_order_invoice: {
+        Args: {
+          _amount_excl_vat: number
+          _amount_incl_vat: number
+          _due_date: string
+          _invoice_number: string
+          _issued_at: string
+          _order_id: string
+          _pdf_url: string
+          _vat_amount: number
+          _vendor_id: string
+        }
         Returns: string
       }
       upsert_market_prices: { Args: { rows: Json }; Returns: number }

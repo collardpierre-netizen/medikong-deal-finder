@@ -47,11 +47,17 @@ Deno.serve(async (req) => {
     if (!apiKey) missing.push("FALCO_API_KEY");
     if (!appSecret) missing.push("FALCO_APP_SECRET");
 
+    const formatCheck = validateFalcoCredentials(apiKey, appSecret);
+    const formatValid = formatCheck.ok === true;
+
     return json(200, {
       integration: "falco-peppol",
-      active: missing.length === 0,
+      active: missing.length === 0 && formatValid,
       api_key_configured: Boolean(apiKey),
       app_secret_configured: Boolean(appSecret),
+      api_key_format_valid: !apiKey ? null : /^sk_(live|test)_[A-Za-z0-9]+_[A-Za-z0-9]+$/.test(apiKey),
+      app_secret_format_valid: !appSecret ? null : /^app_[A-Za-z0-9]+$/.test(appSecret),
+      format_error: formatCheck.ok ? null : { code: formatCheck.code, message: formatCheck.message },
       base_url_overridden: Boolean(baseUrlRaw),
       base_url: baseUrl,
       environment,

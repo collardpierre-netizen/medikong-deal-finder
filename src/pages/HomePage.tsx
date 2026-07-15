@@ -530,7 +530,7 @@ export default function HomePage() {
         const groups = new Map<string, { label: string; priority: number; items: typeof curatedProducts }>();
         for (const p of curatedProducts) {
           const key = p.category_id ?? "__none__";
-          const label = p.category_name ?? "Autres best-sellers";
+          const label = p.category_name ?? t("homeCurated.otherBestSellers");
           if (!groups.has(key)) {
             groups.set(key, { label, priority: matchPriority(label), items: [] });
           }

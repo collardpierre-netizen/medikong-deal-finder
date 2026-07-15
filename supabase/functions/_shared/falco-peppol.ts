@@ -357,3 +357,105 @@ export async function persistFalcoResult(
     });
   }
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// Peppol receiver capability check (SMP discovery via Peppol Directory)
+// ────────────────────────────────────────────────────────────────────────────
+export type PeppolReceiverCheck = {
+  registered: boolean;              // safe to send (found + doc type not explicitly unsupported)
+  found_in_directory: boolean;      // participant listed in peppoldirectory
+  document_type_supported?: boolean;// undefined = not exposed by directory (can't tell)
+  message?: string;                 // human-readable reason when registered=false
+  raw?: unknown;
+};
+
+/**
+ * Best-effort pre-send check that the Peppol receiver is discoverable and
+ * (when the directory exposes it) supports the Peppol BIS Billing 3.0 invoice
+ * document type. Uses the public Peppol Directory JSON API — no auth needed.
+ *
+ * Returns registered=true when in doubt (directory reachable but doc types
+ * not listed) to avoid false negatives blocking legitimate sends.
+ */
+export async function checkPeppolReceiverRegistered(
+  peppolIdentifier?: string | null,
+): Promise<PeppolReceiverCheck> {
+  const id = normalizeFalcoPeppolIdentifier(peppolIdentifier || "");
+  if (!id || !id.includes(":")) {
+    return {
+      registered: false,
+      found_in_directory: false,
+      message: "Identifiant Peppol invalide (attendu scheme:value, ex. 0208:BE0404014205).",
+    };
+  }
+  const [scheme, ...rest] = id.split(":");
+  const value = rest.join(":");
+  const participant = `iso6523-actorid-upis::${scheme}:${value}`;
+  const url = `https://directory.peppol.eu/search/1.0/json?participant=${encodeURIComponent(participant)}`;
+
+  try {
+    const res = await fetch(url, { headers: { Accept: "application/json" } });
+    if (!res.ok) {
+      // Directory unreachable → do NOT block (fail-open). Falco will still gate.
+      logFalco("warn", "peppol_directory_unavailable", { http_status: res.status, participant });
+      return {
+        registered: true,
+        found_in_directory: false,
+        message: `Peppol Directory indisponible (HTTP ${res.status}) — envoi tenté sans pré-vérification.`,
+      };
+    }
+    const data = (await res.json().catch(() => null)) as any;
+    const matches = Array.isArray(data?.matches) ? data.matches : [];
+    const hit = matches.find((m: any) => {
+      const pid = m?.participantID || m?.participantId || {};
+      return (
+        String(pid?.scheme || "").toLowerCase() === scheme.toLowerCase() &&
+        String(pid?.value || "").toLowerCase() === value.toLowerCase()
+      );
+    });
+    if (!hit) {
+      return {
+        registered: false,
+        found_in_directory: false,
+        message: `Le destinataire ${scheme}:${value} n'est pas enregistré sur Peppol (absent de peppoldirectory.eu). Demandez au vendeur d'enregistrer son entreprise auprès d'un Access Point Peppol pour recevoir des factures.`,
+        raw: data,
+      };
+    }
+
+    // Optional: check that Peppol BIS Billing 3.0 invoice doc type is supported.
+    const docTypes = Array.isArray(hit?.docTypes) ? hit.docTypes : [];
+    let documentTypeSupported: boolean | undefined = undefined;
+    if (docTypes.length > 0) {
+      documentTypeSupported = docTypes.some((d: any) => {
+        const v = String(d?.value || d?.id || "").toLowerCase();
+        return v.includes("invoice") || v.includes("billing") || v.includes("crediтnote") || v.includes("creditnote");
+      });
+    }
+    if (documentTypeSupported === false) {
+      return {
+        registered: false,
+        found_in_directory: true,
+        document_type_supported: false,
+        message: `Destinataire enregistré sur Peppol mais ne supporte pas les factures (Peppol BIS Billing 3.0). Demandez au vendeur d'activer la réception des factures auprès de son Access Point.`,
+        raw: hit,
+      };
+    }
+    return {
+      registered: true,
+      found_in_directory: true,
+      document_type_supported: documentTypeSupported,
+      raw: hit,
+    };
+  } catch (e) {
+    // Network error → fail-open (do not block a legitimate send).
+    logFalco("warn", "peppol_directory_network_error", {
+      participant,
+      error: String((e as any)?.message || e),
+    });
+    return {
+      registered: true,
+      found_in_directory: false,
+      message: "Peppol Directory injoignable — envoi tenté sans pré-vérification.",
+    };
+  }
+}

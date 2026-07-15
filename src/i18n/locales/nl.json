@@ -514,5 +514,12 @@
   "homeCurated": {
     "bestSellersPrefix": "Bestsellers — {{label}}",
     "otherBestSellers": "Andere bestsellers"
+  },
+  "countryOnboarding": {
+    "title": "Kies uw leveringsland",
+    "description": "MediKong past de catalogus, prijzen, valuta en zichtbare aanbiedingen aan op basis van uw land. U kunt deze keuze op elk moment wijzigen via de kopregel.",
+    "detectedUnsupported": "We hebben een niet-ondersteund land gedetecteerd ({{country}}). Selecteer het land dat overeenkomt met uw levering.",
+    "meta": "{{code}} · {{currency}} · Btw {{vat}}%",
+    "footer": "Alleen aanbiedingen die leverbaar zijn in het gekozen land worden getoond. U kunt dit later wijzigen in de kopregel of in uw accountvoorkeuren."
   }
 }

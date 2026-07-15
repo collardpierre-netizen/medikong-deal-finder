@@ -519,5 +519,12 @@
   "homeCurated": {
     "bestSellersPrefix": "Best-sellers — {{label}}",
     "otherBestSellers": "Autres best-sellers"
+  },
+  "countryOnboarding": {
+    "title": "Choisissez votre pays de livraison",
+    "description": "MediKong adapte le catalogue, les prix, la devise et les offres visibles selon votre pays. Ce choix reste modifiable à tout moment depuis l'en-tête.",
+    "detectedUnsupported": "Nous avons détecté un pays non desservi ({{country}}). Sélectionnez celui qui correspond à votre livraison.",
+    "meta": "{{code}} · {{currency}} · TVA {{vat}}%",
+    "footer": "Seules les offres livrables dans le pays choisi seront affichées. Vous pourrez le modifier dans l'en-tête ou dans vos préférences de compte."
   }
 }

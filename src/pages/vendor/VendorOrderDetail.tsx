@@ -12,6 +12,7 @@ import { VCard } from "@/components/vendor/ui/VCard";
 import { VBadge } from "@/components/vendor/ui/VBadge";
 import { fmtEur } from "@/lib/format-currency";
 import { useResyncOnReconnect } from "@/hooks/useResyncOnReconnect";
+import OrderInvoiceStatusPanel from "@/components/orders/OrderInvoiceStatusPanel";
 
 import {
   OrderInfoBlocks,

@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { fmtEur } from "@/lib/format-currency";
+import OrderPaymentTimeline from "@/components/orders/OrderPaymentTimeline";
 
 /**
  * Context describing a Stripe-confirmed card payment on the parent order.

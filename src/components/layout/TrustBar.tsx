@@ -7,7 +7,7 @@ export function TrustBar() {
   const { t, i18n } = useTranslation();
   const items = [
     { icon: Truck, text: shippingCopy("short", i18n.language) },
-    { icon: ShieldCheck, text: t("trustBar.authenticity", "100% Authenticité garantie") },
+    { icon: ShieldCheck, text: t("trustBar.authenticity") },
     { icon: BadgeCheck, text: t("trustBar.verifiedSuppliers") },
   ];
 

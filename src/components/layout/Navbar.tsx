@@ -14,19 +14,21 @@ import logoHorizontal from "@/assets/logo-medikong.png";
 import { useIsResellerPro } from "@/hooks/useCurrentBuyerProfile";
 
 function ResellerNavLink() {
+  const { t } = useTranslation();
   const { isReseller } = useIsResellerPro();
   if (!isReseller) return null;
   return (
     <Link
       to="/pro"
       className="flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full hover:bg-primary/20 transition-colors"
-      title="Catalogue B2B revendeur"
+      title={t("nav.resellerCatalogTitle")}
     >
       <Lock size={12} />
-      <span>Espace revendeur</span>
+      <span>{t("nav.resellerSpace")}</span>
     </Link>
   );
 }
+
 
 export function Navbar() {
   const { t } = useTranslation();
@@ -102,7 +104,7 @@ export function Navbar() {
           <button
             onClick={toggleTVAC}
             className="flex items-center gap-1 text-[11px] font-semibold rounded-full px-2.5 py-1.5 border border-border hover:bg-muted transition-colors"
-            title="Basculer entre prix HTVA et TTC"
+            title={t("nav.priceToggleTitle")}
           >
             <span className={isTVAC ? "text-muted-foreground" : "text-primary font-bold"}>HTVA</span>
             <span className="text-muted-foreground">/</span>
@@ -111,7 +113,8 @@ export function Navbar() {
           {user && <NotificationsBell scope="buyer" variant="light" />}
           <Link
             to="/panier"
-            aria-label={t("common.cart", "Panier")}
+            aria-label={t("common.cart")}
+
             className="relative p-2 rounded-full hover:bg-muted transition-colors"
           >
             <ShoppingCart className="text-foreground" size={20} aria-hidden="true" />
@@ -128,7 +131,7 @@ export function Navbar() {
                 </Link>
               )}
               {isVendor && (
-                <div className="flex items-center bg-muted/60 rounded-full p-0.5" role="group" aria-label="Bascule Acheteur / Vendeur">
+                <div className="flex items-center bg-muted/60 rounded-full p-0.5" role="group" aria-label={t("nav.buyerSellerToggle")}>
                   <Link
                     to="/compte"
                     aria-pressed={!location.pathname.startsWith("/vendor")}
@@ -139,7 +142,7 @@ export function Navbar() {
                     }`}
                   >
                     <Users size={12} />
-                    <span>Acheteur</span>
+                    <span>{t("nav.buyer")}</span>
                   </Link>
                   <Link
                     to="/vendor"
@@ -151,18 +154,19 @@ export function Navbar() {
                     }`}
                   >
                     <Store size={12} />
-                    <span>Vendeur</span>
+                    <span>{t("nav.seller")}</span>
                   </Link>
                 </div>
               )}
-              <Link to="/bonnes-affaires" className="flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full hover:bg-amber-100 transition-colors" title="Trouver tous les produits offrant X% de remise vs PVP ou prix marché">
+              <Link to="/bonnes-affaires" className="flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full hover:bg-amber-100 transition-colors" title={t("nav.goodDealsTitle")}>
                 <Percent size={13} />
-                <span>Bonnes affaires</span>
+                <span>{t("nav.goodDeals")}</span>
               </Link>
               <Link to="/mes-prix" className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full hover:bg-emerald-100 transition-colors">
                 <Tag size={13} />
-                <span>{t("nav.myPrices", "Mes Prix")}</span>
+                <span>{t("nav.myPrices")}</span>
               </Link>
+
               <ResellerNavLink />
               <Link
                 to="/compte"
@@ -173,7 +177,7 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={handleSignOut}
-                aria-label={t("common.signOut", "Se déconnecter")}
+                aria-label={t("common.signOut")}
                 className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
               >
                 <LogOut size={16} aria-hidden="true" />
@@ -192,7 +196,7 @@ export function Navbar() {
 
         {/* Mobile icons */}
         <div className="flex md:hidden items-center gap-2 shrink-0 ml-auto">
-          <Link to="/panier" aria-label={t("common.cart", "Panier")} className="relative p-2">
+          <Link to="/panier" aria-label={t("common.cart")} className="relative p-2">
             <ShoppingCart className="text-foreground" size={20} aria-hidden="true" />
             {cartCount > 0 && (
               <span className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center">{cartCount}</span>
@@ -201,7 +205,8 @@ export function Navbar() {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label={mobileMenuOpen ? t("common.closeMenu", "Fermer le menu") : t("common.openMenu", "Ouvrir le menu")}
+            aria-label={mobileMenuOpen ? t("common.closeMenu") : t("common.openMenu")}
+
             aria-expanded={mobileMenuOpen}
             className="p-2 text-foreground"
           >
@@ -250,7 +255,7 @@ export function Navbar() {
                     </Link>
                   )}
                   <Link to="/mes-prix" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-emerald-600 text-sm font-semibold py-1">
-                    <Tag size={16} /> {t("nav.myPrices", "Mes Prix")}
+                    <Tag size={16} /> {t("nav.myPrices")}
                   </Link>
                   <Link to="/compte" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-foreground text-sm py-1">
                     <Users size={16} /> {t("common.account")}

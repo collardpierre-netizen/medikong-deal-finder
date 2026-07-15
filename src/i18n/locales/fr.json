@@ -53,7 +53,15 @@
     "sourcing": "Sourcing",
     "account": "Mon compte",
     "myPrices": "Mes Prix",
-    "freeAudit": "Audit gratuit"
+    "freeAudit": "Audit gratuit",
+    "buyer": "Acheteur",
+    "seller": "Vendeur",
+    "buyerSellerToggle": "Bascule Acheteur / Vendeur",
+    "goodDeals": "Bonnes affaires",
+    "goodDealsTitle": "Trouver tous les produits offrant un % de remise vs PVP ou prix marché",
+    "resellerSpace": "Espace revendeur",
+    "resellerCatalogTitle": "Catalogue B2B revendeur",
+    "priceToggleTitle": "Basculer entre prix HTVA et TTC"
   },
   "trustBar": {
     "certifiedCE": "Produits certifiés CE",

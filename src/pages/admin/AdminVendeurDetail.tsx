@@ -1339,6 +1339,7 @@ function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boole
     city: vendor.city || "",
     postal_code: vendor.postal_code || "",
     country_code: vendor.country_code || "BE",
+    peppol_id: (vendor as any).peppol_id || "",
     commission_rate: String(vendor.commission_rate ?? 0),
     commission_model: (vendor as any).commission_model || "flat_percentage",
     fixed_commission_amount: String((vendor as any).fixed_commission_amount ?? 0),

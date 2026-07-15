@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import { fmtEur } from "@/lib/format-currency";
 import type { AnalyticsPeriod } from "@/hooks/useVendorAnalytics";
 import logoUrl from "@/assets/logo-medikong.png";
+import { renderCartoStaticMap, type MapPoint } from "@/lib/carto-static-map";
 
 // MediKong brand tokens (mirrors mem://style/*).
 const BRAND_BLUE: [number, number, number] = [27, 91, 218]; // #1B5BDA
@@ -206,13 +207,30 @@ function drawHeader(
   doc.setFillColor(...BRAND_BLUE);
   doc.rect(0, 0, w, 26, "F");
 
-  // Logo (left) — falls back to wordmark if the image failed to load.
+  // Logo (left) — kept at its natural 1.6:1 aspect so the lion + wordmark stay
+  // legible instead of being squashed into a wave.
+  const LOGO_H = 14; // mm
+  const LOGO_W = LOGO_H * 1.6; // 400/250 aspect
+  const PANEL_PAD_X = 3;
+  const PANEL_PAD_Y = 2;
+  const PANEL_W = LOGO_W + PANEL_PAD_X * 2;
+  const PANEL_H = LOGO_H + PANEL_PAD_Y * 2;
+  const PANEL_X = 10;
+  const PANEL_Y = (26 - PANEL_H) / 2;
   if (logoDataUrl) {
     try {
-      // White panel so the horizontal logo pops on the blue banner.
       doc.setFillColor(255, 255, 255);
-      doc.roundedRect(10, 5, 56, 16, 2, 2, "F");
-      doc.addImage(logoDataUrl, "PNG", 12, 7, 52, 12, undefined, "FAST");
+      doc.roundedRect(PANEL_X, PANEL_Y, PANEL_W, PANEL_H, 2, 2, "F");
+      doc.addImage(
+        logoDataUrl,
+        "PNG",
+        PANEL_X + PANEL_PAD_X,
+        PANEL_Y + PANEL_PAD_Y,
+        LOGO_W,
+        LOGO_H,
+        undefined,
+        "FAST"
+      );
     } catch {
       doc.setFont(titleFont, "bold");
       doc.setFontSize(18);
@@ -400,7 +418,8 @@ function drawCoverageMap(
   y: number,
   points: GeoPoint[],
   outlines: Record<CountryCode, Ring[]>,
-  fontName: string
+  fontName: string,
+  raster?: { dataUrl: string; widthPx: number; heightPx: number } | null
 ): number {
   const w = doc.internal.pageSize.getWidth();
   const margin = 14;
@@ -452,56 +471,7 @@ function drawCoverageMap(
     oy + (1 - (lat - lat0) / (lat1 - lat0)) * drawH,
   ];
 
-  // Draw country outlines (filled land + border).
-  doc.setLineWidth(0.25);
-  doc.setDrawColor(148, 163, 184); // slate-400 borders
-  doc.setFillColor(255, 255, 255); // land
-  for (const cc of Object.keys(outlines) as CountryCode[]) {
-    for (const ring of outlines[cc]) {
-      if (ring.length < 3) continue;
-      const pts = ring.map(([lng, lat]) => project(lng, lat));
-      const [sx, sy] = pts[0];
-      const deltas: [number, number][] = [];
-      for (let i = 1; i < pts.length; i++) {
-        deltas.push([pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]]);
-      }
-      // Fill + stroke
-      (doc as unknown as { lines: (l: number[][], x: number, y: number, s: number[], style: string, closed: boolean) => void }).lines(
-        deltas as unknown as number[][],
-        sx,
-        sy,
-        [1, 1],
-        "FD",
-        true
-      );
-    }
-  }
-
-  // Country ISO labels at approx centroids.
-  doc.setFont(fontName, "bold");
-  doc.setFontSize(7);
-  doc.setTextColor(148, 163, 184);
-  for (const cc of Object.keys(outlines) as CountryCode[]) {
-    const rings = outlines[cc];
-    if (!rings.length) continue;
-    // Centroid of the first (main) ring.
-    const ring = rings[0];
-    let cx = 0, cy = 0;
-    for (const [lng, lat] of ring) { cx += lng; cy += lat; }
-    cx /= ring.length; cy /= ring.length;
-    const [px, py] = project(cx, cy);
-    doc.text(cc, px, py, { align: "center" });
-  }
-
-  if (points.length === 0) {
-    doc.setFont(fontName, "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(...MUTED);
-    doc.text("Aucune localisation client géocodée sur la période.", margin + boxW / 2, y + boxH / 2 + 6, { align: "center" });
-    return y + boxH + 6;
-  }
-
-  // Tertile thresholds on CA (same logic as CustomerMap.quantile)
+  // Compute tertile thresholds now so both branches can use them for the legend.
   const sortedCa = points.map((p) => p.ca_htva_cents).sort((a, b) => a - b);
   const q = (arr: number[], p: number) => {
     if (!arr.length) return 0;
@@ -514,19 +484,78 @@ function drawCoverageMap(
   const p66 = q(sortedCa, 2 / 3);
   const maxCa = Math.max(1, ...sortedCa);
 
-  // Plot points on top of the outlines.
-  for (const p of points) {
-    const [px, py] = project(p.lng, p.lat);
-    const tier: [number, number, number] =
-      p.ca_htva_cents >= p66 ? TIER_HIGH : p.ca_htva_cents >= p33 ? TIER_MID : TIER_LOW;
-    const r = 1.1 + 2.6 * (p.ca_htva_cents / maxCa);
-    // White halo for readability against country fill.
+  if (raster && raster.dataUrl) {
+    // Real basemap tiles — the raster already contains the points, so we only
+    // embed the image and let the legend below annotate it.
+    try {
+      doc.addImage(raster.dataUrl, "PNG", ox, oy, drawW, drawH, undefined, "FAST");
+    } catch {
+      /* fall through to vector outlines if the image is somehow invalid */
+    }
+  } else {
+    // Fallback: vector country outlines + plotted points.
+    doc.setLineWidth(0.25);
+    doc.setDrawColor(148, 163, 184);
     doc.setFillColor(255, 255, 255);
-    doc.circle(px, py, r + 0.6, "F");
-    doc.setFillColor(...tier);
-    doc.setDrawColor(...tier);
-    doc.setLineWidth(0.2);
-    doc.circle(px, py, r, "F");
+    for (const cc of Object.keys(outlines) as CountryCode[]) {
+      for (const ring of outlines[cc]) {
+        if (ring.length < 3) continue;
+        const pts = ring.map(([lng, lat]) => project(lng, lat));
+        const [sx, sy] = pts[0];
+        const deltas: [number, number][] = [];
+        for (let i = 1; i < pts.length; i++) {
+          deltas.push([pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]]);
+        }
+        (doc as unknown as { lines: (l: number[][], x: number, y: number, s: number[], style: string, closed: boolean) => void }).lines(
+          deltas as unknown as number[][],
+          sx,
+          sy,
+          [1, 1],
+          "FD",
+          true
+        );
+      }
+    }
+    doc.setFont(fontName, "bold");
+    doc.setFontSize(7);
+    doc.setTextColor(148, 163, 184);
+    for (const cc of Object.keys(outlines) as CountryCode[]) {
+      const rings = outlines[cc];
+      if (!rings.length) continue;
+      const ring = rings[0];
+      let cx = 0, cy = 0;
+      for (const [lng, lat] of ring) { cx += lng; cy += lat; }
+      cx /= ring.length; cy /= ring.length;
+      const [px, py] = project(cx, cy);
+      doc.text(cc, px, py, { align: "center" });
+    }
+    if (points.length === 0) {
+      doc.setFont(fontName, "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(...MUTED);
+      doc.text("Aucune localisation client géocodée sur la période.", margin + boxW / 2, y + boxH / 2 + 6, { align: "center" });
+      return y + boxH + 6;
+    }
+    for (const p of points) {
+      const [px, py] = project(p.lng, p.lat);
+      const tier: [number, number, number] =
+        p.ca_htva_cents >= p66 ? TIER_HIGH : p.ca_htva_cents >= p33 ? TIER_MID : TIER_LOW;
+      const r = 1.1 + 2.6 * (p.ca_htva_cents / maxCa);
+      doc.setFillColor(255, 255, 255);
+      doc.circle(px, py, r + 0.6, "F");
+      doc.setFillColor(...tier);
+      doc.setDrawColor(...tier);
+      doc.setLineWidth(0.2);
+      doc.circle(px, py, r, "F");
+    }
+  }
+
+  if (raster && points.length === 0) {
+    doc.setFont(fontName, "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(...MUTED);
+    doc.text("Aucune localisation client géocodée sur la période.", margin + boxW / 2, y + boxH / 2 + 6, { align: "center" });
+    return y + boxH + 6;
   }
 
   // Legend (bottom-left inside the box)
@@ -681,7 +710,49 @@ export async function generateVendorAnalyticsPdf(
   drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName, titleFont);
   y = 50;
   y = sectionTitle(doc, y, "Carte de couverture clients", fontName, titleFont, `${payload.geoPoints.length} zones`);
-  y = drawCoverageMap(doc, y, payload.geoPoints, outlines, fontName);
+
+  // Try to render a real CARTO Positron basemap raster for the coverage box.
+  // Falls back to vector outlines if tiles or canvas readback fail.
+  let mapRaster: { dataUrl: string; widthPx: number; heightPx: number } | null = null;
+  if (payload.geoPoints.length > 0) {
+    let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+    for (const p of payload.geoPoints) {
+      if (p.lat < minLat) minLat = p.lat;
+      if (p.lat > maxLat) maxLat = p.lat;
+      if (p.lng < minLng) minLng = p.lng;
+      if (p.lng > maxLng) maxLng = p.lng;
+    }
+    // Pad the bbox so points aren't stuck against the edges.
+    const padLat = Math.max(0.4, (maxLat - minLat) * 0.15);
+    const padLng = Math.max(0.4, (maxLng - minLng) * 0.15);
+    const sortedCa = payload.geoPoints.map((p) => p.ca_htva_cents).sort((a, b) => a - b);
+    const q = (arr: number[], p: number) => {
+      if (!arr.length) return 0;
+      const pos = (arr.length - 1) * p;
+      const base = Math.floor(pos);
+      const rest = pos - base;
+      return arr[base + 1] !== undefined ? arr[base] + rest * (arr[base + 1] - arr[base]) : arr[base];
+    };
+    const p33m = q(sortedCa, 1 / 3);
+    const p66m = q(sortedCa, 2 / 3);
+    const maxCam = Math.max(1, ...sortedCa);
+    const mapPts: MapPoint[] = payload.geoPoints.map((p) => ({
+      lat: p.lat,
+      lng: p.lng,
+      color:
+        p.ca_htva_cents >= p66m ? TIER_HIGH : p.ca_htva_cents >= p33m ? TIER_MID : TIER_LOW,
+      radius: 4 + 14 * (p.ca_htva_cents / maxCam),
+    }));
+    mapRaster = await renderCartoStaticMap({
+      bbox: [minLng - padLng, minLat - padLat, maxLng + padLng, maxLat + padLat],
+      widthPx: 1600,
+      heightPx: 1000,
+      points: mapPts,
+      style: "light_all",
+    }).catch(() => null);
+  }
+
+  y = drawCoverageMap(doc, y, payload.geoPoints, outlines, fontName, mapRaster);
 
   // Top clients
   if (payload.topCustomers.length > 0) {

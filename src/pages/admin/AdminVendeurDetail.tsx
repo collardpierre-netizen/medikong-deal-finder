@@ -27,6 +27,8 @@ import {
   VENDOR_ONBOARDING_MODE_META,
   getVendorOnboardingModeLabel,
 } from "@/lib/vendor-onboarding-mode-labels";
+import { isBelgianVendor, isValidBePeppolId, normalizePeppolId, PEPPOL_BE_EXAMPLE } from "@/lib/peppol";
+import { VendorPeppolBadge } from "@/components/admin/VendorPeppolBadge";
 
 type VendorValidationStatus = "pending_review" | "under_review" | "accepted" | "approved" | "rejected";
 

@@ -41,8 +41,32 @@ function json(status: number, body: unknown) {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Idempotent short-circuit for `no_vendor_eligible_for_invoice`.
+// Rationale: a buyer whose cart is not eligible for invoice payment used to
+// generate one auto-cancelled order per click (see Pharmacie des Saules — 13
+// duplicates on 2026-07-15). Even after we stopped persisting on rejection,
+// double-clicks still re-run the eligibility RPCs for nothing. We remember
+// recent rejections in-memory (per warm isolate) keyed on user+cart+method
+// and return the cached rejection for a short TTL.
+// ---------------------------------------------------------------------------
+const INELIGIBLE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const ineligibleCache = new Map<string, { until: number; payload: unknown }>();
+
+async function sha256Hex(input: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function cachePurgeExpired(now: number) {
+  for (const [k, v] of ineligibleCache) if (v.until <= now) ineligibleCache.delete(k);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
 
   try {
     const authHeader = req.headers.get("Authorization");

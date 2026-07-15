@@ -113,13 +113,43 @@ export function CustomerMap({ rows }: { rows: CustomerLocationRow[] }) {
   const p33 = quantile(sortedCa, 1 / 3);
   const p66 = quantile(sortedCa, 2 / 3);
 
+  const tileStyle = (typeof window !== "undefined" && (localStorage.getItem("vendor-map-tile") as "sober" | "gray" | "standard" | null)) || "sober";
+  const tiles = {
+    sober: {
+      url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    },
+    gray: {
+      url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png",
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    },
+    standard: {
+      url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    },
+  }[tileStyle];
+
   return (
     <div className="rounded-[10px] overflow-hidden border border-[#E2E8F0] relative" style={{ height: 480 }}>
+      <div className="absolute top-2 right-2 z-[1000] flex gap-1 bg-white/95 border border-[#E2E8F0] rounded-md shadow-sm p-1 text-[11px]">
+        {(["sober", "gray", "standard"] as const).map((k) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => {
+              localStorage.setItem("vendor-map-tile", k);
+              // force re-render
+              window.dispatchEvent(new Event("storage"));
+              location.reload();
+            }}
+            className={`px-2 py-1 rounded ${tileStyle === k ? "bg-[#1E252F] text-white" : "text-[#475569] hover:bg-[#F1F5F9]"}`}
+          >
+            {k === "sober" ? "Sobre" : k === "gray" ? "Neutre" : "Standard"}
+          </button>
+        ))}
+      </div>
       <MapContainer center={[50.5, 4.5]} zoom={6} style={{ height: "100%", width: "100%" }}>
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <TileLayer attribution={tiles.attribution} url={tiles.url} />
         {points.map((p) => {
           const tier = tierFor(p.row.ca_htva_cents, p66, p33);
           const color = TIER_COLORS[tier];

@@ -13,6 +13,7 @@ import {
   normalizeFalcoPeppolIdentifier,
   normalizeFalcoVatNumber,
   resolveFalcoPostalCode,
+  checkPeppolReceiverRegistered,
   type FalcoInvoiceMetadata,
   type FalcoLine,
   type FalcoTaxSubtotal,
@@ -275,6 +276,36 @@ Deno.serve(async (req) => {
         error: "blocked_missing_peppol_id",
         vendor_id: inv.vendor_id,
         hint: "Ajoutez le Peppol ID (0208:BEXXXXXXXXXXX) sur la fiche du vendeur avant d'envoyer.",
+      });
+    }
+
+    // Guard: receiver must be discoverable on Peppol (SMP lookup via Peppol Directory).
+    // Fail-open if the directory is unreachable so we never block legitimate sends on outage.
+    const receiverCheck = await checkPeppolReceiverRegistered(vendorCheck?.peppol_id);
+    if (!receiverCheck.registered) {
+      await supabase
+        .from("order_invoices")
+        .update({
+          peppol_status: "blocked_not_registered",
+          peppol_error: receiverCheck.message || "Destinataire non enregistré sur Peppol.",
+          peppol_last_attempt_at: new Date().toISOString(),
+        })
+        .eq("id", inv.id);
+      logFalco("warn", "send_blocked_receiver_not_registered", {
+        invoice_id: inv.id,
+        vendor_id: inv.vendor_id,
+        peppol_id: vendorCheck?.peppol_id || null,
+        found_in_directory: receiverCheck.found_in_directory,
+        document_type_supported: receiverCheck.document_type_supported,
+      });
+      return json(422, {
+        ok: false,
+        error: "blocked_receiver_not_registered",
+        vendor_id: inv.vendor_id,
+        peppol_id: vendorCheck?.peppol_id || null,
+        found_in_directory: receiverCheck.found_in_directory,
+        document_type_supported: receiverCheck.document_type_supported,
+        hint: receiverCheck.message,
       });
     }
 

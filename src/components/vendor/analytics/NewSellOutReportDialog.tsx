@@ -136,6 +136,7 @@ export function NewSellOutReportDialog({ vendorId, onClose }: { vendorId: string
                       onClick={() => {
                         const label = `${p.name} — APB ${p.apb_number}${p.city ? ` · ${p.city}` : ""}`;
                         setCustomerLabel(label);
+                        setPharmacyId(p.id);
                         setPharmacyLocked(true);
                         setShowPharmacyResults(false);
                       }}

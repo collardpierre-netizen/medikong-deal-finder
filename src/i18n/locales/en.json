@@ -35,7 +35,9 @@
     "stripeConnect": "Stripe Connect",
     "stripeRevenue": "Revenue & Margins",
     "productSubmissions": "Submitted products",
-    "free": "Free"
+    "free": "Free",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
   },
   "nav": {
     "shop": "Shop",
@@ -48,7 +50,15 @@
     "manufacturers": "Manufacturers",
     "delegates": "Delegates",
     "myPrices": "My Prices",
-    "freeAudit": "Free audit"
+    "freeAudit": "Free audit",
+    "buyer": "Buyer",
+    "seller": "Seller",
+    "buyerSellerToggle": "Toggle Buyer / Seller",
+    "goodDeals": "Deals",
+    "goodDealsTitle": "Find all products with a discount vs RRP or market price",
+    "resellerSpace": "Reseller area",
+    "resellerCatalogTitle": "B2B reseller catalog",
+    "priceToggleTitle": "Toggle between prices excl. and incl. VAT"
   },
   "trustBar": {
     "certifiedCE": "CE certified products",

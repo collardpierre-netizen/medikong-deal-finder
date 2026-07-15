@@ -35,7 +35,9 @@
     "stripeConnect": "Stripe Connect",
     "stripeRevenue": "Umsatz & Margen",
     "productSubmissions": "Eingereichte Produkte",
-    "free": "Kostenlos"
+    "free": "Kostenlos",
+    "openMenu": "Menü öffnen",
+    "closeMenu": "Menü schließen"
   },
   "nav": {
     "shop": "Shop",
@@ -47,7 +49,15 @@
     "account": "Mein Konto",
     "manufacturers": "Hersteller",
     "myPrices": "Meine Preise",
-    "freeAudit": "Kostenlose Prüfung"
+    "freeAudit": "Kostenlose Prüfung",
+    "buyer": "Käufer",
+    "seller": "Verkäufer",
+    "buyerSellerToggle": "Wechsel Käufer / Verkäufer",
+    "goodDeals": "Schnäppchen",
+    "goodDealsTitle": "Alle Produkte mit Rabatt gegenüber UVP oder Marktpreis finden",
+    "resellerSpace": "Wiederverkäuferbereich",
+    "resellerCatalogTitle": "B2B-Katalog Wiederverkäufer",
+    "priceToggleTitle": "Zwischen Preisen exkl. und inkl. MwSt. wechseln"
   },
   "trustBar": {
     "certifiedCE": "CE-zertifizierte Produkte",

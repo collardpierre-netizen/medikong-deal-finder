@@ -35,7 +35,9 @@
     "stripeConnect": "Stripe Connect",
     "stripeRevenue": "Omzet & Marges",
     "productSubmissions": "Ingediende producten",
-    "free": "Gratis"
+    "free": "Gratis",
+    "openMenu": "Menu openen",
+    "closeMenu": "Menu sluiten"
   },
   "nav": {
     "shop": "Shop",
@@ -47,7 +49,15 @@
     "account": "Mijn account",
     "manufacturers": "Fabrikanten",
     "myPrices": "Mijn prijzen",
-    "freeAudit": "Gratis audit"
+    "freeAudit": "Gratis audit",
+    "buyer": "Koper",
+    "seller": "Verkoper",
+    "buyerSellerToggle": "Wissel Koper / Verkoper",
+    "goodDeals": "Koopjes",
+    "goodDealsTitle": "Vind alle producten met korting t.o.v. adviesprijs of marktprijs",
+    "resellerSpace": "Wederverkoper",
+    "resellerCatalogTitle": "B2B-catalogus wederverkoper",
+    "priceToggleTitle": "Schakelen tussen prijs excl. en incl. btw"
   },
   "trustBar": {
     "certifiedCE": "CE-gecertificeerde producten",

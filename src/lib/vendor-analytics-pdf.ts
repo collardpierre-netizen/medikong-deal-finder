@@ -744,5 +744,10 @@ export async function generateVendorAnalyticsPdf(
 
   const safeVendor = (payload.vendorName || "vendeur").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
   const dateStr = new Date().toISOString().slice(0, 10);
-  doc.save(`medikong-analytics-${safeVendor}-${payload.period}-${dateStr}.pdf`);
+  const filename = `medikong-analytics-${safeVendor}-${payload.period}-${dateStr}.pdf`;
+  const blob = doc.output("blob") as Blob;
+  const blobUrl = URL.createObjectURL(blob);
+  const save = () => doc.save(filename);
+  if (autoSave) save();
+  return { blobUrl, blob, filename, save };
 }

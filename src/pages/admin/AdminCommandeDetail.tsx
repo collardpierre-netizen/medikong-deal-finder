@@ -458,17 +458,28 @@ const AdminCommandeDetail = () => {
                 <div className="font-medium text-sm">
                   {(order as any).fulfillment_mode === "pickup" ? "🏬 Picking — retrait sur place" : "📦 Livraison"}
                 </div>
-                {(order as any).fulfillment_mode === "delivery" && (order as any).shipping_address && (
-                  <div className="mt-2 text-xs text-slate-600 leading-snug">
-                    {(order as any).shipping_address.label && <div className="font-medium text-slate-800">{(order as any).shipping_address.label}</div>}
-                    {(order as any).shipping_address.address_l1 && <div>{(order as any).shipping_address.address_l1}</div>}
-                    {(order as any).shipping_address.address_l2 && <div>{(order as any).shipping_address.address_l2}</div>}
-                    <div>
-                      {(order as any).shipping_address.postal_code} {(order as any).shipping_address.city}
-                      {(order as any).shipping_address.country_code ? ` (${(order as any).shipping_address.country_code})` : ""}
+                {(order as any).fulfillment_mode === "delivery" && (() => {
+                  const sa = (order as any).shipping_address as any;
+                  const hasMin = sa && (sa.address_l1 || sa.address_line1) && (sa.postal_code || sa.zip) && sa.city;
+                  if (!hasMin) {
+                    return (
+                      <div className="mt-2 text-xs rounded border border-rose-200 bg-rose-50 text-rose-800 px-2 py-1.5">
+                        ⚠️ Adresse de livraison manquante ou incomplète — impossible d'expédier en l'état.
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="mt-2 text-xs text-slate-600 leading-snug">
+                      {sa.label && <div className="font-medium text-slate-800">{sa.label}</div>}
+                      {(sa.address_l1 || sa.address_line1) && <div>{sa.address_l1 || sa.address_line1}</div>}
+                      {(sa.address_l2 || sa.address_line2) && <div>{sa.address_l2 || sa.address_line2}</div>}
+                      <div>
+                        {(sa.postal_code || sa.zip)} {sa.city}
+                        {sa.country_code ? ` (${sa.country_code})` : ""}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             )}
             <div className="mb-3 p-3 rounded border bg-white flex items-center justify-between gap-3" style={{ borderColor: "#E2E8F0" }}>

@@ -548,7 +548,7 @@ export default function HomePage() {
                 <div key={g.label}>
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-bold text-mk-navy">
-                      {idx === 0 && g.priority < 999 ? `Best-sellers — ${g.label}` : g.label}
+                      {idx === 0 && g.priority < 999 ? t("homeCurated.bestSellersPrefix", { label: g.label }) : g.label}
                     </h2>
                     <Link to="/recherche" className="text-sm text-mk-blue hover:underline flex items-center gap-1">
                       {t("common.viewAll")} <ChevronRight size={14} />

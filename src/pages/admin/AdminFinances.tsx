@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Send } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
@@ -139,11 +140,33 @@ const AdminFinances = () => {
                       />
                     </td>
                     <td className="px-4 py-3">
-                      <PeppolStatusBadge
-                        status={inv.peppol_status as any}
-                        error={inv.peppol_error}
-                        retryCount={inv.peppol_retry_count}
-                      />
+                      <div className="flex items-center gap-2">
+                        <PeppolStatusBadge
+                          status={inv.peppol_status as any}
+                          error={inv.peppol_error}
+                          retryCount={inv.peppol_retry_count}
+                        />
+                        {(!inv.peppol_status || inv.peppol_status === "non_envoyé" || inv.peppol_status === "not_sent") && (
+                          <button
+                            onClick={async () => {
+                              const t = toast.loading("Envoi Peppol en cours…");
+                              const { data, error } = await supabase.functions.invoke("send-invoice-peppol", { body: { invoice_id: inv.id } });
+                              toast.dismiss(t);
+                              if (error || (data && data.ok === false)) {
+                                toast.error(`Échec envoi Peppol: ${error?.message || data?.error || "erreur inconnue"}`);
+                              } else {
+                                toast.success("Facture envoyée via Peppol");
+                              }
+                              queryClient.invalidateQueries({ queryKey: ["admin-order-invoices"] });
+                            }}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded hover:bg-slate-100"
+                            style={{ color: "#1B5BDA" }}
+                            title="Envoyer via Peppol"
+                          >
+                            <Send size={11} /> Envoyer
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       {inv.pdf_path && (

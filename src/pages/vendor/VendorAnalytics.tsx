@@ -37,6 +37,7 @@ const TABS = [
   { key: "products", label: "Top produits" },
   { key: "sellin_manual", label: "Sell-in manuel" },
   { key: "sellout", label: "Sell-in vs Sell-out" },
+  { key: "coverage_be", label: "Couverture BE" },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
 

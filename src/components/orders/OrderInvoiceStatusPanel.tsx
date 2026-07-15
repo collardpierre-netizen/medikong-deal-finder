@@ -230,6 +230,39 @@ export default function OrderInvoiceStatusPanel({ orderId, vendorId, defaultAmou
       </div>
 
 
+      {stripePaidCtx && (
+        <div className="px-4 py-3 border-b bg-emerald-50/60" style={{ borderColor: "#E2E8F0" }}>
+          <div className="flex items-start gap-2">
+            <Lock size={14} className="text-emerald-700 mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-[11px] uppercase text-emerald-800 font-bold tracking-wide">
+                Vérifié via Stripe
+              </div>
+              <div className="mt-1 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-slate-700">
+                <div>
+                  <div className="text-slate-500 uppercase text-[10px] font-semibold">PaymentIntent</div>
+                  <div className="font-mono text-[11px] break-all">{stripePaidCtx.reference}</div>
+                </div>
+                <div>
+                  <div className="text-slate-500 uppercase text-[10px] font-semibold">Confirmé le</div>
+                  <div>
+                    {new Date(stripePaidCtx.paidAt).toLocaleString("fr-BE", {
+                      day: "2-digit", month: "2-digit", year: "numeric",
+                      hour: "2-digit", minute: "2-digit",
+                    })}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-slate-500 uppercase text-[10px] font-semibold">Montant encaissé</div>
+                  <div className="font-semibold text-emerald-800">{fmtEur(stripePaidCtx.amount)} € TTC</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       {invoicesQuery.isLoading && (
         <div className="p-4 text-sm text-slate-500">Chargement…</div>
       )}

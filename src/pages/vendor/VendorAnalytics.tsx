@@ -726,6 +726,7 @@ export default function VendorAnalytics() {
       {tab === "products" && <TopProductsTab period={period} vendorId={vendor?.id ?? null} />}
       {tab === "sellin_manual" && <ManualSellInPanel vendorId={vendor?.id ?? null} />}
       {tab === "sellout" && <SellOutPanel vendorId={vendor?.id ?? null} />}
+      {tab === "coverage_be" && <BeCoveragePanel vendorId={vendor?.id ?? null} />}
     </div>
   );
 }

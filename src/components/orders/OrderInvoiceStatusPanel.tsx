@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { FileText, Send, Wallet, Bell, Plus, ExternalLink } from "lucide-react";
+import { FileText, Send, Wallet, Bell, Plus, ExternalLink, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { fmtEur } from "@/lib/format-currency";
+
+/**
+ * Context describing a Stripe-confirmed card payment on the parent order.
+ * When present, the "Paiement reçu" section is auto-filled and locked:
+ * the encaissement is the source of truth and cannot be edited manually.
+ */
+type StripePaidCtx = {
+  paidAt: string;         // ISO — best available Stripe confirmation timestamp
+  amount: number;         // TTC in EUR
+  method: "card";
+  reference: string;      // stripe_payment_intent_id
+};
+
 
 type Invoice = {
   id: string;
@@ -119,6 +132,44 @@ export default function OrderInvoiceStatusPanel({ orderId, vendorId, defaultAmou
     },
   });
 
+  // Fetch parent order to detect a Stripe-confirmed card payment.
+  const orderQuery = useQuery({
+    queryKey: ["order-invoices-panel-order", orderId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, payment_method, payment_status, stripe_payment_intent_id, total_incl_vat, updated_at, created_at")
+        .eq("id", orderId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as {
+        id: string;
+        payment_method: string | null;
+        payment_status: string | null;
+        stripe_payment_intent_id: string | null;
+        total_incl_vat: number | null;
+        updated_at: string | null;
+        created_at: string | null;
+      } | null;
+    },
+  });
+
+  const stripePaidCtx: StripePaidCtx | null = useMemo(() => {
+    const o = orderQuery.data;
+    if (!o) return null;
+    const method = (o.payment_method ?? "").toLowerCase();
+    const isCard = method === "card" || method === "stripe";
+    if (!isCard) return null;
+    if ((o.payment_status ?? "").toLowerCase() !== "paid") return null;
+    if (!o.stripe_payment_intent_id) return null;
+    return {
+      paidAt: o.updated_at || o.created_at || new Date().toISOString(),
+      amount: Number(o.total_incl_vat) || 0,
+      method: "card",
+      reference: o.stripe_payment_intent_id,
+    };
+  }, [orderQuery.data]);
+
   const invoices = invoicesQuery.data ?? [];
   const overduePending = useMemo(
     () => invoices.some((i) => i.status !== "paid" && i.due_date && new Date(i.due_date) < new Date()),
@@ -126,6 +177,36 @@ export default function OrderInvoiceStatusPanel({ orderId, vendorId, defaultAmou
   );
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["order-invoices-panel", orderId] });
+
+  // Auto-persist Stripe encaissement onto invoices that have no paid_at yet.
+  // Runs at most once per invoice per session — the RPC itself is idempotent.
+  const autoFilledRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!stripePaidCtx) return;
+    const targets = invoices.filter((i) => !i.paid_at && !autoFilledRef.current.has(i.id));
+    if (targets.length === 0) return;
+    (async () => {
+      for (const inv of targets) {
+        autoFilledRef.current.add(inv.id);
+        const { error } = await supabase.rpc("update_order_invoice_billing", {
+          _invoice_id: inv.id,
+          _patch: {
+            status: "paid",
+            paid_at: stripePaidCtx.paidAt,
+            payment_amount_received: stripePaidCtx.amount,
+            payment_method_received: stripePaidCtx.method,
+            payment_reference: stripePaidCtx.reference,
+          },
+        });
+        if (error) {
+          // Non-blocking: revert the guard so a later retry can happen.
+          autoFilledRef.current.delete(inv.id);
+        }
+      }
+      refresh();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stripePaidCtx, invoices]);
 
   return (
     <div className={`bg-white border rounded-lg ${className ?? ""}`} style={{ borderColor: "#E2E8F0" }}>
@@ -136,12 +217,18 @@ export default function OrderInvoiceStatusPanel({ orderId, vendorId, defaultAmou
             {vendorLabel ? `${vendorLabel} · ` : ""}
             {invoices.length === 0 ? "Aucune facture enregistrée" : `${invoices.length} facture${invoices.length > 1 ? "s" : ""}`}
             {overduePending && <span className="ml-2 text-amber-700 font-semibold">· Échéance dépassée</span>}
+            {stripePaidCtx && (
+              <span className="ml-2 inline-flex items-center gap-1 text-emerald-700 font-semibold">
+                <Lock size={11} /> Encaissé par Stripe
+              </span>
+            )}
           </div>
         </div>
         <Button size="sm" variant="outline" onClick={() => setManualOpen(true)} className="gap-1.5">
           <Plus size={14} /> Enregistrer une facture
         </Button>
       </div>
+
 
       {invoicesQuery.isLoading && (
         <div className="p-4 text-sm text-slate-500">Chargement…</div>
@@ -255,6 +342,7 @@ export default function OrderInvoiceStatusPanel({ orderId, vendorId, defaultAmou
       {editingId && (
         <EditInvoiceDialog
           invoice={invoices.find((i) => i.id === editingId)!}
+          stripePaidCtx={stripePaidCtx}
           onClose={() => setEditingId(null)}
           onSaved={() => { setEditingId(null); refresh(); }}
         />
@@ -398,17 +486,41 @@ function ManualInvoiceDialog({
 // Edit invoice dialog (statut / envoi / paiement / relance)
 // ---------------------------------------------------------------------------
 
-function EditInvoiceDialog({ invoice, onClose, onSaved }: { invoice: Invoice; onClose: () => void; onSaved: () => void }) {
-  const [status, setStatus] = useState(invoice.status);
+function EditInvoiceDialog({
+  invoice,
+  stripePaidCtx,
+  onClose,
+  onSaved,
+}: {
+  invoice: Invoice;
+  stripePaidCtx: StripePaidCtx | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const stripeLocked = !!stripePaidCtx;
+  const [status, setStatus] = useState(stripeLocked ? "paid" : invoice.status);
   const [dueDate, setDueDate] = useState(toDateInputValue(invoice.due_date));
   const [sentAt, setSentAt] = useState(toDatetimeInputValue(invoice.sent_at));
   const [sentChannel, setSentChannel] = useState<string>(invoice.sent_channel ?? "");
   const [sentTo, setSentTo] = useState(invoice.sent_to ?? "");
-  const [paidAt, setPaidAt] = useState(toDatetimeInputValue(invoice.paid_at));
-  const [paidAmount, setPaidAmount] = useState(invoice.payment_amount_received != null ? String(invoice.payment_amount_received) : "");
-  const [paidMethod, setPaidMethod] = useState<string>(invoice.payment_method_received ?? "");
-  const [paidRef, setPaidRef] = useState(invoice.payment_reference ?? "");
+  const [paidAt, setPaidAt] = useState(
+    stripeLocked
+      ? toDatetimeInputValue(invoice.paid_at ?? stripePaidCtx!.paidAt)
+      : toDatetimeInputValue(invoice.paid_at),
+  );
+  const [paidAmount, setPaidAmount] = useState(
+    stripeLocked
+      ? String(invoice.payment_amount_received ?? stripePaidCtx!.amount)
+      : (invoice.payment_amount_received != null ? String(invoice.payment_amount_received) : ""),
+  );
+  const [paidMethod, setPaidMethod] = useState<string>(
+    stripeLocked ? "card" : (invoice.payment_method_received ?? ""),
+  );
+  const [paidRef, setPaidRef] = useState(
+    stripeLocked ? (invoice.payment_reference || stripePaidCtx!.reference) : (invoice.payment_reference ?? ""),
+  );
   const [notes, setNotes] = useState(invoice.internal_notes ?? "");
+
 
   const qc = useQueryClient();
 
@@ -477,11 +589,21 @@ function EditInvoiceDialog({ invoice, onClose, onSaved }: { invoice: Invoice; on
 
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" onClick={quickMarkSent} className="gap-1.5"><Send size={13} /> Marquer envoyée</Button>
-          <Button size="sm" variant="outline" onClick={quickMarkPaid} className="gap-1.5"><Wallet size={13} /> Marquer payée</Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={quickMarkPaid}
+            disabled={stripeLocked}
+            title={stripeLocked ? "Paiement carte confirmé par Stripe" : undefined}
+            className="gap-1.5"
+          >
+            <Wallet size={13} /> Marquer payée
+          </Button>
           <Button size="sm" variant="outline" onClick={() => remindMut.mutate()} disabled={remindMut.isPending} className="gap-1.5">
             <Bell size={13} /> Consigner une relance
           </Button>
         </div>
+
 
         <div className="grid grid-cols-2 gap-3 pt-2">
           <div>
@@ -528,19 +650,43 @@ function EditInvoiceDialog({ invoice, onClose, onSaved }: { invoice: Invoice; on
         </div>
 
         <div className="pt-3 border-t" style={{ borderColor: "#E2E8F0" }}>
-          <div className="text-[11px] uppercase text-slate-400 font-semibold mb-2">Paiement encaissé</div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[11px] uppercase text-slate-400 font-semibold">Paiement encaissé</div>
+            {stripeLocked && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+                <Lock size={10} /> Verrouillé — Stripe
+              </span>
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Reçu le</Label>
-              <Input type="datetime-local" value={paidAt} onChange={(e) => setPaidAt(e.target.value)} />
+              <Input
+                type="datetime-local"
+                value={paidAt}
+                onChange={(e) => setPaidAt(e.target.value)}
+                disabled={stripeLocked}
+                readOnly={stripeLocked}
+              />
             </div>
             <div>
               <Label>Montant (€)</Label>
-              <Input type="number" step="0.01" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} />
+              <Input
+                type="number"
+                step="0.01"
+                value={paidAmount}
+                onChange={(e) => setPaidAmount(e.target.value)}
+                disabled={stripeLocked}
+                readOnly={stripeLocked}
+              />
             </div>
             <div>
               <Label>Méthode</Label>
-              <Select value={paidMethod || "__none__"} onValueChange={(v) => setPaidMethod(v === "__none__" ? "" : v)}>
+              <Select
+                value={paidMethod || "__none__"}
+                onValueChange={(v) => setPaidMethod(v === "__none__" ? "" : v)}
+                disabled={stripeLocked}
+              >
                 <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">—</SelectItem>
@@ -552,10 +698,23 @@ function EditInvoiceDialog({ invoice, onClose, onSaved }: { invoice: Invoice; on
             </div>
             <div>
               <Label>Référence</Label>
-              <Input value={paidRef} onChange={(e) => setPaidRef(e.target.value)} placeholder="Communication / IBAN…" />
+              <Input
+                value={paidRef}
+                onChange={(e) => setPaidRef(e.target.value)}
+                placeholder="Communication / IBAN…"
+                disabled={stripeLocked}
+                readOnly={stripeLocked}
+              />
             </div>
           </div>
+          {stripeLocked && (
+            <div className="mt-2 text-[11px] text-slate-500">
+              Encaissement confirmé par Stripe (PaymentIntent&nbsp;
+              <code className="text-slate-600">{stripePaidCtx!.reference}</code>). Non modifiable manuellement.
+            </div>
+          )}
         </div>
+
 
         <div className="pt-3 border-t" style={{ borderColor: "#E2E8F0" }}>
           <Label>Notes internes</Label>

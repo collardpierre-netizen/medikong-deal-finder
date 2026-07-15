@@ -1,15 +1,31 @@
 import { useState } from "react";
-import { Upload, Search, MapPin, Building2 } from "lucide-react";
+import { Upload, Search, MapPin, Building2, Download, RefreshCw } from "lucide-react";
 import {
   useBePharmaciesList,
   useUpsertBePharmacies,
 } from "@/hooks/useBePharmacies";
 import { parseBePharmaciesXlsx, type ParseBePharmaciesResult } from "@/lib/parseBePharmaciesXlsx";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
+const BE_PROVINCES = [
+  "Bruxelles-Capitale",
+  "Brabant wallon",
+  "Brabant flamand",
+  "Anvers",
+  "Limbourg",
+  "Liège",
+  "Namur",
+  "Hainaut",
+  "Luxembourg",
+  "Flandre orientale",
+  "Flandre occidentale",
+];
 
 export default function AdminBePharmaciesPage() {
   const [search, setSearch] = useState("");
-  const { data, isLoading } = useBePharmaciesList({ search, limit: 200 });
+  const [provinceFilter, setProvinceFilter] = useState<string>("");
+  const { data, isLoading } = useBePharmaciesList({ search, limit: 500 });
   const upsert = useUpsertBePharmacies();
   const [parsed, setParsed] = useState<ParseBePharmaciesResult | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);

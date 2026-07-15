@@ -79,7 +79,7 @@ export default function VendorOrderDetail() {
       const { data: order, error: oErr } = await supabase
         .from("orders")
         .select(
-          "id, order_number, status, created_at, shipping_address, billing_address, customer_id, hidden_from_list, deleted_at, payment_method, payment_status, stripe_payment_intent_id, payment_due_date, tracking_number, tracking_url, tracking_carrier, shipped_at, notes, source",
+          "id, order_number, status, created_at, shipping_address, billing_address, customer_id, hidden_from_list, deleted_at, payment_method, payment_status, stripe_payment_intent_id, payment_due_date, tracking_number, tracking_url, tracking_carrier, shipped_at, notes, source, fulfillment_mode",
         )
         .eq("id", id!)
         .maybeSingle();

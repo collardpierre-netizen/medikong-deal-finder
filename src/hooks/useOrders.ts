@@ -54,7 +54,12 @@ export function useCreateOrder() {
         let serverMsg: string | undefined;
         try {
           const body = await ctx?.json?.();
-          serverMsg = body?.error || (body?.validation ? "Panier invalide" : undefined);
+          if (body?.error === "no_vendor_eligible_for_invoice") {
+            serverMsg =
+              "Paiement sur facture non disponible pour cette commande (aucun fournisseur éligible). Merci de choisir « Carte bancaire ».";
+          } else {
+            serverMsg = body?.error || (body?.validation ? "Panier invalide" : undefined);
+          }
         } catch (_) {
           // ignore
         }

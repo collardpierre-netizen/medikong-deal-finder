@@ -111,24 +111,10 @@ Deno.serve(async (req) => {
     const total = validation.items.reduce((s, it) => s + it.total_incl_vat, 0);
     const vatAmount = Math.max(0, total - subtotal);
 
-    const orderNumber = `MK-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`;
-    const { data: order, error: orderErr } = await supabase
-      .from("orders")
-      .insert({
-        order_number: orderNumber,
-        customer_id: customer.id,
-        shipping_address: { line1: input.shippingAddress },
-        billing_address: { line1: input.billingAddress || input.shippingAddress },
-        payment_method: mapPaymentMethod(input.paymentMethod),
-        subtotal_excl_vat: subtotal,
-        vat_amount: vatAmount,
-        total_incl_vat: total,
-      })
-      .select("id, order_number")
-      .single();
-    if (orderErr || !order) return json(500, { error: "Création commande : " + orderErr?.message });
-
-    // Lookup offer metadata (qogita + vendor type) to route lines
+    // Lookup offer metadata (qogita + vendor type) up-front so we can pre-check
+    // invoice eligibility BEFORE persisting an order — avoids creating orphan
+    // cancelled orders when no vendor is eligible for invoice payment
+    // (previously seen as 11 flash-cancelled duplicates for the same buyer).
     const offerIds = validation.items.map((v) => v.offer_id);
     const { data: offers } = await supabase
       .from("offers")
@@ -141,6 +127,66 @@ Deno.serve(async (req) => {
       ? await supabase.from("vendors").select("id, type").in("id", vendorIds)
       : { data: [] };
     const vendorTypeMap = new Map((vendors || []).map((v: any) => [v.id, v.type]));
+
+    // ====== PRE-CHECK INVOICE ELIGIBILITY (no order created yet) ======
+    const orderPaymentMethod = mapPaymentMethod(input.paymentMethod);
+    const invoiceEligibility: Array<{ vendor_id: string; eligible: boolean; net_days?: number; reason?: string }> = [];
+    if (orderPaymentMethod === "invoice") {
+      const perVendor = new Map<string, number>();
+      for (const v of validation.items) {
+        const ref = offerMap.get(v.offer_id);
+        const vId = ref?.vendor_id ?? v.vendor_id;
+        const vType = vId ? vendorTypeMap.get(vId) : null;
+        if (!vId || vType === "qogita_virtual") continue; // qogita always goes via Balooh card
+        perVendor.set(vId, (perVendor.get(vId) || 0) + Number(v.total_excl_vat));
+      }
+      let eligibleAny = false;
+      for (const [vid, subTotal] of perVendor) {
+        const { data: elig } = await supabase.rpc("resolve_invoice_payment_eligibility", {
+          _vendor_id: vid, _customer_id: customer.id, _amount_cents: Math.round(subTotal * 100),
+        });
+        const row = Array.isArray(elig) ? elig[0] : elig;
+        if (row?.eligible) {
+          eligibleAny = true;
+          invoiceEligibility.push({ vendor_id: vid, eligible: true, net_days: row.net_days });
+        } else {
+          invoiceEligibility.push({ vendor_id: vid, eligible: false, reason: row?.reason || "ineligible" });
+        }
+      }
+      if (!eligibleAny) {
+        // No persistence: fail fast with a clear error the front can render as
+        // "Paiement sur facture non disponible — utilisez la carte bancaire".
+        return json(400, { error: "no_vendor_eligible_for_invoice", eligibility: invoiceEligibility });
+      }
+    }
+
+    const orderNumber = `MK-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`;
+    const { data: order, error: orderErr } = await supabase
+      .from("orders")
+      .insert({
+        order_number: orderNumber,
+        customer_id: customer.id,
+        shipping_address: { line1: input.shippingAddress },
+        billing_address: { line1: input.billingAddress || input.shippingAddress },
+        payment_method: orderPaymentMethod,
+        subtotal_excl_vat: subtotal,
+        vat_amount: vatAmount,
+        total_incl_vat: total,
+      })
+      .select("id, order_number")
+      .single();
+    if (orderErr || !order) return json(500, { error: "Création commande : " + orderErr?.message });
+
+    // Helper: mark an order as auto-cancelled with a machine-readable reason so
+    // the admin list can filter these out instead of showing polluting rows.
+    const softCancel = async (reason: string) => {
+      await supabase.from("orders").update({
+        status: "cancelled",
+        hidden_from_list: true,
+        deleted_at: new Date().toISOString(),
+        deleted_reason: reason,
+      }).eq("id", order.id);
+    };
 
     // order_items (legacy) — must succeed
     // validateCart returns vat_rate as percent (e.g. 21).
@@ -165,7 +211,7 @@ Deno.serve(async (req) => {
     });
     const { error: itemsErr } = await supabase.from("order_items").insert(orderItems);
     if (itemsErr) {
-      await supabase.from("orders").update({ status: "cancelled" }).eq("id", order.id);
+      await softCancel("insert_order_items_failed");
       return json(500, { error: "Insertion order_items : " + itemsErr.message });
     }
 
@@ -197,54 +243,32 @@ Deno.serve(async (req) => {
     });
     const { error: linesErr } = await supabase.from("order_lines").insert(orderLines);
     if (linesErr) {
-      await supabase.from("orders").update({ status: "cancelled" }).eq("id", order.id);
+      await softCancel("insert_order_lines_failed");
       return json(500, { error: "Insertion order_lines : " + linesErr.message });
     }
 
-    // ====== INVOICE PAYMENT — per-vendor resolution & sub_orders ======
-    const orderPaymentMethod = mapPaymentMethod(input.paymentMethod);
+    // ====== INVOICE — persist sub_orders & finalize order (eligibility already resolved) ======
     if (orderPaymentMethod === "invoice") {
-      // Aggregate per vendor (excluding qogita_virtual which always pays by card via Balooh)
-      const perVendor = new Map<string, number>();
-      for (const l of orderLines) {
-        if (l.fulfillment_type === "qogita") continue;
-        perVendor.set(l.vendor_id, (perVendor.get(l.vendor_id) || 0) + Number(l.line_total_excl_vat));
-      }
-      let eligibleAny = false;
-      const eligibilityNotes: any[] = [];
-      for (const [vid, subTotal] of perVendor) {
-        const { data: elig } = await supabase.rpc("resolve_invoice_payment_eligibility", {
-          _vendor_id: vid, _customer_id: customer.id, _amount_cents: Math.round(subTotal * 100),
+      const eligibleEntries = invoiceEligibility.filter((e) => e.eligible);
+      for (const e of eligibleEntries) {
+        const dueDate = new Date();
+        dueDate.setUTCDate(dueDate.getUTCDate() + (e.net_days || 30));
+        const vendorLines = orderLines.filter((l) => l.vendor_id === e.vendor_id);
+        const vendorTotalIncVat = vendorLines.reduce((s, l) => s + Number(l.line_total_incl_vat), 0);
+        await supabase.from("sub_orders").insert({
+          order_id: order.id,
+          vendor_id: e.vendor_id,
+          fulfillment_type: "vendor_direct",
+          subtotal_incl_vat: vendorTotalIncVat,
+          payment_method: "invoice",
+          payment_status: "pending",
+          invoice_net_days: e.net_days,
+          payment_due_date: dueDate.toISOString().slice(0, 10),
         });
-        const row = Array.isArray(elig) ? elig[0] : elig;
-        if (row?.eligible) {
-          eligibleAny = true;
-          const dueDate = new Date(); dueDate.setUTCDate(dueDate.getUTCDate() + (row.net_days || 30));
-          // sub_order for vendor invoice
-          const vendorLines = orderLines.filter((l) => l.vendor_id === vid);
-          const vendorTotalIncVat = vendorLines.reduce((s, l) => s + Number(l.line_total_incl_vat), 0);
-          await supabase.from("sub_orders").insert({
-            order_id: order.id,
-            vendor_id: vid,
-            fulfillment_type: "vendor_direct",
-            subtotal_incl_vat: vendorTotalIncVat,
-            payment_method: "invoice",
-            payment_status: "pending",
-            invoice_net_days: row.net_days,
-            payment_due_date: dueDate.toISOString().slice(0, 10),
-          });
-          eligibilityNotes.push({ vendor_id: vid, eligible: true, net_days: row.net_days });
-        } else {
-          eligibilityNotes.push({ vendor_id: vid, eligible: false, reason: row?.reason || "ineligible" });
-        }
-      }
-      if (!eligibleAny) {
-        await supabase.from("orders").update({ status: "cancelled" }).eq("id", order.id);
-        return json(400, { error: "no_vendor_eligible_for_invoice", eligibility: eligibilityNotes });
       }
       // Order-level due date = furthest due (worst case for cashflow tracking)
-      const dueDates = eligibilityNotes.filter((e) => e.eligible).map((e) => e.net_days);
-      const maxDays = Math.max(...dueDates);
+      const dueDays = eligibleEntries.map((e) => e.net_days || 30);
+      const maxDays = Math.max(...dueDays);
       const orderDue = new Date(); orderDue.setUTCDate(orderDue.getUTCDate() + maxDays);
       await supabase.from("orders").update({
         payment_method: "invoice",
@@ -252,7 +276,7 @@ Deno.serve(async (req) => {
         payment_due_date: orderDue.toISOString().slice(0, 10),
         status: "confirmed",
       }).eq("id", order.id);
-      return json(200, { id: order.id, order_number: order.order_number, payment_method: "invoice", eligibility: eligibilityNotes });
+      return json(200, { id: order.id, order_number: order.order_number, payment_method: "invoice", eligibility: invoiceEligibility });
     }
 
 

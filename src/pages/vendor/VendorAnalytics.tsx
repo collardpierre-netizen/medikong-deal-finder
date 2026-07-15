@@ -18,6 +18,7 @@ import { RecurrencePanel } from "@/components/vendor/analytics/RecurrencePanel";
 import { CustomerMap } from "@/components/vendor/analytics/CustomerMap";
 import { SellOutPanel } from "@/components/vendor/analytics/SellOutPanel";
 import { ManualSellInPanel } from "@/components/vendor/analytics/ManualSellInPanel";
+import { BeCoveragePanel } from "@/components/vendor/analytics/BeCoveragePanel";
 import { AnalyticsExportButtons } from "@/components/vendor/analytics/AnalyticsExportButtons";
 import { exportAnalyticsRows } from "@/lib/analytics-export";
 

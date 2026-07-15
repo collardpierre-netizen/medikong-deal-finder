@@ -10,6 +10,9 @@ import {
   persistFalcoResult,
   isFalcoConfigured,
   logFalco,
+  normalizeFalcoPeppolIdentifier,
+  normalizeFalcoVatNumber,
+  resolveFalcoPostalCode,
   type FalcoInvoiceMetadata,
   type FalcoLine,
   type FalcoTaxSubtotal,
@@ -40,7 +43,7 @@ const round2 = (n: number) => (Math.round(n * 100) / 100).toFixed(2);
 async function buildSelfBillingMetadata(supabase: any, invoice: any): Promise<{ pdfBytes: Uint8Array; metadata: FalcoInvoiceMetadata } | { error: string }> {
   const [{ data: order }, { data: vendor }] = await Promise.all([
     supabase.from("orders").select("id, order_number, created_at, customers:customers!orders_customer_id_fkey(company_name, email, vat_number, address_line1, city, postal_code, country_code)").eq("id", invoice.order_id).maybeSingle(),
-    supabase.from("vendors").select("id, name, company_name, vat_number, address_line1, city, postal_code, country_code, mandate_signed_at").eq("id", invoice.vendor_id).maybeSingle(),
+    supabase.from("vendors").select("id, name, company_name, email, vat_number, peppol_id, address_line1, city, postal_code, country_code, mandate_signed_at").eq("id", invoice.vendor_id).maybeSingle(),
   ]);
   if (!order || !vendor) return { error: "order_or_vendor_not_found" };
   const { data: lines } = await supabase
@@ -80,18 +83,21 @@ async function buildSelfBillingMetadata(supabase: any, invoice: any): Promise<{ 
   const metadata: FalcoInvoiceMetadata = {
     document_type: "sale_invoice",
     document_date: (invoice.issued_at || new Date().toISOString()).slice(0, 10),
+    due_date: (invoice.issued_at || new Date().toISOString()).slice(0, 10),
     number: invoice.invoice_number,
+    buyer_reference: order.order_number || invoice.invoice_number,
     note: buildSelfBillingMandateMention(vendor, vendor.mandate_signed_at),
     sender: { name: BALOOH_SELLER.name, vat_number: BALOOH_SELLER.vat_number, address: { ...BALOOH_SELLER.address } },
     receiver: {
-      name: cust.company_name || cust.email || "Client",
-      vat_number: cust.vat_number || undefined,
-      contact: cust.email ? { email: cust.email } : undefined,
+      name: vendor.company_name || vendor.name,
+      vat_number: normalizeFalcoVatNumber(vendor.vat_number),
+      peppol_identifier: normalizeFalcoPeppolIdentifier(vendor.peppol_id),
+      contact: vendor.email ? { email: vendor.email } : undefined,
       address: {
-        line1: cust.address_line1 || "—",
-        zip: cust.postal_code || undefined,
-        city: cust.city || undefined,
-        country: cust.country_code || "BE",
+        line1: vendor.address_line1 || "—",
+        zip: resolveFalcoPostalCode(vendor),
+        city: vendor.city || undefined,
+        country: vendor.country_code || "BE",
       },
     },
     currency: "EUR",
@@ -107,7 +113,7 @@ async function buildSelfBillingMetadata(supabase: any, invoice: any): Promise<{ 
 async function buildCommissionMetadata(supabase: any, invoice: any): Promise<{ pdfBytes: Uint8Array; metadata: FalcoInvoiceMetadata } | { error: string }> {
   const [{ data: order }, { data: vendor }] = await Promise.all([
     supabase.from("orders").select("id, order_number").eq("id", invoice.order_id).maybeSingle(),
-    supabase.from("vendors").select("id, name, company_name, vat_number, address_line1, city, postal_code, country_code").eq("id", invoice.vendor_id).maybeSingle(),
+    supabase.from("vendors").select("id, name, company_name, vat_number, peppol_id, address_line1, city, postal_code, country_code").eq("id", invoice.vendor_id).maybeSingle(),
   ]);
   if (!order || !vendor) return { error: "order_or_vendor_not_found" };
   const { data: pdf, error: pdfErr } = await supabase.storage.from(BUCKET).download(invoice.pdf_path);
@@ -121,15 +127,18 @@ async function buildCommissionMetadata(supabase: any, invoice: any): Promise<{ p
   const metadata: FalcoInvoiceMetadata = {
     document_type: "sale_invoice",
     document_date: (invoice.issued_at || new Date().toISOString()).slice(0, 10),
+    due_date: (invoice.issued_at || new Date().toISOString()).slice(0, 10),
     number: invoice.invoice_number,
+    buyer_reference: order.order_number || invoice.invoice_number,
     note: `MediKong marketplace commission (retry) for order ${order.order_number}.`,
     sender: { name: BALOOH_SELLER.name, vat_number: BALOOH_SELLER.vat_number, address: { ...BALOOH_SELLER.address } },
     receiver: {
       name: vendor.company_name || vendor.name,
-      vat_number: vendor.vat_number || undefined,
+      vat_number: normalizeFalcoVatNumber(vendor.vat_number),
+      peppol_identifier: normalizeFalcoPeppolIdentifier(vendor.peppol_id),
       address: {
         line1: vendor.address_line1 || "—",
-        zip: vendor.postal_code || undefined,
+        zip: resolveFalcoPostalCode(vendor),
         city: vendor.city || undefined,
         country: vendor.country_code || "BE",
       },

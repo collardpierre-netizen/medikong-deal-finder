@@ -71,6 +71,28 @@ export type FalcoImportResult = {
   raw?: unknown;
 };
 
+export function normalizeFalcoVatNumber(value?: string | null): string | undefined {
+  const normalized = String(value || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+  return normalized || undefined;
+}
+
+export function normalizeFalcoPeppolIdentifier(value?: string | null): string | undefined {
+  const normalized = String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "");
+  return normalized || undefined;
+}
+
+export function resolveFalcoPostalCode(party: any): string | undefined {
+  const explicit = String(party?.postal_code || party?.zip || "").trim();
+  if (explicit) return explicit;
+  const fromAddress = String(party?.address_line1 || party?.address?.line1 || "").match(/\b\d{4}\b/);
+  return fromAddress?.[0];
+}
+
 /**
  * Strip characters that break fetch()'s ByteString header validation:
  * removes ALL control chars (incl. CR/LF/TAB/NUL) and any non-ASCII byte
@@ -207,11 +229,7 @@ export async function submitInvoiceToFalco(
     new Blob([pdfBytes], { type: "application/pdf" }),
     opts.pdfFilename || `${metadata.number}.pdf`,
   );
-  form.append(
-    "metadata",
-    new Blob([JSON.stringify(metadata)], { type: "application/json" }),
-    "metadata.json",
-  );
+  form.append("metadata", JSON.stringify(metadata));
 
   const commonLog = {
     caller,
@@ -247,8 +265,10 @@ export async function submitInvoiceToFalco(
       : await res.text().catch(() => null);
 
     if (!res.ok) {
+      const problem = payload && typeof payload === "object" ? payload as any : null;
       const errMsg =
-        (payload && typeof payload === "object" && (payload.detail || payload.title)) ||
+        (problem && [problem.code, problem.title, problem.detail].filter(Boolean).join(" — ")) ||
+        (problem && JSON.stringify(problem).slice(0, 500)) ||
         (typeof payload === "string" ? payload.slice(0, 500) : `HTTP ${res.status}`);
       logFalco("error", "request_failed", {
         ...commonLog,

@@ -8,6 +8,9 @@ import {
   submitInvoiceToFalco,
   persistFalcoResult,
   isFalcoConfigured,
+  normalizeFalcoPeppolIdentifier,
+  normalizeFalcoVatNumber,
+  resolveFalcoPostalCode,
 } from "../_shared/falco-peppol.ts";
 
 // MediKong legal seller identity (Balooh SRL) — used as sender on commission invoices.
@@ -78,7 +81,7 @@ Deno.serve(async (req) => {
     // Resolve order + vendor + lines + rate
     const [{ data: order }, { data: vendor }, { data: lines }] = await Promise.all([
       supabase.from("orders").select("id, order_number, created_at").eq("id", orderId).maybeSingle(),
-      supabase.from("vendors").select("id, name, company_name, vat_number, address_line1, city, postal_code, country_code, commission_rate").eq("id", vendorId).maybeSingle(),
+      supabase.from("vendors").select("id, name, company_name, vat_number, peppol_id, address_line1, city, postal_code, country_code, commission_rate").eq("id", vendorId).maybeSingle(),
       supabase.from("order_lines").select("line_total_excl_vat, commission_rate, commission_amount").eq("order_id", orderId).eq("vendor_id", vendorId),
     ]);
     if (!order) return json(404, { error: "order_not_found" });
@@ -150,7 +153,9 @@ Deno.serve(async (req) => {
         const falcoRes = await submitInvoiceToFalco(pdf, {
           document_type: "sale_invoice",
           document_date: new Date().toISOString().slice(0, 10),
+          due_date: new Date().toISOString().slice(0, 10),
           number: invoiceNumber,
+          buyer_reference: order.order_number || invoiceNumber,
           note: `MediKong marketplace commission (${rateStr}% on GMV HTVA ${round2(gmvExclVat)} EUR) for order ${order.order_number}.`,
           sender: {
             name: MK_SELLER.name,
@@ -159,10 +164,11 @@ Deno.serve(async (req) => {
           },
           receiver: {
             name: vendor.company_name || vendor.name,
-            vat_number: vendor.vat_number || undefined,
+            vat_number: normalizeFalcoVatNumber(vendor.vat_number),
+            peppol_identifier: normalizeFalcoPeppolIdentifier(vendor.peppol_id),
             address: {
               line1: vendor.address_line1 || "—",
-              zip: vendor.postal_code || undefined,
+              zip: resolveFalcoPostalCode(vendor),
               city: vendor.city || undefined,
               country: vendor.country_code || "BE",
             },

@@ -25938,6 +25938,10 @@ export type Database = {
         Args: { _country_code?: string }
         Returns: Json
       }
+      cron_generate_vendor_statements_previous_month: {
+        Args: never
+        Returns: undefined
+      }
       current_active_account_id: { Args: never; Returns: string }
       current_active_account_kind: { Args: never; Returns: string }
       current_buyer_id: { Args: never; Returns: string }

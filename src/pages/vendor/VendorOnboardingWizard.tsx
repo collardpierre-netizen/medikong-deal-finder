@@ -24,6 +24,7 @@ interface CompanyForm {
   email: string;
   phone: string;
   vat_number: string;
+  peppol_id: string;
 }
 
 interface AddressForm {

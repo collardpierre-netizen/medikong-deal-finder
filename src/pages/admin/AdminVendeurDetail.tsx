@@ -1454,6 +1454,22 @@ function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boole
             <Input value={form.website_url} onChange={e => set("website_url", e.target.value)} placeholder="https://..." />
           </div>
           <div><Label>N° TVA</Label><Input value={form.vat_number} onChange={e => set("vat_number", e.target.value)} /></div>
+          <div>
+            <Label>
+              Identifiant Peppol
+              {isBelgianVendor(form.country_code) && <span className="text-destructive"> *</span>}
+              <span className="ml-1 text-xs font-normal text-muted-foreground">(BE — format 0208:BEXXXXXXXXXXX)</span>
+            </Label>
+            <Input
+              value={form.peppol_id}
+              onChange={e => set("peppol_id", e.target.value)}
+              placeholder={PEPPOL_BE_EXAMPLE}
+              aria-invalid={!!form.peppol_id && !isValidBePeppolId(form.peppol_id)}
+            />
+            {!!form.peppol_id && !isValidBePeppolId(form.peppol_id) && (
+              <p className="text-xs text-destructive mt-1">Format invalide — attendu <span className="font-mono">0208:BE</span> + 10 chiffres.</p>
+            )}
+          </div>
           <div><Label>Adresse</Label><Input value={form.address_line1} onChange={e => set("address_line1", e.target.value)} /></div>
           <div className="grid grid-cols-3 gap-3">
             <div><Label>Ville</Label><Input value={form.city} onChange={e => set("city", e.target.value)} /></div>

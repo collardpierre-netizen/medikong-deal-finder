@@ -62,7 +62,57 @@ export default function AdminBePharmaciesPage() {
     }
   }
 
-  return (
+  async function onBackfill() {
+    try {
+      const { data, error } = await (supabase.rpc as any)("backfill_sell_out_pharmacy_ids");
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      toast({
+        title: `Rapprochement terminé`,
+        description: `${row?.updated_count ?? 0} rapport(s) reliés · ${row?.remaining_unmatched ?? 0} sans correspondance`,
+      });
+    } catch (err: any) {
+      toast({ title: "Erreur backfill", description: err.message, variant: "destructive" });
+    }
+  }
+
+  function onExportCsv() {
+    const rows = (data?.rows ?? []).filter(
+      (r) => !provinceFilter || r.province === provinceFilter,
+    );
+    if (!rows.length) {
+      toast({ title: "Aucune pharmacie à exporter", variant: "destructive" });
+      return;
+    }
+    const headers = [
+      "apb_number",
+      "name",
+      "address_line1",
+      "postal_code",
+      "city",
+      "province",
+      "phone",
+      "email",
+      "latitude",
+      "longitude",
+    ];
+    const escape = (v: unknown) => {
+      const s = v == null ? "" : String(v);
+      return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const csv = [
+      headers.join(","),
+      ...rows.map((r) => headers.map((h) => escape((r as any)[h])).join(",")),
+    ].join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `pharmacies-be${provinceFilter ? `-${provinceFilter}` : ""}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: `${rows.length} pharmacie(s) exportée(s)` });
+  }
     <div className="p-6 space-y-6 max-w-[1400px] mx-auto">
       <div>
         <h1 className="text-[24px] font-semibold text-[#1D2530] flex items-center gap-2">

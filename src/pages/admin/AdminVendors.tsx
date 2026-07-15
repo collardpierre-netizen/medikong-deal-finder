@@ -70,7 +70,7 @@ const AdminVendors = () => {
       const { data, error } = await supabase
         .from("vendors")
         .select(
-          "id, name, slug, type, commission_rate, stripe_account_id, stripe_onboarding_complete, stripe_charges_enabled, stripe_payouts_enabled"
+          "id, name, slug, type, commission_rate, stripe_account_id, stripe_onboarding_complete, stripe_charges_enabled, stripe_payouts_enabled, country_code, peppol_id"
         )
         .order("name");
       if (error) throw error;

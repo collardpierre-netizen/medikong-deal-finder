@@ -193,7 +193,14 @@ function registerBricolage(doc: jsPDF, font: { bold: string } | null, fallback: 
   return "Bricolage";
 }
 
-function drawHeader(doc: jsPDF, vendorName: string, periodLabel: string, logoDataUrl: string | null, fontName: string) {
+function drawHeader(
+  doc: jsPDF,
+  vendorName: string,
+  periodLabel: string,
+  logoDataUrl: string | null,
+  fontName: string,
+  titleFont: string
+) {
   const w = doc.internal.pageSize.getWidth();
   // Blue banner
   doc.setFillColor(...BRAND_BLUE);
@@ -202,18 +209,18 @@ function drawHeader(doc: jsPDF, vendorName: string, periodLabel: string, logoDat
   // Logo (left) — falls back to wordmark if the image failed to load.
   if (logoDataUrl) {
     try {
-      // Draw on a slightly lighter panel so the logo pops on the blue banner.
+      // White panel so the horizontal logo pops on the blue banner.
       doc.setFillColor(255, 255, 255);
-      doc.roundedRect(10, 5, 44, 16, 2, 2, "F");
-      doc.addImage(logoDataUrl, "PNG", 12, 6, 40, 14, undefined, "FAST");
+      doc.roundedRect(10, 5, 56, 16, 2, 2, "F");
+      doc.addImage(logoDataUrl, "PNG", 12, 7, 52, 12, undefined, "FAST");
     } catch {
-      doc.setFont(fontName, "bold");
+      doc.setFont(titleFont, "bold");
       doc.setFontSize(18);
       doc.setTextColor(255, 255, 255);
       doc.text("MediKong", 14, 17);
     }
   } else {
-    doc.setFont(fontName, "bold");
+    doc.setFont(titleFont, "bold");
     doc.setFontSize(18);
     doc.setTextColor(255, 255, 255);
     doc.text("MediKong", 14, 17);
@@ -237,8 +244,8 @@ function drawHeader(doc: jsPDF, vendorName: string, periodLabel: string, logoDat
   doc.rect(0, 26, w, 16, "F");
   doc.setDrawColor(...BORDER);
   doc.line(0, 42, w, 42);
-  doc.setFont(fontName, "bold");
-  doc.setFontSize(12);
+  doc.setFont(titleFont, "bold");
+  doc.setFontSize(13);
   doc.setTextColor(...NAVY);
   doc.text(vendorName || "Vendeur", 14, 36);
   doc.setFont(fontName, "normal");
@@ -263,21 +270,21 @@ function drawFooter(doc: jsPDF, fontName: string) {
   }
 }
 
-function sectionTitle(doc: jsPDF, y: number, title: string, fontName: string, subtitle?: string): number {
+function sectionTitle(doc: jsPDF, y: number, title: string, fontName: string, titleFont: string, subtitle?: string): number {
   const w = doc.internal.pageSize.getWidth();
   doc.setFillColor(...BRAND_BLUE);
-  doc.rect(14, y, 3, 6, "F");
-  doc.setFont(fontName, "bold");
-  doc.setFontSize(12);
+  doc.rect(14, y, 3, 7, "F");
+  doc.setFont(titleFont, "bold");
+  doc.setFontSize(13);
   doc.setTextColor(...NAVY);
-  doc.text(title, 20, y + 5);
+  doc.text(title, 20, y + 5.5);
   if (subtitle) {
     doc.setFont(fontName, "normal");
     doc.setFontSize(9);
     doc.setTextColor(...MUTED);
-    doc.text(subtitle, w - 14, y + 5, { align: "right" });
+    doc.text(subtitle, w - 14, y + 5.5, { align: "right" });
   }
-  return y + 10;
+  return y + 11;
 }
 
 function drawKpiGrid(

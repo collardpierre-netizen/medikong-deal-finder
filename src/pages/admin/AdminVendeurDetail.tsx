@@ -1384,6 +1384,7 @@ function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boole
         city: form.city.trim() || null,
         postal_code: form.postal_code.trim() || null,
         country_code: form.country_code || "BE",
+        peppol_id: normalizePeppolId(form.peppol_id).trim() || null,
         commission_rate: parseFloat(form.commission_rate) || 0,
         commission_model: form.commission_model,
         fixed_commission_amount: form.commission_model === 'fixed_amount' ? parseFloat(form.fixed_commission_amount) || 0 : null,

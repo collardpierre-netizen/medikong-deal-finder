@@ -470,56 +470,7 @@ function drawCoverageMap(
     oy + (1 - (lat - lat0) / (lat1 - lat0)) * drawH,
   ];
 
-  // Draw country outlines (filled land + border).
-  doc.setLineWidth(0.25);
-  doc.setDrawColor(148, 163, 184); // slate-400 borders
-  doc.setFillColor(255, 255, 255); // land
-  for (const cc of Object.keys(outlines) as CountryCode[]) {
-    for (const ring of outlines[cc]) {
-      if (ring.length < 3) continue;
-      const pts = ring.map(([lng, lat]) => project(lng, lat));
-      const [sx, sy] = pts[0];
-      const deltas: [number, number][] = [];
-      for (let i = 1; i < pts.length; i++) {
-        deltas.push([pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]]);
-      }
-      // Fill + stroke
-      (doc as unknown as { lines: (l: number[][], x: number, y: number, s: number[], style: string, closed: boolean) => void }).lines(
-        deltas as unknown as number[][],
-        sx,
-        sy,
-        [1, 1],
-        "FD",
-        true
-      );
-    }
-  }
-
-  // Country ISO labels at approx centroids.
-  doc.setFont(fontName, "bold");
-  doc.setFontSize(7);
-  doc.setTextColor(148, 163, 184);
-  for (const cc of Object.keys(outlines) as CountryCode[]) {
-    const rings = outlines[cc];
-    if (!rings.length) continue;
-    // Centroid of the first (main) ring.
-    const ring = rings[0];
-    let cx = 0, cy = 0;
-    for (const [lng, lat] of ring) { cx += lng; cy += lat; }
-    cx /= ring.length; cy /= ring.length;
-    const [px, py] = project(cx, cy);
-    doc.text(cc, px, py, { align: "center" });
-  }
-
-  if (points.length === 0) {
-    doc.setFont(fontName, "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(...MUTED);
-    doc.text("Aucune localisation client géocodée sur la période.", margin + boxW / 2, y + boxH / 2 + 6, { align: "center" });
-    return y + boxH + 6;
-  }
-
-  // Tertile thresholds on CA (same logic as CustomerMap.quantile)
+  // Compute tertile thresholds now so both branches can use them for the legend.
   const sortedCa = points.map((p) => p.ca_htva_cents).sort((a, b) => a - b);
   const q = (arr: number[], p: number) => {
     if (!arr.length) return 0;
@@ -532,19 +483,78 @@ function drawCoverageMap(
   const p66 = q(sortedCa, 2 / 3);
   const maxCa = Math.max(1, ...sortedCa);
 
-  // Plot points on top of the outlines.
-  for (const p of points) {
-    const [px, py] = project(p.lng, p.lat);
-    const tier: [number, number, number] =
-      p.ca_htva_cents >= p66 ? TIER_HIGH : p.ca_htva_cents >= p33 ? TIER_MID : TIER_LOW;
-    const r = 1.1 + 2.6 * (p.ca_htva_cents / maxCa);
-    // White halo for readability against country fill.
+  if (raster && raster.dataUrl) {
+    // Real basemap tiles — the raster already contains the points, so we only
+    // embed the image and let the legend below annotate it.
+    try {
+      doc.addImage(raster.dataUrl, "PNG", ox, oy, drawW, drawH, undefined, "FAST");
+    } catch {
+      /* fall through to vector outlines if the image is somehow invalid */
+    }
+  } else {
+    // Fallback: vector country outlines + plotted points.
+    doc.setLineWidth(0.25);
+    doc.setDrawColor(148, 163, 184);
     doc.setFillColor(255, 255, 255);
-    doc.circle(px, py, r + 0.6, "F");
-    doc.setFillColor(...tier);
-    doc.setDrawColor(...tier);
-    doc.setLineWidth(0.2);
-    doc.circle(px, py, r, "F");
+    for (const cc of Object.keys(outlines) as CountryCode[]) {
+      for (const ring of outlines[cc]) {
+        if (ring.length < 3) continue;
+        const pts = ring.map(([lng, lat]) => project(lng, lat));
+        const [sx, sy] = pts[0];
+        const deltas: [number, number][] = [];
+        for (let i = 1; i < pts.length; i++) {
+          deltas.push([pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]]);
+        }
+        (doc as unknown as { lines: (l: number[][], x: number, y: number, s: number[], style: string, closed: boolean) => void }).lines(
+          deltas as unknown as number[][],
+          sx,
+          sy,
+          [1, 1],
+          "FD",
+          true
+        );
+      }
+    }
+    doc.setFont(fontName, "bold");
+    doc.setFontSize(7);
+    doc.setTextColor(148, 163, 184);
+    for (const cc of Object.keys(outlines) as CountryCode[]) {
+      const rings = outlines[cc];
+      if (!rings.length) continue;
+      const ring = rings[0];
+      let cx = 0, cy = 0;
+      for (const [lng, lat] of ring) { cx += lng; cy += lat; }
+      cx /= ring.length; cy /= ring.length;
+      const [px, py] = project(cx, cy);
+      doc.text(cc, px, py, { align: "center" });
+    }
+    if (points.length === 0) {
+      doc.setFont(fontName, "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(...MUTED);
+      doc.text("Aucune localisation client géocodée sur la période.", margin + boxW / 2, y + boxH / 2 + 6, { align: "center" });
+      return y + boxH + 6;
+    }
+    for (const p of points) {
+      const [px, py] = project(p.lng, p.lat);
+      const tier: [number, number, number] =
+        p.ca_htva_cents >= p66 ? TIER_HIGH : p.ca_htva_cents >= p33 ? TIER_MID : TIER_LOW;
+      const r = 1.1 + 2.6 * (p.ca_htva_cents / maxCa);
+      doc.setFillColor(255, 255, 255);
+      doc.circle(px, py, r + 0.6, "F");
+      doc.setFillColor(...tier);
+      doc.setDrawColor(...tier);
+      doc.setLineWidth(0.2);
+      doc.circle(px, py, r, "F");
+    }
+  }
+
+  if (raster && points.length === 0) {
+    doc.setFont(fontName, "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(...MUTED);
+    doc.text("Aucune localisation client géocodée sur la période.", margin + boxW / 2, y + boxH / 2 + 6, { align: "center" });
+    return y + boxH + 6;
   }
 
   // Legend (bottom-left inside the box)

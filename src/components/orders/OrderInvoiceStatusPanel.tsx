@@ -483,6 +483,12 @@ export default function OrderInvoiceStatusPanel({ orderId, vendorId, defaultAmou
         />
       )}
     </div>
+    <OrderPaymentTimeline
+      orderId={orderId}
+      paymentIntentId={orderQuery.data?.stripe_payment_intent_id ?? null}
+      stripeVerification={stripeVerification.data}
+    />
+    </>
   );
 }
 

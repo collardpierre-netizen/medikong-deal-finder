@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
       api_key_configured: Boolean(apiKey),
       app_secret_configured: Boolean(appSecret),
       api_key_format_valid: !apiKey ? null : /^sk_(live|test)_[A-Za-z0-9]+_[A-Za-z0-9]+$/.test(apiKey),
-      app_secret_format_valid: !appSecret ? null : /^app_[A-Za-z0-9]+$/.test(appSecret),
+      app_secret_format_valid: !appSecret ? null : (appSecret.trim().startsWith("as_") && appSecret.trim().length > 10),
       format_error: formatCheck.ok ? null : { code: formatCheck.code, message: formatCheck.message },
       base_url_overridden: Boolean(baseUrlRaw),
       base_url: baseUrl,

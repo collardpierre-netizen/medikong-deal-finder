@@ -20825,7 +20825,7 @@ export type Database = {
           linkedin_url: string | null
           logo_url: string | null
           mandate_signed_at: string | null
-          margin_split_pct: number
+          margin_split_pct: number | null
           max_open_rfqs: number | null
           name: string
           peppol_id: string | null
@@ -20913,7 +20913,7 @@ export type Database = {
           linkedin_url?: string | null
           logo_url?: string | null
           mandate_signed_at?: string | null
-          margin_split_pct?: number
+          margin_split_pct?: number | null
           max_open_rfqs?: number | null
           name: string
           peppol_id?: string | null
@@ -21001,7 +21001,7 @@ export type Database = {
           linkedin_url?: string | null
           logo_url?: string | null
           mandate_signed_at?: string | null
-          margin_split_pct?: number
+          margin_split_pct?: number | null
           max_open_rfqs?: number | null
           name?: string
           peppol_id?: string | null

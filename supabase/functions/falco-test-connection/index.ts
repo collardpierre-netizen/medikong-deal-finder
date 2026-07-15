@@ -4,7 +4,7 @@
 // a structured result — NEVER the secret values themselves.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
-import { logFalco, getFalcoConfig } from "../_shared/falco-peppol.ts";
+import { logFalco, getFalcoConfig, validateFalcoCredentials } from "../_shared/falco-peppol.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

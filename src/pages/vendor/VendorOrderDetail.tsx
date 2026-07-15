@@ -113,6 +113,7 @@ export default function VendorOrderDetail() {
         customer_id: order.customer_id,
         payment_method: (order as any).payment_method ?? null,
         payment_status: (order as any).payment_status ?? null,
+        stripe_payment_intent_id: (order as any).stripe_payment_intent_id ?? null,
         payment_due_date: (order as any).payment_due_date ?? null,
         order_tracking_number: (order as any).tracking_number ?? null,
         order_tracking_url: (order as any).tracking_url ?? null,

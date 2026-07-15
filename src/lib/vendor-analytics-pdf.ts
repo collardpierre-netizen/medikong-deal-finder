@@ -587,27 +587,30 @@ function tableStyles(fontName: string) {
 export async function generateVendorAnalyticsPdf(payload: VendorAnalyticsPdfPayload): Promise<void> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-  // Try to load the MediKong logo + DM Sans font in parallel; both are best-effort.
-  const [logoDataUrl, dmSans] = await Promise.all([
+  // Try to load the MediKong logo + DM Sans + Bricolage Grotesque in parallel; all best-effort.
+  const [logoDataUrl, dmSans, bricolage, outlines] = await Promise.all([
     urlToDataUrl(logoUrl).catch(() => null),
     loadDmSans(),
+    loadBricolage(),
+    preloadCountryOutlines(payload.geoPoints),
   ]);
   const fontName = registerDmSans(doc, dmSans);
+  const titleFont = registerBricolage(doc, bricolage, fontName);
   doc.setFont(fontName, "normal");
 
-  drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName);
+  drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName, titleFont);
 
   let y = 50;
 
   // KPIs
   if (payload.kpis) {
-    y = sectionTitle(doc, y, "Indicateurs clés", fontName, payload.periodLabel);
+    y = sectionTitle(doc, y, "Indicateurs clés", fontName, titleFont, payload.periodLabel);
     y = drawKpiGrid(doc, y, payload.kpis, fontName) + 6;
   }
 
   // Recurrence
   if (payload.recurrence) {
-    y = sectionTitle(doc, y, "Récurrence clients", fontName);
+    y = sectionTitle(doc, y, "Récurrence clients", fontName, titleFont);
     const r = payload.recurrence;
     const retention = r.total_customers ? Math.round((r.returning_customers / r.total_customers) * 100) : 0;
     autoTable(doc, {
@@ -626,8 +629,8 @@ export async function generateVendorAnalyticsPdf(payload: VendorAnalyticsPdfPayl
 
   // Typologie
   if (payload.byType.length > 0) {
-    if (y > 240) { doc.addPage(); drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName); y = 50; }
-    y = sectionTitle(doc, y, "Répartition par typologie de client", fontName);
+    if (y > 240) { doc.addPage(); drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName, titleFont); y = 50; }
+    y = sectionTitle(doc, y, "Répartition par typologie de client", fontName, titleFont);
     autoTable(doc, {
       startY: y,
       head: [["Profil", "CA HTVA", "Part", "Commandes"]],
@@ -645,8 +648,8 @@ export async function generateVendorAnalyticsPdf(payload: VendorAnalyticsPdfPayl
 
   // Pays
   if (payload.byCountry.length > 0) {
-    if (y > 240) { doc.addPage(); drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName); y = 50; }
-    y = sectionTitle(doc, y, "Répartition par pays", fontName);
+    if (y > 240) { doc.addPage(); drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName, titleFont); y = 50; }
+    y = sectionTitle(doc, y, "Répartition par pays", fontName, titleFont);
     autoTable(doc, {
       startY: y,
       head: [["Pays", "CA HTVA", "Part", "Commandes"]],
@@ -664,10 +667,10 @@ export async function generateVendorAnalyticsPdf(payload: VendorAnalyticsPdfPayl
 
   // Coverage map — new page dedicated to the scatter + legend.
   doc.addPage();
-  drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName);
+  drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName, titleFont);
   y = 50;
-  y = sectionTitle(doc, y, "Carte de couverture clients", fontName, `${payload.geoPoints.length} zones`);
-  y = drawCoverageMap(doc, y, payload.geoPoints, fontName);
+  y = sectionTitle(doc, y, "Carte de couverture clients", fontName, titleFont, `${payload.geoPoints.length} zones`);
+  y = drawCoverageMap(doc, y, payload.geoPoints, outlines, fontName);
 
   // Top clients
   if (payload.topCustomers.length > 0) {

@@ -378,13 +378,13 @@ export function buildCommissionPdf(p: CommissionParams): { pdf: Uint8Array; comm
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9.5);
   setText(doc, C.ink);
-  doc.text(`Commission MediKong — commande ${p.order.order_number}`, M.left + 3, y + 2, { maxWidth: 110 });
+  doc.text(`Commission MediKong — commande ${p.order.order_number}`, M.left + 3, y, { maxWidth: 110 });
   setText(doc, C.body);
-  doc.text(fmtEur(p.gmvExclVat), 148, y + 2, { align: "right" });
-  doc.text(`${p.commissionRate.toFixed(2)}%`, 165, y + 2, { align: "right" });
+  doc.text(fmtEur(p.gmvExclVat), 148, y, { align: "right" });
+  doc.text(`${p.commissionRate.toFixed(2)}%`, 165, y, { align: "right" });
   setText(doc, C.ink);
-  doc.text(fmtEur(commissionHt), M.right - 3, y + 2, { align: "right" });
-  y += 10;
+  doc.text(fmtEur(commissionHt), M.right - 3, y, { align: "right" });
+  y += 8;
 
   y = drawTotalsBlock(doc, y, [
     { label: "Commission HTVA", value: fmtEur(commissionHt) },

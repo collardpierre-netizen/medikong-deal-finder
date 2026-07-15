@@ -86,7 +86,8 @@
     "suppliers": "Verifizierte Lieferanten",
     "products": "Produkte",
     "brands": "Marken",
-    "pharmacies": "Partnerapotheken"
+    "pharmacies": "Partnerapotheken",
+    "offers": "Angebote"
   },
   "valueProps": {
     "bestPrices": "Beste B2B-Preise",
@@ -496,5 +497,9 @@
   "seo": {
     "homeTitle": "MediKong — Der B2B-Marktplatz für Gesundheitsfachkräfte in Belgien",
     "homeDescription": "MediKong.pro: B2B-Preisvergleich und Marktplatz für Apotheken, Arztpraxen und Gesundheitsfachkräfte in Belgien. Vergleichen Sie Angebote von Hunderten Lieferanten und bestellen Sie mit wenigen Klicks."
+  },
+  "homeCurated": {
+    "bestSellersPrefix": "Bestseller — {{label}}",
+    "otherBestSellers": "Weitere Bestseller"
   }
 }

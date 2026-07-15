@@ -95,7 +95,8 @@
     "suppliers": "Fournisseurs vérifiés",
     "products": "Produits",
     "brands": "Marques",
-    "pharmacies": "Pharmacies partenaires"
+    "pharmacies": "Pharmacies partenaires",
+    "offers": "Offres"
   },
   "valueProps": {
     "bestPrices": "Meilleurs prix B2B",
@@ -506,5 +507,9 @@
   "seo": {
     "homeTitle": "MediKong — La marketplace B2B des professionnels de santé en Belgique",
     "homeDescription": "MediKong.pro : comparateur B2B + marketplace pour pharmacies, cabinets médicaux et professionnels de santé en Belgique. Comparez les offres de centaines de fournisseurs, commandez en quelques clics."
+  },
+  "homeCurated": {
+    "bestSellersPrefix": "Best-sellers — {{label}}",
+    "otherBestSellers": "Autres best-sellers"
   }
 }

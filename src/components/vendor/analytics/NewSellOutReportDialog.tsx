@@ -13,6 +13,7 @@ function fmtEur(cents: number) {
 export function NewSellOutReportDialog({ vendorId, onClose }: { vendorId: string; onClose: () => void }) {
   const create = useCreateSellOutReport();
   const [customerLabel, setCustomerLabel] = useState("");
+  const [pharmacyId, setPharmacyId] = useState<string | null>(null);
   const [pharmacyQuery, setPharmacyQuery] = useState("");
   const [pharmacyLocked, setPharmacyLocked] = useState(false);
   const [showPharmacyResults, setShowPharmacyResults] = useState(false);

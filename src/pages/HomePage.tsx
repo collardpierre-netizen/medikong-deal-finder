@@ -337,7 +337,7 @@ export default function HomePage() {
               <div className="text-lg sm:text-xl md:text-2xl font-bold text-mk-navy">
                 {renderCountryStat(countryStats?.offers)}
               </div>
-              <div className="text-[11px] sm:text-xs text-mk-sec mt-0.5">{t("stats.offers", "Offres")}</div>
+              <div className="text-[11px] sm:text-xs text-mk-sec mt-0.5">{t("stats.offers")}</div>
             </div>
           </motion.div>
 

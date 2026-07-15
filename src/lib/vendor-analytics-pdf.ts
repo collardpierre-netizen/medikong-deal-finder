@@ -206,13 +206,30 @@ function drawHeader(
   doc.setFillColor(...BRAND_BLUE);
   doc.rect(0, 0, w, 26, "F");
 
-  // Logo (left) — falls back to wordmark if the image failed to load.
+  // Logo (left) — kept at its natural 1.6:1 aspect so the lion + wordmark stay
+  // legible instead of being squashed into a wave.
+  const LOGO_H = 14; // mm
+  const LOGO_W = LOGO_H * 1.6; // 400/250 aspect
+  const PANEL_PAD_X = 3;
+  const PANEL_PAD_Y = 2;
+  const PANEL_W = LOGO_W + PANEL_PAD_X * 2;
+  const PANEL_H = LOGO_H + PANEL_PAD_Y * 2;
+  const PANEL_X = 10;
+  const PANEL_Y = (26 - PANEL_H) / 2;
   if (logoDataUrl) {
     try {
-      // White panel so the horizontal logo pops on the blue banner.
       doc.setFillColor(255, 255, 255);
-      doc.roundedRect(10, 5, 56, 16, 2, 2, "F");
-      doc.addImage(logoDataUrl, "PNG", 12, 7, 52, 12, undefined, "FAST");
+      doc.roundedRect(PANEL_X, PANEL_Y, PANEL_W, PANEL_H, 2, 2, "F");
+      doc.addImage(
+        logoDataUrl,
+        "PNG",
+        PANEL_X + PANEL_PAD_X,
+        PANEL_Y + PANEL_PAD_Y,
+        LOGO_W,
+        LOGO_H,
+        undefined,
+        "FAST"
+      );
     } catch {
       doc.setFont(titleFont, "bold");
       doc.setFontSize(18);

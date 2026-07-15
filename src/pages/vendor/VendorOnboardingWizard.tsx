@@ -743,6 +743,9 @@ export default function VendorOnboardingWizard() {
                     <div><span className="text-muted-foreground">Email:</span> <span className="font-medium text-foreground">{company.email}</span></div>
                     <div><span className="text-muted-foreground">Téléphone:</span> <span className="font-medium text-foreground">{company.phone || "—"}</span></div>
                     <div><span className="text-muted-foreground">N° TVA:</span> <span className="font-medium text-foreground">{company.vat_number || "—"}</span></div>
+                    {isBECompany && (
+                      <div className="col-span-2"><span className="text-muted-foreground">Peppol ID:</span> <span className="font-mono font-medium text-foreground">{company.peppol_id || "—"}</span></div>
+                    )}
                   </div>
                 </div>
 

@@ -113,6 +113,8 @@ export default function AdminBePharmaciesPage() {
     URL.revokeObjectURL(url);
     toast({ title: `${rows.length} pharmacie(s) exportée(s)` });
   }
+
+  return (
     <div className="p-6 space-y-6 max-w-[1400px] mx-auto">
       <div>
         <h1 className="text-[24px] font-semibold text-[#1D2530] flex items-center gap-2">

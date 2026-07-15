@@ -66,15 +66,18 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json(405, { error: "method_not_allowed" });
 
   try {
-    // Optional shared-secret validation. No-op if secret not configured.
+    // Mandatory shared-secret validation. Refuse to run unauthenticated even
+    // if the secret is missing so nobody can flip invoice statuses anonymously.
     const expected = (Deno.env.get("FALCO_WEBHOOK_SECRET") || "").trim();
-    if (expected) {
-      const provided =
-        (req.headers.get("x-falco-signature") || req.headers.get("x-webhook-secret") || "").trim();
-      if (!provided || provided !== expected) {
-        logFalco("warn", "webhook_unauthorized", { has_header: Boolean(provided) });
-        return json(401, { error: "invalid_signature" });
-      }
+    if (!expected) {
+      logFalco("error", "webhook_secret_missing", {});
+      return json(500, { error: "webhook_secret_not_configured" });
+    }
+    const provided =
+      (req.headers.get("x-falco-signature") || req.headers.get("x-webhook-secret") || "").trim();
+    if (!provided || provided !== expected) {
+      logFalco("warn", "webhook_unauthorized", { has_header: Boolean(provided) });
+      return json(401, { error: "invalid_signature" });
     }
 
     const rawBody = await req.text();

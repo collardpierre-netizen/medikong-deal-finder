@@ -197,6 +197,13 @@ export default function VendorOrderDetail() {
                   </span>
                 );
               })()}
+              <StripePaymentStatusBadge
+                order={{
+                  payment_method: order.payment_method,
+                  payment_status: order.payment_status,
+                  stripe_payment_intent_id: (order as any).stripe_payment_intent_id ?? null,
+                }}
+              />
             </div>
             <div className="text-[12px] text-muted-foreground mt-0.5">
               {format(new Date(order.order_date), "dd MMM yyyy à HH:mm", { locale: fr })} · {order.lines.length}{" "}

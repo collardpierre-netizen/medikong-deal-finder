@@ -13,6 +13,7 @@ import { VBadge } from "@/components/vendor/ui/VBadge";
 import { fmtEur } from "@/lib/format-currency";
 import { useResyncOnReconnect } from "@/hooks/useResyncOnReconnect";
 import OrderInvoiceStatusPanel from "@/components/orders/OrderInvoiceStatusPanel";
+import StripePaymentStatusBadge from "@/components/orders/StripePaymentStatusBadge";
 
 import {
   OrderInfoBlocks,
@@ -77,7 +78,7 @@ export default function VendorOrderDetail() {
       const { data: order, error: oErr } = await supabase
         .from("orders")
         .select(
-          "id, order_number, status, created_at, shipping_address, billing_address, customer_id, hidden_from_list, deleted_at, payment_method, payment_status, payment_due_date, tracking_number, tracking_url, tracking_carrier, shipped_at, notes",
+          "id, order_number, status, created_at, shipping_address, billing_address, customer_id, hidden_from_list, deleted_at, payment_method, payment_status, stripe_payment_intent_id, payment_due_date, tracking_number, tracking_url, tracking_carrier, shipped_at, notes",
         )
         .eq("id", id!)
         .maybeSingle();
@@ -113,6 +114,7 @@ export default function VendorOrderDetail() {
         customer_id: order.customer_id,
         payment_method: (order as any).payment_method ?? null,
         payment_status: (order as any).payment_status ?? null,
+        stripe_payment_intent_id: (order as any).stripe_payment_intent_id ?? null,
         payment_due_date: (order as any).payment_due_date ?? null,
         order_tracking_number: (order as any).tracking_number ?? null,
         order_tracking_url: (order as any).tracking_url ?? null,
@@ -195,6 +197,13 @@ export default function VendorOrderDetail() {
                   </span>
                 );
               })()}
+              <StripePaymentStatusBadge
+                order={{
+                  payment_method: order.payment_method,
+                  payment_status: order.payment_status,
+                  stripe_payment_intent_id: (order as any).stripe_payment_intent_id ?? null,
+                }}
+              />
             </div>
             <div className="text-[12px] text-muted-foreground mt-0.5">
               {format(new Date(order.order_date), "dd MMM yyyy à HH:mm", { locale: fr })} · {order.lines.length}{" "}

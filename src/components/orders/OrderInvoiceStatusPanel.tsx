@@ -486,17 +486,41 @@ function ManualInvoiceDialog({
 // Edit invoice dialog (statut / envoi / paiement / relance)
 // ---------------------------------------------------------------------------
 
-function EditInvoiceDialog({ invoice, onClose, onSaved }: { invoice: Invoice; onClose: () => void; onSaved: () => void }) {
-  const [status, setStatus] = useState(invoice.status);
+function EditInvoiceDialog({
+  invoice,
+  stripePaidCtx,
+  onClose,
+  onSaved,
+}: {
+  invoice: Invoice;
+  stripePaidCtx: StripePaidCtx | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const stripeLocked = !!stripePaidCtx;
+  const [status, setStatus] = useState(stripeLocked ? "paid" : invoice.status);
   const [dueDate, setDueDate] = useState(toDateInputValue(invoice.due_date));
   const [sentAt, setSentAt] = useState(toDatetimeInputValue(invoice.sent_at));
   const [sentChannel, setSentChannel] = useState<string>(invoice.sent_channel ?? "");
   const [sentTo, setSentTo] = useState(invoice.sent_to ?? "");
-  const [paidAt, setPaidAt] = useState(toDatetimeInputValue(invoice.paid_at));
-  const [paidAmount, setPaidAmount] = useState(invoice.payment_amount_received != null ? String(invoice.payment_amount_received) : "");
-  const [paidMethod, setPaidMethod] = useState<string>(invoice.payment_method_received ?? "");
-  const [paidRef, setPaidRef] = useState(invoice.payment_reference ?? "");
+  const [paidAt, setPaidAt] = useState(
+    stripeLocked
+      ? toDatetimeInputValue(invoice.paid_at ?? stripePaidCtx!.paidAt)
+      : toDatetimeInputValue(invoice.paid_at),
+  );
+  const [paidAmount, setPaidAmount] = useState(
+    stripeLocked
+      ? String(invoice.payment_amount_received ?? stripePaidCtx!.amount)
+      : (invoice.payment_amount_received != null ? String(invoice.payment_amount_received) : ""),
+  );
+  const [paidMethod, setPaidMethod] = useState<string>(
+    stripeLocked ? "card" : (invoice.payment_method_received ?? ""),
+  );
+  const [paidRef, setPaidRef] = useState(
+    stripeLocked ? (invoice.payment_reference || stripePaidCtx!.reference) : (invoice.payment_reference ?? ""),
+  );
   const [notes, setNotes] = useState(invoice.internal_notes ?? "");
+
 
   const qc = useQueryClient();
 

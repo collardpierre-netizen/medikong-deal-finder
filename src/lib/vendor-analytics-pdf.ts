@@ -584,7 +584,18 @@ function tableStyles(fontName: string) {
   };
 }
 
-export async function generateVendorAnalyticsPdf(payload: VendorAnalyticsPdfPayload): Promise<void> {
+export interface GeneratedPdf {
+  blobUrl: string;
+  blob: Blob;
+  filename: string;
+  save: () => void;
+}
+
+export async function generateVendorAnalyticsPdf(
+  payload: VendorAnalyticsPdfPayload,
+  options?: { autoSave?: boolean }
+): Promise<GeneratedPdf> {
+  const autoSave = options?.autoSave ?? true;
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
   // Try to load the MediKong logo + DM Sans + Bricolage Grotesque in parallel; all best-effort.
@@ -733,5 +744,10 @@ export async function generateVendorAnalyticsPdf(payload: VendorAnalyticsPdfPayl
 
   const safeVendor = (payload.vendorName || "vendeur").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
   const dateStr = new Date().toISOString().slice(0, 10);
-  doc.save(`medikong-analytics-${safeVendor}-${payload.period}-${dateStr}.pdf`);
+  const filename = `medikong-analytics-${safeVendor}-${payload.period}-${dateStr}.pdf`;
+  const blob = doc.output("blob") as Blob;
+  const blobUrl = URL.createObjectURL(blob);
+  const save = () => doc.save(filename);
+  if (autoSave) save();
+  return { blobUrl, blob, filename, save };
 }

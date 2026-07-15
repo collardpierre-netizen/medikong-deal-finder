@@ -241,6 +241,12 @@ export default function VendorOrderDetail() {
           .
         </div>
       </VCard>
+
+      <OrderInvoiceStatusPanel
+        orderId={order.order_id}
+        vendorId={vendorId}
+        defaultAmounts={{ excl_vat: totalHT }}
+      />
     </div>
   );
 }

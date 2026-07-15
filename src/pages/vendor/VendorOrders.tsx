@@ -62,6 +62,7 @@ export interface OrderWithLines {
   payment_method: string | null;
   payment_status: string | null;
   stripe_payment_intent_id?: string | null;
+  source?: string | null;
   payment_due_date: string | null;
   order_tracking_number: string | null;
   order_tracking_url: string | null;

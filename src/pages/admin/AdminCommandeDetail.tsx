@@ -10,6 +10,7 @@ import { fmtEur } from "@/lib/format-currency";
 import { ArrowLeft, FileDown, Pencil, Copy, Link2, ExternalLink, Lock, Wallet, ShieldCheck, AlertTriangle, CheckCircle2, Truck, Send } from "lucide-react";
 import OrderInvoiceStatusPanel from "@/components/orders/OrderInvoiceStatusPanel";
 import StripePaymentStatusBadge from "@/components/orders/StripePaymentStatusBadge";
+import OrderSourceBadge from "@/components/orders/OrderSourceBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { lineMetrics, type ManualLineInput } from "@/lib/manual-order-metrics";
 import { VendorsEmbedError } from "@/lib/vendors-embed-error";
@@ -444,8 +445,9 @@ const AdminCommandeDetail = () => {
                 <div className="text-[11px] uppercase text-slate-400 font-semibold mb-1">Paiement</div>
                 <div className="font-medium">{order.payment_method ?? "—"}</div>
                 <div className="text-xs text-slate-500">Statut paiement : {order.payment_status ?? "—"}</div>
-                <div className="mt-1">
+                <div className="mt-1 flex flex-wrap items-center gap-1.5">
                   <StripePaymentStatusBadge order={order as any} />
+                  <OrderSourceBadge source={(order as any).source ?? null} />
                 </div>
                 {order.payment_due_date && <div className="text-xs text-slate-500">Échéance : {new Date(order.payment_due_date).toLocaleDateString("fr-BE")}</div>}
               </div>

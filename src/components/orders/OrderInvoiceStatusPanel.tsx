@@ -132,6 +132,44 @@ export default function OrderInvoiceStatusPanel({ orderId, vendorId, defaultAmou
     },
   });
 
+  // Fetch parent order to detect a Stripe-confirmed card payment.
+  const orderQuery = useQuery({
+    queryKey: ["order-invoices-panel-order", orderId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, payment_method, payment_status, stripe_payment_intent_id, total_incl_vat, updated_at, created_at")
+        .eq("id", orderId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as {
+        id: string;
+        payment_method: string | null;
+        payment_status: string | null;
+        stripe_payment_intent_id: string | null;
+        total_incl_vat: number | null;
+        updated_at: string | null;
+        created_at: string | null;
+      } | null;
+    },
+  });
+
+  const stripePaidCtx: StripePaidCtx | null = useMemo(() => {
+    const o = orderQuery.data;
+    if (!o) return null;
+    const method = (o.payment_method ?? "").toLowerCase();
+    const isCard = method === "card" || method === "stripe";
+    if (!isCard) return null;
+    if ((o.payment_status ?? "").toLowerCase() !== "paid") return null;
+    if (!o.stripe_payment_intent_id) return null;
+    return {
+      paidAt: o.updated_at || o.created_at || new Date().toISOString(),
+      amount: Number(o.total_incl_vat) || 0,
+      method: "card",
+      reference: o.stripe_payment_intent_id,
+    };
+  }, [orderQuery.data]);
+
   const invoices = invoicesQuery.data ?? [];
   const overduePending = useMemo(
     () => invoices.some((i) => i.status !== "paid" && i.due_date && new Date(i.due_date) < new Date()),
@@ -139,6 +177,36 @@ export default function OrderInvoiceStatusPanel({ orderId, vendorId, defaultAmou
   );
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["order-invoices-panel", orderId] });
+
+  // Auto-persist Stripe encaissement onto invoices that have no paid_at yet.
+  // Runs at most once per invoice per session — the RPC itself is idempotent.
+  const autoFilledRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!stripePaidCtx) return;
+    const targets = invoices.filter((i) => !i.paid_at && !autoFilledRef.current.has(i.id));
+    if (targets.length === 0) return;
+    (async () => {
+      for (const inv of targets) {
+        autoFilledRef.current.add(inv.id);
+        const { error } = await supabase.rpc("update_order_invoice_billing", {
+          _invoice_id: inv.id,
+          _patch: {
+            status: "paid",
+            paid_at: stripePaidCtx.paidAt,
+            payment_amount_received: stripePaidCtx.amount,
+            payment_method_received: stripePaidCtx.method,
+            payment_reference: stripePaidCtx.reference,
+          },
+        });
+        if (error) {
+          // Non-blocking: revert the guard so a later retry can happen.
+          autoFilledRef.current.delete(inv.id);
+        }
+      }
+      refresh();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stripePaidCtx, invoices]);
 
   return (
     <div className={`bg-white border rounded-lg ${className ?? ""}`} style={{ borderColor: "#E2E8F0" }}>
@@ -149,12 +217,18 @@ export default function OrderInvoiceStatusPanel({ orderId, vendorId, defaultAmou
             {vendorLabel ? `${vendorLabel} · ` : ""}
             {invoices.length === 0 ? "Aucune facture enregistrée" : `${invoices.length} facture${invoices.length > 1 ? "s" : ""}`}
             {overduePending && <span className="ml-2 text-amber-700 font-semibold">· Échéance dépassée</span>}
+            {stripePaidCtx && (
+              <span className="ml-2 inline-flex items-center gap-1 text-emerald-700 font-semibold">
+                <Lock size={11} /> Encaissé par Stripe
+              </span>
+            )}
           </div>
         </div>
         <Button size="sm" variant="outline" onClick={() => setManualOpen(true)} className="gap-1.5">
           <Plus size={14} /> Enregistrer une facture
         </Button>
       </div>
+
 
       {invoicesQuery.isLoading && (
         <div className="p-4 text-sm text-slate-500">Chargement…</div>

@@ -264,12 +264,23 @@ export default function OrderInvoiceStatusPanel({ orderId, vendorId, defaultAmou
 
 
       {stripePaidCtx && (
-        <div className="px-4 py-3 border-b bg-emerald-50/60" style={{ borderColor: "#E2E8F0" }}>
+        <div
+          className={`px-4 py-3 border-b ${stripeMismatch ? "bg-amber-50/70" : "bg-emerald-50/60"}`}
+          style={{ borderColor: "#E2E8F0" }}
+        >
           <div className="flex items-start gap-2">
-            <Lock size={14} className="text-emerald-700 mt-0.5 shrink-0" />
+            {stripeMismatch ? (
+              <AlertTriangle size={14} className="text-amber-700 mt-0.5 shrink-0" />
+            ) : (
+              <Lock size={14} className="text-emerald-700 mt-0.5 shrink-0" />
+            )}
             <div className="flex-1 min-w-0">
-              <div className="text-[11px] uppercase text-emerald-800 font-bold tracking-wide">
-                Vérifié via Stripe
+              <div
+                className={`text-[11px] uppercase font-bold tracking-wide ${
+                  stripeMismatch ? "text-amber-800" : "text-emerald-800"
+                }`}
+              >
+                {stripeMismatch ? "Vérifié via Stripe · Écart détecté" : "Vérifié via Stripe"}
               </div>
               <div className="mt-1 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-slate-700">
                 <div>
@@ -287,13 +298,69 @@ export default function OrderInvoiceStatusPanel({ orderId, vendorId, defaultAmou
                 </div>
                 <div>
                   <div className="text-slate-500 uppercase text-[10px] font-semibold">Montant encaissé</div>
-                  <div className="font-semibold text-emerald-800">{fmtEur(stripePaidCtx.amount)} € TTC</div>
+                  <div
+                    className={`font-semibold ${
+                      stripeMismatch ? "text-amber-800" : "text-emerald-800"
+                    }`}
+                  >
+                    {stripeVerification.data
+                      ? `${fmtEur(stripeVerification.data.amount_received)} € (${stripeVerification.data.currency.toUpperCase()})`
+                      : `${fmtEur(stripePaidCtx.amount)} € TTC`}
+                  </div>
                 </div>
               </div>
+
+              {stripeVerification.isLoading && (
+                <div className="mt-2 text-[11px] text-slate-500 italic">
+                  Vérification du montant Stripe en cours…
+                </div>
+              )}
+              {stripeVerification.isError && (
+                <div className="mt-2 text-[11px] text-amber-800">
+                  Impossible de vérifier le montant Stripe en direct (
+                  {(stripeVerification.error as any)?.message ?? "erreur inconnue"}).
+                </div>
+              )}
+
+              {stripeMismatch && (
+                <div className="mt-2 rounded border border-amber-300 bg-white/70 p-2 text-[12px] text-amber-900 space-y-1">
+                  <div className="font-semibold">
+                    ⚠️ Le montant Stripe ne correspond pas au TTC de la commande.
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-0.5">
+                    <div>
+                      <span className="text-slate-500">TTC commande&nbsp;:</span>{" "}
+                      <span className="font-mono">{fmtEur(stripeMismatch.expected)} €</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Stripe reçu&nbsp;:</span>{" "}
+                      <span className="font-mono">
+                        {fmtEur(stripeMismatch.received)} {stripeMismatch.currency.toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Écart&nbsp;:</span>{" "}
+                      <span className="font-mono font-semibold">
+                        {(stripeMismatch.deltaCents / 100).toFixed(2)} €
+                      </span>
+                    </div>
+                  </div>
+                  {!stripeMismatch.currencyOk && (
+                    <div>Devise Stripe inattendue&nbsp;: {stripeMismatch.currency.toUpperCase()} (attendu EUR).</div>
+                  )}
+                  {!stripeMismatch.statusOk && (
+                    <div>Statut PaymentIntent&nbsp;: <span className="font-mono">{stripeMismatch.status}</span> (attendu <span className="font-mono">succeeded</span>).</div>
+                  )}
+                  <div className="text-slate-600">
+                    Vérifiez le PaymentIntent dans Stripe avant toute réconciliation comptable.
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
+
 
 
       {invoicesQuery.isLoading && (

@@ -584,7 +584,18 @@ function tableStyles(fontName: string) {
   };
 }
 
-export async function generateVendorAnalyticsPdf(payload: VendorAnalyticsPdfPayload): Promise<void> {
+export interface GeneratedPdf {
+  blobUrl: string;
+  blob: Blob;
+  filename: string;
+  save: () => void;
+}
+
+export async function generateVendorAnalyticsPdf(
+  payload: VendorAnalyticsPdfPayload,
+  options?: { autoSave?: boolean }
+): Promise<GeneratedPdf> {
+  const autoSave = options?.autoSave ?? true;
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
   // Try to load the MediKong logo + DM Sans + Bricolage Grotesque in parallel; all best-effort.

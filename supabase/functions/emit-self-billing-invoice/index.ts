@@ -9,6 +9,9 @@ import {
   submitInvoiceToFalco,
   persistFalcoResult,
   isFalcoConfigured,
+  normalizeFalcoPeppolIdentifier,
+  normalizeFalcoVatNumber,
+  resolveFalcoPostalCode,
   type FalcoLine,
   type FalcoTaxSubtotal,
 } from "../_shared/falco-peppol.ts";
@@ -82,7 +85,7 @@ Deno.serve(async (req) => {
 
     const [{ data: order }, { data: vendor }] = await Promise.all([
       supabase.from("orders").select("id, order_number, created_at, customer_id, customers:customers!orders_customer_id_fkey(company_name, email, vat_number, address_line1, city, postal_code, country_code)").eq("id", orderId).maybeSingle(),
-      supabase.from("vendors").select("id, name, company_name, vat_number, address_line1, city, postal_code, country_code, mandate_signed_at").eq("id", vendorId).maybeSingle(),
+      supabase.from("vendors").select("id, name, company_name, email, vat_number, peppol_id, address_line1, city, postal_code, country_code, mandate_signed_at").eq("id", vendorId).maybeSingle(),
     ]);
     if (!order) return json(404, { error: "order_not_found" });
     if (!vendor) return json(404, { error: "vendor_not_found" });
@@ -193,7 +196,9 @@ Deno.serve(async (req) => {
         const falcoRes = await submitInvoiceToFalco(pdfBytes, {
           document_type: "sale_invoice",
           document_date: new Date().toISOString().slice(0, 10),
+          due_date: new Date().toISOString().slice(0, 10),
           number: invoiceNumber,
+          buyer_reference: order.order_number || invoiceNumber,
           // Point 1: mandate mention required by BE self-billing regulation, embedded in UBL note.
           note: mandateMention,
           sender: {
@@ -202,14 +207,15 @@ Deno.serve(async (req) => {
             address: { ...BALOOH_SELLER.address },
           },
           receiver: {
-            name: cust.company_name || cust.email || "Client",
-            vat_number: cust.vat_number || undefined,
-            contact: cust.email ? { email: cust.email } : undefined,
+            name: vendor.company_name || vendor.name,
+            vat_number: normalizeFalcoVatNumber(vendor.vat_number),
+            peppol_identifier: normalizeFalcoPeppolIdentifier(vendor.peppol_id),
+            contact: vendor.email ? { email: vendor.email } : undefined,
             address: {
-              line1: cust.address_line1 || "—",
-              zip: cust.postal_code || undefined,
-              city: cust.city || undefined,
-              country: cust.country_code || "BE",
+              line1: vendor.address_line1 || "—",
+              zip: resolveFalcoPostalCode(vendor),
+              city: vendor.city || undefined,
+              country: vendor.country_code || "BE",
             },
           },
           currency: "EUR",

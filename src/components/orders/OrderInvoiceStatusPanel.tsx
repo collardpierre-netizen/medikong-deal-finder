@@ -650,19 +650,43 @@ function EditInvoiceDialog({
         </div>
 
         <div className="pt-3 border-t" style={{ borderColor: "#E2E8F0" }}>
-          <div className="text-[11px] uppercase text-slate-400 font-semibold mb-2">Paiement encaissé</div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[11px] uppercase text-slate-400 font-semibold">Paiement encaissé</div>
+            {stripeLocked && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+                <Lock size={10} /> Verrouillé — Stripe
+              </span>
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Reçu le</Label>
-              <Input type="datetime-local" value={paidAt} onChange={(e) => setPaidAt(e.target.value)} />
+              <Input
+                type="datetime-local"
+                value={paidAt}
+                onChange={(e) => setPaidAt(e.target.value)}
+                disabled={stripeLocked}
+                readOnly={stripeLocked}
+              />
             </div>
             <div>
               <Label>Montant (€)</Label>
-              <Input type="number" step="0.01" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} />
+              <Input
+                type="number"
+                step="0.01"
+                value={paidAmount}
+                onChange={(e) => setPaidAmount(e.target.value)}
+                disabled={stripeLocked}
+                readOnly={stripeLocked}
+              />
             </div>
             <div>
               <Label>Méthode</Label>
-              <Select value={paidMethod || "__none__"} onValueChange={(v) => setPaidMethod(v === "__none__" ? "" : v)}>
+              <Select
+                value={paidMethod || "__none__"}
+                onValueChange={(v) => setPaidMethod(v === "__none__" ? "" : v)}
+                disabled={stripeLocked}
+              >
                 <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">—</SelectItem>
@@ -674,10 +698,23 @@ function EditInvoiceDialog({
             </div>
             <div>
               <Label>Référence</Label>
-              <Input value={paidRef} onChange={(e) => setPaidRef(e.target.value)} placeholder="Communication / IBAN…" />
+              <Input
+                value={paidRef}
+                onChange={(e) => setPaidRef(e.target.value)}
+                placeholder="Communication / IBAN…"
+                disabled={stripeLocked}
+                readOnly={stripeLocked}
+              />
             </div>
           </div>
+          {stripeLocked && (
+            <div className="mt-2 text-[11px] text-slate-500">
+              Encaissement confirmé par Stripe (PaymentIntent&nbsp;
+              <code className="text-slate-600">{stripePaidCtx!.reference}</code>). Non modifiable manuellement.
+            </div>
+          )}
         </div>
+
 
         <div className="pt-3 border-t" style={{ borderColor: "#E2E8F0" }}>
           <Label>Notes internes</Label>

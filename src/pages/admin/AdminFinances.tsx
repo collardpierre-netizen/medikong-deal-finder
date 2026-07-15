@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { Send } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { Send, FileText, Loader2 } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
@@ -195,32 +195,183 @@ const AdminFinances = () => {
       )}
 
       {activeTab === "payouts" && (
-        <div className="rounded-[10px] overflow-x-auto" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
-          <table className="w-full text-left">
-            <thead>
-              <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                {["Vendeur", "Commission", "Tier", "Statut"].map((h) => (
-                  <th key={h} className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {vendors.filter(v => v.is_active).map((v) => (
-                <tr key={v.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
-                  <td className="px-4 py-3 text-[13px] font-semibold" style={{ color: "#1B5BDA" }}>{v.company_name || v.name}</td>
-                  <td className="px-4 py-3 text-[12px] font-mono" style={{ color: "#616B7C" }}>{v.commission_rate}%</td>
-                  <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{v.type}</td>
-                  <td className="px-4 py-3">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#ECFDF5", color: "#059669" }}>Actif</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <VendorStatementsPanel vendors={vendors.filter((v: any) => v.is_active && v.type === "real")} />
       )}
     </div>
   );
 };
+
+const MONTHS_FR = [
+  "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
+];
+
+function VendorStatementsPanel({ vendors }: { vendors: any[] }) {
+  const now = new Date();
+  const defaultYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+  const defaultMonth = now.getMonth() === 0 ? 12 : now.getMonth(); // mois précédent
+  const [year, setYear] = useState<number>(defaultYear);
+  const [month, setMonth] = useState<number>(defaultMonth);
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const qc = useQueryClient();
+
+  const yearsRange = useMemo(() => {
+    const y = new Date().getFullYear();
+    return [y, y - 1, y - 2];
+  }, []);
+
+  const { data: statements = [], isLoading } = useQuery({
+    queryKey: ["admin-vendor-statements", year, month],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendor_statements")
+        .select("*")
+        .eq("period_year", year)
+        .eq("period_month", month);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const byVendor = useMemo(() => {
+    const map = new Map<string, any>();
+    statements.forEach((s: any) => map.set(s.vendor_id, s));
+    return map;
+  }, [statements]);
+
+  async function generate(vendorId: string) {
+    setGeneratingId(vendorId);
+    const t = toast.loading("Génération du relevé en cours…");
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-vendor-statement", {
+        body: { vendor_id: vendorId, year, month, send_email: false },
+      });
+      toast.dismiss(t);
+      if (error || (data && data.ok === false)) {
+        toast.error(`Échec: ${error?.message || data?.error || "erreur inconnue"}`);
+      } else {
+        toast.success("Relevé généré");
+        qc.invalidateQueries({ queryKey: ["admin-vendor-statements", year, month] });
+      }
+    } finally {
+      setGeneratingId(null);
+    }
+  }
+
+  async function download(pdfPath: string | null) {
+    if (!pdfPath) return;
+    const { data, error } = await supabase.storage
+      .from("vendor-statements")
+      .createSignedUrl(pdfPath, 3600);
+    if (error || !data?.signedUrl) {
+      toast.error("Impossible de générer le lien du PDF");
+      return;
+    }
+    window.open(data.signedUrl, "_blank");
+  }
+
+  const fmtEur = (n: number) => n.toLocaleString("fr-BE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " EUR";
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <label className="text-[12px] font-semibold text-[#616B7C]">Période :</label>
+          <select
+            value={month}
+            onChange={(e) => setMonth(Number(e.target.value))}
+            className="text-[13px] border border-[#E2E8F0] rounded px-2 py-1 bg-white"
+          >
+            {MONTHS_FR.map((m, i) => (
+              <option key={i} value={i + 1}>{m}</option>
+            ))}
+          </select>
+          <select
+            value={year}
+            onChange={(e) => setYear(Number(e.target.value))}
+            className="text-[13px] border border-[#E2E8F0] rounded px-2 py-1 bg-white"
+          >
+            {yearsRange.map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+        </div>
+        <span className="text-[11px] text-[#8B95A5]">
+          {vendors.length} vendeur(s) actif(s) · {statements.length} relevé(s) généré(s)
+        </span>
+      </div>
+
+      <div className="rounded-[10px] overflow-x-auto" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+        {isLoading ? (
+          <div className="py-12 text-center text-[13px] text-[#8B95A5]">Chargement…</div>
+        ) : (
+          <table className="w-full text-left">
+            <thead>
+              <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
+                {["Vendeur", "Période", "Ventes brutes TTC", "Commission HT", "Net transféré", "PDF", "Statut"].map((h) => (
+                  <th key={h} className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#8B95A5]">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {vendors.map((v: any) => {
+                const s = byVendor.get(v.id);
+                const label = `${MONTHS_FR[month - 1]} ${year}`;
+                return (
+                  <tr key={v.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
+                    <td className="px-4 py-3 text-[13px] font-semibold text-[#1B5BDA]">{v.company_name || v.name}</td>
+                    <td className="px-4 py-3 text-[12px] text-[#616B7C]">{label}</td>
+                    <td className="px-4 py-3 text-[12px] font-mono text-[#1D2530]">{s ? fmtEur(Number(s.total_gross_ttc)) : "—"}</td>
+                    <td className="px-4 py-3 text-[12px] font-mono text-[#616B7C]">{s ? fmtEur(Number(s.total_commission_ht)) : "—"}</td>
+                    <td className="px-4 py-3 text-[12px] font-mono font-bold text-[#059669]">{s ? fmtEur(Number(s.total_net_transferred)) : "—"}</td>
+                    <td className="px-4 py-3">
+                      {s?.pdf_path ? (
+                        <button
+                          onClick={() => download(s.pdf_path)}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded hover:bg-slate-100 text-[#1B5BDA]"
+                        >
+                          <Download size={12} /> PDF
+                        </button>
+                      ) : (
+                        <span className="text-[11px] text-[#8B95A5]">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {s ? (
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ECFDF5] text-[#059669]">Généré</span>
+                          <button
+                            onClick={() => generate(v.id)}
+                            disabled={generatingId === v.id}
+                            className="text-[10px] text-[#8B95A5] hover:text-[#1B5BDA] underline"
+                            title="Régénérer"
+                          >
+                            {generatingId === v.id ? "…" : "Régénérer"}
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => generate(v.id)}
+                          disabled={generatingId === v.id}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded bg-[#1B5BDA] text-white hover:bg-[#1749B8] disabled:opacity-50"
+                        >
+                          {generatingId === v.id ? <Loader2 size={11} className="animate-spin" /> : <FileText size={11} />}
+                          Générer
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+              {vendors.length === 0 && (
+                <tr><td colSpan={7} className="px-4 py-12 text-center text-[12px] text-[#8B95A5]">Aucun vendeur actif.</td></tr>
+              )}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default AdminFinances;

@@ -20595,6 +20595,113 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_statements: {
+        Row: {
+          created_at: string
+          email_sent_at: string | null
+          generated_at: string
+          id: string
+          order_count: number
+          pdf_path: string | null
+          pdf_url: string | null
+          peppol_status: string
+          period_month: number
+          period_year: number
+          total_commission_ht: number
+          total_commission_vat: number
+          total_gross_ttc: number
+          total_net_transferred: number
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_sent_at?: string | null
+          generated_at?: string
+          id?: string
+          order_count?: number
+          pdf_path?: string | null
+          pdf_url?: string | null
+          peppol_status?: string
+          period_month: number
+          period_year: number
+          total_commission_ht?: number
+          total_commission_vat?: number
+          total_gross_ttc?: number
+          total_net_transferred?: number
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          email_sent_at?: string | null
+          generated_at?: string
+          id?: string
+          order_count?: number
+          pdf_path?: string | null
+          pdf_url?: string | null
+          peppol_status?: string
+          period_month?: number
+          period_year?: number
+          total_commission_ht?: number
+          total_commission_vat?: number
+          total_gross_ttc?: number
+          total_net_transferred?: number
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_statements_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_statements_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_statements_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_statements_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_statements_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_statements_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_statements_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_visibility_rules: {
         Row: {
           country_code: string | null

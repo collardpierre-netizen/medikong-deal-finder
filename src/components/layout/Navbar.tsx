@@ -131,7 +131,7 @@ export function Navbar() {
                 </Link>
               )}
               {isVendor && (
-                <div className="flex items-center bg-muted/60 rounded-full p-0.5" role="group" aria-label="Bascule Acheteur / Vendeur">
+                <div className="flex items-center bg-muted/60 rounded-full p-0.5" role="group" aria-label={t("nav.buyerSellerToggle")}>
                   <Link
                     to="/compte"
                     aria-pressed={!location.pathname.startsWith("/vendor")}
@@ -142,7 +142,7 @@ export function Navbar() {
                     }`}
                   >
                     <Users size={12} />
-                    <span>Acheteur</span>
+                    <span>{t("nav.buyer")}</span>
                   </Link>
                   <Link
                     to="/vendor"
@@ -154,18 +154,19 @@ export function Navbar() {
                     }`}
                   >
                     <Store size={12} />
-                    <span>Vendeur</span>
+                    <span>{t("nav.seller")}</span>
                   </Link>
                 </div>
               )}
-              <Link to="/bonnes-affaires" className="flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full hover:bg-amber-100 transition-colors" title="Trouver tous les produits offrant X% de remise vs PVP ou prix marché">
+              <Link to="/bonnes-affaires" className="flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full hover:bg-amber-100 transition-colors" title={t("nav.goodDealsTitle")}>
                 <Percent size={13} />
-                <span>Bonnes affaires</span>
+                <span>{t("nav.goodDeals")}</span>
               </Link>
               <Link to="/mes-prix" className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full hover:bg-emerald-100 transition-colors">
                 <Tag size={13} />
-                <span>{t("nav.myPrices", "Mes Prix")}</span>
+                <span>{t("nav.myPrices")}</span>
               </Link>
+
               <ResellerNavLink />
               <Link
                 to="/compte"

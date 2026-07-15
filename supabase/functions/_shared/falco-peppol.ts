@@ -115,7 +115,8 @@ export function isFalcoConfigured(): boolean {
  * suitable for logging / returning to the caller (never leaks the secret).
  */
 export const FALCO_API_KEY_PATTERN = /^sk_(live|test)_[A-Za-z0-9]+_[A-Za-z0-9]+$/;
-export const FALCO_APP_SECRET_PATTERN = /^as_(live|test)_[A-Za-z0-9]+_[A-Za-z0-9]+$/;
+// FALCO_APP_SECRET : validation loose côté client, format exact validé par Falco.
+export const isValidAppSecret = (v: string) => v.trim().startsWith("as_") && v.trim().length > 10;
 
 export function validateFalcoCredentials(
   apiKey: string,
@@ -134,10 +135,7 @@ export function validateFalcoCredentials(
   if (!appSecret) {
     return { ok: false, code: "app_secret_missing", message: "FALCO_APP_SECRET is not set." };
   }
-  // Validation loose : Falco valide le format exact côté serveur. On vérifie
-  // juste la présence du préfixe `as_` et une longueur minimale plausible.
-  const trimmed = appSecret.trim();
-  if (!trimmed.startsWith("as_") || trimmed.length <= 10) {
+  if (!isValidAppSecret(appSecret)) {
     return {
       ok: false,
       code: "app_secret_format_invalid",

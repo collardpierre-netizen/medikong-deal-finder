@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { Send } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { Send, FileText, Loader2 } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import KpiCard from "@/components/admin/KpiCard";
 import StatusBadge from "@/components/admin/StatusBadge";

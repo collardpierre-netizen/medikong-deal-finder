@@ -27,7 +27,9 @@ export function AnnouncementBar() {
 
   const crowdfundingActive = (config as any)?.crowdfunding_enabled !== false;
 
-  // Pick the localized text with fallback chain → current lang → FR → null
+  // Pick the localized text for the current language ONLY.
+  // If empty, fall back to i18n translations rather than the FR DB text,
+  // otherwise EN/NL/DE users would see French copy.
   const lang = i18n.language?.substring(0, 2) || "fr";
   const localizedMap: Record<string, string | null | undefined> = {
     fr: config?.investment_banner_text,
@@ -35,8 +37,7 @@ export function AnnouncementBar() {
     en: (config as any)?.investment_banner_text_en,
     de: (config as any)?.investment_banner_text_de,
   };
-  const customText =
-    (localizedMap[lang]?.trim() || config?.investment_banner_text?.trim()) ?? "";
+  const customText = localizedMap[lang]?.trim() ?? "";
   const messages = customText
     ? [
         { icon: Rocket, text: customText },
@@ -50,6 +51,7 @@ export function AnnouncementBar() {
         { icon: TrendingUp, text: t("investBanner.msg1") },
         { icon: Coins, text: t("investBanner.msg2") },
       ];
+
 
   const innerContent = (
     <>

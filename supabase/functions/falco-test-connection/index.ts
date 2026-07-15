@@ -70,6 +70,26 @@ Deno.serve(async (req) => {
       });
     }
 
+    const credCheck = validateFalcoCredentials(apiKey, appSecret);
+    if (!credCheck.ok) {
+      logFalco("error", "credentials_invalid_format", {
+        caller,
+        environment,
+        code: credCheck.code,
+        api_key_length: apiKey.length,
+        app_secret_length: appSecret.length,
+      });
+      return json(200, {
+        ok: false,
+        reason: credCheck.code,
+        environment,
+        base_url: baseUrl,
+        api_key_length: apiKey.length,
+        app_secret_length: appSecret.length,
+        message: credCheck.message,
+      });
+    }
+
     logFalco("info", "request_start", { caller, environment, endpoint, base_url: baseUrl, method: "GET" });
     const startedAt = Date.now();
     let httpStatus = 0;

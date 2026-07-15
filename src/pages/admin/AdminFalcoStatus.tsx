@@ -173,6 +173,64 @@ export default function AdminFalcoStatus() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
+                <KeyRound className="h-5 w-5" />
+                Format attendu des secrets Falco
+              </CardTitle>
+              <CardDescription>
+                Vérifiez le format avant de coller la valeur dans « Secrets ». Un mauvais format entraîne un <code className="text-xs">401 Unauthorized</code> côté Falco.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              <div className="space-y-1">
+                <div className="font-medium font-mono">FALCO_API_KEY</div>
+                <div className="text-muted-foreground">
+                  Format : <code className="text-xs bg-muted px-1.5 py-0.5 rounded">sk_&lt;env&gt;_&lt;id&gt;_&lt;secret&gt;</code>
+                  {" "}où <code className="text-xs">&lt;env&gt;</code> vaut <code className="text-xs">live</code> ou <code className="text-xs">test</code>.
+                </div>
+                <div className="text-xs">
+                  Exemple générique :{" "}
+                  <code className="bg-muted px-1.5 py-0.5 rounded">sk_live_abc123_XXXXXXXXXXXXXXXX</code>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  À copier depuis le dashboard Falco (Settings → API keys). Ne collez ni un libellé d'UI, ni un jeton d'un autre service.
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <div className="font-medium font-mono">FALCO_APP_SECRET</div>
+                <div className="text-muted-foreground">
+                  Format : commence par <code className="text-xs bg-muted px-1.5 py-0.5 rounded">app_</code> suivi de caractères alphanumériques.
+                </div>
+                <div className="text-xs">
+                  Exemple générique : <code className="bg-muted px-1.5 py-0.5 rounded">app_XXXXXXXXXXXX</code>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <div className="font-medium font-mono">FALCO_BASE_URL <span className="text-xs font-normal text-muted-foreground">(optionnel)</span></div>
+                <div className="text-xs text-muted-foreground">
+                  Production : <code className="bg-muted px-1.5 py-0.5 rounded">https://api.falco-app.be/v1</code> ·
+                  Sandbox : <code className="bg-muted px-1.5 py-0.5 rounded">https://api.sandbox.falco-app.be/v1</code>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t">
+                <Button onClick={runTest} disabled={testing} size="sm" className="gap-2">
+                  <RefreshCw className={`h-4 w-4 ${testing ? "animate-spin" : ""}`} />
+                  {testing ? "Test en cours…" : "Relancer le test de connexion"}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Le résultat s'affiche dans la carte « Test de connexion Falco » ci-dessous.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
                 <PlugZap className="h-5 w-5" />
                 Test de connexion Falco
               </CardTitle>

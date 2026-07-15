@@ -108,6 +108,41 @@ export function isFalcoConfigured(): boolean {
   return Boolean(appSecret && apiKey);
 }
 
+/**
+ * Falco API key must match `sk_{env}_{id}_{secret}` where env is `live` or `test`.
+ * App secret must start with `app_`. Returns null when valid, or an error code
+ * suitable for logging / returning to the caller (never leaks the secret).
+ */
+export const FALCO_API_KEY_PATTERN = /^sk_(live|test)_[A-Za-z0-9]+_[A-Za-z0-9]+$/;
+export const FALCO_APP_SECRET_PATTERN = /^app_[A-Za-z0-9]+$/;
+
+export function validateFalcoCredentials(
+  apiKey: string,
+  appSecret: string,
+): { ok: true } | { ok: false; code: string; message: string } {
+  if (!apiKey) {
+    return { ok: false, code: "api_key_missing", message: "FALCO_API_KEY is not set." };
+  }
+  if (!FALCO_API_KEY_PATTERN.test(apiKey)) {
+    return {
+      ok: false,
+      code: "api_key_format_invalid",
+      message: "FALCO_API_KEY format invalid (expected sk_{env}_{id}_{secret}).",
+    };
+  }
+  if (!appSecret) {
+    return { ok: false, code: "app_secret_missing", message: "FALCO_APP_SECRET is not set." };
+  }
+  if (!FALCO_APP_SECRET_PATTERN.test(appSecret)) {
+    return {
+      ok: false,
+      code: "app_secret_format_invalid",
+      message: "FALCO_APP_SECRET format invalid (expected app_...).",
+    };
+  }
+  return { ok: true };
+}
+
 /** One structured log line — safe to grep in Supabase edge-function logs. */
 export function logFalco(level: "info" | "warn" | "error", event: string, data: Record<string, unknown> = {}) {
   const line = JSON.stringify({ tag: "falco", level, event, ts: new Date().toISOString(), ...data });
@@ -143,6 +178,26 @@ export async function submitInvoiceToFalco(
       peppol_error: "falco_credentials_missing",
     };
   }
+
+  const credCheck = validateFalcoCredentials(apiKey, appSecret);
+  if (!credCheck.ok) {
+    logFalco("error", "credentials_invalid_format", {
+      caller,
+      invoice_id: invoiceId,
+      invoice_number: metadata.number,
+      code: credCheck.code,
+      api_key_length: apiKey.length,
+      app_secret_length: appSecret.length,
+      environment,
+    });
+    return {
+      ok: false,
+      http_status: 0,
+      peppol_status: "failed",
+      peppol_error: `falco_${credCheck.code}`,
+    };
+  }
+
 
   const form = new FormData();
   form.append(

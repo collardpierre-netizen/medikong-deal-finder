@@ -4,7 +4,7 @@
 // a structured result — NEVER the secret values themselves.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
-import { logFalco, getFalcoConfig } from "../_shared/falco-peppol.ts";
+import { logFalco, getFalcoConfig, validateFalcoCredentials } from "../_shared/falco-peppol.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -67,6 +67,26 @@ Deno.serve(async (req) => {
         environment,
         base_url: baseUrl,
         message: `Secret(s) manquant(s) : ${missing.join(", ")}.`,
+      });
+    }
+
+    const credCheck = validateFalcoCredentials(apiKey, appSecret);
+    if (!credCheck.ok) {
+      logFalco("error", "credentials_invalid_format", {
+        caller,
+        environment,
+        code: credCheck.code,
+        api_key_length: apiKey.length,
+        app_secret_length: appSecret.length,
+      });
+      return json(200, {
+        ok: false,
+        reason: credCheck.code,
+        environment,
+        base_url: baseUrl,
+        api_key_length: apiKey.length,
+        app_secret_length: appSecret.length,
+        message: credCheck.message,
       });
     }
 

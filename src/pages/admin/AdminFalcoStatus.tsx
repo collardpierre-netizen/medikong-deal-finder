@@ -35,6 +35,8 @@ type TestResult = {
   missing_secrets?: string[];
   reason?: string;
   checked_at?: string;
+  response_body?: string;
+  response_headers?: Record<string, string>;
 };
 
 export default function AdminFalcoStatus() {

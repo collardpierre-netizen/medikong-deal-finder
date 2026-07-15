@@ -195,29 +195,7 @@ const AdminFinances = () => {
       )}
 
       {activeTab === "payouts" && (
-        <div className="rounded-[10px] overflow-x-auto" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
-          <table className="w-full text-left">
-            <thead>
-              <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                {["Vendeur", "Commission", "Tier", "Statut"].map((h) => (
-                  <th key={h} className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {vendors.filter(v => v.is_active).map((v) => (
-                <tr key={v.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
-                  <td className="px-4 py-3 text-[13px] font-semibold" style={{ color: "#1B5BDA" }}>{v.company_name || v.name}</td>
-                  <td className="px-4 py-3 text-[12px] font-mono" style={{ color: "#616B7C" }}>{v.commission_rate}%</td>
-                  <td className="px-4 py-3 text-[12px]" style={{ color: "#616B7C" }}>{v.type}</td>
-                  <td className="px-4 py-3">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#ECFDF5", color: "#059669" }}>Actif</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <VendorStatementsPanel vendors={vendors.filter((v: any) => v.is_active && v.type === "real")} />
       )}
     </div>
   );

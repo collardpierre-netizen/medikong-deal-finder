@@ -136,6 +136,26 @@ Deno.serve(async (req) => {
       invoice_ids: (data || []).map((r: any) => r.id),
     });
 
+    // Admin notification on rejected/failed statuses.
+    if ((mapped === "rejected" || mapped === "failed") && matched > 0) {
+      const rows = (data || []) as Array<{ id: string; invoice_number: string }>;
+      const severity = mapped === "rejected" ? "error" : "warning";
+      const notifications = rows.map((r) => ({
+        type: "peppol_status",
+        severity,
+        title: `Facture ${r.invoice_number} ${mapped === "rejected" ? "rejetée" : "en échec"} par Peppol`,
+        body: error ? String(error).slice(0, 500) : `Statut Peppol: ${mapped}`,
+        cta_url: "/admin/finances?tab=invoices",
+        payload: { invoice_id: r.id, invoice_number: r.invoice_number, peppol_document_id: document_id, peppol_status: mapped, peppol_error: error || null },
+        source_type: "order_invoice",
+        source_id: r.id,
+      }));
+      const { error: notifErr } = await supabase.from("admin_notifications").insert(notifications);
+      if (notifErr) {
+        logFalco("warn", "webhook_notification_insert_failed", { error: notifErr.message, count: notifications.length });
+      }
+    }
+
     return json(200, {
       ok: true,
       matched,

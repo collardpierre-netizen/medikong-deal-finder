@@ -104,7 +104,7 @@ export function Navbar() {
           <button
             onClick={toggleTVAC}
             className="flex items-center gap-1 text-[11px] font-semibold rounded-full px-2.5 py-1.5 border border-border hover:bg-muted transition-colors"
-            title="Basculer entre prix HTVA et TTC"
+            title={t("nav.priceToggleTitle")}
           >
             <span className={isTVAC ? "text-muted-foreground" : "text-primary font-bold"}>HTVA</span>
             <span className="text-muted-foreground">/</span>

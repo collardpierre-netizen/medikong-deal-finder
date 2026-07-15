@@ -1372,6 +1372,11 @@ function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boole
   };
 
   const handleSave = async () => {
+    // Peppol validation: if entered, must match BE format (avoids garbage in DB)
+    if (form.peppol_id.trim() && !isValidBePeppolId(form.peppol_id)) {
+      toast.error("Format Peppol invalide", { description: "Attendu : 0208:BE + 10 chiffres." });
+      return;
+    }
     setSaving(true);
     try {
       const { error } = await supabase.from("vendors").update({

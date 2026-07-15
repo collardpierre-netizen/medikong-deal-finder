@@ -14,19 +14,21 @@ import logoHorizontal from "@/assets/logo-medikong.png";
 import { useIsResellerPro } from "@/hooks/useCurrentBuyerProfile";
 
 function ResellerNavLink() {
+  const { t } = useTranslation();
   const { isReseller } = useIsResellerPro();
   if (!isReseller) return null;
   return (
     <Link
       to="/pro"
       className="flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full hover:bg-primary/20 transition-colors"
-      title="Catalogue B2B revendeur"
+      title={t("nav.resellerCatalogTitle")}
     >
       <Lock size={12} />
-      <span>Espace revendeur</span>
+      <span>{t("nav.resellerSpace")}</span>
     </Link>
   );
 }
+
 
 export function Navbar() {
   const { t } = useTranslation();

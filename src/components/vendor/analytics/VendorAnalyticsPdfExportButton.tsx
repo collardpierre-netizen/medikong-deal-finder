@@ -7,10 +7,12 @@ import {
   useVendorAnalyticsByCountry,
   useVendorAnalyticsTopCustomers,
   useVendorAnalyticsTopProducts,
+  computeRange,
   type AnalyticsPeriod,
 } from "@/hooks/useVendorAnalytics";
 import { useVendorAnalyticsRecurrence } from "@/hooks/useVendorAnalyticsRecurrence";
-import { generateVendorAnalyticsPdf } from "@/lib/vendor-analytics-pdf";
+import { supabase } from "@/integrations/supabase/client";
+import { generateVendorAnalyticsPdf, type GeoPoint } from "@/lib/vendor-analytics-pdf";
 
 interface Props {
   vendorName: string;
@@ -20,9 +22,58 @@ interface Props {
 }
 
 /**
- * Fetches every analytics dataset (in background) then produces a MediKong-branded PDF.
- * All hooks are always mounted so data is warm when the button is clicked.
+ * Resolve geocoded points for the customer-location dataset used by CustomerMap.
+ * Reuses the `geocode-locations` edge function (server-side cache).
  */
+async function fetchGeoPoints(vendorId: string, period: AnalyticsPeriod): Promise<GeoPoint[]> {
+  const { from, to } = computeRange(period);
+  const { data: locData, error: locErr } = await (supabase.rpc as any)(
+    "vendor_analytics_customer_locations",
+    { _from: from, _to: to, _vendor_id: vendorId, _product_id: null }
+  );
+  if (locErr) throw locErr;
+  const rows: Array<{
+    country_code: string; postal_code: string; city: string;
+    customers_count: number; orders_count: number; ca_htva_cents: number;
+  }> = (locData ?? []).filter((r: any) => r.postal_code !== "-" || r.city !== "-");
+  if (rows.length === 0) return [];
+
+  const locations = rows.map((r) => ({
+    country_code: r.country_code,
+    postal_code: r.postal_code,
+    city: r.city,
+  }));
+
+  const geoByKey = new Map<string, { lat: number; lng: number }>();
+  // Poll the edge function until no more pending geocodes (bounded).
+  for (let i = 0; i < 20; i++) {
+    const { data, error } = await supabase.functions.invoke("geocode-locations", { body: { locations } });
+    if (error) break;
+    const results: Array<{ key: string; lat: number; lng: number }> = data?.results ?? [];
+    for (const r of results) geoByKey.set(r.key, { lat: r.lat, lng: r.lng });
+    const pending: number = data?.pending ?? 0;
+    if (!pending) break;
+  }
+
+  const out: GeoPoint[] = [];
+  for (const r of rows) {
+    const key = `${r.country_code}|${r.postal_code}|${r.city}`;
+    const g = geoByKey.get(key);
+    if (!g) continue;
+    out.push({
+      lat: g.lat,
+      lng: g.lng,
+      city: r.city,
+      postal_code: r.postal_code,
+      country_code: r.country_code,
+      ca_htva_cents: Number(r.ca_htva_cents) || 0,
+      orders_count: Number(r.orders_count) || 0,
+      customers_count: Number(r.customers_count) || 0,
+    });
+  }
+  return out;
+}
+
 export function VendorAnalyticsPdfExportButton({ vendorName, vendorId, period, periodLabel }: Props) {
   const [busy, setBusy] = useState(false);
   const kpis = useVendorAnalyticsKpis(period);
@@ -43,8 +94,8 @@ export function VendorAnalyticsPdfExportButton({ vendorName, vendorId, period, p
       return;
     }
     setBusy(true);
+    const loadingId = toast.loading("Génération du PDF en cours…");
     try {
-      // Ensure fresh data (best-effort refetch of anything stale).
       await Promise.all([
         kpis.data ? null : kpis.refetch(),
         byType.data ? null : byType.refetch(),
@@ -54,7 +105,15 @@ export function VendorAnalyticsPdfExportButton({ vendorName, vendorId, period, p
         recurrence.data ? null : recurrence.refetch(),
       ]);
 
-      generateVendorAnalyticsPdf({
+      let geoPoints: GeoPoint[] = [];
+      try {
+        geoPoints = await fetchGeoPoints(vendorId, period);
+      } catch {
+        // Coverage map is optional — carry on without it.
+        geoPoints = [];
+      }
+
+      await generateVendorAnalyticsPdf({
         vendorName,
         period,
         periodLabel,
@@ -64,11 +123,12 @@ export function VendorAnalyticsPdfExportButton({ vendorName, vendorId, period, p
         topCustomers: (topCustomers.data as any) ?? [],
         topProducts: (topProducts.data as any) ?? [],
         recurrence: (recurrence.data as any) ?? null,
+        geoPoints,
       });
-      toast.success("Export PDF généré");
+      toast.success("Export PDF généré", { id: loadingId });
     } catch (err) {
       const msg = (err as { message?: string })?.message ?? String(err);
-      toast.error(`Échec de l'export PDF : ${msg}`);
+      toast.error(`Échec de l'export PDF : ${msg}`, { id: loadingId });
     } finally {
       setBusy(false);
     }

@@ -8,6 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Copy, ExternalLink, Loader2, RefreshCw, Sparkles, SlidersHorizontal } from "lucide-react";
 import { formatUpdatedAt } from "@/lib/format-date";
 import AdminVendorMovMoqModal from "@/components/admin/AdminVendorMovMoqModal";
+import { VendorPeppolBadge } from "@/components/admin/VendorPeppolBadge";
+import { isBelgianVendor } from "@/lib/peppol";
 
 type StripeStatus = "none" | "pending" | "active";
 

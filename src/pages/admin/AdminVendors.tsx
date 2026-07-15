@@ -218,6 +218,9 @@ const AdminVendors = () => {
                   </TableCell>
                   <TableCell><StatusBadge status={st} /></TableCell>
                   <TableCell>
+                    <VendorPeppolBadge peppolId={v.peppol_id} isBelgian={isBelgianVendor(v.country_code)} />
+                  </TableCell>
+                  <TableCell>
                     {(() => {
                       const vmi = vmiByVendor[v.id];
                       const status = vmi?.status ?? "none";

@@ -445,8 +445,9 @@ const AdminCommandeDetail = () => {
                 <div className="text-[11px] uppercase text-slate-400 font-semibold mb-1">Paiement</div>
                 <div className="font-medium">{order.payment_method ?? "—"}</div>
                 <div className="text-xs text-slate-500">Statut paiement : {order.payment_status ?? "—"}</div>
-                <div className="mt-1">
+                <div className="mt-1 flex flex-wrap items-center gap-1.5">
                   <StripePaymentStatusBadge order={order as any} />
+                  <OrderSourceBadge source={(order as any).source ?? null} />
                 </div>
                 {order.payment_due_date && <div className="text-xs text-slate-500">Échéance : {new Date(order.payment_due_date).toLocaleDateString("fr-BE")}</div>}
               </div>

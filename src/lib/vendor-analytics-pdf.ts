@@ -704,8 +704,8 @@ export async function generateVendorAnalyticsPdf(payload: VendorAnalyticsPdfPayl
 
   // Top produits
   if (payload.topProducts.length > 0) {
-    if (y > 220) { doc.addPage(); drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName); y = 50; }
-    y = sectionTitle(doc, y, "Top produits", fontName, `${payload.topProducts.length} entrées`);
+    if (y > 220) { doc.addPage(); drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName, titleFont); y = 50; }
+    y = sectionTitle(doc, y, "Top produits", fontName, titleFont, `${payload.topProducts.length} entrées`);
     autoTable(doc, {
       startY: y,
       head: [["#", "Produit", "Unités", "CA HTVA", "Marge", "Commission"]],

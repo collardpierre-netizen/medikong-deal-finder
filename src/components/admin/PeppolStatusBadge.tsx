@@ -1,6 +1,6 @@
-import { CheckCircle2, Clock, XCircle, AlertTriangle, MinusCircle } from "lucide-react";
+import { CheckCircle2, Clock, XCircle, AlertTriangle, MinusCircle, ShieldAlert } from "lucide-react";
 
-type PeppolStatus = "sent" | "submitted" | "failed" | "rejected" | null | undefined;
+type PeppolStatus = "sent" | "submitted" | "failed" | "rejected" | "blocked_missing_id" | null | undefined;
 
 interface Props {
   status: PeppolStatus;
@@ -10,6 +10,17 @@ interface Props {
 
 /** Peppol dispatch status pill, updated in real-time via Falco webhook. */
 const PeppolStatusBadge = ({ status, error, retryCount }: Props) => {
+  if (status === "blocked_missing_id") {
+    return (
+      <span
+        className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold"
+        style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}
+        title="Peppol ID manquant pour ce vendeur — compléter sa fiche."
+      >
+        <ShieldAlert size={10} /> ⚠️ Peppol ID manquant
+      </span>
+    );
+  }
   const map: Record<string, { label: string; bg: string; color: string; Icon: any }> = {
     sent:      { label: "Peppol envoyé",   bg: "#ECFDF5", color: "#059669", Icon: CheckCircle2 },
     submitted: { label: "Peppol en cours", bg: "#FFFBEB", color: "#B45309", Icon: Clock },
@@ -46,3 +57,4 @@ const PeppolStatusBadge = ({ status, error, retryCount }: Props) => {
 };
 
 export default PeppolStatusBadge;
+

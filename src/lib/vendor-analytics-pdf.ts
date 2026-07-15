@@ -2,7 +2,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { fmtEur } from "@/lib/format-currency";
 import type { AnalyticsPeriod } from "@/hooks/useVendorAnalytics";
-import logoUrl from "@/assets/medikong-logo.png";
+import logoUrl from "@/assets/logo-medikong.png";
 
 // MediKong brand tokens (mirrors mem://style/*).
 const BRAND_BLUE: [number, number, number] = [27, 91, 218]; // #1B5BDA
@@ -131,8 +131,9 @@ function stripDataUrl(dataUrl: string): string {
   return i >= 0 ? dataUrl.slice(i + 1) : dataUrl;
 }
 
-// Module-level cache for the DM Sans TTF (fetched once per session).
+// Module-level cache for DM Sans + Bricolage Grotesque TTFs (fetched once per session).
 let dmSansCache: { regular: string; bold: string } | null = null;
+let bricolageCache: { bold: string } | null = null;
 
 /**
  * Fetch DM Sans (regular + bold) from a stable CDN and cache the base64 payload.
@@ -152,6 +153,28 @@ async function loadDmSans(): Promise<{ regular: string; bold: string } | null> {
   }
 }
 
+/**
+ * Fetch Bricolage Grotesque Bold — used for titles to mirror the MediKong site
+ * (mem://style: titres en Bricolage Grotesque). Best-effort with fallback.
+ */
+async function loadBricolage(): Promise<{ bold: string } | null> {
+  if (bricolageCache) return bricolageCache;
+  const urls = [
+    "https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/bricolagegrotesque/static/BricolageGrotesque_24pt-Bold.ttf",
+    "https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/bricolagegrotesque/static/BricolageGrotesque-Bold.ttf",
+  ];
+  for (const u of urls) {
+    try {
+      const b = await urlToDataUrl(u);
+      bricolageCache = { bold: stripDataUrl(b) };
+      return bricolageCache;
+    } catch {
+      /* try next */
+    }
+  }
+  return null;
+}
+
 /** Register DM Sans in a jsPDF document if it has been loaded, else no-op. */
 function registerDmSans(doc: jsPDF, font: { regular: string; bold: string } | null): string {
   if (!font) return "helvetica";
@@ -162,7 +185,22 @@ function registerDmSans(doc: jsPDF, font: { regular: string; bold: string } | nu
   return "DMSans";
 }
 
-function drawHeader(doc: jsPDF, vendorName: string, periodLabel: string, logoDataUrl: string | null, fontName: string) {
+/** Register Bricolage Grotesque Bold for titles. Returns the family name or a fallback. */
+function registerBricolage(doc: jsPDF, font: { bold: string } | null, fallback: string): string {
+  if (!font) return fallback;
+  doc.addFileToVFS("BricolageGrotesque-Bold.ttf", font.bold);
+  doc.addFont("BricolageGrotesque-Bold.ttf", "Bricolage", "bold");
+  return "Bricolage";
+}
+
+function drawHeader(
+  doc: jsPDF,
+  vendorName: string,
+  periodLabel: string,
+  logoDataUrl: string | null,
+  fontName: string,
+  titleFont: string
+) {
   const w = doc.internal.pageSize.getWidth();
   // Blue banner
   doc.setFillColor(...BRAND_BLUE);
@@ -171,18 +209,18 @@ function drawHeader(doc: jsPDF, vendorName: string, periodLabel: string, logoDat
   // Logo (left) — falls back to wordmark if the image failed to load.
   if (logoDataUrl) {
     try {
-      // Draw on a slightly lighter panel so the logo pops on the blue banner.
+      // White panel so the horizontal logo pops on the blue banner.
       doc.setFillColor(255, 255, 255);
-      doc.roundedRect(10, 5, 44, 16, 2, 2, "F");
-      doc.addImage(logoDataUrl, "PNG", 12, 6, 40, 14, undefined, "FAST");
+      doc.roundedRect(10, 5, 56, 16, 2, 2, "F");
+      doc.addImage(logoDataUrl, "PNG", 12, 7, 52, 12, undefined, "FAST");
     } catch {
-      doc.setFont(fontName, "bold");
+      doc.setFont(titleFont, "bold");
       doc.setFontSize(18);
       doc.setTextColor(255, 255, 255);
       doc.text("MediKong", 14, 17);
     }
   } else {
-    doc.setFont(fontName, "bold");
+    doc.setFont(titleFont, "bold");
     doc.setFontSize(18);
     doc.setTextColor(255, 255, 255);
     doc.text("MediKong", 14, 17);
@@ -206,8 +244,8 @@ function drawHeader(doc: jsPDF, vendorName: string, periodLabel: string, logoDat
   doc.rect(0, 26, w, 16, "F");
   doc.setDrawColor(...BORDER);
   doc.line(0, 42, w, 42);
-  doc.setFont(fontName, "bold");
-  doc.setFontSize(12);
+  doc.setFont(titleFont, "bold");
+  doc.setFontSize(13);
   doc.setTextColor(...NAVY);
   doc.text(vendorName || "Vendeur", 14, 36);
   doc.setFont(fontName, "normal");
@@ -232,21 +270,21 @@ function drawFooter(doc: jsPDF, fontName: string) {
   }
 }
 
-function sectionTitle(doc: jsPDF, y: number, title: string, fontName: string, subtitle?: string): number {
+function sectionTitle(doc: jsPDF, y: number, title: string, fontName: string, titleFont: string, subtitle?: string): number {
   const w = doc.internal.pageSize.getWidth();
   doc.setFillColor(...BRAND_BLUE);
-  doc.rect(14, y, 3, 6, "F");
-  doc.setFont(fontName, "bold");
-  doc.setFontSize(12);
+  doc.rect(14, y, 3, 7, "F");
+  doc.setFont(titleFont, "bold");
+  doc.setFontSize(13);
   doc.setTextColor(...NAVY);
-  doc.text(title, 20, y + 5);
+  doc.text(title, 20, y + 5.5);
   if (subtitle) {
     doc.setFont(fontName, "normal");
     doc.setFontSize(9);
     doc.setTextColor(...MUTED);
-    doc.text(subtitle, w - 14, y + 5, { align: "right" });
+    doc.text(subtitle, w - 14, y + 5.5, { align: "right" });
   }
-  return y + 10;
+  return y + 11;
 }
 
 function drawKpiGrid(
@@ -298,28 +336,169 @@ function drawKpiGrid(
   return y + Math.ceil(items.length / cols) * (cellH + gap);
 }
 
+// Country outlines cache (MediKong operating footprint: BE / LU / FR / NL / DE).
+type CountryCode = "BE" | "FR" | "LU" | "NL" | "DE";
+const COUNTRY_TO_ISO3: Record<CountryCode, string> = { BE: "BEL", FR: "FRA", LU: "LUX", NL: "NLD", DE: "DEU" };
+type Ring = Array<[number, number]>; // [lng, lat]
+const countryOutlineCache: Record<string, Ring[]> = {};
+
+async function loadCountryOutline(iso3: string): Promise<Ring[]> {
+  if (countryOutlineCache[iso3]) return countryOutlineCache[iso3];
+  try {
+    const res = await fetch(
+      `https://cdn.jsdelivr.net/gh/johan/world.geo.json@master/countries/${iso3}.geo.json`
+    );
+    if (!res.ok) throw new Error(String(res.status));
+    const json = await res.json();
+    const rings: Ring[] = [];
+    const feat = json?.features?.[0] ?? json;
+    const geom = feat?.geometry ?? feat;
+    const coords = geom?.coordinates;
+    if (geom?.type === "Polygon" && Array.isArray(coords)) {
+      // First ring only (outer boundary).
+      if (Array.isArray(coords[0])) rings.push(coords[0] as Ring);
+    } else if (geom?.type === "MultiPolygon" && Array.isArray(coords)) {
+      for (const poly of coords) if (Array.isArray(poly?.[0])) rings.push(poly[0] as Ring);
+    }
+    countryOutlineCache[iso3] = rings;
+    return rings;
+  } catch {
+    countryOutlineCache[iso3] = [];
+    return [];
+  }
+}
+
 /**
- * Draw a schematic scatter map of geocoded customer points using the same
- * tertile color coding as CustomerMap.tsx (green/orange/red on CA).
- * Uses an equirectangular projection scaled to a fixed canvas box.
+ * Preload outlines for the countries actually present in the dataset
+ * (fallback to BE so the map is never empty). Called from generateVendorAnalyticsPdf.
  */
-function drawCoverageMap(doc: jsPDF, y: number, points: GeoPoint[], fontName: string): number {
+async function preloadCountryOutlines(points: GeoPoint[]): Promise<Record<CountryCode, Ring[]>> {
+  const present = new Set<CountryCode>();
+  for (const p of points) {
+    const cc = (p.country_code || "").toUpperCase();
+    if (cc in COUNTRY_TO_ISO3) present.add(cc as CountryCode);
+  }
+  if (present.size === 0) present.add("BE");
+  // Always include neighbours of BE for geographic context.
+  present.add("BE");
+  present.add("FR");
+  present.add("NL");
+  present.add("LU");
+  const codes = Array.from(present);
+  const rings = await Promise.all(codes.map((cc) => loadCountryOutline(COUNTRY_TO_ISO3[cc])));
+  const out = {} as Record<CountryCode, Ring[]>;
+  codes.forEach((cc, i) => (out[cc] = rings[i]));
+  return out;
+}
+
+/**
+ * Draw a coverage map with country outlines (BE/LU/FR/NL/DE) as background
+ * and geocoded customer points colour-coded by CA tertile.
+ */
+function drawCoverageMap(
+  doc: jsPDF,
+  y: number,
+  points: GeoPoint[],
+  outlines: Record<CountryCode, Ring[]>,
+  fontName: string
+): number {
   const w = doc.internal.pageSize.getWidth();
   const margin = 14;
   const boxW = w - margin * 2;
-  const boxH = 90;
+  const boxH = 110;
 
   // Frame
   doc.setDrawColor(...BORDER);
-  doc.setFillColor(248, 250, 252);
+  doc.setFillColor(238, 244, 253); // soft "sea" background
   doc.roundedRect(margin, y, boxW, boxH, 2, 2, "FD");
+
+  // Compute bounding box: union of loaded country outlines + points (padded).
+  let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+  const includePt = (lng: number, lat: number) => {
+    if (lat < minLat) minLat = lat;
+    if (lat > maxLat) maxLat = lat;
+    if (lng < minLng) minLng = lng;
+    if (lng > maxLng) maxLng = lng;
+  };
+  for (const cc of Object.keys(outlines) as CountryCode[]) {
+    for (const ring of outlines[cc]) for (const [lng, lat] of ring) includePt(lng, lat);
+  }
+  for (const p of points) includePt(p.lng, p.lat);
+  if (!isFinite(minLat)) {
+    // No outlines and no points — fallback to BENELUX box.
+    minLat = 49; maxLat = 54; minLng = 2; maxLng = 8;
+  }
+  const spanLat = Math.max(0.5, maxLat - minLat);
+  const spanLng = Math.max(0.5, maxLng - minLng);
+  const padLat = spanLat * 0.05;
+  const padLng = spanLng * 0.05;
+  const lat0 = minLat - padLat;
+  const lat1 = maxLat + padLat;
+  const lng0 = minLng - padLng;
+  const lng1 = maxLng + padLng;
+
+  // Preserve aspect ratio inside the frame.
+  const dataAspect = (lng1 - lng0) / (lat1 - lat0);
+  const boxAspect = (boxW - 6) / (boxH - 6);
+  let drawW = boxW - 6;
+  let drawH = boxH - 6;
+  if (dataAspect > boxAspect) drawH = drawW / dataAspect;
+  else drawW = drawH * dataAspect;
+  const ox = margin + (boxW - drawW) / 2;
+  const oy = y + (boxH - drawH) / 2;
+
+  const project = (lng: number, lat: number): [number, number] => [
+    ox + ((lng - lng0) / (lng1 - lng0)) * drawW,
+    oy + (1 - (lat - lat0) / (lat1 - lat0)) * drawH,
+  ];
+
+  // Draw country outlines (filled land + border).
+  doc.setLineWidth(0.25);
+  doc.setDrawColor(148, 163, 184); // slate-400 borders
+  doc.setFillColor(255, 255, 255); // land
+  for (const cc of Object.keys(outlines) as CountryCode[]) {
+    for (const ring of outlines[cc]) {
+      if (ring.length < 3) continue;
+      const pts = ring.map(([lng, lat]) => project(lng, lat));
+      const [sx, sy] = pts[0];
+      const deltas: [number, number][] = [];
+      for (let i = 1; i < pts.length; i++) {
+        deltas.push([pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]]);
+      }
+      // Fill + stroke
+      (doc as unknown as { lines: (l: number[][], x: number, y: number, s: number[], style: string, closed: boolean) => void }).lines(
+        deltas as unknown as number[][],
+        sx,
+        sy,
+        [1, 1],
+        "FD",
+        true
+      );
+    }
+  }
+
+  // Country ISO labels at approx centroids.
+  doc.setFont(fontName, "bold");
+  doc.setFontSize(7);
+  doc.setTextColor(148, 163, 184);
+  for (const cc of Object.keys(outlines) as CountryCode[]) {
+    const rings = outlines[cc];
+    if (!rings.length) continue;
+    // Centroid of the first (main) ring.
+    const ring = rings[0];
+    let cx = 0, cy = 0;
+    for (const [lng, lat] of ring) { cx += lng; cy += lat; }
+    cx /= ring.length; cy /= ring.length;
+    const [px, py] = project(cx, cy);
+    doc.text(cc, px, py, { align: "center" });
+  }
 
   if (points.length === 0) {
     doc.setFont(fontName, "normal");
     doc.setFontSize(10);
     doc.setTextColor(...MUTED);
-    doc.text("Aucune localisation client géocodée sur la période.", margin + boxW / 2, y + boxH / 2, { align: "center" });
-    return y + boxH + 4;
+    doc.text("Aucune localisation client géocodée sur la période.", margin + boxW / 2, y + boxH / 2 + 6, { align: "center" });
+    return y + boxH + 6;
   }
 
   // Tertile thresholds on CA (same logic as CustomerMap.quantile)
@@ -335,72 +514,41 @@ function drawCoverageMap(doc: jsPDF, y: number, points: GeoPoint[], fontName: st
   const p66 = q(sortedCa, 2 / 3);
   const maxCa = Math.max(1, ...sortedCa);
 
-  // Bounding box with a bit of padding
-  const lats = points.map((p) => p.lat);
-  const lngs = points.map((p) => p.lng);
-  const minLat = Math.min(...lats);
-  const maxLat = Math.max(...lats);
-  const minLng = Math.min(...lngs);
-  const maxLng = Math.max(...lngs);
-  const spanLat = Math.max(0.5, maxLat - minLat);
-  const spanLng = Math.max(0.5, maxLng - minLng);
-  const padLat = spanLat * 0.1;
-  const padLng = spanLng * 0.1;
-  const lat0 = minLat - padLat;
-  const lat1 = maxLat + padLat;
-  const lng0 = minLng - padLng;
-  const lng1 = maxLng + padLng;
-
-  // Preserve aspect ratio: pad the shorter axis inside the box.
-  const dataAspect = (lng1 - lng0) / (lat1 - lat0);
-  const boxAspect = boxW / boxH;
-  let drawW = boxW - 6;
-  let drawH = boxH - 6;
-  if (dataAspect > boxAspect) drawH = drawW / dataAspect;
-  else drawW = drawH * dataAspect;
-  const ox = margin + (boxW - drawW) / 2;
-  const oy = y + (boxH - drawH) / 2;
-
-  // Faint inner rect delimiting the projection canvas.
-  doc.setDrawColor(230, 236, 244);
-  doc.setLineWidth(0.2);
-  doc.rect(ox, oy, drawW, drawH);
-
-  // Plot points
+  // Plot points on top of the outlines.
   for (const p of points) {
-    const px = ox + ((p.lng - lng0) / (lng1 - lng0)) * drawW;
-    const py = oy + (1 - (p.lat - lat0) / (lat1 - lat0)) * drawH;
+    const [px, py] = project(p.lng, p.lat);
     const tier: [number, number, number] =
       p.ca_htva_cents >= p66 ? TIER_HIGH : p.ca_htva_cents >= p33 ? TIER_MID : TIER_LOW;
-    const r = 0.8 + 2.4 * (p.ca_htva_cents / maxCa);
-    doc.setDrawColor(...tier);
+    const r = 1.1 + 2.6 * (p.ca_htva_cents / maxCa);
+    // White halo for readability against country fill.
+    doc.setFillColor(255, 255, 255);
+    doc.circle(px, py, r + 0.6, "F");
     doc.setFillColor(...tier);
+    doc.setDrawColor(...tier);
     doc.setLineWidth(0.2);
-    // Approximate a filled disk with a filled circle.
     doc.circle(px, py, r, "F");
-    // Halo
-    doc.setFillColor(tier[0], tier[1], tier[2]);
-    doc.setDrawColor(tier[0], tier[1], tier[2]);
   }
 
-  // Legend (bottom-right inside the box)
-  const legX = margin + boxW - 52;
-  const legY = y + boxH - 22;
+  // Legend (bottom-left inside the box)
+  const legW = 54;
+  const legH = 20;
+  const legX = margin + 4;
+  const legY = y + boxH - legH - 4;
   doc.setFillColor(255, 255, 255);
   doc.setDrawColor(...BORDER);
   doc.setLineWidth(0.2);
-  doc.roundedRect(legX, legY, 48, 18, 1.5, 1.5, "FD");
+  doc.roundedRect(legX, legY, legW, legH, 1.5, 1.5, "FD");
   doc.setFont(fontName, "bold");
   doc.setFontSize(6.5);
   doc.setTextColor(...SLATE);
   doc.text("COUVERTURE (CA)", legX + 2, legY + 3.5);
   const legendRow = (row: number, color: [number, number, number], label: string) => {
     doc.setFillColor(...color);
-    doc.circle(legX + 3.5, legY + 6.5 + row * 3.8, 1.1, "F");
+    doc.circle(legX + 3.5, legY + 7 + row * 4, 1.2, "F");
     doc.setFont(fontName, "normal");
     doc.setFontSize(7);
     doc.setTextColor(...NAVY);
-    doc.text(label, legX + 6, legY + 7.5 + row * 3.8);
+    doc.text(label, legX + 6, legY + 8 + row * 4);
   };
   legendRow(0, TIER_HIGH, `Forte (≥ ${fmtEur(p66 / 100)} €)`);
   legendRow(1, TIER_MID, "Moyenne");
@@ -413,10 +561,10 @@ function drawCoverageMap(doc: jsPDF, y: number, points: GeoPoint[], fontName: st
   doc.text(
     `${points.length} zones géocodées · taille des cercles ∝ CA HTVA · couleur par tertile de CA`,
     margin,
-    y + boxH + 4
+    y + boxH + 5
   );
 
-  return y + boxH + 8;
+  return y + boxH + 10;
 }
 
 const tableStylesBase = {
@@ -439,27 +587,30 @@ function tableStyles(fontName: string) {
 export async function generateVendorAnalyticsPdf(payload: VendorAnalyticsPdfPayload): Promise<void> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-  // Try to load the MediKong logo + DM Sans font in parallel; both are best-effort.
-  const [logoDataUrl, dmSans] = await Promise.all([
+  // Try to load the MediKong logo + DM Sans + Bricolage Grotesque in parallel; all best-effort.
+  const [logoDataUrl, dmSans, bricolage, outlines] = await Promise.all([
     urlToDataUrl(logoUrl).catch(() => null),
     loadDmSans(),
+    loadBricolage(),
+    preloadCountryOutlines(payload.geoPoints),
   ]);
   const fontName = registerDmSans(doc, dmSans);
+  const titleFont = registerBricolage(doc, bricolage, fontName);
   doc.setFont(fontName, "normal");
 
-  drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName);
+  drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName, titleFont);
 
   let y = 50;
 
   // KPIs
   if (payload.kpis) {
-    y = sectionTitle(doc, y, "Indicateurs clés", fontName, payload.periodLabel);
+    y = sectionTitle(doc, y, "Indicateurs clés", fontName, titleFont, payload.periodLabel);
     y = drawKpiGrid(doc, y, payload.kpis, fontName) + 6;
   }
 
   // Recurrence
   if (payload.recurrence) {
-    y = sectionTitle(doc, y, "Récurrence clients", fontName);
+    y = sectionTitle(doc, y, "Récurrence clients", fontName, titleFont);
     const r = payload.recurrence;
     const retention = r.total_customers ? Math.round((r.returning_customers / r.total_customers) * 100) : 0;
     autoTable(doc, {
@@ -478,8 +629,8 @@ export async function generateVendorAnalyticsPdf(payload: VendorAnalyticsPdfPayl
 
   // Typologie
   if (payload.byType.length > 0) {
-    if (y > 240) { doc.addPage(); drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName); y = 50; }
-    y = sectionTitle(doc, y, "Répartition par typologie de client", fontName);
+    if (y > 240) { doc.addPage(); drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName, titleFont); y = 50; }
+    y = sectionTitle(doc, y, "Répartition par typologie de client", fontName, titleFont);
     autoTable(doc, {
       startY: y,
       head: [["Profil", "CA HTVA", "Part", "Commandes"]],
@@ -497,8 +648,8 @@ export async function generateVendorAnalyticsPdf(payload: VendorAnalyticsPdfPayl
 
   // Pays
   if (payload.byCountry.length > 0) {
-    if (y > 240) { doc.addPage(); drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName); y = 50; }
-    y = sectionTitle(doc, y, "Répartition par pays", fontName);
+    if (y > 240) { doc.addPage(); drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName, titleFont); y = 50; }
+    y = sectionTitle(doc, y, "Répartition par pays", fontName, titleFont);
     autoTable(doc, {
       startY: y,
       head: [["Pays", "CA HTVA", "Part", "Commandes"]],
@@ -516,15 +667,15 @@ export async function generateVendorAnalyticsPdf(payload: VendorAnalyticsPdfPayl
 
   // Coverage map — new page dedicated to the scatter + legend.
   doc.addPage();
-  drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName);
+  drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName, titleFont);
   y = 50;
-  y = sectionTitle(doc, y, "Carte de couverture clients", fontName, `${payload.geoPoints.length} zones`);
-  y = drawCoverageMap(doc, y, payload.geoPoints, fontName);
+  y = sectionTitle(doc, y, "Carte de couverture clients", fontName, titleFont, `${payload.geoPoints.length} zones`);
+  y = drawCoverageMap(doc, y, payload.geoPoints, outlines, fontName);
 
   // Top clients
   if (payload.topCustomers.length > 0) {
-    if (y > 220) { doc.addPage(); drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName); y = 50; }
-    y = sectionTitle(doc, y, "Top clients", fontName, `${payload.topCustomers.length} entrées`);
+    if (y > 220) { doc.addPage(); drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName, titleFont); y = 50; }
+    y = sectionTitle(doc, y, "Top clients", fontName, titleFont, `${payload.topCustomers.length} entrées`);
     autoTable(doc, {
       startY: y,
       head: [["#", "Client", "Profil", "Localisation", "CA HTVA", "Part", "Cmd", "Dernière"]],
@@ -553,8 +704,8 @@ export async function generateVendorAnalyticsPdf(payload: VendorAnalyticsPdfPayl
 
   // Top produits
   if (payload.topProducts.length > 0) {
-    if (y > 220) { doc.addPage(); drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName); y = 50; }
-    y = sectionTitle(doc, y, "Top produits", fontName, `${payload.topProducts.length} entrées`);
+    if (y > 220) { doc.addPage(); drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName, titleFont); y = 50; }
+    y = sectionTitle(doc, y, "Top produits", fontName, titleFont, `${payload.topProducts.length} entrées`);
     autoTable(doc, {
       startY: y,
       head: [["#", "Produit", "Unités", "CA HTVA", "Marge", "Commission"]],

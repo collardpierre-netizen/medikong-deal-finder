@@ -649,23 +649,31 @@ export default function VendorAnalytics() {
             Outil d'analyse — KPIs, typologie, récurrence, carte et sell-out · <span className="font-medium">{rangeLabel}</span>
           </p>
         </div>
-        <div className="inline-flex rounded-[8px] border border-[#E2E8F0] bg-white p-0.5" role="tablist" aria-label="Période">
-          {PERIOD_OPTIONS.map((opt) => {
-            const active = opt.value === period;
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setPeriod(opt.value)}
-                className="px-3 py-1.5 text-[12px] font-medium rounded-[6px] transition-colors"
-                style={{ backgroundColor: active ? "#1B5BDA" : "transparent", color: active ? "#fff" : "#616B7C" }}
-              >
-                {opt.label}
-              </button>
-            );
-          })}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="inline-flex rounded-[8px] border border-[#E2E8F0] bg-white p-0.5" role="tablist" aria-label="Période">
+            {PERIOD_OPTIONS.map((opt) => {
+              const active = opt.value === period;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setPeriod(opt.value)}
+                  className="px-3 py-1.5 text-[12px] font-medium rounded-[6px] transition-colors"
+                  style={{ backgroundColor: active ? "#1B5BDA" : "transparent", color: active ? "#fff" : "#616B7C" }}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+          <VendorAnalyticsPdfExportButton
+            vendorName={vendor?.name || vendor?.company_name || "Vendeur"}
+            vendorId={vendor?.id ?? null}
+            period={period}
+            periodLabel={rangeLabel}
+          />
         </div>
       </div>
 

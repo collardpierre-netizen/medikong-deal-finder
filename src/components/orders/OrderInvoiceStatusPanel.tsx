@@ -342,6 +342,7 @@ export default function OrderInvoiceStatusPanel({ orderId, vendorId, defaultAmou
       {editingId && (
         <EditInvoiceDialog
           invoice={invoices.find((i) => i.id === editingId)!}
+          stripePaidCtx={stripePaidCtx}
           onClose={() => setEditingId(null)}
           onSaved={() => { setEditingId(null); refresh(); }}
         />

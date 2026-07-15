@@ -13,6 +13,7 @@ import {
   normalizeFalcoPeppolIdentifier,
   normalizeFalcoVatNumber,
   resolveFalcoPostalCode,
+  checkPeppolReceiverRegistered,
   type FalcoInvoiceMetadata,
   type FalcoLine,
   type FalcoTaxSubtotal,

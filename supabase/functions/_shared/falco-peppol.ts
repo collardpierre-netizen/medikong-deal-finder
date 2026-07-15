@@ -135,10 +135,7 @@ export function validateFalcoCredentials(
   if (!appSecret) {
     return { ok: false, code: "app_secret_missing", message: "FALCO_APP_SECRET is not set." };
   }
-  // Validation loose : Falco valide le format exact côté serveur. On vérifie
-  // juste la présence du préfixe `as_` et une longueur minimale plausible.
-  const trimmed = appSecret.trim();
-  if (!trimmed.startsWith("as_") || trimmed.length <= 10) {
+  if (!isValidAppSecret(appSecret)) {
     return {
       ok: false,
       code: "app_secret_format_invalid",

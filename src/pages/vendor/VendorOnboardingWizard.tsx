@@ -371,6 +371,34 @@ export default function VendorOnboardingWizard() {
                   />
                 </div>
               </div>
+
+              {/* Peppol ID — required for Belgian companies */}
+              {isBECompany && (
+                <div className="space-y-1.5 rounded-lg border border-primary/30 bg-primary/5 p-4">
+                  <Label className="text-sm font-semibold text-foreground">
+                    Identifiant Peppol <span className="text-destructive">*</span>
+                    <span className="ml-1 text-xs font-normal text-muted-foreground">(obligatoire pour les entreprises belges)</span>
+                  </Label>
+                  <Input
+                    value={company.peppol_id}
+                    onChange={(e) => setCompany({ ...company, peppol_id: e.target.value })}
+                    placeholder={PEPPOL_BE_EXAMPLE}
+                    aria-invalid={!!company.peppol_id && !peppolValid}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Format&nbsp;: <span className="font-mono">0208:BEXXXXXXXXXXX</span> (votre n° TVA sans points ni tirets précédé de « 0208: »)<br />
+                    Exemple&nbsp;: <span className="font-mono">{PEPPOL_BE_EXAMPLE}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground italic">
+                    ℹ️ Votre comptable ou logiciel de facturation peut vous fournir cet identifiant.
+                  </p>
+                  {!!company.peppol_id && !peppolValid && (
+                    <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" /> Format invalide — vérifiez avec votre comptable.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

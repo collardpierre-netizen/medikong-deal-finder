@@ -177,7 +177,7 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={handleSignOut}
-                aria-label={t("common.signOut", "Se déconnecter")}
+                aria-label={t("common.signOut")}
                 className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
               >
                 <LogOut size={16} aria-hidden="true" />

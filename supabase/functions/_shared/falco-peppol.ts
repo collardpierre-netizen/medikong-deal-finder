@@ -134,11 +134,14 @@ export function validateFalcoCredentials(
   if (!appSecret) {
     return { ok: false, code: "app_secret_missing", message: "FALCO_APP_SECRET is not set." };
   }
-  if (!FALCO_APP_SECRET_PATTERN.test(appSecret)) {
+  // Validation loose : Falco valide le format exact côté serveur. On vérifie
+  // juste la présence du préfixe `as_` et une longueur minimale plausible.
+  const trimmed = appSecret.trim();
+  if (!trimmed.startsWith("as_") || trimmed.length <= 10) {
     return {
       ok: false,
       code: "app_secret_format_invalid",
-      message: "FALCO_APP_SECRET format invalid (expected as_{env}_{id}_{secret}).",
+      message: "FALCO_APP_SECRET doit commencer par 'as_' et être suffisamment long.",
     };
   }
   return { ok: true };

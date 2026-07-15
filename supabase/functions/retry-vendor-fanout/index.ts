@@ -1,15 +1,25 @@
 // Cron job : rejoue notify-vendors-new-order pour les commandes payées
 // qui n'ont aucun sub_order (webhook Stripe manqué ou fan-out échoué).
 // Scanne les 7 derniers jours ; idempotent côté fanout_order_to_vendors + email.
+// Auth: pg_cron (x-cron-secret), service role, ou admin uniquement.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { requireCronOrService } from "../_shared/cron-or-admin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
 };
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  const guard = await requireCronOrService(req, { allowAdmin: true });
+  if (!guard.ok) {
+    return new Response(JSON.stringify({ error: guard.error }), {
+      status: guard.status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

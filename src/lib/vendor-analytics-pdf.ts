@@ -2,6 +2,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { fmtEur } from "@/lib/format-currency";
 import type { AnalyticsPeriod } from "@/hooks/useVendorAnalytics";
+import logoUrl from "@/assets/medikong-logo.png";
 
 // MediKong brand tokens (mirrors mem://style/*).
 const BRAND_BLUE: [number, number, number] = [27, 91, 218]; // #1B5BDA
@@ -10,6 +11,11 @@ const SLATE: [number, number, number] = [97, 107, 124]; // #616B7C
 const MUTED: [number, number, number] = [139, 149, 165]; // #8B95A5
 const BORDER: [number, number, number] = [226, 232, 240]; // #E2E8F0
 const SOFT_BG: [number, number, number] = [248, 250, 252]; // #F8FAFC
+
+// Coverage tertile colors — mirrors src/components/vendor/analytics/CustomerMap.tsx
+const TIER_HIGH: [number, number, number] = [22, 163, 74]; // #16A34A green
+const TIER_MID: [number, number, number] = [245, 158, 11]; // #F59E0B orange
+const TIER_LOW: [number, number, number] = [220, 38, 38]; // #DC2626 red
 
 const CUSTOMER_TYPE_LABEL: Record<string, string> = {
   retail: "Retail",
@@ -32,6 +38,17 @@ const COUNTRY_LABEL: Record<string, string> = {
   DE: "Allemagne",
   UNK: "Non renseigné",
 };
+
+export interface GeoPoint {
+  lat: number;
+  lng: number;
+  city: string;
+  postal_code: string;
+  country_code: string;
+  ca_htva_cents: number;
+  orders_count: number;
+  customers_count: number;
+}
 
 export interface VendorAnalyticsPdfPayload {
   vendorName: string;
@@ -79,6 +96,7 @@ export interface VendorAnalyticsPdfPayload {
     avg_days_between_orders: number;
     churn_risk_count: number;
   } | null;
+  geoPoints: GeoPoint[];
 }
 
 function eur(cents: number): string {
@@ -91,18 +109,87 @@ function delta(cur: number, prev: number): string {
   return `${d >= 0 ? "+" : ""}${d.toFixed(1)}%`;
 }
 
-function drawHeader(doc: jsPDF, vendorName: string, periodLabel: string) {
+/**
+ * Fetch a URL and return its data-URL representation.
+ * Used to embed images (logo) and TTF fonts fetched from CDN.
+ */
+async function urlToDataUrl(url: string): Promise<string> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+  const blob = await res.blob();
+  return await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error);
+    reader.onload = () => resolve(reader.result as string);
+    reader.readAsDataURL(blob);
+  });
+}
+
+/** Strip a data URL prefix to get raw base64 payload. */
+function stripDataUrl(dataUrl: string): string {
+  const i = dataUrl.indexOf(",");
+  return i >= 0 ? dataUrl.slice(i + 1) : dataUrl;
+}
+
+// Module-level cache for the DM Sans TTF (fetched once per session).
+let dmSansCache: { regular: string; bold: string } | null = null;
+
+/**
+ * Fetch DM Sans (regular + bold) from a stable CDN and cache the base64 payload.
+ * Returns null if the fetch fails so the caller can fall back to Helvetica.
+ */
+async function loadDmSans(): Promise<{ regular: string; bold: string } | null> {
+  if (dmSansCache) return dmSansCache;
+  try {
+    const [reg, bold] = await Promise.all([
+      urlToDataUrl("https://cdn.jsdelivr.net/gh/googlefonts/dm-fonts@master/Sans/Roman/Static/DMSans-Regular.ttf"),
+      urlToDataUrl("https://cdn.jsdelivr.net/gh/googlefonts/dm-fonts@master/Sans/Roman/Static/DMSans-Bold.ttf"),
+    ]);
+    dmSansCache = { regular: stripDataUrl(reg), bold: stripDataUrl(bold) };
+    return dmSansCache;
+  } catch {
+    return null;
+  }
+}
+
+/** Register DM Sans in a jsPDF document if it has been loaded, else no-op. */
+function registerDmSans(doc: jsPDF, font: { regular: string; bold: string } | null): string {
+  if (!font) return "helvetica";
+  doc.addFileToVFS("DMSans-Regular.ttf", font.regular);
+  doc.addFileToVFS("DMSans-Bold.ttf", font.bold);
+  doc.addFont("DMSans-Regular.ttf", "DMSans", "normal");
+  doc.addFont("DMSans-Bold.ttf", "DMSans", "bold");
+  return "DMSans";
+}
+
+function drawHeader(doc: jsPDF, vendorName: string, periodLabel: string, logoDataUrl: string | null, fontName: string) {
   const w = doc.internal.pageSize.getWidth();
   // Blue banner
   doc.setFillColor(...BRAND_BLUE);
   doc.rect(0, 0, w, 26, "F");
-  // Logo wordmark
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
-  doc.setTextColor(255, 255, 255);
-  doc.text("MediKong", 14, 17);
+
+  // Logo (left) — falls back to wordmark if the image failed to load.
+  if (logoDataUrl) {
+    try {
+      // Draw on a slightly lighter panel so the logo pops on the blue banner.
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(10, 5, 44, 16, 2, 2, "F");
+      doc.addImage(logoDataUrl, "PNG", 12, 6, 40, 14, undefined, "FAST");
+    } catch {
+      doc.setFont(fontName, "bold");
+      doc.setFontSize(18);
+      doc.setTextColor(255, 255, 255);
+      doc.text("MediKong", 14, 17);
+    }
+  } else {
+    doc.setFont(fontName, "bold");
+    doc.setFontSize(18);
+    doc.setTextColor(255, 255, 255);
+    doc.text("MediKong", 14, 17);
+  }
+
   // Tagline right
-  doc.setFont("helvetica", "normal");
+  doc.setFont(fontName, "normal");
   doc.setFontSize(9);
   doc.setTextColor(220, 232, 255);
   doc.text("Rapport analytics vendeur", w - 14, 12, { align: "right" });
@@ -119,17 +206,17 @@ function drawHeader(doc: jsPDF, vendorName: string, periodLabel: string) {
   doc.rect(0, 26, w, 16, "F");
   doc.setDrawColor(...BORDER);
   doc.line(0, 42, w, 42);
-  doc.setFont("helvetica", "bold");
+  doc.setFont(fontName, "bold");
   doc.setFontSize(12);
   doc.setTextColor(...NAVY);
   doc.text(vendorName || "Vendeur", 14, 36);
-  doc.setFont("helvetica", "normal");
+  doc.setFont(fontName, "normal");
   doc.setFontSize(9);
   doc.setTextColor(...SLATE);
   doc.text(`Période : ${periodLabel}`, w - 14, 36, { align: "right" });
 }
 
-function drawFooter(doc: jsPDF) {
+function drawFooter(doc: jsPDF, fontName: string) {
   const pageCount = doc.getNumberOfPages();
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
@@ -137,7 +224,7 @@ function drawFooter(doc: jsPDF) {
     doc.setPage(i);
     doc.setDrawColor(...BORDER);
     doc.line(14, h - 14, w - 14, h - 14);
-    doc.setFont("helvetica", "normal");
+    doc.setFont(fontName, "normal");
     doc.setFontSize(8);
     doc.setTextColor(...MUTED);
     doc.text("MediKong · Balooh SRL · BE 1005.771.323", 14, h - 8);
@@ -145,16 +232,16 @@ function drawFooter(doc: jsPDF) {
   }
 }
 
-function sectionTitle(doc: jsPDF, y: number, title: string, subtitle?: string): number {
+function sectionTitle(doc: jsPDF, y: number, title: string, fontName: string, subtitle?: string): number {
   const w = doc.internal.pageSize.getWidth();
   doc.setFillColor(...BRAND_BLUE);
   doc.rect(14, y, 3, 6, "F");
-  doc.setFont("helvetica", "bold");
+  doc.setFont(fontName, "bold");
   doc.setFontSize(12);
   doc.setTextColor(...NAVY);
   doc.text(title, 20, y + 5);
   if (subtitle) {
-    doc.setFont("helvetica", "normal");
+    doc.setFont(fontName, "normal");
     doc.setFontSize(9);
     doc.setTextColor(...MUTED);
     doc.text(subtitle, w - 14, y + 5, { align: "right" });
@@ -162,7 +249,12 @@ function sectionTitle(doc: jsPDF, y: number, title: string, subtitle?: string): 
   return y + 10;
 }
 
-function drawKpiGrid(doc: jsPDF, y: number, kpis: NonNullable<VendorAnalyticsPdfPayload["kpis"]>): number {
+function drawKpiGrid(
+  doc: jsPDF,
+  y: number,
+  kpis: NonNullable<VendorAnalyticsPdfPayload["kpis"]>,
+  fontName: string
+): number {
   const w = doc.internal.pageSize.getWidth();
   const margin = 14;
   const gap = 4;
@@ -187,15 +279,15 @@ function drawKpiGrid(doc: jsPDF, y: number, kpis: NonNullable<VendorAnalyticsPdf
     doc.setDrawColor(...BORDER);
     doc.setFillColor(255, 255, 255);
     doc.roundedRect(x, cy, cellW, cellH, 2, 2, "FD");
-    doc.setFont("helvetica", "normal");
+    doc.setFont(fontName, "normal");
     doc.setFontSize(8);
     doc.setTextColor(...MUTED);
     doc.text(it.label.toUpperCase(), x + 4, cy + 5);
-    doc.setFont("helvetica", "bold");
+    doc.setFont(fontName, "bold");
     doc.setFontSize(13);
     doc.setTextColor(...NAVY);
     doc.text(it.value, x + 4, cy + 13);
-    doc.setFont("helvetica", "normal");
+    doc.setFont(fontName, "normal");
     doc.setFontSize(8);
     const isPos = !it.deltaText.startsWith("-") && it.deltaText !== "—";
     doc.setTextColor(...(isPos ? ([4, 120, 87] as [number, number, number]) : ([185, 28, 28] as [number, number, number])));
@@ -206,7 +298,128 @@ function drawKpiGrid(doc: jsPDF, y: number, kpis: NonNullable<VendorAnalyticsPdf
   return y + Math.ceil(items.length / cols) * (cellH + gap);
 }
 
-const tableStyles = {
+/**
+ * Draw a schematic scatter map of geocoded customer points using the same
+ * tertile color coding as CustomerMap.tsx (green/orange/red on CA).
+ * Uses an equirectangular projection scaled to a fixed canvas box.
+ */
+function drawCoverageMap(doc: jsPDF, y: number, points: GeoPoint[], fontName: string): number {
+  const w = doc.internal.pageSize.getWidth();
+  const margin = 14;
+  const boxW = w - margin * 2;
+  const boxH = 90;
+
+  // Frame
+  doc.setDrawColor(...BORDER);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(margin, y, boxW, boxH, 2, 2, "FD");
+
+  if (points.length === 0) {
+    doc.setFont(fontName, "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(...MUTED);
+    doc.text("Aucune localisation client géocodée sur la période.", margin + boxW / 2, y + boxH / 2, { align: "center" });
+    return y + boxH + 4;
+  }
+
+  // Tertile thresholds on CA (same logic as CustomerMap.quantile)
+  const sortedCa = points.map((p) => p.ca_htva_cents).sort((a, b) => a - b);
+  const q = (arr: number[], p: number) => {
+    if (!arr.length) return 0;
+    const pos = (arr.length - 1) * p;
+    const base = Math.floor(pos);
+    const rest = pos - base;
+    return arr[base + 1] !== undefined ? arr[base] + rest * (arr[base + 1] - arr[base]) : arr[base];
+  };
+  const p33 = q(sortedCa, 1 / 3);
+  const p66 = q(sortedCa, 2 / 3);
+  const maxCa = Math.max(1, ...sortedCa);
+
+  // Bounding box with a bit of padding
+  const lats = points.map((p) => p.lat);
+  const lngs = points.map((p) => p.lng);
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs);
+  const maxLng = Math.max(...lngs);
+  const spanLat = Math.max(0.5, maxLat - minLat);
+  const spanLng = Math.max(0.5, maxLng - minLng);
+  const padLat = spanLat * 0.1;
+  const padLng = spanLng * 0.1;
+  const lat0 = minLat - padLat;
+  const lat1 = maxLat + padLat;
+  const lng0 = minLng - padLng;
+  const lng1 = maxLng + padLng;
+
+  // Preserve aspect ratio: pad the shorter axis inside the box.
+  const dataAspect = (lng1 - lng0) / (lat1 - lat0);
+  const boxAspect = boxW / boxH;
+  let drawW = boxW - 6;
+  let drawH = boxH - 6;
+  if (dataAspect > boxAspect) drawH = drawW / dataAspect;
+  else drawW = drawH * dataAspect;
+  const ox = margin + (boxW - drawW) / 2;
+  const oy = y + (boxH - drawH) / 2;
+
+  // Faint inner rect delimiting the projection canvas.
+  doc.setDrawColor(230, 236, 244);
+  doc.setLineWidth(0.2);
+  doc.rect(ox, oy, drawW, drawH);
+
+  // Plot points
+  for (const p of points) {
+    const px = ox + ((p.lng - lng0) / (lng1 - lng0)) * drawW;
+    const py = oy + (1 - (p.lat - lat0) / (lat1 - lat0)) * drawH;
+    const tier: [number, number, number] =
+      p.ca_htva_cents >= p66 ? TIER_HIGH : p.ca_htva_cents >= p33 ? TIER_MID : TIER_LOW;
+    const r = 0.8 + 2.4 * (p.ca_htva_cents / maxCa);
+    doc.setDrawColor(...tier);
+    doc.setFillColor(...tier);
+    doc.setLineWidth(0.2);
+    // Approximate a filled disk with a filled circle.
+    doc.circle(px, py, r, "F");
+    // Halo
+    doc.setFillColor(tier[0], tier[1], tier[2]);
+    doc.setDrawColor(tier[0], tier[1], tier[2]);
+  }
+
+  // Legend (bottom-right inside the box)
+  const legX = margin + boxW - 52;
+  const legY = y + boxH - 22;
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(...BORDER);
+  doc.setLineWidth(0.2);
+  doc.roundedRect(legX, legY, 48, 18, 1.5, 1.5, "FD");
+  doc.setFont(fontName, "bold");
+  doc.setFontSize(6.5);
+  doc.setTextColor(...SLATE);
+  doc.text("COUVERTURE (CA)", legX + 2, legY + 3.5);
+  const legendRow = (row: number, color: [number, number, number], label: string) => {
+    doc.setFillColor(...color);
+    doc.circle(legX + 3.5, legY + 6.5 + row * 3.8, 1.1, "F");
+    doc.setFont(fontName, "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(...NAVY);
+    doc.text(label, legX + 6, legY + 7.5 + row * 3.8);
+  };
+  legendRow(0, TIER_HIGH, `Forte (≥ ${fmtEur(p66 / 100)} €)`);
+  legendRow(1, TIER_MID, "Moyenne");
+  legendRow(2, TIER_LOW, `Faible (< ${fmtEur(p33 / 100)} €)`);
+
+  // Caption
+  doc.setFont(fontName, "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...MUTED);
+  doc.text(
+    `${points.length} zones géocodées · taille des cercles ∝ CA HTVA · couleur par tertile de CA`,
+    margin,
+    y + boxH + 4
+  );
+
+  return y + boxH + 8;
+}
+
+const tableStylesBase = {
   headStyles: { fillColor: NAVY, textColor: [255, 255, 255] as [number, number, number], fontSize: 9, fontStyle: "bold" as const },
   bodyStyles: { fontSize: 9, textColor: NAVY },
   alternateRowStyles: { fillColor: SOFT_BG },
@@ -214,21 +427,39 @@ const tableStyles = {
   margin: { left: 14, right: 14 },
 };
 
-export function generateVendorAnalyticsPdf(payload: VendorAnalyticsPdfPayload): void {
+function tableStyles(fontName: string) {
+  return {
+    ...tableStylesBase,
+    headStyles: { ...tableStylesBase.headStyles, font: fontName },
+    bodyStyles: { ...tableStylesBase.bodyStyles, font: fontName },
+    styles: { ...tableStylesBase.styles, font: fontName },
+  };
+}
+
+export async function generateVendorAnalyticsPdf(payload: VendorAnalyticsPdfPayload): Promise<void> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  drawHeader(doc, payload.vendorName, payload.periodLabel);
+
+  // Try to load the MediKong logo + DM Sans font in parallel; both are best-effort.
+  const [logoDataUrl, dmSans] = await Promise.all([
+    urlToDataUrl(logoUrl).catch(() => null),
+    loadDmSans(),
+  ]);
+  const fontName = registerDmSans(doc, dmSans);
+  doc.setFont(fontName, "normal");
+
+  drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName);
 
   let y = 50;
 
   // KPIs
   if (payload.kpis) {
-    y = sectionTitle(doc, y, "Indicateurs clés", payload.periodLabel);
-    y = drawKpiGrid(doc, y, payload.kpis) + 6;
+    y = sectionTitle(doc, y, "Indicateurs clés", fontName, payload.periodLabel);
+    y = drawKpiGrid(doc, y, payload.kpis, fontName) + 6;
   }
 
   // Recurrence
   if (payload.recurrence) {
-    y = sectionTitle(doc, y, "Récurrence clients");
+    y = sectionTitle(doc, y, "Récurrence clients", fontName);
     const r = payload.recurrence;
     const retention = r.total_customers ? Math.round((r.returning_customers / r.total_customers) * 100) : 0;
     autoTable(doc, {
@@ -240,15 +471,15 @@ export function generateVendorAnalyticsPdf(payload: VendorAnalyticsPdfPayload): 
         ["Commandes / client (moy.)", String(r.avg_orders_per_customer ?? 0), `Ø ${r.avg_days_between_orders ?? 0} j entre commandes`],
         ["Risque de churn", String(r.churn_risk_count ?? 0), "Aucune commande depuis 60 j"],
       ],
-      ...tableStyles,
+      ...tableStyles(fontName),
     });
     y = (doc as any).lastAutoTable.finalY + 8;
   }
 
   // Typologie
   if (payload.byType.length > 0) {
-    if (y > 240) { doc.addPage(); drawHeader(doc, payload.vendorName, payload.periodLabel); y = 50; }
-    y = sectionTitle(doc, y, "Répartition par typologie de client");
+    if (y > 240) { doc.addPage(); drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName); y = 50; }
+    y = sectionTitle(doc, y, "Répartition par typologie de client", fontName);
     autoTable(doc, {
       startY: y,
       head: [["Profil", "CA HTVA", "Part", "Commandes"]],
@@ -258,7 +489,7 @@ export function generateVendorAnalyticsPdf(payload: VendorAnalyticsPdfPayload): 
         `${Number(r.share).toFixed(1)}%`,
         String(r.orders_count),
       ]),
-      ...tableStyles,
+      ...tableStyles(fontName),
       columnStyles: { 1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" } },
     });
     y = (doc as any).lastAutoTable.finalY + 8;
@@ -266,8 +497,8 @@ export function generateVendorAnalyticsPdf(payload: VendorAnalyticsPdfPayload): 
 
   // Pays
   if (payload.byCountry.length > 0) {
-    if (y > 240) { doc.addPage(); drawHeader(doc, payload.vendorName, payload.periodLabel); y = 50; }
-    y = sectionTitle(doc, y, "Répartition par pays");
+    if (y > 240) { doc.addPage(); drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName); y = 50; }
+    y = sectionTitle(doc, y, "Répartition par pays", fontName);
     autoTable(doc, {
       startY: y,
       head: [["Pays", "CA HTVA", "Part", "Commandes"]],
@@ -277,18 +508,23 @@ export function generateVendorAnalyticsPdf(payload: VendorAnalyticsPdfPayload): 
         `${Number(r.share).toFixed(1)}%`,
         String(r.orders_count),
       ]),
-      ...tableStyles,
+      ...tableStyles(fontName),
       columnStyles: { 1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" } },
     });
     y = (doc as any).lastAutoTable.finalY + 8;
   }
 
+  // Coverage map — new page dedicated to the scatter + legend.
+  doc.addPage();
+  drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName);
+  y = 50;
+  y = sectionTitle(doc, y, "Carte de couverture clients", fontName, `${payload.geoPoints.length} zones`);
+  y = drawCoverageMap(doc, y, payload.geoPoints, fontName);
+
   // Top clients
   if (payload.topCustomers.length > 0) {
-    doc.addPage();
-    drawHeader(doc, payload.vendorName, payload.periodLabel);
-    y = 50;
-    y = sectionTitle(doc, y, "Top clients", `${payload.topCustomers.length} entrées`);
+    if (y > 220) { doc.addPage(); drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName); y = 50; }
+    y = sectionTitle(doc, y, "Top clients", fontName, `${payload.topCustomers.length} entrées`);
     autoTable(doc, {
       startY: y,
       head: [["#", "Client", "Profil", "Localisation", "CA HTVA", "Part", "Cmd", "Dernière"]],
@@ -302,8 +538,8 @@ export function generateVendorAnalyticsPdf(payload: VendorAnalyticsPdfPayload): 
         String(r.orders_count),
         r.last_order_at ? new Date(r.last_order_at).toLocaleDateString("fr-FR") : "—",
       ]),
-      ...tableStyles,
-      styles: { ...tableStyles.styles, fontSize: 8 },
+      ...tableStyles(fontName),
+      styles: { ...tableStyles(fontName).styles, fontSize: 8 },
       columnStyles: {
         0: { cellWidth: 8, halign: "right" },
         4: { halign: "right" },
@@ -317,8 +553,8 @@ export function generateVendorAnalyticsPdf(payload: VendorAnalyticsPdfPayload): 
 
   // Top produits
   if (payload.topProducts.length > 0) {
-    if (y > 220) { doc.addPage(); drawHeader(doc, payload.vendorName, payload.periodLabel); y = 50; }
-    y = sectionTitle(doc, y, "Top produits", `${payload.topProducts.length} entrées`);
+    if (y > 220) { doc.addPage(); drawHeader(doc, payload.vendorName, payload.periodLabel, logoDataUrl, fontName); y = 50; }
+    y = sectionTitle(doc, y, "Top produits", fontName, `${payload.topProducts.length} entrées`);
     autoTable(doc, {
       startY: y,
       head: [["#", "Produit", "Unités", "CA HTVA", "Marge", "Commission"]],
@@ -330,8 +566,8 @@ export function generateVendorAnalyticsPdf(payload: VendorAnalyticsPdfPayload): 
         eur(r.margin_cents),
         eur(r.commission_cents),
       ]),
-      ...tableStyles,
-      styles: { ...tableStyles.styles, fontSize: 8 },
+      ...tableStyles(fontName),
+      styles: { ...tableStyles(fontName).styles, fontSize: 8 },
       columnStyles: {
         0: { cellWidth: 8, halign: "right" },
         2: { halign: "right" },
@@ -342,7 +578,7 @@ export function generateVendorAnalyticsPdf(payload: VendorAnalyticsPdfPayload): 
     });
   }
 
-  drawFooter(doc);
+  drawFooter(doc, fontName);
 
   const safeVendor = (payload.vendorName || "vendeur").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
   const dateStr = new Date().toISOString().slice(0, 10);

@@ -21,6 +21,8 @@ import ReconciliationCard from "@/components/vendor/dashboard/ReconciliationCard
 import VendorTotalsConsistencyAlert from "@/components/vendor/dashboard/VendorTotalsConsistencyAlert";
 import TopProductsCard from "@/components/vendor/dashboard/TopProductsCard";
 import VendorWaterfallCard from "@/components/vendor/dashboard/VendorWaterfallCard";
+import CommissionBasisSplitCard from "@/components/vendor/dashboard/CommissionBasisSplitCard";
+import SourceSplitCard from "@/components/vendor/dashboard/SourceSplitCard";
 import { checkVendorTotalsConsistency } from "@/lib/vendor-gmv-consistency";
 import { useMoneyFormat } from "@/lib/money-format";
 

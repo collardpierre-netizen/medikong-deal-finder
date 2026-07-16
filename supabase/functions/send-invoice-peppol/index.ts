@@ -350,8 +350,13 @@ Deno.serve(async (req) => {
       http_status: falcoRes.http_status,
       error: falcoRes.peppol_error,
     });
-  } catch (e) {
-    console.error("[send-invoice-peppol]", e);
-    return json(500, { error: "internal_error", details: String((e as any)?.message || e) });
+  } catch (error) {
+    console.error("send-invoice-peppol error:", error);
+
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message,
+      stack: error.stack,
+    }), { status: 200, headers: { "Content-Type": "application/json" } });
   }
 });

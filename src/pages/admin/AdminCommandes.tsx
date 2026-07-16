@@ -1547,6 +1547,23 @@ const AdminCommandes = () => {
                                   <FileDown size={14} />
                                 </button>
                                 <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    const { generateExpressOrderPdf } = await import("@/lib/express-order-pdf");
+                                    try {
+                                      await generateExpressOrderPdf(o.rawId);
+                                      toast.success("PDF express généré");
+                                    } catch (err: any) {
+                                      toast.error(err?.message || "Échec PDF express");
+                                    }
+                                  }}
+                                  title="PDF express (côté navigateur, sans attendre)"
+                                  className="p-1.5 rounded hover:bg-emerald-50"
+                                  style={{ color: "#059669" }}
+                                >
+                                  <Zap size={14} />
+                                </button>
+                                <button
                                   onClick={(e) => { e.stopPropagation(); navigate(`/admin/commandes/nouvelle?duplicate=${o.rawId}`); }}
                                   title="Dupliquer cette commande"
                                   className="p-1.5 rounded hover:bg-sky-50"

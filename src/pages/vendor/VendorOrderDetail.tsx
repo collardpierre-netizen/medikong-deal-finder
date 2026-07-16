@@ -15,6 +15,7 @@ import { useResyncOnReconnect } from "@/hooks/useResyncOnReconnect";
 import OrderInvoiceStatusPanel from "@/components/orders/OrderInvoiceStatusPanel";
 import StripePaymentStatusBadge from "@/components/orders/StripePaymentStatusBadge";
 import OrderSourceBadge from "@/components/orders/OrderSourceBadge";
+import OrderProductsSummary from "@/components/orders/OrderProductsSummary";
 
 import {
   OrderInfoBlocks,
@@ -270,6 +271,15 @@ export default function VendorOrderDetail() {
             </div>
           );
         })()}
+
+        <div className="p-4 border-b border-border">
+          <OrderProductsSummary
+            lines={order.lines.map((l: any) => ({
+              ...l,
+              products: { name: l.product_name, cnk_code: l.product_cnk, gtin: l.product_gtin },
+            }))}
+          />
+        </div>
 
         <div className="divide-y divide-border">
           {order.lines.map((line) => (

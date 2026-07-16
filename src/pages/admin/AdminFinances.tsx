@@ -152,8 +152,16 @@ const AdminFinances = () => {
                               const t = toast.loading("Envoi Peppol en cours…");
                               const { data, error } = await supabase.functions.invoke("send-invoice-peppol", { body: { invoice_id: inv.id } });
                               toast.dismiss(t);
-                              if (error || (data && data.ok === false)) {
-                                toast.error(`Échec envoi Peppol: ${error?.message || data?.error || "erreur inconnue"}`);
+                              // On 4xx/5xx, supabase-js puts the JSON body inside error.context (a Response).
+                              let errBody: any = null;
+                              if (error && (error as any).context && typeof (error as any).context.json === "function") {
+                                try { errBody = await (error as any).context.clone().json(); } catch { /* noop */ }
+                              }
+                              const failed = !!error || (data && data.ok === false);
+                              if (failed) {
+                                const payload = errBody || data || {};
+                                const msg = payload.hint || payload.error || error?.message || "erreur inconnue";
+                                toast.error(`Échec envoi Peppol : ${msg}`, { duration: 8000 });
                               } else {
                                 toast.success("Facture envoyée via Peppol");
                               }

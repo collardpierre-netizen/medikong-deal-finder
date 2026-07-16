@@ -73,6 +73,7 @@ const sections: NavSection[] = [
     labelKey: "intelligence",
     items: [
       { labelKey: "priceCockpit", path: "/admin/prix-cockpit", icon: TrendingDown },
+      { label: "Veille marché vendeurs", path: "/admin/vendor-market-intel", icon: Activity },
       { label: "Écarts prix anormaux", path: "/admin/market-delta-anomalies", icon: AlertTriangle },
       { label: "Seuils écarts prix", path: "/admin/market-delta-thresholds", icon: SlidersHorizontal },
       { label: "Audit conditionnements", path: "/admin/pack-audit", icon: Package },

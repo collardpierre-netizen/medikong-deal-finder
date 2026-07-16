@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { fmtEur } from "@/lib/format-currency";
 import { ArrowLeft, FileDown, Pencil, Copy, Link2, ExternalLink, Lock, Wallet, ShieldCheck, AlertTriangle, CheckCircle2, Truck, Send } from "lucide-react";
 import OrderInvoiceStatusPanel from "@/components/orders/OrderInvoiceStatusPanel";
+import OrderProductsSummary from "@/components/orders/OrderProductsSummary";
 import StripePaymentStatusBadge from "@/components/orders/StripePaymentStatusBadge";
 import OrderSourceBadge from "@/components/orders/OrderSourceBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -519,6 +520,8 @@ const AdminCommandeDetail = () => {
 
 
 
+
+          <OrderProductsSummary lines={lines} />
 
           <div className="bg-white border rounded-lg overflow-hidden" style={{ borderColor: "#E2E8F0" }}>
             <table className="w-full text-sm">

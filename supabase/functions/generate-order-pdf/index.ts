@@ -307,6 +307,114 @@ Deno.serve(async (req) => {
       y += 2;
     }
 
+    // ─── Synthèse produits (agrégé) ────────────────────────────────────
+    {
+      const agg = new Map<string, { name: string; cnk: string | null; qty: number; ht: number }>();
+      let sumHt = 0;
+      let sumQty = 0;
+      for (const l of (lines || [])) {
+        const qty = Number(l.quantity) || 0;
+        const ht = Number(l.line_total_excl_vat) || (Number(l.unit_price_excl_vat) || 0) * qty;
+        const cnk = (l as any).cnk_code || l.products?.cnk_code || null;
+        const name = l.manual_label || l.products?.name || "—";
+        const key = l.product_id || cnk || `${name}::${l.products?.gtin || ""}`;
+        const cur = agg.get(key);
+        if (cur) { cur.qty += qty; cur.ht += ht; } else { agg.set(key, { name, cnk, qty, ht }); }
+        sumHt += ht;
+        sumQty += qty;
+      }
+      const rows = Array.from(agg.values()).sort((a, b) => b.ht - a.ht);
+
+      if (rows.length > 0) {
+        if (y + 40 > pageH - 50) { doc.addPage(); y = 20; }
+
+        // Bandeau titre
+        doc.setFillColor(...NAVY);
+        doc.rect(M, y, pageW - 2 * M, 7, "F");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8.5);
+        doc.setTextColor(255, 255, 255);
+        doc.text("SYNTHÈSE DES PRODUITS (AGRÉGÉ)", M + 2, y + 4.9);
+        y += 7;
+
+        // 3 KPI cards
+        const cardW = (pageW - 2 * M) / 3;
+        const cardH = 14;
+        const kpis = [
+          { label: "Produits uniques", value: String(rows.length), fill: [239, 246, 255], accent: [28, 88, 217] },
+          { label: "Quantité totale", value: String(sumQty), fill: [240, 253, 244], accent: [21, 128, 61] },
+          { label: "Total HTVA", value: fmtEur(Math.round(sumHt * 100), currency), fill: [254, 243, 199], accent: [180, 83, 9] },
+        ];
+        kpis.forEach((k, i) => {
+          const x = M + i * cardW;
+          doc.setFillColor(k.fill[0], k.fill[1], k.fill[2]);
+          doc.rect(x, y, cardW - 1, cardH, "F");
+          doc.setFillColor(k.accent[0], k.accent[1], k.accent[2]);
+          doc.rect(x, y, 1.5, cardH, "F");
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(10);
+          doc.setTextColor(k.accent[0], k.accent[1], k.accent[2]);
+          doc.text(k.value, x + cardW / 2, y + 6.5, { align: "center" });
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(6.5);
+          doc.setTextColor(...MUTED);
+          doc.text(k.label, x + cardW / 2, y + 11, { align: "center" });
+        });
+        y += cardH + 3;
+
+        // Table synthèse
+        const SCOL = {
+          rank: M + 2,
+          cnk: M + 10,
+          name: M + 32,
+          nameW: 92,
+          qty: M + 132,
+          ht: M + 158,
+          pct: pageW - M - 2,
+        };
+        doc.setFillColor(248, 250, 252);
+        doc.rect(M, y, pageW - 2 * M, 6, "F");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(6.5);
+        doc.setTextColor(100, 116, 139);
+        doc.text("#", SCOL.rank, y + 4);
+        doc.text("CNK", SCOL.cnk, y + 4);
+        doc.text("PRODUIT", SCOL.name, y + 4);
+        doc.text("QTÉ TOTALE", SCOL.qty, y + 4, { align: "right" });
+        doc.text("TOTAL HTVA", SCOL.ht, y + 4, { align: "right" });
+        doc.text("% CMD", SCOL.pct, y + 4, { align: "right" });
+        y += 6;
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7);
+        rows.forEach((r, i) => {
+          const nameLines = doc.splitTextToSize(r.name, SCOL.nameW);
+          const rowH = Math.max(5, nameLines.length * 3.2 + 1.8);
+          if (y + rowH > pageH - 50) { doc.addPage(); y = 20; }
+          if (i % 2 === 0) {
+            doc.setFillColor(...SOFT);
+            doc.rect(M, y, pageW - 2 * M, rowH, "F");
+          }
+          doc.setTextColor(148, 163, 184);
+          doc.text(String(i + 1), SCOL.rank, y + 3.4);
+          doc.setTextColor(80, 80, 80);
+          doc.text(r.cnk || "—", SCOL.cnk, y + 3.4);
+          doc.setTextColor(...NAVY);
+          doc.text(nameLines, SCOL.name, y + 3.4);
+          doc.setFont("helvetica", "bold");
+          doc.text(String(r.qty), SCOL.qty, y + 3.4, { align: "right" });
+          doc.setFont("helvetica", "normal");
+          doc.text(fmtEur(Math.round(r.ht * 100), currency), SCOL.ht, y + 3.4, { align: "right" });
+          doc.setTextColor(...MUTED);
+          const pct = sumHt > 0 ? (r.ht / sumHt) * 100 : 0;
+          doc.text(`${pct.toFixed(1)}%`, SCOL.pct, y + 3.4, { align: "right" });
+          y += rowH;
+        });
+        y += 6;
+        if (y > pageH - 60) { doc.addPage(); y = 20; }
+      }
+    }
+
     // ─── Tableau lignes ────────────────────────────────────────────────
     // En-tête tableau
     const COLS = {

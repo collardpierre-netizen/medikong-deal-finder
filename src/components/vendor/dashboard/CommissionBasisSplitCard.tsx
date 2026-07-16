@@ -1,6 +1,12 @@
 import { VCard } from "@/components/vendor/ui/VCard";
 import { useMoneyFormat } from "@/lib/money-format";
-import { TrendingUp, Percent, HelpCircle } from "lucide-react";
+import { TrendingUp, Percent, HelpCircle, Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Props {
   tradingCents: number;

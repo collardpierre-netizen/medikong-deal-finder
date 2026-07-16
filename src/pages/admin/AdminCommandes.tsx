@@ -21,13 +21,14 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
   ShoppingCart, TrendingUp, Clock, CreditCard, Truck, Percent,
-  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle, CalendarClock, Copy, Pencil, Flame, FileDown, Eye, Check, X, Plus,
+  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle, CalendarClock, Copy, Pencil, Flame, FileDown, Eye, ScanEye, Check, X, Plus,
 } from "lucide-react";
 import { fmtEur } from "@/lib/format-currency";
 import { computeOrderTotals } from "@/lib/manual-order-metrics";
 import { type VendorCommissionConfig } from "@/lib/vendorMargin";
 import { computeCommissionFromLines as computeCommissionFromLinesPure } from "@/lib/order-commission-fallback";
 import { AdminCommandesCommissionCell } from "./AdminCommandesCommissionCell";
+import OrderPdfPreviewDialog from "@/components/orders/OrderPdfPreviewDialog";
 
 type PeriodKey = "7d" | "30d" | "90d" | "12m" | "all";
 const PERIODS: { key: PeriodKey; label: string; days: number | null }[] = [
@@ -102,6 +103,7 @@ const AdminCommandes = () => {
   const [deleting, setDeleting] = useState(false);
   const [hardDeleteTarget, setHardDeleteTarget] = useState<{ id: string; number: string; status: string } | null>(null);
   const [hardDeleting, setHardDeleting] = useState(false);
+  const [pdfPreview, setPdfPreview] = useState<{ id: string; number: string; status: string; lines: any[] } | null>(null);
 
   const { data: slaCount } = useQuery({
     queryKey: ["admin-sla-count"],
@@ -1515,6 +1517,17 @@ const AdminCommandes = () => {
                                   </button>
                                 )}
                                 <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setPdfPreview({ id: o.rawId, number: o.id, status: o.status, lines: (o.lines || []) as any[] });
+                                  }}
+                                  title="Aperçu du PDF (récap 5 KPI + filigrane brouillon)"
+                                  className="p-1.5 rounded hover:bg-indigo-50"
+                                  style={{ color: "#4F46E5" }}
+                                >
+                                  <ScanEye size={14} />
+                                </button>
+                                <button
                                   onClick={async (e) => {
                                     e.stopPropagation();
                                     try {
@@ -1993,6 +2006,17 @@ const AdminCommandes = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {pdfPreview && (
+        <OrderPdfPreviewDialog
+          open={!!pdfPreview}
+          onOpenChange={(o) => { if (!o) setPdfPreview(null); }}
+          orderId={pdfPreview.id}
+          orderNumber={pdfPreview.number}
+          status={pdfPreview.status}
+          lines={pdfPreview.lines}
+        />
+      )}
     </div>
 
   );

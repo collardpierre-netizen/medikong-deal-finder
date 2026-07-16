@@ -39,6 +39,7 @@ const sections: NavSection[] = [
       { label: "Emails onboarding vendeur", path: "/admin/vendor-onboarding-emails", icon: Mail },
       { label: "Exclusivités vendeurs", path: "/admin/exclusivites", icon: ShieldCheck },
       { label: "Demandes d'exclusivité", path: "/admin/vendor-exclusivity-requests", icon: ShieldCheck },
+      { label: "Autorisations marques", path: "/admin/vendor-brand-authorizations", icon: ShieldCheck },
       { labelKey: "products", path: "/admin/produits", icon: Package },
       { labelKey: "productSubmissions", path: "/admin/produits-soumis", icon: ClipboardList },
       { labelKey: "categories", path: "/admin/categories", icon: Layers },

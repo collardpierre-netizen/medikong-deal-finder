@@ -5,9 +5,10 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Copy, ExternalLink, Loader2, RefreshCw, Sparkles, SlidersHorizontal } from "lucide-react";
+import { Copy, ExternalLink, Loader2, RefreshCw, Sparkles, SlidersHorizontal, ShieldCheck, ShieldAlert } from "lucide-react";
 import { formatUpdatedAt } from "@/lib/format-date";
 import AdminVendorMovMoqModal from "@/components/admin/AdminVendorMovMoqModal";
+import AdminVendorComplianceModal from "@/components/admin/AdminVendorComplianceModal";
 import { VendorPeppolBadge } from "@/components/admin/VendorPeppolBadge";
 import { isBelgianVendor } from "@/lib/peppol";
 

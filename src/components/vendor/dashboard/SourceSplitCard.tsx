@@ -64,63 +64,93 @@ export default function SourceSplitCard({
   ];
 
   return (
-    <VCard>
-      <div className="mb-3">
-        <h3 className="text-[13px] font-bold text-[#1D2530]">
-          Ventes site vs ventes manuelles
-        </h3>
-        <p className="text-[11px] text-[#8B95A5]">
-          Origine de chaque commande (CA HTVA · commission MediKong · nb commandes)
-        </p>
-      </div>
+    <TooltipProvider delayDuration={150}>
+      <VCard>
+        <div className="mb-3">
+          <div className="flex items-center gap-1.5">
+            <h3 className="text-[13px] font-bold text-[#1D2530]">
+              Ventes site vs ventes manuelles
+            </h3>
+            <Tooltip>
+              <TooltipTrigger className="inline-flex items-center cursor-help text-[#8B95A5] hover:text-[#1D2530]">
+                <Info size={13} aria-label="À propos de ce split" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[300px] text-[11px] leading-snug">
+                <p className="font-semibold mb-1">Comment sont classées les commandes ?</p>
+                <p>
+                  <span className="font-semibold">Site (« standalone »)</span> : l'acheteur
+                  passe seul commande via le checkout medikong.pro.
+                </p>
+                <p className="mt-1">
+                  <span className="font-semibold">Manuelle</span> : un admin MediKong crée la
+                  commande dans le back-office (ex. commande téléphonique, RFQ transformée).
+                  Détectées via <code>orders.source = 'manual_admin'</code> ou{" "}
+                  <code>created_by_admin</code> renseigné.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <p className="text-[11px] text-[#8B95A5]">
+            Origine de chaque commande (CA HTVA · commission MediKong · nb commandes)
+          </p>
+        </div>
 
-      {loading ? (
-        <div className="h-20 w-full animate-pulse bg-[#F1F5F9] rounded" />
-      ) : totalRevenue === 0 ? (
-        <div className="text-[12px] text-[#8B95A5] py-4">
-          Aucune vente sur la période.
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {rows.map((r) => (
-            <div key={r.key} className="flex items-start gap-3">
-              <div
-                className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5"
-                style={{ backgroundColor: r.color }}
-              >
-                {r.icon}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-[12px] font-semibold text-[#1D2530]">
-                    {r.label}
-                  </span>
-                  <span className="text-[13px] font-bold tabular-nums text-[#1D2530]">
-                    {formatMoney(r.revenueCents / 100, { fractionDigits: 0 })}
-                  </span>
+        {loading ? (
+          <div className="h-20 w-full animate-pulse bg-[#F1F5F9] rounded" />
+        ) : totalRevenue === 0 ? (
+          <div className="text-[12px] text-[#8B95A5] py-4">
+            Aucune vente sur la période.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {rows.map((r) => (
+              <div key={r.key} className="flex items-start gap-3">
+                <div
+                  className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5"
+                  style={{ backgroundColor: r.color }}
+                >
+                  {r.icon}
                 </div>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <div className="flex-1 h-1.5 rounded-full bg-[#F1F5F9] overflow-hidden">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${pct(r.revenueCents)}%`, backgroundColor: r.color }}
-                    />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-[12px] font-semibold text-[#1D2530] inline-flex items-center gap-1">
+                      {r.label}
+                      <Tooltip>
+                        <TooltipTrigger className="inline-flex items-center cursor-help text-[#8B95A5] hover:text-[#1D2530]">
+                          <Info size={11} aria-label={`À propos de ${r.label}`} />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[280px] text-[11px] leading-snug">
+                          {r.tooltip}
+                        </TooltipContent>
+                      </Tooltip>
+                    </span>
+                    <span className="text-[13px] font-bold tabular-nums text-[#1D2530]">
+                      {formatMoney(r.revenueCents / 100, { fractionDigits: 0 })}
+                    </span>
                   </div>
-                  <span className="text-[10.5px] tabular-nums text-[#8B95A5] w-10 text-right">
-                    {pct(r.revenueCents).toFixed(0)}%
-                  </span>
-                </div>
-                <div className="text-[10.5px] text-[#8B95A5] mt-0.5">
-                  {r.sub} · {r.orders} commande{r.orders > 1 ? "s" : ""} · commission{" "}
-                  <span className="font-semibold text-[#1D2530]">
-                    {formatMoney(r.commissionCents / 100, { fractionDigits: 0 })}
-                  </span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <div className="flex-1 h-1.5 rounded-full bg-[#F1F5F9] overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: `${pct(r.revenueCents)}%`, backgroundColor: r.color }}
+                      />
+                    </div>
+                    <span className="text-[10.5px] tabular-nums text-[#8B95A5] w-10 text-right">
+                      {pct(r.revenueCents).toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="text-[10.5px] text-[#8B95A5] mt-0.5">
+                    {r.sub} · {r.orders} commande{r.orders > 1 ? "s" : ""} · commission{" "}
+                    <span className="font-semibold text-[#1D2530]">
+                      {formatMoney(r.commissionCents / 100, { fractionDigits: 0 })}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </VCard>
+            ))}
+          </div>
+        )}
+      </VCard>
+    </TooltipProvider>
   );
 }

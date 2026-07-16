@@ -245,6 +245,28 @@ const AdminVendors = () => {
                   </TableCell>
                   <TableCell>
                     {(() => {
+                      const c = complianceByVendor[v.id];
+                      const ok = !!(c?.auth && c?.mandate);
+                      const partial = !!(c?.auth || c?.mandate);
+                      const cfg = ok
+                        ? { bg: "#F0FDF4", text: "#059669", label: "Conforme", Icon: ShieldCheck }
+                        : partial
+                          ? { bg: "#FFFBEB", text: "#D97706", label: c?.auth ? "Sans mandat" : "Non déclaré", Icon: ShieldAlert }
+                          : { bg: "#FEF2F2", text: "#B91C1C", label: "Non conforme", Icon: ShieldAlert };
+                      return (
+                        <button
+                          onClick={() => setComplianceVendor({ id: v.id, name: v.name })}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold hover:brightness-95"
+                          style={{ backgroundColor: cfg.bg, color: cfg.text }}
+                          title="Modifier la conformité"
+                        >
+                          <cfg.Icon size={11} /> {cfg.label}
+                        </button>
+                      );
+                    })()}
+                  </TableCell>
+                  <TableCell>
+                    {(() => {
                       const vmi = vmiByVendor[v.id];
                       const status = vmi?.status ?? "none";
                       const vmiBusy = vmiBusyId === v.id;

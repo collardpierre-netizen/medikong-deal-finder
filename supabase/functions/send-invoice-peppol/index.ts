@@ -9,6 +9,7 @@ import {
   submitInvoiceToFalco,
   persistFalcoResult,
   isFalcoConfigured,
+  getFalcoConfig,
   logFalco,
   normalizeFalcoPeppolIdentifier,
   normalizeFalcoVatNumber,

@@ -323,6 +323,14 @@ Deno.serve(async (req) => {
       return json(422, { ok: false, error: "build_failed", details: built.error });
     }
 
+    const cfg = getFalcoConfig();
+    console.log("[send-invoice-peppol] config:", {
+      appSecretPrefix: cfg.appSecret.substring(0, 6),
+      appSecretLength: cfg.appSecret.length,
+      apiKeyPrefix: cfg.apiKey.substring(0, 6),
+      baseUrl: cfg.baseUrl,
+    });
+
     const falcoRes = await submitInvoiceToFalco(built.pdfBytes, built.metadata, {
       pdfFilename: `${inv.invoice_number}.pdf`,
       caller: "send-invoice-peppol",

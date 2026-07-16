@@ -926,7 +926,7 @@ export default function VendorOnboardingWizard() {
               <div />
             )}
 
-            {step < 5 ? (
+            {step < 6 ? (
               <button
                 onClick={() => setStep(step + 1)}
                 disabled={!canProceed()}

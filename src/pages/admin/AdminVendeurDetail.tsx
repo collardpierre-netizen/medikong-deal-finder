@@ -1330,6 +1330,13 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
 function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boolean; onOpenChange: (o: boolean) => void; vendor: any; onSaved: () => void }) {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [peppolCheck, setPeppolCheck] = useState<{
+    checking: boolean;
+    checkedFor: string | null;
+    registered: boolean | null;
+    found: boolean | null;
+    message: string | null;
+  }>({ checking: false, checkedFor: null, registered: null, found: null, message: null });
   const [form, setForm] = useState({
     company_name: vendor.company_name || "",
     email: vendor.email || "",
@@ -1349,6 +1356,7 @@ function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boole
     website_url: (vendor as any).website || (vendor as any).website_url || "",
     contact_name: vendor.contact_name || "",
   });
+
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 

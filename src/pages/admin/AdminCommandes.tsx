@@ -20,7 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
   ShoppingCart, TrendingUp, Clock, CreditCard, Truck, Percent,
-  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle, CalendarClock, Copy, Pencil, Flame, FileDown, Eye, Check, X,
+  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle, CalendarClock, Copy, Pencil, Flame, FileDown, Eye, Check, X, Plus,
 } from "lucide-react";
 import { fmtEur } from "@/lib/format-currency";
 import { computeOrderTotals } from "@/lib/manual-order-metrics";
@@ -797,6 +797,15 @@ const AdminCommandes = () => {
           <button onClick={handleExportCsv} className="flex items-center gap-2 px-4 py-2 rounded-md text-[13px] font-bold text-white" style={{ backgroundColor: "#1B5BDA" }}>
             <Download size={15} /> Export CSV
           </button>
+          <button
+            onClick={() => navigate("/admin/commandes/nouvelle")}
+            className="flex items-center gap-2 px-4 py-2 rounded-md text-[13px] font-bold text-white"
+            style={{ backgroundColor: "#0F172A" }}
+            title="Créer une nouvelle commande manuelle"
+          >
+            <Plus size={15} /> Nouvelle commande
+          </button>
+
 
         </div>
       } />

@@ -40,6 +40,7 @@ const sections: NavSection[] = [
       { label: "Exclusivités vendeurs", path: "/admin/exclusivites", icon: ShieldCheck },
       { label: "Demandes d'exclusivité", path: "/admin/vendor-exclusivity-requests", icon: ShieldCheck },
       { label: "Autorisations marques", path: "/admin/vendor-brand-authorizations", icon: ShieldCheck },
+      { label: "Offres bloquées", path: "/admin/offers", icon: ShieldAlert },
       { labelKey: "products", path: "/admin/produits", icon: Package },
       { labelKey: "productSubmissions", path: "/admin/produits-soumis", icon: ClipboardList },
       { labelKey: "categories", path: "/admin/categories", icon: Layers },

@@ -20,43 +20,36 @@ const json = (status: number, body: unknown) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-// Map any Falco status string to our order_invoices.peppol_status column values.
+// Map Falco `peppol_send_status` values to our order_invoices.peppol_status column.
+// Falco enum: not_sent | success | failure | rejected
 const STATUS_MAP: Record<string, string> = {
-  submitted: "submitted",
-  pending: "submitted",
-  processing: "submitted",
-  sent: "sent",
-  delivered: "sent",
-  accepted: "sent",
-  failed: "failed",
+  not_sent: "submitted",
+  success: "sent",
+  failure: "failed",
   rejected: "rejected",
-  error: "failed",
+  // legacy / passthrough
+  submitted: "submitted",
+  sent: "sent",
+  failed: "failed",
 };
 
 function normalizeStatus(raw: unknown): string | null {
   const s = String(raw ?? "").trim().toLowerCase();
   if (!s) return null;
-  return STATUS_MAP[s] ?? s; // pass-through unknown strings so they surface
+  return STATUS_MAP[s] ?? s;
 }
 
 function extractDoc(doc: any): { id: string | null; status: string | null; error: string | null } {
-  const id =
-    doc?.id ||
-    doc?.document_id ||
-    doc?.uuid ||
-    null;
-  const peppol = doc?.peppol_status || doc?.peppol || doc || {};
-  const status =
-    normalizeStatus(peppol?.status) ??
-    normalizeStatus(doc?.status) ??
-    null;
-  const error =
-    peppol?.error_message ||
-    peppol?.error ||
-    doc?.error_message ||
-    doc?.error ||
-    null;
-  return { id: id ? String(id) : null, status, error: error ? String(error) : null };
+  const id = doc?.id ? String(doc.id) : null;
+  const status = normalizeStatus(doc?.peppol_send_status ?? doc?.status);
+  let error: string | null = null;
+  if (Array.isArray(doc?.events)) {
+    const failure = [...doc.events]
+      .reverse()
+      .find((e: any) => e?.type === "peppol_send_failure");
+    if (failure) error = failure?.message || failure?.details || `peppol_send_failure @ ${failure?.date || "?"}`;
+  }
+  return { id, status, error };
 }
 
 Deno.serve(async (req) => {

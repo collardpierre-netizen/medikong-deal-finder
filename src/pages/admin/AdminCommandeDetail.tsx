@@ -521,6 +521,8 @@ const AdminCommandeDetail = () => {
 
 
 
+          <OrderProductsSummary lines={lines} />
+
           <div className="bg-white border rounded-lg overflow-hidden" style={{ borderColor: "#E2E8F0" }}>
             <table className="w-full text-sm">
               <thead style={{ backgroundColor: "#F8FAFC" }}>

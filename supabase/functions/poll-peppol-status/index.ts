@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
         peppol_status: status,
         peppol_error: error,
       };
-      if (status === "sent") patch.peppol_delivered_at = new Date().toISOString();
+
 
       const { error: updErr } = await supabase
         .from("order_invoices")

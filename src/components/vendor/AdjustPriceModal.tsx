@@ -71,7 +71,7 @@ export function AdjustPriceModal({ open, onOpenChange, ctx, invalidateKeys, onPr
     queryFn: async (): Promise<number | null> => {
       if (!ctx?.offerId || !ctx?.vendorId || !ctx?.productId) return null;
       const [{ data: offer }, { data: dflt }] = await Promise.all([
-        supabase.from("offers").select("purchase_price_excl_vat").eq("id", ctx.offerId).maybeSingle(),
+        supabase.from("offers_private" as any).select("purchase_price_excl_vat").eq("id", ctx.offerId).maybeSingle(),
         supabase
           .from("vendor_product_costs")
           .select("default_purchase_price_excl_vat")

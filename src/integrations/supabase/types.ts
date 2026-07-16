@@ -2039,6 +2039,13 @@ export type Database = {
             foreignKeyName: "cart_items_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
+            referencedRelation: "offers_private"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_items_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
             referencedRelation: "offers_public_v"
             referencedColumns: ["id"]
           },
@@ -3553,6 +3560,13 @@ export type Database = {
             columns: ["offer_id"]
             isOneToOne: false
             referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discount_tiers_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_private"
             referencedColumns: ["id"]
           },
           {
@@ -5763,6 +5777,13 @@ export type Database = {
             foreignKeyName: "market_delta_anomalies_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
+            referencedRelation: "offers_private"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_delta_anomalies_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
             referencedRelation: "offers_public_v"
             referencedColumns: ["id"]
           },
@@ -6879,6 +6900,13 @@ export type Database = {
             foreignKeyName: "offer_buyer_profile_prices_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
+            referencedRelation: "offers_private"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_buyer_profile_prices_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
             referencedRelation: "offers_public_v"
             referencedColumns: ["id"]
           },
@@ -6964,6 +6992,13 @@ export type Database = {
             foreignKeyName: "offer_categories_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
+            referencedRelation: "offers_private"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_categories_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
             referencedRelation: "offers_public_v"
             referencedColumns: ["id"]
           },
@@ -7037,6 +7072,13 @@ export type Database = {
             columns: ["offer_id"]
             isOneToOne: false
             referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_data_quality_logs_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_private"
             referencedColumns: ["id"]
           },
           {
@@ -7185,6 +7227,13 @@ export type Database = {
             columns: ["offer_id"]
             isOneToOne: false
             referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_margin_snapshots_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_private"
             referencedColumns: ["id"]
           },
           {
@@ -7364,6 +7413,13 @@ export type Database = {
             columns: ["offer_id"]
             isOneToOne: false
             referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_price_tiers_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_private"
             referencedColumns: ["id"]
           },
           {
@@ -8071,6 +8127,13 @@ export type Database = {
             foreignKeyName: "order_items_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
+            referencedRelation: "offers_private"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
             referencedRelation: "offers_public_v"
             referencedColumns: ["id"]
           },
@@ -8348,6 +8411,13 @@ export type Database = {
             columns: ["offer_id"]
             isOneToOne: false
             referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_private"
             referencedColumns: ["id"]
           },
           {
@@ -11557,6 +11627,13 @@ export type Database = {
             columns: ["offer_id"]
             isOneToOne: false
             referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_lines_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_private"
             referencedColumns: ["id"]
           },
           {
@@ -17138,6 +17215,13 @@ export type Database = {
             foreignKeyName: "vendor_competitor_alerts_my_offer_id_fkey"
             columns: ["my_offer_id"]
             isOneToOne: false
+            referencedRelation: "offers_private"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_my_offer_id_fkey"
+            columns: ["my_offer_id"]
+            isOneToOne: false
             referencedRelation: "offers_public_v"
             referencedColumns: ["id"]
           },
@@ -19895,6 +19979,13 @@ export type Database = {
             foreignKeyName: "vendor_price_challenges_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
+            referencedRelation: "offers_private"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_price_challenges_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
             referencedRelation: "offers_public_v"
             referencedColumns: ["id"]
           },
@@ -21807,6 +21898,13 @@ export type Database = {
             foreignKeyName: "order_lines_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
+            referencedRelation: "offers_private"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
             referencedRelation: "offers_public_v"
             referencedColumns: ["id"]
           },
@@ -22378,6 +22476,319 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "public_top_price_deltas"
             referencedColumns: ["product_id"]
+          },
+        ]
+      }
+      offers_private: {
+        Row: {
+          admin_hidden: boolean | null
+          admin_hidden_at: string | null
+          admin_hidden_by: string | null
+          admin_hidden_reason: string | null
+          applied_margin_percentage: number | null
+          applied_margin_rule_id: string | null
+          campaign_id: string | null
+          carton_size_override: number | null
+          commission_model: string | null
+          commission_override_created_via_admin_shortcut: boolean | null
+          commission_override_reason: string | null
+          commission_override_status:
+            | Database["public"]["Enums"]["commission_override_status"]
+            | null
+          commission_override_updated_at: string | null
+          commission_override_updated_by: string | null
+          commission_rate: number | null
+          commission_valid_from: string | null
+          commission_valid_until: string | null
+          country_code: string | null
+          country_codes: string[] | null
+          created_at: string | null
+          delivery_days: number | null
+          down_payment_pct: number | null
+          estimated_delivery_days: number | null
+          fixed_commission_amount: number | null
+          has_extended_delivery: boolean | null
+          id: string | null
+          is_active: boolean | null
+          is_qogita_backed: boolean | null
+          is_top_seller: boolean | null
+          is_traceable: boolean | null
+          last_sync_run_id: string | null
+          margin_amount: number | null
+          margin_split_pct: number | null
+          max_delivery_days: number | null
+          min_delivery_days: number | null
+          moq: number | null
+          mov: number | null
+          mov_amount: number | null
+          mov_currency: string | null
+          pack_size_override: number | null
+          packaging_languages: string[] | null
+          price_excl_vat: number | null
+          price_incl_vat: number | null
+          price_tiers: Json | null
+          product_id: string | null
+          purchase_price: number | null
+          purchase_price_excl_vat: number | null
+          qogita_base_delay_days: number | null
+          qogita_base_price: number | null
+          qogita_offer_qid: string | null
+          qogita_seller_fid: string | null
+          shipping_from_country: string | null
+          source_supplier: string | null
+          stock_quantity: number | null
+          stock_status: Database["public"]["Enums"]["stock_status_enum"] | null
+          suggested_retail_price_cents: number | null
+          suggested_retail_price_source:
+            | Database["public"]["Enums"]["pvp_source_enum"]
+            | null
+          synced_at: string | null
+          updated_at: string | null
+          vat_rate: number | null
+          vendor_id: string | null
+          vendor_note: string | null
+        }
+        Insert: {
+          admin_hidden?: boolean | null
+          admin_hidden_at?: string | null
+          admin_hidden_by?: string | null
+          admin_hidden_reason?: string | null
+          applied_margin_percentage?: number | null
+          applied_margin_rule_id?: string | null
+          campaign_id?: string | null
+          carton_size_override?: number | null
+          commission_model?: string | null
+          commission_override_created_via_admin_shortcut?: boolean | null
+          commission_override_reason?: string | null
+          commission_override_status?:
+            | Database["public"]["Enums"]["commission_override_status"]
+            | null
+          commission_override_updated_at?: string | null
+          commission_override_updated_by?: string | null
+          commission_rate?: number | null
+          commission_valid_from?: string | null
+          commission_valid_until?: string | null
+          country_code?: string | null
+          country_codes?: string[] | null
+          created_at?: string | null
+          delivery_days?: number | null
+          down_payment_pct?: number | null
+          estimated_delivery_days?: number | null
+          fixed_commission_amount?: number | null
+          has_extended_delivery?: boolean | null
+          id?: string | null
+          is_active?: boolean | null
+          is_qogita_backed?: boolean | null
+          is_top_seller?: boolean | null
+          is_traceable?: boolean | null
+          last_sync_run_id?: string | null
+          margin_amount?: number | null
+          margin_split_pct?: number | null
+          max_delivery_days?: number | null
+          min_delivery_days?: number | null
+          moq?: number | null
+          mov?: number | null
+          mov_amount?: number | null
+          mov_currency?: string | null
+          pack_size_override?: number | null
+          packaging_languages?: string[] | null
+          price_excl_vat?: number | null
+          price_incl_vat?: number | null
+          price_tiers?: Json | null
+          product_id?: string | null
+          purchase_price?: number | null
+          purchase_price_excl_vat?: number | null
+          qogita_base_delay_days?: number | null
+          qogita_base_price?: number | null
+          qogita_offer_qid?: string | null
+          qogita_seller_fid?: string | null
+          shipping_from_country?: string | null
+          source_supplier?: string | null
+          stock_quantity?: number | null
+          stock_status?: Database["public"]["Enums"]["stock_status_enum"] | null
+          suggested_retail_price_cents?: number | null
+          suggested_retail_price_source?:
+            | Database["public"]["Enums"]["pvp_source_enum"]
+            | null
+          synced_at?: string | null
+          updated_at?: string | null
+          vat_rate?: number | null
+          vendor_id?: string | null
+          vendor_note?: string | null
+        }
+        Update: {
+          admin_hidden?: boolean | null
+          admin_hidden_at?: string | null
+          admin_hidden_by?: string | null
+          admin_hidden_reason?: string | null
+          applied_margin_percentage?: number | null
+          applied_margin_rule_id?: string | null
+          campaign_id?: string | null
+          carton_size_override?: number | null
+          commission_model?: string | null
+          commission_override_created_via_admin_shortcut?: boolean | null
+          commission_override_reason?: string | null
+          commission_override_status?:
+            | Database["public"]["Enums"]["commission_override_status"]
+            | null
+          commission_override_updated_at?: string | null
+          commission_override_updated_by?: string | null
+          commission_rate?: number | null
+          commission_valid_from?: string | null
+          commission_valid_until?: string | null
+          country_code?: string | null
+          country_codes?: string[] | null
+          created_at?: string | null
+          delivery_days?: number | null
+          down_payment_pct?: number | null
+          estimated_delivery_days?: number | null
+          fixed_commission_amount?: number | null
+          has_extended_delivery?: boolean | null
+          id?: string | null
+          is_active?: boolean | null
+          is_qogita_backed?: boolean | null
+          is_top_seller?: boolean | null
+          is_traceable?: boolean | null
+          last_sync_run_id?: string | null
+          margin_amount?: number | null
+          margin_split_pct?: number | null
+          max_delivery_days?: number | null
+          min_delivery_days?: number | null
+          moq?: number | null
+          mov?: number | null
+          mov_amount?: number | null
+          mov_currency?: string | null
+          pack_size_override?: number | null
+          packaging_languages?: string[] | null
+          price_excl_vat?: number | null
+          price_incl_vat?: number | null
+          price_tiers?: Json | null
+          product_id?: string | null
+          purchase_price?: number | null
+          purchase_price_excl_vat?: number | null
+          qogita_base_delay_days?: number | null
+          qogita_base_price?: number | null
+          qogita_offer_qid?: string | null
+          qogita_seller_fid?: string | null
+          shipping_from_country?: string | null
+          source_supplier?: string | null
+          stock_quantity?: number | null
+          stock_status?: Database["public"]["Enums"]["stock_status_enum"] | null
+          suggested_retail_price_cents?: number | null
+          suggested_retail_price_source?:
+            | Database["public"]["Enums"]["pvp_source_enum"]
+            | null
+          synced_at?: string | null
+          updated_at?: string | null
+          vat_rate?: number | null
+          vendor_id?: string | null
+          vendor_note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offers_applied_margin_rule_id_fkey"
+            columns: ["applied_margin_rule_id"]
+            isOneToOne: false
+            referencedRelation: "margin_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_offer_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -24223,6 +24634,13 @@ export type Database = {
             columns: ["my_offer_id"]
             isOneToOne: false
             referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_my_offer_id_fkey"
+            columns: ["my_offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_private"
             referencedColumns: ["id"]
           },
           {

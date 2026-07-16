@@ -177,8 +177,8 @@ export async function exportOffers(opts?: { activeOnly?: boolean }) {
       const pageNum = diag.pages + 1;
       const { data, error } = await withRetry(
         async () => {
-          let q = supabase
-            .from("offers")
+          let q = (supabase as any)
+            .from("offers_private")
             .select("id, product_id, vendor_id, country_code, price_excl_vat, price_incl_vat, vat_rate, stock_quantity, stock_status, moq, mov, mov_amount, mov_currency, delivery_days, is_active, purchase_price, qogita_base_price, applied_margin_percentage, margin_amount, is_qogita_backed")
             .order("id", { ascending: true })
             .limit(PAGE);

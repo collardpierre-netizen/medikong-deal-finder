@@ -119,8 +119,8 @@ export default function AdminCommissionOverridesPage() {
     enabled: scope === "offer",
     queryKey: ["admin-commission-overrides", "offer", tab],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("offers")
+      const { data, error } = await (supabase as any)
+        .from("offers_private")
         .select(`
           id, vendor_id, product_id, commission_model, commission_rate,
           margin_split_pct, fixed_commission_amount, commission_override_status,

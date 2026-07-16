@@ -229,7 +229,7 @@ export function useProductOffers(productId: string | undefined) {
       const { data: offers, error } = await supabase
         .from("offers")
         .select(
-          "id, product_id, vendor_id, price_excl_vat, price_incl_vat, vat_rate, stock_quantity, stock_status, moq, mov, mov_amount, mov_currency, delivery_days, shipping_from_country, price_tiers, is_active, synced_at, updated_at, country_code, is_traceable, has_extended_delivery, min_delivery_days, max_delivery_days, estimated_delivery_days, is_qogita_backed, qogita_offer_qid, is_top_seller, pack_size_override, suggested_retail_price_cents, suggested_retail_price_source, carton_size_override, packaging_languages, vendor_note, campaign_id"
+          "id, product_id, vendor_id, price_excl_vat, price_incl_vat, vat_rate, stock_quantity, stock_status, moq, mov, mov_amount, mov_currency, delivery_days, shipping_from_country, price_tiers, is_active, synced_at, updated_at, country_code, is_traceable, has_extended_delivery, min_delivery_days, max_delivery_days, estimated_delivery_days, is_qogita_backed, qogita_offer_qid, is_top_seller, pack_size_override, suggested_retail_price_cents, suggested_retail_price_source, carton_size_override, packaging_languages, campaign_id"
         )
         .eq("product_id", productId!)
         .eq("is_active", true)
@@ -410,7 +410,7 @@ export function useProductOffers(productId: string | undefined) {
           minDeliveryDays: o.min_delivery_days || undefined,
           maxDeliveryDays: o.max_delivery_days || undefined,
           estimatedDeliveryDays: o.estimated_delivery_days || undefined,
-          vendorNote: o.vendor_note ?? null,
+          vendorNote: null,
           cartonSizeOverride: o.carton_size_override ?? null,
           packagingLanguages: Array.isArray(o.packaging_languages) ? o.packaging_languages : null,
           isExclusiveWinner: !!exclMode && o.vendor_id === exclVendorId,

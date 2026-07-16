@@ -122,8 +122,8 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
     enabled: previewEnabled,
     queryKey: ["admin-cco-preview", scope, vendorId, productId, offerId],
     queryFn: async (): Promise<PreviewOffer[]> => {
-      const base = supabase
-        .from("offers")
+      const base = (supabase as any)
+        .from("offers_private")
         .select(
           "id, price_excl_vat, purchase_price_excl_vat, purchase_price, vendors:vendor_id(name, company_name), products:product_id(name, gtin)"
         );
@@ -201,8 +201,8 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
           source: "product",
         }));
       }
-      const { data, error } = await supabase
-        .from("offers")
+      const { data, error } = await (supabase as any)
+        .from("offers_private")
         .select("id, commission_model, commission_rate, margin_split_pct, fixed_commission_amount, commission_valid_from, commission_valid_until, commission_override_status")
         .eq("id", offerId!)
         .not("commission_model", "is", null)

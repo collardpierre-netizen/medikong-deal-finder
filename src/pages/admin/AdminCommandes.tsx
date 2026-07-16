@@ -20,7 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
   ShoppingCart, TrendingUp, Clock, CreditCard, Truck, Percent,
-  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle, CalendarClock, Copy, Pencil, Flame, FileDown, Eye, Check, X,
+  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle, CalendarClock, Copy, Pencil, Flame, FileDown, Eye, Check, X, Plus,
 } from "lucide-react";
 import { fmtEur } from "@/lib/format-currency";
 import { computeOrderTotals } from "@/lib/manual-order-metrics";

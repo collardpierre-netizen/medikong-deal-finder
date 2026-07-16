@@ -737,8 +737,108 @@ export default function VendorOnboardingWizard() {
             </div>
           )}
 
-          {/* ─── STEP 5: Review ─── */}
+          {/* ─── STEP 5: Distribution & Mandat de facturation ─── */}
           {step === 5 && (
+            <div className="space-y-5">
+              <div className="flex items-center gap-2 mb-4">
+                <FileSignature className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">Distribution & Mandat de facturation</h2>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Ces deux conditions sont indispensables pour publier vos offres sur MediKong.
+                Vous ne pourrez pas activer d'offre sans les avoir remplies.
+              </p>
+
+              {/* Distributeur autorisé */}
+              <div className="rounded-lg border-2 border-border p-4 space-y-3">
+                <div className="flex items-start gap-2">
+                  <ShieldCheck className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">Distributeur autorisé</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Vous déclarez être fabricant, filiale, distributeur exclusif ou revendeur
+                      dûment autorisé pour les marques que vous vendrez sur MediKong,
+                      conformément à la réglementation applicable (produits pharmaceutiques,
+                      dispositifs médicaux, cosmétiques, compléments alimentaires).
+                    </p>
+                  </div>
+                </div>
+
+                <label className="flex items-start gap-3 cursor-pointer rounded-md border border-border p-3 hover:border-primary/40 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={isAuthorizedDistributor}
+                    onChange={(e) => setIsAuthorizedDistributor(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 accent-primary cursor-pointer"
+                  />
+                  <span className="text-sm text-foreground">
+                    <span className="font-medium">Je déclare</span> être un distributeur autorisé
+                    pour l'ensemble des produits que je proposerai à la vente.
+                  </span>
+                </label>
+
+                <label className="flex items-start gap-3 cursor-pointer rounded-md border border-border p-3 hover:border-primary/40 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={distributorConfirm}
+                    onChange={(e) => setDistributorConfirm(e.target.checked)}
+                    disabled={!isAuthorizedDistributor}
+                    className="mt-0.5 w-4 h-4 accent-primary cursor-pointer disabled:opacity-40"
+                  />
+                  <span className="text-sm text-foreground">
+                    <span className="font-medium">Je confirme</span> pouvoir fournir sur demande,
+                    par marque, tout justificatif d'autorisation de distribution
+                    (contrat, lettre du titulaire, licence).
+                  </span>
+                </label>
+
+                <div className="flex items-start gap-2 rounded-md bg-amber-50 border border-amber-200 p-3">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-800">
+                    Toute fausse déclaration entraînera la suspension immédiate de votre compte
+                    et le retrait des offres concernées, sans préjudice de poursuites éventuelles.
+                  </p>
+                </div>
+              </div>
+
+              {/* Mandat de facturation */}
+              <div className="rounded-lg border-2 border-border p-4 space-y-3">
+                <div className="flex items-start gap-2">
+                  <FileSignature className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">Mandat de facturation « au nom et pour le compte »</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      MediKong (Balooh SRL) émet les factures acheteurs en votre nom et pour votre
+                      compte via un mandat de facturation (self-billing). Ce mandat doit être
+                      signé électroniquement avant toute publication d'offre.
+                    </p>
+                  </div>
+                </div>
+
+                <label className="flex items-start gap-3 cursor-pointer rounded-md border border-border p-3 hover:border-primary/40 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={mandateCommitment}
+                    onChange={(e) => setMandateCommitment(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 accent-primary cursor-pointer"
+                  />
+                  <span className="text-sm text-foreground">
+                    <span className="font-medium">Je m'engage à signer</span> la convention de
+                    mandat de facturation dès la fin de mon inscription. Vous serez redirigé(e)
+                    automatiquement vers la page de signature.
+                  </span>
+                </label>
+
+                <p className="text-[11px] text-muted-foreground italic">
+                  ℹ️ Tant que le mandat n'est pas signé et que la déclaration de distributeur
+                  autorisé n'est pas confirmée, vos offres resteront bloquées en publication.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ─── STEP 6: Review ─── */}
+          {step === 6 && (
             <div className="space-y-5">
               <div className="flex items-center gap-2 mb-4">
                 <Clipboard className="w-5 h-5 text-primary" />

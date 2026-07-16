@@ -24,6 +24,7 @@ interface NavItem {
 
 interface NavSection {
   labelKey: string;
+  label?: string;
   items: NavItem[];
 }
 

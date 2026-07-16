@@ -315,7 +315,10 @@ export default function VendorDashboard() {
             netMarginCents={monthly?.netMarginCents ?? 0}
             progress={gmvProgress ?? null}
             loading={monthlyLoading}
+            tradingCommissionCents={monthly?.commissionSplit?.tradingCents ?? 0}
+            marketplaceCommissionCents={monthly?.commissionSplit?.marketplaceCents ?? 0}
           />
+
 
           {/* Split commission trading vs marketplace + Ventes site vs manuelles */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

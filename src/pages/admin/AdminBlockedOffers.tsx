@@ -1,16 +1,23 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { format } from "date-fns";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { RefreshCw, ShieldAlert, ExternalLink } from "lucide-react";
+import { RefreshCw, ShieldAlert, ExternalLink, CalendarIcon, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type BlockedOffer = {
   offer_id: string;
@@ -20,6 +27,8 @@ type BlockedOffer = {
   product_id: string | null;
   product_name: string | null;
   product_gtin: string | null;
+  brand_id: string | null;
+  brand_name: string | null;
   is_active: boolean;
   updated_at: string | null;
   missing_distributor: boolean;
@@ -29,9 +38,16 @@ type BlockedOffer = {
   reason: string;
 };
 
+type ReasonFilter = "all" | "both" | "distributor" | "mandate";
+
 export default function AdminBlockedOffers() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [vendorFilter, setVendorFilter] = useState<string>("all");
+  const [brandFilter, setBrandFilter] = useState<string>("all");
+  const [reasonFilter, setReasonFilter] = useState<ReasonFilter>("all");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
 
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["admin-blocked-offers"],
@@ -62,15 +78,55 @@ export default function AdminBlockedOffers() {
     onError: (e: any) => toast.error(e?.message ?? "Erreur re-contrôle"),
   });
 
+  const vendorOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    (data ?? []).forEach((r) => {
+      if (r.vendor_id) map.set(r.vendor_id, r.vendor_name || r.vendor_display_code || r.vendor_id);
+    });
+    return Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+  }, [data]);
+
+  const brandOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    (data ?? []).forEach((r) => {
+      if (r.brand_id) map.set(r.brand_id, r.brand_name || r.brand_id);
+    });
+    return Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+  }, [data]);
+
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return data ?? [];
-    return (data ?? []).filter((r) =>
-      [r.vendor_name, r.vendor_display_code, r.product_name, r.product_gtin, r.reason]
-        .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(q)),
-    );
-  }, [data, search]);
+    const fromTs = dateFrom ? new Date(dateFrom).setHours(0, 0, 0, 0) : null;
+    const toTs = dateTo ? new Date(dateTo).setHours(23, 59, 59, 999) : null;
+
+    return (data ?? []).filter((r) => {
+      if (vendorFilter !== "all" && r.vendor_id !== vendorFilter) return false;
+      if (brandFilter !== "all" && r.brand_id !== brandFilter) return false;
+
+      if (reasonFilter === "both" && !(r.missing_distributor && r.missing_mandate)) return false;
+      if (reasonFilter === "distributor" && !(r.missing_distributor && !r.missing_mandate)) return false;
+      if (reasonFilter === "mandate" && !(!r.missing_distributor && r.missing_mandate)) return false;
+
+      if (fromTs !== null || toTs !== null) {
+        const t = r.updated_at ? new Date(r.updated_at).getTime() : NaN;
+        if (Number.isNaN(t)) return false;
+        if (fromTs !== null && t < fromTs) return false;
+        if (toTs !== null && t > toTs) return false;
+      }
+
+      if (q) {
+        return [
+          r.vendor_name, r.vendor_display_code, r.product_name,
+          r.product_gtin, r.brand_name, r.reason,
+        ].filter(Boolean).some((v) => String(v).toLowerCase().includes(q));
+      }
+      return true;
+    });
+  }, [data, search, vendorFilter, brandFilter, reasonFilter, dateFrom, dateTo]);
 
   const stats = useMemo(() => {
     const total = data?.length ?? 0;
@@ -79,6 +135,18 @@ export default function AdminBlockedOffers() {
     const missingMandate = (data ?? []).filter((r) => !r.missing_distributor && r.missing_mandate).length;
     return { total, missingBoth, missingDist, missingMandate };
   }, [data]);
+
+  const activeFilters =
+    (vendorFilter !== "all" ? 1 : 0) +
+    (brandFilter !== "all" ? 1 : 0) +
+    (reasonFilter !== "all" ? 1 : 0) +
+    (dateFrom ? 1 : 0) + (dateTo ? 1 : 0) +
+    (search.trim() ? 1 : 0);
+
+  function resetFilters() {
+    setSearch(""); setVendorFilter("all"); setBrandFilter("all");
+    setReasonFilter("all"); setDateFrom(undefined); setDateTo(undefined);
+  }
 
   return (
     <div className="space-y-6 p-6">
@@ -107,16 +175,101 @@ export default function AdminBlockedOffers() {
       </div>
 
       <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
+        <CardHeader className="space-y-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Input
-              placeholder="Rechercher (vendeur, produit, GTIN, motif)…"
+              placeholder="Rechercher (vendeur, produit, GTIN, marque, motif)…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="max-w-md"
             />
-            <span className="text-xs text-muted-foreground">{rows.length} résultat(s)</span>
+
+            <Select value={vendorFilter} onValueChange={setVendorFilter}>
+              <SelectTrigger className="w-[220px]">
+                <SelectValue placeholder="Vendeur" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les vendeurs</SelectItem>
+                {vendorOptions.map((v) => (
+                  <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={brandFilter} onValueChange={setBrandFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Marque" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes les marques</SelectItem>
+                {brandOptions.map((b) => (
+                  <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={reasonFilter} onValueChange={(v) => setReasonFilter(v as ReasonFilter)}>
+              <SelectTrigger className="w-[240px]">
+                <SelectValue placeholder="Motif" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les motifs</SelectItem>
+                <SelectItem value="both">Distributeur + mandat manquants</SelectItem>
+                <SelectItem value="distributor">Distributeur non autorisé</SelectItem>
+                <SelectItem value="mandate">Mandat non signé</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn("w-[170px] justify-start text-left font-normal", !dateFrom && "text-muted-foreground")}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateFrom ? format(dateFrom, "dd/MM/yyyy") : "Bloquée depuis"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dateFrom}
+                  onSelect={setDateFrom}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn("w-[170px] justify-start text-left font-normal", !dateTo && "text-muted-foreground")}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateTo ? format(dateTo, "dd/MM/yyyy") : "Bloquée jusqu'à"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dateTo}
+                  onSelect={setDateTo}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+
+            {activeFilters > 0 && (
+              <Button variant="ghost" size="sm" onClick={resetFilters}>
+                <X className="h-4 w-4 mr-1" />
+                Réinitialiser ({activeFilters})
+              </Button>
+            )}
           </div>
+          <div className="text-xs text-muted-foreground">{rows.length} résultat(s)</div>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
@@ -124,6 +277,7 @@ export default function AdminBlockedOffers() {
               <TableRow>
                 <TableHead>Vendeur</TableHead>
                 <TableHead>Produit</TableHead>
+                <TableHead>Marque</TableHead>
                 <TableHead>Motif exact</TableHead>
                 <TableHead>Distributeur</TableHead>
                 <TableHead>Mandat</TableHead>
@@ -133,10 +287,10 @@ export default function AdminBlockedOffers() {
             </TableHeader>
             <TableBody>
               {isLoading && (
-                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Chargement…</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Chargement…</TableCell></TableRow>
               )}
               {!isLoading && rows.length === 0 && (
-                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucune offre bloquée 🎉</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Aucune offre bloquée 🎉</TableCell></TableRow>
               )}
               {rows.map((r) => (
                 <TableRow key={r.offer_id}>
@@ -154,6 +308,7 @@ export default function AdminBlockedOffers() {
                     <div className="text-sm">{r.product_name ?? "—"}</div>
                     <div className="text-xs text-muted-foreground">{r.product_gtin ?? ""}</div>
                   </TableCell>
+                  <TableCell className="text-sm">{r.brand_name ?? "—"}</TableCell>
                   <TableCell>
                     <Badge variant="destructive">{r.reason}</Badge>
                   </TableCell>

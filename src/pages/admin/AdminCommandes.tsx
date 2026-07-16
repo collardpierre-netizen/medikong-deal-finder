@@ -1517,6 +1517,17 @@ const AdminCommandes = () => {
                                   </button>
                                 )}
                                 <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setPdfPreview({ id: o.rawId, number: o.id, status: o.status, lines: (o.lines || []) as any[] });
+                                  }}
+                                  title="Aperçu du PDF (récap 5 KPI + filigrane brouillon)"
+                                  className="p-1.5 rounded hover:bg-indigo-50"
+                                  style={{ color: "#4F46E5" }}
+                                >
+                                  <ScanEye size={14} />
+                                </button>
+                                <button
                                   onClick={async (e) => {
                                     e.stopPropagation();
                                     try {

@@ -82,8 +82,8 @@ const useVendorOffers = (vendorId: string | undefined, statusFilter: OfferStatus
     queryKey: ["vendor-offers", vendorId, statusFilter],
     queryFn: async () => {
       if (!vendorId) return [];
-      let q = supabase
-        .from("offers")
+      let q = (supabase as any)
+        .from("offers_private")
         .select("*, products(name, gtin, image_urls, slug, brand_name, category_name, cnk_code, pack_size, manufacturer_id, manufacturers(name))")
         .eq("vendor_id", vendorId)
         .order("created_at", { ascending: false });

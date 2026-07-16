@@ -260,7 +260,9 @@ export default function VendorOnboardingWizard() {
     },
     onSuccess: () => {
       toast.success("Inscription vendeur envoyée ! Votre compte est en cours de validation.");
-      navigate("/vendor");
+      // Si le vendeur s'est engagé à signer le mandat de facturation, on l'y amène directement
+      // pour débloquer la publication de ses offres (billing_mandate_signed via mandate_signed_at).
+      navigate(mandateCommitment ? "/vendor/contract" : "/vendor");
     },
     onError: (err: any) => {
       toast.error(err.message || "Erreur lors de l'inscription");

@@ -182,8 +182,30 @@ Deno.serve(async (req) => {
 
     doc.setTextColor(...MUTED);
     doc.text("Statut", M, y + 27);
-    doc.setTextColor(...NAVY);
-    doc.text(String(order.status || "—"), M + 18, y + 27);
+    const isDraft = String(order.status || "").toLowerCase() === "draft";
+    const STATUS_LABELS: Record<string, string> = {
+      draft: "Brouillon",
+      pending: "En attente",
+      confirmed: "Confirmée",
+      processing: "En cours",
+      shipped: "Expédiée",
+      delivered: "Livrée",
+      cancelled: "Annulée",
+    };
+    const statusLabel = STATUS_LABELS[String(order.status || "").toLowerCase()] || String(order.status || "—");
+    if (isDraft) {
+      // Pastille rouge "Brouillon" bien visible
+      doc.setFillColor(220, 38, 38); // red-600
+      doc.roundedRect(M + 18, y + 23.5, 26, 5.5, 1.2, 1.2, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(255, 255, 255);
+      doc.text(statusLabel.toUpperCase(), M + 31, y + 27.4, { align: "center" });
+      doc.setFont("helvetica", "normal");
+    } else {
+      doc.setTextColor(...NAVY);
+      doc.text(statusLabel, M + 18, y + 27);
+    }
 
     // Destinataire (carte)
     const cardX = pageW - M - 85;

@@ -231,7 +231,9 @@ const AdminFinances = () => {
             </table>
           )}
         </div>
+        </>
       )}
+
 
       {activeTab === "payouts" && (
         <VendorStatementsPanel vendors={vendors.filter((v: any) => v.is_active && v.type === "real")} />

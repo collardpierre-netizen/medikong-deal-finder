@@ -21,7 +21,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
   ShoppingCart, TrendingUp, Clock, CreditCard, Truck, Percent,
-  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle, CalendarClock, Copy, Pencil, Flame, FileDown, Eye, ScanEye, Check, X, Plus,
+  Search, Filter, Download, ChevronDown, ChevronRight, Package, Trash2, AlertTriangle, CalendarClock, Copy, Pencil, Flame, FileDown, Eye, ScanEye, Check, X, Plus, Zap,
 } from "lucide-react";
 import { fmtEur } from "@/lib/format-currency";
 import { computeOrderTotals } from "@/lib/manual-order-metrics";
@@ -1545,6 +1545,23 @@ const AdminCommandes = () => {
                                   style={{ color: "#1C58D9" }}
                                 >
                                   <FileDown size={14} />
+                                </button>
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    const { generateExpressOrderPdf } = await import("@/lib/express-order-pdf");
+                                    try {
+                                      await generateExpressOrderPdf(o.rawId);
+                                      toast.success("PDF express généré");
+                                    } catch (err: any) {
+                                      toast.error(err?.message || "Échec PDF express");
+                                    }
+                                  }}
+                                  title="PDF express (côté navigateur, sans attendre)"
+                                  className="p-1.5 rounded hover:bg-emerald-50"
+                                  style={{ color: "#059669" }}
+                                >
+                                  <Zap size={14} />
                                 </button>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); navigate(`/admin/commandes/nouvelle?duplicate=${o.rawId}`); }}

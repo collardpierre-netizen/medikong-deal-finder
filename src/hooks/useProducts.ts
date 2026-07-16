@@ -410,7 +410,7 @@ export function useProductOffers(productId: string | undefined) {
           minDeliveryDays: o.min_delivery_days || undefined,
           maxDeliveryDays: o.max_delivery_days || undefined,
           estimatedDeliveryDays: o.estimated_delivery_days || undefined,
-          vendorNote: o.vendor_note ?? null,
+          vendorNote: null,
           cartonSizeOverride: o.carton_size_override ?? null,
           packagingLanguages: Array.isArray(o.packaging_languages) ? o.packaging_languages : null,
           isExclusiveWinner: !!exclMode && o.vendor_id === exclVendorId,

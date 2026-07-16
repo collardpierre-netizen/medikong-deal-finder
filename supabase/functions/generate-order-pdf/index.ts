@@ -311,18 +311,25 @@ Deno.serve(async (req) => {
     {
       const agg = new Map<string, { name: string; cnk: string | null; qty: number; ht: number }>();
       let sumHt = 0;
+      let sumTtc = 0;
       let sumQty = 0;
       for (const l of (lines || [])) {
         const qty = Number(l.quantity) || 0;
         const ht = Number(l.line_total_excl_vat) || (Number(l.unit_price_excl_vat) || 0) * qty;
+        const ttcLine =
+          Number((l as any).line_total_incl_vat) ||
+          (Number((l as any).unit_price_incl_vat) || 0) * qty ||
+          ht * (1 + (Number((l as any).vat_rate) || 0) / 100);
         const cnk = (l as any).cnk_code || l.products?.cnk_code || null;
         const name = l.manual_label || l.products?.name || "—";
         const key = l.product_id || cnk || `${name}::${l.products?.gtin || ""}`;
         const cur = agg.get(key);
         if (cur) { cur.qty += qty; cur.ht += ht; } else { agg.set(key, { name, cnk, qty, ht }); }
         sumHt += ht;
+        sumTtc += ttcLine;
         sumQty += qty;
       }
+      const sumTva = Math.max(0, sumTtc - sumHt);
       const rows = Array.from(agg.values()).sort((a, b) => b.ht - a.ht);
 
       if (rows.length > 0) {
@@ -337,14 +344,16 @@ Deno.serve(async (req) => {
         doc.text("SYNTHÈSE DES PRODUITS (AGRÉGÉ)", M + 2, y + 4.9);
         y += 7;
 
-        // 3 KPI cards
-        const cardW = (pageW - 2 * M) / 3;
-        const cardH = 14;
+        // 5 KPI cards (uniques / quantité / HTVA / TVA / TTC)
         const kpis = [
           { label: "Produits uniques", value: String(rows.length), fill: [239, 246, 255], accent: [28, 88, 217] },
           { label: "Quantité totale", value: String(sumQty), fill: [240, 253, 244], accent: [21, 128, 61] },
           { label: "Total HTVA", value: fmtEur(Math.round(sumHt * 100), currency), fill: [254, 243, 199], accent: [180, 83, 9] },
+          { label: "Total TVA", value: fmtEur(Math.round(sumTva * 100), currency), fill: [243, 232, 255], accent: [126, 34, 206] },
+          { label: "Total TTC", value: fmtEur(Math.round(sumTtc * 100), currency), fill: [220, 252, 231], accent: [5, 150, 105] },
         ];
+        const cardW = (pageW - 2 * M) / kpis.length;
+        const cardH = 14;
         kpis.forEach((k, i) => {
           const x = M + i * cardW;
           doc.setFillColor(k.fill[0], k.fill[1], k.fill[2]);
@@ -352,11 +361,11 @@ Deno.serve(async (req) => {
           doc.setFillColor(k.accent[0], k.accent[1], k.accent[2]);
           doc.rect(x, y, 1.5, cardH, "F");
           doc.setFont("helvetica", "bold");
-          doc.setFontSize(10);
+          doc.setFontSize(9);
           doc.setTextColor(k.accent[0], k.accent[1], k.accent[2]);
           doc.text(k.value, x + cardW / 2, y + 6.5, { align: "center" });
           doc.setFont("helvetica", "normal");
-          doc.setFontSize(6.5);
+          doc.setFontSize(6.2);
           doc.setTextColor(...MUTED);
           doc.text(k.label, x + cardW / 2, y + 11, { align: "center" });
         });

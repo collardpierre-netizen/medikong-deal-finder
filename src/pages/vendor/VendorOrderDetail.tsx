@@ -272,6 +272,10 @@ export default function VendorOrderDetail() {
           );
         })()}
 
+        <div className="p-4 border-b border-border">
+          <OrderProductsSummary lines={order.lines as any} />
+        </div>
+
         <div className="divide-y divide-border">
           {order.lines.map((line) => (
             <VendorOrderLineRow key={line.id} line={line} order={order} readOnly />

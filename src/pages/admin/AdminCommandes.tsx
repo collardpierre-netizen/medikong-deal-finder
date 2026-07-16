@@ -797,6 +797,15 @@ const AdminCommandes = () => {
           <button onClick={handleExportCsv} className="flex items-center gap-2 px-4 py-2 rounded-md text-[13px] font-bold text-white" style={{ backgroundColor: "#1B5BDA" }}>
             <Download size={15} /> Export CSV
           </button>
+          <button
+            onClick={() => navigate("/admin/commandes/nouvelle")}
+            className="flex items-center gap-2 px-4 py-2 rounded-md text-[13px] font-bold text-white"
+            style={{ backgroundColor: "#0F172A" }}
+            title="Créer une nouvelle commande manuelle"
+          >
+            <Plus size={15} /> Nouvelle commande
+          </button>
+
 
         </div>
       } />

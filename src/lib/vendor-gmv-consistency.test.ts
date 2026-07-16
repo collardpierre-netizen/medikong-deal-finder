@@ -15,6 +15,15 @@ function monthly(over: Partial<VendorMonthlyDashboard> = {}): VendorMonthlyDashb
     dailySeries: [],
     customerTypeBreakdown: [],
     topProducts: [],
+    commissionSplit: { tradingCents: 0, marketplaceCents: 0, otherCents: 0 },
+    sourceSplit: {
+      manualCents: 0,
+      siteCents: 0,
+      manualOrders: 0,
+      siteOrders: 0,
+      manualCommissionCents: 0,
+      siteCommissionCents: 0,
+    },
     ...over,
   };
 }

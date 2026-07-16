@@ -244,6 +244,7 @@ const AdminRfqRoutingAuditPage = lazyWithRetry(() => import("./pages/admin/Admin
 const AdminVendorMarketIntelPage = lazyWithRetry(() => import("./pages/admin/AdminVendorMarketIntelPage"), "AdminVendorMarketIntelPage");
 const AdminVendorExclusivityRequests = lazyWithRetry(() => import("./pages/admin/AdminVendorExclusivityRequests"), "AdminVendorExclusivityRequests");
 const AdminVendorExclusivitiesPage = lazyWithRetry(() => import("./pages/admin/AdminVendorExclusivitiesPage"), "AdminVendorExclusivitiesPage");
+const AdminVendorBrandAuthorizations = lazyWithRetry(() => import("./pages/admin/AdminVendorBrandAuthorizations"), "AdminVendorBrandAuthorizations");
 const AdminVendorOnboardingEmailsPage = lazyWithRetry(() => import("./pages/admin/AdminVendorOnboardingEmailsPage"), "AdminVendorOnboardingEmailsPage");
 const AdminAnnouncementBar = lazyWithRetry(() => import("./pages/admin/AdminAnnouncementBar"), "AdminAnnouncementBar");
 const AdminFeatureFlags = lazyWithRetry(() => import("./pages/admin/AdminFeatureFlags"), "AdminFeatureFlags");

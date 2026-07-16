@@ -122,8 +122,8 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
     enabled: previewEnabled,
     queryKey: ["admin-cco-preview", scope, vendorId, productId, offerId],
     queryFn: async (): Promise<PreviewOffer[]> => {
-      const base = supabase
-        .from("offers")
+      const base = (supabase as any)
+        .from("offers_private")
         .select(
           "id, price_excl_vat, purchase_price_excl_vat, purchase_price, vendors:vendor_id(name, company_name), products:product_id(name, gtin)"
         );

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Building2, Package, Truck, ShieldCheck, Check, AlertTriangle,
   ChevronLeft, ChevronRight, Loader2, Eye, EyeOff, ExternalLink,
-  MapPin, Clipboard
+  MapPin, Clipboard, FileSignature
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentGuarantee } from "@/hooks/useGuarantee";

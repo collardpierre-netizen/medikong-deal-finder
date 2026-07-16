@@ -107,7 +107,7 @@ const AdminVendeurDetail = () => {
       if (!myOffers?.length) return [];
 
       // For each product, get total vendor count
-      const productIds = [...new Set(myOffers.map(o => o.product_id))];
+      const productIds = [...new Set(myOffers.map((o: any) => o.product_id as string))] as string[];
       const vendorCounts: Record<string, number> = {};
       
       // Batch query vendor counts

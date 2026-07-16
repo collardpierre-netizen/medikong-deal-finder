@@ -182,8 +182,30 @@ Deno.serve(async (req) => {
 
     doc.setTextColor(...MUTED);
     doc.text("Statut", M, y + 27);
-    doc.setTextColor(...NAVY);
-    doc.text(String(order.status || "—"), M + 18, y + 27);
+    const isDraft = String(order.status || "").toLowerCase() === "draft";
+    const STATUS_LABELS: Record<string, string> = {
+      draft: "Brouillon",
+      pending: "En attente",
+      confirmed: "Confirmée",
+      processing: "En cours",
+      shipped: "Expédiée",
+      delivered: "Livrée",
+      cancelled: "Annulée",
+    };
+    const statusLabel = STATUS_LABELS[String(order.status || "").toLowerCase()] || String(order.status || "—");
+    if (isDraft) {
+      // Pastille rouge "Brouillon" bien visible
+      doc.setFillColor(220, 38, 38); // red-600
+      doc.roundedRect(M + 18, y + 23.5, 26, 5.5, 1.2, 1.2, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(255, 255, 255);
+      doc.text(statusLabel.toUpperCase(), M + 31, y + 27.4, { align: "center" });
+      doc.setFont("helvetica", "normal");
+    } else {
+      doc.setTextColor(...NAVY);
+      doc.text(statusLabel, M + 18, y + 27);
+    }
 
     // Destinataire (carte)
     const cardX = pageW - M - 85;
@@ -451,16 +473,48 @@ Deno.serve(async (req) => {
       y += bkH + 4;
     }
 
-    // ─── Footer (toutes pages) ─────────────────────────────────────────
+    // ─── Footer + filigrane BROUILLON (toutes pages) ───────────────────
     const pageCount = (doc as any).internal.getNumberOfPages();
     for (let p = 1; p <= pageCount; p++) {
       doc.setPage(p);
+
+      // Filigrane diagonal "BROUILLON" si commande en draft
+      if (isDraft) {
+        try {
+          (doc as any).saveGraphicsState?.();
+          (doc as any).setGState?.(new (doc as any).GState({ opacity: 0.12 }));
+        } catch (_) { /* jsPDF sans GState : on continue sans opacité */ }
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(110);
+        doc.setTextColor(220, 38, 38);
+        doc.text("BROUILLON", pageW / 2, pageH / 2 + 20, { align: "center", angle: 32 });
+        try { (doc as any).restoreGraphicsState?.(); } catch (_) { /* noop */ }
+        doc.setTextColor(...MUTED);
+
+        // Bandeau d'avertissement en bas (au-dessus du footer)
+        doc.setFillColor(254, 226, 226); // red-100
+        doc.setDrawColor(220, 38, 38);
+        doc.setLineWidth(0.4);
+        doc.roundedRect(M, pageH - 24, pageW - 2 * M, 7, 1.2, 1.2, "FD");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(153, 27, 27); // red-800
+        doc.text(
+          "DOCUMENT PROVISOIRE — BROUILLON NON CONFIRMÉ · Ne pas utiliser comme bon de commande définitif",
+          pageW / 2,
+          pageH - 19.5,
+          { align: "center" }
+        );
+        doc.setFont("helvetica", "normal");
+      }
+
       doc.setDrawColor(...LINE);
+      doc.setLineWidth(0.2);
       doc.line(M, pageH - 14, pageW - M, pageH - 14);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(7.5);
       doc.setTextColor(...MUTED);
-      doc.text(`Bon de commande ${order.order_number}`, M, pageH - 9);
+      doc.text(`Bon de commande ${order.order_number}${isDraft ? " · BROUILLON" : ""}`, M, pageH - 9);
       doc.text("MediKong — Balooh SRL · TVA BE 1005.771.323 · medikong.pro", pageW / 2, pageH - 9, { align: "center" });
       doc.text(`Page ${p} / ${pageCount}`, pageW - M, pageH - 9, { align: "right" });
     }

@@ -16529,6 +16529,130 @@ export type Database = {
           },
         ]
       }
+      vendor_brand_authorizations: {
+        Row: {
+          authorization_type: string
+          brand_id: string | null
+          created_at: string
+          document_reference: string | null
+          id: string
+          notes: string | null
+          updated_at: string
+          valid_from: string | null
+          valid_until: string | null
+          vendor_id: string
+        }
+        Insert: {
+          authorization_type?: string
+          brand_id?: string | null
+          created_at?: string
+          document_reference?: string | null
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+          vendor_id: string
+        }
+        Update: {
+          authorization_type?: string
+          brand_id?: string | null
+          created_at?: string
+          document_reference?: string | null
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_brand_authorizations_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "vendor_brand_authorizations_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_kpis"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "vendor_brand_authorizations_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_logistics_stats"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "vendor_brand_authorizations_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_brand_authorizations_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_top_brands_mv"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "vendor_brand_authorizations_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_brand_authorizations_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_brand_authorizations_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_brand_authorizations_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_brand_authorizations_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_brand_authorizations_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_brand_authorizations_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_buyer_overrides: {
         Row: {
           buyer_account_id: string
@@ -20818,6 +20942,7 @@ export type Database = {
           id: string
           instagram_url: string | null
           is_active: boolean
+          is_authorized_distributor: boolean
           is_manufacturer: boolean
           is_top_seller: boolean | null
           is_verified: boolean
@@ -20906,6 +21031,7 @@ export type Database = {
           id?: string
           instagram_url?: string | null
           is_active?: boolean
+          is_authorized_distributor?: boolean
           is_manufacturer?: boolean
           is_top_seller?: boolean | null
           is_verified?: boolean
@@ -20994,6 +21120,7 @@ export type Database = {
           id?: string
           instagram_url?: string | null
           is_active?: boolean
+          is_authorized_distributor?: boolean
           is_manufacturer?: boolean
           is_top_seller?: boolean | null
           is_verified?: boolean
@@ -24456,6 +24583,7 @@ export type Database = {
       }
       vendors_public: {
         Row: {
+          billing_mandate_signed: boolean | null
           city: string | null
           company_name: string | null
           country_code: string | null
@@ -24467,6 +24595,7 @@ export type Database = {
           facebook_url: string | null
           id: string | null
           instagram_url: string | null
+          is_authorized_distributor: boolean | null
           is_top_seller: boolean | null
           is_verified: boolean | null
           linkedin_url: string | null
@@ -24484,6 +24613,7 @@ export type Database = {
           youtube_url: string | null
         }
         Insert: {
+          billing_mandate_signed?: never
           city?: string | null
           company_name?: string | null
           country_code?: string | null
@@ -24495,6 +24625,7 @@ export type Database = {
           facebook_url?: string | null
           id?: string | null
           instagram_url?: string | null
+          is_authorized_distributor?: boolean | null
           is_top_seller?: boolean | null
           is_verified?: boolean | null
           linkedin_url?: string | null
@@ -24512,6 +24643,7 @@ export type Database = {
           youtube_url?: string | null
         }
         Update: {
+          billing_mandate_signed?: never
           city?: string | null
           company_name?: string | null
           country_code?: string | null
@@ -24523,6 +24655,7 @@ export type Database = {
           facebook_url?: string | null
           id?: string | null
           instagram_url?: string | null
+          is_authorized_distributor?: boolean | null
           is_top_seller?: boolean | null
           is_verified?: boolean | null
           linkedin_url?: string | null
@@ -26920,6 +27053,10 @@ export type Database = {
           price_excl_vat: number
           source: string
         }[]
+      }
+      resolve_offer_trust: {
+        Args: { _brand_id?: string; _offer_id: string }
+        Returns: Json
       }
       resolve_product_brands: { Args: never; Returns: undefined }
       resolve_product_categories: { Args: never; Returns: undefined }

@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { ShieldCheck, FileCheck2, BadgeCheck, ScrollText, Truck, Building2 } from "lucide-react";
+import { ShieldCheck, FileCheck2, BadgeCheck, ScrollText, Truck, Building2, type LucideIcon } from "lucide-react";
 
 /**
  * Page publique /confiance — traçabilité & confiance MediKong.
@@ -76,7 +76,7 @@ function TrustBlock({
   title,
   body,
 }: {
-  icon: React.ComponentType<{ className?: string; size?: number }>;
+  icon: LucideIcon;
   title: string;
   body: string;
 }) {

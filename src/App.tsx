@@ -124,6 +124,7 @@ const TeamPage = lazyWithRetry(() => import("./pages/entreprise/TeamPage"), "Tea
 // Trust pages
 const SupplierVerificationPage = lazyWithRetry(() => import("./pages/trust/SupplierVerificationPage"), "SupplierVerificationPage");
 const QualityGuaranteePage = lazyWithRetry(() => import("./pages/trust/QualityGuaranteePage"), "QualityGuaranteePage");
+const ConfiancePage = lazyWithRetry(() => import("./pages/trust/ConfiancePage"), "ConfiancePage");
 const HowToOrderPage = lazyWithRetry(() => import("./pages/trust/HowToOrderPage"), "HowToOrderPage");
 const BuyNowPayLaterPage = lazyWithRetry(() => import("./pages/trust/BuyNowPayLaterPage"), "BuyNowPayLaterPage");
 const LogisticsPage = lazyWithRetry(() => import("./pages/trust/LogisticsPage"), "LogisticsPage");
@@ -468,6 +469,7 @@ const App = () => (
             {/* Trust & Process */}
             <Route path="/verification-fournisseurs" element={<LP><SupplierVerificationPage /></LP>} />
             <Route path="/garantie-qualite" element={<LP><QualityGuaranteePage /></LP>} />
+            <Route path="/confiance" element={<LP><ConfiancePage /></LP>} />
             <Route path="/comment-commander" element={<LP><HowToOrderPage /></LP>} />
             <Route path="/paiement-differe" element={<LP><BuyNowPayLaterPage /></LP>} />
             <Route path="/logistique" element={<LP><LogisticsPage /></LP>} />

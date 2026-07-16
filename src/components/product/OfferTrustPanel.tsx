@@ -1,4 +1,4 @@
-import { ShieldCheck, FileCheck2, BadgeCheck, ScrollText, Info } from "lucide-react";
+import { ShieldCheck, FileCheck2, BadgeCheck, ScrollText, Info, type LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useOfferTrust } from "@/hooks/useOfferTrust";
@@ -21,7 +21,7 @@ export function OfferTrustPanel({ offerId, brandId, variant = "compact", classNa
 
   if (!offerId || isLoading || !data) return null;
 
-  const chips: { icon: React.ComponentType<{ size?: number; className?: string }>; label: string; ok: boolean; tip: string }[] = [
+  const chips: { icon: LucideIcon; label: string; ok: boolean; tip: string }[] = [
     {
       icon: BadgeCheck,
       label: "Distributeur autorisé",

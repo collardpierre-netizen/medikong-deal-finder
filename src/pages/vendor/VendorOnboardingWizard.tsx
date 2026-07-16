@@ -902,12 +902,35 @@ export default function VendorOnboardingWizard() {
                     </p>
                   </div>
                 )}
+
+                {/* Distribution & mandat summary */}
+                <div className="rounded-lg border border-border p-4 space-y-2">
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <FileSignature className="w-4 h-4 text-primary" /> Distribution & mandat
+                  </h3>
+                  <div className="text-xs space-y-1">
+                    <div>
+                      <span className="text-muted-foreground">Distributeur autorisé :</span>{" "}
+                      {isAuthorizedDistributor && distributorConfirm
+                        ? <span className="text-green-600 font-medium">✓ Déclaré</span>
+                        : <span className="text-amber-600 font-medium">⚠ Non déclaré</span>}
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Mandat de facturation :</span>{" "}
+                      {mandateCommitment
+                        ? <span className="text-green-600 font-medium">✓ Signature prévue après inscription</span>
+                        : <span className="text-amber-600 font-medium">⚠ Non engagé</span>}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="bg-primary/5 rounded-lg border border-primary/20 p-4">
                 <p className="text-xs text-foreground/80">
                   En soumettant votre inscription, votre profil vendeur sera créé et soumis à validation par l'équipe MediKong.
-                  Vous recevrez un email de confirmation une fois votre compte activé.
+                  {mandateCommitment
+                    ? " Vous serez ensuite redirigé(e) vers la signature du mandat de facturation pour débloquer la publication de vos offres."
+                    : " Vous recevrez un email de confirmation une fois votre compte activé."}
                 </p>
               </div>
             </div>

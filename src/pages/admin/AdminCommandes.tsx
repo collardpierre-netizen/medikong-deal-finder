@@ -2006,6 +2006,17 @@ const AdminCommandes = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {pdfPreview && (
+        <OrderPdfPreviewDialog
+          open={!!pdfPreview}
+          onOpenChange={(o) => { if (!o) setPdfPreview(null); }}
+          orderId={pdfPreview.id}
+          orderNumber={pdfPreview.number}
+          status={pdfPreview.status}
+          lines={pdfPreview.lines}
+        />
+      )}
     </div>
 
   );

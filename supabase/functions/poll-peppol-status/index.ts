@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
       return json(400, { ok: false, error: "falco_not_configured", details: e?.message });
     }
 
-    const url = `${cfg.baseUrl}/documents?limit=100`;
+    const url = `${cfg.baseUrl}/documents/sales?page_size=100&sort_by=created_at&sort_direction=desc`;
     const started = Date.now();
     const res = await fetch(url, {
       headers: {

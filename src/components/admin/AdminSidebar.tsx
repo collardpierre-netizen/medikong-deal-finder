@@ -11,7 +11,7 @@ import {
   ShoppingCart, AlertCircle, DollarSign, Eye, Link, BarChart3,
   Shield, Upload, MessageSquare, Layout, Truck, ShieldCheck, Settings, FileText,
   LogOut, Users, ClipboardList, Percent, RefreshCw, Key, Book, Factory, Globe, Hash, ExternalLink,
-  CreditCard, TrendingUp, TrendingDown, AlertTriangle, Zap, Recycle, LayoutGrid, Users2, Mail, ShieldCheck as ShieldCheckAlt,
+  CreditCard, TrendingUp, TrendingDown, AlertTriangle, Zap, Recycle, LayoutGrid, Users2, Mail, ShieldCheck as ShieldCheckAlt, ShieldAlert,
   Search, Image as ImageIcon, Activity, Bell, Plus, EyeOff, Send,
 } from "lucide-react";
 

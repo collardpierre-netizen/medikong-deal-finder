@@ -533,6 +533,7 @@ const App = () => (
               <Route path="exclusivites" element={<LP><AdminVendorExclusivitiesPage /></LP>} />
               <Route path="vendor-onboarding-emails" element={<LP><AdminVendorOnboardingEmailsPage /></LP>} />
               <Route path="vendor-brand-authorizations" element={<LP><AdminVendorBrandAuthorizations /></LP>} />
+              <Route path="offers" element={<LP><AdminBlockedOffers /></LP>} />
 
               <Route path="abonnements" element={<LP><AdminAbonnements /></LP>} />
               <Route path="announcement-bar" element={<LP><AdminAnnouncementBar /></LP>} />

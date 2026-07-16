@@ -181,6 +181,22 @@ export default function VendorOrderDetail() {
         {backLink}
         <div className="flex items-center gap-2 flex-wrap">
           <VendorOrderPdfButton orderId={order.order_id} orderNumber={order.order_number} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              const { generateExpressOrderPdf } = await import("@/lib/express-order-pdf");
+              const { toast } = await import("sonner");
+              try {
+                await generateExpressOrderPdf(order.order_id);
+                toast.success("PDF express généré");
+              } catch (err: any) {
+                toast.error(err?.message || "Échec PDF express");
+              }
+            }}
+          >
+            ⚡ PDF express
+          </Button>
           <VendorPayoutPdfButton orderId={order.order_id} orderNumber={order.order_number} label="Décompte fournisseur" />
         </div>
       </div>

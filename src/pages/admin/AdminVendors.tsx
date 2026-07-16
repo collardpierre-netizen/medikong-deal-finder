@@ -5,9 +5,10 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Copy, ExternalLink, Loader2, RefreshCw, Sparkles, SlidersHorizontal } from "lucide-react";
+import { Copy, ExternalLink, Loader2, RefreshCw, Sparkles, SlidersHorizontal, ShieldCheck, ShieldAlert } from "lucide-react";
 import { formatUpdatedAt } from "@/lib/format-date";
 import AdminVendorMovMoqModal from "@/components/admin/AdminVendorMovMoqModal";
+import AdminVendorComplianceModal from "@/components/admin/AdminVendorComplianceModal";
 import { VendorPeppolBadge } from "@/components/admin/VendorPeppolBadge";
 import { isBelgianVendor } from "@/lib/peppol";
 
@@ -63,6 +64,7 @@ const AdminVendors = () => {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [vmiBusyId, setVmiBusyId] = useState<string | null>(null);
   const [movMoqVendor, setMovMoqVendor] = useState<{ id: string; name: string | null } | null>(null);
+  const [complianceVendor, setComplianceVendor] = useState<{ id: string; name: string | null } | null>(null);
 
   const { data: vendors = [], isLoading, refetch } = useQuery({
     queryKey: ["admin-vendors-stripe"],
@@ -88,6 +90,26 @@ const AdminVendors = () => {
       if (error) throw error;
       const map: Record<string, VmiRow> = {};
       ((data as unknown as VmiRow[]) ?? []).forEach((r) => { map[r.vendor_id] = r; });
+      return map;
+    },
+    enabled: isAdmin,
+  });
+
+  const { data: complianceByVendor = {} } = useQuery({
+    queryKey: ["admin-vendors-compliance"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendors")
+        .select("id, is_authorized_distributor, mandate_signed_at");
+      if (error) throw error;
+      const map: Record<string, { auth: boolean; mandate: boolean }> = {};
+      ((data ?? []) as Array<{ id: string; is_authorized_distributor: boolean | null; mandate_signed_at: string | null }>)
+        .forEach((r) => {
+          map[r.id] = {
+            auth: !!r.is_authorized_distributor,
+            mandate: !!r.mandate_signed_at,
+          };
+        });
       return map;
     },
     enabled: isAdmin,
@@ -186,6 +208,7 @@ const AdminVendors = () => {
               <TableHead>Commission</TableHead>
               <TableHead>Stripe</TableHead>
               <TableHead>Peppol</TableHead>
+              <TableHead>Conformité</TableHead>
               <TableHead>Veille marché</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -193,14 +216,14 @@ const AdminVendors = () => {
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                   Chargement…
                 </TableCell>
               </TableRow>
             )}
             {!isLoading && vendors.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                   Aucun vendor.
                 </TableCell>
               </TableRow>
@@ -219,6 +242,28 @@ const AdminVendors = () => {
                   <TableCell><StatusBadge status={st} /></TableCell>
                   <TableCell>
                     <VendorPeppolBadge peppolId={v.peppol_id} isBelgian={isBelgianVendor(v.country_code)} />
+                  </TableCell>
+                  <TableCell>
+                    {(() => {
+                      const c = complianceByVendor[v.id];
+                      const ok = !!(c?.auth && c?.mandate);
+                      const partial = !!(c?.auth || c?.mandate);
+                      const cfg = ok
+                        ? { bg: "#F0FDF4", text: "#059669", label: "Conforme", Icon: ShieldCheck }
+                        : partial
+                          ? { bg: "#FFFBEB", text: "#D97706", label: c?.auth ? "Sans mandat" : "Non déclaré", Icon: ShieldAlert }
+                          : { bg: "#FEF2F2", text: "#B91C1C", label: "Non conforme", Icon: ShieldAlert };
+                      return (
+                        <button
+                          onClick={() => setComplianceVendor({ id: v.id, name: v.name })}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold hover:brightness-95"
+                          style={{ backgroundColor: cfg.bg, color: cfg.text }}
+                          title="Modifier la conformité"
+                        >
+                          <cfg.Icon size={11} /> {cfg.label}
+                        </button>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell>
                     {(() => {
@@ -320,6 +365,13 @@ const AdminVendors = () => {
         vendorName={movMoqVendor?.name ?? null}
         open={!!movMoqVendor}
         onOpenChange={(v) => { if (!v) setMovMoqVendor(null); }}
+      />
+
+      <AdminVendorComplianceModal
+        vendorId={complianceVendor?.id ?? null}
+        vendorName={complianceVendor?.name ?? null}
+        open={!!complianceVendor}
+        onOpenChange={(v) => { if (!v) setComplianceVendor(null); }}
       />
     </div>
   );

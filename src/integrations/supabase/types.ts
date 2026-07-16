@@ -20935,6 +20935,8 @@ export type Database = {
           created_at: string
           description: string | null
           display_code: string
+          distributor_updated_at: string | null
+          distributor_updated_by: string | null
           email: string | null
           facebook_url: string | null
           fixed_commission_amount: number | null
@@ -20950,6 +20952,7 @@ export type Database = {
           linkedin_url: string | null
           logo_url: string | null
           mandate_signed_at: string | null
+          mandate_updated_by: string | null
           margin_split_pct: number | null
           max_open_rfqs: number | null
           name: string
@@ -21024,6 +21027,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           display_code?: string
+          distributor_updated_at?: string | null
+          distributor_updated_by?: string | null
           email?: string | null
           facebook_url?: string | null
           fixed_commission_amount?: number | null
@@ -21039,6 +21044,7 @@ export type Database = {
           linkedin_url?: string | null
           logo_url?: string | null
           mandate_signed_at?: string | null
+          mandate_updated_by?: string | null
           margin_split_pct?: number | null
           max_open_rfqs?: number | null
           name: string
@@ -21113,6 +21119,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           display_code?: string
+          distributor_updated_at?: string | null
+          distributor_updated_by?: string | null
           email?: string | null
           facebook_url?: string | null
           fixed_commission_amount?: number | null
@@ -21128,6 +21136,7 @@ export type Database = {
           linkedin_url?: string | null
           logo_url?: string | null
           mandate_signed_at?: string | null
+          mandate_updated_by?: string | null
           margin_split_pct?: number | null
           max_open_rfqs?: number | null
           name?: string
@@ -25660,6 +25669,15 @@ export type Database = {
       admin_set_order_public_access: {
         Args: { _expires_at?: string; _order_id: string; _pin?: string }
         Returns: undefined
+      }
+      admin_set_vendor_compliance: {
+        Args: {
+          _is_authorized_distributor: boolean
+          _mandate_signed_at: string
+          _reason?: string
+          _vendor_id: string
+        }
+        Returns: Json
       }
       admin_sla_open_alerts_count: {
         Args: never

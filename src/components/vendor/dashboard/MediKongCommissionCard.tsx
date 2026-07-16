@@ -9,6 +9,8 @@ interface Props {
   netMarginCents: number;
   progress: VendorGmvProgress | null;
   loading?: boolean;
+  tradingCommissionCents?: number;
+  marketplaceCommissionCents?: number;
 }
 
 /**

@@ -314,6 +314,11 @@ export default function VendorOnboardingWizard() {
       if (shippingMode === "medikong_whitelabel") return !!address.address_line_1 && !!address.city && !!address.postal_code;
     }
     if (step === 4) return guaranteeAccepted && !!guarantee?.id;
+    if (step === 5) {
+      // Distributeur autorisé : double coche (déclaration + confirmation) OU refus explicite non prévu ici.
+      // Engagement à signer le mandat requis pour débloquer la publication.
+      return isAuthorizedDistributor && distributorConfirm && mandateCommitment;
+    }
     return true;
   };
 

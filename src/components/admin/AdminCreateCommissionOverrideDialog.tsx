@@ -201,8 +201,8 @@ export function AdminCreateCommissionOverrideDialog({ trigger, defaultScope = "p
           source: "product",
         }));
       }
-      const { data, error } = await supabase
-        .from("offers")
+      const { data, error } = await (supabase as any)
+        .from("offers_private")
         .select("id, commission_model, commission_rate, margin_split_pct, fixed_commission_amount, commission_valid_from, commission_valid_until, commission_override_status")
         .eq("id", offerId!)
         .not("commission_model", "is", null)

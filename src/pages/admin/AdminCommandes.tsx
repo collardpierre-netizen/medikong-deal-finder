@@ -1998,4 +1998,13 @@ const AdminCommandes = () => {
   );
 };
 
+function MiniKpi({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div className="rounded border px-2 py-1.5 text-center" style={{ borderColor: "#E2E8F0" }}>
+      <div className="text-[13px] font-bold leading-tight" style={{ color }}>{value}</div>
+      <div className="text-[9px] uppercase tracking-wide text-slate-500 mt-0.5">{label}</div>
+    </div>
+  );
+}
+
 export default AdminCommandes;

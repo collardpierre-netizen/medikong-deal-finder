@@ -266,7 +266,7 @@ const AdminSidebar = () => {
               className="px-3 mb-1.5 text-[10px] font-semibold tracking-wider"
               style={{ color: "#8B95A5" }}
             >
-              {t(section.labelKey)}
+              {section.label ?? t(section.labelKey)}
             </p>
             {section.items.map((item) => {
               const acKey = pathToSection[item.path];

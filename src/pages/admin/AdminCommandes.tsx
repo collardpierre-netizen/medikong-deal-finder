@@ -1259,9 +1259,83 @@ const AdminCommandes = () => {
                               </span>
                             </td>
                             <td className="px-3 py-3">
-                              <span className="text-[12px] font-medium" style={{ color: "#616B7C" }}>
-                                {o.lines.length} article{o.lines.length > 1 ? "s" : ""}
-                              </span>
+                              <HoverCard openDelay={120} closeDelay={80}>
+                                <HoverCardTrigger asChild>
+                                  <span
+                                    className="text-[12px] font-medium underline decoration-dotted underline-offset-2 cursor-help"
+                                    style={{ color: "#616B7C" }}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {o.lines.length} article{o.lines.length > 1 ? "s" : ""}
+                                  </span>
+                                </HoverCardTrigger>
+                                <HoverCardContent
+                                  align="start"
+                                  className="w-[380px] p-0 overflow-hidden"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {(() => {
+                                    const map = new Map<string, { name: string; cnk: string | null; qty: number; ht: number }>();
+                                    let totalHt = 0;
+                                    let totalQty = 0;
+                                    for (const l of (o.lines || []) as any[]) {
+                                      const qty = Number(l.quantity) || 0;
+                                      const ht = Number(l.line_total_excl_vat) || (Number(l.unit_price_excl_vat) || 0) * qty;
+                                      const cnk = l.products?.cnk_code || l.cnk_code || null;
+                                      const name = l.manual_label || l.products?.name || "—";
+                                      const key = l.product_id || cnk || name;
+                                      const ex = map.get(key);
+                                      if (ex) { ex.qty += qty; ex.ht += ht; }
+                                      else map.set(key, { name, cnk, qty, ht });
+                                      totalHt += ht; totalQty += qty;
+                                    }
+                                    const rows = Array.from(map.values()).sort((a, b) => b.ht - a.ht);
+                                    const top = rows.slice(0, 5);
+                                    const rest = rows.length - top.length;
+                                    return (
+                                      <div>
+                                        <div className="px-3 py-2 text-white text-[11px] font-semibold uppercase tracking-wide" style={{ backgroundColor: "#1C58D9" }}>
+                                          Synthèse produits · {o.id}
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-2 p-3 border-b" style={{ borderColor: "#E2E8F0" }}>
+                                          <MiniKpi label="Uniques" value={String(rows.length)} color="#1C58D9" />
+                                          <MiniKpi label="Qté" value={String(totalQty)} color="#15803D" />
+                                          <MiniKpi label="HTVA" value={`${fmtEur(totalHt)} €`} color="#B45309" />
+                                        </div>
+                                        {top.length === 0 ? (
+                                          <div className="p-4 text-center text-[11px] text-slate-500">Aucune ligne</div>
+                                        ) : (
+                                          <table className="w-full text-[11px]">
+                                            <thead style={{ backgroundColor: "#F8FAFC" }}>
+                                              <tr>
+                                                <th className="text-left px-2 py-1.5 text-[9px] uppercase font-semibold text-slate-500">CNK</th>
+                                                <th className="text-left px-2 py-1.5 text-[9px] uppercase font-semibold text-slate-500">Produit</th>
+                                                <th className="text-right px-2 py-1.5 text-[9px] uppercase font-semibold text-slate-500">Qté</th>
+                                                <th className="text-right px-2 py-1.5 text-[9px] uppercase font-semibold text-slate-500">HTVA</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              {top.map((r, i) => (
+                                                <tr key={i} className="border-t" style={{ borderColor: "#F1F5F9" }}>
+                                                  <td className="px-2 py-1.5 font-mono text-slate-500">{r.cnk || "—"}</td>
+                                                  <td className="px-2 py-1.5 truncate max-w-[160px]" title={r.name}>{r.name}</td>
+                                                  <td className="px-2 py-1.5 text-right font-medium">{r.qty}</td>
+                                                  <td className="px-2 py-1.5 text-right font-mono">{fmtEur(r.ht)} €</td>
+                                                </tr>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        )}
+                                        {rest > 0 && (
+                                          <div className="px-3 py-1.5 text-[10px] text-slate-500 bg-slate-50 border-t" style={{ borderColor: "#F1F5F9" }}>
+                                            + {rest} autre{rest > 1 ? "s" : ""} produit{rest > 1 ? "s" : ""} · déplier la ligne pour tout voir
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
+                                </HoverCardContent>
+                              </HoverCard>
                             </td>
                             <td className="px-3 py-3">
                               {(() => {

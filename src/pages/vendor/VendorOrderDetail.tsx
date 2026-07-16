@@ -273,7 +273,12 @@ export default function VendorOrderDetail() {
         })()}
 
         <div className="p-4 border-b border-border">
-          <OrderProductsSummary lines={order.lines as any} />
+          <OrderProductsSummary
+            lines={order.lines.map((l: any) => ({
+              ...l,
+              products: { name: l.product_name, cnk_code: l.product_cnk, gtin: l.product_gtin },
+            }))}
+          />
         </div>
 
         <div className="divide-y divide-border">

@@ -24,6 +24,7 @@ interface NavItem {
 
 interface NavSection {
   labelKey: string;
+  label?: string;
   items: NavItem[];
 }
 
@@ -67,6 +68,13 @@ const sections: NavSection[] = [
       { label: "Statut sync Qogita", path: "/admin/qogita-status", icon: Activity },
       { label: "Connexion Qogita", path: "/admin/qogita-connection", icon: Key },
       { labelKey: "marketCodes", path: "/admin/market-codes", icon: Hash },
+    ],
+  },
+  {
+    labelKey: "intelligenceModules",
+    label: "MODULES INTELLIGENCE",
+    items: [
+      { label: "Paywall + paliers + onglets", path: "/admin/modules-intelligence", icon: ShieldCheck },
     ],
   },
   {
@@ -265,7 +273,7 @@ const AdminSidebar = () => {
               className="px-3 mb-1.5 text-[10px] font-semibold tracking-wider"
               style={{ color: "#8B95A5" }}
             >
-              {t(section.labelKey)}
+              {section.label ?? t(section.labelKey)}
             </p>
             {section.items.map((item) => {
               const acKey = pathToSection[item.path];

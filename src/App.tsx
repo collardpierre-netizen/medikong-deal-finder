@@ -242,6 +242,7 @@ const AdminRfqRemindersPage = lazyWithRetry(() => import("./pages/admin/AdminRfq
 const AdminRfqRoutingTestPage = lazyWithRetry(() => import("./pages/admin/AdminRfqRoutingTestPage"), "AdminRfqRoutingTestPage");
 const AdminRfqRoutingAuditPage = lazyWithRetry(() => import("./pages/admin/AdminRfqRoutingAuditPage"), "AdminRfqRoutingAuditPage");
 const AdminVendorMarketIntelPage = lazyWithRetry(() => import("./pages/admin/AdminVendorMarketIntelPage"), "AdminVendorMarketIntelPage");
+const AdminIntelligenceModulesPage = lazyWithRetry(() => import("./pages/admin/AdminIntelligenceModulesPage"), "AdminIntelligenceModulesPage");
 const AdminVendorExclusivityRequests = lazyWithRetry(() => import("./pages/admin/AdminVendorExclusivityRequests"), "AdminVendorExclusivityRequests");
 const AdminVendorExclusivitiesPage = lazyWithRetry(() => import("./pages/admin/AdminVendorExclusivitiesPage"), "AdminVendorExclusivitiesPage");
 const AdminVendorBrandAuthorizations = lazyWithRetry(() => import("./pages/admin/AdminVendorBrandAuthorizations"), "AdminVendorBrandAuthorizations");
@@ -529,6 +530,7 @@ const App = () => (
               <Route path="rfq-routing-audit" element={<LP><AdminRfqRoutingAuditPage /></LP>} />
               <Route path="ventes-privees" element={<LP><AdminP2PSalesPage /></LP>} />
               <Route path="vendor-market-intel" element={<LP><AdminVendorMarketIntelPage /></LP>} />
+              <Route path="modules-intelligence" element={<LP><AdminIntelligenceModulesPage /></LP>} />
               <Route path="vendor-exclusivity-requests" element={<LP><AdminVendorExclusivityRequests /></LP>} />
               <Route path="exclusivites" element={<LP><AdminVendorExclusivitiesPage /></LP>} />
               <Route path="vendor-onboarding-emails" element={<LP><AdminVendorOnboardingEmailsPage /></LP>} />

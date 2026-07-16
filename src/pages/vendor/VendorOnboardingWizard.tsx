@@ -169,6 +169,7 @@ export default function VendorOnboardingWizard() {
           vendor_shipping_mode: shippingMode,
           is_active: false,
           validation_status: "pending_review",
+          is_authorized_distributor: isAuthorizedDistributor && distributorConfirm,
         } as any)
         .select("id")
         .single();

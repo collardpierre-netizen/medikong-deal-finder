@@ -35,6 +35,21 @@ export interface TopProductSlice {
   hasCost: boolean;
 }
 
+export interface CommissionSplit {
+  tradingCents: number;      // commission_basis = 'margin' (100% marge)
+  marketplaceCents: number;  // commission_basis = 'ca' (% du CA)
+  otherCents: number;        // basis inconnu / null
+}
+
+export interface SourceSplit {
+  manualCents: number;       // orders.source = 'manual_admin' OU created_by_admin
+  siteCents: number;         // le reste (checkout site)
+  manualOrders: number;
+  siteOrders: number;
+  manualCommissionCents: number;
+  siteCommissionCents: number;
+}
+
 export interface VendorMonthlyDashboard {
   gmvCents: number;
   revenueExclVatCents: number;
@@ -52,6 +67,8 @@ export interface VendorMonthlyDashboard {
   }>;
   customerTypeBreakdown: CustomerTypeSlice[];
   topProducts: TopProductSlice[];
+  commissionSplit: CommissionSplit;
+  sourceSplit: SourceSplit;
 }
 
 /**

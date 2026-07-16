@@ -108,7 +108,37 @@ const AdminFinances = () => {
       )}
 
       {activeTab === "invoices" && (
+        <>
+        <div className="flex justify-end mb-3">
+          <button
+            onClick={async () => {
+              const tId = toast.loading("Rafraîchissement des statuts Peppol…");
+              const { data, error } = await supabase.functions.invoke("poll-peppol-status", { body: { trigger: "manual" } });
+              toast.dismiss(tId);
+              let errBody: any = null;
+              if (error && (error as any).context && typeof (error as any).context.json === "function") {
+                try { errBody = await (error as any).context.clone().json(); } catch { /* noop */ }
+              }
+              const failed = !!error || (data && data.ok === false);
+              if (failed) {
+                const payload = errBody || data || {};
+                toast.error(`Échec rafraîchissement : ${payload.error || error?.message || "erreur inconnue"}`);
+              } else {
+                const upd = data?.updated ?? 0;
+                const checked = data?.checked ?? 0;
+                toast.success(`Statuts rafraîchis — ${upd} mise(s) à jour sur ${checked} document(s) vérifié(s).`);
+                queryClient.invalidateQueries({ queryKey: ["admin-order-invoices"] });
+              }
+            }}
+            className="inline-flex items-center gap-2 text-[12px] font-semibold px-3 py-2 rounded-md hover:bg-slate-50"
+            style={{ color: "#1B5BDA", border: "1px solid #E2E8F0", backgroundColor: "#fff" }}
+            title="Interroger Falco pour mettre à jour les statuts Peppol"
+          >
+            <RefreshCw size={13} /> Rafraîchir statuts Peppol
+          </button>
+        </div>
         <div className="rounded-[10px] overflow-x-auto" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+
           {isLoading ? <div className="py-12 text-center text-[13px]" style={{ color: "#8B95A5" }}>Chargement...</div> : (
             <table className="w-full text-left">
               <thead>

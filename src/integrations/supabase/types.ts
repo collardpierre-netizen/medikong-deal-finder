@@ -24825,6 +24825,8 @@ export type Database = {
       admin_blocked_offers_list: {
         Args: never
         Returns: {
+          brand_id: string
+          brand_name: string
           is_active: boolean
           is_authorized_distributor: boolean
           mandate_signed_at: string

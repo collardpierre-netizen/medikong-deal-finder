@@ -22,6 +22,8 @@ import { BeCoveragePanel } from "@/components/vendor/analytics/BeCoveragePanel";
 import { AnalyticsExportButtons } from "@/components/vendor/analytics/AnalyticsExportButtons";
 import { VendorAnalyticsPdfExportButton } from "@/components/vendor/analytics/VendorAnalyticsPdfExportButton";
 import { exportAnalyticsRows } from "@/lib/analytics-export";
+import { useIntelligenceEntitlement, useIntelligenceTabFlags } from "@/hooks/useIntelligenceEntitlement";
+import { TabLockCard } from "@/components/vendor/TabLockCard";
 
 const PERIOD_OPTIONS: { value: AnalyticsPeriod; label: string }[] = [
   { value: "30d", label: "30 jours" },
@@ -638,6 +640,12 @@ export default function VendorAnalytics() {
       ? "Session admin"
       : null;
 
+  const { data: analyticsEnt } = useIntelligenceEntitlement("analytics");
+  const { data: tabFlags = [] } = useIntelligenceTabFlags("analytics");
+  const flagsByKey = Object.fromEntries(tabFlags.map((f) => [f.tab_key, f]));
+  const hasAnalyticsAccess = !!analyticsEnt?.has_access;
+  const canViewTab = (key: string) => (flagsByKey[key]?.is_free ?? false) || hasAnalyticsAccess;
+
   const rangeLabel = useMemo(() => PERIOD_OPTIONS.find((o) => o.value === period)?.label ?? "", [period]);
 
   return (
@@ -728,15 +736,31 @@ export default function VendorAnalytics() {
         })}
       </div>
 
-      {tab === "overview" && <OverviewTab period={period} vendorId={vendor?.id ?? null} />}
-      {tab === "typology" && <TypologyTab period={period} vendorId={vendor?.id ?? null} />}
-      {tab === "recurrence" && <RecurrencePanel period={period} />}
-      {tab === "customers" && <TopCustomersTab period={period} vendorId={vendor?.id ?? null} />}
-      {tab === "map" && <MapTab period={period} vendorId={vendor?.id ?? null} />}
-      {tab === "products" && <TopProductsTab period={period} vendorId={vendor?.id ?? null} />}
-      {tab === "sellin_manual" && <ManualSellInPanel vendorId={vendor?.id ?? null} />}
-      {tab === "sellout" && <SellOutPanel vendorId={vendor?.id ?? null} />}
-      {tab === "coverage_be" && <BeCoveragePanel vendorId={vendor?.id ?? null} />}
+      {(() => {
+        const currentTabLabel = TABS.find((t) => t.key === tab)?.label ?? tab;
+        if (!canViewTab(tab)) {
+          return (
+            <TabLockCard
+              module="analytics"
+              tabLabel={currentTabLabel}
+              entitlement={analyticsEnt ?? null}
+            />
+          );
+        }
+        return (
+          <>
+            {tab === "overview" && <OverviewTab period={period} vendorId={vendor?.id ?? null} />}
+            {tab === "typology" && <TypologyTab period={period} vendorId={vendor?.id ?? null} />}
+            {tab === "recurrence" && <RecurrencePanel period={period} />}
+            {tab === "customers" && <TopCustomersTab period={period} vendorId={vendor?.id ?? null} />}
+            {tab === "map" && <MapTab period={period} vendorId={vendor?.id ?? null} />}
+            {tab === "products" && <TopProductsTab period={period} vendorId={vendor?.id ?? null} />}
+            {tab === "sellin_manual" && <ManualSellInPanel vendorId={vendor?.id ?? null} />}
+            {tab === "sellout" && <SellOutPanel vendorId={vendor?.id ?? null} />}
+            {tab === "coverage_be" && <BeCoveragePanel vendorId={vendor?.id ?? null} />}
+          </>
+        );
+      })()}
     </div>
   );
 }

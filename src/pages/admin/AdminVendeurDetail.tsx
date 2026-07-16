@@ -1330,6 +1330,13 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
 function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boolean; onOpenChange: (o: boolean) => void; vendor: any; onSaved: () => void }) {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [peppolCheck, setPeppolCheck] = useState<{
+    checking: boolean;
+    checkedFor: string | null;
+    registered: boolean | null;
+    found: boolean | null;
+    message: string | null;
+  }>({ checking: false, checkedFor: null, registered: null, found: null, message: null });
   const [form, setForm] = useState({
     company_name: vendor.company_name || "",
     email: vendor.email || "",
@@ -1349,6 +1356,7 @@ function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boole
     website_url: (vendor as any).website || (vendor as any).website_url || "",
     contact_name: vendor.contact_name || "",
   });
+
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
@@ -1465,16 +1473,72 @@ function VendorEditDialog({ open, onOpenChange, vendor, onSaved }: { open: boole
               {isBelgianVendor(form.country_code) && <span className="text-destructive"> *</span>}
               <span className="ml-1 text-xs font-normal text-muted-foreground">(BE — format 0208:BEXXXXXXXXXXX)</span>
             </Label>
-            <Input
-              value={form.peppol_id}
-              onChange={e => set("peppol_id", e.target.value)}
-              placeholder={PEPPOL_BE_EXAMPLE}
-              aria-invalid={!!form.peppol_id && !isValidBePeppolId(form.peppol_id)}
-            />
+            <div className="flex items-stretch gap-2 mt-1">
+              <Input
+                value={form.peppol_id}
+                onChange={e => {
+                  set("peppol_id", e.target.value);
+                  setPeppolCheck({ checking: false, checkedFor: null, registered: null, found: null, message: null });
+                }}
+                placeholder={PEPPOL_BE_EXAMPLE}
+                aria-invalid={!!form.peppol_id && !isValidBePeppolId(form.peppol_id)}
+              />
+              <button
+                type="button"
+                disabled={peppolCheck.checking || !form.peppol_id.trim() || !isValidBePeppolId(form.peppol_id)}
+                onClick={async () => {
+                  const normalized = normalizePeppolId(form.peppol_id).trim();
+                  setPeppolCheck({ checking: true, checkedFor: normalized, registered: null, found: null, message: null });
+                  const { data, error } = await supabase.functions.invoke("check-peppol-directory", {
+                    body: { peppol_id: normalized },
+                  });
+                  if (error || !data || data.ok === false) {
+                    setPeppolCheck({
+                      checking: false,
+                      checkedFor: normalized,
+                      registered: null,
+                      found: null,
+                      message: (data && data.error) || error?.message || "Vérification impossible.",
+                    });
+                    return;
+                  }
+                  setPeppolCheck({
+                    checking: false,
+                    checkedFor: normalized,
+                    registered: Boolean(data.registered),
+                    found: Boolean(data.found_in_directory),
+                    message: data.message || null,
+                  });
+                }}
+                className="px-3 py-2 rounded-md border border-border text-xs font-semibold hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                title="Interroger peppoldirectory.eu"
+              >
+                {peppolCheck.checking ? "Vérification…" : "Vérifier"}
+              </button>
+            </div>
             {!!form.peppol_id && !isValidBePeppolId(form.peppol_id) && (
               <p className="text-xs text-destructive mt-1">Format invalide — attendu <span className="font-mono">0208:BE</span> + 10 chiffres.</p>
             )}
+            {peppolCheck.checkedFor && !peppolCheck.checking && (
+              <div
+                className="text-xs mt-2 px-2 py-1.5 rounded-md border"
+                style={
+                  peppolCheck.registered && peppolCheck.found
+                    ? { color: "#065F46", backgroundColor: "#ECFDF5", borderColor: "#A7F3D0" }
+                    : peppolCheck.registered === null
+                    ? { color: "#7C2D12", backgroundColor: "#FEF3C7", borderColor: "#FDE68A" }
+                    : { color: "#7C2D12", backgroundColor: "#FEF3C7", borderColor: "#FDE68A" }
+                }
+              >
+                {peppolCheck.registered && peppolCheck.found
+                  ? `✓ Confirmé sur Peppol Directory (${peppolCheck.checkedFor}).`
+                  : peppolCheck.registered && !peppolCheck.found
+                  ? `⚠ Peppol Directory injoignable — impossible de confirmer ${peppolCheck.checkedFor}. Vous pouvez sauvegarder, Falco gèrera la livraison.`
+                  : `⚠ ${peppolCheck.message || `Destinataire ${peppolCheck.checkedFor} introuvable sur peppoldirectory.eu.`} L'ID peut être sauvegardé, mais les envois Peppol échoueront tant que le vendeur ne s'est pas enregistré via un Access Point.`}
+              </div>
+            )}
           </div>
+
           <div><Label>Adresse</Label><Input value={form.address_line1} onChange={e => set("address_line1", e.target.value)} /></div>
           <div className="grid grid-cols-3 gap-3">
             <div><Label>Ville</Label><Input value={form.city} onChange={e => set("city", e.target.value)} /></div>

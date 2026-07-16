@@ -166,8 +166,28 @@ export default function AdminUsers() {
     const fnName = u.type === "vendor" ? "create-vendor-account" : "create-buyer-account";
     const body = u.type === "vendor" ? { vendor_id: u.id } : { customer_id: u.id, email: u.email };
     const { data, error } = await supabase.functions.invoke(fnName, { body });
-    if (error || data?.ok === false || data?.error) {
-      toast.error(`Erreur : ${error?.message || data?.error}`);
+
+    // Extraire le vrai message d'erreur du corps de la réponse (FunctionsHttpError.context est une Response)
+    let realError: string | null = null;
+    if (error) {
+      const ctx: any = (error as any).context;
+      if (ctx && typeof ctx.text === "function") {
+        try {
+          const txt = await ctx.text();
+          try {
+            const j = JSON.parse(txt);
+            realError = j?.error || j?.message || txt;
+          } catch { realError = txt; }
+        } catch { /* ignore */ }
+      }
+      realError = realError || (error as any).message || "Erreur inconnue";
+    } else if (data?.ok === false || data?.error) {
+      realError = data?.error || "Erreur inconnue";
+    }
+
+    if (realError) {
+      console.error(`[${fnName}] failed for ${u.email}:`, realError, { data, error });
+      toast.error(`Erreur : ${realError}`);
       return;
     }
     toast.success("Accès créé", {
@@ -178,6 +198,7 @@ export default function AdminUsers() {
     });
     loadUsers();
   }
+
 
   function closeDetail() {
     setSelectedUser(null);

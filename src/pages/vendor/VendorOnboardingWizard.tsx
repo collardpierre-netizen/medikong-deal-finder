@@ -331,7 +331,7 @@ export default function VendorOnboardingWizard() {
           <p className="text-sm text-muted-foreground mt-1">Complétez votre inscription en quelques minutes</p>
         </div>
 
-        <StepIndicator current={step} total={5} />
+        <StepIndicator current={step} total={6} />
 
         <div className="bg-card rounded-xl border border-border shadow-sm p-6">
           {/* ─── STEP 1: Company ─── */}

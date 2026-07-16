@@ -83,8 +83,8 @@ const AdminVendeurDetail = () => {
   const { data: vendorProducts = [] } = useQuery({
     queryKey: ["vendor-products-list", id],
     queryFn: async () => {
-      const { data: offers } = await supabase
-        .from("offers")
+      const { data: offers } = await (supabase as any)
+        .from("offers_private")
         .select("product_id, price_excl_vat, stock_quantity, is_active, purchase_price, margin_amount, applied_margin_percentage, qogita_base_price, products(name, offer_count, gtin)")
         .eq("vendor_id", id!);
       return offers || [];

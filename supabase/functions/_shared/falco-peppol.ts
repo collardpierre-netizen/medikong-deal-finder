@@ -107,27 +107,35 @@ function sanitizeHeaderValue(v: string): string {
     .trim();
 }
 
+const STRIP_CTRL_RE = /[\r\n\s\u0000-\u001F\u007F-\u009F]/g;
+
 export function getFalcoConfig() {
-  const rawApiKey = Deno.env.get("FALCO_API_KEY")?.trim() ?? "";
-  const rawAppSecret = Deno.env.get("FALCO_APP_SECRET")?.trim() ?? "";
-  const rawBaseUrl = Deno.env.get("FALCO_BASE_URL") ?? "";
-  console.log("Falco debug:", {
-    apiKeyLength: rawApiKey.length,
-    apiKeyPrefix: rawApiKey.substring(0, 8),
-    appSecretLength: rawAppSecret.length,
-    appSecretPrefix: rawAppSecret.substring(0, 8),
-    baseUrl: rawBaseUrl,
-  });
-  const appSecret = sanitizeHeaderValue(rawAppSecret);
-  const apiKey = sanitizeHeaderValue(rawApiKey);
+  const appSecret = (Deno.env.get("FALCO_APP_SECRET") ?? "").replace(STRIP_CTRL_RE, "");
+  const apiKey = (Deno.env.get("FALCO_API_KEY") ?? "").replace(STRIP_CTRL_RE, "");
   const baseUrl =
-    sanitizeHeaderValue(rawBaseUrl) || "https://api.sandbox.falco-app.be/v1";
+    (Deno.env.get("FALCO_BASE_URL") ?? "").replace(STRIP_CTRL_RE, "") ||
+    "https://api.sandbox.falco-app.be/v1";
+
+  if (!appSecret.startsWith("as_") || appSecret.length < 10) {
+    throw new Error(
+      `FALCO_APP_SECRET invalide — longueur: ${appSecret.length}, prefix: ${appSecret.substring(0, 4)}`,
+    );
+  }
+  if (!apiKey.startsWith("sk_") || apiKey.length < 10) {
+    throw new Error(
+      `FALCO_API_KEY invalide — longueur: ${apiKey.length}, prefix: ${apiKey.substring(0, 4)}`,
+    );
+  }
   return { appSecret, apiKey, baseUrl };
 }
 
 export function isFalcoConfigured(): boolean {
-  const { appSecret, apiKey } = getFalcoConfig();
-  return Boolean(appSecret && apiKey);
+  try {
+    const { appSecret, apiKey } = getFalcoConfig();
+    return Boolean(appSecret && apiKey);
+  } catch {
+    return false;
+  }
 }
 
 /**

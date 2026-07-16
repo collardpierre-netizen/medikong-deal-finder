@@ -291,6 +291,25 @@ export default function VendorDashboard() {
             loading={monthlyLoading}
           />
 
+          {/* Split commission trading vs marketplace + Ventes site vs manuelles */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <CommissionBasisSplitCard
+              tradingCents={monthly?.commissionSplit?.tradingCents ?? 0}
+              marketplaceCents={monthly?.commissionSplit?.marketplaceCents ?? 0}
+              otherCents={monthly?.commissionSplit?.otherCents ?? 0}
+              loading={monthlyLoading}
+            />
+            <SourceSplitCard
+              siteCents={monthly?.sourceSplit?.siteCents ?? 0}
+              siteOrders={monthly?.sourceSplit?.siteOrders ?? 0}
+              siteCommissionCents={monthly?.sourceSplit?.siteCommissionCents ?? 0}
+              manualCents={monthly?.sourceSplit?.manualCents ?? 0}
+              manualOrders={monthly?.sourceSplit?.manualOrders ?? 0}
+              manualCommissionCents={monthly?.sourceSplit?.manualCommissionCents ?? 0}
+              loading={monthlyLoading}
+            />
+          </div>
+
           {/* Alerte cohérence CA/GMV — silencieuse si tout concorde */}
           <VendorTotalsConsistencyAlert report={consistencyReport} />
 

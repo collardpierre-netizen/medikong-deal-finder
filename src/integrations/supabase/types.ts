@@ -24822,6 +24822,25 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_blocked_offers_list: {
+        Args: never
+        Returns: {
+          is_active: boolean
+          is_authorized_distributor: boolean
+          mandate_signed_at: string
+          missing_distributor: boolean
+          missing_mandate: boolean
+          offer_id: string
+          product_gtin: string
+          product_id: string
+          product_name: string
+          reason: string
+          updated_at: string
+          vendor_display_code: string
+          vendor_id: string
+          vendor_name: string
+        }[]
+      }
       admin_bulk_create_categories_and_map: {
         Args: { _payload: Json }
         Returns: {
@@ -25372,6 +25391,10 @@ export type Database = {
       }
       admin_qogita_watchdog_run: {
         Args: { _stale_minutes?: number }
+        Returns: Json
+      }
+      admin_recheck_offer_publication: {
+        Args: { _offer_id: string }
         Returns: Json
       }
       admin_redispatch_catalog_notifications: {

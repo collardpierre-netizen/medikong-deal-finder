@@ -366,6 +366,13 @@ const AdminVendors = () => {
         open={!!movMoqVendor}
         onOpenChange={(v) => { if (!v) setMovMoqVendor(null); }}
       />
+
+      <AdminVendorComplianceModal
+        vendorId={complianceVendor?.id ?? null}
+        vendorName={complianceVendor?.name ?? null}
+        open={!!complianceVendor}
+        onOpenChange={(v) => { if (!v) setComplianceVendor(null); }}
+      />
     </div>
   );
 };

@@ -48,7 +48,7 @@ export function OfferCommissionOverrideDialog({
     queryKey: ["offer-commission-override", offerId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("offers")
+        .from("offers_private" as any)
         .select("id, commission_model, commission_rate, margin_split_pct, fixed_commission_amount, commission_override_status, commission_valid_from, commission_valid_until, commission_override_reason")
         .eq("id", offerId)
         .maybeSingle();

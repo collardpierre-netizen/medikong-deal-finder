@@ -206,9 +206,10 @@ export default function VendorDashboard() {
           </div>
 
           {/* Deuxième bandeau KPI : commission, net vendeur, panier moyen, marge nette % */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Bandeau commissions détaillé : total / trading / marketplace */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <VStat
-              label="Commission MediKong"
+              label="Commission MediKong (total)"
               value={formatMoney((monthly?.commissionCents ?? 0) / 100, { fractionDigits: 0 })}
               icon="Percent"
               color="#F59E0B"
@@ -218,6 +219,31 @@ export default function VendorDashboard() {
                   : "—"
               }
             />
+            <VStat
+              label="Commission trading"
+              value={formatMoney((monthly?.commissionSplit?.tradingCents ?? 0) / 100, { fractionDigits: 0 })}
+              icon="TrendingUp"
+              color="#7C3AED"
+              sub={
+                (monthly?.revenueExclVatCents ?? 0) > 0
+                  ? `${(((monthly?.commissionSplit?.tradingCents ?? 0) / (monthly!.revenueExclVatCents)) * 100).toFixed(1)}% du CA HTVA · 100% marge`
+                  : "100% de la marge PV−PA"
+              }
+            />
+            <VStat
+              label="Commission marketplace"
+              value={formatMoney((monthly?.commissionSplit?.marketplaceCents ?? 0) / 100, { fractionDigits: 0 })}
+              icon="Percent"
+              color="#F59E0B"
+              sub={
+                (monthly?.revenueExclVatCents ?? 0) > 0
+                  ? `${(((monthly?.commissionSplit?.marketplaceCents ?? 0) / (monthly!.revenueExclVatCents)) * 100).toFixed(1)}% du CA HTVA · classique`
+                  : "% du CA HTVA"
+              }
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <VStat
               label="Net vendeur"
               value={formatMoney(((monthly?.revenueExclVatCents ?? 0) - (monthly?.commissionCents ?? 0)) / 100, { fractionDigits: 0 })}

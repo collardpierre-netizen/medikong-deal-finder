@@ -133,6 +133,12 @@ export default function VendorOnboardingWizard() {
   const guarantee = guaranteeQuery.data;
   const [guaranteeAccepted, setGuaranteeAccepted] = useState(false);
 
+  // Step 5 — Distribution & Mandat de facturation
+  const [isAuthorizedDistributor, setIsAuthorizedDistributor] = useState(false);
+  const [distributorConfirm, setDistributorConfirm] = useState(false);
+  const [mandateCommitment, setMandateCommitment] = useState(false);
+
+
 
   // Submit
   const submitMutation = useMutation({

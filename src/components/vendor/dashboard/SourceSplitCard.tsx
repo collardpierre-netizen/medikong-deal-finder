@@ -41,6 +41,8 @@ export default function SourceSplitCard({
       key: "site",
       label: "Ventes site",
       sub: "checkout medikong.pro",
+      tooltip:
+        "Ventes « standalone » : commandes passées en autonomie par l'acheteur sur medikong.pro (checkout self-service). Aucun admin MediKong n'intervient dans la saisie.",
       revenueCents: siteCents,
       commissionCents: siteCommissionCents,
       orders: siteOrders,
@@ -51,6 +53,8 @@ export default function SourceSplitCard({
       key: "manual",
       label: "Ventes manuelles",
       sub: "saisies par un admin MediKong",
+      tooltip:
+        "Commandes créées manuellement dans l'admin MediKong (source « manual_admin » ou created_by_admin renseigné) : ex. commande téléphonique, RFQ transformée, saisie back-office. Le buyer n'a pas déclenché de checkout en ligne.",
       revenueCents: manualCents,
       commissionCents: manualCommissionCents,
       orders: manualOrders,

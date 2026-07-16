@@ -9,6 +9,8 @@ interface Props {
   netMarginCents: number;
   progress: VendorGmvProgress | null;
   loading?: boolean;
+  tradingCommissionCents?: number;
+  marketplaceCommissionCents?: number;
 }
 
 /**
@@ -21,12 +23,18 @@ export default function MediKongCommissionCard({
   netMarginCents,
   progress,
   loading,
+  tradingCommissionCents,
+  marketplaceCommissionCents,
 }: Props) {
   const { formatMoney } = useMoneyFormat();
 
   const windowLabel =
     progress?.gmv_window === "rolling_12m" ? "12 mois glissants" : "année en cours";
   const directionDecreasing = progress?.tiers_direction !== "increasing";
+  const hasSplit =
+    tradingCommissionCents !== undefined || marketplaceCommissionCents !== undefined;
+  const tradingC = tradingCommissionCents ?? 0;
+  const marketC = marketplaceCommissionCents ?? 0;
 
   return (
     <VCard>
@@ -38,17 +46,41 @@ export default function MediKongCommissionCard({
           color="#1B5BDA"
           loading={loading}
         />
-        <Metric
-          label="Commission MediKong"
-          value={formatMoney(commissionCents / 100, { fractionDigits: 0 })}
-          hint={
-            gmvCents > 0
-              ? `${((commissionCents / gmvCents) * 100).toFixed(1)}% du GMV`
-              : "—"
-          }
-          color="#7C3AED"
-          loading={loading}
-        />
+        <div>
+          <Metric
+            label="Commission MediKong"
+            value={formatMoney(commissionCents / 100, { fractionDigits: 0 })}
+            hint={
+              gmvCents > 0
+                ? `${((commissionCents / gmvCents) * 100).toFixed(1)}% du GMV`
+                : "—"
+            }
+            color="#7C3AED"
+            loading={loading}
+          />
+          {hasSplit && !loading && (
+            <div className="mt-2 space-y-1 border-t border-[#E2E8F0] pt-2">
+              <div className="flex items-baseline justify-between text-[11px]">
+                <span className="text-[#616B7C]">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#7C3AED] mr-1.5 align-middle" />
+                  Trading <span className="text-[#8B95A5]">(100% marge)</span>
+                </span>
+                <span className="font-semibold tabular-nums text-[#1D2530]">
+                  {formatMoney(tradingC / 100, { fractionDigits: 0 })}
+                </span>
+              </div>
+              <div className="flex items-baseline justify-between text-[11px]">
+                <span className="text-[#616B7C]">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#F59E0B] mr-1.5 align-middle" />
+                  Marketplace <span className="text-[#8B95A5]">(% CA)</span>
+                </span>
+                <span className="font-semibold tabular-nums text-[#1D2530]">
+                  {formatMoney(marketC / 100, { fractionDigits: 0 })}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
         <Metric
           label="Marge nette"
           value={formatMoney(netMarginCents / 100, { fractionDigits: 0 })}
@@ -56,6 +88,7 @@ export default function MediKongCommissionCard({
           color={netMarginCents >= 0 ? "#059669" : "#EF4444"}
           loading={loading}
         />
+
       </div>
 
       {progress && progress.has_tiers && (

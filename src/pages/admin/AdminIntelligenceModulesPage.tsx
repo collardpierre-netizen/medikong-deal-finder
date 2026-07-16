@@ -734,7 +734,7 @@ function GlobalSettingsTab() {
               </p>
             </div>
             <Switch
-              checked={!!bundle?.is_enabled}
+              checked={!!(bundle as any)?.is_enabled}
               onCheckedChange={(v) => toggleBundle.mutate(v)}
             />
           </div>

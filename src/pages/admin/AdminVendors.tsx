@@ -95,6 +95,26 @@ const AdminVendors = () => {
     enabled: isAdmin,
   });
 
+  const { data: complianceByVendor = {} } = useQuery({
+    queryKey: ["admin-vendors-compliance"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendors")
+        .select("id, is_authorized_distributor, mandate_signed_at");
+      if (error) throw error;
+      const map: Record<string, { auth: boolean; mandate: boolean }> = {};
+      ((data ?? []) as Array<{ id: string; is_authorized_distributor: boolean | null; mandate_signed_at: string | null }>)
+        .forEach((r) => {
+          map[r.id] = {
+            auth: !!r.is_authorized_distributor,
+            mandate: !!r.mandate_signed_at,
+          };
+        });
+      return map;
+    },
+    enabled: isAdmin,
+  });
+
   const startTrial = async (vendor_id: string, vendor_name: string | null) => {
     if (!confirm(`Démarrer l'essai 180 jours pour ${vendor_name ?? vendor_id} ?`)) return;
     setVmiBusyId(vendor_id);

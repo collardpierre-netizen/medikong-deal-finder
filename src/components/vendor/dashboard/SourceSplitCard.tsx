@@ -1,6 +1,12 @@
 import { VCard } from "@/components/vendor/ui/VCard";
 import { useMoneyFormat } from "@/lib/money-format";
-import { Globe, UserCog } from "lucide-react";
+import { Globe, UserCog, Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Props {
   siteCents: number;

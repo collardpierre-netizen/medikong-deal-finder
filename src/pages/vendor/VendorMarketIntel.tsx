@@ -343,7 +343,7 @@ export default function VendorMarketIntel() {
       if (!openRow?.my_offer_id || !vendorId || !openRow?.product_id) return null;
       const [{ data: offer }, { data: dflt }] = await Promise.all([
         supabase
-          .from("offers")
+          .from("offers_private" as any)
           .select("purchase_price_excl_vat")
           .eq("id", openRow.my_offer_id)
           .maybeSingle(),

@@ -126,9 +126,9 @@ export function useVendorMonthlyDashboard(
       const { data, error } = await supabase
         .from("order_lines")
         .select(
-          `product_id, quantity, line_total_incl_vat, line_total_excl_vat, line_margin, commission_amount,
+          `product_id, quantity, line_total_incl_vat, line_total_excl_vat, line_margin, commission_amount, commission_basis,
            products:product_id ( name ),
-           orders!inner ( ${VENDOR_GMV_ORDER_COLUMNS},
+           orders!inner ( ${VENDOR_GMV_ORDER_COLUMNS}, source, created_by_admin,
                           customers:customer_id ( customer_type ) )`,
         )
         .eq("vendor_id", vendorId!)
@@ -153,6 +153,8 @@ export function useVendorMonthlyDashboard(
       }));
       const perType = new Map<string, number>();
       const orderIds = new Set<string>();
+      const manualOrderIds = new Set<string>();
+      const siteOrderIds = new Set<string>();
       const perProduct = new Map<
         string,
         {
@@ -165,6 +167,20 @@ export function useVendorMonthlyDashboard(
           costKnown: boolean;
         }
       >();
+
+      const commissionSplit: CommissionSplit = {
+        tradingCents: 0,
+        marketplaceCents: 0,
+        otherCents: 0,
+      };
+      const sourceSplit: SourceSplit = {
+        manualCents: 0,
+        siteCents: 0,
+        manualOrders: 0,
+        siteOrders: 0,
+        manualCommissionCents: 0,
+        siteCommissionCents: 0,
+      };
 
       for (const l of billable as any[]) {
         const incl = Number(l.line_total_incl_vat ?? 0);
@@ -182,8 +198,29 @@ export function useVendorMonthlyDashboard(
         grossMarginCents += marginC;
         commissionCents += commC;
 
+        // Split commission trading vs marketplace via commission_basis
+        const basis = (l.commission_basis as string | null) ?? null;
+        if (basis === "margin") commissionSplit.tradingCents += commC;
+        else if (basis === "ca") commissionSplit.marketplaceCents += commC;
+        else commissionSplit.otherCents += commC;
+
+        // Split ventes manuelles vs site (source='manual_admin' OU created_by_admin non null)
+        const isManual =
+          l.orders?.source === "manual_admin" || l.orders?.created_by_admin != null;
+        if (isManual) {
+          sourceSplit.manualCents += exclC;
+          sourceSplit.manualCommissionCents += commC;
+        } else {
+          sourceSplit.siteCents += exclC;
+          sourceSplit.siteCommissionCents += commC;
+        }
+
         const oid = l.orders?.id;
-        if (oid) orderIds.add(oid);
+        if (oid) {
+          orderIds.add(oid);
+          if (isManual) manualOrderIds.add(oid);
+          else siteOrderIds.add(oid);
+        }
 
         const createdAt = l.orders?.created_at ? new Date(l.orders.created_at) : null;
         if (createdAt) {
@@ -218,6 +255,9 @@ export function useVendorMonthlyDashboard(
           perProduct.set(pid, prev);
         }
       }
+
+      sourceSplit.manualOrders = manualOrderIds.size;
+      sourceSplit.siteOrders = siteOrderIds.size;
 
       const netMarginCents = grossMarginCents - commissionCents;
       const dailySeries = daily.map((d, i) => {
@@ -261,6 +301,8 @@ export function useVendorMonthlyDashboard(
         dailySeries,
         customerTypeBreakdown,
         topProducts,
+        commissionSplit,
+        sourceSplit,
       };
     },
   });

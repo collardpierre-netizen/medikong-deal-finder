@@ -617,6 +617,7 @@ const App = () => (
               <Route path="onboarding-cms" element={<LP><AdminOnboardingCMS /></LP>} />
               <Route path="commissions" element={<LP><AdminCommissions /></LP>} />
               <Route path="commission-overrides" element={<LP><AdminCommissionOverridesPage /></LP>} />
+              <Route path="commissions-revenus" element={<LP><AdminCommissionsRevenus /></LP>} />
               <Route path="sync" element={<LP><AdminSync /></LP>} />
               <Route path="qogita-connection" element={<LP><AdminQogitaConnection /></LP>} />
               <Route path="qogita-status" element={<LP><AdminQogitaStatus /></LP>} />

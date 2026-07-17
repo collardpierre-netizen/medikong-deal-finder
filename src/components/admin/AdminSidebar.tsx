@@ -62,6 +62,7 @@ const sections: NavSection[] = [
       { labelKey: "finances", path: "/admin/finances", icon: DollarSign },
       { labelKey: "commissions", path: "/admin/commissions", icon: Percent },
       { label: "Commissions personnalisées", path: "/admin/commission-overrides", icon: Percent },
+      { label: "Commissions & Revenus", path: "/admin/commissions-revenus", icon: DollarSign },
       { labelKey: "stripeConnect", path: "/admin/stripe-commissions", icon: CreditCard },
       { labelKey: "stripeRevenue", path: "/admin/stripe-revenue", icon: TrendingUp },
       { labelKey: "syncQogita", path: "/admin/sync", icon: RefreshCw },

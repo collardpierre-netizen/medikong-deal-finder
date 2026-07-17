@@ -2850,6 +2850,258 @@ export type Database = {
         }
         Relationships: []
       }
+      commission_invoice_lines: {
+        Row: {
+          commission_basis: string | null
+          commission_excl_vat_cents: number
+          commission_invoice_id: string
+          commission_rate: number | null
+          created_at: string
+          gmv_incl_vat_cents: number
+          id: string
+          order_id: string
+          order_line_id: string
+          revenue_excl_vat_cents: number
+          type: Database["public"]["Enums"]["commission_invoice_type"]
+        }
+        Insert: {
+          commission_basis?: string | null
+          commission_excl_vat_cents?: number
+          commission_invoice_id: string
+          commission_rate?: number | null
+          created_at?: string
+          gmv_incl_vat_cents?: number
+          id?: string
+          order_id: string
+          order_line_id: string
+          revenue_excl_vat_cents?: number
+          type: Database["public"]["Enums"]["commission_invoice_type"]
+        }
+        Update: {
+          commission_basis?: string | null
+          commission_excl_vat_cents?: number
+          commission_invoice_id?: string
+          commission_rate?: number | null
+          created_at?: string
+          gmv_incl_vat_cents?: number
+          id?: string
+          order_id?: string
+          order_line_id?: string
+          revenue_excl_vat_cents?: number
+          type?: Database["public"]["Enums"]["commission_invoice_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_invoice_lines_commission_invoice_id_fkey"
+            columns: ["commission_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "commission_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_invoice_lines_order_line_id_fkey"
+            columns: ["order_line_id"]
+            isOneToOne: false
+            referencedRelation: "admin_commission_backlog_v"
+            referencedColumns: ["order_line_id"]
+          },
+          {
+            foreignKeyName: "commission_invoice_lines_order_line_id_fkey"
+            columns: ["order_line_id"]
+            isOneToOne: false
+            referencedRelation: "customer_order_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_invoice_lines_order_line_id_fkey"
+            columns: ["order_line_id"]
+            isOneToOne: false
+            referencedRelation: "order_lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commission_invoices: {
+        Row: {
+          cancelled_at: string | null
+          cancelled_reason: string | null
+          commission_excl_vat_cents: number
+          created_at: string
+          created_by: string | null
+          dispute_reason: string | null
+          due_date: string | null
+          gmv_incl_vat_cents: number
+          id: string
+          invoice_number: string | null
+          invoiced_at: string | null
+          lines_count: number
+          notes: string | null
+          order_id: string | null
+          orders_count: number
+          paid_at: string | null
+          payment_reference: string | null
+          period_end: string | null
+          period_start: string | null
+          revenue_excl_vat_cents: number
+          sales_channel: Database["public"]["Enums"]["commission_sales_channel"]
+          status: Database["public"]["Enums"]["commission_invoice_status"]
+          total_incl_vat_cents: number
+          type: Database["public"]["Enums"]["commission_invoice_type"]
+          updated_at: string
+          vat_cents: number
+          vat_rate: number
+          vendor_country_code: string | null
+          vendor_id: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          cancelled_reason?: string | null
+          commission_excl_vat_cents?: number
+          created_at?: string
+          created_by?: string | null
+          dispute_reason?: string | null
+          due_date?: string | null
+          gmv_incl_vat_cents?: number
+          id?: string
+          invoice_number?: string | null
+          invoiced_at?: string | null
+          lines_count?: number
+          notes?: string | null
+          order_id?: string | null
+          orders_count?: number
+          paid_at?: string | null
+          payment_reference?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          revenue_excl_vat_cents?: number
+          sales_channel?: Database["public"]["Enums"]["commission_sales_channel"]
+          status?: Database["public"]["Enums"]["commission_invoice_status"]
+          total_incl_vat_cents?: number
+          type: Database["public"]["Enums"]["commission_invoice_type"]
+          updated_at?: string
+          vat_cents?: number
+          vat_rate?: number
+          vendor_country_code?: string | null
+          vendor_id: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          cancelled_reason?: string | null
+          commission_excl_vat_cents?: number
+          created_at?: string
+          created_by?: string | null
+          dispute_reason?: string | null
+          due_date?: string | null
+          gmv_incl_vat_cents?: number
+          id?: string
+          invoice_number?: string | null
+          invoiced_at?: string | null
+          lines_count?: number
+          notes?: string | null
+          order_id?: string | null
+          orders_count?: number
+          paid_at?: string | null
+          payment_reference?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          revenue_excl_vat_cents?: number
+          sales_channel?: Database["public"]["Enums"]["commission_sales_channel"]
+          status?: Database["public"]["Enums"]["commission_invoice_status"]
+          total_incl_vat_cents?: number
+          type?: Database["public"]["Enums"]["commission_invoice_type"]
+          updated_at?: string
+          vat_cents?: number
+          vat_rate?: number
+          vendor_country_code?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "commission_invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_with_forecast_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders_visible_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "commission_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "commission_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_intelligence_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "commission_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "commission_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "commission_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       commission_overrides_audit: {
         Row: {
           action: string
@@ -8390,6 +8642,13 @@ export type Database = {
           sub_order_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "order_line_sub_orders_order_line_id_fkey"
+            columns: ["order_line_id"]
+            isOneToOne: true
+            referencedRelation: "admin_commission_backlog_v"
+            referencedColumns: ["order_line_id"]
+          },
           {
             foreignKeyName: "order_line_sub_orders_order_line_id_fkey"
             columns: ["order_line_id"]
@@ -22163,6 +22422,120 @@ export type Database = {
           },
         ]
       }
+      admin_commission_backlog_v: {
+        Row: {
+          age_days: number | null
+          commission_basis: string | null
+          commission_excl_vat_cents: number | null
+          commission_rate: number | null
+          gmv_incl_vat_cents: number | null
+          order_created_at: string | null
+          order_id: string | null
+          order_line_id: string | null
+          order_number: string | null
+          order_source: Database["public"]["Enums"]["order_source"] | null
+          order_status: Database["public"]["Enums"]["order_status"] | null
+          payment_status:
+            | Database["public"]["Enums"]["payment_status_enum"]
+            | null
+          period_month: string | null
+          quantity: number | null
+          revenue_excl_vat_cents: number | null
+          sales_channel:
+            | Database["public"]["Enums"]["commission_sales_channel"]
+            | null
+          type: Database["public"]["Enums"]["commission_invoice_type"] | null
+          vendor_country_code: string | null
+          vendor_display_name: string | null
+          vendor_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_with_forecast_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders_visible_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "order_lines_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "order_lines_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_intelligence_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "order_lines_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "order_lines_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "order_lines_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_orders_sla_overview_v: {
         Row: {
           alert_created_at: string | null
@@ -26212,6 +26585,10 @@ export type Database = {
           raw_label: string
         }[]
       }
+      admin_cancel_commission_invoice: {
+        Args: { _invoice_id: string; _reason?: string }
+        Returns: undefined
+      }
       admin_category_mapping_dashboard: { Args: never; Returns: Json }
       admin_category_source_aliases_list: {
         Args: {
@@ -26268,6 +26645,48 @@ export type Database = {
       admin_claim_product_submission: {
         Args: { _submission_id: string }
         Returns: undefined
+      }
+      admin_commission_by_month: {
+        Args: {
+          _from?: string
+          _to?: string
+          _type?: Database["public"]["Enums"]["commission_invoice_type"]
+        }
+        Returns: {
+          marketplace_cents: number
+          orders_count: number
+          period_month: string
+          total_cents: number
+          trading_cents: number
+        }[]
+      }
+      admin_commission_by_vendor: {
+        Args: {
+          _channel?: Database["public"]["Enums"]["commission_sales_channel"]
+          _period_end?: string
+          _period_start?: string
+          _type?: Database["public"]["Enums"]["commission_invoice_type"]
+        }
+        Returns: {
+          commission_marketplace_cents: number
+          commission_total_cents: number
+          commission_trading_cents: number
+          disputed_cents: number
+          gmv_incl_vat_cents: number
+          invoiced_cents: number
+          lines_count: number
+          orders_count: number
+          paid_cents: number
+          revenue_excl_vat_cents: number
+          to_invoice_cents: number
+          vendor_country_code: string
+          vendor_display_name: string
+          vendor_id: string
+        }[]
+      }
+      admin_commission_dashboard_kpis: {
+        Args: { _period_end?: string; _period_start?: string }
+        Returns: Json
       }
       admin_convert_forecast_to_real: {
         Args: { _notes?: string; _order_id: string }
@@ -26345,6 +26764,15 @@ export type Database = {
           products_updated: number
           slug: string
         }[]
+      }
+      admin_create_commission_invoice: {
+        Args: {
+          _order_id: string
+          _order_line_ids: string[]
+          _type: Database["public"]["Enums"]["commission_invoice_type"]
+          _vendor_id: string
+        }
+        Returns: string
       }
       admin_create_manual_order: { Args: { _payload: Json }; Returns: Json }
       admin_create_quote_from_payload: {
@@ -26597,6 +27025,18 @@ export type Database = {
             }
             Returns: string
           }
+      admin_mark_commission_disputed: {
+        Args: { _invoice_id: string; _reason: string }
+        Returns: undefined
+      }
+      admin_mark_commission_invoiced: {
+        Args: { _due_date?: string; _invoice_id: string }
+        Returns: undefined
+      }
+      admin_mark_commission_paid: {
+        Args: { _invoice_id: string; _payment_reference?: string }
+        Returns: undefined
+      }
       admin_normalize_product_gtins: { Args: never; Returns: Json }
       admin_notifications_get: {
         Args: { _id: string }
@@ -28265,6 +28705,7 @@ export type Database = {
         }
         Returns: number
       }
+      next_commission_invoice_number: { Args: never; Returns: string }
       normalize_brand_name: { Args: { _name: string }; Returns: string }
       normalize_product_gtin: { Args: { _gtin: string }; Returns: string }
       offer_exclusivity_flags: {
@@ -28482,6 +28923,10 @@ export type Database = {
       resolve_buyer_profile_for_user: {
         Args: { _user_id: string }
         Returns: string
+      }
+      resolve_commission_vat_rate: {
+        Args: { _country_code: string }
+        Returns: number
       }
       resolve_effective_commission: {
         Args: { _offer_id: string }
@@ -29540,6 +29985,13 @@ export type Database = {
         | "pending_review"
         | "rejected"
         | "archived"
+      commission_invoice_status:
+        | "to_invoice"
+        | "invoiced"
+        | "paid"
+        | "disputed"
+        | "cancelled"
+      commission_invoice_type: "marketplace" | "trading"
       commission_model_enum: "flat_percentage" | "margin_split" | "fixed_amount"
       commission_override_status:
         | "draft"
@@ -29547,6 +29999,7 @@ export type Database = {
         | "approved"
         | "rejected"
         | "expired"
+      commission_sales_channel: "manual" | "online" | "mixed"
       customer_type:
         | "pharmacy"
         | "hospital"
@@ -29923,6 +30376,14 @@ export const Constants = {
         "rejected",
         "archived",
       ],
+      commission_invoice_status: [
+        "to_invoice",
+        "invoiced",
+        "paid",
+        "disputed",
+        "cancelled",
+      ],
+      commission_invoice_type: ["marketplace", "trading"],
       commission_model_enum: [
         "flat_percentage",
         "margin_split",
@@ -29935,6 +30396,7 @@ export const Constants = {
         "rejected",
         "expired",
       ],
+      commission_sales_channel: ["manual", "online", "mixed"],
       customer_type: [
         "pharmacy",
         "hospital",

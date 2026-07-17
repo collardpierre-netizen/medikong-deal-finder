@@ -532,6 +532,7 @@ const App = () => (
               <Route path="ventes-privees" element={<LP><AdminP2PSalesPage /></LP>} />
               <Route path="vendor-market-intel" element={<LP><AdminVendorMarketIntelPage /></LP>} />
               <Route path="modules-intelligence" element={<LP><AdminIntelligenceModulesPage /></LP>} />
+              <Route path="intelligence-apercu" element={<LP><AdminIntelligenceOverviewPage /></LP>} />
               <Route path="vendor-exclusivity-requests" element={<LP><AdminVendorExclusivityRequests /></LP>} />
               <Route path="exclusivites" element={<LP><AdminVendorExclusivitiesPage /></LP>} />
               <Route path="vendor-onboarding-emails" element={<LP><AdminVendorOnboardingEmailsPage /></LP>} />

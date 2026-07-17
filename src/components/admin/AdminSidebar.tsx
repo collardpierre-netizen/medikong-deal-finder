@@ -74,6 +74,7 @@ const sections: NavSection[] = [
     labelKey: "intelligenceModules",
     label: "MODULES INTELLIGENCE",
     items: [
+      { label: "Aperçu vendeurs", path: "/admin/intelligence-apercu", icon: Activity },
       { label: "Paywall + paliers + onglets", path: "/admin/modules-intelligence", icon: ShieldCheck },
     ],
   },

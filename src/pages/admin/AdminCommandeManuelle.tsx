@@ -1541,7 +1541,7 @@ function LineRow({
             type="number" step="0.01" min="0" max="100"
             placeholder="ex. 12"
             value={line.commission_rate}
-            disabled={line.commission_amount !== ""}
+            disabled={Number(line.commission_amount) > 0 && String(line.commission_rate ?? "").trim() === ""}
             onChange={(e) => onPatch({ commission_rate: e.target.value })}
           />
           <div className="flex items-center gap-1 mt-1 text-[11px]">
@@ -1570,7 +1570,7 @@ function LineRow({
             type="number" step="0.01" min="0"
             placeholder="ex. 1.50"
             value={line.commission_amount}
-            disabled={line.commission_rate !== ""}
+            disabled={Number(line.commission_rate) > 0 && String(line.commission_amount ?? "").trim() === ""}
             onChange={(e) => onPatch({ commission_amount: e.target.value })}
           />
         </div>

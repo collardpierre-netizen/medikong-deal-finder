@@ -259,6 +259,7 @@ const AdminSavingsOcr = lazyWithRetry(() => import("./pages/admin/AdminSavingsOc
 const AdminProductSubmissions = lazyWithRetry(() => import("./pages/admin/AdminProductSubmissions"), "AdminProductSubmissions");
 const AdminCommissions = lazyWithRetry(() => import("./pages/admin/AdminCommissions"), "AdminCommissions");
 const AdminCommissionOverridesPage = lazyWithRetry(() => import("./pages/admin/AdminCommissionOverridesPage"), "AdminCommissionOverridesPage");
+const AdminCommissionsRevenus = lazyWithRetry(() => import("./pages/admin/AdminCommissionsRevenus"), "AdminCommissionsRevenus");
 const AdminOnboardingCMS = lazyWithRetry(() => import("./pages/admin/AdminOnboardingCMS"), "AdminOnboardingCMS");
 const AdminSync = lazyWithRetry(() => import("./pages/admin/AdminSync"), "AdminSync");
 const AdminQogitaConnection = lazyWithRetry(() => import("./pages/admin/AdminQogitaConnection"), "AdminQogitaConnection");

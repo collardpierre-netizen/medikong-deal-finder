@@ -90,9 +90,11 @@ export function lineMetrics(l: ManualLineInput): LineMetrics {
   const amt = toNum(l.commission_amount);
   const basis: CommissionBasis = l.commission_basis === "margin" ? "margin" : "ca";
   let commissionC = 0;
-  if (Number.isFinite(amt) && amt >= 0) {
+  // Priorité : un montant fixe > 0 gagne ; sinon on applique le taux %.
+  // Un amount = 0 (valeur par défaut du champ) NE doit pas court-circuiter le %.
+  if (Number.isFinite(amt) && amt > 0) {
     commissionC = toCents(amt) * qty;
-  } else if (Number.isFinite(rate) && rate >= 0) {
+  } else if (Number.isFinite(rate) && rate > 0) {
     // Base = marge brute si demandé ET coût connu, sinon CA HTVA (fallback sûr).
     const baseC = basis === "margin" && hasCost ? caC - costTotalC : caC;
     commissionC = Math.round((baseC * rate) / 100);

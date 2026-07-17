@@ -1570,7 +1570,7 @@ function LineRow({
             type="number" step="0.01" min="0"
             placeholder="ex. 1.50"
             value={line.commission_amount}
-            disabled={line.commission_rate !== ""}
+            disabled={Number(line.commission_rate) > 0 && String(line.commission_amount ?? "").trim() === ""}
             onChange={(e) => onPatch({ commission_amount: e.target.value })}
           />
         </div>

@@ -318,13 +318,15 @@ export default function AdminCommissionsRevenus() {
 
   const totals = kpisQ.data;
 
-  const monthChart = useMemo(() => {
-    return (byMonthQ.data ?? []).map(r => ({
-      month: r.period_month,
-      trading: r.trading_cents / 100,
-      marketplace: r.marketplace_cents / 100,
+  const seriesChart = useMemo(() => {
+    return (seriesQ.data ?? []).map(r => ({
+      label: r.bucket_label,
+      trading: Number(r.trading_cents) / 100,
+      marketplace: Number(r.marketplace_cents) / 100,
+      total: Number(r.total_cents) / 100,
+      cumulative: Number(r.cumulative_cents) / 100,
     }));
-  }, [byMonthQ.data]);
+  }, [seriesQ.data]);
 
   const DRAFT_STATUSES = new Set(["draft", "brouillon", "pending", "en_attente"]);
   const filteredBacklog = useMemo(() => {

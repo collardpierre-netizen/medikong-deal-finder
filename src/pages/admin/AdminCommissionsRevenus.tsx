@@ -389,6 +389,16 @@ export default function AdminCommissionsRevenus() {
             </Select>
           </div>
           <div>
+            <Label className="text-xs text-[#616B7C]">Statut cmd (backlog)</Label>
+            <Select value={filterOrderStatus} onValueChange={v => setFilterOrderStatus(v as any)}>
+              <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes</SelectItem>
+                <SelectItem value="validated">Validées uniquement</SelectItem>
+                <SelectItem value="draft">Brouillons uniquement</SelectItem>
+              </SelectContent>
+            </Select>
+          <div>
             <Label className="text-xs text-[#616B7C]">Canal</Label>
             <Select value={filterChannel} onValueChange={v => setFilterChannel(v as any)}>
               <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>

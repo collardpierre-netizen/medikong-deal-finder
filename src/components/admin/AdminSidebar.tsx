@@ -52,6 +52,7 @@ const sections: NavSection[] = [
       { labelKey: "pimSchemas", path: "/admin/schemas-pim", icon: SlidersHorizontal },
       // Entrée "productPrices" supprimée — édition prix par offre via /vendor/offers (offer_buyer_profile_prices)
       { labelKey: "orders", path: "/admin/commandes", icon: ShoppingCart },
+      { label: "Commissions & Revenus", path: "/admin/commissions-revenus", icon: DollarSign },
       { label: "Nouvelle commande manuelle", path: "/admin/commandes/nouvelle", icon: Plus },
       { label: "Devis", path: "/admin/devis", icon: FileText },
       { label: "Commandes en retard", path: "/admin/commandes-en-retard", icon: AlertTriangle },
@@ -62,7 +63,6 @@ const sections: NavSection[] = [
       { labelKey: "finances", path: "/admin/finances", icon: DollarSign },
       { labelKey: "commissions", path: "/admin/commissions", icon: Percent },
       { label: "Commissions personnalisées", path: "/admin/commission-overrides", icon: Percent },
-      { label: "Commissions & Revenus", path: "/admin/commissions-revenus", icon: DollarSign },
       { labelKey: "stripeConnect", path: "/admin/stripe-commissions", icon: CreditCard },
       { labelKey: "stripeRevenue", path: "/admin/stripe-revenue", icon: TrendingUp },
       { labelKey: "syncQogita", path: "/admin/sync", icon: RefreshCw },

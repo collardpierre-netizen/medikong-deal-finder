@@ -457,21 +457,68 @@ export default function AdminCommissionsRevenus() {
             iconColor="#1B5BDA" iconBg="#EFF6FF" />
         </div>
 
-        {/* Chart mensuel */}
-        <div className="bg-white border border-[#E2E8F0] rounded-[10px] p-5">
-          <h3 className="text-sm font-semibold text-[#1D2530] mb-3">Commissions par mois — 12 mois glissants</h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthChart}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                <XAxis dataKey="month" fontSize={11} />
-                <YAxis fontSize={11} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                <ReTooltip formatter={(v: number) => `${v.toFixed(2)} EUR`} />
-                <Legend />
-                <Bar dataKey="trading" stackId="a" fill="#7C3AED" name="Trading" />
-                <Bar dataKey="marketplace" stackId="a" fill="#F59E0B" name="Marketplace" />
-              </BarChart>
-            </ResponsiveContainer>
+        {/* Charts : granularité + cumul */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="bg-white border border-[#E2E8F0] rounded-[10px] p-5">
+            <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+              <h3 className="text-sm font-semibold text-[#1D2530]">
+                Commissions par {bucket === "day" ? "jour" : bucket === "week" ? "semaine" : bucket === "quarter" ? "trimestre" : "mois"} — période sélectionnée
+              </h3>
+              <div className="flex gap-1">
+                {(["day","week","month","quarter"] as const).map(b => (
+                  <Button key={b} size="sm" variant={bucket === b ? "default" : "outline"} onClick={() => setBucket(b)} className="h-7 text-xs">
+                    {b === "day" ? "Jour" : b === "week" ? "Semaine" : b === "month" ? "Mois" : "Trimestre"}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="h-64">
+              {seriesChart.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-sm text-[#8B95A5]">
+                  Aucune commission sur la période sélectionnée.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={seriesChart}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                    <XAxis dataKey="label" fontSize={11} />
+                    <YAxis fontSize={11} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(1)}k€` : `${v.toFixed(0)}€`} />
+                    <ReTooltip formatter={(v: number) => `${v.toFixed(2)} EUR`} />
+                    <Legend />
+                    <Bar dataKey="trading" stackId="a" fill="#7C3AED" name="Trading" />
+                    <Bar dataKey="marketplace" stackId="a" fill="#F59E0B" name="Marketplace" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-white border border-[#E2E8F0] rounded-[10px] p-5">
+            <h3 className="text-sm font-semibold text-[#1D2530] mb-3">Cumul commissions — période sélectionnée</h3>
+            <div className="h-64">
+              {seriesChart.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-sm text-[#8B95A5]">
+                  Aucune commission sur la période sélectionnée.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={seriesChart}>
+                    <defs>
+                      <linearGradient id="cumGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#1B5BDA" stopOpacity={0.35} />
+                        <stop offset="100%" stopColor="#1B5BDA" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                    <XAxis dataKey="label" fontSize={11} />
+                    <YAxis fontSize={11} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(1)}k€` : `${v.toFixed(0)}€`} />
+                    <ReTooltip formatter={(v: number) => `${v.toFixed(2)} EUR`} />
+                    <Legend />
+                    <Area type="monotone" dataKey="cumulative" name="Cumul" stroke="#1B5BDA" strokeWidth={2} fill="url(#cumGrad)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </div>
           </div>
         </div>
 

@@ -74,11 +74,11 @@ const AdminCommandeDetail = () => {
   const { data: order, isLoading, error: orderError } = useQuery({
     queryKey: ["admin-order", id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id || "");
+      const query = supabase
         .from("orders")
-        .select("*, customer:customers(*), order_lines(*, products(name, gtin, cnk_code), vendors(company_name, name, vat_number, bank_name, iban, bic))")
-        .eq("id", id!)
-        .maybeSingle();
+        .select("*, customer:customers(*), order_lines(*, products(name, gtin, cnk_code), vendors(company_name, name, vat_number, bank_name, iban, bic))");
+      const { data, error } = await (isUuid ? query.eq("id", id!) : query.eq("order_number", id!)).maybeSingle();
       if (error) throw error;
 
       const persisted = (data as any)?.order_lines || [];

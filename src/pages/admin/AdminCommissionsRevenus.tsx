@@ -180,15 +180,17 @@ export default function AdminCommissionsRevenus() {
     },
   });
 
-  // ---------- By month (12 mois glissants) ----------
-  const byMonthQ = useQuery({
-    queryKey: ["commrev-by-month", typeArg],
+  // ---------- Timeseries (jour / semaine / mois / trimestre) ----------
+  const seriesQ = useQuery({
+    queryKey: ["commrev-timeseries", periodStart, periodEnd, bucket, typeArg, channelArg],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("admin_commission_by_month", {
-        _type: typeArg as any,
+      const { data, error } = await supabase.rpc("admin_commission_timeseries", {
+        _from: periodStart, _to: periodEnd,
+        _bucket: bucket,
+        _type: typeArg as any, _channel: channelArg as any,
       });
       if (error) throw error;
-      return (data ?? []) as MonthRow[];
+      return (data ?? []) as TimeseriesRow[];
     },
   });
 

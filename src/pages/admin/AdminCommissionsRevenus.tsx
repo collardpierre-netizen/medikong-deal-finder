@@ -499,14 +499,15 @@ export default function AdminCommissionsRevenus() {
                     <tr>
                       <th className="p-2 w-8">
                         <Checkbox
-                          checked={backlogQ.data && backlogQ.data.length > 0 && selectedLines.size === backlogQ.data.length}
+                          checked={filteredBacklog.length > 0 && filteredBacklog.every(r => selectedLines.has(r.order_line_id))}
                           onCheckedChange={(v) => {
-                            if (v) setSelectedLines(new Set((backlogQ.data ?? []).map(r => r.order_line_id)));
+                            if (v) setSelectedLines(new Set(filteredBacklog.map(r => r.order_line_id)));
                             else setSelectedLines(new Set());
                           }}
                         />
                       </th>
                       <th className="p-2 text-left">Commande</th>
+                      <th className="p-2 text-left">Statut</th>
                       <th className="p-2 text-left">Date</th>
                       <th className="p-2 text-left">Vendeur</th>
                       <th className="p-2 text-left">Type</th>
@@ -517,7 +518,7 @@ export default function AdminCommissionsRevenus() {
                     </tr>
                   </thead>
                   <tbody>
-                    {(backlogQ.data ?? []).map(r => (
+                    {filteredBacklog.map(r => (
                       <tr key={r.order_line_id} className="border-t border-[#F1F5F9] hover:bg-[#F8FAFC]">
                         <td className="p-2">
                           <Checkbox

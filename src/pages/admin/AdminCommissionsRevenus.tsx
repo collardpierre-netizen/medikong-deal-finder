@@ -141,6 +141,7 @@ export default function AdminCommissionsRevenus() {
   const [periodEnd, setPeriodEnd] = useState(toISODate(monthEnd()));
   const [filterType, setFilterType] = useState<"all" | InvoiceType>("all");
   const [filterChannel, setFilterChannel] = useState<"all" | SalesChannel>("all");
+  const [filterOrderStatus, setFilterOrderStatus] = useState<"all" | "validated" | "draft">("all");
   const [selectedLines, setSelectedLines] = useState<Set<string>>(new Set());
 
   // Dialog states
@@ -320,11 +321,22 @@ export default function AdminCommissionsRevenus() {
     }));
   }, [byMonthQ.data]);
 
+  const DRAFT_STATUSES = new Set(["draft", "brouillon", "pending", "en_attente"]);
+  const filteredBacklog = useMemo(() => {
+    const rows = backlogQ.data ?? [];
+    if (filterOrderStatus === "all") return rows;
+    const wantDraft = filterOrderStatus === "draft";
+    return rows.filter(r => {
+      const isDraft = DRAFT_STATUSES.has(String(r.order_status ?? "").toLowerCase());
+      return wantDraft ? isDraft : !isDraft;
+    });
+  }, [backlogQ.data, filterOrderStatus]);
+
   const backlogSelectedAmount = useMemo(() => {
-    return (backlogQ.data ?? [])
+    return filteredBacklog
       .filter(r => selectedLines.has(r.order_line_id))
       .reduce((s, r) => s + r.commission_excl_vat_cents, 0);
-  }, [backlogQ.data, selectedLines]);
+  }, [filteredBacklog, selectedLines]);
 
   const exportVendorCsv = () => {
     const rows = byVendorQ.data ?? [];
@@ -373,6 +385,17 @@ export default function AdminCommissionsRevenus() {
                 <SelectItem value="all">Tous</SelectItem>
                 <SelectItem value="trading">Trading (100% marge)</SelectItem>
                 <SelectItem value="marketplace">Marketplace (% CA)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs text-[#616B7C]">Statut cmd (backlog)</Label>
+            <Select value={filterOrderStatus} onValueChange={v => setFilterOrderStatus(v as any)}>
+              <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes</SelectItem>
+                <SelectItem value="validated">Validées uniquement</SelectItem>
+                <SelectItem value="draft">Brouillons uniquement</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -449,7 +472,7 @@ export default function AdminCommissionsRevenus() {
         <Tabs defaultValue="backlog" className="w-full">
           <TabsList>
             <TabsTrigger value="backlog">
-              Backlog ({backlogQ.data?.length ?? 0})
+              Backlog ({filteredBacklog.length}{filterOrderStatus !== "all" && backlogQ.data ? ` / ${backlogQ.data.length}` : ""})
             </TabsTrigger>
             <TabsTrigger value="vendors">Par vendeur ({byVendorQ.data?.length ?? 0})</TabsTrigger>
             <TabsTrigger value="invoices">Factures ({invoicesQ.data?.length ?? 0})</TabsTrigger>
@@ -476,14 +499,15 @@ export default function AdminCommissionsRevenus() {
                     <tr>
                       <th className="p-2 w-8">
                         <Checkbox
-                          checked={backlogQ.data && backlogQ.data.length > 0 && selectedLines.size === backlogQ.data.length}
+                          checked={filteredBacklog.length > 0 && filteredBacklog.every(r => selectedLines.has(r.order_line_id))}
                           onCheckedChange={(v) => {
-                            if (v) setSelectedLines(new Set((backlogQ.data ?? []).map(r => r.order_line_id)));
+                            if (v) setSelectedLines(new Set(filteredBacklog.map(r => r.order_line_id)));
                             else setSelectedLines(new Set());
                           }}
                         />
                       </th>
                       <th className="p-2 text-left">Commande</th>
+                      <th className="p-2 text-left">Statut</th>
                       <th className="p-2 text-left">Date</th>
                       <th className="p-2 text-left">Vendeur</th>
                       <th className="p-2 text-left">Type</th>
@@ -494,7 +518,7 @@ export default function AdminCommissionsRevenus() {
                     </tr>
                   </thead>
                   <tbody>
-                    {(backlogQ.data ?? []).map(r => (
+                    {filteredBacklog.map(r => (
                       <tr key={r.order_line_id} className="border-t border-[#F1F5F9] hover:bg-[#F8FAFC]">
                         <td className="p-2">
                           <Checkbox
@@ -507,6 +531,11 @@ export default function AdminCommissionsRevenus() {
                           />
                         </td>
                         <td className="p-2"><a href={`/admin/commandes/${r.order_number}`} className="text-[#1B5BDA] hover:underline">{r.order_number}</a></td>
+                        <td className="p-2">
+                          {DRAFT_STATUSES.has(String(r.order_status ?? "").toLowerCase())
+                            ? <Badge className="bg-orange-100 text-orange-800">Brouillon</Badge>
+                            : <Badge className="bg-green-100 text-green-800">Validée</Badge>}
+                        </td>
                         <td className="p-2">{formatUpdatedAt(r.order_created_at)}</td>
                         <td className="p-2">{r.vendor_display_name}</td>
                         <td className="p-2">
@@ -522,8 +551,8 @@ export default function AdminCommissionsRevenus() {
                         <td className="p-2 text-right text-xs text-[#616B7C]">{Math.round(r.age_days)}j</td>
                       </tr>
                     ))}
-                    {backlogQ.data?.length === 0 && (
-                      <tr><td colSpan={9} className="p-8 text-center text-[#8B95A5]">Aucune ligne dans le backlog sur la période.</td></tr>
+                    {filteredBacklog.length === 0 && (
+                      <tr><td colSpan={10} className="p-8 text-center text-[#8B95A5]">Aucune ligne dans le backlog sur la période.</td></tr>
                     )}
                   </tbody>
                 </table>

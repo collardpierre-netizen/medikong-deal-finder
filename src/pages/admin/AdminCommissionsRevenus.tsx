@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { fmtEurFromCents } from "@/lib/format-currency";
 import { formatUpdatedAt } from "@/lib/format-date";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, ResponsiveContainer, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, ResponsiveContainer, Legend, ComposedChart, Line, AreaChart, Area } from "recharts";
 import {
   DollarSign, FileClock, CheckCircle2, AlertTriangle, Coins,
   Download, RefreshCw, FileText, Check, Ban, XCircle,
@@ -59,11 +59,13 @@ interface VendorRow {
   disputed_cents: number;
 }
 
-interface MonthRow {
-  period_month: string;
+interface TimeseriesRow {
+  bucket_start: string;
+  bucket_label: string;
   trading_cents: number;
   marketplace_cents: number;
   total_cents: number;
+  cumulative_cents: number;
   orders_count: number;
 }
 
@@ -142,6 +144,7 @@ export default function AdminCommissionsRevenus() {
   const [filterType, setFilterType] = useState<"all" | InvoiceType>("all");
   const [filterChannel, setFilterChannel] = useState<"all" | SalesChannel>("all");
   const [filterOrderStatus, setFilterOrderStatus] = useState<"all" | "validated" | "draft">("all");
+  const [bucket, setBucket] = useState<"day" | "week" | "month" | "quarter">("month");
   const [selectedLines, setSelectedLines] = useState<Set<string>>(new Set());
 
   // Dialog states
@@ -177,15 +180,17 @@ export default function AdminCommissionsRevenus() {
     },
   });
 
-  // ---------- By month (12 mois glissants) ----------
-  const byMonthQ = useQuery({
-    queryKey: ["commrev-by-month", typeArg],
+  // ---------- Timeseries (jour / semaine / mois / trimestre) ----------
+  const seriesQ = useQuery({
+    queryKey: ["commrev-timeseries", periodStart, periodEnd, bucket, typeArg, channelArg],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("admin_commission_by_month", {
-        _type: typeArg as any,
+      const { data, error } = await supabase.rpc("admin_commission_timeseries", {
+        _from: periodStart, _to: periodEnd,
+        _bucket: bucket,
+        _type: typeArg as any, _channel: channelArg as any,
       });
       if (error) throw error;
-      return (data ?? []) as MonthRow[];
+      return (data ?? []) as TimeseriesRow[];
     },
   });
 
@@ -231,7 +236,7 @@ export default function AdminCommissionsRevenus() {
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["commrev-kpis"] });
     qc.invalidateQueries({ queryKey: ["commrev-by-vendor"] });
-    qc.invalidateQueries({ queryKey: ["commrev-by-month"] });
+    qc.invalidateQueries({ queryKey: ["commrev-timeseries"] });
     qc.invalidateQueries({ queryKey: ["commrev-backlog"] });
     qc.invalidateQueries({ queryKey: ["commrev-invoices"] });
   };
@@ -313,13 +318,15 @@ export default function AdminCommissionsRevenus() {
 
   const totals = kpisQ.data;
 
-  const monthChart = useMemo(() => {
-    return (byMonthQ.data ?? []).map(r => ({
-      month: r.period_month,
-      trading: r.trading_cents / 100,
-      marketplace: r.marketplace_cents / 100,
+  const seriesChart = useMemo(() => {
+    return (seriesQ.data ?? []).map(r => ({
+      label: r.bucket_label,
+      trading: Number(r.trading_cents) / 100,
+      marketplace: Number(r.marketplace_cents) / 100,
+      total: Number(r.total_cents) / 100,
+      cumulative: Number(r.cumulative_cents) / 100,
     }));
-  }, [byMonthQ.data]);
+  }, [seriesQ.data]);
 
   const DRAFT_STATUSES = new Set(["draft", "brouillon", "pending", "en_attente"]);
   const filteredBacklog = useMemo(() => {
@@ -450,21 +457,68 @@ export default function AdminCommissionsRevenus() {
             iconColor="#1B5BDA" iconBg="#EFF6FF" />
         </div>
 
-        {/* Chart mensuel */}
-        <div className="bg-white border border-[#E2E8F0] rounded-[10px] p-5">
-          <h3 className="text-sm font-semibold text-[#1D2530] mb-3">Commissions par mois — 12 mois glissants</h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthChart}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                <XAxis dataKey="month" fontSize={11} />
-                <YAxis fontSize={11} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                <ReTooltip formatter={(v: number) => `${v.toFixed(2)} EUR`} />
-                <Legend />
-                <Bar dataKey="trading" stackId="a" fill="#7C3AED" name="Trading" />
-                <Bar dataKey="marketplace" stackId="a" fill="#F59E0B" name="Marketplace" />
-              </BarChart>
-            </ResponsiveContainer>
+        {/* Charts : granularité + cumul */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="bg-white border border-[#E2E8F0] rounded-[10px] p-5">
+            <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+              <h3 className="text-sm font-semibold text-[#1D2530]">
+                Commissions par {bucket === "day" ? "jour" : bucket === "week" ? "semaine" : bucket === "quarter" ? "trimestre" : "mois"} — période sélectionnée
+              </h3>
+              <div className="flex gap-1">
+                {(["day","week","month","quarter"] as const).map(b => (
+                  <Button key={b} size="sm" variant={bucket === b ? "default" : "outline"} onClick={() => setBucket(b)} className="h-7 text-xs">
+                    {b === "day" ? "Jour" : b === "week" ? "Semaine" : b === "month" ? "Mois" : "Trimestre"}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="h-64">
+              {seriesChart.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-sm text-[#8B95A5]">
+                  Aucune commission sur la période sélectionnée.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={seriesChart}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                    <XAxis dataKey="label" fontSize={11} />
+                    <YAxis fontSize={11} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(1)}k€` : `${v.toFixed(0)}€`} />
+                    <ReTooltip formatter={(v: number) => `${v.toFixed(2)} EUR`} />
+                    <Legend />
+                    <Bar dataKey="trading" stackId="a" fill="#7C3AED" name="Trading" />
+                    <Bar dataKey="marketplace" stackId="a" fill="#F59E0B" name="Marketplace" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-white border border-[#E2E8F0] rounded-[10px] p-5">
+            <h3 className="text-sm font-semibold text-[#1D2530] mb-3">Cumul commissions — période sélectionnée</h3>
+            <div className="h-64">
+              {seriesChart.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-sm text-[#8B95A5]">
+                  Aucune commission sur la période sélectionnée.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={seriesChart}>
+                    <defs>
+                      <linearGradient id="cumGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#1B5BDA" stopOpacity={0.35} />
+                        <stop offset="100%" stopColor="#1B5BDA" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                    <XAxis dataKey="label" fontSize={11} />
+                    <YAxis fontSize={11} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(1)}k€` : `${v.toFixed(0)}€`} />
+                    <ReTooltip formatter={(v: number) => `${v.toFixed(2)} EUR`} />
+                    <Legend />
+                    <Area type="monotone" dataKey="cumulative" name="Cumul" stroke="#1B5BDA" strokeWidth={2} fill="url(#cumGrad)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </div>
           </div>
         </div>
 

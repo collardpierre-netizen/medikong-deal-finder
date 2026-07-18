@@ -26688,6 +26688,24 @@ export type Database = {
         Args: { _period_end?: string; _period_start?: string }
         Returns: Json
       }
+      admin_commission_timeseries: {
+        Args: {
+          _bucket?: string
+          _channel?: Database["public"]["Enums"]["commission_sales_channel"]
+          _from?: string
+          _to?: string
+          _type?: Database["public"]["Enums"]["commission_invoice_type"]
+        }
+        Returns: {
+          bucket_label: string
+          bucket_start: string
+          cumulative_cents: number
+          marketplace_cents: number
+          orders_count: number
+          total_cents: number
+          trading_cents: number
+        }[]
+      }
       admin_convert_forecast_to_real: {
         Args: { _notes?: string; _order_id: string }
         Returns: {

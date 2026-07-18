@@ -613,6 +613,7 @@ const AdminCommandeManuelle = () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-manual-order-drafts"] }),
         queryClient.invalidateQueries({ queryKey: ["admin-orders"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-orders-paginated"] }),
         queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] }),
       ]);
       toast.success(currentDraftId ? "Brouillon mis à jour" : "Brouillon enregistré");

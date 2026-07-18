@@ -236,7 +236,7 @@ export default function AdminCommissionsRevenus() {
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["commrev-kpis"] });
     qc.invalidateQueries({ queryKey: ["commrev-by-vendor"] });
-    qc.invalidateQueries({ queryKey: ["commrev-by-month"] });
+    qc.invalidateQueries({ queryKey: ["commrev-timeseries"] });
     qc.invalidateQueries({ queryKey: ["commrev-backlog"] });
     qc.invalidateQueries({ queryKey: ["commrev-invoices"] });
   };

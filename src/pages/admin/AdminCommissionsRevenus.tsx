@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { fmtEurFromCents } from "@/lib/format-currency";
 import { formatUpdatedAt } from "@/lib/format-date";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, ResponsiveContainer, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, ResponsiveContainer, Legend, ComposedChart, Line, AreaChart, Area } from "recharts";
 import {
   DollarSign, FileClock, CheckCircle2, AlertTriangle, Coins,
   Download, RefreshCw, FileText, Check, Ban, XCircle,

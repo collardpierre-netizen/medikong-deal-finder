@@ -472,7 +472,7 @@ export default function AdminCommissionsRevenus() {
         <Tabs defaultValue="backlog" className="w-full">
           <TabsList>
             <TabsTrigger value="backlog">
-              Backlog ({backlogQ.data?.length ?? 0})
+              Backlog ({filteredBacklog.length}{filterOrderStatus !== "all" && backlogQ.data ? ` / ${backlogQ.data.length}` : ""})
             </TabsTrigger>
             <TabsTrigger value="vendors">Par vendeur ({byVendorQ.data?.length ?? 0})</TabsTrigger>
             <TabsTrigger value="invoices">Factures ({invoicesQ.data?.length ?? 0})</TabsTrigger>

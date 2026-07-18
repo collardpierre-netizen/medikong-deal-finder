@@ -321,11 +321,22 @@ export default function AdminCommissionsRevenus() {
     }));
   }, [byMonthQ.data]);
 
+  const DRAFT_STATUSES = new Set(["draft", "brouillon", "pending", "en_attente"]);
+  const filteredBacklog = useMemo(() => {
+    const rows = backlogQ.data ?? [];
+    if (filterOrderStatus === "all") return rows;
+    const wantDraft = filterOrderStatus === "draft";
+    return rows.filter(r => {
+      const isDraft = DRAFT_STATUSES.has(String(r.order_status ?? "").toLowerCase());
+      return wantDraft ? isDraft : !isDraft;
+    });
+  }, [backlogQ.data, filterOrderStatus]);
+
   const backlogSelectedAmount = useMemo(() => {
-    return (backlogQ.data ?? [])
+    return filteredBacklog
       .filter(r => selectedLines.has(r.order_line_id))
       .reduce((s, r) => s + r.commission_excl_vat_cents, 0);
-  }, [backlogQ.data, selectedLines]);
+  }, [filteredBacklog, selectedLines]);
 
   const exportVendorCsv = () => {
     const rows = byVendorQ.data ?? [];

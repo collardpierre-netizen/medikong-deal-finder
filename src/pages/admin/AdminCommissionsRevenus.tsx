@@ -141,6 +141,7 @@ export default function AdminCommissionsRevenus() {
   const [periodEnd, setPeriodEnd] = useState(toISODate(monthEnd()));
   const [filterType, setFilterType] = useState<"all" | InvoiceType>("all");
   const [filterChannel, setFilterChannel] = useState<"all" | SalesChannel>("all");
+  const [filterOrderStatus, setFilterOrderStatus] = useState<"all" | "validated" | "draft">("all");
   const [selectedLines, setSelectedLines] = useState<Set<string>>(new Set());
 
   // Dialog states

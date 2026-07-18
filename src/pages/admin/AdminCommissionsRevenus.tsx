@@ -59,11 +59,13 @@ interface VendorRow {
   disputed_cents: number;
 }
 
-interface MonthRow {
-  period_month: string;
+interface TimeseriesRow {
+  bucket_start: string;
+  bucket_label: string;
   trading_cents: number;
   marketplace_cents: number;
   total_cents: number;
+  cumulative_cents: number;
   orders_count: number;
 }
 

@@ -608,8 +608,8 @@ const AdminCommandes = () => {
           const amt = s.commission_amount_override;
           if (amt != null && Number.isFinite(Number(amt))) return acc + Number(amt);
           const rate = s.commission_rate_override;
-          const sub = Number(s.subtotal_incl_vat) || 0;
-          if (rate != null && Number.isFinite(Number(rate)) && sub > 0) return acc + (sub * Number(rate)) / 100;
+          const subHt = Number(s.subtotal_excl_vat) || 0;
+          if (rate != null && Number.isFinite(Number(rate)) && subHt > 0) return acc + (subHt * Number(rate)) / 100;
           return acc;
         }, 0);
         return {

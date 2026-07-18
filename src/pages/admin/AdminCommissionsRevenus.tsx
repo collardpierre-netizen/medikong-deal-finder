@@ -398,6 +398,7 @@ export default function AdminCommissionsRevenus() {
                 <SelectItem value="draft">Brouillons uniquement</SelectItem>
               </SelectContent>
             </Select>
+          </div>
           <div>
             <Label className="text-xs text-[#616B7C]">Canal</Label>
             <Select value={filterChannel} onValueChange={v => setFilterChannel(v as any)}>

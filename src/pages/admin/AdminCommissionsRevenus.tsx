@@ -531,6 +531,11 @@ export default function AdminCommissionsRevenus() {
                           />
                         </td>
                         <td className="p-2"><a href={`/admin/commandes/${r.order_number}`} className="text-[#1B5BDA] hover:underline">{r.order_number}</a></td>
+                        <td className="p-2">
+                          {DRAFT_STATUSES.has(String(r.order_status ?? "").toLowerCase())
+                            ? <Badge className="bg-orange-100 text-orange-800">Brouillon</Badge>
+                            : <Badge className="bg-green-100 text-green-800">Validée</Badge>}
+                        </td>
                         <td className="p-2">{formatUpdatedAt(r.order_created_at)}</td>
                         <td className="p-2">{r.vendor_display_name}</td>
                         <td className="p-2">

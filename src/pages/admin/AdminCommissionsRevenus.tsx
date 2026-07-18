@@ -551,8 +551,8 @@ export default function AdminCommissionsRevenus() {
                         <td className="p-2 text-right text-xs text-[#616B7C]">{Math.round(r.age_days)}j</td>
                       </tr>
                     ))}
-                    {backlogQ.data?.length === 0 && (
-                      <tr><td colSpan={9} className="p-8 text-center text-[#8B95A5]">Aucune ligne dans le backlog sur la période.</td></tr>
+                    {filteredBacklog.length === 0 && (
+                      <tr><td colSpan={10} className="p-8 text-center text-[#8B95A5]">Aucune ligne dans le backlog sur la période.</td></tr>
                     )}
                   </tbody>
                 </table>

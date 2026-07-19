@@ -65,7 +65,7 @@ export default function AdminCommissionInvoiceDetail() {
   });
 
   const generatePdfM = useMutation({
-    mutationFn: async (force = false) => {
+    mutationFn: async (force: boolean = false) => {
       const { data, error } = await supabase.functions.invoke("generate-commission-invoice-pdf", {
         body: { invoice_id: id, force },
       });

@@ -93,7 +93,7 @@ export default function AdminCommissionInvoiceDetail() {
   });
 
   const sendPeppolM = useMutation({
-    mutationFn: async (force = false) => {
+    mutationFn: async (force: boolean = false) => {
       const { data, error } = await supabase.functions.invoke("send-commission-invoice-peppol", {
         body: { invoice_id: id, force },
       });

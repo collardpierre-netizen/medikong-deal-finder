@@ -685,7 +685,9 @@ export default function AdminCommissionsRevenus() {
                     const vname = inv.vendors?.company_name || inv.vendors?.name || inv.vendor_id.slice(0, 8);
                     return (
                       <tr key={inv.id} className="border-t border-[#F1F5F9] hover:bg-[#F8FAFC]">
-                        <td className="p-2 font-mono text-xs">{inv.invoice_number ?? "—"}</td>
+                        <td className="p-2 font-mono text-xs">
+                          <a href={`/admin/commissions-revenus/${inv.id}`} className="text-[#1B5BDA] hover:underline">{inv.invoice_number ?? inv.id.slice(0, 8)}</a>
+                        </td>
                         <td className="p-2 text-xs">{formatUpdatedAt(inv.created_at)}</td>
                         <td className="p-2">{vname}</td>
                         <td className="p-2 text-xs">

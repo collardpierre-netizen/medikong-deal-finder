@@ -260,6 +260,7 @@ const AdminProductSubmissions = lazyWithRetry(() => import("./pages/admin/AdminP
 const AdminCommissions = lazyWithRetry(() => import("./pages/admin/AdminCommissions"), "AdminCommissions");
 const AdminCommissionOverridesPage = lazyWithRetry(() => import("./pages/admin/AdminCommissionOverridesPage"), "AdminCommissionOverridesPage");
 const AdminCommissionsRevenus = lazyWithRetry(() => import("./pages/admin/AdminCommissionsRevenus"), "AdminCommissionsRevenus");
+const AdminCommissionInvoiceDetail = lazyWithRetry(() => import("./pages/admin/AdminCommissionInvoiceDetail"), "AdminCommissionInvoiceDetail");
 const AdminOnboardingCMS = lazyWithRetry(() => import("./pages/admin/AdminOnboardingCMS"), "AdminOnboardingCMS");
 const AdminSync = lazyWithRetry(() => import("./pages/admin/AdminSync"), "AdminSync");
 const AdminQogitaConnection = lazyWithRetry(() => import("./pages/admin/AdminQogitaConnection"), "AdminQogitaConnection");
@@ -618,6 +619,7 @@ const App = () => (
               <Route path="commissions" element={<LP><AdminCommissions /></LP>} />
               <Route path="commission-overrides" element={<LP><AdminCommissionOverridesPage /></LP>} />
               <Route path="commissions-revenus" element={<LP><AdminCommissionsRevenus /></LP>} />
+              <Route path="commissions-revenus/:id" element={<LP><AdminCommissionInvoiceDetail /></LP>} />
               <Route path="sync" element={<LP><AdminSync /></LP>} />
               <Route path="qogita-connection" element={<LP><AdminQogitaConnection /></LP>} />
               <Route path="qogita-status" element={<LP><AdminQogitaStatus /></LP>} />

@@ -2940,6 +2940,13 @@ export type Database = {
           orders_count: number
           paid_at: string | null
           payment_reference: string | null
+          pdf_generated_at: string | null
+          pdf_path: string | null
+          peppol_document_id: string | null
+          peppol_error: string | null
+          peppol_last_attempt_at: string | null
+          peppol_retry_count: number
+          peppol_status: string | null
           period_end: string | null
           period_start: string | null
           revenue_excl_vat_cents: number
@@ -2971,6 +2978,13 @@ export type Database = {
           orders_count?: number
           paid_at?: string | null
           payment_reference?: string | null
+          pdf_generated_at?: string | null
+          pdf_path?: string | null
+          peppol_document_id?: string | null
+          peppol_error?: string | null
+          peppol_last_attempt_at?: string | null
+          peppol_retry_count?: number
+          peppol_status?: string | null
           period_end?: string | null
           period_start?: string | null
           revenue_excl_vat_cents?: number
@@ -3002,6 +3016,13 @@ export type Database = {
           orders_count?: number
           paid_at?: string | null
           payment_reference?: string | null
+          pdf_generated_at?: string | null
+          pdf_path?: string | null
+          peppol_document_id?: string | null
+          peppol_error?: string | null
+          peppol_last_attempt_at?: string | null
+          peppol_retry_count?: number
+          peppol_status?: string | null
           period_end?: string | null
           period_start?: string | null
           revenue_excl_vat_cents?: number

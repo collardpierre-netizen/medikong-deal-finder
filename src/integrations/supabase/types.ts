@@ -25851,6 +25851,137 @@ export type Database = {
           },
         ]
       }
+      vendor_brand_authorizations_private: {
+        Row: {
+          authorization_type: string | null
+          brand_id: string | null
+          created_at: string | null
+          document_reference: string | null
+          id: string | null
+          notes: string | null
+          updated_at: string | null
+          valid_from: string | null
+          valid_until: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          authorization_type?: string | null
+          brand_id?: string | null
+          created_at?: string | null
+          document_reference?: string | null
+          id?: string | null
+          notes?: string | null
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          authorization_type?: string | null
+          brand_id?: string | null
+          created_at?: string | null
+          document_reference?: string | null
+          id?: string | null
+          notes?: string | null
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_brand_authorizations_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "vendor_brand_authorizations_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_kpis"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "vendor_brand_authorizations_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_logistics_stats"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "vendor_brand_authorizations_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_brand_authorizations_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_top_brands_mv"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "vendor_brand_authorizations_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_brand_authorizations_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_brand_authorizations_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_brand_authorizations_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_intelligence_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_brand_authorizations_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_brand_authorizations_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "vendor_brand_authorizations_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_brand_authorizations_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_competitor_alerts_anon_v: {
         Row: {
           competitor_display_code: string | null

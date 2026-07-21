@@ -23,6 +23,7 @@ const AdminFinances = () => {
   const { data: invoicesData = [], isLoading } = useInvoices();
   const { data: vendors = [] } = useVendors();
   const [activeTab, setActiveTab] = useState<"overview" | "invoices" | "payouts">("overview");
+  const [creditingId, setCreditingId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   // Realtime: refresh invoices list whenever the Falco webhook updates peppol_status.

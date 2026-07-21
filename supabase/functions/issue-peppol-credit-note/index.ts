@@ -53,9 +53,11 @@ Deno.serve(async (req) => {
     const reason = (body?.reason as string) || "Annulation — avoir émis depuis MediKong";
     if (!invoiceId) return json(400, { error: "invoice_id_required" });
 
+    const invoiceTable = invoiceType === "commission" ? "commission_invoices" : "order_invoices";
+    const numberColumn = invoiceType === "commission" ? "invoice_number" : "invoice_number";
     const { data: inv, error: invErr } = await supabase
-      .from("order_invoices")
-      .select("id, invoice_number, peppol_document_id, peppol_status")
+      .from(invoiceTable)
+      .select(`id, ${numberColumn}, peppol_document_id, peppol_status`)
       .eq("id", invoiceId)
       .maybeSingle();
     if (invErr || !inv) return json(404, { error: "invoice_not_found" });

@@ -7,6 +7,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import {
   submitInvoiceToFalco, isFalcoConfigured,
   normalizeFalcoPeppolIdentifier, normalizeFalcoVatNumber, resolveFalcoPostalCode,
+  markFalcoInvoicePaid, logFalco,
   type FalcoInvoiceMetadata,
 } from "../_shared/falco-peppol.ts";
 
@@ -159,6 +160,24 @@ Deno.serve(async (req) => {
       peppol_last_attempt_at: new Date().toISOString(),
       peppol_retry_count: (inv.peppol_retry_count || 0) + 1,
     }).eq("id", inv.id);
+
+    // Best-effort: mark the Falco document as paid (commission encaissée côté
+    // Balooh via Stripe Connect). Never fail the send on this.
+    if (falcoRes.ok && falcoRes.document_id) {
+      try {
+        const paidRes = await markFalcoInvoicePaid({
+          documentId: String(falcoRes.document_id),
+          amountInclVat: Number(inv.total_incl_vat_cents || 0) / 100,
+          paidAt: inv.paid_at || null,
+          note: "Paiement encaissé via Stripe Connect — MediKong",
+        });
+        if (!paidRes.ok) {
+          logFalco("warn", "mark_paid_skipped", { invoice_id: inv.id, error: paidRes.error });
+        }
+      } catch (e: any) {
+        logFalco("warn", "mark_paid_unexpected", { invoice_id: inv.id, error: String(e?.message || e) });
+      }
+    }
 
     return json(falcoRes.ok ? 200 : 502, {
       ok: falcoRes.ok,

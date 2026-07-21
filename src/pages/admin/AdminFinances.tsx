@@ -241,7 +241,7 @@ const AdminFinances = () => {
                               const tId = toast.loading(`Émission de l'avoir Peppol pour ${inv.invoice_number}…`);
                               try {
                                 const { data, error } = await supabase.functions.invoke("issue-peppol-credit-note", {
-                                  body: { invoice_id: inv.id, reason: reason.trim() },
+                                  body: { invoice_id: inv.id, invoice_type: inv.type === "commission" ? "commission" : "order", reason: reason.trim() },
                                 });
                                 let errBody: any = null;
                                 if (error && (error as any).context && typeof (error as any).context.json === "function") {

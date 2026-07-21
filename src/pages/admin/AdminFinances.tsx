@@ -209,11 +209,13 @@ const AdminFinances = () => {
                           <button
                             onClick={async () => {
                               const reason = window.prompt(
-                                "Motif de l'avoir (obligatoire) :",
+                                `⚠️ ÉMISSION D'UN AVOIR PEPPOL\n\nFacture : ${inv.invoice_number}\nMontant TTC : ${fmt(Number(inv.amount_ttc || 0))} EUR\n\nCette action est IRRÉVERSIBLE : une note de crédit sera transmise via Peppol au destinataire de la facture originale et ne pourra pas être annulée.\n\nSaisissez le motif de l'avoir (obligatoire) :`,
                                 "Annulation — commande test",
                               );
                               if (!reason || !reason.trim()) return;
-                              if (!window.confirm(`Émettre un avoir Peppol pour la facture ${inv.invoice_number} ?\n\nMotif : ${reason}`)) return;
+                              if (!window.confirm(
+                                `⚠️ CONFIRMATION FINALE\n\nÉmettre définitivement un avoir Peppol pour la facture ${inv.invoice_number} ?\n\nMotif : ${reason.trim()}\n\nCette action est IRRÉVERSIBLE et sera transmise immédiatement au destinataire via le réseau Peppol.`,
+                              )) return;
                               const tId = toast.loading("Émission de l'avoir Peppol…");
                               const { data, error } = await supabase.functions.invoke("issue-peppol-credit-note", {
                                 body: { invoice_id: inv.id, reason: reason.trim() },

@@ -30,6 +30,8 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization") || "";
     const bearer = authHeader.replace(/^Bearer\s+/i, "").trim();
     const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    let issuedBy: string | null = null;
+    let issuedByEmail: string | null = null;
     if (bearer !== serviceRole) {
       const user = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
         global: { headers: { Authorization: authHeader } },
@@ -39,6 +41,8 @@ Deno.serve(async (req) => {
       if (!uid) return json(401, { error: "unauthorized" });
       const { data: adm } = await supabase.rpc("is_admin", { _user_id: uid });
       if (!adm) return json(403, { error: "forbidden" });
+      issuedBy = uid;
+      issuedByEmail = (claims?.claims?.email as string) || null;
     }
 
     if (!isFalcoConfigured()) return json(400, { ok: false, error: "falco_not_configured" });

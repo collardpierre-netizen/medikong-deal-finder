@@ -25,7 +25,25 @@ const AdminFinances = () => {
   const { data: vendors = [] } = useVendors();
   const [activeTab, setActiveTab] = useState<"overview" | "invoices" | "payouts">("overview");
   const [creditingId, setCreditingId] = useState<string | null>(null);
+  const [historyInvoice, setHistoryInvoice] = useState<{ id: string; number: string | null } | null>(null);
   const queryClient = useQueryClient();
+
+  // Aggregate credit-note counts per invoice for a "history" indicator.
+  const { data: creditNoteCounts = {} } = useQuery<Record<string, number>>({
+    queryKey: ["admin-peppol-credit-notes-counts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("peppol_credit_notes" as any)
+        .select("invoice_id")
+        .eq("invoice_type", "order");
+      if (error) throw error;
+      const map: Record<string, number> = {};
+      for (const r of (data as any[]) || []) {
+        map[r.invoice_id] = (map[r.invoice_id] || 0) + 1;
+      }
+      return map;
+    },
+  });
 
   // Realtime: refresh invoices list whenever the Falco webhook updates peppol_status.
   useEffect(() => {

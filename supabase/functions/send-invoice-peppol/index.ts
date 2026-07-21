@@ -15,6 +15,7 @@ import {
   normalizeFalcoVatNumber,
   resolveFalcoPostalCode,
   checkPeppolReceiverRegistered,
+  markFalcoInvoicePaid,
   type FalcoInvoiceMetadata,
   type FalcoLine,
   type FalcoTaxSubtotal,

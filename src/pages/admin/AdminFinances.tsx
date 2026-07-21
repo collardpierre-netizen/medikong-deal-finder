@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Send, FileText, Loader2, RefreshCw } from "lucide-react";
+import { Send, FileText, Loader2, RefreshCw, Undo2 } from "lucide-react";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AdminTopBar from "@/components/admin/AdminTopBar";
@@ -203,6 +203,41 @@ const AdminFinances = () => {
                             title="Envoyer via Peppol"
                           >
                             <Send size={11} /> Envoyer
+                          </button>
+                        )}
+                        {(inv.peppol_status === "sent" || inv.peppol_status === "submitted") && (
+                          <button
+                            onClick={async () => {
+                              const reason = window.prompt(
+                                "Motif de l'avoir (obligatoire) :",
+                                "Annulation — commande test",
+                              );
+                              if (!reason || !reason.trim()) return;
+                              if (!window.confirm(`Émettre un avoir Peppol pour la facture ${inv.invoice_number} ?\n\nMotif : ${reason}`)) return;
+                              const tId = toast.loading("Émission de l'avoir Peppol…");
+                              const { data, error } = await supabase.functions.invoke("issue-peppol-credit-note", {
+                                body: { invoice_id: inv.id, reason: reason.trim() },
+                              });
+                              toast.dismiss(tId);
+                              let errBody: any = null;
+                              if (error && (error as any).context && typeof (error as any).context.json === "function") {
+                                try { errBody = await (error as any).context.clone().json(); } catch { /* noop */ }
+                              }
+                              const failed = !!error || (data && data.ok === false);
+                              if (failed) {
+                                const payload = errBody || data || {};
+                                const msg = payload.hint || payload.error || error?.message || "erreur inconnue";
+                                toast.error(`Échec émission avoir : ${msg}`, { duration: 8000 });
+                              } else {
+                                toast.success("Avoir Peppol émis avec succès");
+                                queryClient.invalidateQueries({ queryKey: ["admin-order-invoices"] });
+                              }
+                            }}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded hover:bg-amber-50"
+                            style={{ color: "#B45309" }}
+                            title="Émettre une note de crédit Peppol pour cette facture"
+                          >
+                            <Undo2 size={11} /> Avoir
                           </button>
                         )}
                       </div>

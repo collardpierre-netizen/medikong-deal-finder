@@ -274,7 +274,6 @@ const AdminFinances = () => {
                             {creditingId === inv.id ? "Émission…" : "Avoir"}
                           </button>
                         )}
-                      </div>
                         {(creditNoteCounts[inv.id] || 0) > 0 && (
                           <button
                             onClick={() => setHistoryInvoice({ id: inv.id, number: inv.invoice_number })}

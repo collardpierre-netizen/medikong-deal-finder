@@ -112,6 +112,25 @@ Deno.serve(async (req) => {
       latency_ms: Date.now() - started,
     });
 
+    // Persist history (best-effort — do not fail the request if this insert errors)
+    const falcoCreditNoteId = (payload && typeof payload === "object")
+      ? String((payload as any).id ?? (payload as any).credit_note_id ?? (payload as any).document_id ?? "") || null
+      : null;
+    const { error: histErr } = await supabase.from("peppol_credit_notes").insert({
+      invoice_id: inv.id,
+      invoice_type: invoiceType,
+      invoice_number: (inv as any).invoice_number ?? null,
+      reason,
+      falco_original_document_id: inv.peppol_document_id,
+      falco_credit_note_id: falcoCreditNoteId,
+      falco_payload: typeof payload === "object" ? payload : { raw: payload },
+      issued_by: issuedBy,
+      issued_by_email: issuedByEmail,
+    });
+    if (histErr) {
+      console.error("[issue-peppol-credit-note] history_insert_failed", histErr);
+    }
+
     return json(200, {
       ok: true,
       invoice_id: inv.id,

@@ -275,6 +275,20 @@ const AdminFinances = () => {
                           </button>
                         )}
                       </div>
+                        {(creditNoteCounts[inv.id] || 0) > 0 && (
+                          <button
+                            onClick={() => setHistoryInvoice({ id: inv.id, number: inv.invoice_number })}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded hover:bg-slate-100"
+                            style={{ color: "#616B7C" }}
+                            title="Voir l'historique des avoirs Peppol émis"
+                          >
+                            <History size={11} /> Avoirs
+                            <span className="ml-1 inline-flex items-center justify-center min-w-[16px] h-[16px] px-1 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#FEF3C7", color: "#B45309" }}>
+                              {creditNoteCounts[inv.id]}
+                            </span>
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       {inv.pdf_path && (

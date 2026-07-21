@@ -320,6 +320,13 @@ const AdminFinances = () => {
       {activeTab === "payouts" && (
         <VendorStatementsPanel vendors={vendors.filter((v: any) => v.is_active && v.type === "real")} />
       )}
+
+      <PeppolCreditNotesDialog
+        open={!!historyInvoice}
+        onOpenChange={(o) => { if (!o) setHistoryInvoice(null); }}
+        invoiceId={historyInvoice?.id ?? null}
+        invoiceNumber={historyInvoice?.number ?? null}
+      />
     </div>
   );
 };

@@ -25,6 +25,7 @@ const AdminFinances = () => {
   const { data: vendors = [] } = useVendors();
   const [activeTab, setActiveTab] = useState<"overview" | "invoices" | "payouts">("overview");
   const [creditingId, setCreditingId] = useState<string | null>(null);
+  const [creditFailures, setCreditFailures] = useState<Record<string, { message: string; reason: string; attempts: number }>>({});
   const [historyInvoice, setHistoryInvoice] = useState<{ id: string; number: string | null } | null>(null);
   const queryClient = useQueryClient();
 
@@ -225,55 +226,159 @@ const AdminFinances = () => {
                             <Send size={11} /> Envoyer
                           </button>
                         )}
-                        {(inv.peppol_status === "sent" || inv.peppol_status === "submitted") && (
-                          <button
-                            disabled={creditingId === inv.id}
-                            onClick={async () => {
-                              const reason = window.prompt(
-                                `⚠️ ÉMISSION D'UN AVOIR PEPPOL\n\nFacture : ${inv.invoice_number}\nMontant TTC : ${fmt(Number(inv.amount_ttc || 0))} EUR\n\nCette action est IRRÉVERSIBLE : une note de crédit sera transmise via Peppol au destinataire de la facture originale et ne pourra pas être annulée.\n\nSaisissez le motif de l'avoir (obligatoire) :`,
-                                "Annulation — commande test",
-                              );
-                              if (!reason || !reason.trim()) return;
-                              if (!window.confirm(
-                                `⚠️ CONFIRMATION FINALE\n\nÉmettre définitivement un avoir Peppol pour la facture ${inv.invoice_number} ?\n\nMotif : ${reason.trim()}\n\nCette action est IRRÉVERSIBLE et sera transmise immédiatement au destinataire via le réseau Peppol.`,
-                              )) return;
-                              setCreditingId(inv.id);
-                              const tId = toast.loading(`Émission de l'avoir Peppol pour ${inv.invoice_number}…`);
-                              try {
-                                const { data, error } = await supabase.functions.invoke("issue-peppol-credit-note", {
-                                  body: { invoice_id: inv.id, invoice_type: inv.type === "commission" ? "commission" : "order", reason: reason.trim() },
-                                });
-                                let errBody: any = null;
-                                if (error && (error as any).context && typeof (error as any).context.json === "function") {
-                                  try { errBody = await (error as any).context.clone().json(); } catch { /* noop */ }
-                                }
-                                const failed = !!error || (data && data.ok === false);
-                                if (failed) {
-                                  const payload = errBody || data || {};
-                                  const msg = payload.hint || payload.error || error?.message || "erreur inconnue";
-                                  toast.error(`Échec émission avoir : ${msg}`, { id: tId, duration: 8000 });
-                                } else {
-                                  toast.success(`Avoir Peppol émis pour ${inv.invoice_number}`, { id: tId });
-                                }
-                              } catch (e: any) {
-                                toast.error(`Échec émission avoir : ${e?.message || "erreur inconnue"}`, { id: tId, duration: 8000 });
-                              } finally {
-                                setCreditingId(null);
-                                await Promise.all([
-                                  queryClient.invalidateQueries({ queryKey: ["admin-order-invoices"] }),
-                                  queryClient.invalidateQueries({ queryKey: ["admin-peppol-credit-notes-counts"] }),
-                                  queryClient.invalidateQueries({ queryKey: ["peppol-credit-notes"] }),
-                                ]);
+                        {(inv.peppol_status === "sent" || inv.peppol_status === "submitted") && (() => {
+                          const failure = creditFailures[inv.id];
+                          const isCrediting = creditingId === inv.id;
+
+                          const FRIENDLY_ERRORS: Record<string, string> = {
+                            falco_not_configured: "Le connecteur Falco/Peppol n'est pas configuré côté serveur.",
+                            no_peppol_document: "Cette facture n'a jamais été transmise à Falco — aucun document à annuler.",
+                            invalid_status: "Statut Peppol incompatible : l'avoir n'est possible que sur une facture 'sent' ou 'submitted'.",
+                            falco_credit_note_failed: "Falco a refusé l'émission de l'avoir. Réessayez ou contactez le support.",
+                            invoice_not_found: "Facture introuvable côté serveur.",
+                            unauthorized: "Session expirée — reconnectez-vous.",
+                            forbidden: "Accès refusé (rôle admin requis).",
+                            internal_error: "Erreur interne du serveur. Réessayez dans quelques instants.",
+                          };
+                          const humanizeError = (payload: any, error: any): string => {
+                            const raw = payload?.hint || payload?.error || error?.message || "";
+                            if (payload?.error && FRIENDLY_ERRORS[payload.error]) {
+                              const base = FRIENDLY_ERRORS[payload.error];
+                              return payload.http_status ? `${base} (HTTP ${payload.http_status})` : base;
+                            }
+                            if (error && /network|fetch|failed to fetch|timeout/i.test(String(error?.message || ""))) {
+                              return "Impossible de contacter le serveur (réseau ou timeout). Vérifiez votre connexion puis réessayez.";
+                            }
+                            return raw || "Erreur inconnue lors de l'émission de l'avoir.";
+                          };
+
+                          const runIssueCreditNote = async (reasonText: string) => {
+                            setCreditingId(inv.id);
+                            const attempt = (creditFailures[inv.id]?.attempts || 0) + 1;
+                            const tId = toast.loading(
+                              attempt > 1
+                                ? `Nouvelle tentative (${attempt}) — Avoir Peppol ${inv.invoice_number}…`
+                                : `Émission de l'avoir Peppol pour ${inv.invoice_number}…`,
+                            );
+                            try {
+                              const { data, error } = await supabase.functions.invoke("issue-peppol-credit-note", {
+                                body: { invoice_id: inv.id, invoice_type: inv.type === "commission" ? "commission" : "order", reason: reasonText },
+                              });
+                              let errBody: any = null;
+                              if (error && (error as any).context && typeof (error as any).context.json === "function") {
+                                try { errBody = await (error as any).context.clone().json(); } catch { /* noop */ }
                               }
-                            }}
-                            className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                            style={{ color: "#B45309" }}
-                            title="Émettre une note de crédit Peppol pour cette facture"
-                          >
-                            {creditingId === inv.id ? <Loader2 size={11} className="animate-spin" /> : <Undo2 size={11} />}
-                            {creditingId === inv.id ? "Émission…" : "Avoir"}
-                          </button>
-                        )}
+                              const failed = !!error || (data && data.ok === false);
+                              if (failed) {
+                                const payload = errBody || data || {};
+                                const msg = humanizeError(payload, error);
+                                setCreditFailures((prev) => ({
+                                  ...prev,
+                                  [inv.id]: { message: msg, reason: reasonText, attempts: attempt },
+                                }));
+                                toast.error(`Échec émission avoir #${attempt} — ${msg}`, {
+                                  id: tId,
+                                  duration: 12000,
+                                  description: `Facture ${inv.invoice_number}`,
+                                  action: {
+                                    label: "Réessayer",
+                                    onClick: () => { void runIssueCreditNote(reasonText); },
+                                  },
+                                });
+                              } else {
+                                setCreditFailures((prev) => {
+                                  const { [inv.id]: _drop, ...rest } = prev;
+                                  return rest;
+                                });
+                                toast.success(`Avoir Peppol émis pour ${inv.invoice_number}`, { id: tId });
+                              }
+                            } catch (e: any) {
+                              const msg = humanizeError({}, e);
+                              setCreditFailures((prev) => ({
+                                ...prev,
+                                [inv.id]: { message: msg, reason: reasonText, attempts: attempt },
+                              }));
+                              toast.error(`Échec émission avoir #${attempt} — ${msg}`, {
+                                id: tId,
+                                duration: 12000,
+                                description: `Facture ${inv.invoice_number}`,
+                                action: {
+                                  label: "Réessayer",
+                                  onClick: () => { void runIssueCreditNote(reasonText); },
+                                },
+                              });
+                            } finally {
+                              setCreditingId(null);
+                              await Promise.all([
+                                queryClient.invalidateQueries({ queryKey: ["admin-order-invoices"] }),
+                                queryClient.invalidateQueries({ queryKey: ["admin-peppol-credit-notes-counts"] }),
+                                queryClient.invalidateQueries({ queryKey: ["peppol-credit-notes"] }),
+                              ]);
+                            }
+                          };
+
+                          const startFlow = () => {
+                            // If a previous attempt failed, allow retrying with the same reason without re-prompting.
+                            if (failure) {
+                              void runIssueCreditNote(failure.reason);
+                              return;
+                            }
+                            const reason = window.prompt(
+                              `⚠️ ÉMISSION D'UN AVOIR PEPPOL\n\nFacture : ${inv.invoice_number}\nMontant TTC : ${fmt(Number(inv.amount_ttc || 0))} EUR\n\nCette action est IRRÉVERSIBLE : une note de crédit sera transmise via Peppol au destinataire de la facture originale et ne pourra pas être annulée.\n\nSaisissez le motif de l'avoir (obligatoire) :`,
+                              "Annulation — commande test",
+                            );
+                            if (!reason || !reason.trim()) return;
+                            if (!window.confirm(
+                              `⚠️ CONFIRMATION FINALE\n\nÉmettre définitivement un avoir Peppol pour la facture ${inv.invoice_number} ?\n\nMotif : ${reason.trim()}\n\nCette action est IRRÉVERSIBLE et sera transmise immédiatement au destinataire via le réseau Peppol.`,
+                            )) return;
+                            void runIssueCreditNote(reason.trim());
+                          };
+
+                          return (
+                            <div className="inline-flex flex-col items-start gap-1">
+                              <button
+                                disabled={isCrediting}
+                                onClick={startFlow}
+                                className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                                style={{
+                                  color: failure ? "#B91C1C" : "#B45309",
+                                  backgroundColor: failure ? "#FEF2F2" : "transparent",
+                                  border: failure ? "1px solid #FCA5A5" : "1px solid transparent",
+                                }}
+                                title={failure ? `Dernière erreur : ${failure.message}\nCliquez pour réessayer avec le même motif.` : "Émettre une note de crédit Peppol pour cette facture"}
+                              >
+                                {isCrediting ? <Loader2 size={11} className="animate-spin" /> : failure ? <RefreshCw size={11} /> : <Undo2 size={11} />}
+                                {isCrediting
+                                  ? "Émission…"
+                                  : failure
+                                  ? `Réessayer (${failure.attempts})`
+                                  : "Avoir"}
+                              </button>
+                              {failure && !isCrediting && (
+                                <div className="max-w-[260px] text-[10px] leading-tight px-2 py-1 rounded" style={{ color: "#7F1D1D", backgroundColor: "#FEF2F2", border: "1px solid #FECACA" }}>
+                                  <div className="font-semibold flex items-center gap-1">
+                                    <AlertTriangle size={10} /> Échec avoir Peppol
+                                  </div>
+                                  <div className="mt-0.5">{failure.message}</div>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setCreditFailures((prev) => {
+                                        const { [inv.id]: _drop, ...rest } = prev;
+                                        return rest;
+                                      });
+                                    }}
+                                    className="mt-1 underline text-[10px] font-semibold"
+                                    style={{ color: "#7F1D1D" }}
+                                  >
+                                    Ignorer
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+
                         {(creditNoteCounts[inv.id] || 0) > 0 && (
                           <button
                             onClick={() => setHistoryInvoice({ id: inv.id, number: inv.invoice_number })}

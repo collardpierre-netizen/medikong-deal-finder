@@ -7,6 +7,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import {
   submitInvoiceToFalco, isFalcoConfigured,
   normalizeFalcoPeppolIdentifier, normalizeFalcoVatNumber, resolveFalcoPostalCode,
+  markFalcoInvoicePaid, logFalco,
   type FalcoInvoiceMetadata,
 } from "../_shared/falco-peppol.ts";
 

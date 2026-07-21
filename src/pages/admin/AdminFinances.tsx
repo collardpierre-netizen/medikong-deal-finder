@@ -259,7 +259,11 @@ const AdminFinances = () => {
                                 toast.error(`Échec émission avoir : ${e?.message || "erreur inconnue"}`, { id: tId, duration: 8000 });
                               } finally {
                                 setCreditingId(null);
-                                await queryClient.invalidateQueries({ queryKey: ["admin-order-invoices"] });
+                                await Promise.all([
+                                  queryClient.invalidateQueries({ queryKey: ["admin-order-invoices"] }),
+                                  queryClient.invalidateQueries({ queryKey: ["admin-peppol-credit-notes-counts"] }),
+                                  queryClient.invalidateQueries({ queryKey: ["peppol-credit-notes"] }),
+                                ]);
                               }
                             }}
                             className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed"

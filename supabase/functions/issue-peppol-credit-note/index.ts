@@ -49,6 +49,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const invoiceId = body?.invoice_id as string;
+    const invoiceType = (body?.invoice_type === "commission" ? "commission" : "order") as "order" | "commission";
     const reason = (body?.reason as string) || "Annulation — avoir émis depuis MediKong";
     if (!invoiceId) return json(400, { error: "invoice_id_required" });
 

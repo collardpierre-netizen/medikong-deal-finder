@@ -23,6 +23,7 @@ const AdminFinances = () => {
   const { data: invoicesData = [], isLoading } = useInvoices();
   const { data: vendors = [] } = useVendors();
   const [activeTab, setActiveTab] = useState<"overview" | "invoices" | "payouts">("overview");
+  const [creditingId, setCreditingId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   // Realtime: refresh invoices list whenever the Falco webhook updates peppol_status.
@@ -207,6 +208,7 @@ const AdminFinances = () => {
                         )}
                         {(inv.peppol_status === "sent" || inv.peppol_status === "submitted") && (
                           <button
+                            disabled={creditingId === inv.id}
                             onClick={async () => {
                               const reason = window.prompt(
                                 `⚠️ ÉMISSION D'UN AVOIR PEPPOL\n\nFacture : ${inv.invoice_number}\nMontant TTC : ${fmt(Number(inv.amount_ttc || 0))} EUR\n\nCette action est IRRÉVERSIBLE : une note de crédit sera transmise via Peppol au destinataire de la facture originale et ne pourra pas être annulée.\n\nSaisissez le motif de l'avoir (obligatoire) :`,
@@ -216,30 +218,37 @@ const AdminFinances = () => {
                               if (!window.confirm(
                                 `⚠️ CONFIRMATION FINALE\n\nÉmettre définitivement un avoir Peppol pour la facture ${inv.invoice_number} ?\n\nMotif : ${reason.trim()}\n\nCette action est IRRÉVERSIBLE et sera transmise immédiatement au destinataire via le réseau Peppol.`,
                               )) return;
-                              const tId = toast.loading("Émission de l'avoir Peppol…");
-                              const { data, error } = await supabase.functions.invoke("issue-peppol-credit-note", {
-                                body: { invoice_id: inv.id, reason: reason.trim() },
-                              });
-                              toast.dismiss(tId);
-                              let errBody: any = null;
-                              if (error && (error as any).context && typeof (error as any).context.json === "function") {
-                                try { errBody = await (error as any).context.clone().json(); } catch { /* noop */ }
-                              }
-                              const failed = !!error || (data && data.ok === false);
-                              if (failed) {
-                                const payload = errBody || data || {};
-                                const msg = payload.hint || payload.error || error?.message || "erreur inconnue";
-                                toast.error(`Échec émission avoir : ${msg}`, { duration: 8000 });
-                              } else {
-                                toast.success("Avoir Peppol émis avec succès");
-                                queryClient.invalidateQueries({ queryKey: ["admin-order-invoices"] });
+                              setCreditingId(inv.id);
+                              const tId = toast.loading(`Émission de l'avoir Peppol pour ${inv.invoice_number}…`);
+                              try {
+                                const { data, error } = await supabase.functions.invoke("issue-peppol-credit-note", {
+                                  body: { invoice_id: inv.id, reason: reason.trim() },
+                                });
+                                let errBody: any = null;
+                                if (error && (error as any).context && typeof (error as any).context.json === "function") {
+                                  try { errBody = await (error as any).context.clone().json(); } catch { /* noop */ }
+                                }
+                                const failed = !!error || (data && data.ok === false);
+                                if (failed) {
+                                  const payload = errBody || data || {};
+                                  const msg = payload.hint || payload.error || error?.message || "erreur inconnue";
+                                  toast.error(`Échec émission avoir : ${msg}`, { id: tId, duration: 8000 });
+                                } else {
+                                  toast.success(`Avoir Peppol émis pour ${inv.invoice_number}`, { id: tId });
+                                }
+                              } catch (e: any) {
+                                toast.error(`Échec émission avoir : ${e?.message || "erreur inconnue"}`, { id: tId, duration: 8000 });
+                              } finally {
+                                setCreditingId(null);
+                                await queryClient.invalidateQueries({ queryKey: ["admin-order-invoices"] });
                               }
                             }}
-                            className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded hover:bg-amber-50"
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed"
                             style={{ color: "#B45309" }}
                             title="Émettre une note de crédit Peppol pour cette facture"
                           >
-                            <Undo2 size={11} /> Avoir
+                            {creditingId === inv.id ? <Loader2 size={11} className="animate-spin" /> : <Undo2 size={11} />}
+                            {creditingId === inv.id ? "Émission…" : "Avoir"}
                           </button>
                         )}
                       </div>

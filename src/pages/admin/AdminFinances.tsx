@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Send, FileText, Loader2, RefreshCw, Undo2 } from "lucide-react";
+import { Send, FileText, Loader2, RefreshCw, Undo2, History } from "lucide-react";
+import PeppolCreditNotesDialog from "@/components/admin/PeppolCreditNotesDialog";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AdminTopBar from "@/components/admin/AdminTopBar";
@@ -24,7 +25,25 @@ const AdminFinances = () => {
   const { data: vendors = [] } = useVendors();
   const [activeTab, setActiveTab] = useState<"overview" | "invoices" | "payouts">("overview");
   const [creditingId, setCreditingId] = useState<string | null>(null);
+  const [historyInvoice, setHistoryInvoice] = useState<{ id: string; number: string | null } | null>(null);
   const queryClient = useQueryClient();
+
+  // Aggregate credit-note counts per invoice for a "history" indicator.
+  const { data: creditNoteCounts = {} } = useQuery<Record<string, number>>({
+    queryKey: ["admin-peppol-credit-notes-counts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("peppol_credit_notes" as any)
+        .select("invoice_id")
+        .eq("invoice_type", "order");
+      if (error) throw error;
+      const map: Record<string, number> = {};
+      for (const r of (data as any[]) || []) {
+        map[r.invoice_id] = (map[r.invoice_id] || 0) + 1;
+      }
+      return map;
+    },
+  });
 
   // Realtime: refresh invoices list whenever the Falco webhook updates peppol_status.
   useEffect(() => {
@@ -222,7 +241,7 @@ const AdminFinances = () => {
                               const tId = toast.loading(`Émission de l'avoir Peppol pour ${inv.invoice_number}…`);
                               try {
                                 const { data, error } = await supabase.functions.invoke("issue-peppol-credit-note", {
-                                  body: { invoice_id: inv.id, reason: reason.trim() },
+                                  body: { invoice_id: inv.id, invoice_type: inv.type === "commission" ? "commission" : "order", reason: reason.trim() },
                                 });
                                 let errBody: any = null;
                                 if (error && (error as any).context && typeof (error as any).context.json === "function") {
@@ -240,7 +259,11 @@ const AdminFinances = () => {
                                 toast.error(`Échec émission avoir : ${e?.message || "erreur inconnue"}`, { id: tId, duration: 8000 });
                               } finally {
                                 setCreditingId(null);
-                                await queryClient.invalidateQueries({ queryKey: ["admin-order-invoices"] });
+                                await Promise.all([
+                                  queryClient.invalidateQueries({ queryKey: ["admin-order-invoices"] }),
+                                  queryClient.invalidateQueries({ queryKey: ["admin-peppol-credit-notes-counts"] }),
+                                  queryClient.invalidateQueries({ queryKey: ["peppol-credit-notes"] }),
+                                ]);
                               }
                             }}
                             className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -249,6 +272,19 @@ const AdminFinances = () => {
                           >
                             {creditingId === inv.id ? <Loader2 size={11} className="animate-spin" /> : <Undo2 size={11} />}
                             {creditingId === inv.id ? "Émission…" : "Avoir"}
+                          </button>
+                        )}
+                        {(creditNoteCounts[inv.id] || 0) > 0 && (
+                          <button
+                            onClick={() => setHistoryInvoice({ id: inv.id, number: inv.invoice_number })}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded hover:bg-slate-100"
+                            style={{ color: "#616B7C" }}
+                            title="Voir l'historique des avoirs Peppol émis"
+                          >
+                            <History size={11} /> Avoirs
+                            <span className="ml-1 inline-flex items-center justify-center min-w-[16px] h-[16px] px-1 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#FEF3C7", color: "#B45309" }}>
+                              {creditNoteCounts[inv.id]}
+                            </span>
                           </button>
                         )}
                       </div>
@@ -284,6 +320,13 @@ const AdminFinances = () => {
       {activeTab === "payouts" && (
         <VendorStatementsPanel vendors={vendors.filter((v: any) => v.is_active && v.type === "real")} />
       )}
+
+      <PeppolCreditNotesDialog
+        open={!!historyInvoice}
+        onOpenChange={(o) => { if (!o) setHistoryInvoice(null); }}
+        invoiceId={historyInvoice?.id ?? null}
+        invoiceNumber={historyInvoice?.number ?? null}
+      />
     </div>
   );
 };

@@ -30,6 +30,8 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization") || "";
     const bearer = authHeader.replace(/^Bearer\s+/i, "").trim();
     const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    let issuedBy: string | null = null;
+    let issuedByEmail: string | null = null;
     if (bearer !== serviceRole) {
       const user = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
         global: { headers: { Authorization: authHeader } },
@@ -39,18 +41,23 @@ Deno.serve(async (req) => {
       if (!uid) return json(401, { error: "unauthorized" });
       const { data: adm } = await supabase.rpc("is_admin", { _user_id: uid });
       if (!adm) return json(403, { error: "forbidden" });
+      issuedBy = uid;
+      issuedByEmail = (claims?.claims?.email as string) || null;
     }
 
     if (!isFalcoConfigured()) return json(400, { ok: false, error: "falco_not_configured" });
 
     const body = await req.json().catch(() => ({}));
     const invoiceId = body?.invoice_id as string;
+    const invoiceType = (body?.invoice_type === "commission" ? "commission" : "order") as "order" | "commission";
     const reason = (body?.reason as string) || "Annulation — avoir émis depuis MediKong";
     if (!invoiceId) return json(400, { error: "invoice_id_required" });
 
+    const invoiceTable = invoiceType === "commission" ? "commission_invoices" : "order_invoices";
+    const numberColumn = invoiceType === "commission" ? "invoice_number" : "invoice_number";
     const { data: inv, error: invErr } = await supabase
-      .from("order_invoices")
-      .select("id, invoice_number, peppol_document_id, peppol_status")
+      .from(invoiceTable)
+      .select(`id, ${numberColumn}, peppol_document_id, peppol_status`)
       .eq("id", invoiceId)
       .maybeSingle();
     if (invErr || !inv) return json(404, { error: "invoice_not_found" });
@@ -104,6 +111,25 @@ Deno.serve(async (req) => {
       original_document_id: inv.peppol_document_id,
       latency_ms: Date.now() - started,
     });
+
+    // Persist history (best-effort — do not fail the request if this insert errors)
+    const falcoCreditNoteId = (payload && typeof payload === "object")
+      ? String((payload as any).id ?? (payload as any).credit_note_id ?? (payload as any).document_id ?? "") || null
+      : null;
+    const { error: histErr } = await supabase.from("peppol_credit_notes").insert({
+      invoice_id: inv.id,
+      invoice_type: invoiceType,
+      invoice_number: (inv as any).invoice_number ?? null,
+      reason,
+      falco_original_document_id: inv.peppol_document_id,
+      falco_credit_note_id: falcoCreditNoteId,
+      falco_payload: typeof payload === "object" ? payload : { raw: payload },
+      issued_by: issuedBy,
+      issued_by_email: issuedByEmail,
+    });
+    if (histErr) {
+      console.error("[issue-peppol-credit-note] history_insert_failed", histErr);
+    }
 
     return json(200, {
       ok: true,

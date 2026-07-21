@@ -9528,6 +9528,48 @@ export type Database = {
           },
         ]
       }
+      peppol_credit_notes: {
+        Row: {
+          created_at: string
+          falco_credit_note_id: string | null
+          falco_original_document_id: string | null
+          falco_payload: Json | null
+          id: string
+          invoice_id: string
+          invoice_number: string | null
+          invoice_type: string
+          issued_by: string | null
+          issued_by_email: string | null
+          reason: string
+        }
+        Insert: {
+          created_at?: string
+          falco_credit_note_id?: string | null
+          falco_original_document_id?: string | null
+          falco_payload?: Json | null
+          id?: string
+          invoice_id: string
+          invoice_number?: string | null
+          invoice_type?: string
+          issued_by?: string | null
+          issued_by_email?: string | null
+          reason: string
+        }
+        Update: {
+          created_at?: string
+          falco_credit_note_id?: string | null
+          falco_original_document_id?: string | null
+          falco_payload?: Json | null
+          id?: string
+          invoice_id?: string
+          invoice_number?: string | null
+          invoice_type?: string
+          issued_by?: string | null
+          issued_by_email?: string | null
+          reason?: string
+        }
+        Relationships: []
+      }
       pharmacist_wholesaler_settings: {
         Row: {
           account_number: string | null

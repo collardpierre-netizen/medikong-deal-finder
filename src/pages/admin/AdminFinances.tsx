@@ -25,6 +25,7 @@ const AdminFinances = () => {
   const { data: vendors = [] } = useVendors();
   const [activeTab, setActiveTab] = useState<"overview" | "invoices" | "payouts">("overview");
   const [creditingId, setCreditingId] = useState<string | null>(null);
+  const [creditFailures, setCreditFailures] = useState<Record<string, { message: string; reason: string; attempts: number }>>({});
   const [historyInvoice, setHistoryInvoice] = useState<{ id: string; number: string | null } | null>(null);
   const queryClient = useQueryClient();
 

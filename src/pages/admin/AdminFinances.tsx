@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Send, FileText, Loader2, RefreshCw, Undo2 } from "lucide-react";
+import { Send, FileText, Loader2, RefreshCw, Undo2, History } from "lucide-react";
+import PeppolCreditNotesDialog from "@/components/admin/PeppolCreditNotesDialog";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AdminTopBar from "@/components/admin/AdminTopBar";

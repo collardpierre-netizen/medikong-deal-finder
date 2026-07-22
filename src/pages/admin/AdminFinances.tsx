@@ -262,7 +262,7 @@ const AdminFinances = () => {
                             );
                             try {
                               const { data, error } = await supabase.functions.invoke("issue-peppol-credit-note", {
-                                body: { invoice_id: inv.id, invoice_type: inv.type === "commission" ? "commission" : "order", reason: reasonText },
+                                body: { invoice_id: inv.id, invoice_type: "order", reason: reasonText },
                               });
                               let errBody: any = null;
                               if (error && (error as any).context && typeof (error as any).context.json === "function") {

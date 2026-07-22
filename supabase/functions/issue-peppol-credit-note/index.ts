@@ -92,17 +92,32 @@ Deno.serve(async (req) => {
       : await res.text().catch(() => null);
 
     if (!res.ok) {
-      logFalco("error", "credit_note_failed", {
+      // Distinguer route inexistante (endpoint Falco non confirmé) vs document introuvable
+      // côté Falco. Sans cette distinction, un 404 sur la route était affiché comme
+      // "facture introuvable" et masquait le vrai problème.
+      const payloadStr = typeof payload === "string" ? payload : JSON.stringify(payload ?? "");
+      const looksLikeDocumentMissing = /document|invoice/i.test(payloadStr) && /not.?found|introuvable|unknown/i.test(payloadStr);
+      const errorCode = res.status === 404 && !looksLikeDocumentMissing
+        ? "route_not_found"
+        : res.status === 404
+          ? "falco_document_not_found"
+          : "falco_credit_note_failed";
+      logFalco("error", errorCode, {
         invoice_id: inv.id,
+        endpoint: url,
         http_status: res.status,
         latency_ms: Date.now() - started,
         payload: typeof payload === "string" ? payload.slice(0, 500) : payload,
       });
       return json(502, {
         ok: false,
-        error: "falco_credit_note_failed",
+        error: errorCode,
+        endpoint: url,
         http_status: res.status,
         details: payload,
+        hint: errorCode === "route_not_found"
+          ? "L'endpoint Falco /documents/{id}/credit-note n'est pas reconnu — route à confirmer par Falco avant réactivation."
+          : undefined,
       });
     }
 

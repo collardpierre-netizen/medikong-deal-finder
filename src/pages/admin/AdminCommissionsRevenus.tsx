@@ -18,7 +18,7 @@ import { formatUpdatedAt } from "@/lib/format-date";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, ResponsiveContainer, Legend, ComposedChart, Line, AreaChart, Area } from "recharts";
 import {
   DollarSign, FileClock, CheckCircle2, AlertTriangle, Coins,
-  Download, RefreshCw, FileText, Check, Ban, XCircle,
+  Download, RefreshCw, FileText, Check, Ban, XCircle, ExternalLink,
 } from "lucide-react";
 
 /**
@@ -682,6 +682,7 @@ export default function AdminCommissionsRevenus() {
                         />
                       </th>
                       <th className="p-2 text-left">Commande</th>
+                      <th className="p-2 text-left">ID</th>
                       <th className="p-2 text-left">Statut</th>
                       <th className="p-2 text-left">Date</th>
                       <th className="p-2 text-left">Client</th>
@@ -707,7 +708,17 @@ export default function AdminCommissionsRevenus() {
                             }}
                           />
                         </td>
-                        <td className="p-2"><a href={`/admin/commandes/${r.order_number}`} className="text-[#1B5BDA] hover:underline">{r.order_number}</a></td>
+                        <td className="p-2"><a href={`/admin/commandes/${r.order_id}`} className="text-[#1B5BDA] hover:underline">{r.order_number}</a></td>
+                        <td className="p-2">
+                          <a
+                            href={`/admin/commandes/${r.order_id}`}
+                            className="inline-flex items-center gap-1 font-mono text-xs text-[#616B7C] hover:text-[#1B5BDA] hover:underline"
+                            title={r.order_id}
+                          >
+                            {String(r.order_id).slice(0, 8)}…
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </td>
                         <td className="p-2">
                           {DRAFT_STATUSES.has(String(r.order_status ?? "").toLowerCase())
                             ? <Badge className="bg-orange-100 text-orange-800">Brouillon</Badge>
@@ -733,7 +744,7 @@ export default function AdminCommissionsRevenus() {
                       </tr>
                     ))}
                     {filteredBacklog.length === 0 && (
-                      <tr><td colSpan={12} className="p-8 text-center text-[#8B95A5]">Aucune ligne dans le backlog sur la période.</td></tr>
+                      <tr><td colSpan={13} className="p-8 text-center text-[#8B95A5]">Aucune ligne dans le backlog sur la période.</td></tr>
                     )}
                   </tbody>
                 </table>

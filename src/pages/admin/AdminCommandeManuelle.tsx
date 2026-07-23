@@ -95,6 +95,7 @@ const AdminCommandeManuelle = () => {
   const [paymentMethod, setPaymentMethod] = useState("invoice");
   const [paymentStatus, setPaymentStatus] = useState("paid");
   const [adminNotes, setAdminNotes] = useState("");
+  const [customerNotes, setCustomerNotes] = useState("");
   const [lines, setLines] = useState<ManualLine[]>([]);
   const [draftId, _setDraftId] = useState<string | null>(null);
   const draftIdRef = useRef<string | null>(null);
@@ -524,6 +525,14 @@ const AdminCommandeManuelle = () => {
         : await supabase.rpc("admin_create_manual_order", { _payload: payload as any });
       if (error) throw error;
       const result = data as any;
+      const orderIdForNotes: string | null = editingOrderId ?? (result?.order_id ?? result?.id ?? null);
+      if (orderIdForNotes) {
+        // Best-effort : persiste le texte libre destiné au client (imprimé sur le PDF).
+        await supabase.rpc("admin_set_order_customer_notes" as any, {
+          _order_id: orderIdForNotes,
+          _notes: customerNotes || "",
+        });
+      }
       if (draftId) {
         await supabase.rpc("admin_delete_manual_order_draft", { _id: draftId });
       }
@@ -563,6 +572,7 @@ const AdminCommandeManuelle = () => {
       payment_method: paymentMethod,
       payment_status: paymentStatus,
       admin_notes: adminNotes || null,
+      customer_notes: customerNotes || null,
       encoding_at: encodingAt || null,
       created_at: encodingIso,
       is_forecast: isForecast || futureEncoding,
@@ -637,6 +647,7 @@ const AdminCommandeManuelle = () => {
       setPaymentMethod(p.payment_method ?? "invoice");
       setPaymentStatus(p.payment_status ?? "paid");
       setAdminNotes(p.admin_notes ?? "");
+      setCustomerNotes(p.customer_notes ?? "");
       setEncodingAt(p.encoding_at ?? "");
       setIsForecast(Boolean(p.is_forecast));
       setFulfillmentMode(p.fulfillment_mode === "pickup" ? "pickup" : "delivery");
@@ -719,6 +730,7 @@ const AdminCommandeManuelle = () => {
           (p.admin_notes ? p.admin_notes + "\n" : "") +
           `[Dupliquée depuis ${p.source_order_number ?? duplicateFromUrl}]`
         );
+        setCustomerNotes(p.customer_notes ?? "");
         setEncodingAt("");
         setIsForecast(false);
         setFulfillmentMode(p.fulfillment_mode === "pickup" ? "pickup" : "delivery");
@@ -765,6 +777,10 @@ const AdminCommandeManuelle = () => {
         setPaymentMethod(p.payment_method ?? "invoice");
         setPaymentStatus(p.payment_status ?? "paid");
         setAdminNotes(p.admin_notes ?? "");
+        try {
+          const { data: cn } = await supabase.rpc("admin_get_order_customer_notes" as any, { _order_id: editFromUrl });
+          setCustomerNotes((cn as any) ?? "");
+        } catch { setCustomerNotes(""); }
         setEncodingAt(p.encoding_at ?? "");
         setIsForecast(Boolean(p.is_forecast));
         // Charge l'adresse de livraison rattachée (si présente)
@@ -1189,6 +1205,19 @@ const AdminCommandeManuelle = () => {
           <div className="bg-white rounded-lg border p-4 space-y-3" style={{ borderColor: "#E2E8F0" }}>
             <h3 className="font-semibold text-sm">Notes admin</h3>
             <Textarea value={adminNotes} onChange={(e) => setAdminNotes(e.target.value)} rows={4} placeholder="Contexte, référence interne…" />
+          </div>
+
+          <div className="bg-white rounded-lg border p-4 space-y-3" style={{ borderColor: "#E2E8F0" }}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-sm">Notes client (imprimées sur le PDF)</h3>
+              <span className="text-xs text-muted-foreground">Visible par le client</span>
+            </div>
+            <Textarea
+              value={customerNotes}
+              onChange={(e) => setCustomerNotes(e.target.value)}
+              rows={4}
+              placeholder="Mention libre affichée sur le PDF côté client (ex. conditions particulières, remerciements, référence dossier…)"
+            />
           </div>
         </div>
 

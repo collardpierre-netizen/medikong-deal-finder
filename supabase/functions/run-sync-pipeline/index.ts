@@ -194,17 +194,33 @@ async function callEdgeFunction(functionName: string, params: unknown, timeoutMs
   }
 }
 
+// Heartbeat staleness threshold: time since last progress bump (NOT total run duration).
+// Robust to long Full syncs (45+ min) as long as each step bumps last_progress_at.
+const PIPELINE_HEARTBEAT_STALE_MINUTES = 15;
+
 async function markPreviousRunsAsSuperseded(supabase: any, country: string, runId: string) {
+  // Exclude the current run id explicitly to avoid auto-superseding ourselves.
   await supabase
     .from("sync_pipeline_runs")
     .update({
-      status: "failed",
+      status: "superseded",
       completed_at: new Date().toISOString(),
       error_message: `Remplacé par le run ${runId}`,
     })
     .eq("country_code", country)
     .eq("status", "running")
     .neq("id", runId);
+}
+
+async function bumpHeartbeat(supabase: any, runId: string) {
+  try {
+    await supabase
+      .from("sync_pipeline_runs")
+      .update({ last_progress_at: new Date().toISOString() })
+      .eq("id", runId);
+  } catch (e) {
+    console.warn("bumpHeartbeat failed:", (e as any)?.message);
+  }
 }
 
 async function waitForSyncLogCompletion(

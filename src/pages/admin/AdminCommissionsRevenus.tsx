@@ -744,7 +744,7 @@ export default function AdminCommissionsRevenus() {
                       </tr>
                     ))}
                     {filteredBacklog.length === 0 && (
-                      <tr><td colSpan={12} className="p-8 text-center text-[#8B95A5]">Aucune ligne dans le backlog sur la période.</td></tr>
+                      <tr><td colSpan={13} className="p-8 text-center text-[#8B95A5]">Aucune ligne dans le backlog sur la période.</td></tr>
                     )}
                   </tbody>
                 </table>

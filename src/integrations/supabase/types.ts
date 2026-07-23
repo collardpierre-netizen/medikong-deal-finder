@@ -27087,6 +27087,10 @@ export type Database = {
           similarity: number
         }[]
       }
+      admin_get_order_customer_notes: {
+        Args: { _order_id: string }
+        Returns: string
+      }
       admin_get_order_split_summary: {
         Args: { _order_id: string }
         Returns: Json
@@ -27695,6 +27699,10 @@ export type Database = {
           target_type: string
           total_count: number
         }[]
+      }
+      admin_set_order_customer_notes: {
+        Args: { _notes: string; _order_id: string }
+        Returns: undefined
       }
       admin_set_order_public_access: {
         Args: { _expires_at?: string; _order_id: string; _pin?: string }

@@ -652,8 +652,9 @@ const AdminCommandes = () => {
           shipping_method: r.shipping_method || "",
           shipping_status: r.shipping_status || "",
           tracking_number: r.tracking_number || "",
-          notes: r.notes || "",
+          customer_notes: r.notes || "",
           admin_notes: r.admin_notes || "",
+
           forecast_snapshot_total_incl_vat: r.forecast_snapshot?.total_incl_vat != null ? Number(r.forecast_snapshot.total_incl_vat) : null,
         };
       });
@@ -686,6 +687,8 @@ const AdminCommandes = () => {
             line_cost: num(l.line_cost),
             commission_rate: num(l.commission_rate),
             commission_amount: num(l.commission_amount),
+            customer_notes: r.notes || "",
+
           });
         });
       });

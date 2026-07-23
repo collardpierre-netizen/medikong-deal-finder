@@ -687,6 +687,9 @@ export default function AdminCommissionsRevenus() {
                             : <Badge className="bg-green-100 text-green-800">Validée</Badge>}
                         </td>
                         <td className="p-2">{formatUpdatedAt(r.order_created_at)}</td>
+                        <td className="p-2 text-xs text-[#3B4453] max-w-[180px] truncate" title={customerNameFor(r.order_id)}>
+                          {customerNameFor(r.order_id) || <span className="text-[#B0B8C4]">—</span>}
+                        </td>
                         <td className="p-2">{r.vendor_display_name}</td>
                         <td className="p-2">
                           <Badge className={r.type === "trading" ? "bg-purple-100 text-purple-800" : "bg-amber-100 text-amber-800"}>
@@ -696,13 +699,14 @@ export default function AdminCommissionsRevenus() {
                         <td className="p-2">
                           <Badge variant="outline">{r.sales_channel === "manual" ? "Manuelle" : "En ligne"}</Badge>
                         </td>
+                        <td className="p-2 text-right tabular-nums">{Number(r.quantity ?? 0)}</td>
                         <td className="p-2 text-right tabular-nums">{fmtEurFromCents(r.gmv_incl_vat_cents)}</td>
                         <td className="p-2 text-right tabular-nums font-semibold">{fmtEurFromCents(r.commission_excl_vat_cents)}</td>
                         <td className="p-2 text-right text-xs text-[#616B7C]">{Math.round(r.age_days)}j</td>
                       </tr>
                     ))}
                     {filteredBacklog.length === 0 && (
-                      <tr><td colSpan={10} className="p-8 text-center text-[#8B95A5]">Aucune ligne dans le backlog sur la période.</td></tr>
+                      <tr><td colSpan={12} className="p-8 text-center text-[#8B95A5]">Aucune ligne dans le backlog sur la période.</td></tr>
                     )}
                   </tbody>
                 </table>

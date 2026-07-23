@@ -75,6 +75,8 @@ interface BacklogRow {
   order_number: string;
   order_created_at: string;
   order_status: string;
+  order_source: string | null;
+  quantity: number | null;
   vendor_id: string;
   vendor_display_name: string;
   sales_channel: SalesChannel;
@@ -212,6 +214,33 @@ export default function AdminCommissionsRevenus() {
       return (data ?? []) as BacklogRow[];
     },
   });
+
+  // ---------- Client names for backlog orders ----------
+  const backlogOrderIds = useMemo(() => {
+    const ids = new Set<string>();
+    (backlogQ.data ?? []).forEach(r => { if (r.order_id) ids.add(r.order_id); });
+    return Array.from(ids);
+  }, [backlogQ.data]);
+
+  const customersQ = useQuery({
+    queryKey: ["commrev-backlog-customers", backlogOrderIds],
+    enabled: backlogOrderIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, customers:customer_id (company_name, email)")
+        .in("id", backlogOrderIds);
+      if (error) throw error;
+      const map = new Map<string, string>();
+      (data ?? []).forEach((o: any) => {
+        const c = o.customers;
+        const label = c?.company_name || c?.email || "";
+        if (o.id) map.set(o.id, label);
+      });
+      return map;
+    },
+  });
+  const customerNameFor = (orderId: string) => customersQ.data?.get(orderId) ?? "";
 
   // ---------- Invoices ----------
   const invoicesQ = useQuery({
@@ -380,6 +409,8 @@ export default function AdminCommissionsRevenus() {
     const totalGmv = lineRows.reduce((s, r) => s + (r.gmv_incl_vat_cents ?? 0), 0);
     const totalRevenue = lineRows.reduce((s, r) => s + (r.revenue_excl_vat_cents ?? 0), 0);
 
+    const totalQty = lineRows.reduce((s, r) => s + Number(r.quantity ?? 0), 0);
+
     const lineSheetData = lineRows.length === 0
       ? [{ Info: "(aucune ligne pour ces filtres)" }]
       : [
@@ -387,19 +418,23 @@ export default function AdminCommissionsRevenus() {
             Commande: r.order_number ?? "",
             Date: r.order_created_at ? new Date(r.order_created_at).toLocaleString("fr-FR") : "",
             Statut: r.order_status ?? "",
+            Client: customerNameFor(r.order_id),
             Vendeur: r.vendor_display_name ?? "",
             Canal: r.sales_channel ?? "",
+            Origine: r.order_source === "manual_admin" ? "Manuelle" : "Standalone",
             Type: r.type ?? "",
             Base: r.commission_basis ?? "",
             "Taux %": r.commission_rate ?? "",
+            Qté: Number(r.quantity ?? 0),
             "GMV TTC (€)": eur(r.gmv_incl_vat_cents),
             "CA HTVA (€)": eur(r.revenue_excl_vat_cents),
             "Commission HTVA (€)": eur(r.commission_excl_vat_cents),
             "Âge (jours)": r.age_days ?? "",
           })),
           {
-            Commande: "TOTAL", Date: "", Statut: "", Vendeur: "", Canal: "",
-            Type: "", Base: "", "Taux %": "",
+            Commande: "TOTAL", Date: "", Statut: "", Client: "", Vendeur: "", Canal: "",
+            Origine: "", Type: "", Base: "", "Taux %": "",
+            Qté: totalQty,
             "GMV TTC (€)": eur(totalGmv),
             "CA HTVA (€)": eur(totalRevenue),
             "Commission HTVA (€)": eur(totalCommission),
@@ -622,9 +657,11 @@ export default function AdminCommissionsRevenus() {
                       <th className="p-2 text-left">Commande</th>
                       <th className="p-2 text-left">Statut</th>
                       <th className="p-2 text-left">Date</th>
+                      <th className="p-2 text-left">Client</th>
                       <th className="p-2 text-left">Vendeur</th>
                       <th className="p-2 text-left">Type</th>
                       <th className="p-2 text-left">Canal</th>
+                      <th className="p-2 text-right">Qté</th>
                       <th className="p-2 text-right">GMV TTC</th>
                       <th className="p-2 text-right">Commission HT</th>
                       <th className="p-2 text-right">Âge</th>
@@ -650,6 +687,9 @@ export default function AdminCommissionsRevenus() {
                             : <Badge className="bg-green-100 text-green-800">Validée</Badge>}
                         </td>
                         <td className="p-2">{formatUpdatedAt(r.order_created_at)}</td>
+                        <td className="p-2 text-xs text-[#3B4453] max-w-[180px] truncate" title={customerNameFor(r.order_id)}>
+                          {customerNameFor(r.order_id) || <span className="text-[#B0B8C4]">—</span>}
+                        </td>
                         <td className="p-2">{r.vendor_display_name}</td>
                         <td className="p-2">
                           <Badge className={r.type === "trading" ? "bg-purple-100 text-purple-800" : "bg-amber-100 text-amber-800"}>
@@ -659,13 +699,14 @@ export default function AdminCommissionsRevenus() {
                         <td className="p-2">
                           <Badge variant="outline">{r.sales_channel === "manual" ? "Manuelle" : "En ligne"}</Badge>
                         </td>
+                        <td className="p-2 text-right tabular-nums">{Number(r.quantity ?? 0)}</td>
                         <td className="p-2 text-right tabular-nums">{fmtEurFromCents(r.gmv_incl_vat_cents)}</td>
                         <td className="p-2 text-right tabular-nums font-semibold">{fmtEurFromCents(r.commission_excl_vat_cents)}</td>
                         <td className="p-2 text-right text-xs text-[#616B7C]">{Math.round(r.age_days)}j</td>
                       </tr>
                     ))}
                     {filteredBacklog.length === 0 && (
-                      <tr><td colSpan={10} className="p-8 text-center text-[#8B95A5]">Aucune ligne dans le backlog sur la période.</td></tr>
+                      <tr><td colSpan={12} className="p-8 text-center text-[#8B95A5]">Aucune ligne dans le backlog sur la période.</td></tr>
                     )}
                   </tbody>
                 </table>

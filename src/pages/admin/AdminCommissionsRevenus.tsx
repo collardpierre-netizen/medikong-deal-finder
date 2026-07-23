@@ -657,9 +657,11 @@ export default function AdminCommissionsRevenus() {
                       <th className="p-2 text-left">Commande</th>
                       <th className="p-2 text-left">Statut</th>
                       <th className="p-2 text-left">Date</th>
+                      <th className="p-2 text-left">Client</th>
                       <th className="p-2 text-left">Vendeur</th>
                       <th className="p-2 text-left">Type</th>
                       <th className="p-2 text-left">Canal</th>
+                      <th className="p-2 text-right">Qté</th>
                       <th className="p-2 text-right">GMV TTC</th>
                       <th className="p-2 text-right">Commission HT</th>
                       <th className="p-2 text-right">Âge</th>

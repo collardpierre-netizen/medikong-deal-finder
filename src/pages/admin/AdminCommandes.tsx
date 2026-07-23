@@ -687,6 +687,8 @@ const AdminCommandes = () => {
             line_cost: num(l.line_cost),
             commission_rate: num(l.commission_rate),
             commission_amount: num(l.commission_amount),
+            customer_notes: r.notes || "",
+
           });
         });
       });

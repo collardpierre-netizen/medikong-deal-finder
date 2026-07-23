@@ -572,6 +572,7 @@ const AdminCommandeManuelle = () => {
       payment_method: paymentMethod,
       payment_status: paymentStatus,
       admin_notes: adminNotes || null,
+      customer_notes: customerNotes || null,
       encoding_at: encodingAt || null,
       created_at: encodingIso,
       is_forecast: isForecast || futureEncoding,

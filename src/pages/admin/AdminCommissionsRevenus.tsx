@@ -75,6 +75,8 @@ interface BacklogRow {
   order_number: string;
   order_created_at: string;
   order_status: string;
+  order_source: string | null;
+  quantity: number | null;
   vendor_id: string;
   vendor_display_name: string;
   sales_channel: SalesChannel;

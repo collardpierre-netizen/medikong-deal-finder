@@ -20,6 +20,7 @@ type Payload = {
     status: string | null;
     currency: string;
     created_at: string | null;
+    notes?: string | null;
     customer: { company_name?: string | null; email?: string | null } | null;
   };
   lines: PayloadLine[];
@@ -130,6 +131,20 @@ export async function generateExpressOrderPdf(orderId: string) {
   }
 
   cursorY += 6;
+
+  // Notes client (imprimées sur le PDF)
+  if (order.notes && order.notes.trim()) {
+    doc.setFillColor(239, 246, 255);
+    const noteLines = doc.splitTextToSize(String(order.notes), pageW - 2 * M - 6);
+    const noteH = noteLines.length * 4 + 6;
+    doc.rect(M, cursorY, pageW - 2 * M, noteH, "F");
+    doc.setTextColor(...NAVY);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text(noteLines, M + 3, cursorY + 5);
+    cursorY += noteH + 4;
+  }
+
 
   // 5 KPI cards
   const kpis = [

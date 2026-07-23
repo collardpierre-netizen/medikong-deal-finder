@@ -16678,6 +16678,7 @@ export type Database = {
           current_step: number | null
           error_message: string | null
           id: string
+          last_progress_at: string | null
           started_at: string | null
           status: string
           steps_status: Json | null
@@ -16691,6 +16692,7 @@ export type Database = {
           current_step?: number | null
           error_message?: string | null
           id?: string
+          last_progress_at?: string | null
           started_at?: string | null
           status?: string
           steps_status?: Json | null
@@ -16704,6 +16706,7 @@ export type Database = {
           current_step?: number | null
           error_message?: string | null
           id?: string
+          last_progress_at?: string | null
           started_at?: string | null
           status?: string
           steps_status?: Json | null

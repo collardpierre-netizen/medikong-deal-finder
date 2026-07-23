@@ -136,6 +136,7 @@ Deno.serve(async (req) => {
         status: order.status,
         currency: order.currency || "EUR",
         created_at: order.created_at,
+        notes: (order as any).notes ?? null,
         customer: order.customer || null,
       },
       lines: filteredLines,

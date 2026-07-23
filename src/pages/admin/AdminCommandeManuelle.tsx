@@ -647,6 +647,7 @@ const AdminCommandeManuelle = () => {
       setPaymentMethod(p.payment_method ?? "invoice");
       setPaymentStatus(p.payment_status ?? "paid");
       setAdminNotes(p.admin_notes ?? "");
+      setCustomerNotes(p.customer_notes ?? "");
       setEncodingAt(p.encoding_at ?? "");
       setIsForecast(Boolean(p.is_forecast));
       setFulfillmentMode(p.fulfillment_mode === "pickup" ? "pickup" : "delivery");

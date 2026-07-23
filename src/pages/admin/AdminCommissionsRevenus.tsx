@@ -708,7 +708,17 @@ export default function AdminCommissionsRevenus() {
                             }}
                           />
                         </td>
-                        <td className="p-2"><a href={`/admin/commandes/${r.order_number}`} className="text-[#1B5BDA] hover:underline">{r.order_number}</a></td>
+                        <td className="p-2"><a href={`/admin/commandes/${r.order_id}`} className="text-[#1B5BDA] hover:underline">{r.order_number}</a></td>
+                        <td className="p-2">
+                          <a
+                            href={`/admin/commandes/${r.order_id}`}
+                            className="inline-flex items-center gap-1 font-mono text-xs text-[#616B7C] hover:text-[#1B5BDA] hover:underline"
+                            title={r.order_id}
+                          >
+                            {String(r.order_id).slice(0, 8)}…
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </td>
                         <td className="p-2">
                           {DRAFT_STATUSES.has(String(r.order_status ?? "").toLowerCase())
                             ? <Badge className="bg-orange-100 text-orange-800">Brouillon</Badge>

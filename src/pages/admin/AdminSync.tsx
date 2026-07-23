@@ -188,9 +188,18 @@ function PipelineRunCard({ run, runningLog }: { run: any; runningLog?: any }) {
 
   const statusColor =
     run.status === "completed" ? "text-green-700 bg-green-50" :
+    run.status === "completed_with_errors" ? "text-orange-700 bg-orange-50" :
     run.status === "failed" ? "text-red-700 bg-red-50" :
     run.status === "running" ? "text-blue-700 bg-blue-50" :
+    run.status === "superseded" || run.status === "stale" ? "text-muted-foreground bg-muted" :
     "text-muted-foreground bg-muted";
+
+  const statusLabel =
+    run.status === "completed" ? "completed" :
+    run.status === "completed_with_errors" ? "avec erreurs" :
+    run.status === "superseded" ? "supplanté" :
+    run.status === "stale" ? "interrompu" :
+    run.status;
 
   const runningStep = runningStepIdx >= 0 ? steps[runningStepIdx] : null;
   const liveMessage = runningLog?.progress_message;
@@ -213,8 +222,13 @@ function PipelineRunCard({ run, runningLog }: { run: any; runningLog?: any }) {
               Pipeline {run.country_code}
             </span>
             <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusColor}`}>
-              {run.status}
+              {statusLabel}
             </span>
+            {run.error_message && (run.status === "superseded" || run.status === "stale") && (
+              <span className="ml-2 text-[10px] text-muted-foreground italic" title={run.error_message}>
+                (info)
+              </span>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-4 text-[11px]" style={{ color: "#616B7C" }}>

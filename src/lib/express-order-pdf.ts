@@ -20,6 +20,7 @@ type Payload = {
     status: string | null;
     currency: string;
     created_at: string | null;
+    notes?: string | null;
     customer: { company_name?: string | null; email?: string | null } | null;
   };
   lines: PayloadLine[];

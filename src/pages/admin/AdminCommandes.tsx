@@ -652,8 +652,9 @@ const AdminCommandes = () => {
           shipping_method: r.shipping_method || "",
           shipping_status: r.shipping_status || "",
           tracking_number: r.tracking_number || "",
-          notes: r.notes || "",
+          customer_notes: r.notes || "",
           admin_notes: r.admin_notes || "",
+
           forecast_snapshot_total_incl_vat: r.forecast_snapshot?.total_incl_vat != null ? Number(r.forecast_snapshot.total_incl_vat) : null,
         };
       });

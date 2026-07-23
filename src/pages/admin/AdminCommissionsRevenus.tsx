@@ -18,7 +18,7 @@ import { formatUpdatedAt } from "@/lib/format-date";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, ResponsiveContainer, Legend, ComposedChart, Line, AreaChart, Area } from "recharts";
 import {
   DollarSign, FileClock, CheckCircle2, AlertTriangle, Coins,
-  Download, RefreshCw, FileText, Check, Ban, XCircle,
+  Download, RefreshCw, FileText, Check, Ban, XCircle, ExternalLink,
 } from "lucide-react";
 
 /**

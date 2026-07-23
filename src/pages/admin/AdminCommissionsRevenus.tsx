@@ -146,6 +146,7 @@ export default function AdminCommissionsRevenus() {
   const [filterType, setFilterType] = useState<"all" | InvoiceType>("all");
   const [filterChannel, setFilterChannel] = useState<"all" | SalesChannel>("all");
   const [filterOrderStatus, setFilterOrderStatus] = useState<"all" | "validated" | "draft">("all");
+  const [customerSearch, setCustomerSearch] = useState("");
   const [bucket, setBucket] = useState<"day" | "week" | "month" | "quarter">("month");
   const [selectedLines, setSelectedLines] = useState<Set<string>>(new Set());
 
@@ -231,16 +232,18 @@ export default function AdminCommissionsRevenus() {
         .select("id, customers:customer_id (company_name, email)")
         .in("id", backlogOrderIds);
       if (error) throw error;
-      const map = new Map<string, string>();
+      const map = new Map<string, { label: string; company: string; email: string }>();
       (data ?? []).forEach((o: any) => {
         const c = o.customers;
-        const label = c?.company_name || c?.email || "";
-        if (o.id) map.set(o.id, label);
+        const company = c?.company_name ?? "";
+        const email = c?.email ?? "";
+        const label = company || email || "";
+        if (o.id) map.set(o.id, { label, company, email });
       });
       return map;
     },
   });
-  const customerNameFor = (orderId: string) => customersQ.data?.get(orderId) ?? "";
+  const customerNameFor = (orderId: string) => customersQ.data?.get(orderId)?.label ?? "";
 
   // ---------- Invoices ----------
   const invoicesQ = useQuery({
@@ -359,14 +362,24 @@ export default function AdminCommissionsRevenus() {
 
   const DRAFT_STATUSES = new Set(["draft", "brouillon", "pending", "en_attente"]);
   const filteredBacklog = useMemo(() => {
-    const rows = backlogQ.data ?? [];
-    if (filterOrderStatus === "all") return rows;
-    const wantDraft = filterOrderStatus === "draft";
-    return rows.filter(r => {
-      const isDraft = DRAFT_STATUSES.has(String(r.order_status ?? "").toLowerCase());
-      return wantDraft ? isDraft : !isDraft;
-    });
-  }, [backlogQ.data, filterOrderStatus]);
+    let rows = backlogQ.data ?? [];
+    if (filterOrderStatus !== "all") {
+      const wantDraft = filterOrderStatus === "draft";
+      rows = rows.filter(r => {
+        const isDraft = DRAFT_STATUSES.has(String(r.order_status ?? "").toLowerCase());
+        return wantDraft ? isDraft : !isDraft;
+      });
+    }
+    const q = customerSearch.trim().toLowerCase();
+    if (q) {
+      rows = rows.filter(r => {
+        const c = customersQ.data?.get(r.order_id);
+        if (!c) return false;
+        return c.company.toLowerCase().includes(q) || c.email.toLowerCase().includes(q);
+      });
+    }
+    return rows;
+  }, [backlogQ.data, filterOrderStatus, customerSearch, customersQ.data]);
 
   const backlogSelectedAmount = useMemo(() => {
     return filteredBacklog
@@ -509,6 +522,20 @@ export default function AdminCommissionsRevenus() {
                 <SelectItem value="manual">Manuelle</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div>
+            <Label className="text-xs text-[#616B7C]">Client (raison sociale ou email)</Label>
+            <div className="flex items-center gap-1">
+              <Input
+                value={customerSearch}
+                onChange={e => setCustomerSearch(e.target.value)}
+                placeholder="Rechercher un client…"
+                className="w-64"
+              />
+              {customerSearch && (
+                <Button variant="ghost" size="sm" onClick={() => setCustomerSearch("")}>×</Button>
+              )}
+            </div>
           </div>
           <div className="flex gap-2 ml-auto">
             <Button variant="outline" size="sm" onClick={() => { setPeriodStart(toISODate(monthStart())); setPeriodEnd(toISODate(monthEnd())); }}>

@@ -415,3 +415,128 @@ export function buildCommissionPdf(p: CommissionParams): { pdf: Uint8Array; comm
   drawFooter(doc);
   return { pdf: doc.output("arraybuffer") as any, commissionHt, vat, commissionTtc };
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// Credit note builder — same visual language, with a red "NOTE DE CRÉDIT"
+// banner and negative amounts. Used to cancel a previously issued invoice.
+// ────────────────────────────────────────────────────────────────────────────
+export interface CreditNoteParams {
+  originalInvoiceNumber: string;
+  creditNoteNumber: string;
+  reason: string;
+  issuedAt: Date;
+  seller: any;   // Balooh (self-billing) OR MediKong (commission credit)
+  buyer: any;    // vendor (self-billing) OR customer
+  order?: any;
+  lines: Array<{
+    name: string;
+    quantity: number;
+    unit_price_excl_vat: number;
+    vat_rate: number;
+    line_total_excl_vat: number;
+    line_total_incl_vat: number;
+  }>;
+}
+
+/**
+ * Signed values (negative) so Falco/receiver book the correct offset.
+ * Falco accepts sale_credit_note with negative base/total amounts.
+ */
+export function buildCreditNotePdf(p: CreditNoteParams): {
+  pdf: Uint8Array;
+  baseAmount: number;       // negative
+  vatAmount: number;        // negative
+  totalAmount: number;      // negative
+} {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  drawHeader(doc, "NOTE DE CRÉDIT", `N° ${p.creditNoteNumber}`);
+
+  // Red banner referring to the cancelled invoice
+  const bannerY = 46;
+  setFill(doc, [254, 226, 226]);
+  setDraw(doc, [220, 38, 38]);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(M.left, bannerY, M.width, 10, 2, 2, "FD");
+  setText(doc, [153, 27, 27]);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9.5);
+  doc.text(
+    `NOTE DE CRÉDIT — Annulation de la facture ${p.originalInvoiceNumber}`,
+    105, bannerY + 6.5, { align: "center" },
+  );
+
+  let y = 62;
+  y = drawParties(doc, p.seller, p.buyer, y);
+  y = drawInvoiceMeta(doc, {
+    "N° note de crédit": p.creditNoteNumber,
+    "Facture annulée": p.originalInvoiceNumber,
+    "Date": fmtDateBE(p.issuedAt),
+    "Commande": p.order?.order_number || "—",
+  }, y);
+
+  y = drawTableHeader(doc, y, [
+    { label: "DÉSIGNATION", x: M.left + 3 },
+    { label: "QTÉ", x: 118, align: "right" },
+    { label: "PU HTVA", x: 148, align: "right" },
+    { label: "TVA", x: 165, align: "right" },
+    { label: "TOTAL HTVA", x: M.right - 3, align: "right" },
+  ]);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9.5);
+  let subtotal = 0;
+  let vatTotal = 0;
+  const rowH = 7;
+  p.lines.forEach((l, idx) => {
+    if (idx % 2 === 1) {
+      setFill(doc, C.zebra);
+      doc.rect(M.left, y - 5, M.width, rowH, "F");
+    }
+    // Negative signed amounts (credit)
+    const qty = -Math.abs(Number(l.quantity || 0));
+    const base = -Math.abs(Number(l.line_total_excl_vat || 0));
+    const incl = -Math.abs(Number(l.line_total_incl_vat || 0));
+    setText(doc, C.ink);
+    doc.text(String(l.name || "—"), M.left + 3, y, { maxWidth: 100 });
+    setText(doc, C.body);
+    doc.text(String(qty), 118, y, { align: "right" });
+    doc.text(fmtEur(l.unit_price_excl_vat), 148, y, { align: "right" });
+    doc.text(`${Number(l.vat_rate).toFixed(0)}%`, 165, y, { align: "right" });
+    setText(doc, [153, 27, 27]);
+    doc.text(fmtEur(base), M.right - 3, y, { align: "right" });
+    subtotal += base;
+    vatTotal += incl - base;
+    y += rowH;
+    if (y > 250) { doc.addPage(); y = 20; }
+  });
+
+  y += 4;
+  y = drawTotalsBlock(doc, y, [
+    { label: "Sous-total HTVA", value: fmtEur(subtotal) },
+    { label: "TVA", value: fmtEur(vatTotal) },
+    { label: "Total à créditer TTC", value: fmtEur(subtotal + vatTotal), strong: true },
+  ]);
+
+  // Reason panel
+  y += 2;
+  setFill(doc, C.soft);
+  setDraw(doc, C.line);
+  doc.setLineWidth(0.2);
+  doc.roundedRect(M.left, y, M.width, 18, 2, 2, "FD");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  setText(doc, C.mute);
+  doc.text("MOTIF DE L'AVOIR", M.left + 4, y + 5);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  setText(doc, C.body);
+  doc.text(p.reason || "Annulation de la facture originale.", M.left + 4, y + 11, { maxWidth: M.width - 8 });
+
+  drawFooter(doc);
+  return {
+    pdf: doc.output("arraybuffer") as any,
+    baseAmount: subtotal,
+    vatAmount: vatTotal,
+    totalAmount: subtotal + vatTotal,
+  };
+}

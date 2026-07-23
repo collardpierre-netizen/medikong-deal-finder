@@ -409,6 +409,8 @@ export default function AdminCommissionsRevenus() {
     const totalGmv = lineRows.reduce((s, r) => s + (r.gmv_incl_vat_cents ?? 0), 0);
     const totalRevenue = lineRows.reduce((s, r) => s + (r.revenue_excl_vat_cents ?? 0), 0);
 
+    const totalQty = lineRows.reduce((s, r) => s + Number(r.quantity ?? 0), 0);
+
     const lineSheetData = lineRows.length === 0
       ? [{ Info: "(aucune ligne pour ces filtres)" }]
       : [
@@ -416,19 +418,23 @@ export default function AdminCommissionsRevenus() {
             Commande: r.order_number ?? "",
             Date: r.order_created_at ? new Date(r.order_created_at).toLocaleString("fr-FR") : "",
             Statut: r.order_status ?? "",
+            Client: customerNameFor(r.order_id),
             Vendeur: r.vendor_display_name ?? "",
             Canal: r.sales_channel ?? "",
+            Origine: r.order_source === "manual_admin" ? "Manuelle" : "Standalone",
             Type: r.type ?? "",
             Base: r.commission_basis ?? "",
             "Taux %": r.commission_rate ?? "",
+            Qté: Number(r.quantity ?? 0),
             "GMV TTC (€)": eur(r.gmv_incl_vat_cents),
             "CA HTVA (€)": eur(r.revenue_excl_vat_cents),
             "Commission HTVA (€)": eur(r.commission_excl_vat_cents),
             "Âge (jours)": r.age_days ?? "",
           })),
           {
-            Commande: "TOTAL", Date: "", Statut: "", Vendeur: "", Canal: "",
-            Type: "", Base: "", "Taux %": "",
+            Commande: "TOTAL", Date: "", Statut: "", Client: "", Vendeur: "", Canal: "",
+            Origine: "", Type: "", Base: "", "Taux %": "",
+            Qté: totalQty,
             "GMV TTC (€)": eur(totalGmv),
             "CA HTVA (€)": eur(totalRevenue),
             "Commission HTVA (€)": eur(totalCommission),

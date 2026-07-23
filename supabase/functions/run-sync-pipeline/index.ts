@@ -309,11 +309,14 @@ async function executePipeline({
         : {}),
     };
 
+    // Every step transition bumps the heartbeat — this is what keeps a long-running
+    // Full sync out of the "stale" bucket without needing to raise the timeout.
     await supabase
       .from("sync_pipeline_runs")
       .update({
         steps_status: stepsStatus,
         current_step: idx + (status === "completed" ? 1 : 0),
+        last_progress_at: new Date().toISOString(),
       })
       .eq("id", runId);
   };

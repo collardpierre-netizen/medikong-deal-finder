@@ -215,6 +215,33 @@ export default function AdminCommissionsRevenus() {
     },
   });
 
+  // ---------- Client names for backlog orders ----------
+  const backlogOrderIds = useMemo(() => {
+    const ids = new Set<string>();
+    (backlogQ.data ?? []).forEach(r => { if (r.order_id) ids.add(r.order_id); });
+    return Array.from(ids);
+  }, [backlogQ.data]);
+
+  const customersQ = useQuery({
+    queryKey: ["commrev-backlog-customers", backlogOrderIds],
+    enabled: backlogOrderIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, customers:customer_id (company_name, email)")
+        .in("id", backlogOrderIds);
+      if (error) throw error;
+      const map = new Map<string, string>();
+      (data ?? []).forEach((o: any) => {
+        const c = o.customers;
+        const label = c?.company_name || c?.email || "";
+        if (o.id) map.set(o.id, label);
+      });
+      return map;
+    },
+  });
+  const customerNameFor = (orderId: string) => customersQ.data?.get(orderId) ?? "";
+
   // ---------- Invoices ----------
   const invoicesQ = useQuery({
     queryKey: ["commrev-invoices", periodStart, periodEnd, typeArg, channelArg],

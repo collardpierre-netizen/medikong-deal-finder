@@ -346,28 +346,80 @@ export default function AdminCommissionsRevenus() {
   }, [filteredBacklog, selectedLines]);
 
   const exportVendorCsv = () => {
-    const rows = byVendorQ.data ?? [];
-    const header = ["Vendeur", "Pays", "Commandes", "Lignes", "GMV TTC", "CA HTVA", "Trading", "Marketplace", "Total commission", "À facturer", "Facturé", "Payé", "En litige"];
-    const csv = [header.join(",")].concat(rows.map(r => [
-      `"${(r.vendor_display_name ?? "").replace(/"/g, '""')}"`,
-      r.vendor_country_code ?? "",
-      r.orders_count, r.lines_count,
-      (r.gmv_incl_vat_cents / 100).toFixed(2),
-      (r.revenue_excl_vat_cents / 100).toFixed(2),
-      (r.commission_trading_cents / 100).toFixed(2),
-      (r.commission_marketplace_cents / 100).toFixed(2),
-      (r.commission_total_cents / 100).toFixed(2),
-      (r.to_invoice_cents / 100).toFixed(2),
-      (r.invoiced_cents / 100).toFixed(2),
-      (r.paid_cents / 100).toFixed(2),
-      (r.disputed_cents / 100).toFixed(2),
-    ].join(","))).join("\n");
+    const vendorRows = byVendorQ.data ?? [];
+    const lineRows = filteredBacklog;
+
+    const esc = (v: unknown) => {
+      const s = v == null ? "" : String(v);
+      return `"${s.replace(/"/g, '""')}"`;
+    };
+    const money = (c: number | null | undefined) =>
+      ((Number(c ?? 0)) / 100).toFixed(2).replace(".", ",");
+
+    const sections: string[] = [];
+
+    // Section 1 — Récap par vendeur
+    sections.push(`Récap par vendeur — ${periodStart} au ${periodEnd}`);
+    sections.push([
+      "Vendeur","Pays","Commandes","Lignes","GMV TTC","CA HTVA",
+      "Trading","Marketplace","Total commission","À facturer","Facturé","Payé","En litige",
+    ].map(esc).join(";"));
+    if (vendorRows.length === 0) {
+      sections.push(esc("(aucune ligne pour cette période)"));
+    } else {
+      vendorRows.forEach(r => sections.push([
+        esc(r.vendor_display_name ?? ""),
+        esc(r.vendor_country_code ?? ""),
+        r.orders_count, r.lines_count,
+        money(r.gmv_incl_vat_cents), money(r.revenue_excl_vat_cents),
+        money(r.commission_trading_cents), money(r.commission_marketplace_cents),
+        money(r.commission_total_cents), money(r.to_invoice_cents),
+        money(r.invoiced_cents), money(r.paid_cents), money(r.disputed_cents),
+      ].join(";")));
+    }
+
+    sections.push("");
+    // Section 2 — Détail ligne par ligne (backlog filtré)
+    sections.push(`Détail des commissions (${lineRows.length} lignes)`);
+    sections.push([
+      "Commande","Date","Statut","Vendeur","Canal","Type","Base","Taux %",
+      "GMV TTC","CA HTVA","Commission HTVA","Âge (jours)",
+    ].map(esc).join(";"));
+    if (lineRows.length === 0) {
+      sections.push(esc("(aucune ligne pour ces filtres)"));
+    } else {
+      lineRows.forEach(r => sections.push([
+        esc(r.order_number ?? ""),
+        esc(r.order_created_at ? new Date(r.order_created_at).toLocaleString("fr-FR") : ""),
+        esc(r.order_status ?? ""),
+        esc(r.vendor_display_name ?? ""),
+        esc(r.sales_channel ?? ""),
+        esc(r.type ?? ""),
+        esc(r.commission_basis ?? ""),
+        r.commission_rate != null ? String(r.commission_rate).replace(".", ",") : "",
+        money(r.gmv_incl_vat_cents), money(r.revenue_excl_vat_cents),
+        money(r.commission_excl_vat_cents),
+        r.age_days ?? "",
+      ].join(";")));
+
+      const totalCommission = lineRows.reduce((s, r) => s + (r.commission_excl_vat_cents ?? 0), 0);
+      const totalGmv = lineRows.reduce((s, r) => s + (r.gmv_incl_vat_cents ?? 0), 0);
+      const totalRevenue = lineRows.reduce((s, r) => s + (r.revenue_excl_vat_cents ?? 0), 0);
+      sections.push("");
+      sections.push([esc("TOTAL"), "", "", "", "", "", "", "",
+        money(totalGmv), money(totalRevenue), money(totalCommission), ""].join(";"));
+    }
+
+    const csv = sections.join("\n");
     const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url;
-    a.download = `commissions-vendeurs-${periodStart}-${periodEnd}.csv`;
+    a.download = `commissions-${periodStart}-${periodEnd}.csv`;
     a.click(); URL.revokeObjectURL(url);
+
+    toast.success(`Export CSV : ${vendorRows.length} vendeur(s), ${lineRows.length} ligne(s)`);
   };
+
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">

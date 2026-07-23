@@ -8278,6 +8278,8 @@ export type Database = {
           amount_excl_vat: number
           amount_incl_vat: number
           created_at: string
+          credit_note_peppol_id: string | null
+          credited_at: string | null
           due_date: string | null
           error_message: string | null
           hosted_url: string | null
@@ -8317,6 +8319,8 @@ export type Database = {
           amount_excl_vat?: number
           amount_incl_vat?: number
           created_at?: string
+          credit_note_peppol_id?: string | null
+          credited_at?: string | null
           due_date?: string | null
           error_message?: string | null
           hosted_url?: string | null
@@ -8356,6 +8360,8 @@ export type Database = {
           amount_excl_vat?: number
           amount_incl_vat?: number
           created_at?: string
+          credit_note_peppol_id?: string | null
+          credited_at?: string | null
           due_date?: string | null
           error_message?: string | null
           hosted_url?: string | null

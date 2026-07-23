@@ -538,6 +538,46 @@ serve(async (req) => {
       }
     }
 
+    // Concurrency lock: at most one 'running' pipeline per country.
+    // 1) Pre-check: if an active run exists AND it's still fresh (heartbeat < 15 min),
+    //    skip silently — no new row inserted, no rouge dans l'historique.
+    // 2) Otherwise, stale it (not failed) so the new run can proceed.
+    // 3) DB partial unique index catches races via 23505.
+    const { data: activeRuns } = await supabase
+      .from("sync_pipeline_runs")
+      .select("id, started_at, last_progress_at")
+      .eq("country_code", country)
+      .eq("status", "running");
+
+    const active = (activeRuns ?? [])[0];
+    if (active) {
+      const hb = active.last_progress_at
+        ? new Date(active.last_progress_at as any).getTime()
+        : new Date(active.started_at as any).getTime();
+      const minutesSinceProgress = (Date.now() - hb) / 60000;
+      if (minutesSinceProgress < PIPELINE_HEARTBEAT_STALE_MINUTES) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            skipped: true,
+            reason: "already_running",
+            active_run_id: active.id,
+            minutes_since_progress: Number(minutesSinceProgress.toFixed(2)),
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
+        );
+      }
+      // Stale — mark as such (never failed) so the unique index frees up
+      await supabase
+        .from("sync_pipeline_runs")
+        .update({
+          status: "stale",
+          completed_at: new Date().toISOString(),
+          error_message: `Aucune progression depuis ${Math.round(minutesSinceProgress)} min — run considéré comme interrompu`,
+        })
+        .eq("id", active.id);
+    }
+
     // Create pipeline run record
     const initialSteps = STEPS.map((s) => ({
       step: s.name,
@@ -545,22 +585,35 @@ serve(async (req) => {
       status: "pending",
     }));
 
+    const nowIso = new Date().toISOString();
     const { data: run, error: insertErr } = await supabase
       .from("sync_pipeline_runs")
       .insert({
         country_code: country,
         status: "running",
         triggered_by: triggeredBy,
-        started_at: new Date().toISOString(),
+        started_at: nowIso,
+        last_progress_at: nowIso,
         total_steps: STEPS.length,
         steps_status: initialSteps,
       })
       .select()
       .single();
 
-    if (insertErr) throw insertErr;
+    if (insertErr) {
+      // 23505 = unique_violation on sync_pipeline_runs_one_running_per_country
+      if ((insertErr as any)?.code === "23505") {
+        return new Response(
+          JSON.stringify({ success: true, skipped: true, reason: "race" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
+        );
+      }
+      throw insertErr;
+    }
     const runId = run.id;
 
+    // Belt-and-braces: mark any other stray 'running' rows for this country as superseded
+    // (never failed). Excludes runId to avoid auto-supersede.
     await markPreviousRunsAsSuperseded(supabase, country, runId);
 
     const backgroundRun = executePipeline({

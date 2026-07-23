@@ -29,10 +29,20 @@ serve(async (req) => {
       body: JSON.stringify({ email, password }),
     });
 
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
 
     if (!res.ok || !data.accessToken) {
-      return new Response(JSON.stringify({ error: `Connexion échouée (${res.status})` }), { status: 401, headers: corsHeaders });
+      const detail = data?.detail
+        ? (typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail))
+        : data?.message ?? `HTTP ${res.status}`;
+      return new Response(
+        JSON.stringify({
+          error: `Connexion Qogita refusée (${res.status}) : ${detail}`,
+          http_status: res.status,
+          qogita_detail: detail,
+        }),
+        { status: 200, headers: corsHeaders },
+      );
     }
 
     const sb = createClient(

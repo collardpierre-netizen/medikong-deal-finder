@@ -530,7 +530,16 @@ export default function AdminSync() {
       return data;
     },
     onSuccess: (data) => {
-      toast.success("Pipeline lancé ✅", { description: `Run ID: ${data?.runId?.slice(0, 8)}` });
+      if (data?.skipped) {
+        toast("Run ignoré", {
+          description:
+            data.reason === "race"
+              ? "Un autre run vient de démarrer en parallèle."
+              : `Un run est déjà en cours (dernière progression il y a ${data.minutes_since_progress ?? "?"} min).`,
+        });
+      } else {
+        toast.success("Pipeline lancé ✅", { description: `Run ID: ${data?.runId?.slice(0, 8)}` });
+      }
       qc.invalidateQueries({ queryKey: ["pipeline-runs"] });
     },
     onError: (err: any) => toast.error("Erreur pipeline", { description: err.message }),

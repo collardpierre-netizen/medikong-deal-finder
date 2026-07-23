@@ -188,9 +188,18 @@ function PipelineRunCard({ run, runningLog }: { run: any; runningLog?: any }) {
 
   const statusColor =
     run.status === "completed" ? "text-green-700 bg-green-50" :
+    run.status === "completed_with_errors" ? "text-orange-700 bg-orange-50" :
     run.status === "failed" ? "text-red-700 bg-red-50" :
     run.status === "running" ? "text-blue-700 bg-blue-50" :
+    run.status === "superseded" || run.status === "stale" ? "text-muted-foreground bg-muted" :
     "text-muted-foreground bg-muted";
+
+  const statusLabel =
+    run.status === "completed" ? "completed" :
+    run.status === "completed_with_errors" ? "avec erreurs" :
+    run.status === "superseded" ? "supplanté" :
+    run.status === "stale" ? "interrompu" :
+    run.status;
 
   const runningStep = runningStepIdx >= 0 ? steps[runningStepIdx] : null;
   const liveMessage = runningLog?.progress_message;
@@ -213,8 +222,13 @@ function PipelineRunCard({ run, runningLog }: { run: any; runningLog?: any }) {
               Pipeline {run.country_code}
             </span>
             <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusColor}`}>
-              {run.status}
+              {statusLabel}
             </span>
+            {run.error_message && (run.status === "superseded" || run.status === "stale") && (
+              <span className="ml-2 text-[10px] text-muted-foreground italic" title={run.error_message}>
+                (info)
+              </span>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-4 text-[11px]" style={{ color: "#616B7C" }}>
@@ -530,7 +544,16 @@ export default function AdminSync() {
       return data;
     },
     onSuccess: (data) => {
-      toast.success("Pipeline lancé ✅", { description: `Run ID: ${data?.runId?.slice(0, 8)}` });
+      if (data?.skipped) {
+        toast("Run ignoré", {
+          description:
+            data.reason === "race"
+              ? "Un autre run vient de démarrer en parallèle."
+              : `Un run est déjà en cours (dernière progression il y a ${data.minutes_since_progress ?? "?"} min).`,
+        });
+      } else {
+        toast.success("Pipeline lancé ✅", { description: `Run ID: ${data?.runId?.slice(0, 8)}` });
+      }
       qc.invalidateQueries({ queryKey: ["pipeline-runs"] });
     },
     onError: (err: any) => toast.error("Erreur pipeline", { description: err.message }),
@@ -749,7 +772,11 @@ export default function AdminSync() {
               onClick={() => launchPipeline.mutate({ mode: "incremental" })}
               disabled={launchPipeline.isPending || !!activePipeline}
               className="flex items-center gap-1.5 h-9 px-3 rounded-md text-[12px] font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
-              title="Lance immédiatement le pipeline de sync Qogita (mode incrémental)"
+              title={
+                activePipeline
+                  ? `Un run est déjà en cours (démarré ${activePipeline.started_at ? format(new Date(activePipeline.started_at), "HH:mm", { locale: fr }) : "récemment"}). Le nouveau run sera ignoré tant que celui-ci progresse.`
+                  : "Lance immédiatement le pipeline de sync Qogita (mode incrémental)"
+              }
             >
               {launchPipeline.isPending || activePipeline
                 ? <Loader2 size={13} className="animate-spin" />

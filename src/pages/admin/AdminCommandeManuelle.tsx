@@ -1218,7 +1218,43 @@ const AdminCommandeManuelle = () => {
               rows={4}
               placeholder="Mention libre affichée sur le PDF côté client (ex. conditions particulières, remerciements, référence dossier…)"
             />
+            <div className="space-y-1.5">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                Aperçu PDF (temps réel)
+              </p>
+              <div className="rounded-md border bg-slate-50 p-3">
+                <div className="mx-auto max-w-md rounded-sm bg-white shadow-sm border p-4">
+                  <div className="text-[10px] text-slate-400 mb-2 border-b pb-1">
+                    …en-tête facture / commande…
+                  </div>
+                  {customerNotes.trim() ? (
+                    <div
+                      className="rounded border-l-4 p-2.5"
+                      style={{ borderLeftColor: "#2563EB", backgroundColor: "#EFF6FF" }}
+                    >
+                      <div
+                        className="text-[10px] font-semibold uppercase tracking-wide mb-1"
+                        style={{ color: "#1D4ED8" }}
+                      >
+                        Notes
+                      </div>
+                      <div className="text-[11px] leading-relaxed whitespace-pre-wrap text-slate-800">
+                        {customerNotes}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-[11px] italic text-slate-400 py-3 text-center">
+                      Aucune note — rien ne sera affiché sur le PDF.
+                    </div>
+                  )}
+                  <div className="text-[10px] text-slate-400 mt-2 border-t pt-1">
+                    …tableau des lignes produits…
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+
         </div>
 
         {/* Right: lines + commissions */}

@@ -95,6 +95,7 @@ const AdminCommandeManuelle = () => {
   const [paymentMethod, setPaymentMethod] = useState("invoice");
   const [paymentStatus, setPaymentStatus] = useState("paid");
   const [adminNotes, setAdminNotes] = useState("");
+  const [customerNotes, setCustomerNotes] = useState("");
   const [lines, setLines] = useState<ManualLine[]>([]);
   const [draftId, _setDraftId] = useState<string | null>(null);
   const draftIdRef = useRef<string | null>(null);

@@ -408,9 +408,23 @@ async function executePipeline({
     }
   }
 
+  // Finalize: if any non-required step failed, mark the whole run as completed_with_errors
+  // so the UI shows a neutral orange badge — never green, never red.
+  const { data: finalSteps } = await supabase
+    .from("sync_pipeline_runs")
+    .select("steps_status")
+    .eq("id", runId)
+    .single();
+  const hasFailedStep = ((finalSteps?.steps_status as any[]) || []).some(
+    (s: any) => s?.status === "failed",
+  );
   await supabase
     .from("sync_pipeline_runs")
-    .update({ status: "completed", completed_at: new Date().toISOString() })
+    .update({
+      status: hasFailedStep ? "completed_with_errors" : "completed",
+      completed_at: new Date().toISOString(),
+      last_progress_at: new Date().toISOString(),
+    })
     .eq("id", runId);
 }
 

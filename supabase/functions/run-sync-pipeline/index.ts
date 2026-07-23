@@ -370,6 +370,9 @@ async function executePipeline({
             throw new Error(`Aucune progression détectée sur ${step.label} alors qu'il reste ${remaining} éléments.`);
           }
 
+          // Bump heartbeat between long batches so a slow Full sync isn't flagged stale.
+          await bumpHeartbeat(supabase, runId);
+
           await sleep(STEP_DELAY_MS);
         }
 

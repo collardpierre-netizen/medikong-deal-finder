@@ -525,6 +525,14 @@ const AdminCommandeManuelle = () => {
         : await supabase.rpc("admin_create_manual_order", { _payload: payload as any });
       if (error) throw error;
       const result = data as any;
+      const orderIdForNotes: string | null = editingOrderId ?? (result?.order_id ?? result?.id ?? null);
+      if (orderIdForNotes) {
+        // Best-effort : persiste le texte libre destiné au client (imprimé sur le PDF).
+        await supabase.rpc("admin_set_order_customer_notes" as any, {
+          _order_id: orderIdForNotes,
+          _notes: customerNotes || "",
+        });
+      }
       if (draftId) {
         await supabase.rpc("admin_delete_manual_order_draft", { _id: draftId });
       }

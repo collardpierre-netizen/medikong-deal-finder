@@ -482,8 +482,9 @@ export default function AdminCommissionsRevenus() {
             <Button variant="outline" size="sm" onClick={() => invalidate()}>
               <RefreshCw className="w-4 h-4 mr-1" /> Rafraîchir
             </Button>
-            <Button variant="outline" size="sm" onClick={exportVendorCsv}>
-              <Download className="w-4 h-4 mr-1" /> Export CSV
+            <Button variant="outline" size="sm" onClick={exportVendorXlsx}>
+              <Download className="w-4 h-4 mr-1" /> Export Excel
+
             </Button>
           </div>
         </div>

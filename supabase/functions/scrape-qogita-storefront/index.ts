@@ -701,6 +701,8 @@ async function scrapeProduct(
   }
 
   const { allOffers, priceHistory } = parseStorefront(html);
+  console.log(JSON.stringify({ tag: "storefront_parse", slug: product.qogita_slug ?? product.id, html_len: html.length, offers: allOffers.length, history: priceHistory.length, has_allOffers_marker: html.includes("allOffers") }));
+
 
   if (opts.dryRun) {
     return {

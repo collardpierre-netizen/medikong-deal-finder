@@ -26995,6 +26995,15 @@ export type Database = {
         }
         Returns: string
       }
+      admin_create_consolidated_commission_invoice: {
+        Args: {
+          _order_line_ids: string[]
+          _period_end: string
+          _period_start: string
+          _vendor_id: string
+        }
+        Returns: string
+      }
       admin_create_manual_order: { Args: { _payload: Json }; Returns: Json }
       admin_create_quote_from_payload: {
         Args: { _payload: Json }
@@ -30220,7 +30229,7 @@ export type Database = {
         | "paid"
         | "disputed"
         | "cancelled"
-      commission_invoice_type: "marketplace" | "trading"
+      commission_invoice_type: "marketplace" | "trading" | "mixed"
       commission_model_enum: "flat_percentage" | "margin_split" | "fixed_amount"
       commission_override_status:
         | "draft"
@@ -30612,7 +30621,7 @@ export const Constants = {
         "disputed",
         "cancelled",
       ],
-      commission_invoice_type: ["marketplace", "trading"],
+      commission_invoice_type: ["marketplace", "trading", "mixed"],
       commission_model_enum: [
         "flat_percentage",
         "margin_split",

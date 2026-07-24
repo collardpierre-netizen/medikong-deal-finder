@@ -150,6 +150,34 @@ export default function AdminCommissionsRevenus() {
   const [bucket, setBucket] = useState<"day" | "week" | "month" | "quarter">("month");
   const [selectedLines, setSelectedLines] = useState<Set<string>>(new Set());
 
+  // ---------- Consolidated billing toggle (persisted in admin_settings) ----------
+  const consolidatedQ = useQuery({
+    queryKey: ["commrev-consolidated-setting"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("admin_settings")
+        .select("value_json")
+        .eq("key", "commission_consolidated_billing_enabled")
+        .maybeSingle();
+      return Boolean((data as any)?.value_json ?? false);
+    },
+  });
+  const consolidated = consolidatedQ.data ?? false;
+  const setConsolidatedM = useMutation({
+    mutationFn: async (v: boolean) => {
+      const { error } = await supabase
+        .from("admin_settings")
+        .upsert({
+          key: "commission_consolidated_billing_enabled",
+          value_json: v as any,
+          description: "Regrouper les commissions d'un vendeur en une seule facture par période plutôt qu'une facture par commande.",
+        }, { onConflict: "key" });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["commrev-consolidated-setting"] }),
+    onError: (e: any) => toast.error(e?.message ?? "Erreur enregistrement option"),
+  });
+
   // Dialog states
   const [markInvoicedOpen, setMarkInvoicedOpen] = useState<InvoiceRow | null>(null);
   const [markPaidOpen, setMarkPaidOpen] = useState<InvoiceRow | null>(null);
@@ -277,11 +305,41 @@ export default function AdminCommissionsRevenus() {
     mutationFn: async () => {
       const rows = (backlogQ.data ?? []).filter(r => selectedLines.has(r.order_line_id));
       if (rows.length === 0) throw new Error("Aucune ligne sélectionnée");
-      // Grouper par (vendor_id, order_id, type)
-      const groups = new Map<string, BacklogRow[]>();
+
+      // Consolidated mode: ONE invoice per vendor regrouping all selected lines
+      // across all orders and both types (marketplace + trading).
+      if (consolidated) {
+        const groups = new Map<string, typeof rows>();
+        for (const r of rows) {
+          const k = r.vendor_id;
+          if (!groups.has(k)) groups.set(k, [] as any);
+          groups.get(k)!.push(r);
+        }
+        let count = 0;
+        for (const [vendorId, list] of groups) {
+          const dates = list
+            .map(x => x.order_created_at)
+            .filter(Boolean)
+            .sort();
+          const pStart = dates[0]?.slice(0, 10) ?? periodStart;
+          const pEnd = dates[dates.length - 1]?.slice(0, 10) ?? periodEnd;
+          const { error } = await supabase.rpc("admin_create_consolidated_commission_invoice", {
+            _vendor_id: vendorId,
+            _order_line_ids: list.map(x => x.order_line_id),
+            _period_start: pStart,
+            _period_end: pEnd,
+          });
+          if (error) throw error;
+          count++;
+        }
+        return count;
+      }
+
+      // Legacy mode: one invoice per (vendor, order, type)
+      const groups = new Map<string, typeof rows>();
       for (const r of rows) {
         const k = `${r.vendor_id}::${r.order_id}::${r.type}`;
-        if (!groups.has(k)) groups.set(k, []);
+        if (!groups.has(k)) groups.set(k, [] as any);
         groups.get(k)!.push(r);
       }
       let count = 0;
@@ -656,17 +714,34 @@ export default function AdminCommissionsRevenus() {
           {/* --- BACKLOG --- */}
           <TabsContent value="backlog">
             <div className="bg-white border border-[#E2E8F0] rounded-[10px]">
-              <div className="p-4 border-b border-[#E2E8F0] flex items-center justify-between">
+              <div className="p-4 border-b border-[#E2E8F0] flex items-center justify-between gap-4 flex-wrap">
                 <div className="text-sm text-[#616B7C]">
                   {selectedLines.size} ligne(s) sélectionnée(s) — {fmtEurFromCents(backlogSelectedAmount)}
                 </div>
-                <Button
-                  size="sm"
-                  disabled={selectedLines.size === 0 || createInvoiceM.isPending}
-                  onClick={() => createInvoiceM.mutate()}
-                >
-                  {createInvoiceM.isPending ? "Création…" : `Créer facture(s) commission`}
-                </Button>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 text-xs text-[#616B7C] cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4"
+                      checked={consolidated}
+                      onChange={(e) => setConsolidatedM.mutate(e.target.checked)}
+                      disabled={setConsolidatedM.isPending}
+                    />
+                    Facturation consolidée
+                    <span className="text-[#8B95A5]" title="Une seule facture par vendeur regroupant toutes les commandes sélectionnées et les deux types (marketplace + trading).">ⓘ</span>
+                  </label>
+                  <Button
+                    size="sm"
+                    disabled={selectedLines.size === 0 || createInvoiceM.isPending}
+                    onClick={() => createInvoiceM.mutate()}
+                  >
+                    {createInvoiceM.isPending
+                      ? "Création…"
+                      : consolidated
+                        ? "Créer facture(s) consolidée(s)"
+                        : "Créer facture(s) commission"}
+                  </Button>
+                </div>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">

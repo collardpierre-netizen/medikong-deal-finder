@@ -684,8 +684,11 @@ Deno.serve(async (req) => {
     syncLogId = newLog!.id;
   }
 
-  // Run sync synchronously. Multi-vendor continuation is handled in-process by
-  // syncOffers; no Edge self-invocation / loopback call is used here.
+  // Run sync : 1 page/invocation TOUJOURS (multi-vendeur inclus). Ce n'est plus
+  // syncOffers qui boucle : c'est l'orchestrateur `run-sync-pipeline` qui rappelle
+  // cette edge function via loopBatch, avec heartbeat entre chaque tour. Cela borne
+  // strictement la wall-clock de chaque invocation → plus de run orphelin killé
+  // en cours de boucle interne.
   let productsEnriched = 0;
   let offersUpserted = 0;
   let syncResult: any = null;
@@ -706,9 +709,45 @@ Deno.serve(async (req) => {
       .eq("id", syncLogId);
   }
 
-  // Re-check state after this batch (remaining n'est plus calculable sans COUNT ; on renvoie le statut).
+  // Re-check state after this batch.
   const { data: updatedLog } = await sb.from("sync_logs").select("status, stats").eq("id", syncLogId).single();
   const nextCursor = updatedLog?.status === "partial" ? (updatedLog.stats as any)?.cursor_after ?? null : null;
+
+  // Real `remaining` = COUNT products still eligible AFTER the cursor, using the
+  // SAME WHERE filter as the page query. JAMAIS un `id=in.(…)` géant : quand la
+  // requête est bornée par productIds (daily_stale_refresh), on renvoie le count
+  // du tableau tel quel — pas de round-trip HTTP à travers le tableau.
+  let remaining = 0;
+  if (nextCursor) {
+    if (productIds.length > 0) {
+      // Bounded set : we already know when we're done (cursor doesn't advance
+      // beyond the last passed id). Reporter la borne à l'orchestrateur.
+      remaining = 1;
+    } else {
+      try {
+        let remQuery = sb
+          .from("products")
+          .select("id", { count: "exact", head: true })
+          .eq("is_active", true)
+          .not("gtin", "is", null)
+          .gt("created_at", nextCursor);
+        if (fastMode) {
+          remQuery = remQuery.not("qogita_fid", "is", null).not("slug", "is", null);
+        } else {
+          remQuery = remQuery.or("offer_count.gt.0,synced_at.is.null,qogita_qid.is.null");
+        }
+        const { count } = await remQuery;
+        remaining = typeof count === "number" ? count : 1;
+      } catch (_) {
+        remaining = 1;
+      }
+    }
+  }
+
+  // 429 défer : si la page vient de subir du rate-limit Qogita, on demande à
+  // l'orchestrateur de casser sa boucle. Le prochain tick cron reprendra.
+  const rateLimitedThisPage = Number(syncResult?.rate_limited ?? 0) > 0;
+  const deferred = rateLimitedThisPage && remaining > 0;
 
   return new Response(
     JSON.stringify({
@@ -720,9 +759,11 @@ Deno.serve(async (req) => {
       offers_upserted: offersUpserted,
       stats: syncResult,
       next_cursor: nextCursor,
-      remaining: nextCursor ? 1 : 0,
+      remaining,
+      deferred,
+      defer_reason: deferred ? "rate_limited" : undefined,
       status: updatedLog?.status || "unknown",
-      message: `Sync offres ${targetCountry} — ${productsEnriched} enrichis${nextCursor ? " (partiel, à reprendre)" : ""}`,
+      message: `Sync offres ${targetCountry} — ${productsEnriched} enrichis${nextCursor ? ` (partiel, remaining=${remaining}${deferred ? ", deferred=rate_limited" : ""})` : ""}`,
     }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );

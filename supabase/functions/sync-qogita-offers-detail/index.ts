@@ -626,7 +626,11 @@ Deno.serve(async (req) => {
   const vatRate = ctryRow.default_vat_rate || 21;
   const vatMultiplier = 1 + vatRate / 100;
 
-  const syncType = fetchMultiVendor ? "offers_multi_vendor" : "offers_detail";
+  // P1-a — plus jamais de sync_type "offers_multi_vendor" (fausse entrée d'étape
+  // qui polluait l'historique). Le mode multi-vendeur est signalé via un flag
+  // dans les stats (multi_vendor: true). Les sweeps A/B/C key sur last_sync_run_id,
+  // pas sur sync_type → aucun risque de régression.
+  const syncType = "offers_detail";
 
   const { data: resumableLogs } = await sb
     .from("sync_logs")

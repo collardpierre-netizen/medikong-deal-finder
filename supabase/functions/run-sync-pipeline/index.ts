@@ -196,8 +196,9 @@ async function callEdgeFunction(functionName: string, params: unknown, timeoutMs
 
 
 // Heartbeat staleness threshold: time since last progress bump (NOT total run duration).
-// Robust to long Full syncs (45+ min) as long as each step bumps last_progress_at.
-const PIPELINE_HEARTBEAT_STALE_MINUTES = 15;
+// 10 min : plus agressif qu'avant (15 min), pour libérer plus tôt les runs orphelins
+// (edge function tuée par WORKER_LIMIT sans mise à jour du heartbeat).
+const PIPELINE_HEARTBEAT_STALE_MINUTES = 10;
 
 async function markPreviousRunsAsSuperseded(supabase: any, country: string, runId: string) {
   // Exclude the current run id explicitly to avoid auto-superseding ourselves.

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  AreaChart,
+  ComposedChart,
   Area,
   Line,
   XAxis,

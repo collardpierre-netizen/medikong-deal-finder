@@ -665,7 +665,7 @@ async function scrapeProduct(
   sb: any,
   product: { id: string; gtin: string | null; qogita_fid: string | null; qogita_slug: string | null; country_code?: string | null },
   stats: { vendors_created: number; retries: number },
-  opts: { dryRun: boolean; resourceOffers: boolean },
+  opts: { dryRun: boolean; resourceOffers: boolean; marginMul: number },
 ): Promise<ProductResult> {
   if (!product.qogita_fid || !product.qogita_slug) {
     return { status: "error", offersWritten: 0, tiersWritten: 0, historyPoints: 0, error: "missing_qogita_ids" };

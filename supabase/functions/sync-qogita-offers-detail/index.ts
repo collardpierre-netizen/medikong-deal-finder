@@ -253,8 +253,28 @@ async function fetchVariantWithRetry(
   return lastResponse || new Response(null, { status: 404 });
 }
 
-/** Resolve or create a vendor row for a Qogita seller alias */
-async function resolveVendor(sb: any, sellerCode: string, country: string, syncRunId: string | null): Promise<string | null> {
+/**
+ * P0 damage-control : détecte un endpoint Qogita mort (404 ou réponse HTML).
+ * Un HTML text/html sur un endpoint JSON signifie que l'endpoint a été supprimé
+ * ou déplacé côté Qogita (routing 404 générique).
+ */
+function isDeadOffersEndpoint(res: Response): boolean {
+  if (res.status === 404) return true;
+  const ct = (res.headers.get("content-type") || "").toLowerCase();
+  if (ct.includes("text/html")) return true;
+  return false;
+}
+
+/** Resolve or create a vendor row for a Qogita seller alias.
+ * A.3 — `localStats.vendors_created` est incrémenté SUR LA BRANCHE INSERT UNIQUEMENT.
+ */
+async function resolveVendor(
+  sb: any,
+  sellerCode: string,
+  country: string,
+  syncRunId: string | null,
+  localStats?: { vendors_created?: number },
+): Promise<string | null> {
   if (!sellerCode || sellerCode === "UNKNOWN") return null;
 
   // Check by qogita_seller_alias first
@@ -275,7 +295,7 @@ async function resolveVendor(sb: any, sellerCode: string, country: string, syncR
   const slug = `qogita-seller-${sellerCode.toLowerCase()}`;
   const { data: bySlug } = await sb.from("vendors").select("id").eq("slug", slug).maybeSingle();
   if (bySlug?.id) {
-    // Update alias (+ stamp run)
+    // Update alias (+ stamp run) — pas une vraie création (row déjà existante)
     await sb.from("vendors").update({
       qogita_seller_alias: sellerCode,
       ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
@@ -306,7 +326,47 @@ async function resolveVendor(sb: any, sellerCode: string, country: string, syncR
     console.error(`Vendor creation error for ${sellerCode}:`, error.message);
     return null;
   }
+  if (localStats) {
+    localStats.vendors_created = (localStats.vendors_created ?? 0) + 1;
+  }
   return inserted.id;
+}
+
+/**
+ * Marque toutes les offres best-price d'un produit comme "prix indicatif"
+ * (price_stale = true) quand Qogita ne renvoie plus le prix. On ne désactive
+ * PAS l'offre pour ne pas vider le catalogue — l'UI affichera un bandeau.
+ */
+async function markBestPriceStale(sb: any, productId: string, reason: string) {
+  try {
+    await sb
+      .from("offers")
+      .update({
+        price_stale: true,
+        price_stale_since: new Date().toISOString(),
+      })
+      .eq("product_id", productId)
+      .eq("is_qogita_backed", true)
+      .eq("price_stale", false);
+  } catch (e: any) {
+    console.warn(`[qogita.stale] product ${productId} (${reason}): ${e.message}`);
+  }
+}
+
+/**
+ * Stamp `products.mv_last_probed_at = now()` — DOIT être appelé après CHAQUE
+ * tentative d'appel /offers/ (succès, réponse vide OU 404). Sans ça la RPC
+ * `enqueue_qogita_resync_batch` reboucle indéfiniment sur les mêmes produits.
+ */
+async function stampProbed(sb: any, productId: string) {
+  try {
+    await sb
+      .from("products")
+      .update({ mv_last_probed_at: new Date().toISOString() })
+      .eq("id", productId);
+  } catch (e: any) {
+    console.warn(`[qogita.probe-stamp] product ${productId}: ${e.message}`);
+  }
 }
 
 
@@ -859,6 +919,15 @@ async function syncOffers(
   aggregateStats.tiers_synced = pageStats.tiers_synced || 0;
   aggregateStats.cursor_after = pageStats.cursor_after ?? afterCreatedAt;
   aggregateStats.chunks_processed = 1;
+  aggregateStats.endpoint_removed = pageStats.endpoint_removed || 0;
+  aggregateStats.no_price = pageStats.no_price || 0;
+  aggregateStats.mv_probed = pageStats.mv_probed || 0;
+  // Damage-control flag : ce run n'a rien pu récupérer côté /offers/ (100% 404/HTML).
+  aggregateStats.mv_endpoint_dead =
+    aggregateStats.mv_probed > 0 && aggregateStats.endpoint_removed === aggregateStats.mv_probed;
+  if (pageStats.first_mv_offer_status !== undefined) {
+    aggregateStats.first_mv_offer_status = pageStats.first_mv_offer_status;
+  }
   if (pageStats.first_api_response_keys) {
     aggregateStats.first_api_response_keys = pageStats.first_api_response_keys;
     aggregateStats.first_flat_sample = pageStats.first_flat_sample;
@@ -868,18 +937,43 @@ async function syncOffers(
     aggregateStats.first_mv_offer_sample = pageStats.first_mv_offer_sample;
   }
 
+
+  // Health-check : si les 2 derniers runs offres_detail ont déjà `mv_endpoint_dead=true`
+  // et que celui-ci l'est aussi (3 consécutifs), on marque le sync_log courant
+  // `api_endpoint_dead` pour signaler l'incident à l'admin (bandeau).
+  let endpointDeadStreak = false;
+  if (aggregateStats.mv_endpoint_dead) {
+    try {
+      const { data: recent } = await sb
+        .from("sync_logs")
+        .select("stats")
+        .eq("sync_type", "offers_detail")
+        .neq("id", logId)
+        .in("status", ["completed", "partial", "api_endpoint_dead"])
+        .order("started_at", { ascending: false })
+        .limit(2);
+      const deadCount = (recent ?? []).filter(
+        (r: any) => r?.stats?.mv_endpoint_dead === true,
+      ).length;
+      endpointDeadStreak = deadCount >= 2;
+    } catch (_) { /* best-effort */ }
+  }
+
   // Terminé pour de bon : plus rien d'éligible OU plus de chunk.
   if (pageStats.completed_reason === "no_eligible_products" || !pageStats.has_more_chunks) {
     if (!pageStats.paused) {
       await sb
         .from("sync_logs")
         .update({
-          status: "completed",
+          status: endpointDeadStreak ? "api_endpoint_dead" : "completed",
           completed_at: new Date().toISOString(),
           stats: aggregateStats,
-          progress_message: `${country}: terminé — ${aggregateStats.products_enriched} enrichis, ${aggregateStats.offers_upserted} offres, ${aggregateStats.multi_vendor_offers} multi-vendeur ✓`,
+          progress_message: endpointDeadStreak
+            ? `${country}: endpoint Qogita /offers/ mort (3 runs consécutifs) — voir bandeau admin`
+            : `${country}: terminé — ${aggregateStats.products_enriched} enrichis, ${aggregateStats.offers_upserted} offres, ${aggregateStats.multi_vendor_offers} multi-vendeur ✓`,
         })
         .eq("id", logId);
+
 
       if (resyncLogId) {
         try {
@@ -1094,11 +1188,16 @@ async function syncOffersPage({
           stats.errors += result.value.errors;
           stats.skipped += result.value.skipped;
           stats.rate_limited += result.value.rate_limited;
+          stats.vendors_created = (stats.vendors_created ?? 0) + (result.value.vendors_created ?? 0);
+          stats.endpoint_removed = (stats.endpoint_removed ?? 0) + (result.value.endpoint_removed ?? 0);
+          stats.no_price = (stats.no_price ?? 0) + (result.value.no_price ?? 0);
+          stats.mv_probed = (stats.mv_probed ?? 0) + (result.value.mv_probed ?? 0);
         } else if (result.status === "rejected") {
           stats.errors += 1;
           console.error("Product processing failed:", result.reason);
         }
       }
+
 
       if (resyncLogId) {
         await recordProgress({
@@ -1197,10 +1296,28 @@ async function refreshOffersOnly(
     const offersUrl = `${baseUrl}/variants/${product.qogita_fid}/${product.slug}/offers/`;
     const offersRes = await fetchWithRetry(offersUrl, token);
 
+    // B.1 — stamp probe timestamp DANS TOUS LES CAS (succès, vide, 404, HTML)
+    // afin d'empêcher le hot loop de resonder les mêmes produits chaque tick.
+    await stampProbed(sb, product.id);
+    localStats.mv_probed++;
+
+
+    // 1) Short-circuit endpoint mort (404 / text/html)
+    const dead = isDeadOffersEndpoint(offersRes);
+    if (dead) {
+      localStats.endpoint_removed = (localStats.endpoint_removed ?? 0) + 1;
+      if (parentStats.first_mv_offer_status === undefined) {
+        parentStats.first_mv_offer_status = "endpoint_removed";
+      }
+      // On consomme le body pour libérer le socket
+      try { await offersRes.text(); } catch { /* ignore */ }
+      return;
+    }
+
     if (!offersRes.ok) {
       if (offersRes.status === 429) localStats.rate_limited++;
-      else if (offersRes.status !== 404) localStats.errors++;
-      if (offersRes.status !== 404 && recordEndpointError) {
+      else localStats.errors++;
+      if (recordEndpointError) {
         await recordEndpointError(`/variants/{fid}/{slug}/offers/ [fast]`, offersRes.status,
           `gtin=${product.gtin} fid=${product.qogita_fid}`);
       }
@@ -1214,7 +1331,7 @@ async function refreshOffersOnly(
       const sellerCode = offer.seller || offer.sellerCode;
       if (!sellerCode) continue;
 
-      const vendorId = await resolveVendor(sb, sellerCode, country, syncRunId);
+      const vendorId = await resolveVendor(sb, sellerCode, country, syncRunId, localStats);
       if (!vendorId) continue;
 
       const offerPrice = parseFloat(String(offer.price ?? "0")) || 0;
@@ -1310,7 +1427,12 @@ async function processSingleProduct(
     errors: 0,
     skipped: 0,
     rate_limited: 0,
+    vendors_created: 0,
+    endpoint_removed: 0,
+    no_price: 0,
+    mv_probed: 0,
   };
+
 
     try {
       // FAST MODE : skip /variants/{gtin}/ (heavy). Use cached fid+slug from DB
@@ -1396,10 +1518,6 @@ async function processSingleProduct(
       const bpMov = parseFloat(String(variant?.mov ?? variant?.minimumOrderValue ?? "0")) || 0;
       const bpRawTiers = extractRawTiers(variant);
 
-      // POLITIQUE ANTI-VENDEUR ANONYME :
-      // On n'enregistre PLUS d'offre catch-all sur le vendeur virtuel "qogita-best-price".
-      // Seules les offres multi-vendor (avec FID vendeur réel) sont persistées plus bas.
-      // Le bloc ci-dessous est désactivé volontairement.
       if (priceExclVat > 0) {
         const { data: bpUpserted, error: offerErr } = await sb.from("offers").upsert(
           {
@@ -1420,10 +1538,11 @@ async function processSingleProduct(
             delivery_days: delayDays,
             shipping_from_country: country,
             is_active: true,
+            price_stale: false,
+            price_stale_since: null,
             synced_at: new Date().toISOString(),
             ...(syncRunId ? { last_sync_run_id: syncRunId } : {}),
           },
-          // Aligned with multi-vendor upsert — qogita_offer_qid is the canonical key.
           { onConflict: "qogita_offer_qid", ignoreDuplicates: false },
         ).select("id").maybeSingle();
 
@@ -1448,6 +1567,19 @@ async function processSingleProduct(
             }
           }
         }
+      } else {
+        // A.1 — log EXPLICITE : Qogita ne renvoie plus le prix (API dépréciée).
+        // Ne PAS forcer d'upsert bidon. Marquer les offres best-price existantes
+        // comme "prix indicatif" pour que l'UI affiche un bandeau de fraîcheur.
+        localStats.no_price = (localStats.no_price ?? 0) + 1;
+        if (recordEndpointError) {
+          await recordEndpointError(
+            `/variants/{gtin}/?country=${country}`,
+            null,
+            `no_price gtin=${product.gtin} qid=${variant?.qid ?? ""}`,
+          );
+        }
+        await markBestPriceStale(sb, product.id, "no_price_in_variant_response");
       }
 
 
@@ -1457,13 +1589,25 @@ async function processSingleProduct(
           const offersUrl = `${baseUrl}/variants/${variant.fid}/${variant.slug}/offers/`;
           const offersRes = await fetchWithRetry(offersUrl, token);
 
-          if (!offersRes.ok && recordEndpointError) {
+          // B.1 — stamp probe timestamp DANS TOUS LES CAS
+          await stampProbed(sb, product.id);
+          localStats.mv_probed++;
+
+
+          // Short-circuit endpoint mort (404 ou HTML)
+          if (isDeadOffersEndpoint(offersRes)) {
+            localStats.endpoint_removed = (localStats.endpoint_removed ?? 0) + 1;
+            if (parentStats.first_mv_offer_status === undefined) {
+              parentStats.first_mv_offer_status = "endpoint_removed";
+            }
+            try { await offersRes.text(); } catch { /* ignore */ }
+          } else if (!offersRes.ok && recordEndpointError) {
             await recordEndpointError(`/variants/{fid}/{slug}/offers/`, offersRes.status, `gtin=${product.gtin} fid=${variant.fid}`);
           }
 
-          if (offersRes.ok) {
+          if (offersRes.ok && !isDeadOffersEndpoint(offersRes)) {
             const offersData = await offersRes.json();
-            const offersArr = offersData?.offers || (Array.isArray(offersData) ? offersData : []);
+            const offersArr = offersData?.offers || offersData?.results || offersData?.items || (Array.isArray(offersData) ? offersData : []);
 
             // Diagnostic: capture first multi-vendor offer raw sample to discover field names
             if (parentStats.first_mv_offer_keys === undefined && offersArr.length > 0) {
@@ -1475,7 +1619,7 @@ async function processSingleProduct(
               const sellerCode = offer.seller || offer.sellerCode;
               if (!sellerCode) continue;
 
-              const vendorId = await resolveVendor(sb, sellerCode, country, syncRunId);
+              const vendorId = await resolveVendor(sb, sellerCode, country, syncRunId, localStats);
               if (!vendorId) continue;
 
               const offerPrice = parseFloat(String(offer.price ?? "0")) || 0;

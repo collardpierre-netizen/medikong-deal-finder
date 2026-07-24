@@ -26,6 +26,7 @@ const prefetchedProductIds = new Set<string>();
 export default function SearchTrivagoCard({ product: p }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const fromState = { state: { from: location.pathname + location.search } };
   const [showMore, setShowMore] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -33,7 +34,8 @@ export default function SearchTrivagoCard({ product: p }: Props) {
 
   // ⚡ Best offer pré-chargé via le batch RPC (BestOffersProvider). Si la page ne
   // monte pas le provider, on retombe sur l'ancien `useProductOffers` immédiat.
-  const { bestOffer: batchBest, hasContext } = useBestOfferForProduct(p.id);
+  const { bestOffer: batchBest, hasContext, isLoading: batchLoading, isError: batchError } = useBestOfferForProduct(p.id);
+
 
   // Les "autres offres" restent en lazy : on ne déclenche `useProductOffers`
   // que quand l'utilisateur ouvre la liste (économise N-1 RPC par page).

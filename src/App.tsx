@@ -198,6 +198,8 @@ const AdminCmsHomeShowcase = lazyWithRetry(() => import("./pages/admin/AdminCmsH
 const AdminMedia = lazyWithRetry(() => import("./pages/admin/AdminMedia"), "AdminMedia");
 const AdminMediaLibrary = lazyWithRetry(() => import("./pages/admin/AdminMediaLibrary"), "AdminMediaLibrary");
 const AdminUnmappedCategories = lazyWithRetry(() => import("./pages/admin/AdminUnmappedCategories"), "AdminUnmappedCategories");
+const AdminTrackingCampaignsPage = lazyWithRetry(() => import("./pages/admin/AdminTrackingCampaignsPage"), "AdminTrackingCampaignsPage");
+const TrackedRedirectPage = lazyWithRetry(() => import("./pages/TrackedRedirectPage"), "TrackedRedirectPage");
 const AdminCategoryAliases = lazyWithRetry(() => import("./pages/admin/AdminCategoryAliases"), "AdminCategoryAliases");
 const AdminSourcingPipeline = lazyWithRetry(() => import("./pages/admin/AdminSourcingPipeline"), "AdminSourcingPipeline");
 const AdminCategoryAnomalies = lazyWithRetry(() => import("./pages/admin/AdminCategoryAnomalies"), "AdminCategoryAnomalies");
@@ -395,6 +397,7 @@ const App = () => (
             <Route path="/pitchdeck" element={<PitchdeckRedirect />} />
             <Route path="/recherche" element={<LP><SearchResultsPage /></LP>} />
             <Route path="/produit/:slug" element={<LP><SafeBoundary label="la fiche produit"><ProductPage /></SafeBoundary></LP>} />
+            <Route path="/go/:slug" element={<LP><TrackedRedirectPage /></LP>} />
             <Route path="/marques" element={<LP><BrandsPage /></LP>} />
             <Route path="/marques/:slug" element={<LP><BrandDetailPage /></LP>} />
             {/* Redirection ancienne route singulier → pluriel */}
@@ -543,6 +546,7 @@ const App = () => (
 
               <Route path="abonnements" element={<LP><AdminAbonnements /></LP>} />
               <Route path="announcement-bar" element={<LP><AdminAnnouncementBar /></LP>} />
+              <Route path="tracking-campaigns" element={<LP><AdminTrackingCampaignsPage /></LP>} />
               <Route path="modules" element={<LP><AdminFeatureFlags /></LP>} />
               <Route path="i18n-pilot" element={<LP><AdminI18nPilot /></LP>} />
               <Route path="fabricants" element={<LP><AdminFabricants /></LP>} />

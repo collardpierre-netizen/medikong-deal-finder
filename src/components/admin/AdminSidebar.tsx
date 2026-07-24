@@ -12,7 +12,7 @@ import {
   Shield, Upload, MessageSquare, Layout, Truck, ShieldCheck, Settings, FileText,
   LogOut, Users, ClipboardList, Percent, RefreshCw, Key, Book, Factory, Globe, Hash, ExternalLink,
   CreditCard, TrendingUp, TrendingDown, AlertTriangle, Zap, Recycle, LayoutGrid, Users2, Mail, ShieldCheck as ShieldCheckAlt, ShieldAlert,
-  Search, Image as ImageIcon, Activity, Bell, Plus, EyeOff, Send,
+  Search, Image as ImageIcon, Activity, Bell, Plus, EyeOff, Send, QrCode,
 } from "lucide-react";
 
 interface NavItem {
@@ -90,6 +90,7 @@ const sections: NavSection[] = [
       { labelKey: "priceWatch", path: "/admin/veille-prix", icon: Eye },
       { labelKey: "priceAlerts", path: "/admin/price-alerts", icon: AlertTriangle },
       { labelKey: "leads", path: "/admin/leads", icon: Link },
+      { label: "Liens & QR tracés", path: "/admin/tracking-campaigns", icon: QrCode },
       { labelKey: "analytics", path: "/admin/analytics", icon: BarChart3 },
       { label: "Analytics clients", path: "/admin/analytics-clients", icon: Users },
       { label: "Recherches utilisateurs", path: "/admin/recherches", icon: Search },

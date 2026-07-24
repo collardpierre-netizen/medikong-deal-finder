@@ -160,6 +160,23 @@ export default function OnboardingPage() {
   const [transitioning, setTransitioning] = useState(false);
   const screenRef = useRef<HTMLDivElement>(null);
 
+  /* ─── Attribution tracking: fire "visit" once on mount if ?ref=<slug> ─── */
+  useEffect(() => {
+    (async () => {
+      try {
+        const params = new URLSearchParams(location.search);
+        const slug = params.get("ref");
+        const code = params.get("code");
+        if (!slug && !code) return;
+        const { trackEvent } = await import("@/lib/tracking");
+        void trackEvent("visit", { slug: slug ?? undefined, code: code ?? undefined });
+      } catch { /* best-effort */ }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+
+
   /* ─── Role ─── */
   const [role, setRole] = useState<"buyer" | "seller" | "">("");
 

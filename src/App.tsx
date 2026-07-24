@@ -53,6 +53,7 @@ const HomePage = lazyWithRetry(() => import("./pages/HomePage"), "HomePage");
 const SearchResultsPage = lazyWithRetry(() => import("./pages/SearchResultsPage"), "SearchResultsPage");
 const ProductPage = lazyWithRetry(() => import("./pages/ProductPage"), "ProductPage");
 const BrandsPage = lazyWithRetry(() => import("./pages/BrandsPage"), "BrandsPage");
+const TendancesPage = lazyWithRetry(() => import("./pages/TendancesPage"), "TendancesPage");
 const BrandDetailPage = lazyWithRetry(() => import("./pages/BrandDetailPage"), "BrandDetailPage");
 const ManufacturerPage = lazyWithRetry(() => import("./pages/ManufacturerPage"), "ManufacturerPage");
 const FabricantsPage = lazyWithRetry(() => import("./pages/FabricantsPage"), "FabricantsPage");
@@ -401,6 +402,7 @@ const App = () => (
             <Route path="/produit/:slug" element={<LP><SafeBoundary label="la fiche produit"><ProductPage /></SafeBoundary></LP>} />
             <Route path="/go/:slug" element={<LP><TrackedRedirectPage /></LP>} />
             <Route path="/marques" element={<LP><BrandsPage /></LP>} />
+            <Route path="/tendances" element={<LP><TendancesPage /></LP>} />
             <Route path="/marques/:slug" element={<LP><BrandDetailPage /></LP>} />
             {/* Redirection ancienne route singulier → pluriel */}
             <Route path="/marque/:slug" element={<RedirectBrandSingular />} />

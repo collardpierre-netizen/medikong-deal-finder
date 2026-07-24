@@ -29701,6 +29701,48 @@ export type Database = {
           vendor_id: string
         }[]
       }
+      qogita_brand_trend_series: {
+        Args: { _brand_id: string; _days?: number }
+        Returns: {
+          avg_price_eur: number
+          median_price_eur: number
+          price_date: string
+          product_count: number
+        }[]
+      }
+      qogita_brand_trend_summary: {
+        Args: { _brand_id: string }
+        Returns: {
+          change_1d_pct: number
+          change_30d_pct: number
+          change_7d_pct: number
+          last_avg: number
+          last_date: string
+          last_median: number
+          product_count: number
+        }[]
+      }
+      qogita_category_trend_series: {
+        Args: { _category_id: string; _days?: number }
+        Returns: {
+          avg_price_eur: number
+          median_price_eur: number
+          price_date: string
+          product_count: number
+        }[]
+      }
+      qogita_category_trend_summary: {
+        Args: { _category_id: string }
+        Returns: {
+          change_1d_pct: number
+          change_30d_pct: number
+          change_7d_pct: number
+          last_avg: number
+          last_date: string
+          last_median: number
+          product_count: number
+        }[]
+      }
       qogita_deactivate_zero_stock_offers: {
         Args: { _offer_ids: string[] }
         Returns: number

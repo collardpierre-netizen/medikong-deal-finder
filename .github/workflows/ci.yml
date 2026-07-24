@@ -48,3 +48,6 @@ jobs:
 
       - name: Scan build for public "Qogita" mentions
         run: bun run check:public-qogita
+
+      - name: Scan OG/Twitter/head-meta for public "Qogita" mentions
+        run: bun run check:public-og-qogita

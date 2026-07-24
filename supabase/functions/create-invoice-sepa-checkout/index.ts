@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
     const { data: invoice, error: invErr } = await supabase
       .from("order_invoices")
       .select(
-        "id, type, invoice_number, amount_incl_vat, status, order_id, vendor_id, stripe_checkout_session_id, stripe_checkout_url",
+        "id, type, invoice_number, amount_incl_vat, status, order_id, vendor_id, due_date, stripe_checkout_session_id, stripe_checkout_url",
       )
       .eq("id", invoice_id)
       .maybeSingle();

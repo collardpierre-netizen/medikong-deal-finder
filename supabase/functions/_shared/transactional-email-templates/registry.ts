@@ -50,6 +50,7 @@ import { template as orderShipped } from './order-shipped.tsx'
 import { template as orderDeliveryConfirmation } from './order-delivery-confirmation.tsx'
 import { template as vendorStatementReady } from './vendor-statement-ready.tsx'
 import { template as vendorPeppolIdReminder } from './vendor-peppol-id-reminder.tsx'
+import { template as invoicePaymentLink } from './invoice-payment-link.tsx'
 
 
 

@@ -49,6 +49,8 @@ export function CampaignDetailView({
   canEdit?: boolean;
 }) {
   const url = publicTrackedUrl(campaign.slug);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [regenOpen, setRegenOpen] = useState(false);
 
   const { data: qrPng } = useQuery({
     queryKey: ["qr-png", url],

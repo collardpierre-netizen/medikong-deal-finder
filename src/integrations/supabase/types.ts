@@ -104,6 +104,116 @@ export type Database = {
         }
         Relationships: []
       }
+      activation_code_batches: {
+        Row: {
+          benefits: Json | null
+          campaign_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          prefix: string
+          quantity: number
+        }
+        Insert: {
+          benefits?: Json | null
+          campaign_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          prefix?: string
+          quantity: number
+        }
+        Update: {
+          benefits?: Json | null
+          campaign_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          prefix?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activation_code_batches_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "tracking_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activation_codes: {
+        Row: {
+          batch_id: string | null
+          benefits: Json
+          campaign_id: string | null
+          code: string
+          code_kind: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_redemptions: number | null
+          owner_id: string | null
+          owner_type: string | null
+          redeemed_count: number
+          starts_at: string
+        }
+        Insert: {
+          batch_id?: string | null
+          benefits?: Json
+          campaign_id?: string | null
+          code: string
+          code_kind: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_redemptions?: number | null
+          owner_id?: string | null
+          owner_type?: string | null
+          redeemed_count?: number
+          starts_at?: string
+        }
+        Update: {
+          batch_id?: string | null
+          benefits?: Json
+          campaign_id?: string | null
+          code?: string
+          code_kind?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_redemptions?: number | null
+          owner_id?: string | null
+          owner_type?: string | null
+          redeemed_count?: number
+          starts_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activation_codes_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "activation_code_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activation_codes_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "tracking_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_audit_log: {
         Row: {
           action: string
@@ -2849,6 +2959,57 @@ export type Database = {
           vat_rate?: number
         }
         Relationships: []
+      }
+      code_redemptions: {
+        Row: {
+          benefits_snapshot: Json
+          campaign_id: string | null
+          code_id: string
+          founder_granted: boolean
+          id: string
+          points_amount: number
+          points_status: string
+          redeemed_at: string
+          user_id: string
+        }
+        Insert: {
+          benefits_snapshot: Json
+          campaign_id?: string | null
+          code_id: string
+          founder_granted?: boolean
+          id?: string
+          points_amount?: number
+          points_status?: string
+          redeemed_at?: string
+          user_id: string
+        }
+        Update: {
+          benefits_snapshot?: Json
+          campaign_id?: string | null
+          code_id?: string
+          founder_granted?: boolean
+          id?: string
+          points_amount?: number
+          points_status?: string
+          redeemed_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "code_redemptions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "tracking_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "code_redemptions_code_id_fkey"
+            columns: ["code_id"]
+            isOneToOne: false
+            referencedRelation: "activation_codes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       commission_invoice_lines: {
         Row: {
@@ -11783,6 +11944,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          activated_at: string | null
           avatar_url: string | null
           buyer_profile_id: string | null
           category_preferences: Json | null
@@ -11790,8 +11952,11 @@ export type Database = {
           country: string | null
           created_at: string
           filter_mode: string
+          founder_since: string | null
+          founder_source: string | null
           full_name: string | null
           id: string
+          is_founder: boolean
           legal_faq_acknowledged_at: string | null
           phone: string | null
           preferences: Json
@@ -11804,6 +11969,7 @@ export type Database = {
           vat_number: string | null
         }
         Insert: {
+          activated_at?: string | null
           avatar_url?: string | null
           buyer_profile_id?: string | null
           category_preferences?: Json | null
@@ -11811,8 +11977,11 @@ export type Database = {
           country?: string | null
           created_at?: string
           filter_mode?: string
+          founder_since?: string | null
+          founder_source?: string | null
           full_name?: string | null
           id?: string
+          is_founder?: boolean
           legal_faq_acknowledged_at?: string | null
           phone?: string | null
           preferences?: Json
@@ -11825,6 +11994,7 @@ export type Database = {
           vat_number?: string | null
         }
         Update: {
+          activated_at?: string | null
           avatar_url?: string | null
           buyer_profile_id?: string | null
           category_preferences?: Json | null
@@ -11832,8 +12002,11 @@ export type Database = {
           country?: string | null
           created_at?: string
           filter_mode?: string
+          founder_since?: string | null
+          founder_source?: string | null
           full_name?: string | null
           id?: string
+          is_founder?: boolean
           legal_faq_acknowledged_at?: string | null
           phone?: string | null
           preferences?: Json
@@ -16714,6 +16887,134 @@ export type Database = {
           triggered_by?: string | null
         }
         Relationships: []
+      }
+      tracking_campaigns: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          default_activation_code_id: string | null
+          ends_at: string | null
+          id: string
+          landing_path: string
+          name: string
+          owner_id: string | null
+          owner_type: string
+          partner_label: string | null
+          slug: string
+          starts_at: string
+          status: string
+          updated_at: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string
+          utm_source: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          default_activation_code_id?: string | null
+          ends_at?: string | null
+          id?: string
+          landing_path?: string
+          name: string
+          owner_id?: string | null
+          owner_type: string
+          partner_label?: string | null
+          slug: string
+          starts_at?: string
+          status?: string
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string
+          utm_source?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          default_activation_code_id?: string | null
+          ends_at?: string | null
+          id?: string
+          landing_path?: string
+          name?: string
+          owner_id?: string | null
+          owner_type?: string
+          partner_label?: string | null
+          slug?: string
+          starts_at?: string
+          status?: string
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string
+          utm_source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tracking_campaigns_default_code_fk"
+            columns: ["default_activation_code_id"]
+            isOneToOne: false
+            referencedRelation: "activation_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tracking_events: {
+        Row: {
+          campaign_id: string | null
+          code_id: string | null
+          created_at: string
+          event_type: string
+          id: number
+          ip_prefix: string | null
+          meta: Json
+          referrer_host: string | null
+          ua_family: string | null
+          user_id: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          code_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: never
+          ip_prefix?: string | null
+          meta?: Json
+          referrer_host?: string | null
+          ua_family?: string | null
+          user_id?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          code_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: never
+          ip_prefix?: string | null
+          meta?: Json
+          referrer_host?: string | null
+          ua_family?: string | null
+          user_id?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tracking_events_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "tracking_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tracking_events_code_id_fkey"
+            columns: ["code_id"]
+            isOneToOne: false
+            referencedRelation: "activation_codes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       translation_cache: {
         Row: {
@@ -28047,6 +28348,16 @@ export type Database = {
           total_incl_vat: number
         }[]
       }
+      campaign_funnel_stats: { Args: { p_campaign_id: string }; Returns: Json }
+      campaign_funnel_timeseries: {
+        Args: { p_campaign_id: string; p_days?: number }
+        Returns: {
+          activations: number
+          day: string
+          scans: number
+          signups: number
+        }[]
+      }
       can_vendor_set_suggested_price: {
         Args: { _product_id: string; _vendor_id: string }
         Returns: boolean
@@ -29846,6 +30157,10 @@ export type Database = {
       }
       user_has_ordered_brand: {
         Args: { _brand_id: string; _user_id: string }
+        Returns: boolean
+      }
+      user_owns_tracking_campaign: {
+        Args: { _owner_id: string; _owner_type: string }
         Returns: boolean
       }
       validate_cron_secret: { Args: { _secret: string }; Returns: boolean }

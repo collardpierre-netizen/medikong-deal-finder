@@ -123,14 +123,24 @@ async function ensureQogitaVendor(sb: any): Promise<string> {
 }
 
 function scheduleNext(body: object) {
-  fetch(`${SUPABASE_URL}/functions/v1/sync-qogita-products`, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${SERVICE_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  }).catch((e) => console.error("scheduleNext failed:", e.message));
+  const supabaseUrl = (SUPABASE_URL ?? "").trim();
+  if (!/^https:\/\/[a-z0-9]+\.supabase\.co\/?$/.test(supabaseUrl)) {
+    console.error(`internal_invoke_failed: sync-qogita-products — INVALID_PROJECT_URL (got="${supabaseUrl}")`);
+    return;
+  }
+  if (!SERVICE_KEY) {
+    console.error("internal_invoke_failed: sync-qogita-products — MISSING_SERVICE_ROLE_KEY");
+    return;
+  }
+  const internalClient = createClient(supabaseUrl, SERVICE_KEY);
+  const next = internalClient.functions
+    .invoke("sync-qogita-products", { body })
+    .then(({ error }) => {
+      if (error) console.error(`internal_invoke_failed: sync-qogita-products — ${error.message ?? error}`);
+    })
+    .catch((e) => console.error(`internal_invoke_failed: sync-qogita-products — ${e?.message ?? e}`));
+  const edgeRuntime = (globalThis as any).EdgeRuntime;
+  if (edgeRuntime?.waitUntil) edgeRuntime.waitUntil(next);
 }
 
 // Récupère l'URL signée du fichier dans le bucket privé (pour faire des requêtes Range HTTP)

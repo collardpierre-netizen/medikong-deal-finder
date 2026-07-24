@@ -254,31 +254,7 @@ Deno.serve(async (req) => {
     );
   }
 
-  // === POST /carts/{id}/lines/ avec offerQid manquant → renvoie la liste des champs attendus ===
-  const cartQid2 = results["carts_active_get"]?.json?.qid;
-  if (cartQid2) {
-    results["lines_post_empty_body"] = await probe(
-      `${QOGITA_API}/carts/${cartQid2}/lines/`,
-      { ...H, "Content-Type": "application/json" },
-      { method: "POST", body: JSON.stringify({}) },
-    );
-    results["lines_post_only_quantity"] = await probe(
-      `${QOGITA_API}/carts/${cartQid2}/lines/`,
-      { ...H, "Content-Type": "application/json" },
-      { method: "POST", body: JSON.stringify({ quantity: 1 }) },
-    );
-    results["lines_post_fake_offer_qid"] = await probe(
-      `${QOGITA_API}/carts/${cartQid2}/lines/`,
-      { ...H, "Content-Type": "application/json" },
-      { method: "POST", body: JSON.stringify({ offerQid: "00000000-0000-0000-0000-000000000000", quantity: 1 }) },
-    );
-    // OPTIONS pour voir la spec du endpoint lines
-    results["lines_options"] = await probe(
-      `${QOGITA_API}/carts/${cartQid2}/lines/`,
-      H,
-      { method: "OPTIONS" },
-    );
-  }
+  // (déplacé plus bas, après carts_active_get)
 
   // 5) Panier — GET liste + POST création (plusieurs signatures)
   results["carts_list_get"] = await probe(`${QOGITA_API}/carts/?country=${country}`, H);

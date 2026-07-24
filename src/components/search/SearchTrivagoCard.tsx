@@ -164,7 +164,10 @@ export default function SearchTrivagoCard({ product: p }: Props) {
           <p className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider">
             {p.brand}
           </p>
-          <p className="text-[15px] font-bold text-foreground mt-1.5 line-clamp-2 leading-snug">{p.name}</p>
+          <p className="text-[15px] font-bold text-foreground mt-1.5 line-clamp-2 leading-snug">{displayName}</p>
+          {displayShortDescription && (
+            <p className="text-[12px] text-muted-foreground mt-1 line-clamp-2 leading-snug">{displayShortDescription}</p>
+          )}
           <div className="flex items-center gap-1.5 mt-2 text-[11px] text-muted-foreground flex-wrap">
             {p.ean && <span className="bg-muted px-1.5 py-0.5 rounded text-[10px] font-mono">EAN {p.ean}</span>}
             {p.cnk && <span className="bg-muted px-1.5 py-0.5 rounded text-[10px] font-mono">CNK {p.cnk}</span>}

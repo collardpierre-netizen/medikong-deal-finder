@@ -1787,7 +1787,7 @@ export default function ProductPage() {
               ) : null}
 
               {/* Name */}
-              <h1 className="text-xl md:text-2xl font-bold text-foreground mb-3 leading-tight">{product.name}</h1>
+              <h1 className="text-xl md:text-2xl font-bold text-foreground mb-3 leading-tight">{displayName}</h1>
 
               {/* GTIN + Copy */}
               <div className="flex items-center gap-3 mb-2 flex-wrap">

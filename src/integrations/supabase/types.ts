@@ -9745,7 +9745,9 @@ export type Database = {
       }
       peppol_credit_notes: {
         Row: {
+          commission_invoice_id: string | null
           created_at: string
+          credited_document_type: string | null
           falco_credit_note_id: string | null
           falco_original_document_id: string | null
           falco_payload: Json | null
@@ -9758,7 +9760,9 @@ export type Database = {
           reason: string
         }
         Insert: {
+          commission_invoice_id?: string | null
           created_at?: string
+          credited_document_type?: string | null
           falco_credit_note_id?: string | null
           falco_original_document_id?: string | null
           falco_payload?: Json | null
@@ -9771,7 +9775,9 @@ export type Database = {
           reason: string
         }
         Update: {
+          commission_invoice_id?: string | null
           created_at?: string
+          credited_document_type?: string | null
           falco_credit_note_id?: string | null
           falco_original_document_id?: string | null
           falco_payload?: Json | null
@@ -9783,7 +9789,15 @@ export type Database = {
           issued_by_email?: string | null
           reason?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "peppol_credit_notes_commission_invoice_id_fkey"
+            columns: ["commission_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "commission_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pharmacist_wholesaler_settings: {
         Row: {

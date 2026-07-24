@@ -607,8 +607,10 @@ async function syncTiers(
   baseMov: number,
   vatRate: number,
   tiers: StorefrontOffer["tieredPrices"],
+  marginMul: number,
 ): Promise<number> {
   const vm = 1 + vatRate;
+  const sell = (base: number) => Math.round(base * marginMul * 100) / 100;
   const normalized = tiers
     .map((t) => ({
       unit: parseFloat(t?.tierPrice?.amount ?? "0") || 0,
@@ -619,27 +621,29 @@ async function syncTiers(
     .sort((a, b) => a.mov - b.mov);
 
   const rows: Array<Record<string, unknown>> = [];
+  const baseSell = sell(basePriceExcl);
   rows.push({
     offer_id: offerId,
     tier_index: 0,
     mov_threshold: baseMov > 0 ? baseMov : 0,
     mov_currency: "EUR",
     qogita_unit_price: basePriceExcl,
-    price_excl_vat: basePriceExcl,
-    price_incl_vat: Math.round(basePriceExcl * vm * 100) / 100,
+    price_excl_vat: baseSell,
+    price_incl_vat: Math.round(baseSell * vm * 100) / 100,
     is_active: true,
   });
   let idx = 1;
   for (const t of normalized) {
     if (Math.abs(t.unit - basePriceExcl) < 0.005 && Math.abs(t.mov - baseMov) < 0.005) continue;
+    const tSell = sell(t.unit);
     rows.push({
       offer_id: offerId,
       tier_index: idx++,
       mov_threshold: t.mov > 0 ? t.mov : 0,
       mov_currency: "EUR",
       qogita_unit_price: t.unit,
-      price_excl_vat: t.unit,
-      price_incl_vat: Math.round(t.unit * vm * 100) / 100,
+      price_excl_vat: tSell,
+      price_incl_vat: Math.round(tSell * vm * 100) / 100,
       is_active: t.isActive,
     });
   }

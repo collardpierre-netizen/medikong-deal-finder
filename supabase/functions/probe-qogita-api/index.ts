@@ -15,15 +15,14 @@ const corsHeaders = {
 
 const QOGITA_API = "https://api.qogita.com";
 
-async function getToken(sb: any): Promise<string> {
-  // On tente d'abord le bearer en cache, sinon on rejoue login.
+async function getToken(sb: any, forceLogin = false): Promise<string> {
   const { data: rows } = await sb
     .from("qogita_config")
     .select("key, value")
     .in("key", ["qogita_email", "qogita_password", "bearer_token"]);
   const cfg: Record<string, string> = {};
   (rows || []).forEach((r: any) => { cfg[r.key] = r.value; });
-  if (cfg.bearer_token) return cfg.bearer_token;
+  if (!forceLogin && cfg.bearer_token) return cfg.bearer_token;
   const email = cfg.qogita_email;
   const password = await maybeDecrypt(cfg.qogita_password);
   if (!email || !password) throw new Error("Credentials Qogita manquants");
@@ -34,6 +33,10 @@ async function getToken(sb: any): Promise<string> {
   });
   const body = await res.json();
   if (!body.accessToken) throw new Error(`Login échec: ${JSON.stringify(body)}`);
+  // best-effort: persist fresh token
+  try {
+    await sb.from("qogita_config").upsert({ key: "bearer_token", value: body.accessToken });
+  } catch { /* ignore */ }
   return body.accessToken;
 }
 
@@ -101,10 +104,36 @@ Deno.serve(async (req) => {
   } catch { /* pas de body -> defaults */ }
 
   let token: string;
+  let loginDebug: any = null;
   try {
-    token = await getToken(sb);
+    // Direct diagnostic login pour observer la réponse brute
+    const { data: rows } = await sb
+      .from("qogita_config")
+      .select("key, value")
+      .in("key", ["qogita_email", "qogita_password"]);
+    const cfg: Record<string, string> = {};
+    (rows || []).forEach((r: any) => { cfg[r.key] = r.value; });
+    const email = cfg.qogita_email;
+    const password = await maybeDecrypt(cfg.qogita_password);
+    const started = Date.now();
+    const loginRes = await fetch(`${QOGITA_API}/auth/login/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const loginText = await loginRes.text();
+    loginDebug = {
+      status: loginRes.status,
+      latency_ms: Date.now() - started,
+      body_snippet: loginText.slice(0, 500),
+      email_used: email ? email.replace(/(.).*(@.*)/, "$1***$2") : null,
+      password_len: password?.length ?? 0,
+    };
+    const parsed = JSON.parse(loginText);
+    token = parsed.accessToken ?? parsed.access_token ?? parsed.token;
+    if (!token) throw new Error("no accessToken in login response");
   } catch (e) {
-    return new Response(JSON.stringify({ error: (e as Error).message }), { status: 500, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: (e as Error).message, loginDebug }), { status: 500, headers: corsHeaders });
   }
   const H = { Authorization: `Bearer ${token}`, Accept: "application/json" };
 
@@ -162,20 +191,136 @@ Deno.serve(async (req) => {
     { ...H, Accept: "text/csv,application/json;q=0.9,*/*;q=0.8" },
   );
 
+  // 4bis) NOUVEAU — endpoints multi-vendeur/offres potentiels par variant
+  if (qid) {
+    for (const suffix of [
+      "deals", "inventory", "inventories", "suppliers", "supplierOffers",
+      "offers", "supplier-offers", "supplier_offers", "sellerOffers",
+      "listings", "listing", "sellers", "vendors", "prices", "pricing",
+      "stock", "availability",
+    ]) {
+      results[`variant_qid_${suffix}`] = await probe(
+        `${QOGITA_API}/variants/${qid}/${suffix}/?country=${country}`,
+        H,
+      );
+    }
+    // include / expand params (REST courant : ?include=offers ou ?expand=offers)
+    for (const q of [
+      "include=offers", "include=sellers", "include=suppliers", "include=inventory",
+      "expand=offers", "expand=sellers", "expand=suppliers",
+      "fields=offers", "with=offers",
+    ]) {
+      results[`variant_qid_query_${q}`] = await probe(
+        `${QOGITA_API}/variants/${qid}/?country=${country}&${q}`,
+        H,
+      );
+    }
+  }
+  // endpoints "plats" potentiels
+  for (const path of [
+    "offers", "deals", "inventory", "listings", "supplier-offers",
+    "suppliers", "sellers", "prices", "pricing",
+  ]) {
+    results[`root_${path}`] = await probe(
+      `${QOGITA_API}/${path}/?country=${country}&variantQid=${qid ?? ""}`,
+      H,
+    );
+  }
+
+  // === NOUVEAU : cible /offers/ avec toutes les signatures de filtre plausibles ===
+  if (qid) {
+    for (const q of [
+      `variantQid=${qid}`,
+      `variant_qid=${qid}`,
+      `variant=${qid}`,
+      `variantId=${qid}`,
+      `qid=${qid}`,
+      `variantFid=${fid ?? ""}`,
+      `variantSlug=${slug ?? ""}`,
+      `variantGtin=${gtin}`,
+      `gtin=${gtin}`,
+      `search=${gtin}`,
+      `query=${gtin}`,
+    ]) {
+      results[`offers_filter__${q.split("=")[0]}`] = await probe(
+        `${QOGITA_API}/offers/?${q}&country=${country}`,
+        H,
+      );
+    }
+    // Tri par prix pour voir si /offers/ liste tout par défaut
+    results["offers_no_filter"] = await probe(
+      `${QOGITA_API}/offers/?country=${country}&limit=3`,
+      H,
+    );
+  }
+
+  // === POST /carts/{id}/lines/ avec offerQid manquant → renvoie la liste des champs attendus ===
+  const cartQid2 = results["carts_active_get"]?.json?.qid;
+  if (cartQid2) {
+    results["lines_post_empty_body"] = await probe(
+      `${QOGITA_API}/carts/${cartQid2}/lines/`,
+      { ...H, "Content-Type": "application/json" },
+      { method: "POST", body: JSON.stringify({}) },
+    );
+    results["lines_post_only_quantity"] = await probe(
+      `${QOGITA_API}/carts/${cartQid2}/lines/`,
+      { ...H, "Content-Type": "application/json" },
+      { method: "POST", body: JSON.stringify({ quantity: 1 }) },
+    );
+    results["lines_post_fake_offer_qid"] = await probe(
+      `${QOGITA_API}/carts/${cartQid2}/lines/`,
+      { ...H, "Content-Type": "application/json" },
+      { method: "POST", body: JSON.stringify({ offerQid: "00000000-0000-0000-0000-000000000000", quantity: 1 }) },
+    );
+    // OPTIONS pour voir la spec du endpoint lines
+    results["lines_options"] = await probe(
+      `${QOGITA_API}/carts/${cartQid2}/lines/`,
+      H,
+      { method: "OPTIONS" },
+    );
+  }
+
   // 5) Panier — GET liste + POST création (plusieurs signatures)
   results["carts_list_get"] = await probe(`${QOGITA_API}/carts/?country=${country}`, H);
   results["carts_active_get"] = await probe(`${QOGITA_API}/carts/active/?country=${country}`, H);
   results["carts_my_get"] = await probe(`${QOGITA_API}/carts/my/?country=${country}`, H);
-  results["cart_create_no_body"] = await probe(
-    `${QOGITA_API}/carts/`,
-    { ...H, "Content-Type": "application/json" },
-    { method: "POST", body: JSON.stringify({}) },
-  );
-  results["cart_create_with_country"] = await probe(
-    `${QOGITA_API}/carts/`,
-    { ...H, "Content-Type": "application/json" },
-    { method: "POST", body: JSON.stringify({ country, shippingCountry: country }) },
-  );
+
+  // 5bis) FLOW PANIER RÉEL — ajouter la variante et inspecter la réponse
+  // (le prix est probablement porté par le lineItem au sein du panier)
+  const activeCart = results["carts_active_get"]?.json;
+  const activeCartQid = activeCart?.qid ?? activeCart?.id ?? null;
+  if (activeCartQid && qid) {
+    const attempts: [string, string, any][] = [
+      ["cart_active_add_item_by_variantQid",
+       `${QOGITA_API}/carts/${activeCartQid}/lines/`,
+       { variantQid: qid, quantity: 1 }],
+      ["cart_active_add_item_by_qid_snake",
+       `${QOGITA_API}/carts/${activeCartQid}/lines/`,
+       { variant_qid: qid, quantity: 1 }],
+      ["cart_active_add_item_items_path",
+       `${QOGITA_API}/carts/${activeCartQid}/items/`,
+       { variantQid: qid, quantity: 1 }],
+      ["cart_active_add_item_gtin",
+       `${QOGITA_API}/carts/${activeCartQid}/lines/`,
+       { gtin, quantity: 1 }],
+    ];
+    for (const [key, url, body] of attempts) {
+      results[key] = await probe(
+        url,
+        { ...H, "Content-Type": "application/json" },
+        { method: "POST", body: JSON.stringify(body) },
+      );
+    }
+    // Après add-item : relire le panier pour voir prix/vendeurs sur les lineItems
+    results["cart_active_after_add"] = await probe(
+      `${QOGITA_API}/carts/${activeCartQid}/?country=${country}`,
+      H,
+    );
+    results["cart_active_lines"] = await probe(
+      `${QOGITA_API}/carts/${activeCartQid}/lines/?country=${country}`,
+      H,
+    );
+  }
 
   // 6) Watchlist (peut porter des prix ?)
   results["watchlist_list"] = await probe(`${QOGITA_API}/watchlist/?country=${country}`, H);
@@ -187,6 +332,7 @@ Deno.serve(async (req) => {
     JSON.stringify({
       probed_at: new Date().toISOString(),
       inputs: { gtin, country, fid, slug, qid },
+      loginDebug,
       results,
     }, null, 2),
     { headers: corsHeaders },

@@ -1,42 +1,34 @@
-// Admin — Liens & QR tracés (Module A)
-// Liste, création, détail avec QR code + funnel de conversion.
-import { useMemo, useState } from "react";
+// Admin — Liens & QR tracés (Module A). Liste, création, suppression, détail QR + funnel.
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import QRCode from "qrcode";
-import { Copy, Download, QrCode, Plus, ArrowLeft } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, BarChart, Bar, Legend } from "recharts";
+import { Plus, ArrowLeft, Trash2 } from "lucide-react";
+import { CampaignDetailView, StatusBadge, type CampaignLite } from "@/components/tracking/CampaignDetailView";
 
-type Campaign = {
-  id: string;
-  slug: string;
-  name: string;
+type Campaign = CampaignLite & {
   owner_type: "vendor" | "brand" | "manufacturer" | "medikong" | "partner";
   owner_id: string | null;
   partner_label: string | null;
-  landing_path: string;
-  utm_source: string | null;
   utm_medium: string;
   utm_campaign: string | null;
   utm_content: string | null;
   starts_at: string;
   ends_at: string | null;
-  status: "draft" | "active" | "paused" | "ended";
   created_at: string;
 };
 
-function publicTrackedUrl(slug: string): string {
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://app.medikong.be";
-  return `${origin}/go/${encodeURIComponent(slug)}`;
-}
+type VendorOption = { id: string; name: string | null; company_name: string | null };
 
 function slugify(input: string): string {
   return input
@@ -47,9 +39,14 @@ function slugify(input: string): string {
     .slice(0, 40);
 }
 
+function vendorLabel(v: VendorOption): string {
+  return v.company_name || v.name || v.id.slice(0, 8);
+}
+
 export default function AdminTrackingCampaignsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [toDelete, setToDelete] = useState<Campaign | null>(null);
   const qc = useQueryClient();
 
   const { data: campaigns = [], isLoading } = useQuery<Campaign[]>({
@@ -64,18 +61,58 @@ export default function AdminTrackingCampaignsPage() {
     },
   });
 
+  const { data: vendors = [] } = useQuery<VendorOption[]>({
+    queryKey: ["admin-tracking-vendors-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendors")
+        .select("id, name, company_name")
+        .order("company_name", { ascending: true, nullsFirst: false });
+      if (error) throw error;
+      return (data as VendorOption[]) ?? [];
+    },
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("tracking_campaigns").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Campagne supprimée");
+      setToDelete(null);
+      setSelectedId(null);
+      qc.invalidateQueries({ queryKey: ["admin-tracking-campaigns"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Suppression impossible"),
+  });
+
   const selected = selectedId ? campaigns.find((c) => c.id === selectedId) ?? null : null;
 
   if (selected) {
+    const ownerLabel =
+      selected.owner_type === "vendor" && selected.owner_id
+        ? `Vendeur · ${vendors.find((v) => v.id === selected.owner_id) ? vendorLabel(vendors.find((v) => v.id === selected.owner_id)!) : selected.owner_id.slice(0, 8)}`
+        : selected.owner_type + (selected.partner_label ? ` · ${selected.partner_label}` : "");
     return (
       <div className="p-6 space-y-6">
-        <button
-          onClick={() => setSelectedId(null)}
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> Retour à la liste
-        </button>
-        <CampaignDetail campaign={selected} onUpdated={() => qc.invalidateQueries({ queryKey: ["admin-tracking-campaigns"] })} />
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => setSelectedId(null)}
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" /> Retour à la liste
+          </button>
+          <Button variant="destructive" size="sm" onClick={() => setToDelete(selected)}>
+            <Trash2 className="h-4 w-4 mr-1" /> Supprimer la campagne
+          </Button>
+        </div>
+        <div className="text-xs text-muted-foreground">Émetteur : <span className="font-medium">{ownerLabel}</span></div>
+        <CampaignDetailView
+          campaign={selected}
+          onUpdated={() => qc.invalidateQueries({ queryKey: ["admin-tracking-campaigns"] })}
+        />
+        <DeleteDialog target={toDelete} onCancel={() => setToDelete(null)} onConfirm={(id) => deleteMut.mutate(id)} pending={deleteMut.isPending} />
       </div>
     );
   }
@@ -93,11 +130,14 @@ export default function AdminTrackingCampaignsPage() {
           <DialogTrigger asChild>
             <Button><Plus className="h-4 w-4 mr-2" />Nouvelle campagne</Button>
           </DialogTrigger>
-          <CreateCampaignDialog onCreated={(id) => {
-            setCreateOpen(false);
-            qc.invalidateQueries({ queryKey: ["admin-tracking-campaigns"] });
-            setSelectedId(id);
-          }} />
+          <CreateCampaignDialog
+            vendors={vendors}
+            onCreated={(id) => {
+              setCreateOpen(false);
+              qc.invalidateQueries({ queryKey: ["admin-tracking-campaigns"] });
+              setSelectedId(id);
+            }}
+          />
         </Dialog>
       </div>
 
@@ -111,7 +151,7 @@ export default function AdminTrackingCampaignsPage() {
                 <th className="p-3">Émetteur</th>
                 <th className="p-3">Statut</th>
                 <th className="p-3">Créée le</th>
-                <th className="p-3"></th>
+                <th className="p-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -121,54 +161,99 @@ export default function AdminTrackingCampaignsPage() {
               {!isLoading && campaigns.length === 0 && (
                 <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Aucune campagne pour l'instant. Créez-en une pour générer votre premier QR.</td></tr>
               )}
-              {campaigns.map((c) => (
-                <tr key={c.id} className="border-t hover:bg-muted/30 cursor-pointer" onClick={() => setSelectedId(c.id)}>
-                  <td className="p-3 font-medium">{c.name}</td>
-                  <td className="p-3 font-mono text-xs">{c.slug}</td>
-                  <td className="p-3 text-xs">{c.owner_type}{c.partner_label ? ` · ${c.partner_label}` : ""}</td>
-                  <td className="p-3"><StatusBadge status={c.status} /></td>
-                  <td className="p-3 text-xs text-muted-foreground">{new Date(c.created_at).toLocaleDateString("fr-BE")}</td>
-                  <td className="p-3 text-right"><Button variant="ghost" size="sm">Ouvrir →</Button></td>
-                </tr>
-              ))}
+              {campaigns.map((c) => {
+                const owner =
+                  c.owner_type === "vendor" && c.owner_id
+                    ? `vendor · ${vendors.find((v) => v.id === c.owner_id) ? vendorLabel(vendors.find((v) => v.id === c.owner_id)!) : c.owner_id.slice(0, 8)}`
+                    : c.owner_type + (c.partner_label ? ` · ${c.partner_label}` : "");
+                return (
+                  <tr key={c.id} className="border-t hover:bg-muted/30">
+                    <td className="p-3 font-medium cursor-pointer" onClick={() => setSelectedId(c.id)}>{c.name}</td>
+                    <td className="p-3 font-mono text-xs cursor-pointer" onClick={() => setSelectedId(c.id)}>{c.slug}</td>
+                    <td className="p-3 text-xs cursor-pointer" onClick={() => setSelectedId(c.id)}>{owner}</td>
+                    <td className="p-3 cursor-pointer" onClick={() => setSelectedId(c.id)}><StatusBadge status={c.status} /></td>
+                    <td className="p-3 text-xs text-muted-foreground cursor-pointer" onClick={() => setSelectedId(c.id)}>{new Date(c.created_at).toLocaleDateString("fr-BE")}</td>
+                    <td className="p-3 text-right whitespace-nowrap">
+                      <Button variant="ghost" size="sm" onClick={() => setSelectedId(c.id)}>Ouvrir →</Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={(e) => { e.stopPropagation(); setToDelete(c); }}
+                        aria-label="Supprimer"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </CardContent>
       </Card>
+
+      <DeleteDialog target={toDelete} onCancel={() => setToDelete(null)} onConfirm={(id) => deleteMut.mutate(id)} pending={deleteMut.isPending} />
     </div>
   );
 }
 
-function StatusBadge({ status }: { status: Campaign["status"] }) {
-  const map: Record<Campaign["status"], { label: string; className: string }> = {
-    active: { label: "Active", className: "bg-emerald-100 text-emerald-800" },
-    draft: { label: "Brouillon", className: "bg-muted text-foreground" },
-    paused: { label: "En pause", className: "bg-amber-100 text-amber-800" },
-    ended: { label: "Terminée", className: "bg-muted text-muted-foreground" },
-  };
-  const m = map[status];
-  return <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${m.className}`}>{m.label}</span>;
+function DeleteDialog({
+  target, onCancel, onConfirm, pending,
+}: { target: Campaign | null; onCancel: () => void; onConfirm: (id: string) => void; pending: boolean }) {
+  return (
+    <AlertDialog open={!!target} onOpenChange={(o) => !o && onCancel()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Supprimer cette campagne ?</AlertDialogTitle>
+          <AlertDialogDescription>
+            « {target?.name} » (slug <code className="font-mono">{target?.slug}</code>) sera supprimée définitivement.
+            Le QR déjà imprimé cessera de rediriger et les événements de tracking rattachés perdront leur campagne.
+            Cette action est irréversible.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={pending}>Annuler</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={pending}
+            onClick={() => target && onConfirm(target.id)}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {pending ? "Suppression…" : "Supprimer"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 }
 
-function CreateCampaignDialog({ onCreated }: { onCreated: (id: string) => void }) {
+function CreateCampaignDialog({ vendors, onCreated }: { vendors: VendorOption[]; onCreated: (id: string) => void }) {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [ownerType, setOwnerType] = useState<Campaign["owner_type"]>("medikong");
+  const [ownerId, setOwnerId] = useState<string>("");
+  const [vendorSearch, setVendorSearch] = useState("");
   const [partnerLabel, setPartnerLabel] = useState("");
   const [landingPath, setLandingPath] = useState("/inscription");
   const [utmSource, setUtmSource] = useState("");
   const [utmCampaign, setUtmCampaign] = useState("");
 
+  const filteredVendors = vendorSearch.trim()
+    ? vendors.filter((v) => vendorLabel(v).toLowerCase().includes(vendorSearch.trim().toLowerCase()))
+    : vendors;
+
   const mut = useMutation({
     mutationFn: async () => {
       const s = (slug || slugify(name)).trim();
       if (!s) throw new Error("Slug requis");
+      if (ownerType === "vendor" && !ownerId) throw new Error("Sélectionnez un vendeur");
       const { data, error } = await supabase
         .from("tracking_campaigns")
         .insert({
           name,
           slug: s,
           owner_type: ownerType,
+          owner_id: ownerType === "vendor" ? ownerId : null,
           partner_label: ownerType === "partner" ? partnerLabel || null : null,
           landing_path: landingPath || "/inscription",
           utm_source: utmSource || null,
@@ -181,12 +266,11 @@ function CreateCampaignDialog({ onCreated }: { onCreated: (id: string) => void }
       if (error) throw error;
       return data.id as string;
     },
-    onSuccess: (id) => {
-      toast.success("Campagne créée");
-      onCreated(id);
-    },
+    onSuccess: (id) => { toast.success("Campagne créée"); onCreated(id); },
     onError: (e: any) => toast.error(e.message ?? "Erreur"),
   });
+
+  const canSubmit = !!name && !!(slug || slugify(name)) && (ownerType !== "vendor" || !!ownerId) && !mut.isPending;
 
   return (
     <DialogContent className="max-w-lg">
@@ -205,7 +289,7 @@ function CreateCampaignDialog({ onCreated }: { onCreated: (id: string) => void }
         </div>
         <div>
           <Label>Émetteur</Label>
-          <Select value={ownerType} onValueChange={(v) => setOwnerType(v as any)}>
+          <Select value={ownerType} onValueChange={(v) => { setOwnerType(v as any); setOwnerId(""); }}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="medikong">MediKong (interne)</SelectItem>
@@ -216,6 +300,29 @@ function CreateCampaignDialog({ onCreated }: { onCreated: (id: string) => void }
             </SelectContent>
           </Select>
         </div>
+        {ownerType === "vendor" && (
+          <div className="space-y-2 rounded-md border p-3 bg-muted/30">
+            <Label>Vendeur attribué *</Label>
+            <Input
+              value={vendorSearch}
+              onChange={(e) => setVendorSearch(e.target.value)}
+              placeholder="Rechercher un vendeur…"
+              className="h-8"
+            />
+            <Select value={ownerId} onValueChange={setOwnerId}>
+              <SelectTrigger><SelectValue placeholder={`Choisir parmi ${filteredVendors.length} vendeur(s)…`} /></SelectTrigger>
+              <SelectContent className="max-h-72">
+                {filteredVendors.slice(0, 200).map((v) => (
+                  <SelectItem key={v.id} value={v.id}>{vendorLabel(v)}</SelectItem>
+                ))}
+                {filteredVendors.length === 0 && <div className="p-2 text-xs text-muted-foreground">Aucun résultat</div>}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Le vendeur sélectionné verra automatiquement cette campagne dans son espace vendeur (Intelligence → Liens & QR tracés).
+            </p>
+          </div>
+        )}
         {ownerType === "partner" && (
           <div>
             <Label>Nom du partenaire</Label>
@@ -225,6 +332,9 @@ function CreateCampaignDialog({ onCreated }: { onCreated: (id: string) => void }
         <div>
           <Label>Destination</Label>
           <Input value={landingPath} onChange={(e) => setLandingPath(e.target.value)} placeholder="/inscription" />
+          <p className="text-xs text-muted-foreground mt-1">
+            Ex : <code>/boutique/pacheco</code>, <code>/marques/nuxe</code>, <code>/produit/doliprane-500mg</code>, ou une URL complète.
+          </p>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -238,181 +348,10 @@ function CreateCampaignDialog({ onCreated }: { onCreated: (id: string) => void }
         </div>
       </div>
       <DialogFooter>
-        <Button onClick={() => mut.mutate()} disabled={!name || !slug || mut.isPending}>
+        <Button onClick={() => mut.mutate()} disabled={!canSubmit}>
           {mut.isPending ? "Création…" : "Créer la campagne"}
         </Button>
       </DialogFooter>
     </DialogContent>
-  );
-}
-
-function CampaignDetail({ campaign, onUpdated }: { campaign: Campaign; onUpdated: () => void }) {
-  const url = publicTrackedUrl(campaign.slug);
-
-  const { data: qrPng } = useQuery({
-    queryKey: ["qr-png", url],
-    queryFn: () => QRCode.toDataURL(url, { width: 512, margin: 2, errorCorrectionLevel: "H" }),
-  });
-  const { data: qrSvg } = useQuery({
-    queryKey: ["qr-svg", url],
-    queryFn: () => QRCode.toString(url, { type: "svg", errorCorrectionLevel: "H", margin: 2 }),
-  });
-
-  const { data: funnel } = useQuery({
-    queryKey: ["campaign-funnel", campaign.id],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("campaign_funnel_stats", { p_campaign_id: campaign.id });
-      if (error) throw error;
-      return data as Record<string, number | null>;
-    },
-    refetchInterval: 30000,
-  });
-
-  const { data: ts = [] } = useQuery({
-    queryKey: ["campaign-ts", campaign.id],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("campaign_funnel_timeseries", { p_campaign_id: campaign.id, p_days: 30 });
-      if (error) throw error;
-      return (data as Array<{ day: string; scans: number; signups: number; activations: number }>) ?? [];
-    },
-    refetchInterval: 60000,
-  });
-
-  const setStatus = useMutation({
-    mutationFn: async (status: Campaign["status"]) => {
-      const { error } = await supabase.from("tracking_campaigns").update({ status }).eq("id", campaign.id);
-      if (error) throw error;
-    },
-    onSuccess: () => { toast.success("Statut mis à jour"); onUpdated(); },
-    onError: (e: any) => toast.error(e.message ?? "Erreur"),
-  });
-
-  const copy = async (text: string, label: string) => {
-    try { await navigator.clipboard.writeText(text); toast.success(`${label} copié`); }
-    catch { toast.error("Copie impossible"); }
-  };
-
-  const downloadPng = () => {
-    if (!qrPng) return;
-    const a = document.createElement("a");
-    a.href = qrPng;
-    a.download = `qr-${campaign.slug}.png`;
-    a.click();
-  };
-  const downloadSvg = () => {
-    if (!qrSvg) return;
-    const blob = new Blob([qrSvg], { type: "image/svg+xml" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `qr-${campaign.slug}.svg`;
-    a.click();
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-xl font-bold">{campaign.name}</h2>
-          <div className="text-sm text-muted-foreground font-mono">/go/{campaign.slug}</div>
-          <div className="mt-1"><StatusBadge status={campaign.status} /></div>
-        </div>
-        <div className="flex gap-2">
-          {campaign.status === "active" ? (
-            <Button variant="outline" onClick={() => setStatus.mutate("paused")}>Mettre en pause</Button>
-          ) : (
-            <Button variant="outline" onClick={() => setStatus.mutate("active")}>Activer</Button>
-          )}
-          <Button variant="outline" onClick={() => setStatus.mutate("ended")}>Terminer</Button>
-        </div>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader><CardTitle className="text-base flex items-center gap-2"><QrCode className="h-4 w-4" />QR & lien</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-center bg-white rounded-lg p-4 border">
-              {qrPng ? <img src={qrPng} alt="QR" className="w-48 h-48" /> : <div className="w-48 h-48 animate-pulse bg-muted" />}
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <code className="flex-1 text-xs bg-muted p-2 rounded break-all">{url}</code>
-                <Button size="sm" variant="outline" onClick={() => copy(url, "Lien")}><Copy className="h-3 w-3" /></Button>
-              </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={downloadPng} disabled={!qrPng}><Download className="h-3 w-3 mr-1" />PNG</Button>
-                <Button size="sm" variant="outline" onClick={downloadSvg} disabled={!qrSvg}><Download className="h-3 w-3 mr-1" />SVG</Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Collez ce QR sur vos flyers. Chaque scan est journalisé, puis redirigé vers <code>{campaign.landing_path}</code>
-                {campaign.utm_source ? ` avec utm_source=${campaign.utm_source}` : ""}.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle className="text-base">Funnel de conversion</CardTitle></CardHeader>
-          <CardContent>
-            <FunnelStats funnel={funnel} />
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader><CardTitle className="text-base">Activité (30 derniers jours)</CardTitle></CardHeader>
-        <CardContent style={{ height: 320 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={ts}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-              <XAxis dataKey="day" fontSize={11} tickFormatter={(d) => new Date(d).toLocaleDateString("fr-BE", { day: "2-digit", month: "2-digit" })} />
-              <YAxis fontSize={11} allowDecimals={false} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="scans" name="Scans" fill="hsl(var(--primary))" />
-              <Bar dataKey="signups" name="Inscriptions" fill="hsl(var(--chart-2, 217 91% 60%))" />
-              <Bar dataKey="activations" name="Activations" fill="hsl(var(--chart-3, 142 71% 45%))" />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function FunnelStats({ funnel }: { funnel: Record<string, number | null> | undefined }) {
-  if (!funnel) return <div className="text-sm text-muted-foreground">Chargement…</div>;
-  const rows = [
-    { k: "scans", label: "Scans" },
-    { k: "unique_visitors", label: "Visiteurs uniques" },
-    { k: "signups", label: "Inscriptions complétées" },
-    { k: "activations", label: "Comptes activés" },
-    { k: "first_purchases", label: "Premiers achats" },
-  ];
-  const rates = [
-    { k: "cr_scan_to_signup", label: "Scan → inscription" },
-    { k: "cr_signup_to_active", label: "Inscription → activé" },
-    { k: "cr_scan_to_active", label: "Scan → activé" },
-    { k: "cr_active_to_buyer", label: "Activé → 1er achat" },
-  ];
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-2">
-        {rows.map((r) => (
-          <div key={r.k} className="rounded bg-muted/40 p-3">
-            <div className="text-xs text-muted-foreground">{r.label}</div>
-            <div className="text-xl font-bold">{funnel[r.k] ?? 0}</div>
-          </div>
-        ))}
-      </div>
-      <div className="border-t pt-3 space-y-1.5">
-        {rates.map((r) => (
-          <div key={r.k} className="flex justify-between text-sm">
-            <span className="text-muted-foreground">{r.label}</span>
-            <span className="font-medium">{funnel[r.k] != null ? `${funnel[r.k]} %` : "—"}</span>
-          </div>
-        ))}
-      </div>
-      <p className="text-[11px] text-muted-foreground">Bots exclus. Visiteurs uniques = cookie first-party.</p>
-    </div>
   );
 }

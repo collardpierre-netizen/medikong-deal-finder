@@ -1605,8 +1605,9 @@ export default function ProductPage() {
   return (
     <Layout>
       <Helmet>
-        <title>{product.name} | MediKong</title>
-        <meta name="description" content={`Achetez ${product.name} au meilleur prix B2B sur MediKong. GTIN: ${product.gtin || product.ean}`} />
+        <title>{displayName} | MediKong</title>
+        <meta name="description" content={`Achetez ${displayName} au meilleur prix B2B sur MediKong. GTIN: ${product.gtin || product.ean}`} />
+
       </Helmet>
 
       <PageTransition>

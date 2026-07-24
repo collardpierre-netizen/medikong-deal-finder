@@ -116,11 +116,9 @@ function getPipelineSteps(country: string, mode: string): StepConfig[] {
       loopBatch: true,
       batchSize: 100,
     },
-    {
-      name: "offers_multi_vendor",
-      label: "Offres Multi-Vendeurs",
-      functionName: "sync-qogita-offers-detail",
-      params: { country, multi_vendor: true },
+    // NOTE 2026-07-24 — Étape doublon `offers_multi_vendor` retirée du full aussi
+    // (fetchMultiVendor hardcodé true dans sync-qogita-offers-detail). Réversible :
+    // ré-ajouter l'entrée { name: "offers_multi_vendor", … multi_vendor: true } ici.
       required: false,
       loopBatch: true,
       batchSize: 100,

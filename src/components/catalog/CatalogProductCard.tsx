@@ -180,8 +180,8 @@ export function CatalogProductCard({ product, index = 0, view = "grid", searchQu
             <p className="text-xs text-muted-foreground mb-0.5">{product.brand_name}</p>
             <h3 className="text-sm font-medium text-foreground line-clamp-2 mb-1"><HighlightText text={displayName} query={searchQuery} /></h3>
           </Link>
-          {product.short_description && (
-            <p className="text-xs text-muted-foreground line-clamp-1">{product.short_description}</p>
+          {displayShortDescription && (
+            <p className="text-xs text-muted-foreground line-clamp-1">{displayShortDescription}</p>
           )}
           <p className="text-xs text-muted-foreground mt-1">EAN: {product.gtin || "—"}</p>
           <StockBadge product={product} />

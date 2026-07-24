@@ -4,7 +4,7 @@ import { FileText, Film, ImageIcon, Download, Loader2, BookOpen, Megaphone, Shar
 import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import balaoohLogo from "@/assets/logo-balooh.png";
+import balaoohLogo from "@/assets/logo-medikong.png";
 
 export type MediaOwner = { brandId: string } | { manufacturerId: string };
 
@@ -135,7 +135,7 @@ function pushUtmConflict(payload: Record<string, unknown>) {
   try {
     const w = window as unknown as { dataLayer?: Array<Record<string, unknown>> };
     w.dataLayer = w.dataLayer ?? [];
-    w.dataLayer.push({ event: "media_partner_utm_conflict", partner: "balooh", ...payload });
+    w.dataLayer.push({ event: "media_partner_utm_conflict", partner: "medikong", ...payload });
   } catch {
     /* no-op */
   }
@@ -212,7 +212,7 @@ function trackPartnerBannerClick(
     w.dataLayer = w.dataLayer ?? [];
     w.dataLayer.push({
       event: "media_partner_banner_click",
-      partner: "balooh",
+      partner: "medikong",
       owner_key: ownerKey,
       cta_label: ctaLabel,
       offer_id: bannerId,

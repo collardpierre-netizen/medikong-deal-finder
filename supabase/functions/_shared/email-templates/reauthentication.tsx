@@ -39,7 +39,7 @@ export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => 
         <Text style={footer}>
           Ce code expirera sous peu. Si vous n'avez pas fait cette demande, vous pouvez ignorer cet e-mail.
         </Text>
-        <Text style={footerBrand}>© Medikong — Balooh SRL</Text>
+        <Text style={footerBrand}>© MediKong SRL</Text>
       </Container>
     </Body>
   </Html>

@@ -808,7 +808,7 @@ export default function VendorOnboardingWizard() {
                   <div>
                     <h3 className="text-sm font-semibold text-foreground">Mandat de facturation « au nom et pour le compte »</h3>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      MediKong (Balooh SRL) émet les factures acheteurs en votre nom et pour votre
+                      MediKong SRL émet les factures acheteurs en votre nom et pour votre
                       compte via un mandat de facturation (self-billing). Ce mandat doit être
                       signé électroniquement avant toute publication d'offre.
                     </p>

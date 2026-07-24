@@ -4,7 +4,7 @@ export default function TermsPage() {
   return (
     <LegalContent title="Conditions Générales de Vente" lastUpdated="28 mars 2026">
       <h2 className="text-2xl font-bold text-mk-navy mt-10 mb-4">Article 1 — Objet</h2>
-      <p className="text-sm text-muted-foreground leading-[1.8] mb-4">Les présentes conditions générales de vente régissent les relations contractuelles entre Balooh SRL (ci-après « MediKong ») et tout acheteur professionnel inscrit sur la plateforme MediKong.pro.</p>
+      <p className="text-sm text-muted-foreground leading-[1.8] mb-4">Les présentes conditions générales de vente régissent les relations contractuelles entre MediKong SRL (ci-après « MediKong ») et tout acheteur professionnel inscrit sur la plateforme MediKong.pro.</p>
 
       <h2 className="text-2xl font-bold text-mk-navy mt-10 mb-4">Article 2 — Inscription et accès</h2>
       <p className="text-sm text-muted-foreground leading-[1.8] mb-4">L'accès à la marketplace est réservé aux professionnels de santé disposant d'un numéro BCE et d'un numéro de TVA intracommunautaire valide. L'inscription est gratuite et soumise à validation.</p>

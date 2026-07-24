@@ -16,10 +16,10 @@ import {
   type FalcoTaxSubtotal,
 } from "../_shared/falco-peppol.ts";
 
-// Balooh SRL = legal issuer of every self-billing invoice on the marketplace.
+// MediKong SRL = legal issuer of every self-billing invoice on the marketplace.
 // Point 1 (Sprint 3): unified Peppol sender for all self-billing dispatches.
-const BALOOH_SELLER = {
-  name: "Balooh SRL",
+const MEDIKONG_SELLER = {
+  name: "MediKong SRL",
   vat_number: "BE1005771323",
   address: {
     line1: "23 rue de la Procession",
@@ -202,9 +202,9 @@ Deno.serve(async (req) => {
           // Point 1: mandate mention required by BE self-billing regulation, embedded in UBL note.
           note: mandateMention,
           sender: {
-            name: BALOOH_SELLER.name,
-            vat_number: BALOOH_SELLER.vat_number,
-            address: { ...BALOOH_SELLER.address },
+            name: MEDIKONG_SELLER.name,
+            vat_number: MEDIKONG_SELLER.vat_number,
+            address: { ...MEDIKONG_SELLER.address },
           },
           receiver: {
             name: vendor.company_name || vendor.name,

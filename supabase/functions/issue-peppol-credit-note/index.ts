@@ -21,8 +21,8 @@ import {
 } from "../_shared/falco-peppol.ts";
 import { buildCreditNotePdf } from "../_shared/invoice-pdf.ts";
 
-const BALOOH_SELLER = {
-  name: "Balooh SRL",
+const MEDIKONG_SELLER = {
+  name: "MediKong SRL",
   vat_number: "BE1005771323",
   address: { line1: "23 rue de la Procession", zip: "7822", city: "Ath", country: "BE" },
 } as const;
@@ -148,12 +148,12 @@ Deno.serve(async (req) => {
       reason,
       issuedAt,
       seller: {
-        company_name: BALOOH_SELLER.name,
-        address_line1: BALOOH_SELLER.address.line1,
-        postal_code: BALOOH_SELLER.address.zip,
-        city: BALOOH_SELLER.address.city,
-        country_code: BALOOH_SELLER.address.country,
-        vat_number: BALOOH_SELLER.vat_number,
+        company_name: MEDIKONG_SELLER.name,
+        address_line1: MEDIKONG_SELLER.address.line1,
+        postal_code: MEDIKONG_SELLER.address.zip,
+        city: MEDIKONG_SELLER.address.city,
+        country_code: MEDIKONG_SELLER.address.country,
+        vat_number: MEDIKONG_SELLER.vat_number,
       },
       buyer: vendor,
       order,
@@ -192,9 +192,9 @@ Deno.serve(async (req) => {
       buyer_reference: order.order_number || inv.invoice_number,
       note: `Annulation de la facture ${inv.invoice_number} — ${reason}`,
       sender: {
-        name: BALOOH_SELLER.name,
-        vat_number: BALOOH_SELLER.vat_number,
-        address: { ...BALOOH_SELLER.address },
+        name: MEDIKONG_SELLER.name,
+        vat_number: MEDIKONG_SELLER.vat_number,
+        address: { ...MEDIKONG_SELLER.address },
       },
       receiver: {
         name: vendor.company_name || vendor.name,

@@ -13,9 +13,9 @@ import {
   resolveFalcoPostalCode,
 } from "../_shared/falco-peppol.ts";
 
-// MediKong legal seller identity (Balooh SRL) — used as sender on commission invoices.
+// MediKong legal seller identity (MediKong SRL) — used as sender on commission invoices.
 const MK_SELLER = {
-  name: "Balooh SRL",
+  name: "MediKong SRL",
   vat_number: "BE1005771323",
   address: {
     line1: "23 rue de la Procession",

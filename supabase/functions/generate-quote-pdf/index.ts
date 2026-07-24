@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
       doc.addImage(MEDIKONG_LOGO_PNG_BASE64, "PNG", M, y + 5, 58, 12.1);
     } catch (_) { /* non bloquant */ }
 
-    // Emitter block (MediKong / Balooh SRL)
+    // Emitter block (MediKong / MediKong SRL)
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.setTextColor(...NAVY);
@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8.5);
     doc.setTextColor(...MUTED);
-    doc.text("Balooh SRL", pageW - M, y + 7.5, { align: "right" });
+    doc.text("MediKong SRL", pageW - M, y + 7.5, { align: "right" });
     doc.text("23 rue de la Procession", pageW - M, y + 11.5, { align: "right" });
     doc.text("7822 Ath, Belgique", pageW - M, y + 15.5, { align: "right" });
     doc.text("TVA : BE 1005.771.323", pageW - M, y + 19.5, { align: "right" });
@@ -303,7 +303,7 @@ Deno.serve(async (req) => {
       doc.setFontSize(7.5);
       doc.setTextColor(...MUTED);
       doc.text(`Devis ${quote.quote_number}`, M, pageH - 9);
-      doc.text("MediKong — Balooh SRL · TVA BE 1005.771.323 · medikong.pro", pageW / 2, pageH - 9, { align: "center" });
+      doc.text("MediKong SRL · TVA BE 1005.771.323 · medikong.pro", pageW / 2, pageH - 9, { align: "center" });
       doc.text(`Page ${p} / ${pageCount}`, pageW - M, pageH - 9, { align: "right" });
     }
 

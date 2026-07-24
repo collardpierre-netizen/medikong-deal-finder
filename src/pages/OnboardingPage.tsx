@@ -1602,7 +1602,7 @@ export default function OnboardingPage() {
             <div className={animClass} ref={screenRef}>{renderScreen()}</div>
           </div>
           <div style={{ fontSize: 11, color: S.ter, textAlign: "center", paddingTop: 16, flexShrink: 0 }}>
-            Balooh SRL · TVA BE 1005.771.323 · support@medikong.pro
+            MediKong SRL · TVA BE 1005.771.323 · support@medikong.pro
           </div>
         </div>
       </div>

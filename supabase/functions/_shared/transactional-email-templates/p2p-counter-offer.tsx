@@ -51,7 +51,7 @@ const Email = ({ recipientPharmacy, authorPharmacy, productName = 'votre offre',
 
           <Hr style={divider} />
           <Text style={footerText}>L'équipe {SITE_NAME}</Text>
-          <Text style={legalFooter}>MediKong by Balooh SRL · TVA : BE 1005.771.323</Text>
+          <Text style={legalFooter}>MediKong SRL · TVA : BE 1005.771.323</Text>
         </Container>
       </Body>
     </Html>

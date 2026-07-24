@@ -24,8 +24,8 @@ const RETRY_AFTER_MINUTES = 60;
 const BATCH_LIMIT = 25;
 const BUCKET = "invoices";
 
-const BALOOH_SELLER = {
-  name: "Balooh SRL",
+const MEDIKONG_SELLER = {
+  name: "MediKong SRL",
   vat_number: "BE1005771323",
   address: { line1: "23 rue de la Procession", zip: "7822", city: "Ath", country: "BE" },
 } as const;
@@ -87,7 +87,7 @@ async function buildSelfBillingMetadata(supabase: any, invoice: any): Promise<{ 
     number: invoice.invoice_number,
     buyer_reference: order.order_number || invoice.invoice_number,
     note: buildSelfBillingMandateMention(vendor, vendor.mandate_signed_at),
-    sender: { name: BALOOH_SELLER.name, vat_number: BALOOH_SELLER.vat_number, address: { ...BALOOH_SELLER.address } },
+    sender: { name: MEDIKONG_SELLER.name, vat_number: MEDIKONG_SELLER.vat_number, address: { ...MEDIKONG_SELLER.address } },
     receiver: {
       name: vendor.company_name || vendor.name,
       vat_number: normalizeFalcoVatNumber(vendor.vat_number),
@@ -131,7 +131,7 @@ async function buildCommissionMetadata(supabase: any, invoice: any): Promise<{ p
     number: invoice.invoice_number,
     buyer_reference: order.order_number || invoice.invoice_number,
     note: `MediKong marketplace commission (retry) for order ${order.order_number}.`,
-    sender: { name: BALOOH_SELLER.name, vat_number: BALOOH_SELLER.vat_number, address: { ...BALOOH_SELLER.address } },
+    sender: { name: MEDIKONG_SELLER.name, vat_number: MEDIKONG_SELLER.vat_number, address: { ...MEDIKONG_SELLER.address } },
     receiver: {
       name: vendor.company_name || vendor.name,
       vat_number: normalizeFalcoVatNumber(vendor.vat_number),

@@ -614,7 +614,7 @@ Deno.serve(async (req) => {
       doc.setFontSize(7.5);
       doc.setTextColor(...MUTED);
       doc.text(`Bon de commande ${order.order_number} — vue vendeur`, M, pageH - 9);
-      doc.text("MediKong — Balooh SRL · TVA BE 1005.771.323 · medikong.pro", pageW / 2, pageH - 9, { align: "center" });
+      doc.text("MediKong SRL · TVA BE 1005.771.323 · medikong.pro", pageW / 2, pageH - 9, { align: "center" });
       doc.text(`Page ${p} / ${pageCount}`, pageW - M, pageH - 9, { align: "right" });
     }
 

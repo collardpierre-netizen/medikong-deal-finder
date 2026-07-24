@@ -12,8 +12,8 @@ import {
 } from "../_shared/falco-peppol.ts";
 
 const BUCKET = "invoices";
-const BALOOH_SELLER = {
-  name: "Balooh SRL",
+const MEDIKONG_SELLER = {
+  name: "MediKong SRL",
   vat_number: "BE1005771323",
   address: { line1: "23 rue de la Procession", zip: "7822", city: "Ath", country: "BE" },
 } as const;
@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
       number: inv.invoice_number,
       buyer_reference: buyerRef,
       note: `MediKong marketplace commission (${inv.type}) — ${inv.orders_count} commande(s) / ${inv.lines_count} ligne(s).`,
-      sender: { name: BALOOH_SELLER.name, vat_number: BALOOH_SELLER.vat_number, address: { ...BALOOH_SELLER.address } },
+      sender: { name: MEDIKONG_SELLER.name, vat_number: MEDIKONG_SELLER.vat_number, address: { ...MEDIKONG_SELLER.address } },
       receiver: {
         name: vendor.company_name || vendor.name,
         vat_number: normalizeFalcoVatNumber(vendor.vat_number),

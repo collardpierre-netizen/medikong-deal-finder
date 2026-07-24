@@ -46,7 +46,7 @@ export default function InvoicePreview({ order, docType }: Props) {
       <div className="grid grid-cols-3 gap-4 mt-5 text-[11px]">
         <div>
           <p className="text-[10px] font-medium text-[#8B95A5] uppercase tracking-wide mb-1">Emetteur</p>
-          <p className="font-semibold">Balooh SRL</p>
+          <p className="font-semibold">MediKong SRL</p>
           <p>23 rue de la Procession</p>
           <p>B-7822 Ath, Belgique</p>
           <p>TVA: BE 1005.771.323</p>
@@ -70,8 +70,8 @@ export default function InvoicePreview({ order, docType }: Props) {
       {/* Yellow band */}
       <div className="bg-[#D4A843] text-white rounded px-4 py-2 mt-4 text-[11px] font-medium text-center">
         {isInvoice
-          ? `Facture emise par MediKong (Balooh SRL) pour le compte et au nom de ${vendorProfile.name}`
-          : `Bon de livraison emis par MediKong (Balooh SRL) pour le compte de ${vendorProfile.name}`}
+          ? `Facture emise par MediKong SRL pour le compte et au nom de ${vendorProfile.name}`
+          : `Bon de livraison emis par MediKong SRL pour le compte de ${vendorProfile.name}`}
       </div>
 
       {/* Doc info */}
@@ -171,7 +171,7 @@ export default function InvoicePreview({ order, docType }: Props) {
           <div className="grid grid-cols-2 gap-1 text-[#616B7C]">
             <p>IBAN: BE13 6451 1047 3739</p>
             <p>BIC: KREDBEBB</p>
-            <p>Beneficiaire: Balooh SRL</p>
+            <p>Beneficiaire: MediKong SRL</p>
             <p>Communication: {order.id}</p>
           </div>
         </div>
@@ -179,7 +179,7 @@ export default function InvoicePreview({ order, docType }: Props) {
 
       {/* Footer */}
       <div className="border-t border-[#E2E8F0] mt-6 pt-3 text-center text-[10px] text-[#8B95A5]">
-        Balooh SRL | TVA BE 1005.771.323 | 23 rue de la Procession, B-7822 Ath | www.medikong.pro
+        MediKong SRL | TVA BE 1005.771.323 | 23 rue de la Procession, B-7822 Ath | www.medikong.pro
       </div>
     </div>
   );

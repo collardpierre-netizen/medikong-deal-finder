@@ -17,7 +17,7 @@ export function Footer() {
               <img src={logoDark} alt="MediKong.pro" className="h-[72px]" />
             </div>
             <p className="text-sm text-mk-sec mb-3">{t("footer.description")}</p>
-            <p className="text-xs text-mk-ter">Balooh SRL · TVA: BE 1005.771.323</p>
+            <p className="text-xs text-mk-ter">MediKong SRL · TVA: BE 1005.771.323</p>
             <p className="text-xs text-mk-ter">23 rue de la Procession, B-7822 Ath</p>
           </div>
           <div>

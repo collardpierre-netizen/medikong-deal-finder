@@ -182,6 +182,7 @@ export default function AdminCommissionsRevenus() {
   const [markInvoicedOpen, setMarkInvoicedOpen] = useState<InvoiceRow | null>(null);
   const [markPaidOpen, setMarkPaidOpen] = useState<InvoiceRow | null>(null);
   const [disputeOpen, setDisputeOpen] = useState<InvoiceRow | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const typeArg = filterType === "all" ? null : filterType;
   const channelArg = filterChannel === "all" ? null : filterChannel;
@@ -357,6 +358,7 @@ export default function AdminCommissionsRevenus() {
     onSuccess: (n) => {
       toast.success(`${n} facture(s) commission créée(s)`);
       setSelectedLines(new Set());
+      setPreviewOpen(false);
       invalidate();
     },
     onError: (e: any) => toast.error(e?.message ?? "Erreur création facture"),
@@ -407,6 +409,50 @@ export default function AdminCommissionsRevenus() {
   });
 
   const totals = kpisQ.data;
+
+  // Preview data: group selected backlog rows by vendor for the confirmation dialog
+  const previewByVendor = useMemo(() => {
+    const rows = (backlogQ.data ?? []).filter(r => selectedLines.has(r.order_line_id));
+    const map = new Map<string, {
+      vendorId: string;
+      vendorName: string;
+      lines: BacklogRow[];
+      gmv: number;
+      revenue: number;
+      commission: number;
+      orderIds: Set<string>;
+      hasMarketplace: boolean;
+      hasTrading: boolean;
+    }>();
+    for (const r of rows) {
+      let g = map.get(r.vendor_id);
+      if (!g) {
+        g = {
+          vendorId: r.vendor_id,
+          vendorName: r.vendor_display_name,
+          lines: [],
+          gmv: 0, revenue: 0, commission: 0,
+          orderIds: new Set(),
+          hasMarketplace: false,
+          hasTrading: false,
+        };
+        map.set(r.vendor_id, g);
+      }
+      g.lines.push(r);
+      g.gmv += Number(r.gmv_incl_vat_cents) || 0;
+      g.revenue += Number(r.revenue_excl_vat_cents) || 0;
+      g.commission += Number(r.commission_excl_vat_cents) || 0;
+      g.orderIds.add(r.order_id);
+      if (r.type === "marketplace") g.hasMarketplace = true;
+      if (r.type === "trading") g.hasTrading = true;
+    }
+    return Array.from(map.values()).sort((a, b) => b.commission - a.commission);
+  }, [backlogQ.data, selectedLines]);
+
+  const previewTotalCommission = useMemo(
+    () => previewByVendor.reduce((s, v) => s + v.commission, 0),
+    [previewByVendor],
+  );
 
   const seriesChart = useMemo(() => {
     return (seriesQ.data ?? []).map(r => ({
@@ -733,7 +779,7 @@ export default function AdminCommissionsRevenus() {
                   <Button
                     size="sm"
                     disabled={selectedLines.size === 0 || createInvoiceM.isPending}
-                    onClick={() => createInvoiceM.mutate()}
+                    onClick={() => setPreviewOpen(true)}
                   >
                     {createInvoiceM.isPending
                       ? "Création…"
@@ -1020,6 +1066,95 @@ export default function AdminCommissionsRevenus() {
               if (!el?.value) return toast.error("Motif requis");
               disputeM.mutate({ id: disputeOpen!.id, reason: el.value });
             }}>Confirmer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* --- Preview dialog: consolidated invoice preview before creation --- */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              Aperçu des factures {consolidated ? "consolidées" : "de commission"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="text-xs text-[#616B7C] mb-2">
+            {consolidated
+              ? "Une facture sera créée par vendeur, regroupant toutes les ventes ci-dessous (marketplace + trading fusionnés)."
+              : "Une facture sera créée par (vendeur, commande, type) selon les lignes sélectionnées."}
+          </div>
+          <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+            {previewByVendor.length === 0 ? (
+              <div className="text-sm text-[#8B95A5]">Aucune ligne sélectionnée.</div>
+            ) : (
+              previewByVendor.map((v) => (
+                <div key={v.vendorId} className="border border-[#E2E8F0] rounded-[8px]">
+                  <div className="p-3 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-semibold text-[#1D2530]">{v.vendorName}</span>
+                      {v.hasMarketplace && <Badge variant="secondary" className="text-[10px]">Marketplace</Badge>}
+                      {v.hasTrading && <Badge variant="secondary" className="text-[10px]">Trading</Badge>}
+                      {consolidated && v.hasMarketplace && v.hasTrading && (
+                        <Badge className="text-[10px]">mixed</Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-4 text-xs text-[#616B7C]">
+                      <span>{v.orderIds.size} commande(s)</span>
+                      <span>{v.lines.length} ligne(s)</span>
+                      <span>CA HTVA : <span className="font-mono text-[#1D2530]">{fmtEurFromCents(v.revenue)}</span></span>
+                      <span>Commission HT : <span className="font-mono font-semibold text-[#1D2530]">{fmtEurFromCents(v.commission)}</span></span>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead className="text-[#8B95A5] uppercase text-[10px]">
+                        <tr>
+                          <th className="p-2 text-left">Date</th>
+                          <th className="p-2 text-left">Commande</th>
+                          <th className="p-2 text-left">Type</th>
+                          <th className="p-2 text-right">Qté</th>
+                          <th className="p-2 text-right">CA HTVA</th>
+                          <th className="p-2 text-right">Commission</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {v.lines.map((l) => (
+                          <tr key={l.order_line_id} className="border-t border-[#F1F5F9]">
+                            <td className="p-2">{formatUpdatedAt(l.order_created_at)}</td>
+                            <td className="p-2 font-mono">{l.order_number}</td>
+                            <td className="p-2">
+                              <Badge variant="outline" className="text-[10px]">{l.type}</Badge>
+                            </td>
+                            <td className="p-2 text-right">{l.quantity ?? "—"}</td>
+                            <td className="p-2 text-right font-mono">{fmtEurFromCents(l.revenue_excl_vat_cents)}</td>
+                            <td className="p-2 text-right font-mono font-semibold">{fmtEurFromCents(l.commission_excl_vat_cents)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <DialogFooter className="pt-3 border-t border-[#E2E8F0] flex-shrink-0">
+            <div className="mr-auto text-sm text-[#616B7C]">
+              Total commission HT à facturer :{" "}
+              <span className="font-mono font-bold text-[#1D2530]">{fmtEurFromCents(previewTotalCommission)}</span>
+              {" · "}
+              {consolidated
+                ? `${previewByVendor.length} facture(s) à créer`
+                : `${(backlogQ.data ?? []).filter(r => selectedLines.has(r.order_line_id)).reduce((acc, r) => { const k = `${r.vendor_id}::${r.order_id}::${r.type}`; acc.add(k); return acc; }, new Set<string>()).size} facture(s) à créer`}
+            </div>
+            <Button variant="outline" onClick={() => setPreviewOpen(false)} disabled={createInvoiceM.isPending}>
+              Annuler
+            </Button>
+            <Button
+              onClick={() => createInvoiceM.mutate()}
+              disabled={previewByVendor.length === 0 || createInvoiceM.isPending}
+            >
+              {createInvoiceM.isPending ? "Création…" : "Générer la facture"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

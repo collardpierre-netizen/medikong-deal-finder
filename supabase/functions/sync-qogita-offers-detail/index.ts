@@ -684,13 +684,15 @@ Deno.serve(async (req) => {
     syncLogId = newLog!.id;
   }
 
-  // Run sync synchronously (not in background) so we can return accurate remaining
+  // Run sync synchronously. Multi-vendor continuation is handled in-process by
+  // syncOffers; no Edge self-invocation / loopback call is used here.
   let productsEnriched = 0;
   let offersUpserted = 0;
+  let syncResult: any = null;
   try {
-    const result = await syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, startTime, fetchMultiVendor, recordEndpointError, recordProgress, resyncLogId, afterCreatedAt, syncRunId, productIds, fastMode);
-    productsEnriched = result?.products_enriched || 0;
-    offersUpserted = result?.offers_upserted || 0;
+    syncResult = await syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, startTime, fetchMultiVendor, recordEndpointError, recordProgress, resyncLogId, afterCreatedAt, syncRunId, productIds, fastMode);
+    productsEnriched = syncResult?.products_enriched || 0;
+    offersUpserted = syncResult?.offers_upserted || 0;
   } catch (e: any) {
     console.error("Sync offers error:", e);
     await sb
@@ -716,9 +718,11 @@ Deno.serve(async (req) => {
       multi_vendor: fetchMultiVendor,
       products_enriched: productsEnriched,
       offers_upserted: offersUpserted,
+      stats: syncResult,
       next_cursor: nextCursor,
+      remaining: nextCursor ? 1 : 0,
       status: updatedLog?.status || "unknown",
-      message: `Sync offres ${targetCountry} — ${productsEnriched} enrichis${nextCursor ? " (chunk suivant programmé)" : ""}`,
+      message: `Sync offres ${targetCountry} — ${productsEnriched} enrichis${nextCursor ? " (partiel, à reprendre)" : ""}`,
     }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );

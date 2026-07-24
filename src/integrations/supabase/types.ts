@@ -8116,6 +8116,8 @@ export type Database = {
           packaging_languages: string[] | null
           price_excl_vat: number
           price_incl_vat: number
+          price_source: string | null
+          price_source_updated_at: string | null
           price_stale: boolean
           price_stale_since: string | null
           price_tiers: Json | null
@@ -8186,6 +8188,8 @@ export type Database = {
           packaging_languages?: string[] | null
           price_excl_vat: number
           price_incl_vat: number
+          price_source?: string | null
+          price_source_updated_at?: string | null
           price_stale?: boolean
           price_stale_since?: string | null
           price_tiers?: Json | null
@@ -8256,6 +8260,8 @@ export type Database = {
           packaging_languages?: string[] | null
           price_excl_vat?: number
           price_incl_vat?: number
+          price_source?: string | null
+          price_source_updated_at?: string | null
           price_stale?: boolean
           price_stale_since?: string | null
           price_tiers?: Json | null
@@ -12144,6 +12150,72 @@ export type Database = {
           tested_at?: string
           tested_by?: string | null
           tested_email_masked?: string | null
+        }
+        Relationships: []
+      }
+      qogita_price_history: {
+        Row: {
+          gtin: string
+          price_date: string
+          price_eur: number
+          scraped_at: string
+          source: string
+        }
+        Insert: {
+          gtin: string
+          price_date: string
+          price_eur: number
+          scraped_at?: string
+          source?: string
+        }
+        Update: {
+          gtin?: string
+          price_date?: string
+          price_eur?: number
+          scraped_at?: string
+          source?: string
+        }
+        Relationships: []
+      }
+      qogita_price_scrape_logs: {
+        Row: {
+          ended_at: string | null
+          errors: Json | null
+          id: number
+          notes: string | null
+          offers_resourced: number | null
+          points_upserted: number | null
+          products_404: number | null
+          products_error: number | null
+          products_ok: number | null
+          products_targeted: number | null
+          started_at: string
+        }
+        Insert: {
+          ended_at?: string | null
+          errors?: Json | null
+          id?: number
+          notes?: string | null
+          offers_resourced?: number | null
+          points_upserted?: number | null
+          products_404?: number | null
+          products_error?: number | null
+          products_ok?: number | null
+          products_targeted?: number | null
+          started_at?: string
+        }
+        Update: {
+          ended_at?: string | null
+          errors?: Json | null
+          id?: number
+          notes?: string | null
+          offers_resourced?: number | null
+          points_upserted?: number | null
+          products_404?: number | null
+          products_error?: number | null
+          products_ok?: number | null
+          products_targeted?: number | null
+          started_at?: string
         }
         Relationships: []
       }
@@ -16896,6 +16968,85 @@ export type Database = {
           triggered_by?: string | null
         }
         Relationships: []
+      }
+      tendances_index_basket: {
+        Row: {
+          created_at: string
+          is_active: boolean
+          last_scrape_error: string | null
+          last_scrape_status: string | null
+          last_scraped_at: string | null
+          priority: number
+          product_id: string
+          reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          is_active?: boolean
+          last_scrape_error?: string | null
+          last_scrape_status?: string | null
+          last_scraped_at?: string | null
+          priority?: number
+          product_id: string
+          reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          is_active?: boolean
+          last_scrape_error?: string | null
+          last_scrape_status?: string | null
+          last_scraped_at?: string | null
+          priority?: number
+          product_id?: string
+          reason?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tendances_index_basket_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "tendances_index_basket_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tendances_index_basket_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "tendances_index_basket_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tendances_index_basket_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tendances_index_basket_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+        ]
       }
       tracking_campaigns: {
         Row: {
@@ -25427,6 +25578,88 @@ export type Database = {
         }
         Relationships: []
       }
+      qogita_price_history_by_brand_v: {
+        Row: {
+          avg_price_eur: number | null
+          brand_id: string | null
+          brand_name: string | null
+          max_price_eur: number | null
+          median_price_eur: number | null
+          min_price_eur: number | null
+          price_date: string | null
+          product_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "admin_sourcing_items_by_brand_v"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_kpis"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brand_logistics_stats"
+            referencedColumns: ["brand_id"]
+          },
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_top_brands_mv"
+            referencedColumns: ["brand_id"]
+          },
+        ]
+      }
+      qogita_price_history_by_category_v: {
+        Row: {
+          avg_price_eur: number | null
+          category_id: string | null
+          category_name: string | null
+          median_price_eur: number | null
+          price_date: string | null
+          product_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_primary_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_primary_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
+          },
+          {
+            foreignKeyName: "products_primary_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restock_offers_with_delta: {
         Row: {
           allow_partial: boolean | null
@@ -27879,6 +28112,8 @@ export type Database = {
           packaging_languages: string[] | null
           price_excl_vat: number
           price_incl_vat: number
+          price_source: string | null
+          price_source_updated_at: string | null
           price_stale: boolean
           price_stale_since: string | null
           price_tiers: Json | null
@@ -28231,6 +28466,8 @@ export type Database = {
           packaging_languages: string[] | null
           price_excl_vat: number
           price_incl_vat: number
+          price_source: string | null
+          price_source_updated_at: string | null
           price_stale: boolean
           price_stale_since: string | null
           price_tiers: Json | null
@@ -29467,6 +29704,17 @@ export type Database = {
       qogita_deactivate_zero_stock_offers: {
         Args: { _offer_ids: string[] }
         Returns: number
+      }
+      qogita_price_trends: {
+        Args: { _gtin: string }
+        Returns: {
+          change_1d_pct: number
+          change_30d_pct: number
+          change_7d_pct: number
+          gtin: string
+          last_date: string
+          last_price: number
+        }[]
       }
       qogita_reactivate_entity: {
         Args: { _id: string; _kind: string; _reason?: string }

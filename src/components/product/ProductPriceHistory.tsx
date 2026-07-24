@@ -148,6 +148,54 @@ function EmptyState() {
   );
 }
 
+function formatLongDate(iso: string) {
+  return new Date(iso).toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+/**
+ * High-contrast tooltip content: dark navy background, white text,
+ * larger type, thicker border. Meets WCAG AAA on the primary reading.
+ */
+function HighContrastTooltip({ active, payload }: TooltipProps<number, string>) {
+  if (!active || !payload || !payload.length) return null;
+  const row = payload[0]?.payload as { date?: string; price?: number } | undefined;
+  if (!row) return null;
+  return (
+    <div
+      role="status"
+      className="pointer-events-none rounded-lg border-2 px-3 py-2 text-left shadow-xl"
+      style={{
+        background: NAVY,
+        borderColor: PRIMARY,
+        color: "#FFFFFF",
+        minWidth: 168,
+      }}
+    >
+      <div className="text-[11px] font-medium uppercase tracking-wider text-white/70">
+        {row.date ? formatLongDate(row.date) : ""}
+      </div>
+      <div className="mt-1 flex items-center gap-2">
+        <span
+          className="inline-block h-2.5 w-2.5 rounded-full"
+          style={{ background: "#93C5FD", boxShadow: "0 0 0 2px rgba(255,255,255,0.15)" }}
+          aria-hidden
+        />
+        <span className="text-[15px] font-semibold tabular-nums leading-none text-white">
+          {formatEur(row.price)}
+        </span>
+      </div>
+      <div className="mt-1 text-[10px] uppercase tracking-wider text-white/60">
+        Prix marché HTVA
+      </div>
+    </div>
+  );
+}
+
+
 export function ProductPriceHistory({ gtin, productName }: Props) {
   const enabled = !!gtin;
 

@@ -45,3 +45,6 @@ jobs:
 
       - name: Build
         run: bun run build
+
+      - name: Scan build for public "Qogita" mentions
+        run: bun run check:public-qogita

@@ -820,6 +820,22 @@ Deno.serve(async (req) => {
   const limit = Math.min(Math.max(body.limit ?? DEFAULT_BATCH, 1), 100);
   const resourceOffers = body.resourceOffers ?? true;
 
+  // Load the commercial margin (fallback 25%) once per run and apply it
+  // to every offer/tier upserted from the storefront. Without this the
+  // scraper writes the raw base price as the sell price and silently
+  // undoes the global margin recalc for every refreshed offer.
+  let marginPct = 25.0;
+  try {
+    const { data: cfg } = await sb
+      .from("qogita_config")
+      .select("value")
+      .eq("key", "margin_percentage")
+      .maybeSingle();
+    const parsed = cfg?.value ? parseFloat(cfg.value) : NaN;
+    if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 100) marginPct = parsed;
+  } catch (_) { /* keep default */ }
+  const marginMul = 1 + marginPct / 100;
+
   if (body.forceLogin) sessionCache = null;
 
   // Preflight: verify login before touching DB.

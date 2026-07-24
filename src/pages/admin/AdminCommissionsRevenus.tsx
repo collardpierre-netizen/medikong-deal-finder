@@ -150,6 +150,34 @@ export default function AdminCommissionsRevenus() {
   const [bucket, setBucket] = useState<"day" | "week" | "month" | "quarter">("month");
   const [selectedLines, setSelectedLines] = useState<Set<string>>(new Set());
 
+  // ---------- Consolidated billing toggle (persisted in admin_settings) ----------
+  const consolidatedQ = useQuery({
+    queryKey: ["commrev-consolidated-setting"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("admin_settings")
+        .select("value_json")
+        .eq("key", "commission_consolidated_billing_enabled")
+        .maybeSingle();
+      return Boolean((data as any)?.value_json ?? false);
+    },
+  });
+  const consolidated = consolidatedQ.data ?? false;
+  const setConsolidatedM = useMutation({
+    mutationFn: async (v: boolean) => {
+      const { error } = await supabase
+        .from("admin_settings")
+        .upsert({
+          key: "commission_consolidated_billing_enabled",
+          value_json: v as any,
+          description: "Regrouper les commissions d'un vendeur en une seule facture par période plutôt qu'une facture par commande.",
+        }, { onConflict: "key" });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["commrev-consolidated-setting"] }),
+    onError: (e: any) => toast.error(e?.message ?? "Erreur enregistrement option"),
+  });
+
   // Dialog states
   const [markInvoicedOpen, setMarkInvoicedOpen] = useState<InvoiceRow | null>(null);
   const [markPaidOpen, setMarkPaidOpen] = useState<InvoiceRow | null>(null);

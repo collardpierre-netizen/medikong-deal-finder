@@ -108,7 +108,7 @@ const AdminParametres = () => {
     if (configRows.length === 0) return;
     setGeneral({
       platform_name: getConfig("platform_name", "MediKong.pro"),
-      legal_entity: getConfig("legal_entity", "Balooh SRL"),
+      legal_entity: getConfig("legal_entity", "MediKong SRL"),
       vat_number: getConfig("vat_number", "BE 1005.771.323"),
       address: getConfig("address", "23 rue de la Procession, B-7822 Ath"),
       support_email: getConfig("support_email", "support@medikong.pro"),
@@ -215,7 +215,7 @@ const AdminParametres = () => {
                 </h4>
                 <p className="text-[11px] mb-3" style={{ color: "#616B7C" }}>
                   Utilisé uniquement si le vendeur n'a aucun MOV défini (overrides acheteur, défauts profil, MOV d'offre).
-                  Le MOV encodé par le vendeur est toujours prioritaire. Le plancher 500 € des vendeurs virtuels (Qogita / Balooh) reste appliqué en sus.
+                  Le MOV encodé par le vendeur est toujours prioritaire. Le plancher 500 € des vendeurs virtuels (Qogita / MediKong) reste appliqué en sus.
                   Laisser vide pour désactiver le repli.
                 </p>
                 <div className="flex items-center justify-between py-3 border-b gap-4" style={{ borderColor: "#F1F5F9" }}>

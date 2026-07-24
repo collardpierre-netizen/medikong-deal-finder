@@ -122,7 +122,7 @@ const PublicQuotePage = () => {
             <img src={medikongLogo} alt="MediKong" className="h-12 sm:h-14 w-auto" />
             <div className="text-right text-xs text-slate-500">
               <div className="font-semibold text-slate-900">MediKong</div>
-              <div>Balooh SRL</div>
+              <div>MediKong SRL</div>
               <div>23 rue de la Procession</div>
               <div>7822 Ath, Belgique</div>
               <div>TVA : BE 1005.771.323</div>

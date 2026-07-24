@@ -5,7 +5,7 @@ export default function PrivacyPage() {
     <LegalContent title="Politique de confidentialité" lastUpdated="28 mars 2026">
       <h2 className="text-2xl font-bold text-mk-navy mt-10 mb-4">1. Responsable du traitement</h2>
       <p className="text-sm text-muted-foreground leading-[1.8] mb-4">
-        Le responsable du traitement des données personnelles est Balooh SRL, 23 rue de la Procession, B-7822 Ath, Belgique. BCE : 1005.771.323.
+        Le responsable du traitement des données personnelles est MediKong SRL, 23 rue de la Procession, B-7822 Ath, Belgique. BCE : 1005.771.323.
       </p>
 
       <h2 className="text-2xl font-bold text-mk-navy mt-10 mb-4">2. Données collectées</h2>

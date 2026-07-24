@@ -59,7 +59,7 @@ export interface Tier {
 }
 
 export const aboutTimeline: TimelineNode[] = [
-  { year: "2020", title: "Création de Balooh SRL", desc: "Fondation de la holding mère à Ath, Belgique.", status: "past" },
+  { year: "2020", title: "Création de MediKong SRL", desc: "Fondation de la holding mère à Ath, Belgique.", status: "past" },
   { year: "2022", title: "Lancement beta", desc: "50 fournisseurs, tests de marché en Belgique.", status: "past" },
   { year: "2023", title: "500 produits en ligne", desc: "Première levée de fonds seed de 1M€.", status: "past" },
   { year: "2024", title: "40 000+ références", desc: "Expansion Pays-Bas, API ERP, croissance 10x.", status: "past" },
@@ -178,7 +178,7 @@ export const investTimeline: VTimelineNode[] = [
 ];
 
 export const companyInfo = {
-  name: "Balooh SRL",
+  name: "MediKong SRL",
   tva: "BE 1005.771.323",
   address: "23 rue de la Procession, B-7822 Ath, Belgique",
   email: "contact@medikong.pro",

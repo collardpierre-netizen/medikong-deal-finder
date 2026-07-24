@@ -24,7 +24,7 @@ export default function ConfiancePage() {
           Traçabilité &amp; Confiance
         </h1>
         <p className="mt-3 text-muted-foreground">
-          MediKong est une marketplace B2B opérée par Balooh SRL (BE 1005.771.323).
+          MediKong est une marketplace B2B opérée par MediKong SRL (BE 1005.771.323).
           Cette page documente, sans marketing, comment nous vérifions les vendeurs, comment
           les factures sont émises et quelle garantie s'applique à vos achats.
         </p>
@@ -45,7 +45,7 @@ export default function ConfiancePage() {
           <TrustBlock
             icon={FileCheck2}
             title="Mandat de facturation (self-billing)"
-            body="Chaque vendeur signe un mandat de facturation autorisant Balooh SRL à émettre la facture « au nom et pour le compte de » son entreprise. La facture porte donc le nom, l'adresse et le numéro de TVA du vendeur, avec la mention légale correspondante, et est transmise le cas échéant via le réseau Peppol. Aucune offre ne peut être publiée sans mandat actif."
+            body="Chaque vendeur signe un mandat de facturation autorisant MediKong SRL à émettre la facture « au nom et pour le compte de » son entreprise. La facture porte donc le nom, l'adresse et le numéro de TVA du vendeur, avec la mention légale correspondante, et est transmise le cas échéant via le réseau Peppol. Aucune offre ne peut être publiée sans mandat actif."
           />
 
           <TrustBlock
@@ -63,7 +63,7 @@ export default function ConfiancePage() {
           <TrustBlock
             icon={Building2}
             title="Émetteur légal"
-            body="MediKong est édité par Balooh SRL, 23 rue de la Procession, 7822 Ath (Belgique) — TVA BE 1005.771.323. Les mentions légales, CGU, CGV et politique de confidentialité sont accessibles en pied de page."
+            body="MediKong est édité par MediKong SRL, 23 rue de la Procession, 7822 Ath (Belgique) — TVA BE 1005.771.323. Les mentions légales, CGU, CGV et politique de confidentialité sont accessibles en pied de page."
           />
         </section>
       </div>

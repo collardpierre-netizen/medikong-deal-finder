@@ -101,7 +101,7 @@ const VendorContractSubmittedEmail = ({
         </Text>
         <Text style={footer}>L'équipe {SITE_NAME}</Text>
         <Text style={legalFooter}>
-          MediKong by Balooh SRL · TVA : BE 1005.771.323<br />
+          MediKong SRL · TVA : BE 1005.771.323<br />
           23 rue de la Procession, B-7822 Ath, Belgique
         </Text>
       </Container>

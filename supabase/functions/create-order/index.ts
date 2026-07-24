@@ -9,7 +9,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const BALOOH_VENDOR_ID = "b3aa8188-7584-47eb-9b5f-fd50e33ec569";
+const MEDIKONG_VENDOR_ID = "b3aa8188-7584-47eb-9b5f-fd50e33ec569";
 
 interface CustomerInfo {
   company: string;
@@ -183,7 +183,7 @@ Deno.serve(async (req) => {
         const ref = offerMap.get(v.offer_id);
         const vId = ref?.vendor_id ?? v.vendor_id;
         const vType = vId ? vendorTypeMap.get(vId) : null;
-        if (!vId || vType === "qogita_virtual") continue; // qogita always goes via Balooh card
+        if (!vId || vType === "qogita_virtual") continue; // qogita always goes via MediKong card
         perVendor.set(vId, (perVendor.get(vId) || 0) + Number(v.total_excl_vat));
       }
       let eligibleAny = false;
@@ -275,7 +275,7 @@ Deno.serve(async (req) => {
         order_id: order.id,
         offer_id: v.offer_id,
         product_id: v.product_id,
-        vendor_id: isQogita ? BALOOH_VENDOR_ID : vId,
+        vendor_id: isQogita ? MEDIKONG_VENDOR_ID : vId,
         quantity: v.quantity,
         unit_price_excl_vat: v.unit_price_excl_vat,
         unit_price_incl_vat: v.unit_price_incl_vat,

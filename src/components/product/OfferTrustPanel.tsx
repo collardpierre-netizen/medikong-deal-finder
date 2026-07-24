@@ -35,7 +35,7 @@ export function OfferTrustPanel({ offerId, brandId, variant = "compact", classNa
       label: "Mandat de facturation signé",
       ok: data.billing_mandate_signed,
       tip: data.billing_mandate_signed
-        ? "Balooh SRL émet la facture au nom et pour le compte du vendeur (self-billing conforme)."
+        ? "MediKong SRL émet la facture au nom et pour le compte du vendeur (self-billing conforme)."
         : "Aucun mandat de facturation actif pour ce vendeur.",
     },
     {

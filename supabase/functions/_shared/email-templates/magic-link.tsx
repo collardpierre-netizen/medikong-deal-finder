@@ -55,7 +55,7 @@ export const MagicLinkEmail = ({
         <Text style={footer}>
           Si vous n'avez pas demandé ce code, vous pouvez ignorer cet e-mail.
         </Text>
-        <Text style={footerBrand}>© Medikong — Balooh SRL</Text>
+        <Text style={footerBrand}>© MediKong SRL</Text>
       </Container>
     </Body>
   </Html>

@@ -283,7 +283,7 @@ function drawFooter(doc: jsPDF, fontName: string) {
     doc.setFont(fontName, "normal");
     doc.setFontSize(8);
     doc.setTextColor(...MUTED);
-    doc.text("MediKong · Balooh SRL · BE 1005.771.323", 14, h - 8);
+    doc.text("MediKong SRL · BE 1005.771.323", 14, h - 8);
     doc.text(`Page ${i} / ${pageCount}`, w - 14, h - 8, { align: "right" });
   }
 }

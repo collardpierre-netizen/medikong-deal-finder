@@ -4,7 +4,7 @@ import { jsPDF } from "npm:jspdf@2.5.2";
 import { MEDIKONG_LOGO_PNG_BASE64 } from "./medikong-logo.ts";
 
 export const MEDIKONG = {
-  name: "Balooh SRL (MediKong)",
+  name: "MediKong SRL",
   address: "23 rue de la Procession",
   postal: "7822 Ath",
   country: "Belgique",
@@ -192,7 +192,7 @@ export function buildSelfBillingMandateMention(vendor: any, mandateSignedAt: Dat
   const name = vendor?.company_name || vendor?.name || "—";
   const vat = vendor?.vat_number ? String(vendor.vat_number) : "N° TVA non renseigné";
   const date = mandateSignedAt ? fmtDateBE(mandateSignedAt) : "date à confirmer";
-  return `Facture émise par Balooh SRL (BE1005771323) au nom et pour le compte de ${name} — N° TVA fournisseur : ${vat} — Conformément au mandat de facturation signé le ${date}.`;
+  return `Facture émise par MediKong SRL (BE1005771323) au nom et pour le compte de ${name} — N° TVA fournisseur : ${vat} — Conformément au mandat de facturation signé le ${date}.`;
 }
 
 function drawTotalsBlock(
@@ -425,7 +425,7 @@ export interface CreditNoteParams {
   creditNoteNumber: string;
   reason: string;
   issuedAt: Date;
-  seller: any;   // Balooh (self-billing) OR MediKong (commission credit)
+  seller: any;   // MediKong (self-billing) OR MediKong (commission credit)
   buyer: any;    // vendor (self-billing) OR customer
   order?: any;
   lines: Array<{

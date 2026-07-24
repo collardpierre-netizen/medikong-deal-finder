@@ -352,7 +352,7 @@ export default function RfqExternalResponsePage() {
       </Card>
 
       <p className="text-xs text-center text-muted-foreground">
-        MediKong — Balooh SRL · BE 1005.771.323 · 23 rue de la Procession, 7822 Ath
+        MediKong SRL · BE 1005.771.323 · 23 rue de la Procession, 7822 Ath
       </p>
     </div>
   );

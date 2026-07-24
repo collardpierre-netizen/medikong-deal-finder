@@ -96,7 +96,7 @@ const WholesaleSavingsReportEmail = ({
           Email transactionnel envoyé suite à votre demande de simulation. Vous pouvez supprimer définitivement votre simulation et toutes les données associées via ce lien :{' '}
           <a href={deleteUrl} style={legalLink}>supprimer ma simulation</a>.
         </Text>
-        <Text style={footer}>{SITE_NAME} — Balooh SRL · 23 rue de la Procession · 7822 Ath · Belgique</Text>
+        <Text style={footer}>{SITE_NAME} — MediKong SRL · 23 rue de la Procession · 7822 Ath · Belgique</Text>
       </Container>
     </Body>
   </Html>

@@ -209,7 +209,7 @@ export default function AdminAnnouncementBar() {
             Bandeau partenaire sous la galerie médias
           </CardTitle>
           <CardDescription>
-            Affiché sous les médias officiels des fiches marque (<code className="px-1 rounded bg-muted">/marques/:slug</code>) et fabricant (<code className="px-1 rounded bg-muted">/fabricant/:slug</code>). Idéal pour pousser un partenaire sourceur (Balooh, etc.).
+            Affiché sous les médias officiels des fiches marque (<code className="px-1 rounded bg-muted">/marques/:slug</code>) et fabricant (<code className="px-1 rounded bg-muted">/fabricant/:slug</code>). Idéal pour pousser un partenaire sourceur (MediKong, etc.).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -230,16 +230,16 @@ export default function AdminAnnouncementBar() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-sm font-medium">Sous-titre</Label>
-              <Textarea value={mbSubtitle} onChange={(e) => setMbSubtitle(e.target.value)} rows={2} placeholder="Diffusez simplement et rapidement tous vos supports médias grâce à notre partenaire Balooh." maxLength={240} />
+              <Textarea value={mbSubtitle} onChange={(e) => setMbSubtitle(e.target.value)} rows={2} placeholder="Diffusez simplement et rapidement tous vos supports médias grâce à notre partenaire MediKong." maxLength={240} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="space-y-1.5 md:col-span-1">
                 <Label className="text-sm font-medium">Libellé CTA</Label>
-                <Input value={mbCtaLabel} onChange={(e) => setMbCtaLabel(e.target.value)} placeholder="Découvrir Balooh" maxLength={40} />
+                <Input value={mbCtaLabel} onChange={(e) => setMbCtaLabel(e.target.value)} placeholder="Découvrir MediKong" maxLength={40} />
               </div>
               <div className="space-y-1.5 md:col-span-2">
                 <Label className="text-sm font-medium">URL du CTA</Label>
-                <Input value={mbCtaUrl} onChange={(e) => setMbCtaUrl(e.target.value)} placeholder="https://balooh.com/" type="url" />
+                <Input value={mbCtaUrl} onChange={(e) => setMbCtaUrl(e.target.value)} placeholder="https://medikong.com/" type="url" />
               </div>
             </div>
           </div>

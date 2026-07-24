@@ -6,7 +6,7 @@ export default function LegalNoticePage() {
     <LegalContent title="Mentions légales" lastUpdated="28 mars 2026">
       <h2 className="text-2xl font-bold text-mk-navy mt-10 mb-4">1. Éditeur du site</h2>
       <p className="text-sm text-muted-foreground leading-[1.8] mb-4">
-        Le site MediKong.pro est édité par <strong>Balooh SRL</strong>, société de droit belge inscrite à la Banque-Carrefour des Entreprises sous le numéro BCE 1005.771.323.
+        Le site MediKong.pro est édité par <strong>MediKong SRL</strong>, société de droit belge inscrite à la Banque-Carrefour des Entreprises sous le numéro BCE 1005.771.323.
       </p>
       <ul className="ml-6 mt-3 mb-5 space-y-1.5">
         <li className="text-sm text-muted-foreground leading-[1.8]">Siège social : 23 rue de la Procession, B-7822 Ath, Belgique</li>
@@ -15,7 +15,7 @@ export default function LegalNoticePage() {
       </ul>
 
       <h2 className="text-2xl font-bold text-mk-navy mt-10 mb-4">2. Directeur de la publication</h2>
-      <p className="text-sm text-muted-foreground leading-[1.8] mb-4">Le directeur de la publication est le gérant de la société Balooh SRL.</p>
+      <p className="text-sm text-muted-foreground leading-[1.8] mb-4">Le directeur de la publication est le gérant de la société MediKong SRL.</p>
 
       <h2 className="text-2xl font-bold text-mk-navy mt-10 mb-4">3. Hébergement</h2>
       <p className="text-sm text-muted-foreground leading-[1.8] mb-4">

@@ -59,7 +59,7 @@ const Email = ({
         </Section>
 
         <Text style={footer}>
-          MediKong — Balooh SRL · 23 rue de la Procession, 7822 Ath · BE 1005.771.323
+          MediKong SRL · 23 rue de la Procession, 7822 Ath · BE 1005.771.323
         </Text>
       </Container>
     </Body>

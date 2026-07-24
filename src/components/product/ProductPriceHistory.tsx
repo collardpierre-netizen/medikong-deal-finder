@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   ComposedChart,
@@ -206,51 +206,63 @@ export function ProductPriceHistory({ gtin, productName }: Props) {
   const isLoading = historyLoading || trendLoading;
   const hasHistory = !!history && history.length > 0;
 
+  // Track mobile breakpoint to tune the chart density.
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 640px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
   return (
     <section
-      className="mb-8 overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-card to-muted/20 shadow-sm"
+      className="mb-6 overflow-hidden rounded-xl border border-border bg-gradient-to-b from-card to-muted/20 shadow-sm sm:mb-8 sm:rounded-2xl"
       aria-labelledby="price-history-title"
     >
       {/* Header */}
-      <header className="flex flex-col gap-3 border-b border-border/60 bg-card/60 px-4 py-3.5 sm:flex-row sm:items-start sm:justify-between sm:px-5">
+      <header className="flex flex-col gap-2.5 border-b border-border/60 bg-card/60 px-3.5 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-3 sm:px-5 sm:py-3.5">
         <div className="min-w-0">
           <h2
             id="price-history-title"
-            className="flex items-center gap-2 text-base font-bold tracking-tight"
+            className="flex items-center gap-2 text-[15px] font-bold tracking-tight sm:text-base"
             style={{ color: NAVY }}
           >
             <span
-              className="inline-flex h-7 w-7 items-center justify-center rounded-lg"
+              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg sm:h-7 sm:w-7"
               style={{ background: "rgba(28,88,217,0.10)", color: PRIMARY }}
             >
-              <LineChartIcon size={15} aria-hidden />
+              <LineChartIcon size={14} aria-hidden />
             </span>
-            Historique de prix marché
+            <span className="truncate">Historique de prix marché</span>
           </h2>
           <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-            Prix public observé
+            <span>Prix public observé</span>
             <span className="mx-1">·</span>
             <span className="font-medium text-foreground/80">source&nbsp;: Qogita</span>
             {productName ? (
-              <>
-                <span className="mx-1">·</span>
-                <span className="line-clamp-1 align-middle">{productName}</span>
-              </>
+              <span className="mt-0.5 line-clamp-1 sm:mt-0 sm:inline">
+                <span className="mx-1 hidden sm:inline">·</span>
+                <span className="sm:hidden">{productName}</span>
+                <span className="hidden sm:inline">{productName}</span>
+              </span>
             ) : null}
           </p>
         </div>
         {hasHistory && trend && (
-          <div className="flex flex-wrap gap-1.5">
-            <VariationPill label="J/J" pct={trend.change_1d_pct} />
-            <VariationPill label="7 j" pct={trend.change_7d_pct} />
-            <VariationPill label="30 j" pct={trend.change_30d_pct} />
+          <div className="-mx-1 flex snap-x snap-mandatory gap-1.5 overflow-x-auto px-1 pb-0.5 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
+            <div className="snap-start"><VariationPill label="J/J" pct={trend.change_1d_pct} /></div>
+            <div className="snap-start"><VariationPill label="7 j" pct={trend.change_7d_pct} /></div>
+            <div className="snap-start"><VariationPill label="30 j" pct={trend.change_30d_pct} /></div>
           </div>
         )}
       </header>
 
       {/* Stats strip */}
       {hasHistory && stats && (
-        <div className="grid grid-cols-2 gap-3 border-b border-border/60 px-4 py-3 sm:grid-cols-4 sm:px-5">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-2.5 border-b border-border/60 px-3.5 py-2.5 sm:grid-cols-4 sm:gap-3 sm:px-5 sm:py-3">
           <Stat label="Dernier" value={formatEur(stats.last)} tone="current" />
           <Stat label="Moyen 120 j" value={formatEur(stats.avg)} />
           <Stat label="Plus bas" value={formatEur(stats.min)} tone="low" />
@@ -259,17 +271,25 @@ export function ProductPriceHistory({ gtin, productName }: Props) {
       )}
 
       {/* Chart */}
-      <div className="px-2 py-3 sm:px-3">
+      <div className="px-1 py-2.5 sm:px-3 sm:py-3">
         {isLoading ? (
-          <Skeleton className="h-56 w-full" />
+          <Skeleton className="h-48 w-full sm:h-56" />
         ) : !hasHistory ? (
-          <div className="px-2 pb-2 sm:px-2">
+          <div className="px-2 pb-2">
             <EmptyState />
           </div>
         ) : (
-          <div className="h-56 w-full">
+          <div className="h-48 w-full sm:h-56">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={chartData} margin={{ top: 10, right: 14, left: 0, bottom: 0 }}>
+              <ComposedChart
+                data={chartData}
+                margin={{
+                  top: 10,
+                  right: isMobile ? 8 : 14,
+                  left: isMobile ? -8 : 0,
+                  bottom: 0,
+                }}
+              >
                 <defs>
                   <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor={PRIMARY} stopOpacity={0.28} />
@@ -279,20 +299,23 @@ export function ProductPriceHistory({ gtin, productName }: Props) {
                 <CartesianGrid strokeDasharray="2 4" stroke="hsl(var(--border))" vertical={false} />
                 <XAxis
                   dataKey="label"
-                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                  tick={{ fontSize: isMobile ? 9 : 10, fill: "hsl(var(--muted-foreground))" }}
                   tickLine={false}
                   axisLine={{ stroke: "hsl(var(--border))" }}
-                  minTickGap={28}
+                  minTickGap={isMobile ? 40 : 28}
+                  interval="preserveStartEnd"
+                  tickMargin={4}
                 />
                 <YAxis
-                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                  tick={{ fontSize: isMobile ? 9 : 10, fill: "hsl(var(--muted-foreground))" }}
                   tickLine={false}
                   axisLine={false}
-                  width={44}
-                  tickFormatter={(v) => `${Number(v).toFixed(0)} €`}
+                  width={isMobile ? 34 : 44}
+                  tickCount={isMobile ? 4 : 6}
+                  tickFormatter={(v) => `${Number(v).toFixed(0)}${isMobile ? "" : " €"}`}
                   domain={["auto", "auto"]}
                 />
-                {stats && (
+                {stats && !isMobile && (
                   <ReferenceLine
                     y={stats.avg}
                     stroke={NEUTRAL}
@@ -306,6 +329,14 @@ export function ProductPriceHistory({ gtin, productName }: Props) {
                     }}
                   />
                 )}
+                {stats && isMobile && (
+                  <ReferenceLine
+                    y={stats.avg}
+                    stroke={NEUTRAL}
+                    strokeDasharray="3 3"
+                    strokeOpacity={0.4}
+                  />
+                )}
                 <Tooltip
                   cursor={{ stroke: PRIMARY, strokeOpacity: 0.25, strokeWidth: 1 }}
                   contentStyle={{
@@ -316,6 +347,7 @@ export function ProductPriceHistory({ gtin, productName }: Props) {
                     color: "hsl(var(--foreground))",
                     boxShadow: "0 8px 24px -12px rgba(15,23,42,0.25)",
                   }}
+                  wrapperStyle={{ outline: "none" }}
                   labelFormatter={(_l, payload) => {
                     const raw = payload?.[0]?.payload?.date as string | undefined;
                     return raw
@@ -339,9 +371,9 @@ export function ProductPriceHistory({ gtin, productName }: Props) {
                   type="monotone"
                   dataKey="price"
                   stroke={PRIMARY}
-                  strokeWidth={2}
+                  strokeWidth={isMobile ? 1.75 : 2}
                   dot={false}
-                  activeDot={{ r: 5, fill: PRIMARY, stroke: "#fff", strokeWidth: 2 }}
+                  activeDot={{ r: isMobile ? 4 : 5, fill: PRIMARY, stroke: "#fff", strokeWidth: 2 }}
                   isAnimationActive={false}
                 />
               </ComposedChart>

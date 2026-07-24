@@ -527,8 +527,12 @@ async function upsertOffer(
   basePriceExcl: number,
   baseMov: number,
   vatRate: number,
+  marginMul: number,
 ): Promise<string | null> {
   const now = new Date().toISOString();
+  // Apply commercial margin to base price → public sell price (HTVA + TTC).
+  const sellExcl = Math.round(basePriceExcl * marginMul * 100) / 100;
+  const marginPct = Math.round((marginMul - 1) * 10000) / 100;
   const payload = {
     product_id: productId,
     vendor_id: vendorId,
@@ -536,8 +540,10 @@ async function upsertOffer(
     qogita_offer_qid: offer.qid,
     qogita_base_price: basePriceExcl,
     is_qogita_backed: true,
-    price_excl_vat: basePriceExcl,
-    price_incl_vat: Math.round(basePriceExcl * (1 + vatRate) * 100) / 100,
+    price_excl_vat: sellExcl,
+    price_incl_vat: Math.round(sellExcl * (1 + vatRate) * 100) / 100,
+    margin_amount: Math.round((sellExcl - basePriceExcl) * 100) / 100,
+    applied_margin_percentage: marginPct,
     vat_rate: vatRate,
     stock_quantity: offer.inventory,
     stock_status: offer.isInStock ? "in_stock" : "out_of_stock",
@@ -551,13 +557,6 @@ async function upsertOffer(
     price_source: "qogita_storefront",
     price_source_updated_at: now,
     synced_at: now,
-    // Dernière VÉRIFICATION RÉELLE du prix/dispo (distincte de synced_at qui
-    // trace la dernière tentative). Consommée par le guard checkout et par
-    // le futur flip de qogita_config.offers_source_healthy.
-    // TODO(rebuild) : quand un cycle complet du scraper a stampé
-    // last_verified_at sur tout le périmètre attendu, flipper la clé
-    // qogita_config.offers_source_healthy à true — ALORS SEULEMENT les
-    // sweeps A/B/C peuvent désactiver les offres réellement absentes.
     last_verified_at: now,
   };
 

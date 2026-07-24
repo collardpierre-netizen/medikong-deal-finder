@@ -363,8 +363,11 @@ async function executePipeline({
           totalProcessed += processed;
           iterations++;
 
-          if (result?.status === "error") {
-            throw new Error(result?.message || `Échec de l'étape ${step.label}`);
+          if (result?.status === "error" || result?.success === false || result?.error) {
+            // P0-b — surface le message exact renvoyé par la fonction enfant
+            // (avant : "0 enrichis" générique qui masquait TypeError sending request).
+            const childMsg = result?.error || result?.message || `Échec de l'étape ${step.label}`;
+            throw new Error(`${step.label}: ${childMsg}`);
           }
 
           // 429 défer : la fonction signale un backlog rate-limité côté Qogita.

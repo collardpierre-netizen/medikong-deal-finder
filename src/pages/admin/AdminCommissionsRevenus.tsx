@@ -963,7 +963,7 @@ export default function AdminCommissionsRevenus() {
                     return (
                       <tr key={inv.id} className="border-t border-[#F1F5F9] hover:bg-[#F8FAFC]">
                         <td className="p-2 font-mono text-xs">
-                          <a href={`/admin/commissions-revenus/${inv.id}`} className="text-[#1B5BDA] hover:underline">{inv.invoice_number ?? inv.id.slice(0, 8)}</a>
+                          <a href={`/admin/commissions-revenus/${inv.id}`} className="text-[#1B5BDA] hover:underline">{inv.invoice_number || <span className="italic text-slate-500">Sans numéro</span>}</a>
                         </td>
                         <td className="p-2 text-xs">{formatUpdatedAt(inv.created_at)}</td>
                         <td className="p-2">{vname}</td>

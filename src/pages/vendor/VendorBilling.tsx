@@ -95,7 +95,7 @@ export default function VendorBilling() {
     doc.setFontSize(18);
     doc.text("Facture Logistique", 14, 22);
     doc.setFontSize(10);
-    doc.text(`N° ${invoice.invoice_number ?? invoice.id.slice(0, 8)}`, 14, 30);
+    doc.text(`N° ${invoice.invoice_number ?? "Sans numéro"}`, 14, 30);
     doc.text(`Période : ${format(new Date(invoice.period_start), "MMMM yyyy", { locale: fr })}`, 14, 36);
     doc.text(`Statut : ${STATUS_CONFIG[invoice.status]?.label ?? invoice.status}`, 14, 42);
     doc.text(`Vendeur : ${(vendor as any)?.company_name ?? ""}`, 14, 48);
@@ -110,7 +110,7 @@ export default function VendorBilling() {
       ],
     });
 
-    doc.save(`facture-${invoice.invoice_number ?? invoice.id.slice(0, 8)}.pdf`);
+    doc.save(`facture-${invoice.invoice_number ?? "sans-numero"}.pdf`);
   };
 
   if (vendorLoading || invoicesLoading) {
@@ -208,7 +208,7 @@ export default function VendorBilling() {
                         {format(new Date(inv.period_start), "MMMM yyyy", { locale: fr })}
                       </td>
                       <td className="py-2.5 px-3 font-mono text-[11px] text-[#616B7C]">
-                        {inv.invoice_number ?? inv.id.slice(0, 8)}
+                        {inv.invoice_number ?? <span className="italic text-slate-500">Sans numéro</span>}
                       </td>
                       <td className="py-2.5 px-3 text-right">{centsToEur(inv.base_cost_cents)}</td>
                       <td className="py-2.5 px-3 text-right">{centsToEur(inv.margin_cents)}</td>

@@ -722,7 +722,7 @@ function EditInvoiceDialog({
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Facture {invoice.invoice_number || invoice.id.slice(0, 6)}</DialogTitle>
+          <DialogTitle>Facture {invoice.invoice_number || <span className="italic text-slate-500">Sans numéro</span>}</DialogTitle>
           <DialogDescription>
             {fmtEur(Number(invoice.amount_incl_vat))} € TTC · émise le {fmtDate(invoice.issued_at)}
           </DialogDescription>

@@ -131,7 +131,7 @@ export default function AdminCommissionInvoiceDetail() {
 
   return (
     <div>
-      <AdminTopBar title={`Facture ${inv.invoice_number ?? inv.id.slice(0, 8)}`} subtitle={`Vendeur : ${vname}`} />
+      <AdminTopBar title={`Facture ${inv.invoice_number ?? "Sans numéro"}`} subtitle={`Vendeur : ${vname}`} />
       <div className="mb-4">
         <Link to="/admin/commissions-revenus" className="text-sm text-[#1B5BDA] hover:underline inline-flex items-center gap-1">
           <ArrowLeft className="w-3 h-3" /> Retour au dashboard commissions

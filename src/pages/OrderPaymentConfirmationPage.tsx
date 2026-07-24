@@ -128,7 +128,7 @@ export default function OrderPaymentConfirmationPage() {
           <div className="border border-mk-line rounded-lg p-5 mb-6">
             <div className="flex justify-between text-sm mb-2">
               <span className="text-mk-sec">Commande</span>
-              <span className="font-mono text-mk-navy">{order?.order_number || orderId.slice(0, 8)}</span>
+              <span className="font-mono text-mk-navy">{order?.order_number || <span className="italic text-mk-sec">Sans numéro</span>}</span>
             </div>
             {order?.total_incl_vat != null && (
               <div className="flex justify-between text-sm mb-2">

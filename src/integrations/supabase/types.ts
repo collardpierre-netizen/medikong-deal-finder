@@ -4047,6 +4047,30 @@ export type Database = {
           },
         ]
       }
+      document_number_sequences: {
+        Row: {
+          document_type: string
+          id: string
+          last_number: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          document_type: string
+          id?: string
+          last_number?: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          document_type?: string
+          id?: string
+          last_number?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -28947,6 +28971,10 @@ export type Database = {
         Returns: Json
       }
       force_switch_to_paid: { Args: { _sub_id: string }; Returns: undefined }
+      generate_document_number: {
+        Args: { p_document_type: string; p_year?: number }
+        Returns: string
+      }
       generate_quote_number: { Args: never; Returns: string }
       get_action_center: { Args: { _scope: string }; Returns: Json }
       get_active_contract_template: {

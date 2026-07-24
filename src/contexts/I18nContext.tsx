@@ -80,6 +80,7 @@ const translations: Record<Lang, Record<string, string>> = {
     comingSoon: "Cette section sera bientôt disponible.",
     catalog: "Catalogue",
     myOffers: "Mes Offres",
+    trackingCampaigns: "Liens & QR tracés",
     rfqInbox: "Demandes de prix",
     proposeProduct: "Proposer un produit",
     vendorCatalogTitle: "Catalogue MediKong",

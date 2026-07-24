@@ -818,3 +818,225 @@ async function handlePayoutFailed(payout: any) {
     detail: `Payout ${payout.id} échoué: ${payout.failure_message || "raison inconnue"} pour compte ${payout.destination || "inconnu"}`,
   });
 }
+
+/**
+ * Invoice paid via Stripe Checkout (SEPA `customer_balance` created by
+ * `create-invoice-sepa-checkout`). Marks the `order_invoices` row paid, cascades
+ * the payment_status to the parent order when all invoices are paid, and
+ * triggers a Stripe Connect Transfer to the vendor (net = TTC - commission
+ * HTVA × commission_rate), reusing `order_transfers` for idempotency.
+ */
+export async function handleInvoiceCheckoutSucceeded(session: Stripe.Checkout.Session) {
+  ensureDeps();
+  const invoiceId = session.metadata?.invoice_id;
+  if (!invoiceId) return;
+
+  // 1) Idempotence : si déjà paid, skip.
+  const { data: invoice, error: invErr } = await supabase
+    .from("order_invoices")
+    .select("id, order_id, vendor_id, status, amount_excl_vat, amount_incl_vat, invoice_number, type")
+    .eq("id", invoiceId)
+    .maybeSingle();
+  if (invErr || !invoice) {
+    console.error(`[stripe-webhook][invoice] fetch failed ${invoiceId}`, invErr);
+    return;
+  }
+  const paidAtIso = new Date().toISOString();
+
+  if (invoice.status !== "paid") {
+    const paymentIntentId = typeof session.payment_intent === "string"
+      ? session.payment_intent
+      : session.payment_intent?.id ?? null;
+    const { error: updErr } = await supabase
+      .from("order_invoices")
+      .update({
+        status: "paid",
+        paid_at: paidAtIso,
+        payment_amount_received: session.amount_total != null ? session.amount_total / 100 : invoice.amount_incl_vat,
+        payment_method_received: "sepa_bank_transfer",
+        payment_reference: paymentIntentId ?? session.id,
+        updated_at: paidAtIso,
+      })
+      .eq("id", invoiceId)
+      .neq("status", "paid");
+    if (updErr) {
+      console.error(`[stripe-webhook][invoice] update paid failed ${invoiceId}`, updErr);
+    } else {
+      console.log(`[stripe-webhook][invoice] ${invoice.invoice_number ?? invoiceId} → paid`);
+    }
+  }
+
+  // 2) Cascade sur orders : si toutes les factures self_billing de la commande
+  //    sont paid, marque la commande payée.
+  if (invoice.order_id) {
+    const { data: siblings } = await supabase
+      .from("order_invoices")
+      .select("id, status")
+      .eq("order_id", invoice.order_id)
+      .eq("type", "self_billing");
+    const allPaid = (siblings ?? []).length > 0 && siblings!.every((s: any) => s.status === "paid");
+    if (allPaid) {
+      const { error: ordErr } = await supabase
+        .from("orders")
+        .update({
+          payment_status: "paid",
+          status: "confirmed",
+        })
+        .eq("id", invoice.order_id)
+        .neq("payment_status", "paid");
+      if (ordErr) {
+        console.error(`[stripe-webhook][invoice] order cascade failed ${invoice.order_id}`, ordErr);
+      }
+    }
+  }
+
+  // 3) Reversement Stripe Connect (best-effort, idempotent via order_transfers).
+  if (!invoice.order_id || !invoice.vendor_id) {
+    console.log(`[stripe-webhook][invoice] no order/vendor, skip transfer for ${invoiceId}`);
+    return;
+  }
+
+  const { data: vendor } = await supabase
+    .from("vendors")
+    .select("id, stripe_account_id, commission_rate, stripe_charges_enabled")
+    .eq("id", invoice.vendor_id)
+    .maybeSingle();
+  if (!vendor?.stripe_account_id || !vendor?.stripe_charges_enabled) {
+    console.warn(`[stripe-webhook][invoice] vendor ${invoice.vendor_id} sans Stripe Connect actif, skip transfer`);
+    return;
+  }
+
+  const defaultCommission = parseFloat(Deno.env.get("DEFAULT_COMMISSION_RATE") || "0.20");
+  const commRate = Number(vendor.commission_rate ?? defaultCommission);
+  const htCents = Math.round(Number(invoice.amount_excl_vat || 0) * 100);
+  const ttcCents = Math.round(Number(invoice.amount_incl_vat || 0) * 100);
+  const commissionCents = Math.round(htCents * commRate);
+  const transferAmount = ttcCents - commissionCents;
+  if (transferAmount <= 0) {
+    console.warn(`[stripe-webhook][invoice] transfer_amount<=0 order=${invoice.order_id} vendor=${invoice.vendor_id}, skip`);
+    return;
+  }
+
+  // Idempotence : ne pas re-transférer si order_transfers déjà completed pour ce couple.
+  const { data: existing } = await supabase
+    .from("order_transfers")
+    .select("id, status, stripe_transfer_id")
+    .eq("order_id", invoice.order_id)
+    .eq("vendor_id", invoice.vendor_id)
+    .maybeSingle();
+  if (existing?.stripe_transfer_id || existing?.status === "completed") {
+    console.log(`[stripe-webhook][invoice] transfer déjà présent order=${invoice.order_id} vendor=${invoice.vendor_id}, skip`);
+    return;
+  }
+
+  let rowId = existing?.id as string | undefined;
+  if (!rowId) {
+    const { data: inserted, error: insertErr } = await supabase
+      .from("order_transfers")
+      .insert({
+        order_id: invoice.order_id,
+        vendor_id: invoice.vendor_id,
+        amount: transferAmount,
+        commission_amount: commissionCents,
+        commission_rate: commRate,
+        status: "pending",
+      })
+      .select("id")
+      .single();
+    if (insertErr) {
+      const { data: refetched } = await supabase
+        .from("order_transfers")
+        .select("id, status")
+        .eq("order_id", invoice.order_id)
+        .eq("vendor_id", invoice.vendor_id)
+        .maybeSingle();
+      if (refetched?.status === "completed") return;
+      rowId = refetched?.id;
+    } else {
+      rowId = inserted.id;
+    }
+  }
+
+  // Récupère le charge id (source_transaction) depuis le PaymentIntent
+  let latestCharge: string | null = null;
+  const paymentIntentId = typeof session.payment_intent === "string"
+    ? session.payment_intent
+    : session.payment_intent?.id ?? null;
+  if (paymentIntentId) {
+    try {
+      const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+      latestCharge = (pi.latest_charge as string) ?? null;
+    } catch (e) {
+      console.warn(`[stripe-webhook][invoice] PI retrieve failed`, e);
+    }
+  }
+
+  try {
+    const transferPayload: any = {
+      amount: transferAmount,
+      currency: "eur",
+      destination: vendor.stripe_account_id,
+      metadata: {
+        order_id: invoice.order_id,
+        vendor_id: invoice.vendor_id,
+        invoice_id: invoiceId,
+        billing_model: "mandataire",
+        payment_method: "sepa_bank_transfer",
+      },
+    };
+    if (latestCharge) transferPayload.source_transaction = latestCharge;
+
+    const transfer = await stripe.transfers.create(transferPayload, {
+      idempotencyKey: `invoice_transfer_${invoiceId}`,
+    });
+    if (rowId) {
+      await supabase
+        .from("order_transfers")
+        .update({
+          stripe_transfer_id: transfer.id,
+          status: "completed",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", rowId);
+    }
+    console.log(`[stripe-webhook][invoice] Transfer ${transfer.id} OK invoice=${invoiceId} (${transferAmount}c)`);
+  } catch (err: any) {
+    console.error(`[stripe-webhook][invoice] Transfer FAILED invoice=${invoiceId}:`, err);
+    if (rowId) {
+      const { data: current } = await supabase
+        .from("order_transfers")
+        .select("status, stripe_transfer_id")
+        .eq("id", rowId)
+        .single();
+      if (current?.status !== "completed" && !current?.stripe_transfer_id) {
+        await supabase
+          .from("order_transfers")
+          .update({
+            status: "failed",
+            error_message: err?.message || String(err),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", rowId);
+      }
+    }
+  }
+}
+
+export async function handleInvoiceCheckoutFailed(session: Stripe.Checkout.Session) {
+  ensureDeps();
+  const invoiceId = session.metadata?.invoice_id;
+  if (!invoiceId) return;
+  await supabase
+    .from("order_invoices")
+    .update({
+      error_message: `Paiement SEPA échoué (session ${session.id})`,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", invoiceId)
+    .neq("status", "paid");
+  await supabase.from("audit_logs").insert({
+    action: "invoice_payment_failed",
+    module: "stripe",
+    detail: `Checkout session ${session.id} échouée pour invoice ${invoiceId}`,
+  });
+}

@@ -296,6 +296,28 @@ Deno.serve(async (req) => {
       `${QOGITA_API}/carts/${activeCartQid}/lines/?country=${country}`,
       H,
     );
+
+    // === Diagnostic /lines/ : quels champs attend ce endpoint ? ===
+    results["lines_options"] = await probe(
+      `${QOGITA_API}/carts/${activeCartQid}/lines/`,
+      H,
+      { method: "OPTIONS" },
+    );
+    results["lines_post_empty_body"] = await probe(
+      `${QOGITA_API}/carts/${activeCartQid}/lines/`,
+      { ...H, "Content-Type": "application/json" },
+      { method: "POST", body: JSON.stringify({}) },
+    );
+    results["lines_post_only_quantity"] = await probe(
+      `${QOGITA_API}/carts/${activeCartQid}/lines/`,
+      { ...H, "Content-Type": "application/json" },
+      { method: "POST", body: JSON.stringify({ quantity: 1 }) },
+    );
+    results["lines_post_fake_offer_qid"] = await probe(
+      `${QOGITA_API}/carts/${activeCartQid}/lines/`,
+      { ...H, "Content-Type": "application/json" },
+      { method: "POST", body: JSON.stringify({ offerQid: "00000000-0000-0000-0000-000000000000", quantity: 1 }) },
+    );
   }
 
   // 6) Watchlist (peut porter des prix ?)

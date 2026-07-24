@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { ImageOff, Eye } from "lucide-react";
+import { ImageOff, Eye, Lock, Loader2 } from "lucide-react";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
 import { Heart, Check, ChevronDown, ChevronUp, Package, Truck, RotateCcw, ArrowRight, AlertCircle } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -7,6 +7,8 @@ import { useProductOffers } from "@/hooks/useProducts";
 import type { Product } from "@/hooks/useProducts";
 import { useBestOfferForProduct } from "@/contexts/BestOffersContext";
 import { OfferSkeletonRow } from "@/components/shared/OfferSkeletonRow";
+import { useAuth } from "@/contexts/AuthContext";
+
 
 interface Props {
   product: Product;
@@ -24,6 +26,7 @@ const prefetchedProductIds = new Set<string>();
 export default function SearchTrivagoCard({ product: p }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const fromState = { state: { from: location.pathname + location.search } };
   const [showMore, setShowMore] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -31,7 +34,8 @@ export default function SearchTrivagoCard({ product: p }: Props) {
 
   // ⚡ Best offer pré-chargé via le batch RPC (BestOffersProvider). Si la page ne
   // monte pas le provider, on retombe sur l'ancien `useProductOffers` immédiat.
-  const { bestOffer: batchBest, hasContext } = useBestOfferForProduct(p.id);
+  const { bestOffer: batchBest, hasContext, isLoading: batchLoading, isError: batchError } = useBestOfferForProduct(p.id);
+
 
   // Les "autres offres" restent en lazy : on ne déclenche `useProductOffers`
   // que quand l'utilisateur ouvre la liste (économise N-1 RPC par page).
@@ -190,67 +194,121 @@ export default function SearchTrivagoCard({ product: p }: Props) {
         </div>
 
         {/* ZONE 3 — Best deal panel — high contrast like Trivago */}
-        <div className={`w-full md:w-[250px] shrink-0 border-t md:border-t-0 md:border-l border-border p-4 flex flex-col justify-between ${hasOffer ? "bg-emerald-50" : "bg-muted/40"}`}>
-          {hasOffer ? (
-            <>
-              <div>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <p className="text-xs font-bold text-emerald-800">
-                    {bestOffer?.sellerName || "Meilleur prix"}
-                  </p>
-                  {bestOffer?.isExclusiveWinner && (
-                    <span
-                      title="Vendeur exclusif sur ce produit"
-                      className="text-[9px] font-bold uppercase tracking-wide text-amber-900 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded"
-                    >
-                      Exclusif
-                    </span>
-                  )}
-                </div>
-                {bestOffer && (
-                  <p className="text-[10px] text-emerald-600 mt-1 flex items-center gap-1">
-                    <Check size={10} className="text-emerald-500" />
-                    Réservez au meilleur prix
-                  </p>
-                )}
-              </div>
-              <div className="mt-3">
-                <span className="text-2xl font-extrabold text-foreground tracking-tight">{price.toFixed(2)}&nbsp;€</span>
-                {pct > 0 && (
-                  <span className="ml-2 text-xs font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded">-{pct}%</span>
-                )}
-                <p className="text-[10px] text-muted-foreground mt-0.5">HTVA</p>
-                {bestOffer && (
-                  <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
-                    <span className="flex items-center gap-1"><Truck size={10} /> {bestOffer.deliveryDays}j</span>
-                    <span className="flex items-center gap-1"><RotateCcw size={10} /> Retour 30j</span>
-                  </div>
-                )}
-                <button
-                  onClick={() => navigate(`/produit/${p.slug}`, fromState)}
-                  className="w-full mt-3 py-2.5 text-white text-[13px] font-bold rounded-lg
-                            transition-all bg-emerald-700 hover:bg-emerald-800 flex items-center justify-center gap-2 shadow-sm"
+        {(() => {
+          // États dérivés pour l'affichage :
+          //  - loading      : batch RPC en vol, aucune donnée encore
+          //  - authRequired : batch en erreur (RLS/401) et visiteur non connecté
+          const showLoading = hasContext && batchLoading && !batchBest;
+          const showAuthGate = !user && hasContext && batchError && !batchBest;
+          const panelBg = showLoading
+            ? "bg-muted/40"
+            : showAuthGate
+              ? "bg-primary/5"
+              : hasOffer
+                ? "bg-emerald-50"
+                : "bg-muted/40";
+          return (
+            <div className={`w-full md:w-[250px] shrink-0 border-t md:border-t-0 md:border-l border-border p-4 flex flex-col justify-between ${panelBg}`}>
+              {showLoading ? (
+                <div
+                  className="flex-1 flex flex-col items-center justify-center text-center gap-2"
+                  role="status"
+                  aria-live="polite"
+                  aria-label="Chargement des meilleures offres"
                 >
-                  Voir l'offre <ArrowRight size={14} />
-                </button>
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-center gap-2">
-              <Package size={20} className="text-muted-foreground" aria-hidden="true" />
-              <p className="text-sm font-semibold text-foreground">Pas encore d'offre</p>
-              <p className="text-[11px] text-muted-foreground leading-snug">
-                Aucun fournisseur n'a listé ce produit pour le moment.
-              </p>
-              <button
-                onClick={() => navigate(`/produit/${p.slug}`, fromState)}
-                className="mt-1 px-3.5 py-2 border border-border text-foreground text-[12px] font-semibold rounded-md hover:bg-muted transition-colors inline-flex items-center gap-1.5"
-              >
-                Voir le produit <ArrowRight size={12} />
-              </button>
+                  <Loader2 size={20} className="text-muted-foreground animate-spin" aria-hidden="true" />
+                  <p className="text-[11px] text-muted-foreground">Chargement des offres…</p>
+                  <div className="w-full mt-1 space-y-1.5">
+                    <div className="h-3 rounded bg-muted/70 animate-pulse" />
+                    <div className="h-6 rounded bg-muted/70 animate-pulse w-2/3 mx-auto" />
+                    <div className="h-8 rounded bg-muted/70 animate-pulse mt-2" />
+                  </div>
+                </div>
+              ) : showAuthGate ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-center gap-2">
+                  <Lock size={20} className="text-primary" aria-hidden="true" />
+                  <p className="text-sm font-semibold text-foreground">Connexion requise</p>
+                  <p className="text-[11px] text-muted-foreground leading-snug">
+                    Connectez-vous pour voir les prix et les meilleures offres des vendeurs vérifiés.
+                  </p>
+                  <button
+                    onClick={() =>
+                      navigate(`/connexion?redirect=${encodeURIComponent(location.pathname + location.search)}`)
+                    }
+                    className="mt-1 w-full py-2 bg-primary text-primary-foreground text-[12px] font-semibold rounded-md hover:bg-primary/90 transition-colors inline-flex items-center justify-center gap-1.5"
+                  >
+                    Se connecter <ArrowRight size={12} />
+                  </button>
+                  <button
+                    onClick={() => navigate(`/produit/${p.slug}`, fromState)}
+                    className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Voir le produit
+                  </button>
+                </div>
+              ) : hasOffer ? (
+                <>
+                  <div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <p className="text-xs font-bold text-emerald-800">
+                        {bestOffer?.sellerName || "Meilleur prix"}
+                      </p>
+                      {bestOffer?.isExclusiveWinner && (
+                        <span
+                          title="Vendeur exclusif sur ce produit"
+                          className="text-[9px] font-bold uppercase tracking-wide text-amber-900 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded"
+                        >
+                          Exclusif
+                        </span>
+                      )}
+                    </div>
+                    {bestOffer && (
+                      <p className="text-[10px] text-emerald-600 mt-1 flex items-center gap-1">
+                        <Check size={10} className="text-emerald-500" />
+                        Réservez au meilleur prix
+                      </p>
+                    )}
+                  </div>
+                  <div className="mt-3">
+                    <span className="text-2xl font-extrabold text-foreground tracking-tight">{price.toFixed(2)}&nbsp;€</span>
+                    {pct > 0 && (
+                      <span className="ml-2 text-xs font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded">-{pct}%</span>
+                    )}
+                    <p className="text-[10px] text-muted-foreground mt-0.5">HTVA</p>
+                    {bestOffer && (
+                      <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
+                        <span className="flex items-center gap-1"><Truck size={10} /> {bestOffer.deliveryDays}j</span>
+                        <span className="flex items-center gap-1"><RotateCcw size={10} /> Retour 30j</span>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => navigate(`/produit/${p.slug}`, fromState)}
+                      className="w-full mt-3 py-2.5 text-white text-[13px] font-bold rounded-lg
+                                transition-all bg-emerald-700 hover:bg-emerald-800 flex items-center justify-center gap-2 shadow-sm"
+                    >
+                      Voir l'offre <ArrowRight size={14} />
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center gap-2">
+                  <Package size={20} className="text-muted-foreground" aria-hidden="true" />
+                  <p className="text-sm font-semibold text-foreground">Pas encore d'offre</p>
+                  <p className="text-[11px] text-muted-foreground leading-snug">
+                    Aucun fournisseur n'a listé ce produit pour le moment.
+                  </p>
+                  <button
+                    onClick={() => navigate(`/produit/${p.slug}`, fromState)}
+                    className="mt-1 px-3.5 py-2 border border-border text-foreground text-[12px] font-semibold rounded-md hover:bg-muted transition-colors inline-flex items-center gap-1.5"
+                  >
+                    Voir le produit <ArrowRight size={12} />
+                  </button>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          );
+        })()}
+
       </div>
 
       {/* Secondary offers — lazy : on n'invoque useProductOffers qu'au clic */}

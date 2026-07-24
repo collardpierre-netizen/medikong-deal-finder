@@ -24,41 +24,6 @@ function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-const PROJECT_URL_RE = /^https:\/\/[a-z0-9]+\.supabase\.co\/?$/;
-
-function scheduleNextChunk(body: object) {
-  const supabaseUrl = (Deno.env.get("SUPABASE_URL") ?? "").trim();
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-
-  if (!PROJECT_URL_RE.test(supabaseUrl)) {
-    console.error(`internal_invoke_failed: sync-qogita-offers-detail — INVALID_PROJECT_URL (got="${supabaseUrl}")`);
-    return;
-  }
-  if (!serviceRoleKey) {
-    console.error("internal_invoke_failed: sync-qogita-offers-detail — MISSING_SERVICE_ROLE_KEY");
-    return;
-  }
-
-  // Utilise le client officiel : routing interne Edge Runtime (pas de sortie
-  // HTTPS vers l'URL publique du projet, qui échoue régulièrement avec
-  // "TypeError: error sending request from 10.32.x.x:PORT for https://<ref>...").
-  const internalClient = createClient(supabaseUrl, serviceRoleKey);
-  const nextChunk = internalClient.functions
-    .invoke("sync-qogita-offers-detail", { body })
-    .then(({ error }) => {
-      if (error) {
-        console.error(`internal_invoke_failed: sync-qogita-offers-detail — ${error.message ?? error}`);
-      }
-    })
-    .catch((e) => {
-      console.error(`internal_invoke_failed: sync-qogita-offers-detail — ${e?.message ?? e}`);
-    });
-
-  const edgeRuntime = (globalThis as any).EdgeRuntime;
-  if (edgeRuntime?.waitUntil) edgeRuntime.waitUntil(nextChunk);
-}
-
-
 // --- Qogita rate limiter (token bucket en mémoire) ---
 // Débit soutenu ~0.5 req/s (1 req toutes les 2s), burst 1. Volontairement
 // conservateur pour rester sous le seuil 429 observé côté Qogita (juin 2026).
@@ -719,13 +684,15 @@ Deno.serve(async (req) => {
     syncLogId = newLog!.id;
   }
 
-  // Run sync synchronously (not in background) so we can return accurate remaining
+  // Run sync synchronously. Multi-vendor continuation is handled in-process by
+  // syncOffers; no Edge self-invocation / loopback call is used here.
   let productsEnriched = 0;
   let offersUpserted = 0;
+  let syncResult: any = null;
   try {
-    const result = await syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, startTime, fetchMultiVendor, recordEndpointError, recordProgress, resyncLogId, afterCreatedAt, syncRunId, productIds, fastMode);
-    productsEnriched = result?.products_enriched || 0;
-    offersUpserted = result?.offers_upserted || 0;
+    syncResult = await syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, startTime, fetchMultiVendor, recordEndpointError, recordProgress, resyncLogId, afterCreatedAt, syncRunId, productIds, fastMode);
+    productsEnriched = syncResult?.products_enriched || 0;
+    offersUpserted = syncResult?.offers_upserted || 0;
   } catch (e: any) {
     console.error("Sync offers error:", e);
     await sb
@@ -751,9 +718,11 @@ Deno.serve(async (req) => {
       multi_vendor: fetchMultiVendor,
       products_enriched: productsEnriched,
       offers_upserted: offersUpserted,
+      stats: syncResult,
       next_cursor: nextCursor,
+      remaining: nextCursor ? 1 : 0,
       status: updatedLog?.status || "unknown",
-      message: `Sync offres ${targetCountry} — ${productsEnriched} enrichis${nextCursor ? " (chunk suivant programmé)" : ""}`,
+      message: `Sync offres ${targetCountry} — ${productsEnriched} enrichis${nextCursor ? " (partiel, à reprendre)" : ""}`,
     }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );
@@ -778,9 +747,172 @@ async function syncOffers(
   const executionProfile = getExecutionProfile(fetchMultiVendor);
   const { token, baseUrl } = await getQogitaToken(sb);
   const bestPriceVendorId = await ensureBestPriceVendor(sb, country, syncRunId);
-
   const CHUNK_LIMIT = 1000;
   const incrementalProductFilter = "offer_count.gt.0,synced_at.is.null,qogita_qid.is.null";
+
+  const aggregateStats: any = {
+    country,
+    multi_vendor: fetchMultiVendor,
+    products_enriched: 0,
+    offers_upserted: 0,
+    multi_vendor_offers: 0,
+    vendors_created: 0,
+    tiers_synced: 0,
+    errors: 0,
+    skipped: 0,
+    rate_limited: 0,
+    cursor_after: afterCreatedAt,
+    first_api_response_keys: null,
+    first_flat_sample: null,
+    chunks_processed: 0,
+  };
+
+  let currentCursor = afterCreatedAt;
+
+  while (true) {
+    const pageStats = await syncOffersPage({
+      sb,
+      country,
+      vatRate,
+      vatMultiplier,
+      logId,
+      startTime,
+      fetchMultiVendor,
+      recordEndpointError,
+      recordProgress,
+      resyncLogId,
+      afterCreatedAt: currentCursor,
+      syncRunId,
+      productIds,
+      fastMode,
+      executionProfile,
+      token,
+      baseUrl,
+      bestPriceVendorId,
+      chunkLimit: CHUNK_LIMIT,
+      incrementalProductFilter,
+    });
+
+    aggregateStats.products_enriched += pageStats.products_enriched || 0;
+    aggregateStats.offers_upserted += pageStats.offers_upserted || 0;
+    aggregateStats.multi_vendor_offers += pageStats.multi_vendor_offers || 0;
+    aggregateStats.vendors_created += pageStats.vendors_created || 0;
+    aggregateStats.errors += pageStats.errors || 0;
+    aggregateStats.skipped += pageStats.skipped || 0;
+    aggregateStats.rate_limited += pageStats.rate_limited || 0;
+    aggregateStats.tiers_synced += pageStats.tiers_synced || 0;
+    aggregateStats.cursor_after = pageStats.cursor_after ?? currentCursor;
+    aggregateStats.chunks_processed += 1;
+
+    if (!aggregateStats.first_api_response_keys && pageStats.first_api_response_keys) {
+      aggregateStats.first_api_response_keys = pageStats.first_api_response_keys;
+      aggregateStats.first_flat_sample = pageStats.first_flat_sample;
+    }
+    if (aggregateStats.first_mv_offer_keys === undefined && pageStats.first_mv_offer_keys !== undefined) {
+      aggregateStats.first_mv_offer_keys = pageStats.first_mv_offer_keys;
+      aggregateStats.first_mv_offer_sample = pageStats.first_mv_offer_sample;
+    }
+
+    if (pageStats.paused) {
+      await sb
+        .from("sync_logs")
+        .update({ stats: aggregateStats })
+        .eq("id", logId);
+      return aggregateStats;
+    }
+
+    if (pageStats.completed_reason === "no_eligible_products" || !pageStats.has_more_chunks) {
+      await sb
+        .from("sync_logs")
+        .update({
+          status: "completed",
+          completed_at: new Date().toISOString(),
+          stats: aggregateStats,
+          progress_message: `${country}: terminé — ${aggregateStats.products_enriched} enrichis, ${aggregateStats.offers_upserted} offres, ${aggregateStats.multi_vendor_offers} multi-vendeur ✓`,
+        })
+        .eq("id", logId);
+
+      if (resyncLogId) {
+        try {
+          await sb.rpc("finalize_qogita_resync_log", {
+            _id: resyncLogId,
+            _status: aggregateStats.errors > 0 ? "partial" : "success",
+            _stats: {
+              total_errors: aggregateStats.errors || 0,
+              metadata: aggregateStats,
+            },
+          });
+        } catch (_) { /* never fail the sync because of logging */ }
+      }
+
+      await sb.from("qogita_config").upsert({ key: "last_offers_sync_at", value: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: "key" });
+      await sb.from("qogita_config").upsert({ key: "sync_status", value: "completed", updated_at: new Date().toISOString() }, { onConflict: "key" });
+
+      return aggregateStats;
+    }
+
+    currentCursor = pageStats.cursor_after ?? currentCursor;
+
+    // Non multi-vendor modes keep the previous page-at-a-time behaviour and let
+    // the orchestrator loop call the next batch. The multi-vendor path continues
+    // locally, avoiding the former sync-qogita-offers-detail self-invocation.
+    if (!fetchMultiVendor) {
+      await sb
+        .from("sync_logs")
+        .update({
+          status: "partial",
+          stats: aggregateStats,
+          progress_message: `${country}: chunk terminé (${pageStats.page_total} produits, cursor=${aggregateStats.cursor_after}) — reprise par orchestrateur`,
+        })
+        .eq("id", logId);
+      return aggregateStats;
+    }
+  }
+}
+
+async function syncOffersPage({
+  sb,
+  country,
+  vatRate,
+  vatMultiplier,
+  logId,
+  startTime,
+  fetchMultiVendor,
+  recordEndpointError,
+  recordProgress,
+  resyncLogId,
+  afterCreatedAt,
+  syncRunId,
+  productIds,
+  fastMode,
+  executionProfile,
+  token,
+  baseUrl,
+  bestPriceVendorId,
+  chunkLimit,
+  incrementalProductFilter,
+}: {
+  sb: any;
+  country: string;
+  vatRate: number;
+  vatMultiplier: number;
+  logId: string;
+  startTime: number;
+  fetchMultiVendor: boolean;
+  recordEndpointError: (endpoint: string, status: number | null, message: string) => Promise<void>;
+  recordProgress: (delta: Record<string, number>) => Promise<void>;
+  resyncLogId: string | null;
+  afterCreatedAt: string | null;
+  syncRunId: string | null;
+  productIds: string[];
+  fastMode: boolean;
+  executionProfile: ReturnType<typeof getExecutionProfile>;
+  token: string;
+  baseUrl: string;
+  bestPriceVendorId: string;
+  chunkLimit: number;
+  incrementalProductFilter: string;
+}) {
 
   // Keyset pagination : fetch next 1000 products after cursor.
   let productsQuery = sb
@@ -790,7 +922,7 @@ async function syncOffers(
     .not("gtin", "is", null)
     .order("created_at", { ascending: true })
     .order("id", { ascending: true })
-    .limit(CHUNK_LIMIT);
+    .limit(chunkLimit);
 
   if (productIds.length > 0) {
     productsQuery = productsQuery.in("id", productIds);
@@ -824,14 +956,7 @@ async function syncOffers(
         progress_message: `${country}: aucun produit éligible à synchroniser`,
       })
       .eq("id", logId);
-    if (resyncLogId) {
-      await sb.rpc("finalize_qogita_resync_log", {
-        _id: resyncLogId,
-        _status: "success",
-        _stats: { metadata: { country, multi_vendor: fetchMultiVendor, completed_reason: "no_eligible_products" } },
-      });
-    }
-    return { products_enriched: 0, offers_upserted: 0 };
+    return { products_enriched: 0, offers_upserted: 0, completed_reason: "no_eligible_products", cursor_after: afterCreatedAt };
   }
 
   const total = products.length;
@@ -851,12 +976,16 @@ async function syncOffers(
     offers_upserted: 0,
     multi_vendor_offers: 0,
     vendors_created: 0,
+    tiers_synced: 0,
     errors: 0,
     skipped: 0,
     rate_limited: 0,
     cursor_after: afterCreatedAt,
     first_api_response_keys: null,
     first_flat_sample: null,
+    page_total: total,
+    has_more_chunks: false,
+    paused: false,
   };
 
   // Helper : cursor du dernier produit effectivement traité (borne haute atteinte).
@@ -870,6 +999,7 @@ async function syncOffers(
   for (let batchStart = 0; batchStart < total; batchStart += executionProfile.batchSize) {
     if (Date.now() - startTime > executionProfile.maxExecutionTime) {
       stats.cursor_after = cursorAt(batchStart);
+      stats.paused = true;
       await sb
         .from("sync_logs")
         .update({
@@ -877,10 +1007,9 @@ async function syncOffers(
           stats,
           progress_current: batchStart,
           progress_total: total,
-          progress_message: `${country}: pause timeout — ${batchStart}/${total} (reprendra au prochain clic)`,
+          progress_message: `${country}: pause timeout — ${batchStart}/${total} (reprendra au prochain passage)`,
         })
         .eq("id", logId);
-      scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after, resync_log_id: resyncLogId, sync_run_id: syncRunId, product_ids: productIds });
       return stats;
     }
 
@@ -939,6 +1068,7 @@ async function syncOffers(
       }
 
       if (Date.now() - startTime > executionProfile.maxExecutionTime) {
+        stats.paused = true;
         await sb
           .from("sync_logs")
           .update({
@@ -946,10 +1076,9 @@ async function syncOffers(
             stats,
             progress_current: currentChunkEnd,
             progress_total: total,
-            progress_message: `${country}: pause contrôlée — ${currentChunkEnd}/${total} (reprendra automatiquement)`,
+            progress_message: `${country}: pause contrôlée — ${currentChunkEnd}/${total} (reprendra au prochain passage)`,
           })
           .eq("id", logId);
-        scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after, resync_log_id: resyncLogId, sync_run_id: syncRunId, product_ids: productIds });
         return stats;
       }
     }
@@ -969,11 +1098,12 @@ async function syncOffers(
     await sleep(executionProfile.batchDelayMs);
   }
 
-  // Une page pleine (CHUNK_LIMIT) → il reste probablement d'autres produits éligibles.
-  const hasMoreChunks = productIds.length === 0 && total >= CHUNK_LIMIT;
+  // Une page pleine (chunkLimit) → il reste probablement d'autres produits éligibles.
+  const hasMoreChunks = productIds.length === 0 && total >= chunkLimit;
 
   if (hasMoreChunks) {
     stats.cursor_after = cursorAt(total);
+    stats.has_more_chunks = true;
     await sb
       .from("sync_logs")
       .update({
@@ -981,44 +1111,11 @@ async function syncOffers(
         stats,
         progress_current: total,
         progress_total: total,
-        progress_message: `${country}: chunk terminé (${total} produits, cursor=${stats.cursor_after}) — relance auto`,
+          progress_message: `${country}: chunk terminé (${total} produits, cursor=${stats.cursor_after}) — continuation interne`,
       })
       .eq("id", logId);
-    scheduleNextChunk({ country, multi_vendor: fetchMultiVendor, after_created_at: stats.cursor_after, resync_log_id: resyncLogId, sync_run_id: syncRunId, product_ids: productIds });
     return stats;
   }
-
-
-
-  await sb
-    .from("sync_logs")
-    .update({
-      status: "completed",
-      completed_at: new Date().toISOString(),
-      stats,
-      progress_current: total,
-      progress_total: total,
-      progress_message: `${country}: terminé — ${stats.products_enriched} enrichis, ${stats.offers_upserted} offres, ${stats.multi_vendor_offers} multi-vendeur ✓`,
-    })
-    .eq("id", logId);
-
-  // Push aggregate counters & finalize the qogita_resync_logs row (if provided)
-  if (resyncLogId) {
-    try {
-      await sb.rpc("finalize_qogita_resync_log", {
-        _id: resyncLogId,
-        _status: stats.errors > 0 ? "partial" : "success",
-        _stats: {
-          total_errors: stats.errors || 0,
-          metadata: stats,
-        },
-      });
-    } catch (_) { /* never fail the sync because of logging */ }
-  }
-
-  await sb.from("qogita_config").upsert({ key: "last_offers_sync_at", value: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: "key" });
-  await sb.from("qogita_config").upsert({ key: "sync_status", value: "completed", updated_at: new Date().toISOString() }, { onConflict: "key" });
-
 
   return stats;
 }

@@ -593,6 +593,15 @@ Deno.serve(async (req) => {
 
     // ─── Footer + filigrane BROUILLON (toutes pages) ───────────────────
     const pageCount = (doc as any).internal.getNumberOfPages();
+    const fitFooterText = (text: string, maxWidth: number) => {
+      if (doc.getTextWidth(text) <= maxWidth) return text;
+      const ellipsis = "…";
+      let candidate = text;
+      while (candidate.length > 0 && doc.getTextWidth(`${candidate}${ellipsis}`) > maxWidth) {
+        candidate = candidate.slice(0, -1);
+      }
+      return `${candidate.trimEnd()}${ellipsis}`;
+    };
     for (let p = 1; p <= pageCount; p++) {
       doc.setPage(p);
 
@@ -632,9 +641,11 @@ Deno.serve(async (req) => {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(7.5);
       doc.setTextColor(...MUTED);
-      doc.text(`Bon de commande ${order.order_number}${isDraft ? " · BROUILLON" : ""}`, M, pageH - 9);
-      doc.text("MediKong SRL · TVA BE 1005.771.323 · medikong.pro", pageW / 2, pageH - 9, { align: "center" });
-      doc.text(`Page ${p} / ${pageCount}`, pageW - M, pageH - 9, { align: "right" });
+      const leftFooter = fitFooterText(`Bon de commande ${order.order_number}${isDraft ? " · BROUILLON" : ""}`, 82);
+      doc.text(leftFooter, M, pageH - 9.5);
+      doc.text(`Page ${p} / ${pageCount}`, pageW - M, pageH - 9.5, { align: "right" });
+      doc.setFontSize(7);
+      doc.text("MediKong SRL · TVA BE 1005.771.323 · medikong.pro", pageW / 2, pageH - 5.2, { align: "center" });
     }
 
     // ─── Upload ────────────────────────────────────────────────────────

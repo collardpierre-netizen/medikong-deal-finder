@@ -8505,6 +8505,9 @@ export type Database = {
           sent_channel: string | null
           sent_to: string | null
           status: string
+          stripe_checkout_created_at: string | null
+          stripe_checkout_session_id: string | null
+          stripe_checkout_url: string | null
           stripe_customer_id: string | null
           stripe_invoice_id: string | null
           type: string
@@ -8546,6 +8549,9 @@ export type Database = {
           sent_channel?: string | null
           sent_to?: string | null
           status?: string
+          stripe_checkout_created_at?: string | null
+          stripe_checkout_session_id?: string | null
+          stripe_checkout_url?: string | null
           stripe_customer_id?: string | null
           stripe_invoice_id?: string | null
           type?: string
@@ -8587,6 +8593,9 @@ export type Database = {
           sent_channel?: string | null
           sent_to?: string | null
           status?: string
+          stripe_checkout_created_at?: string | null
+          stripe_checkout_session_id?: string | null
+          stripe_checkout_url?: string | null
           stripe_customer_id?: string | null
           stripe_invoice_id?: string | null
           type?: string

@@ -607,6 +607,126 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
       );
     }
 
+    if (action === "admin-create-payment-link") {
+      // Admin generates a shareable Stripe Payment Link for a manual, unpaid order.
+      if (!order_id) {
+        return new Response(JSON.stringify({ error: "order_id requis" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Admin gating
+      const { data: adminUser } = await supabase
+        .from("admin_users")
+        .select("role")
+        .eq("user_id", caller.id)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (!adminUser) {
+        return new Response(JSON.stringify({ error: "Accès refusé" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: order, error: orderErr } = await supabase
+        .from("orders")
+        .select("id, order_number, source, status, payment_status, total_incl_vat, customer_id")
+        .eq("id", order_id)
+        .single();
+
+      if (orderErr || !order) {
+        return new Response(JSON.stringify({ error: "Commande introuvable" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (order.source !== "manual_admin") {
+        return new Response(
+          JSON.stringify({ error: "Lien de paiement réservé aux commandes manuelles" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (order.status === "draft" || order.status === "cancelled") {
+        return new Response(
+          JSON.stringify({ error: "Commande non confirmée ou annulée" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (order.payment_status === "paid") {
+        return new Response(
+          JSON.stringify({ error: "Commande déjà payée" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { data: lines } = await supabase
+        .from("order_lines")
+        .select("product_id, quantity, unit_price_incl_vat, product:products(name)")
+        .eq("order_id", order_id);
+
+      if (!lines || lines.length === 0) {
+        return new Response(JSON.stringify({ error: "Commande sans articles" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const lineItems = lines.map((l: any) => ({
+        price_data: {
+          currency: "eur",
+          product_data: {
+            name: l.product?.name || `Produit ${l.product_id}`,
+          },
+          unit_amount: Math.round(Number(l.unit_price_incl_vat) * 100),
+        },
+        quantity: Number(l.quantity),
+      }));
+
+      const ALLOWED_ORIGINS = new Set([
+        "https://medikong.pro",
+        "https://www.medikong.pro",
+        "https://medikong-deal-finder.lovable.app",
+        "https://dev.medikong.pro",
+      ]);
+      const rawOrigin =
+        req.headers.get("origin") ||
+        req.headers.get("referer")?.replace(/\/[^/]*$/, "") ||
+        "";
+      const origin = ALLOWED_ORIGINS.has(rawOrigin) ? rawOrigin : "https://medikong.pro";
+
+      const paymentLink = await stripe.paymentLinks.create({
+        line_items: lineItems,
+        after_completion: {
+          type: "redirect",
+          redirect: {
+            url: `${origin}/confirmation?order=${order.order_number}`,
+          },
+        },
+        metadata: {
+          order_id: order.id,
+          order_number: order.order_number ?? "",
+          platform: "medikong",
+          origin: "admin_manual_order",
+        },
+        payment_intent_data: {
+          metadata: {
+            order_id: order.id,
+            order_number: order.order_number ?? "",
+            platform: "medikong",
+            origin: "admin_manual_order",
+          },
+        },
+      });
+
+      return new Response(
+        JSON.stringify({ url: paymentLink.url, payment_link_id: paymentLink.id }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(JSON.stringify({ error: "Action inconnue" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

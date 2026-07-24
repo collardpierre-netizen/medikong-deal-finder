@@ -1649,7 +1649,7 @@ export default function ProductPage() {
             )}
             <li className="inline-flex items-center gap-1.5">
               <ChevronRight size={12} />
-              <span className="font-semibold text-foreground truncate max-w-[200px]">{product.name}</span>
+              <span className="font-semibold text-foreground truncate max-w-[200px]">{displayName}</span>
             </li>
           </ol>
         </nav>

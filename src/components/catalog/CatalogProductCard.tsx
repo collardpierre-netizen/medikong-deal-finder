@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { getLocalizedName } from "@/lib/localization";
+import { useLocalizedProductField } from "@/hooks/useLocalizedProductField";
 import type { CatalogProduct } from "@/hooks/useCatalog";
 import { PvpEconomyBadge } from "@/components/product/PvpEconomyBadge";
 
@@ -88,7 +88,8 @@ export function CatalogProductCard({ product, index = 0, view = "grid", searchQu
   const priceIncl = product.best_price_incl_vat || 0;
   const isLoggedIn = !!user;
   const canSeePrices = isLoggedIn && (isVerifiedBuyer || verificationLoading);
-  const displayName = getLocalizedName(product, i18n.language);
+  const displayName = useLocalizedProductField(product.id, product as any, "name", product.name);
+  const displayShortDescription = useLocalizedProductField(product.id, product as any, "short_description", (product as any).short_description);
 
   const handleAddToCart = async () => {
     // If multiple offers, open product page to let user choose
@@ -179,8 +180,8 @@ export function CatalogProductCard({ product, index = 0, view = "grid", searchQu
             <p className="text-xs text-muted-foreground mb-0.5">{product.brand_name}</p>
             <h3 className="text-sm font-medium text-foreground line-clamp-2 mb-1"><HighlightText text={displayName} query={searchQuery} /></h3>
           </Link>
-          {product.short_description && (
-            <p className="text-xs text-muted-foreground line-clamp-1">{product.short_description}</p>
+          {displayShortDescription && (
+            <p className="text-xs text-muted-foreground line-clamp-1">{displayShortDescription}</p>
           )}
           <p className="text-xs text-muted-foreground mt-1">EAN: {product.gtin || "—"}</p>
           <StockBadge product={product} />

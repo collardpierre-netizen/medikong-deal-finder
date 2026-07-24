@@ -8,6 +8,7 @@ import type { Product } from "@/hooks/useProducts";
 import { useBestOfferForProduct } from "@/contexts/BestOffersContext";
 import { OfferSkeletonRow } from "@/components/shared/OfferSkeletonRow";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLocalizedProductField } from "@/hooks/useLocalizedProductField";
 
 
 interface Props {
@@ -31,6 +32,8 @@ export default function SearchTrivagoCard({ product: p }: Props) {
   const [showMore, setShowMore] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const displayName = useLocalizedProductField(p.id, p as any, "name", p.name);
+  const displayShortDescription = useLocalizedProductField(p.id, p as any, "short_description", (p as any).descriptionShort);
 
   // ⚡ Best offer pré-chargé via le batch RPC (BestOffersProvider). Si la page ne
   // monte pas le provider, on retombe sur l'ancien `useProductOffers` immédiat.
@@ -110,7 +113,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
           }}
           role="button"
           tabIndex={0}
-          aria-label={`Voir le produit ${p.name}`}
+          aria-label={`Voir le produit ${displayName}`}
           className="group/img w-full md:w-[190px] bg-white flex items-center justify-center relative shrink-0 cursor-pointer
                      h-[180px] md:h-[220px] md:aspect-square border-b md:border-b-0 md:border-r border-border
                      outline-none transition-shadow
@@ -138,7 +141,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
           ) : (
             <img
               src={getProductImageSrc(p.imageUrls?.[0] || p.imageUrl)}
-              alt={p.name}
+              alt={displayName}
               className={`w-full h-full object-contain p-3 md:p-4 transition-all duration-300 ease-out group-hover/img:scale-105 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
               loading="lazy"
               referrerPolicy="no-referrer"
@@ -161,7 +164,10 @@ export default function SearchTrivagoCard({ product: p }: Props) {
           <p className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider">
             {p.brand}
           </p>
-          <p className="text-[15px] font-bold text-foreground mt-1.5 line-clamp-2 leading-snug">{p.name}</p>
+          <p className="text-[15px] font-bold text-foreground mt-1.5 line-clamp-2 leading-snug">{displayName}</p>
+          {displayShortDescription && (
+            <p className="text-[12px] text-muted-foreground mt-1 line-clamp-2 leading-snug">{displayShortDescription}</p>
+          )}
           <div className="flex items-center gap-1.5 mt-2 text-[11px] text-muted-foreground flex-wrap">
             {p.ean && <span className="bg-muted px-1.5 py-0.5 rounded text-[10px] font-mono">EAN {p.ean}</span>}
             {p.cnk && <span className="bg-muted px-1.5 py-0.5 rounded text-[10px] font-mono">CNK {p.cnk}</span>}

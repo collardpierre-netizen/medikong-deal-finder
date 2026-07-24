@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useCountry } from "@/contexts/CountryContext";
 import { formatPrice } from "@/data/mock";
-import { getLocalizedName } from "@/lib/localization";
+import { useLocalizedProductField } from "@/hooks/useLocalizedProductField";
 import {
   MEDIKONG_PLACEHOLDER,
   getProductImageSrc,
@@ -124,7 +124,7 @@ export function BrandProductCard({ product, index = 0, showBrand = false }: Prop
   const offerCount = Number(product.offer_count ?? 0);
   const isLoggedIn = !!user;
   const canSeePrices = isLoggedIn && (isVerifiedBuyer || verificationLoading);
-  const displayName = getLocalizedName(product as any, i18n.language);
+  const displayName = useLocalizedProductField(product.id, product as any, "name", product.name);
 
   const handleAddToCart = async () => {
     if (offerCount > 1) {

@@ -451,6 +451,12 @@ const AdminCommandeDetail = () => {
                   <OrderSourceBadge source={(order as any).source ?? null} />
                 </div>
                 {order.payment_due_date && <div className="text-xs text-slate-500">Échéance : {new Date(order.payment_due_date).toLocaleDateString("fr-BE")}</div>}
+                {(order as any).source === "manual_admin"
+                  && order.payment_status !== "paid"
+                  && order.status !== "draft"
+                  && order.status !== "cancelled" && (
+                  <GeneratePaymentLinkButton orderId={order.id} />
+                )}
               </div>
             </div>
             {(order as any).fulfillment_mode && (

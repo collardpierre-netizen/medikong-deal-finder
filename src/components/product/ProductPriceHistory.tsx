@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect, useState, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   ComposedChart,
@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
   ReferenceLine,
+  type TooltipProps,
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -147,6 +148,54 @@ function EmptyState() {
   );
 }
 
+function formatLongDate(iso: string) {
+  return new Date(iso).toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+/**
+ * High-contrast tooltip content: dark navy background, white text,
+ * larger type, thicker border. Meets WCAG AAA on the primary reading.
+ */
+function HighContrastTooltip({ active, payload }: TooltipProps<number, string>) {
+  if (!active || !payload || !payload.length) return null;
+  const row = payload[0]?.payload as { date?: string; price?: number } | undefined;
+  if (!row) return null;
+  return (
+    <div
+      role="status"
+      className="pointer-events-none rounded-lg border-2 px-3 py-2 text-left shadow-xl"
+      style={{
+        background: NAVY,
+        borderColor: PRIMARY,
+        color: "#FFFFFF",
+        minWidth: 168,
+      }}
+    >
+      <div className="text-[11px] font-medium uppercase tracking-wider text-white/70">
+        {row.date ? formatLongDate(row.date) : ""}
+      </div>
+      <div className="mt-1 flex items-center gap-2">
+        <span
+          className="inline-block h-2.5 w-2.5 rounded-full"
+          style={{ background: "#93C5FD", boxShadow: "0 0 0 2px rgba(255,255,255,0.15)" }}
+          aria-hidden
+        />
+        <span className="text-[15px] font-semibold tabular-nums leading-none text-white">
+          {formatEur(row.price)}
+        </span>
+      </div>
+      <div className="mt-1 text-[10px] uppercase tracking-wider text-white/60">
+        Prix marché HTVA
+      </div>
+    </div>
+  );
+}
+
+
 export function ProductPriceHistory({ gtin, productName }: Props) {
   const enabled = !!gtin;
 
@@ -217,6 +266,65 @@ export function ProductPriceHistory({ gtin, productName }: Props) {
     return () => mq.removeEventListener("change", update);
   }, []);
 
+  // Keyboard navigation across data points.
+  const [focusIndex, setFocusIndex] = useState<number | null>(null);
+  const [isKeyboardActive, setIsKeyboardActive] = useState(false);
+  const chartWrapperRef = useRef<HTMLDivElement | null>(null);
+  const liveRef = useRef<HTMLDivElement | null>(null);
+
+  const onChartFocus = useCallback(() => {
+    if (!chartData.length) return;
+    setIsKeyboardActive(true);
+    setFocusIndex((prev) => (prev == null ? chartData.length - 1 : prev));
+  }, [chartData.length]);
+
+  const onChartBlur = useCallback(() => {
+    setIsKeyboardActive(false);
+  }, []);
+
+  const onChartKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (!chartData.length) return;
+      const last = chartData.length - 1;
+      const cur = focusIndex ?? last;
+      let next: number | null = cur;
+      switch (e.key) {
+        case "ArrowRight":
+          next = Math.min(last, cur + 1);
+          break;
+        case "ArrowLeft":
+          next = Math.max(0, cur - 1);
+          break;
+        case "PageUp":
+          next = Math.min(last, cur + 7);
+          break;
+        case "PageDown":
+          next = Math.max(0, cur - 7);
+          break;
+        case "Home":
+          next = 0;
+          break;
+        case "End":
+          next = last;
+          break;
+        case "Escape":
+          (e.currentTarget as HTMLDivElement).blur();
+          return;
+        default:
+          return;
+      }
+      e.preventDefault();
+      setIsKeyboardActive(true);
+      setFocusIndex(next);
+    },
+    [chartData.length, focusIndex]
+  );
+
+  const focusedPoint =
+    focusIndex != null && chartData[focusIndex] ? chartData[focusIndex] : null;
+
+
+
   return (
     <section
       className="mb-6 overflow-hidden rounded-xl border border-border bg-gradient-to-b from-card to-muted/20 shadow-sm sm:mb-8 sm:rounded-2xl"
@@ -279,110 +387,166 @@ export function ProductPriceHistory({ gtin, productName }: Props) {
             <EmptyState />
           </div>
         ) : (
-          <div className="h-48 w-full sm:h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart
-                data={chartData}
-                margin={{
-                  top: 10,
-                  right: isMobile ? 8 : 14,
-                  left: isMobile ? -8 : 0,
-                  bottom: 0,
-                }}
+          <>
+            {/* Screen-reader live region: announces the focused point */}
+            <div
+              ref={liveRef}
+              aria-live="polite"
+              aria-atomic="true"
+              className="sr-only"
+            >
+              {focusedPoint
+                ? `${formatLongDate(focusedPoint.date)} — prix marché ${formatEur(
+                    focusedPoint.price
+                  )} hors TVA.`
+                : ""}
+            </div>
+
+            {/* Keyboard-focused point readout: high-contrast card visible only during keyboard nav */}
+            {isKeyboardActive && focusedPoint && (
+              <div
+                className="mx-2 mb-2 flex items-center justify-between gap-3 rounded-lg border-2 px-3 py-2 sm:mx-1"
+                style={{ background: NAVY, borderColor: PRIMARY, color: "#FFFFFF" }}
+                role="status"
               >
-                <defs>
-                  <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={PRIMARY} stopOpacity={0.28} />
-                    <stop offset="100%" stopColor={PRIMARY} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="2 4" stroke="hsl(var(--border))" vertical={false} />
-                <XAxis
-                  dataKey="label"
-                  tick={{ fontSize: isMobile ? 9 : 10, fill: "hsl(var(--muted-foreground))" }}
-                  tickLine={false}
-                  axisLine={{ stroke: "hsl(var(--border))" }}
-                  minTickGap={isMobile ? 40 : 28}
-                  interval="preserveStartEnd"
-                  tickMargin={4}
-                />
-                <YAxis
-                  tick={{ fontSize: isMobile ? 9 : 10, fill: "hsl(var(--muted-foreground))" }}
-                  tickLine={false}
-                  axisLine={false}
-                  width={isMobile ? 34 : 44}
-                  tickCount={isMobile ? 4 : 6}
-                  tickFormatter={(v) => `${Number(v).toFixed(0)}${isMobile ? "" : " €"}`}
-                  domain={["auto", "auto"]}
-                />
-                {stats && !isMobile && (
-                  <ReferenceLine
-                    y={stats.avg}
-                    stroke={NEUTRAL}
-                    strokeDasharray="3 3"
-                    strokeOpacity={0.5}
-                    label={{
-                      value: `moy. ${stats.avg.toFixed(2)} €`,
-                      position: "insideTopRight",
-                      fill: NEUTRAL,
-                      fontSize: 10,
+                <div className="min-w-0">
+                  <div className="text-[10px] font-medium uppercase tracking-wider text-white/70">
+                    Point sélectionné
+                  </div>
+                  <div className="truncate text-[13px] font-semibold text-white">
+                    {formatLongDate(focusedPoint.date)}
+                  </div>
+                </div>
+                <div
+                  className="rounded-md bg-white/10 px-2 py-1 text-[15px] font-semibold tabular-nums leading-none text-white"
+                  style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.15)" }}
+                >
+                  {formatEur(focusedPoint.price)}
+                </div>
+              </div>
+            )}
+
+            <div
+              ref={chartWrapperRef}
+              role="application"
+              tabIndex={0}
+              aria-label={`Graphique de l'historique de prix marché. ${chartData.length} points. Utilisez les flèches gauche et droite pour naviguer, Home et End pour début et fin, Échap pour quitter.`}
+              onFocus={onChartFocus}
+              onBlur={onChartBlur}
+              onKeyDown={onChartKeyDown}
+              className="relative h-48 w-full rounded-lg outline-none ring-offset-2 ring-offset-background transition-shadow focus-visible:ring-2 focus-visible:ring-primary sm:h-56"
+              style={{ WebkitTapHighlightColor: "transparent" }}
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  data={chartData}
+                  margin={{
+                    top: 10,
+                    right: isMobile ? 8 : 14,
+                    left: isMobile ? -8 : 0,
+                    bottom: 0,
+                  }}
+                >
+                  <defs>
+                    <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={PRIMARY} stopOpacity={0.28} />
+                      <stop offset="100%" stopColor={PRIMARY} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="2 4" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fontSize: isMobile ? 9 : 10, fill: "hsl(var(--muted-foreground))" }}
+                    tickLine={false}
+                    axisLine={{ stroke: "hsl(var(--border))" }}
+                    minTickGap={isMobile ? 40 : 28}
+                    interval="preserveStartEnd"
+                    tickMargin={4}
+                  />
+                  <YAxis
+                    tick={{ fontSize: isMobile ? 9 : 10, fill: "hsl(var(--muted-foreground))" }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={isMobile ? 34 : 44}
+                    tickCount={isMobile ? 4 : 6}
+                    tickFormatter={(v) => `${Number(v).toFixed(0)}${isMobile ? "" : " €"}`}
+                    domain={["auto", "auto"]}
+                  />
+                  {stats && !isMobile && (
+                    <ReferenceLine
+                      y={stats.avg}
+                      stroke={NEUTRAL}
+                      strokeDasharray="3 3"
+                      strokeOpacity={0.5}
+                      label={{
+                        value: `moy. ${stats.avg.toFixed(2)} €`,
+                        position: "insideTopRight",
+                        fill: NEUTRAL,
+                        fontSize: 10,
+                      }}
+                    />
+                  )}
+                  {stats && isMobile && (
+                    <ReferenceLine
+                      y={stats.avg}
+                      stroke={NEUTRAL}
+                      strokeDasharray="3 3"
+                      strokeOpacity={0.4}
+                    />
+                  )}
+                  {/* Vertical marker driven by keyboard focus */}
+                  {isKeyboardActive && focusedPoint && (
+                    <ReferenceLine
+                      x={focusedPoint.label}
+                      stroke={PRIMARY}
+                      strokeWidth={2}
+                      strokeOpacity={0.85}
+                      ifOverflow="extendDomain"
+                    />
+                  )}
+                  <Tooltip
+                    cursor={{ stroke: PRIMARY, strokeOpacity: 0.35, strokeWidth: 1.5 }}
+                    wrapperStyle={{ outline: "none" }}
+                    content={<HighContrastTooltip />}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="price"
+                    stroke="none"
+                    fill="url(#priceGradient)"
+                    isAnimationActive={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="price"
+                    stroke={PRIMARY}
+                    strokeWidth={isMobile ? 1.75 : 2}
+                    dot={false}
+                    activeDot={{
+                      r: isMobile ? 4 : 5,
+                      fill: PRIMARY,
+                      stroke: "#fff",
+                      strokeWidth: 2,
                     }}
+                    isAnimationActive={false}
                   />
-                )}
-                {stats && isMobile && (
-                  <ReferenceLine
-                    y={stats.avg}
-                    stroke={NEUTRAL}
-                    strokeDasharray="3 3"
-                    strokeOpacity={0.4}
-                  />
-                )}
-                <Tooltip
-                  cursor={{ stroke: PRIMARY, strokeOpacity: 0.25, strokeWidth: 1 }}
-                  contentStyle={{
-                    fontSize: 12,
-                    borderRadius: 10,
-                    border: "1px solid hsl(var(--border))",
-                    background: "hsl(var(--card))",
-                    color: "hsl(var(--foreground))",
-                    boxShadow: "0 8px 24px -12px rgba(15,23,42,0.25)",
-                  }}
-                  wrapperStyle={{ outline: "none" }}
-                  labelFormatter={(_l, payload) => {
-                    const raw = payload?.[0]?.payload?.date as string | undefined;
-                    return raw
-                      ? new Date(raw).toLocaleDateString("fr-FR", {
-                          day: "2-digit",
-                          month: "long",
-                          year: "numeric",
-                        })
-                      : "";
-                  }}
-                  formatter={(v: number) => [formatEur(v), "Prix marché HTVA"]}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="price"
-                  stroke="none"
-                  fill="url(#priceGradient)"
-                  isAnimationActive={false}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="price"
-                  stroke={PRIMARY}
-                  strokeWidth={isMobile ? 1.75 : 2}
-                  dot={false}
-                  activeDot={{ r: isMobile ? 4 : 5, fill: PRIMARY, stroke: "#fff", strokeWidth: 2 }}
-                  isAnimationActive={false}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Keyboard hints (visible on focus for sighted keyboard users) */}
+            <p
+              className="mt-1 px-2 text-[10px] text-muted-foreground sm:px-1"
+              aria-hidden
+            >
+              Astuce clavier&nbsp;: focalisez le graphique, puis utilisez ← → pour naviguer, Début/Fin pour les bornes.
+            </p>
+          </>
         )}
       </div>
     </section>
   );
 }
+
 
 export default ProductPriceHistory;

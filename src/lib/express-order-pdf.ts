@@ -107,7 +107,7 @@ export async function generateExpressOrderPdf(orderId: string) {
   doc.text("MediKong — Récap commande", M, 14);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text(`Commande ${order.order_number || order.id.slice(0, 8)}`, pageW - M, 10, { align: "right" });
+  doc.text(`Commande ${order.order_number || "Sans numéro"}`, pageW - M, 10, { align: "right" });
   const created = order.created_at ? new Date(order.created_at).toLocaleDateString("fr-BE") : "";
   doc.text(created, pageW - M, 16, { align: "right" });
 
@@ -230,5 +230,6 @@ export async function generateExpressOrderPdf(orderId: string) {
   });
 
   const suffix = isDraft ? "_brouillon" : "";
-  doc.save(`recap_${order.order_number || order.id.slice(0, 8)}${suffix}.pdf`);
+  doc.save(`recap_${order.order_number || "commande-sans-numero"}${suffix}.pdf`);
+
 }

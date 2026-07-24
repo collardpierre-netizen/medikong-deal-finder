@@ -119,6 +119,29 @@ export async function validateCart(
       continue;
     }
 
+    // 🔒 Checkout guard : bloque toute offre Qogita dont le prix n'a pas été
+    // re-vérifié depuis plus de 7 jours. Sans ça on vendrait à un prix figé
+    // au 10/07/2026, avant retrait de l'API. Cohérent avec reveal-at-purchase.
+    const lastVerifiedMs = offer.last_verified_at ? Date.parse(offer.last_verified_at) : null;
+    const isStale =
+      offer.price_stale === true ||
+      (offer.is_qogita_backed === true &&
+        (lastVerifiedMs == null || lastVerifiedMs < staleCutoffMs));
+    if (isStale) {
+      errors.push({
+        type: "price_stale",
+        item_index: idx,
+        vendor_name: null,
+        offer_id: offer.id,
+        details: {
+          offer_id: offer.id,
+          reason: "qogita_source_unhealthy",
+          last_verified_at: offer.last_verified_at,
+        },
+      });
+      continue;
+    }
+
     const v = offer.vendors || {};
     // 🔒 GARDE-FOU : toujours anonymisé côté edge — show_real_name ignoré.
     const vendorName: string = `Fournisseur ${v.display_code || offer.vendor_id.slice(0, 6).toUpperCase()}`;

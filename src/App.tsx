@@ -390,7 +390,7 @@ const App = () => (
           <CountryUrlSync />
           <CountryOnboardingModal />
           <ImpersonationBanner />
-          <QogitaFreezeBanner />
+          {/* QogitaFreezeBanner retiré : aucune mention publique de Qogita */}
 
 
           <ImpersonationPageTracker />

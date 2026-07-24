@@ -173,7 +173,7 @@ export default function TendancesPage() {
         </div>
         <h1 className="text-3xl font-bold tracking-tight">Prix marché — courbes & variations</h1>
         <p className="text-sm text-muted-foreground max-w-2xl">
-          Médiane et moyenne des prix Qogita observés au fil du temps, agrégées par marque ou par catégorie.
+          Médiane et moyenne des prix marché observés au fil du temps, agrégées par marque ou par catégorie.
           Variations calculées sur la médiane à J/J, 7 jours et 30 jours.
         </p>
       </header>
@@ -298,7 +298,7 @@ export default function TendancesPage() {
                   )}
                   <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
                     <Badge variant="outline">{chartData.length} points</Badge>
-                    <span>Source : historique Qogita agrégé quotidiennement.</span>
+                    <span>Source : historique marché agrégé quotidiennement.</span>
                   </div>
                 </CardContent>
               </Card>

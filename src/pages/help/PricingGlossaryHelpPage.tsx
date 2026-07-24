@@ -10,7 +10,7 @@ const FAQ_ITEMS: { q: string; a: React.ReactNode; plain: string }[] = [
   {
     q: "Quelle est la différence entre PVP conseillé et prix marché ?",
     plain:
-      "Le PVP conseillé est le prix public TTC recommandé pour la vente au comptoir (source APB/PMR ou fabricant). Le prix marché est le prix HTVA médian observé chez les autres grossistes B2B (Febelco, CERP, Medi-Market, Qogita). Le premier sert à calculer votre marge de revente, le second à benchmarker votre prix d'achat.",
+      "Le PVP conseillé est le prix public TTC recommandé pour la vente au comptoir (source APB/PMR ou fabricant). Le prix marché est le prix HTVA médian observé chez les autres grossistes B2B (Febelco, CERP, Medi-Market…). Le premier sert à calculer votre marge de revente, le second à benchmarker votre prix d'achat.",
     a: (
       <>
         <p>
@@ -21,7 +21,7 @@ const FAQ_ITEMS: { q: string; a: React.ReactNode; plain: string }[] = [
         <p>
           Le <strong>prix marché</strong> est un prix <strong>HTVA</strong>{" "}
           médian observé chez les autres grossistes B2B (Febelco, CERP,
-          Medi-Market, Qogita…). Vous l'utilisez pour vérifier que votre
+          Medi-Market…). Vous l'utilisez pour vérifier que votre
           prix d'achat MediKong est compétitif.
         </p>
       </>
@@ -267,8 +267,8 @@ export default function PricingGlossaryHelpPage() {
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <p>
               Prix <strong>HTVA médian</strong> observé chez les autres
-              grossistes et plateformes B2B (Febelco, CERP, Medi-Market,
-              Qogita…). C'est la veille concurrentielle agrégée par MediKong
+              grossistes et plateformes B2B (Febelco, CERP, Medi-Market…).
+              C'est la veille concurrentielle agrégée par MediKong
               pour vous indiquer le niveau de prix d'achat habituel pour un
               professionnel.
             </p>

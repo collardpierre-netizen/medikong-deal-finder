@@ -37,9 +37,12 @@ export function useLocalizedProductField(
   // 2) Sinon on tente une traduction (write-through cache) avec l'auto-translate hook.
   //    useAutoTranslate est un hook — on doit toujours l'appeler, même si on n'en a
   //    finalement pas besoin (source vide) pour respecter l'ordre des hooks.
+  // sourceLang="auto" pour ne pas court-circuiter la traduction si la source
+  // n'est pas forcément en FR (ex. fiches produit Qogita rédigées en anglais).
   const { translated } = useAutoTranslate(source, {
     productId: productId || undefined,
     field,
+    sourceLang: "auto",
   });
 
   return translated || source;

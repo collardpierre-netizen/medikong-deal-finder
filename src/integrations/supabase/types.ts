@@ -31075,6 +31075,7 @@ export type Database = {
         | "full"
         | "manual"
         | "reconciliation_sweep"
+        | "storefront"
       qogita_resync_status:
         | "running"
         | "success"
@@ -31480,6 +31481,7 @@ export const Constants = {
         "full",
         "manual",
         "reconciliation_sweep",
+        "storefront",
       ],
       qogita_resync_status: [
         "running",

@@ -348,37 +348,46 @@ function isLoggedOutHtml(html: string): boolean {
 }
 
 // ─────────────────────────── RSC payload extraction ─────────────────────────
-/** Extract a JSON array whose values are wrapped in RSC escape sequences. */
+// The RSC/Flight payload embeds JSON inside a JS string literal, so JSON
+// quotes appear as `\"` and backslashes as `\\`. We walk the escaped stream
+// treating `\"` as the JSON string toggle (never the raw `"` in the HTML) and
+// then unescape the extracted substring as a JS string literal.
 function extractEscapedJsonArray(html: string, key: string): unknown[] | null {
   const idx = html.indexOf(key);
   if (idx < 0) return null;
   const start = html.indexOf("[", idx);
   if (start < 0) return null;
   let depth = 0;
-  let end = -1;
   let inStr = false;
-  let esc = false;
-  const cap = Math.min(html.length, start + 400_000);
-  for (let i = start; i < cap; i++) {
+  let i = start;
+  let end = -1;
+  const cap = Math.min(html.length, start + 800_000);
+  while (i < cap) {
     const ch = html[i];
-    if (inStr) {
-      if (esc) esc = false;
-      else if (ch === "\\") esc = true;
-      else if (ch === '"') inStr = false;
-      continue;
+    if (ch === "\\") {
+      const nxt = html[i + 1];
+      if (nxt === "\\") { i += 2; continue; }         // literal backslash
+      if (nxt === '"')  { inStr = !inStr; i += 2; continue; } // JSON quote
+      i += 2; continue;                                  // \n \t \/ …
     }
-    if (ch === '"') inStr = true;
-    else if (ch === "[") depth++;
-    else if (ch === "]") {
-      depth--;
-      if (depth === 0) { end = i + 1; break; }
+    if (!inStr) {
+      if (ch === "[") depth++;
+      else if (ch === "]") { depth--; if (depth === 0) { end = i + 1; break; } }
     }
+    i++;
   }
   if (end < 0) return null;
-  let raw = html.substring(start, end);
-  raw = raw.replace(/\\"/g, '"').replace(/\\\\/g, "\\");
+  const raw = html.substring(start, end);
+  const decoded = raw
+    .replace(/\\\\/g, "\u0000")
+    .replace(/\\"/g, '"')
+    .replace(/\\n/g, "\n")
+    .replace(/\\r/g, "\r")
+    .replace(/\\t/g, "\t")
+    .replace(/\\\//g, "/")
+    .replace(/\u0000/g, "\\");
   try {
-    const arr = JSON.parse(raw);
+    const arr = JSON.parse(decoded);
     if (Array.isArray(arr)) return arr;
   } catch (_) { /* fall through */ }
   return null;
@@ -867,6 +876,21 @@ Deno.serve(async (req) => {
     .select("id")
     .single();
 
+  // Also open a row in qogita_resync_logs (mode='storefront') so the storefront
+  // pipeline is journaled in the same audit stream as the legacy sync modes.
+  const { data: resyncLog } = await sb
+    .from("qogita_resync_logs")
+    .insert({
+      mode: "storefront",
+      status: "running",
+      triggered_by: body.productIds?.length || body.gtins?.length ? "manual" : "cron",
+      country_code: "BE",
+      products_targeted: products?.length ?? 0,
+      metadata: { strategy: sessionCache?.strategy ?? null, dry_run: !!body.dryRun },
+    })
+    .select("id")
+    .single();
+
   const stats = { vendors_created: 0, retries: 0 };
   let ok = 0, notFound = 0, loggedOut = 0, errors = 0;
   let totalOffers = 0, totalTiers = 0, totalHistory = 0, resourced = 0;
@@ -923,6 +947,29 @@ Deno.serve(async (req) => {
           `retries=${stats.retries} logged_out=${loggedOut}`,
       })
       .eq("id", logRow.id);
+  }
+
+  if (resyncLog?.id) {
+    const finalStatus = errors > 0 && ok === 0 ? "failed" : "success";
+    await sb
+      .from("qogita_resync_logs")
+      .update({
+        status: finalStatus,
+        completed_at: new Date().toISOString(),
+        duration_ms: Date.now() - startedAt,
+        products_processed: ok + notFound + loggedOut + errors,
+        offers_created: totalOffers,
+        offers_updated: resourced,
+        total_errors: errors + loggedOut,
+        error_message: errorSamples.length ? JSON.stringify(errorSamples.slice(0, 3)) : null,
+        metadata: {
+          strategy: sessionCache?.strategy ?? null,
+          vendors_created: stats.vendors_created,
+          tiers_written: totalTiers,
+          history_points: totalHistory,
+        },
+      })
+      .eq("id", resyncLog.id);
   }
 
   return new Response(JSON.stringify({

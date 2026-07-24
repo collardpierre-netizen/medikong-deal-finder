@@ -147,17 +147,42 @@ export function CampaignDetailView({
         <Card>
           <CardHeader><CardTitle className="text-base flex items-center gap-2"><QrCode className="h-4 w-4" />QR & lien</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex justify-center bg-white rounded-lg p-4 border">
+            <button
+              type="button"
+              onClick={() => qrPng && setPreviewOpen(true)}
+              className="w-full flex justify-center bg-white rounded-lg p-4 border hover:border-primary transition-colors group relative"
+              aria-label="Agrandir le QR"
+            >
               {qrPng ? <img src={qrPng} alt="QR" className="w-48 h-48" /> : <div className="w-48 h-48 animate-pulse bg-muted" />}
-            </div>
+              {qrPng && (
+                <span className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-background/90 border rounded p-1">
+                  <Maximize2 className="h-3 w-3" />
+                </span>
+              )}
+            </button>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <code className="flex-1 text-xs bg-muted p-2 rounded break-all">{url}</code>
                 <Button size="sm" variant="outline" onClick={() => copy(url, "Lien")}><Copy className="h-3 w-3" /></Button>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => setPreviewOpen(true)} disabled={!qrPng}>
+                  <Maximize2 className="h-3 w-3 mr-1" />Aperçu
+                </Button>
                 <Button size="sm" variant="outline" onClick={downloadPng} disabled={!qrPng}><Download className="h-3 w-3 mr-1" />PNG</Button>
                 <Button size="sm" variant="outline" onClick={downloadSvg} disabled={!qrSvg}><Download className="h-3 w-3 mr-1" />SVG</Button>
+                {canEdit && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setRegenOpen(true)}
+                    disabled={regenerate.isPending}
+                    className="ml-auto"
+                  >
+                    <RefreshCw className={`h-3 w-3 mr-1 ${regenerate.isPending ? "animate-spin" : ""}`} />
+                    Régénérer
+                  </Button>
+                )}
               </div>
               <p className="text-xs text-muted-foreground">
                 Collez ce QR sur vos flyers. Chaque scan est journalisé puis redirigé vers <code>{campaign.landing_path}</code>

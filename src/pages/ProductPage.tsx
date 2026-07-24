@@ -5,6 +5,7 @@ import { resolveTierSaving } from "@/lib/tier-saving-guard";
 import { TierSavingAdminAlert } from "@/components/admin/TierSavingAdminAlert";
 import { isValidProductImage, getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder, getPreferredProductImageUrls } from "@/lib/image-utils";
 import { useProduct, useProductOffers, type Offer } from "@/hooks/useProducts";
+import { useLocalizedProductField } from "@/hooks/useLocalizedProductField";
 import { OfferSkeletonRow } from "@/components/shared/OfferSkeletonRow";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
@@ -1553,7 +1554,11 @@ export default function ProductPage() {
   const hasImages = images.length > 0;
   const galleryImages = images.slice(0, 6);
 
-  const description = productDetails?.description || (productDetails as any)?.label || product.descriptionShort || "";
+  // Champs produit localisés selon la langue de l'UI (cascade DB name_<lang> > cache IA > source).
+  const displayName = useLocalizedProductField(product.id, productDetails, "name", product.name);
+  const displayShortDescription = useLocalizedProductField(product.id, productDetails, "short_description", product.descriptionShort);
+  const displayDescription = useLocalizedProductField(product.id, productDetails, "description", (productDetails as any)?.description || (productDetails as any)?.label || product.descriptionShort);
+  const description = displayDescription || "";
 
   const bestOfferPack = resolvePackSize({
     offerOverride: bestOffer?.packSizeOverride,
@@ -1600,8 +1605,9 @@ export default function ProductPage() {
   return (
     <Layout>
       <Helmet>
-        <title>{product.name} | MediKong</title>
-        <meta name="description" content={`Achetez ${product.name} au meilleur prix B2B sur MediKong. GTIN: ${product.gtin || product.ean}`} />
+        <title>{displayName} | MediKong</title>
+        <meta name="description" content={`Achetez ${displayName} au meilleur prix B2B sur MediKong. GTIN: ${product.gtin || product.ean}`} />
+
       </Helmet>
 
       <PageTransition>
@@ -1643,7 +1649,7 @@ export default function ProductPage() {
             )}
             <li className="inline-flex items-center gap-1.5">
               <ChevronRight size={12} />
-              <span className="font-semibold text-foreground truncate max-w-[200px]">{product.name}</span>
+              <span className="font-semibold text-foreground truncate max-w-[200px]">{displayName}</span>
             </li>
           </ol>
         </nav>
@@ -1781,7 +1787,7 @@ export default function ProductPage() {
               ) : null}
 
               {/* Name */}
-              <h1 className="text-xl md:text-2xl font-bold text-foreground mb-3 leading-tight">{product.name}</h1>
+              <h1 className="text-xl md:text-2xl font-bold text-foreground mb-3 leading-tight">{displayName}</h1>
 
               {/* GTIN + Copy */}
               <div className="flex items-center gap-3 mb-2 flex-wrap">

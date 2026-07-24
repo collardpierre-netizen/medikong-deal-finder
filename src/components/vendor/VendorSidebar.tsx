@@ -52,6 +52,7 @@ const sidebarSections: { label: string | null; items: SidebarItem[] }[] = [
       { key: "marketIntel", icon: BarChart3, path: "/vendor/market-intel" },
       { key: "tenders", icon: FileText, path: "/vendor/tenders", comingSoon: true },
       { key: "analytics", icon: BarChart3, path: "/vendor/analytics" },
+      { key: "trackingCampaigns", icon: QrCode, path: "/vendor/tracking" },
     ],
   },
   {

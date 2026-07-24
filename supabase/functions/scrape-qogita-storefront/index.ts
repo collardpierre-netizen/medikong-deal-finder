@@ -750,10 +750,10 @@ async function scrapeProduct(
 
     const vendorId = await resolveVendorId(sb, offer.seller, country, stats);
     if (!vendorId) continue;
-    const offerId = await upsertOffer(sb, product.id, vendorId, country, offer, basePriceExcl, baseMov, vatRate);
+    const offerId = await upsertOffer(sb, product.id, vendorId, country, offer, basePriceExcl, baseMov, vatRate, opts.marginMul);
     if (!offerId) continue;
     offersWritten += 1;
-    tiersWritten += await syncTiers(sb, offerId, basePriceExcl, baseMov, vatRate, offer.tieredPrices ?? []);
+    tiersWritten += await syncTiers(sb, offerId, basePriceExcl, baseMov, vatRate, offer.tieredPrices ?? [], opts.marginMul);
   }
 
   // ── Re-source best-price on stale Qogita-backed offers ────────────

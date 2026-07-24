@@ -55,6 +55,14 @@ function getPipelineSteps(country: string, mode: string): StepConfig[] {
   if (mode === "incremental") {
     // Daily incremental: best-price offer recovery + multi-vendor refresh so ALL
     // offers (incl. secondary sellers) keep a synced_at < 24h. Runs 3x/day via cron.
+    //
+    // NOTE 2026-07-24 — Étape doublon `offers_multi_vendor` retirée.
+    // `sync-qogita-offers-detail` a `fetchMultiVendor = true` hardcodé, donc
+    // `offers_detail` fait déjà tout le travail multi-vendeur. Passer `multi_vendor: true`
+    // au 2ᵉ appel ne change rien côté fonction (paramètre ignoré) et double
+    // simplement le coût + risque de 429. Le code de l'étape reste disponible via
+    // la même fonction — retrait purement pipeline, réversible en ré-ajoutant
+    // l'entrée si un jour on dissocie best-price et multi-vendor.
     return [
       {
         name: "offers_detail",
@@ -62,15 +70,6 @@ function getPipelineSteps(country: string, mode: string): StepConfig[] {
         functionName: "sync-qogita-offers-detail",
         params: { country },
         required: true,
-        loopBatch: true,
-        batchSize: 100,
-      },
-      {
-        name: "offers_multi_vendor",
-        label: "Offres Multi-Vendeurs (incrémental)",
-        functionName: "sync-qogita-offers-detail",
-        params: { country, multi_vendor: true },
-        required: false,
         loopBatch: true,
         batchSize: 100,
       },

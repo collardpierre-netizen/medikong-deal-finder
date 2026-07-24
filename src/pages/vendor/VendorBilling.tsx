@@ -95,7 +95,7 @@ export default function VendorBilling() {
     doc.setFontSize(18);
     doc.text("Facture Logistique", 14, 22);
     doc.setFontSize(10);
-    doc.text(`N° ${invoice.invoice_number ?? invoice.id.slice(0, 8)}`, 14, 30);
+    doc.text(`N° ${invoice.invoice_number ?? "Sans numéro"}`, 14, 30);
     doc.text(`Période : ${format(new Date(invoice.period_start), "MMMM yyyy", { locale: fr })}`, 14, 36);
     doc.text(`Statut : ${STATUS_CONFIG[invoice.status]?.label ?? invoice.status}`, 14, 42);
     doc.text(`Vendeur : ${(vendor as any)?.company_name ?? ""}`, 14, 48);

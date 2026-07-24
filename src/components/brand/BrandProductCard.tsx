@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useCountry } from "@/contexts/CountryContext";
 import { formatPrice } from "@/data/mock";
-import { getLocalizedName } from "@/lib/localization";
+import { useLocalizedProductField } from "@/hooks/useLocalizedProductField";
 import {
   MEDIKONG_PLACEHOLDER,
   getProductImageSrc,

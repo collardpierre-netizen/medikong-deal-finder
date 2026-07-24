@@ -696,19 +696,21 @@ Deno.serve(async (req) => {
   let productsEnriched = 0;
   let offersUpserted = 0;
   let syncResult: any = null;
+  let syncError: { message: string; stack?: string } | null = null;
   try {
     syncResult = await syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, startTime, fetchMultiVendor, recordEndpointError, recordProgress, resyncLogId, afterCreatedAt, syncRunId, productIds, fastMode);
     productsEnriched = syncResult?.products_enriched || 0;
     offersUpserted = syncResult?.offers_upserted || 0;
   } catch (e: any) {
     console.error("Sync offers error:", e);
+    syncError = { message: e?.message ?? String(e), stack: e?.stack };
     await sb
       .from("sync_logs")
       .update({
         status: "error",
         completed_at: new Date().toISOString(),
-        error_message: e.message,
-        progress_message: `Erreur: ${e.message}`,
+        error_message: syncError.message,
+        progress_message: `Erreur: ${syncError.message}`,
       })
       .eq("id", syncLogId);
   }

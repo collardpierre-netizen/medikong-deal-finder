@@ -88,7 +88,8 @@ export function CatalogProductCard({ product, index = 0, view = "grid", searchQu
   const priceIncl = product.best_price_incl_vat || 0;
   const isLoggedIn = !!user;
   const canSeePrices = isLoggedIn && (isVerifiedBuyer || verificationLoading);
-  const displayName = getLocalizedName(product, i18n.language);
+  const displayName = useLocalizedProductField(product.id, product as any, "name", product.name);
+  const displayShortDescription = useLocalizedProductField(product.id, product as any, "short_description", (product as any).short_description);
 
   const handleAddToCart = async () => {
     // If multiple offers, open product page to let user choose

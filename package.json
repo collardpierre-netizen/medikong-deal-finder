@@ -28,7 +28,8 @@
     "check:fr-typo": "bun scripts/check-fr-typography.ts",
     "check:fr-typo:fix": "bun scripts/check-fr-typography.ts --fix",
     "check:vendor-anonymity": "bun scripts/check-vendor-anonymity.ts",
-    "check:public-qogita": "bun scripts/check-public-qogita.ts"
+    "check:public-qogita": "bun scripts/check-public-qogita.ts",
+    "check:public-og-qogita": "bun scripts/check-public-og-qogita.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

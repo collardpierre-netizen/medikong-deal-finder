@@ -266,6 +266,65 @@ export function ProductPriceHistory({ gtin, productName }: Props) {
     return () => mq.removeEventListener("change", update);
   }, []);
 
+  // Keyboard navigation across data points.
+  const [focusIndex, setFocusIndex] = useState<number | null>(null);
+  const [isKeyboardActive, setIsKeyboardActive] = useState(false);
+  const chartWrapperRef = useRef<HTMLDivElement | null>(null);
+  const liveRef = useRef<HTMLDivElement | null>(null);
+
+  const onChartFocus = useCallback(() => {
+    if (!chartData.length) return;
+    setIsKeyboardActive(true);
+    setFocusIndex((prev) => (prev == null ? chartData.length - 1 : prev));
+  }, [chartData.length]);
+
+  const onChartBlur = useCallback(() => {
+    setIsKeyboardActive(false);
+  }, []);
+
+  const onChartKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (!chartData.length) return;
+      const last = chartData.length - 1;
+      const cur = focusIndex ?? last;
+      let next: number | null = cur;
+      switch (e.key) {
+        case "ArrowRight":
+          next = Math.min(last, cur + 1);
+          break;
+        case "ArrowLeft":
+          next = Math.max(0, cur - 1);
+          break;
+        case "PageUp":
+          next = Math.min(last, cur + 7);
+          break;
+        case "PageDown":
+          next = Math.max(0, cur - 7);
+          break;
+        case "Home":
+          next = 0;
+          break;
+        case "End":
+          next = last;
+          break;
+        case "Escape":
+          (e.currentTarget as HTMLDivElement).blur();
+          return;
+        default:
+          return;
+      }
+      e.preventDefault();
+      setIsKeyboardActive(true);
+      setFocusIndex(next);
+    },
+    [chartData.length, focusIndex]
+  );
+
+  const focusedPoint =
+    focusIndex != null && chartData[focusIndex] ? chartData[focusIndex] : null;
+
+
+
   return (
     <section
       className="mb-6 overflow-hidden rounded-xl border border-border bg-gradient-to-b from-card to-muted/20 shadow-sm sm:mb-8 sm:rounded-2xl"

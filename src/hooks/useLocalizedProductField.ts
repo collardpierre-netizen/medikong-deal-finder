@@ -28,22 +28,18 @@ export function useLocalizedProductField(
   const dbLocalized = productDetails?.[`${field}_${lang}`];
   const dbSource = productDetails?.[field];
   const source = (dbSource || fallback || "").toString();
+  const hasDbLocalized = typeof dbLocalized === "string" && dbLocalized.trim().length > 0;
 
-  // Si la version localisée existe en DB, on l'utilise directement — pas d'appel edge.
-  if (typeof dbLocalized === "string" && dbLocalized.trim()) {
-    return dbLocalized;
-  }
-
-  // 2) Sinon on tente une traduction (write-through cache) avec l'auto-translate hook.
-  //    useAutoTranslate est un hook — on doit toujours l'appeler, même si on n'en a
-  //    finalement pas besoin (source vide) pour respecter l'ordre des hooks.
-  // sourceLang="auto" pour ne pas court-circuiter la traduction si la source
-  // n'est pas forcément en FR (ex. fiches produit Qogita rédigées en anglais).
-  const { translated } = useAutoTranslate(source, {
+  // 2) On appelle toujours useAutoTranslate (hook au top-level) mais on lui passe
+  //    une chaîne vide si la version DB est déjà connue → aucun appel edge.
+  //    sourceLang="auto" pour ne pas court-circuiter la traduction si la source
+  //    n'est pas en FR (ex. fiches Qogita rédigées en anglais).
+  const { translated } = useAutoTranslate(hasDbLocalized ? "" : source, {
     productId: productId || undefined,
     field,
     sourceLang: "auto",
   });
 
+  if (hasDbLocalized) return dbLocalized as string;
   return translated || source;
 }

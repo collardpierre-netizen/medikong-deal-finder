@@ -957,36 +957,48 @@ async function syncOffersPage({
   incrementalProductFilter: string;
 }) {
 
-  // Keyset pagination : fetch next 1000 products after cursor.
-  let productsQuery = sb
+  // P0-a — LE fix racine du "TypeError: error sending request".
+  // Avant : .in("id", productIds) avec ~500 uuid → URL PostgREST géante
+  // (id=in.(uuid1,uuid2,…)) qui pétait au transport avant même d'atteindre
+  // Qogita. Maintenant : chunking dur à PRODUCT_ID_CHUNK=100, plusieurs
+  // sous-requêtes concaténées côté fonction. Aucune URL ne dépasse ~4 KB.
+  const PRODUCT_ID_CHUNK = 100;
+
+  let products: any[] | null = null;
+  let pErr: any = null;
+
+  const baseSelect = () => sb
     .from("products")
     .select("id, gtin, qogita_qid, qogita_fid, slug, created_at")
     .eq("is_active", true)
     .not("gtin", "is", null)
     .order("created_at", { ascending: true })
-    .order("id", { ascending: true })
-    .limit(chunkLimit);
+    .order("id", { ascending: true });
 
   if (productIds.length > 0) {
-    productsQuery = productsQuery.in("id", productIds);
-  } else if (fastMode) {
-    // Fast mode without explicit ids : never happens (enqueue always passes ids),
-    // but guard anyway — require fid+slug so we can hit /offers/ directly.
-    productsQuery = productsQuery.not("qogita_fid", "is", null).not("slug", "is", null);
+    const collected: any[] = [];
+    for (let i = 0; i < productIds.length; i += PRODUCT_ID_CHUNK) {
+      const slice = productIds.slice(i, i + PRODUCT_ID_CHUNK);
+      let q = baseSelect().in("id", slice).limit(slice.length);
+      if (fastMode) q = q.not("qogita_fid", "is", null).not("slug", "is", null);
+      if (afterCreatedAt) q = q.gt("created_at", afterCreatedAt);
+      const { data, error } = await q;
+      if (error) { pErr = error; break; }
+      if (data?.length) collected.push(...data);
+    }
+    products = collected;
   } else {
-    productsQuery = productsQuery.or(incrementalProductFilter);
+    let productsQuery = baseSelect().limit(chunkLimit);
+    if (fastMode) {
+      productsQuery = productsQuery.not("qogita_fid", "is", null).not("slug", "is", null);
+    } else {
+      productsQuery = productsQuery.or(incrementalProductFilter);
+    }
+    if (afterCreatedAt) productsQuery = productsQuery.gt("created_at", afterCreatedAt);
+    const res = await productsQuery;
+    products = res.data;
+    pErr = res.error;
   }
-
-  if (fastMode) {
-    // Fast mode still needs fid+slug regardless of product_ids.
-    productsQuery = productsQuery.not("qogita_fid", "is", null).not("slug", "is", null);
-  }
-
-  if (afterCreatedAt) {
-    productsQuery = productsQuery.gt("created_at", afterCreatedAt);
-  }
-
-  const { data: products, error: pErr } = await productsQuery;
 
   if (pErr) throw pErr;
 

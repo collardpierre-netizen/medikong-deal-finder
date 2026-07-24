@@ -125,7 +125,6 @@ export function BrandProductCard({ product, index = 0, showBrand = false }: Prop
   const isLoggedIn = !!user;
   const canSeePrices = isLoggedIn && (isVerifiedBuyer || verificationLoading);
   const displayName = useLocalizedProductField(product.id, product as any, "name", product.name);
-  const displayShortDescription = useLocalizedProductField(product.id, product as any, "short_description", product.short_description);
 
   const handleAddToCart = async () => {
     if (offerCount > 1) {

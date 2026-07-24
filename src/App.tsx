@@ -389,6 +389,7 @@ const App = () => (
           <CountryUrlSync />
           <CountryOnboardingModal />
           <ImpersonationBanner />
+          <QogitaFreezeBanner />
 
 
           <ImpersonationPageTracker />

@@ -55,6 +55,14 @@ function getPipelineSteps(country: string, mode: string): StepConfig[] {
   if (mode === "incremental") {
     // Daily incremental: best-price offer recovery + multi-vendor refresh so ALL
     // offers (incl. secondary sellers) keep a synced_at < 24h. Runs 3x/day via cron.
+    //
+    // NOTE 2026-07-24 — Étape doublon `offers_multi_vendor` retirée.
+    // `sync-qogita-offers-detail` a `fetchMultiVendor = true` hardcodé, donc
+    // `offers_detail` fait déjà tout le travail multi-vendeur. Passer `multi_vendor: true`
+    // au 2ᵉ appel ne change rien côté fonction (paramètre ignoré) et double
+    // simplement le coût + risque de 429. Le code de l'étape reste disponible via
+    // la même fonction — retrait purement pipeline, réversible en ré-ajoutant
+    // l'entrée si un jour on dissocie best-price et multi-vendor.
     return [
       {
         name: "offers_detail",
@@ -62,15 +70,6 @@ function getPipelineSteps(country: string, mode: string): StepConfig[] {
         functionName: "sync-qogita-offers-detail",
         params: { country },
         required: true,
-        loopBatch: true,
-        batchSize: 100,
-      },
-      {
-        name: "offers_multi_vendor",
-        label: "Offres Multi-Vendeurs (incrémental)",
-        functionName: "sync-qogita-offers-detail",
-        params: { country, multi_vendor: true },
-        required: false,
         loopBatch: true,
         batchSize: 100,
       },
@@ -117,15 +116,9 @@ function getPipelineSteps(country: string, mode: string): StepConfig[] {
       loopBatch: true,
       batchSize: 100,
     },
-    {
-      name: "offers_multi_vendor",
-      label: "Offres Multi-Vendeurs",
-      functionName: "sync-qogita-offers-detail",
-      params: { country, multi_vendor: true },
-      required: false,
-      loopBatch: true,
-      batchSize: 100,
-    },
+    // NOTE 2026-07-24 — Étape doublon `offers_multi_vendor` retirée du full aussi
+    // (fetchMultiVendor hardcodé true dans sync-qogita-offers-detail). Réversible :
+    // ré-ajouter l'entrée { name: "offers_multi_vendor", … multi_vendor: true } ici.
     {
       name: "recalculate_prices",
       label: "Recalculer Prix (marge)",
@@ -203,8 +196,9 @@ async function callEdgeFunction(functionName: string, params: unknown, timeoutMs
 
 
 // Heartbeat staleness threshold: time since last progress bump (NOT total run duration).
-// Robust to long Full syncs (45+ min) as long as each step bumps last_progress_at.
-const PIPELINE_HEARTBEAT_STALE_MINUTES = 15;
+// 10 min : plus agressif qu'avant (15 min), pour libérer plus tôt les runs orphelins
+// (edge function tuée par WORKER_LIMIT sans mise à jour du heartbeat).
+const PIPELINE_HEARTBEAT_STALE_MINUTES = 10;
 
 async function markPreviousRunsAsSuperseded(supabase: any, country: string, runId: string) {
   // Exclude the current run id explicitly to avoid auto-superseding ourselves.
@@ -344,6 +338,9 @@ async function executePipeline({
         let totalProcessed = 0;
         let iterations = 0;
 
+        let deferred = false;
+        let deferReason: string | null = null;
+
         while (iterations < MAX_LOOP_ITERATIONS) {
           const result = (await callEdgeFunction(step.functionName, {
             ...step.params,
@@ -370,6 +367,16 @@ async function executePipeline({
             throw new Error(result?.message || `Échec de l'étape ${step.label}`);
           }
 
+          // 429 défer : la fonction signale un backlog rate-limité côté Qogita.
+          // On casse la boucle immédiatement (le prochain tick cron reprendra),
+          // sinon on ré-appelle et on retape le 429 → MAX_LOOP_ITERATIONS brûlés
+          // sans progression.
+          if (result?.deferred === true) {
+            deferred = true;
+            deferReason = result?.defer_reason || "rate_limited";
+            break;
+          }
+
           if (remaining <= 0 || result?.status === "completed") {
             break;
           }
@@ -388,7 +395,13 @@ async function executePipeline({
           throw new Error(`Limite de sécurité atteinte sur ${step.label}`);
         }
 
-        await updateStep(i, "completed", { totalProcessed, iterations });
+        if (deferred) {
+          // Étape marquée completed mais avec drapeau `deferred` : le run se
+          // termine proprement, le prochain tick cron reprendra le backlog.
+          await updateStep(i, "completed", { totalProcessed, iterations, deferred: true, defer_reason: deferReason });
+        } else {
+          await updateStep(i, "completed", { totalProcessed, iterations });
+        }
       } else {
         const result = await callEdgeFunction(step.functionName, {
           ...step.params,

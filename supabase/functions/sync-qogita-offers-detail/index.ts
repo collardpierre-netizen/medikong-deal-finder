@@ -684,8 +684,11 @@ Deno.serve(async (req) => {
     syncLogId = newLog!.id;
   }
 
-  // Run sync synchronously. Multi-vendor continuation is handled in-process by
-  // syncOffers; no Edge self-invocation / loopback call is used here.
+  // Run sync : 1 page/invocation TOUJOURS (multi-vendeur inclus). Ce n'est plus
+  // syncOffers qui boucle : c'est l'orchestrateur `run-sync-pipeline` qui rappelle
+  // cette edge function via loopBatch, avec heartbeat entre chaque tour. Cela borne
+  // strictement la wall-clock de chaque invocation → plus de run orphelin killé
+  // en cours de boucle interne.
   let productsEnriched = 0;
   let offersUpserted = 0;
   let syncResult: any = null;
@@ -706,9 +709,45 @@ Deno.serve(async (req) => {
       .eq("id", syncLogId);
   }
 
-  // Re-check state after this batch (remaining n'est plus calculable sans COUNT ; on renvoie le statut).
+  // Re-check state after this batch.
   const { data: updatedLog } = await sb.from("sync_logs").select("status, stats").eq("id", syncLogId).single();
   const nextCursor = updatedLog?.status === "partial" ? (updatedLog.stats as any)?.cursor_after ?? null : null;
+
+  // Real `remaining` = COUNT products still eligible AFTER the cursor, using the
+  // SAME WHERE filter as the page query. JAMAIS un `id=in.(…)` géant : quand la
+  // requête est bornée par productIds (daily_stale_refresh), on renvoie le count
+  // du tableau tel quel — pas de round-trip HTTP à travers le tableau.
+  let remaining = 0;
+  if (nextCursor) {
+    if (productIds.length > 0) {
+      // Bounded set : we already know when we're done (cursor doesn't advance
+      // beyond the last passed id). Reporter la borne à l'orchestrateur.
+      remaining = 1;
+    } else {
+      try {
+        let remQuery = sb
+          .from("products")
+          .select("id", { count: "exact", head: true })
+          .eq("is_active", true)
+          .not("gtin", "is", null)
+          .gt("created_at", nextCursor);
+        if (fastMode) {
+          remQuery = remQuery.not("qogita_fid", "is", null).not("slug", "is", null);
+        } else {
+          remQuery = remQuery.or("offer_count.gt.0,synced_at.is.null,qogita_qid.is.null");
+        }
+        const { count } = await remQuery;
+        remaining = typeof count === "number" ? count : 1;
+      } catch (_) {
+        remaining = 1;
+      }
+    }
+  }
+
+  // 429 défer : si la page vient de subir du rate-limit Qogita, on demande à
+  // l'orchestrateur de casser sa boucle. Le prochain tick cron reprendra.
+  const rateLimitedThisPage = Number(syncResult?.rate_limited ?? 0) > 0;
+  const deferred = rateLimitedThisPage && remaining > 0;
 
   return new Response(
     JSON.stringify({
@@ -720,9 +759,11 @@ Deno.serve(async (req) => {
       offers_upserted: offersUpserted,
       stats: syncResult,
       next_cursor: nextCursor,
-      remaining: nextCursor ? 1 : 0,
+      remaining,
+      deferred,
+      defer_reason: deferred ? "rate_limited" : undefined,
       status: updatedLog?.status || "unknown",
-      message: `Sync offres ${targetCountry} — ${productsEnriched} enrichis${nextCursor ? " (partiel, à reprendre)" : ""}`,
+      message: `Sync offres ${targetCountry} — ${productsEnriched} enrichis${nextCursor ? ` (partiel, remaining=${remaining}${deferred ? ", deferred=rate_limited" : ""})` : ""}`,
     }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );
@@ -767,61 +808,56 @@ async function syncOffers(
     chunks_processed: 0,
   };
 
-  let currentCursor = afterCreatedAt;
+  // 1 page/invocation TOUJOURS. L'ancienne boucle interne (spécifique multi-vendeur)
+  // a été supprimée : c'est l'orchestrateur `run-sync-pipeline` qui rappelle cette
+  // fonction jusqu'à `remaining <= 0`. Cela borne strictement la wall-clock d'une
+  // invocation → plus de run orphelin killé au milieu d'une boucle interne, et le
+  // heartbeat de l'orchestrateur est bumpé entre chaque page.
+  const pageStats = await syncOffersPage({
+    sb,
+    country,
+    vatRate,
+    vatMultiplier,
+    logId,
+    startTime,
+    fetchMultiVendor,
+    recordEndpointError,
+    recordProgress,
+    resyncLogId,
+    afterCreatedAt: afterCreatedAt,
+    syncRunId,
+    productIds,
+    fastMode,
+    executionProfile,
+    token,
+    baseUrl,
+    bestPriceVendorId,
+    chunkLimit: CHUNK_LIMIT,
+    incrementalProductFilter,
+  });
 
-  while (true) {
-    const pageStats = await syncOffersPage({
-      sb,
-      country,
-      vatRate,
-      vatMultiplier,
-      logId,
-      startTime,
-      fetchMultiVendor,
-      recordEndpointError,
-      recordProgress,
-      resyncLogId,
-      afterCreatedAt: currentCursor,
-      syncRunId,
-      productIds,
-      fastMode,
-      executionProfile,
-      token,
-      baseUrl,
-      bestPriceVendorId,
-      chunkLimit: CHUNK_LIMIT,
-      incrementalProductFilter,
-    });
+  aggregateStats.products_enriched = pageStats.products_enriched || 0;
+  aggregateStats.offers_upserted = pageStats.offers_upserted || 0;
+  aggregateStats.multi_vendor_offers = pageStats.multi_vendor_offers || 0;
+  aggregateStats.vendors_created = pageStats.vendors_created || 0;
+  aggregateStats.errors = pageStats.errors || 0;
+  aggregateStats.skipped = pageStats.skipped || 0;
+  aggregateStats.rate_limited = pageStats.rate_limited || 0;
+  aggregateStats.tiers_synced = pageStats.tiers_synced || 0;
+  aggregateStats.cursor_after = pageStats.cursor_after ?? afterCreatedAt;
+  aggregateStats.chunks_processed = 1;
+  if (pageStats.first_api_response_keys) {
+    aggregateStats.first_api_response_keys = pageStats.first_api_response_keys;
+    aggregateStats.first_flat_sample = pageStats.first_flat_sample;
+  }
+  if (pageStats.first_mv_offer_keys !== undefined) {
+    aggregateStats.first_mv_offer_keys = pageStats.first_mv_offer_keys;
+    aggregateStats.first_mv_offer_sample = pageStats.first_mv_offer_sample;
+  }
 
-    aggregateStats.products_enriched += pageStats.products_enriched || 0;
-    aggregateStats.offers_upserted += pageStats.offers_upserted || 0;
-    aggregateStats.multi_vendor_offers += pageStats.multi_vendor_offers || 0;
-    aggregateStats.vendors_created += pageStats.vendors_created || 0;
-    aggregateStats.errors += pageStats.errors || 0;
-    aggregateStats.skipped += pageStats.skipped || 0;
-    aggregateStats.rate_limited += pageStats.rate_limited || 0;
-    aggregateStats.tiers_synced += pageStats.tiers_synced || 0;
-    aggregateStats.cursor_after = pageStats.cursor_after ?? currentCursor;
-    aggregateStats.chunks_processed += 1;
-
-    if (!aggregateStats.first_api_response_keys && pageStats.first_api_response_keys) {
-      aggregateStats.first_api_response_keys = pageStats.first_api_response_keys;
-      aggregateStats.first_flat_sample = pageStats.first_flat_sample;
-    }
-    if (aggregateStats.first_mv_offer_keys === undefined && pageStats.first_mv_offer_keys !== undefined) {
-      aggregateStats.first_mv_offer_keys = pageStats.first_mv_offer_keys;
-      aggregateStats.first_mv_offer_sample = pageStats.first_mv_offer_sample;
-    }
-
-    if (pageStats.paused) {
-      await sb
-        .from("sync_logs")
-        .update({ stats: aggregateStats })
-        .eq("id", logId);
-      return aggregateStats;
-    }
-
-    if (pageStats.completed_reason === "no_eligible_products" || !pageStats.has_more_chunks) {
+  // Terminé pour de bon : plus rien d'éligible OU plus de chunk.
+  if (pageStats.completed_reason === "no_eligible_products" || !pageStats.has_more_chunks) {
+    if (!pageStats.paused) {
       await sb
         .from("sync_logs")
         .update({
@@ -847,27 +883,21 @@ async function syncOffers(
 
       await sb.from("qogita_config").upsert({ key: "last_offers_sync_at", value: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: "key" });
       await sb.from("qogita_config").upsert({ key: "sync_status", value: "completed", updated_at: new Date().toISOString() }, { onConflict: "key" });
-
-      return aggregateStats;
     }
-
-    currentCursor = pageStats.cursor_after ?? currentCursor;
-
-    // Non multi-vendor modes keep the previous page-at-a-time behaviour and let
-    // the orchestrator loop call the next batch. The multi-vendor path continues
-    // locally, avoiding the former sync-qogita-offers-detail self-invocation.
-    if (!fetchMultiVendor) {
-      await sb
-        .from("sync_logs")
-        .update({
-          status: "partial",
-          stats: aggregateStats,
-          progress_message: `${country}: chunk terminé (${pageStats.page_total} produits, cursor=${aggregateStats.cursor_after}) — reprise par orchestrateur`,
-        })
-        .eq("id", logId);
-      return aggregateStats;
-    }
+    return aggregateStats;
   }
+
+  // Partiel : sauvegarde stats+cursor, orchestrateur rappellera.
+  await sb
+    .from("sync_logs")
+    .update({
+      status: "partial",
+      stats: aggregateStats,
+      progress_message: `${country}: chunk terminé (${pageStats.page_total} produits, cursor=${aggregateStats.cursor_after}) — reprise par orchestrateur`,
+    })
+    .eq("id", logId);
+
+  return aggregateStats;
 }
 
 async function syncOffersPage({

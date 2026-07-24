@@ -17,7 +17,7 @@ import { CountryOnboardingModal } from "@/components/CountryOnboardingModal";
 
 import { PriceDisplayProvider } from "@/contexts/PriceDisplayContext";
 import ImpersonationBanner from "@/components/admin/ImpersonationBanner";
-import { QogitaFreezeBanner } from "@/components/QogitaFreezeBanner";
+
 import ImpersonationPageTracker from "@/components/admin/ImpersonationPageTracker";
 import { EnvNoIndex } from "@/components/layout/EnvNoIndex";
 import { AccountSelectionGuard } from "@/components/account/AccountSelectionGuard";
@@ -390,7 +390,7 @@ const App = () => (
           <CountryUrlSync />
           <CountryOnboardingModal />
           <ImpersonationBanner />
-          {/* QogitaFreezeBanner retiré : aucune mention publique de Qogita */}
+          
 
 
           <ImpersonationPageTracker />

@@ -19,6 +19,7 @@ import { useVendorTrust } from "@/hooks/useVendorTrust";
 import { VendorTrustProvider, useVendorTrustForId } from "@/contexts/VendorTrustContext";
 import { VendorTrustHeader, countryName, formatJoined } from "@/components/product/VendorTrustHeader";
 import { OfferTrustPanel } from "@/components/product/OfferTrustPanel";
+import { ProductPriceHistory } from "@/components/product/ProductPriceHistory";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";

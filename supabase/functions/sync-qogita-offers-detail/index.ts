@@ -780,6 +780,7 @@ async function syncOffers(
       fetchMultiVendor,
       recordEndpointError,
       recordProgress,
+      resyncLogId,
       afterCreatedAt: currentCursor,
       syncRunId,
       productIds,
@@ -879,6 +880,7 @@ async function syncOffersPage({
   fetchMultiVendor,
   recordEndpointError,
   recordProgress,
+  resyncLogId,
   afterCreatedAt,
   syncRunId,
   productIds,
@@ -899,6 +901,7 @@ async function syncOffersPage({
   fetchMultiVendor: boolean;
   recordEndpointError: (endpoint: string, status: number | null, message: string) => Promise<void>;
   recordProgress: (delta: Record<string, number>) => Promise<void>;
+  resyncLogId: string | null;
   afterCreatedAt: string | null;
   syncRunId: string | null;
   productIds: string[];

@@ -8128,6 +8128,7 @@ export type Database = {
           is_top_seller: boolean | null
           is_traceable: boolean | null
           last_sync_run_id: string | null
+          last_verified_at: string | null
           margin_amount: number | null
           margin_split_pct: number | null
           max_delivery_days: number | null
@@ -8200,6 +8201,7 @@ export type Database = {
           is_top_seller?: boolean | null
           is_traceable?: boolean | null
           last_sync_run_id?: string | null
+          last_verified_at?: string | null
           margin_amount?: number | null
           margin_split_pct?: number | null
           max_delivery_days?: number | null
@@ -8272,6 +8274,7 @@ export type Database = {
           is_top_seller?: boolean | null
           is_traceable?: boolean | null
           last_sync_run_id?: string | null
+          last_verified_at?: string | null
           margin_amount?: number | null
           margin_split_pct?: number | null
           max_delivery_days?: number | null
@@ -28133,6 +28136,7 @@ export type Database = {
           is_top_seller: boolean | null
           is_traceable: boolean | null
           last_sync_run_id: string | null
+          last_verified_at: string | null
           margin_amount: number | null
           margin_split_pct: number | null
           max_delivery_days: number | null
@@ -28487,6 +28491,7 @@ export type Database = {
           is_top_seller: boolean | null
           is_traceable: boolean | null
           last_sync_run_id: string | null
+          last_verified_at: string | null
           margin_amount: number | null
           margin_split_pct: number | null
           max_delivery_days: number | null
@@ -29784,6 +29789,7 @@ export type Database = {
         Args: { _offer_ids: string[] }
         Returns: number
       }
+      qogita_offers_source_healthy: { Args: never; Returns: boolean }
       qogita_price_trends: {
         Args: { _gtin: string }
         Returns: {

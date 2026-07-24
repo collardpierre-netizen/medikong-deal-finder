@@ -14,12 +14,18 @@ export interface ValidationError {
     | "exceeds_stock"
     | "offer_not_available"
     | "vendor_mov_not_reached"
-    | "invalid_quantity";
+    | "invalid_quantity"
+    | "price_stale";
   item_index: number | null;
   vendor_name: string | null;
   offer_id?: string | null;
   details: Record<string, unknown>;
 }
+
+// Qogita API offers has been down since ~mid-July 2026. Any Qogita-backed offer
+// not verified since more than STALE_THRESHOLD_DAYS is considered unsafe for
+// checkout (reveal-at-purchase price integrity).
+const QOGITA_STALE_THRESHOLD_DAYS = 7;
 
 export interface ValidatedItem {
   offer_id: string;
@@ -86,13 +92,15 @@ export async function validateCart(
   const { data: offers, error: offerErr } = await supabase
     .from("offers")
     .select(
-      "id, vendor_id, product_id, price_excl_vat, price_incl_vat, stock_quantity, moq, mov, is_active, vat_rate, vendors:vendor_id(name, slug, company_name, show_real_name, display_code)",
+      "id, vendor_id, product_id, price_excl_vat, price_incl_vat, stock_quantity, moq, mov, is_active, vat_rate, is_qogita_backed, price_stale, last_verified_at, vendors:vendor_id(name, slug, company_name, show_real_name, display_code)",
     )
     .in("id", offerIds);
 
   if (offerErr) throw new Error(`offers_fetch_failed: ${offerErr.message}`);
 
   const offerMap = new Map<string, any>((offers || []).map((o: any) => [o.id, o]));
+
+  const staleCutoffMs = Date.now() - QOGITA_STALE_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
 
   // Per-item validation + tier resolution
   for (let idx = 0; idx < items.length; idx++) {
@@ -107,6 +115,29 @@ export async function validateCart(
         vendor_name: null,
         offer_id: it.offer_id,
         details: { offer_id: it.offer_id },
+      });
+      continue;
+    }
+
+    // 🔒 Checkout guard : bloque toute offre Qogita dont le prix n'a pas été
+    // re-vérifié depuis plus de 7 jours. Sans ça on vendrait à un prix figé
+    // au 10/07/2026, avant retrait de l'API. Cohérent avec reveal-at-purchase.
+    const lastVerifiedMs = offer.last_verified_at ? Date.parse(offer.last_verified_at) : null;
+    const isStale =
+      offer.price_stale === true ||
+      (offer.is_qogita_backed === true &&
+        (lastVerifiedMs == null || lastVerifiedMs < staleCutoffMs));
+    if (isStale) {
+      errors.push({
+        type: "price_stale",
+        item_index: idx,
+        vendor_name: null,
+        offer_id: offer.id,
+        details: {
+          offer_id: offer.id,
+          reason: "qogita_source_unhealthy",
+          last_verified_at: offer.last_verified_at,
+        },
       });
       continue;
     }

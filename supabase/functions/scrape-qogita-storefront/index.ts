@@ -423,6 +423,14 @@ async function upsertOffer(
     price_source: "qogita_storefront",
     price_source_updated_at: now,
     synced_at: now,
+    // Dernière VÉRIFICATION RÉELLE du prix/dispo (distincte de synced_at qui
+    // trace la dernière tentative). Consommée par le guard checkout et par
+    // le futur flip de qogita_config.offers_source_healthy.
+    // TODO(rebuild) : quand un cycle complet du scraper a stampé
+    // last_verified_at sur tout le périmètre attendu, flipper la clé
+    // qogita_config.offers_source_healthy à true — ALORS SEULEMENT les
+    // sweeps A/B/C peuvent désactiver les offres réellement absentes.
+    last_verified_at: now,
   };
 
   // Match existing offer by product+vendor+country first, fallback to qid.

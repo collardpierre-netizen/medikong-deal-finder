@@ -409,6 +409,50 @@ export default function AdminCommissionsRevenus() {
 
   const totals = kpisQ.data;
 
+  // Preview data: group selected backlog rows by vendor for the confirmation dialog
+  const previewByVendor = useMemo(() => {
+    const rows = (backlogQ.data ?? []).filter(r => selectedLines.has(r.order_line_id));
+    const map = new Map<string, {
+      vendorId: string;
+      vendorName: string;
+      lines: BacklogRow[];
+      gmv: number;
+      revenue: number;
+      commission: number;
+      orderIds: Set<string>;
+      hasMarketplace: boolean;
+      hasTrading: boolean;
+    }>();
+    for (const r of rows) {
+      let g = map.get(r.vendor_id);
+      if (!g) {
+        g = {
+          vendorId: r.vendor_id,
+          vendorName: r.vendor_display_name,
+          lines: [],
+          gmv: 0, revenue: 0, commission: 0,
+          orderIds: new Set(),
+          hasMarketplace: false,
+          hasTrading: false,
+        };
+        map.set(r.vendor_id, g);
+      }
+      g.lines.push(r);
+      g.gmv += Number(r.gmv_incl_vat_cents) || 0;
+      g.revenue += Number(r.revenue_excl_vat_cents) || 0;
+      g.commission += Number(r.commission_excl_vat_cents) || 0;
+      g.orderIds.add(r.order_id);
+      if (r.type === "marketplace") g.hasMarketplace = true;
+      if (r.type === "trading") g.hasTrading = true;
+    }
+    return Array.from(map.values()).sort((a, b) => b.commission - a.commission);
+  }, [backlogQ.data, selectedLines]);
+
+  const previewTotalCommission = useMemo(
+    () => previewByVendor.reduce((s, v) => s + v.commission, 0),
+    [previewByVendor],
+  );
+
   const seriesChart = useMemo(() => {
     return (seriesQ.data ?? []).map(r => ({
       label: r.bucket_label,

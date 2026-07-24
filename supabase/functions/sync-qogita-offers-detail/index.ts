@@ -808,61 +808,56 @@ async function syncOffers(
     chunks_processed: 0,
   };
 
-  let currentCursor = afterCreatedAt;
+  // 1 page/invocation TOUJOURS. L'ancienne boucle interne (spécifique multi-vendeur)
+  // a été supprimée : c'est l'orchestrateur `run-sync-pipeline` qui rappelle cette
+  // fonction jusqu'à `remaining <= 0`. Cela borne strictement la wall-clock d'une
+  // invocation → plus de run orphelin killé au milieu d'une boucle interne, et le
+  // heartbeat de l'orchestrateur est bumpé entre chaque page.
+  const pageStats = await syncOffersPage({
+    sb,
+    country,
+    vatRate,
+    vatMultiplier,
+    logId,
+    startTime,
+    fetchMultiVendor,
+    recordEndpointError,
+    recordProgress,
+    resyncLogId,
+    afterCreatedAt: afterCreatedAt,
+    syncRunId,
+    productIds,
+    fastMode,
+    executionProfile,
+    token,
+    baseUrl,
+    bestPriceVendorId,
+    chunkLimit: CHUNK_LIMIT,
+    incrementalProductFilter,
+  });
 
-  while (true) {
-    const pageStats = await syncOffersPage({
-      sb,
-      country,
-      vatRate,
-      vatMultiplier,
-      logId,
-      startTime,
-      fetchMultiVendor,
-      recordEndpointError,
-      recordProgress,
-      resyncLogId,
-      afterCreatedAt: currentCursor,
-      syncRunId,
-      productIds,
-      fastMode,
-      executionProfile,
-      token,
-      baseUrl,
-      bestPriceVendorId,
-      chunkLimit: CHUNK_LIMIT,
-      incrementalProductFilter,
-    });
+  aggregateStats.products_enriched = pageStats.products_enriched || 0;
+  aggregateStats.offers_upserted = pageStats.offers_upserted || 0;
+  aggregateStats.multi_vendor_offers = pageStats.multi_vendor_offers || 0;
+  aggregateStats.vendors_created = pageStats.vendors_created || 0;
+  aggregateStats.errors = pageStats.errors || 0;
+  aggregateStats.skipped = pageStats.skipped || 0;
+  aggregateStats.rate_limited = pageStats.rate_limited || 0;
+  aggregateStats.tiers_synced = pageStats.tiers_synced || 0;
+  aggregateStats.cursor_after = pageStats.cursor_after ?? afterCreatedAt;
+  aggregateStats.chunks_processed = 1;
+  if (pageStats.first_api_response_keys) {
+    aggregateStats.first_api_response_keys = pageStats.first_api_response_keys;
+    aggregateStats.first_flat_sample = pageStats.first_flat_sample;
+  }
+  if (pageStats.first_mv_offer_keys !== undefined) {
+    aggregateStats.first_mv_offer_keys = pageStats.first_mv_offer_keys;
+    aggregateStats.first_mv_offer_sample = pageStats.first_mv_offer_sample;
+  }
 
-    aggregateStats.products_enriched += pageStats.products_enriched || 0;
-    aggregateStats.offers_upserted += pageStats.offers_upserted || 0;
-    aggregateStats.multi_vendor_offers += pageStats.multi_vendor_offers || 0;
-    aggregateStats.vendors_created += pageStats.vendors_created || 0;
-    aggregateStats.errors += pageStats.errors || 0;
-    aggregateStats.skipped += pageStats.skipped || 0;
-    aggregateStats.rate_limited += pageStats.rate_limited || 0;
-    aggregateStats.tiers_synced += pageStats.tiers_synced || 0;
-    aggregateStats.cursor_after = pageStats.cursor_after ?? currentCursor;
-    aggregateStats.chunks_processed += 1;
-
-    if (!aggregateStats.first_api_response_keys && pageStats.first_api_response_keys) {
-      aggregateStats.first_api_response_keys = pageStats.first_api_response_keys;
-      aggregateStats.first_flat_sample = pageStats.first_flat_sample;
-    }
-    if (aggregateStats.first_mv_offer_keys === undefined && pageStats.first_mv_offer_keys !== undefined) {
-      aggregateStats.first_mv_offer_keys = pageStats.first_mv_offer_keys;
-      aggregateStats.first_mv_offer_sample = pageStats.first_mv_offer_sample;
-    }
-
-    if (pageStats.paused) {
-      await sb
-        .from("sync_logs")
-        .update({ stats: aggregateStats })
-        .eq("id", logId);
-      return aggregateStats;
-    }
-
-    if (pageStats.completed_reason === "no_eligible_products" || !pageStats.has_more_chunks) {
+  // Terminé pour de bon : plus rien d'éligible OU plus de chunk.
+  if (pageStats.completed_reason === "no_eligible_products" || !pageStats.has_more_chunks) {
+    if (!pageStats.paused) {
       await sb
         .from("sync_logs")
         .update({
@@ -888,27 +883,21 @@ async function syncOffers(
 
       await sb.from("qogita_config").upsert({ key: "last_offers_sync_at", value: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: "key" });
       await sb.from("qogita_config").upsert({ key: "sync_status", value: "completed", updated_at: new Date().toISOString() }, { onConflict: "key" });
-
-      return aggregateStats;
     }
-
-    currentCursor = pageStats.cursor_after ?? currentCursor;
-
-    // Non multi-vendor modes keep the previous page-at-a-time behaviour and let
-    // the orchestrator loop call the next batch. The multi-vendor path continues
-    // locally, avoiding the former sync-qogita-offers-detail self-invocation.
-    if (!fetchMultiVendor) {
-      await sb
-        .from("sync_logs")
-        .update({
-          status: "partial",
-          stats: aggregateStats,
-          progress_message: `${country}: chunk terminé (${pageStats.page_total} produits, cursor=${aggregateStats.cursor_after}) — reprise par orchestrateur`,
-        })
-        .eq("id", logId);
-      return aggregateStats;
-    }
+    return aggregateStats;
   }
+
+  // Partiel : sauvegarde stats+cursor, orchestrateur rappellera.
+  await sb
+    .from("sync_logs")
+    .update({
+      status: "partial",
+      stats: aggregateStats,
+      progress_message: `${country}: chunk terminé (${pageStats.page_total} produits, cursor=${aggregateStats.cursor_after}) — reprise par orchestrateur`,
+    })
+    .eq("id", logId);
+
+  return aggregateStats;
 }
 
 async function syncOffersPage({

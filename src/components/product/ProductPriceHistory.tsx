@@ -349,7 +349,7 @@ export function ProductPriceHistory({ gtin, productName }: Props) {
           <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
             <span>Prix public observé</span>
             <span className="mx-1">·</span>
-            <span className="font-medium text-foreground/80">source&nbsp;: Qogita</span>
+            <span className="font-medium text-foreground/80">source&nbsp;: veille marché B2B</span>
             {productName ? (
               <span className="mt-0.5 line-clamp-1 sm:mt-0 sm:inline">
                 <span className="mx-1 hidden sm:inline">·</span>

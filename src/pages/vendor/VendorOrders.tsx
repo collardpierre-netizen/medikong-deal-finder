@@ -1680,7 +1680,7 @@ export function VendorOrderLineRow({
 
           {isQogita && (
             <div className="mt-2 p-2 rounded bg-muted/30 text-[11px] space-y-0.5">
-              <div className="font-semibold text-muted-foreground">Détails fournisseur Qogita :</div>
+              <div className="font-semibold text-muted-foreground">Détails fournisseur (grossiste B2B) :</div>
               {line.qogita_seller_fid && (
                 <div>Vendeur : <span className="font-mono text-foreground">{line.qogita_seller_fid}</span></div>
               )}

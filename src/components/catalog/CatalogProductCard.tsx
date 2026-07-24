@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { getLocalizedName } from "@/lib/localization";
+import { useLocalizedProductField } from "@/hooks/useLocalizedProductField";
 import type { CatalogProduct } from "@/hooks/useCatalog";
 import { PvpEconomyBadge } from "@/components/product/PvpEconomyBadge";
 

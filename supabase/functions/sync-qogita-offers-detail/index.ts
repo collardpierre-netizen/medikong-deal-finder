@@ -24,41 +24,6 @@ function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-const PROJECT_URL_RE = /^https:\/\/[a-z0-9]+\.supabase\.co\/?$/;
-
-function scheduleNextChunk(body: object) {
-  const supabaseUrl = (Deno.env.get("SUPABASE_URL") ?? "").trim();
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-
-  if (!PROJECT_URL_RE.test(supabaseUrl)) {
-    console.error(`internal_invoke_failed: sync-qogita-offers-detail — INVALID_PROJECT_URL (got="${supabaseUrl}")`);
-    return;
-  }
-  if (!serviceRoleKey) {
-    console.error("internal_invoke_failed: sync-qogita-offers-detail — MISSING_SERVICE_ROLE_KEY");
-    return;
-  }
-
-  // Utilise le client officiel : routing interne Edge Runtime (pas de sortie
-  // HTTPS vers l'URL publique du projet, qui échoue régulièrement avec
-  // "TypeError: error sending request from 10.32.x.x:PORT for https://<ref>...").
-  const internalClient = createClient(supabaseUrl, serviceRoleKey);
-  const nextChunk = internalClient.functions
-    .invoke("sync-qogita-offers-detail", { body })
-    .then(({ error }) => {
-      if (error) {
-        console.error(`internal_invoke_failed: sync-qogita-offers-detail — ${error.message ?? error}`);
-      }
-    })
-    .catch((e) => {
-      console.error(`internal_invoke_failed: sync-qogita-offers-detail — ${e?.message ?? e}`);
-    });
-
-  const edgeRuntime = (globalThis as any).EdgeRuntime;
-  if (edgeRuntime?.waitUntil) edgeRuntime.waitUntil(nextChunk);
-}
-
-
 // --- Qogita rate limiter (token bucket en mémoire) ---
 // Débit soutenu ~0.5 req/s (1 req toutes les 2s), burst 1. Volontairement
 // conservateur pour rester sous le seuil 429 observé côté Qogita (juin 2026).

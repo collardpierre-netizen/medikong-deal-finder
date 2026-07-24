@@ -527,8 +527,12 @@ async function upsertOffer(
   basePriceExcl: number,
   baseMov: number,
   vatRate: number,
+  marginMul: number,
 ): Promise<string | null> {
   const now = new Date().toISOString();
+  // Apply commercial margin to base price → public sell price (HTVA + TTC).
+  const sellExcl = Math.round(basePriceExcl * marginMul * 100) / 100;
+  const marginPct = Math.round((marginMul - 1) * 10000) / 100;
   const payload = {
     product_id: productId,
     vendor_id: vendorId,
@@ -536,8 +540,10 @@ async function upsertOffer(
     qogita_offer_qid: offer.qid,
     qogita_base_price: basePriceExcl,
     is_qogita_backed: true,
-    price_excl_vat: basePriceExcl,
-    price_incl_vat: Math.round(basePriceExcl * (1 + vatRate) * 100) / 100,
+    price_excl_vat: sellExcl,
+    price_incl_vat: Math.round(sellExcl * (1 + vatRate) * 100) / 100,
+    margin_amount: Math.round((sellExcl - basePriceExcl) * 100) / 100,
+    applied_margin_percentage: marginPct,
     vat_rate: vatRate,
     stock_quantity: offer.inventory,
     stock_status: offer.isInStock ? "in_stock" : "out_of_stock",
@@ -551,13 +557,6 @@ async function upsertOffer(
     price_source: "qogita_storefront",
     price_source_updated_at: now,
     synced_at: now,
-    // Dernière VÉRIFICATION RÉELLE du prix/dispo (distincte de synced_at qui
-    // trace la dernière tentative). Consommée par le guard checkout et par
-    // le futur flip de qogita_config.offers_source_healthy.
-    // TODO(rebuild) : quand un cycle complet du scraper a stampé
-    // last_verified_at sur tout le périmètre attendu, flipper la clé
-    // qogita_config.offers_source_healthy à true — ALORS SEULEMENT les
-    // sweeps A/B/C peuvent désactiver les offres réellement absentes.
     last_verified_at: now,
   };
 
@@ -608,8 +607,10 @@ async function syncTiers(
   baseMov: number,
   vatRate: number,
   tiers: StorefrontOffer["tieredPrices"],
+  marginMul: number,
 ): Promise<number> {
   const vm = 1 + vatRate;
+  const sell = (base: number) => Math.round(base * marginMul * 100) / 100;
   const normalized = tiers
     .map((t) => ({
       unit: parseFloat(t?.tierPrice?.amount ?? "0") || 0,
@@ -620,27 +621,29 @@ async function syncTiers(
     .sort((a, b) => a.mov - b.mov);
 
   const rows: Array<Record<string, unknown>> = [];
+  const baseSell = sell(basePriceExcl);
   rows.push({
     offer_id: offerId,
     tier_index: 0,
     mov_threshold: baseMov > 0 ? baseMov : 0,
     mov_currency: "EUR",
     qogita_unit_price: basePriceExcl,
-    price_excl_vat: basePriceExcl,
-    price_incl_vat: Math.round(basePriceExcl * vm * 100) / 100,
+    price_excl_vat: baseSell,
+    price_incl_vat: Math.round(baseSell * vm * 100) / 100,
     is_active: true,
   });
   let idx = 1;
   for (const t of normalized) {
     if (Math.abs(t.unit - basePriceExcl) < 0.005 && Math.abs(t.mov - baseMov) < 0.005) continue;
+    const tSell = sell(t.unit);
     rows.push({
       offer_id: offerId,
       tier_index: idx++,
       mov_threshold: t.mov > 0 ? t.mov : 0,
       mov_currency: "EUR",
       qogita_unit_price: t.unit,
-      price_excl_vat: t.unit,
-      price_incl_vat: Math.round(t.unit * vm * 100) / 100,
+      price_excl_vat: tSell,
+      price_incl_vat: Math.round(tSell * vm * 100) / 100,
       is_active: t.isActive,
     });
   }
@@ -665,7 +668,7 @@ async function scrapeProduct(
   sb: any,
   product: { id: string; gtin: string | null; qogita_fid: string | null; qogita_slug: string | null; country_code?: string | null },
   stats: { vendors_created: number; retries: number },
-  opts: { dryRun: boolean; resourceOffers: boolean },
+  opts: { dryRun: boolean; resourceOffers: boolean; marginMul: number },
 ): Promise<ProductResult> {
   if (!product.qogita_fid || !product.qogita_slug) {
     return { status: "error", offersWritten: 0, tiersWritten: 0, historyPoints: 0, error: "missing_qogita_ids" };
@@ -750,10 +753,10 @@ async function scrapeProduct(
 
     const vendorId = await resolveVendorId(sb, offer.seller, country, stats);
     if (!vendorId) continue;
-    const offerId = await upsertOffer(sb, product.id, vendorId, country, offer, basePriceExcl, baseMov, vatRate);
+    const offerId = await upsertOffer(sb, product.id, vendorId, country, offer, basePriceExcl, baseMov, vatRate, opts.marginMul);
     if (!offerId) continue;
     offersWritten += 1;
-    tiersWritten += await syncTiers(sb, offerId, basePriceExcl, baseMov, vatRate, offer.tieredPrices ?? []);
+    tiersWritten += await syncTiers(sb, offerId, basePriceExcl, baseMov, vatRate, offer.tieredPrices ?? [], opts.marginMul);
   }
 
   // ── Re-source best-price on stale Qogita-backed offers ────────────
@@ -819,6 +822,22 @@ Deno.serve(async (req) => {
 
   const limit = Math.min(Math.max(body.limit ?? DEFAULT_BATCH, 1), 100);
   const resourceOffers = body.resourceOffers ?? true;
+
+  // Load the commercial margin (fallback 25%) once per run and apply it
+  // to every offer/tier upserted from the storefront. Without this the
+  // scraper writes the raw base price as the sell price and silently
+  // undoes the global margin recalc for every refreshed offer.
+  let marginPct = 25.0;
+  try {
+    const { data: cfg } = await sb
+      .from("qogita_config")
+      .select("value")
+      .eq("key", "margin_percentage")
+      .maybeSingle();
+    const parsed = cfg?.value ? parseFloat(cfg.value) : NaN;
+    if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 100) marginPct = parsed;
+  } catch (_) { /* keep default */ }
+  const marginMul = 1 + marginPct / 100;
 
   if (body.forceLogin) sessionCache = null;
 
@@ -903,7 +922,7 @@ Deno.serve(async (req) => {
     }
     let res: ProductResult;
     try {
-      res = await scrapeProduct(sb, p as never, stats, { dryRun: !!body.dryRun, resourceOffers });
+      res = await scrapeProduct(sb, p as never, stats, { dryRun: !!body.dryRun, resourceOffers, marginMul });
     } catch (e) {
       res = { status: "error", offersWritten: 0, tiersWritten: 0, historyPoints: 0, error: (e as Error).message };
     }

@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
       .select("value")
       .eq("key", "margin_percentage")
       .maybeSingle();
-    const defaultMarginPct = configRow?.value ? parseFloat(configRow.value) : 15.0;
+    const defaultMarginPct = configRow?.value ? parseFloat(configRow.value) : 25.0;
 
     // Load margin rules sorted by priority desc
     const { data: marginRules } = await supabase
@@ -50,9 +50,22 @@ Deno.serve(async (req) => {
     if (error) throw error;
 
     let updated = 0;
+    let skippedStale = 0;
+    let skippedNoBase = 0;
+    const nowIso = new Date().toISOString();
 
     for (const offer of (offers || [])) {
-      if (!offer.qogita_base_price) continue;
+      // Skip offers without a reliable base price: no base OR stale.
+      // Stale offers keep their existing price; they will be re-recalculated automatically
+      // when the storefront scraper refreshes last_verified_at and clears price_stale.
+      if (!offer.qogita_base_price || Number(offer.qogita_base_price) <= 0) {
+        skippedNoBase++;
+        continue;
+      }
+      if (offer.price_stale === true) {
+        skippedStale++;
+        continue;
+      }
 
       const basePrice = Number(offer.qogita_base_price);
       const product = offer.products as any;
@@ -101,12 +114,20 @@ Deno.serve(async (req) => {
         applied_margin_percentage: marginPct,
         delivery_days: deliveryDays,
         price_tiers: priceTiers,
+        price_source: "qogita_margin_recalc",
+        price_source_updated_at: nowIso,
       }).eq("id", offer.id);
 
       updated++;
     }
 
-    return new Response(JSON.stringify({ success: true, updated, default_margin: defaultMarginPct }), {
+    return new Response(JSON.stringify({
+      success: true,
+      updated,
+      skipped_stale: skippedStale,
+      skipped_no_base: skippedNoBase,
+      default_margin: defaultMarginPct,
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: any) {

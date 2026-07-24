@@ -1050,7 +1050,7 @@ export default function AdminSync() {
                       min={0}
                       max={100}
                       step={0.5}
-                      defaultValue={config?.margin_percentage || "18"}
+                      defaultValue={config?.margin_percentage || "25"}
                       key={config?.margin_percentage}
                       className="w-24 text-[12px] border rounded-md px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                       style={{ borderColor: "#E2E8F0" }}
@@ -1069,7 +1069,7 @@ export default function AdminSync() {
                           toast.info("Aucun changement");
                           return;
                         }
-                        if (confirm(`Modifier la marge de ${config?.margin_percentage || "18"}% à ${v}% ?`)) {
+                        if (confirm(`Modifier la marge de ${config?.margin_percentage || "25"}% à ${v}% ?`)) {
                           updateConfig.mutate({ margin_percentage: String(v) }, {
                             onSuccess: () => {
                               toast.success(`Marge mise à jour : ${v}%`, {

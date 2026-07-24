@@ -215,6 +215,41 @@ export function CampaignDetailView({
           </ResponsiveContainer>
         </CardContent>
       </Card>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Aperçu QR — {campaign.name}</DialogTitle></DialogHeader>
+          <div className="flex justify-center bg-white rounded-lg p-6 border">
+            {qrPng ? <img src={qrPng} alt="QR" className="w-80 h-80" /> : <div className="w-80 h-80 animate-pulse bg-muted" />}
+          </div>
+          <code className="text-xs bg-muted p-2 rounded break-all block">{url}</code>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" size="sm" onClick={downloadPng} disabled={!qrPng}><Download className="h-3 w-3 mr-1" />PNG</Button>
+            <Button variant="outline" size="sm" onClick={downloadSvg} disabled={!qrSvg}><Download className="h-3 w-3 mr-1" />SVG</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={regenOpen} onOpenChange={setRegenOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Régénérer le QR ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Un nouveau token va remplacer le slug actuel <code className="font-mono">{campaign.slug}</code>.
+              <strong className="block mt-2 text-destructive">
+                Tous les QR/flyers imprimés avec l'ancien lien cesseront de fonctionner.
+              </strong>
+              Les statistiques historiques (scans, inscriptions…) sont conservées.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={() => regenerate.mutate()} disabled={regenerate.isPending}>
+              Régénérer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -32,6 +32,8 @@ export default function SearchTrivagoCard({ product: p }: Props) {
   const [showMore, setShowMore] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const displayName = useLocalizedProductField(p.id, p as any, "name", p.name);
+  const displayShortDescription = useLocalizedProductField(p.id, p as any, "short_description", (p as any).descriptionShort);
 
   // ⚡ Best offer pré-chargé via le batch RPC (BestOffersProvider). Si la page ne
   // monte pas le provider, on retombe sur l'ancien `useProductOffers` immédiat.

@@ -88,6 +88,7 @@ Deno.serve(async (req) => {
             url: existing.url,
             session_id: existing.id,
             reused: true,
+            email_sent: false,
           });
         }
       } catch (_e) { /* recrée */ }

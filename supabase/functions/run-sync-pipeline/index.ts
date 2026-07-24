@@ -338,6 +338,9 @@ async function executePipeline({
         let totalProcessed = 0;
         let iterations = 0;
 
+        let deferred = false;
+        let deferReason: string | null = null;
+
         while (iterations < MAX_LOOP_ITERATIONS) {
           const result = (await callEdgeFunction(step.functionName, {
             ...step.params,
@@ -364,6 +367,16 @@ async function executePipeline({
             throw new Error(result?.message || `Échec de l'étape ${step.label}`);
           }
 
+          // 429 défer : la fonction signale un backlog rate-limité côté Qogita.
+          // On casse la boucle immédiatement (le prochain tick cron reprendra),
+          // sinon on ré-appelle et on retape le 429 → MAX_LOOP_ITERATIONS brûlés
+          // sans progression.
+          if (result?.deferred === true) {
+            deferred = true;
+            deferReason = result?.defer_reason || "rate_limited";
+            break;
+          }
+
           if (remaining <= 0 || result?.status === "completed") {
             break;
           }
@@ -382,7 +395,13 @@ async function executePipeline({
           throw new Error(`Limite de sécurité atteinte sur ${step.label}`);
         }
 
-        await updateStep(i, "completed", { totalProcessed, iterations });
+        if (deferred) {
+          // Étape marquée completed mais avec drapeau `deferred` : le run se
+          // termine proprement, le prochain tick cron reprendra le backlog.
+          await updateStep(i, "completed", { totalProcessed, iterations, deferred: true, defer_reason: deferReason });
+        } else {
+          await updateStep(i, "completed", { totalProcessed, iterations });
+        }
       } else {
         const result = await callEdgeFunction(step.functionName, {
           ...step.params,

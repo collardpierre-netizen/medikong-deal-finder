@@ -147,6 +147,7 @@ export default function AdminCommissionsRevenus() {
   const [filterChannel, setFilterChannel] = useState<"all" | SalesChannel>("all");
   const [filterOrderStatus, setFilterOrderStatus] = useState<"all" | "validated" | "draft">("all");
   const [customerSearch, setCustomerSearch] = useState("");
+  const [filterVendorId, setFilterVendorId] = useState<string>("all");
   const [bucket, setBucket] = useState<"day" | "week" | "month" | "quarter">("month");
   const [selectedLines, setSelectedLines] = useState<Set<string>>(new Set());
 

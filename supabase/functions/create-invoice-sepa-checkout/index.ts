@@ -190,7 +190,62 @@ Deno.serve(async (req) => {
       return json(500, { error: "Échec enregistrement du lien" });
     }
 
-    return json(200, { url: session.url, session_id: session.id, reused: false });
+    // Envoi email client (best-effort)
+    let emailSent = false;
+    if (customerEmail) {
+      try {
+        const amountFmt = new Intl.NumberFormat("fr-BE", {
+          style: "currency",
+          currency: "EUR",
+        }).format(amount);
+        const dueDateFmt = invoice.due_date
+          ? new Date(invoice.due_date).toLocaleDateString("fr-BE", {
+              day: "2-digit",
+              month: "long",
+              year: "numeric",
+            })
+          : "";
+        const ref = invoice.invoice_number || orderNumber || invoice.id;
+        const { error: sendErr } = await supabase.functions.invoke(
+          "send-transactional-email",
+          {
+            body: {
+              templateName: "invoice-payment-link",
+              recipientEmail: customerEmail,
+              idempotencyKey: `invoice-payment-link-${invoice.id}-${session.id}`,
+              templateData: {
+                customerName,
+                vendorName,
+                invoiceNumber: invoice.invoice_number ?? "",
+                orderNumber: orderNumber ?? "",
+                amountIncVat: amountFmt,
+                dueDate: dueDateFmt,
+                payUrl: session.url,
+                bankName: vendorBank.bankName,
+                iban: vendorBank.iban,
+                bic: vendorBank.bic,
+                paymentReference: ref,
+              },
+            },
+          },
+        );
+        if (sendErr) {
+          console.error("[create-invoice-sepa-checkout] email send failed", sendErr);
+        } else {
+          emailSent = true;
+        }
+      } catch (e) {
+        console.error("[create-invoice-sepa-checkout] email exception", e);
+      }
+    }
+
+    return json(200, {
+      url: session.url,
+      session_id: session.id,
+      reused: false,
+      email_sent: emailSent,
+      email_recipient: customerEmail ?? null,
+    });
   } catch (err) {
     console.error("[create-invoice-sepa-checkout] error", err);
     return json(500, {

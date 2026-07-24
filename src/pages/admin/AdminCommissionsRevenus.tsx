@@ -147,6 +147,7 @@ export default function AdminCommissionsRevenus() {
   const [filterChannel, setFilterChannel] = useState<"all" | SalesChannel>("all");
   const [filterOrderStatus, setFilterOrderStatus] = useState<"all" | "validated" | "draft">("all");
   const [customerSearch, setCustomerSearch] = useState("");
+  const [filterVendorId, setFilterVendorId] = useState<string>("all");
   const [bucket, setBucket] = useState<"day" | "week" | "month" | "quarter">("month");
   const [selectedLines, setSelectedLines] = useState<Set<string>>(new Set());
 
@@ -482,8 +483,11 @@ export default function AdminCommissionsRevenus() {
         return c.company.toLowerCase().includes(q) || c.email.toLowerCase().includes(q);
       });
     }
+    if (filterVendorId !== "all") {
+      rows = rows.filter(r => r.vendor_id === filterVendorId);
+    }
     return rows;
-  }, [backlogQ.data, filterOrderStatus, customerSearch, customersQ.data]);
+  }, [backlogQ.data, filterOrderStatus, customerSearch, customersQ.data, filterVendorId]);
 
   const backlogSelectedAmount = useMemo(() => {
     return filteredBacklog
@@ -624,6 +628,20 @@ export default function AdminCommissionsRevenus() {
                 <SelectItem value="all">Tous</SelectItem>
                 <SelectItem value="online">En ligne</SelectItem>
                 <SelectItem value="manual">Manuelle</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs text-[#616B7C]">Vendeur</Label>
+            <Select value={filterVendorId} onValueChange={v => setFilterVendorId(v)}>
+              <SelectTrigger className="w-56"><SelectValue placeholder="Tous" /></SelectTrigger>
+              <SelectContent className="max-h-80">
+                <SelectItem value="all">Tous les vendeurs</SelectItem>
+                {(byVendorQ.data ?? []).map(v => (
+                  <SelectItem key={v.vendor_id} value={v.vendor_id}>
+                    {v.vendor_display_name}{v.vendor_country_code ? ` (${v.vendor_country_code})` : ""}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

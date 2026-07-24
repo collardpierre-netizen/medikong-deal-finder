@@ -198,6 +198,8 @@ const AdminCmsHomeShowcase = lazyWithRetry(() => import("./pages/admin/AdminCmsH
 const AdminMedia = lazyWithRetry(() => import("./pages/admin/AdminMedia"), "AdminMedia");
 const AdminMediaLibrary = lazyWithRetry(() => import("./pages/admin/AdminMediaLibrary"), "AdminMediaLibrary");
 const AdminUnmappedCategories = lazyWithRetry(() => import("./pages/admin/AdminUnmappedCategories"), "AdminUnmappedCategories");
+const AdminTrackingCampaignsPage = lazyWithRetry(() => import("./pages/admin/AdminTrackingCampaignsPage"), "AdminTrackingCampaignsPage");
+const TrackedRedirectPage = lazyWithRetry(() => import("./pages/TrackedRedirectPage"), "TrackedRedirectPage");
 const AdminCategoryAliases = lazyWithRetry(() => import("./pages/admin/AdminCategoryAliases"), "AdminCategoryAliases");
 const AdminSourcingPipeline = lazyWithRetry(() => import("./pages/admin/AdminSourcingPipeline"), "AdminSourcingPipeline");
 const AdminCategoryAnomalies = lazyWithRetry(() => import("./pages/admin/AdminCategoryAnomalies"), "AdminCategoryAnomalies");

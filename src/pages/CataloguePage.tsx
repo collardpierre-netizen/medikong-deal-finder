@@ -46,6 +46,7 @@ export default function CataloguePage() {
   const { data, isLoading, isError, error, refetch, isFetching } = useCatalogProducts(effectiveFilters);
   const products = data?.products || [];
   const total = data?.total || 0;
+  const countryStatsUnavailable = (data as any)?.countryStatsUnavailable === true;
   const { view, setView } = useCatalogViewMode();
   const [mobileFilters, setMobileFilters] = useState(false);
 

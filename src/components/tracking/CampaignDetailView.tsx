@@ -88,6 +88,25 @@ export function CampaignDetailView({
     onError: (e: any) => toast.error(e.message ?? "Erreur"),
   });
 
+  const regenerate = useMutation({
+    mutationFn: async () => {
+      // Preserve human-readable base slug, append a fresh 8-char token.
+      const baseSlug = campaign.slug.replace(/-[a-z0-9]{6,}$/i, "");
+      const token = Array.from(crypto.getRandomValues(new Uint8Array(6)))
+        .map((b) => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36]).join("");
+      const newSlug = `${baseSlug || "camp"}-${token}`;
+      const { error } = await supabase.from("tracking_campaigns").update({ slug: newSlug }).eq("id", campaign.id);
+      if (error) throw error;
+      return newSlug;
+    },
+    onSuccess: (newSlug) => {
+      toast.success(`QR régénéré : /go/${newSlug}`, { description: "L'ancien QR est désactivé." });
+      setRegenOpen(false);
+      onUpdated?.();
+    },
+    onError: (e: any) => toast.error(e.message ?? "Erreur régénération"),
+  });
+
   const copy = async (text: string, label: string) => {
     try { await navigator.clipboard.writeText(text); toast.success(`${label} copié`); }
     catch { toast.error("Copie impossible"); }

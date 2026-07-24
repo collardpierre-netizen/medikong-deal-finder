@@ -1554,7 +1554,11 @@ export default function ProductPage() {
   const hasImages = images.length > 0;
   const galleryImages = images.slice(0, 6);
 
-  const description = productDetails?.description || (productDetails as any)?.label || product.descriptionShort || "";
+  // Champs produit localisés selon la langue de l'UI (cascade DB name_<lang> > cache IA > source).
+  const displayName = useLocalizedProductField(product.id, productDetails, "name", product.name);
+  const displayShortDescription = useLocalizedProductField(product.id, productDetails, "short_description", product.descriptionShort);
+  const displayDescription = useLocalizedProductField(product.id, productDetails, "description", (productDetails as any)?.description || (productDetails as any)?.label || product.descriptionShort);
+  const description = displayDescription || "";
 
   const bestOfferPack = resolvePackSize({
     offerOverride: bestOffer?.packSizeOverride,

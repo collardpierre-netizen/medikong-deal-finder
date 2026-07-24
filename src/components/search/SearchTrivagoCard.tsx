@@ -8,6 +8,7 @@ import type { Product } from "@/hooks/useProducts";
 import { useBestOfferForProduct } from "@/contexts/BestOffersContext";
 import { OfferSkeletonRow } from "@/components/shared/OfferSkeletonRow";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLocalizedProductField } from "@/hooks/useLocalizedProductField";
 
 
 interface Props {

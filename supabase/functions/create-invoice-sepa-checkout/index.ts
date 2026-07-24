@@ -93,15 +93,41 @@ Deno.serve(async (req) => {
       } catch (_e) { /* recrée */ }
     }
 
-    // Récupère l'acheteur pour l'email (via order -> customer)
+    // Récupère l'acheteur (email + nom) via order -> customer
     let customerEmail: string | undefined;
+    let customerName: string | undefined;
+    let orderNumber: string | undefined;
     if (invoice.order_id) {
       const { data: order } = await supabase
         .from("orders")
-        .select("customer:customers(email)")
+        .select("order_number, customer:customers(email, first_name, last_name, company_name)")
         .eq("id", invoice.order_id)
         .maybeSingle();
-      customerEmail = (order as any)?.customer?.email || undefined;
+      const c: any = (order as any)?.customer;
+      customerEmail = c?.email || undefined;
+      customerName =
+        c?.company_name ||
+        [c?.first_name, c?.last_name].filter(Boolean).join(" ").trim() ||
+        undefined;
+      orderNumber = (order as any)?.order_number || undefined;
+    }
+
+    // Coordonnées bancaires du vendeur (self-billing = paiement direct au vendeur)
+    let vendorName = "";
+    let vendorBank = { bankName: "", iban: "", bic: "" };
+    if (invoice.vendor_id) {
+      const { data: vendor } = await supabase
+        .from("vendors")
+        .select("name, company_name, bank_name, iban, bic")
+        .eq("id", invoice.vendor_id)
+        .maybeSingle();
+      const v: any = vendor;
+      vendorName = v?.company_name || v?.name || "";
+      vendorBank = {
+        bankName: v?.bank_name || "",
+        iban: v?.iban || "",
+        bic: v?.bic || "",
+      };
     }
 
     const rawOrigin =

@@ -8116,6 +8116,8 @@ export type Database = {
           packaging_languages: string[] | null
           price_excl_vat: number
           price_incl_vat: number
+          price_stale: boolean
+          price_stale_since: string | null
           price_tiers: Json | null
           product_id: string
           purchase_price: number | null
@@ -8184,6 +8186,8 @@ export type Database = {
           packaging_languages?: string[] | null
           price_excl_vat: number
           price_incl_vat: number
+          price_stale?: boolean
+          price_stale_since?: string | null
           price_tiers?: Json | null
           product_id: string
           purchase_price?: number | null
@@ -8252,6 +8256,8 @@ export type Database = {
           packaging_languages?: string[] | null
           price_excl_vat?: number
           price_incl_vat?: number
+          price_stale?: boolean
+          price_stale_since?: string | null
           price_tiers?: Json | null
           product_id?: string
           purchase_price?: number | null
@@ -11283,6 +11289,7 @@ export type Database = {
           manual_mapping_validated_by: string | null
           manufacturer_id: string | null
           min_delivery_days: number | null
+          mv_last_probed_at: string | null
           name: string
           name_de: string | null
           name_en: string | null
@@ -11377,6 +11384,7 @@ export type Database = {
           manual_mapping_validated_by?: string | null
           manufacturer_id?: string | null
           min_delivery_days?: number | null
+          mv_last_probed_at?: string | null
           name: string
           name_de?: string | null
           name_en?: string | null
@@ -11471,6 +11479,7 @@ export type Database = {
           manual_mapping_validated_by?: string | null
           manufacturer_id?: string | null
           min_delivery_days?: number | null
+          mv_last_probed_at?: string | null
           name?: string
           name_de?: string | null
           name_en?: string | null
@@ -27870,6 +27879,8 @@ export type Database = {
           packaging_languages: string[] | null
           price_excl_vat: number
           price_incl_vat: number
+          price_stale: boolean
+          price_stale_since: string | null
           price_tiers: Json | null
           product_id: string
           purchase_price: number | null
@@ -28220,6 +28231,8 @@ export type Database = {
           packaging_languages: string[] | null
           price_excl_vat: number
           price_incl_vat: number
+          price_stale: boolean
+          price_stale_since: string | null
           price_tiers: Json | null
           product_id: string
           purchase_price: number | null

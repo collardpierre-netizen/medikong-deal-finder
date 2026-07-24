@@ -705,12 +705,37 @@ export default function AdminSync() {
     return "inactive";
   };
 
+  // Damage-control : détecte que l'API Qogita /offers/ est morte (endpoint 404/HTML)
+  // sur au moins 3 des 5 derniers runs offres_detail. Bandeau admin visible.
+  const qogitaOffersDetail = (logs || []).filter((l: any) => l.sync_type === "offers_detail").slice(0, 5);
+  const endpointDeadRun = qogitaOffersDetail.find((l: any) => l.status === "api_endpoint_dead" || l?.stats?.mv_endpoint_dead === true);
+  const endpointDeadCount = qogitaOffersDetail.filter((l: any) => l.status === "api_endpoint_dead" || l?.stats?.mv_endpoint_dead === true).length;
+  const showApiDeadBanner = endpointDeadCount >= 3;
+
   return (
     <div className="space-y-6">
       <AdminTopBar title="Synchronisation Qogita" subtitle="Pipeline automatisé & gestion du catalogue" />
 
+      {showApiDeadBanner && (
+        <div className="rounded-xl border border-red-300 bg-red-50 p-4 flex items-start gap-3">
+          <AlertTriangle size={18} className="text-red-600 mt-0.5 shrink-0" />
+          <div className="text-[13px] text-red-800">
+            <p className="font-semibold mb-1">API Qogita /offers/ dépréciée — endpoint mort</p>
+            <p className="text-[12px] leading-relaxed">
+              L'endpoint <code className="font-mono bg-red-100 px-1 rounded">GET /variants/&#123;fid&#125;/&#123;slug&#125;/offers/</code> renvoie 404 sur {endpointDeadCount} des 5 derniers runs.
+              Les paliers multi-vendeur et les prix best-price ne peuvent plus être rafraîchis.
+              Les offres existantes sont marquées <b>prix indicatif</b> jusqu'à recâblage sur le nouvel endpoint Qogita.
+              {endpointDeadRun?.started_at && (
+                <> Premier run affecté : <b>{format(new Date(endpointDeadRun.started_at), "dd/MM HH:mm", { locale: fr })}</b>.</>
+              )}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Running individual sync */}
       {runningLog && <SyncProgressBar log={runningLog} />}
+
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

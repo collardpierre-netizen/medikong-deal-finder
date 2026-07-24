@@ -2865,6 +2865,9 @@ export default function ProductPage() {
 
               {/* ── Deuxième Chance ReStock : déplacé sous "Meilleure offre" plus haut ── */}
 
+              {/* ── Historique de prix marché (source: qogita_public) ── */}
+              <ProductPriceHistory gtin={product.gtin || product.ean} productName={product.name} />
+
               {/* ── Description ── */}
               <div className="mb-8">
                 <h2 className="text-lg font-bold text-foreground mb-3">Description du produit</h2>

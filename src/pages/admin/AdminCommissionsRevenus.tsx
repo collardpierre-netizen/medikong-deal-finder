@@ -358,6 +358,7 @@ export default function AdminCommissionsRevenus() {
     onSuccess: (n) => {
       toast.success(`${n} facture(s) commission créée(s)`);
       setSelectedLines(new Set());
+      setPreviewOpen(false);
       invalidate();
     },
     onError: (e: any) => toast.error(e?.message ?? "Erreur création facture"),

@@ -397,6 +397,7 @@ const App = () => (
             <Route path="/pitchdeck" element={<PitchdeckRedirect />} />
             <Route path="/recherche" element={<LP><SearchResultsPage /></LP>} />
             <Route path="/produit/:slug" element={<LP><SafeBoundary label="la fiche produit"><ProductPage /></SafeBoundary></LP>} />
+            <Route path="/go/:slug" element={<LP><TrackedRedirectPage /></LP>} />
             <Route path="/marques" element={<LP><BrandsPage /></LP>} />
             <Route path="/marques/:slug" element={<LP><BrandDetailPage /></LP>} />
             {/* Redirection ancienne route singulier → pluriel */}

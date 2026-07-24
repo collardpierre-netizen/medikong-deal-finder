@@ -92,13 +92,15 @@ export async function validateCart(
   const { data: offers, error: offerErr } = await supabase
     .from("offers")
     .select(
-      "id, vendor_id, product_id, price_excl_vat, price_incl_vat, stock_quantity, moq, mov, is_active, vat_rate, vendors:vendor_id(name, slug, company_name, show_real_name, display_code)",
+      "id, vendor_id, product_id, price_excl_vat, price_incl_vat, stock_quantity, moq, mov, is_active, vat_rate, is_qogita_backed, price_stale, last_verified_at, vendors:vendor_id(name, slug, company_name, show_real_name, display_code)",
     )
     .in("id", offerIds);
 
   if (offerErr) throw new Error(`offers_fetch_failed: ${offerErr.message}`);
 
   const offerMap = new Map<string, any>((offers || []).map((o: any) => [o.id, o]));
+
+  const staleCutoffMs = Date.now() - QOGITA_STALE_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
 
   // Per-item validation + tier resolution
   for (let idx = 0; idx < items.length; idx++) {

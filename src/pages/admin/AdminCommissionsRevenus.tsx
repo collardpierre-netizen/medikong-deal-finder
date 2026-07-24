@@ -305,11 +305,41 @@ export default function AdminCommissionsRevenus() {
     mutationFn: async () => {
       const rows = (backlogQ.data ?? []).filter(r => selectedLines.has(r.order_line_id));
       if (rows.length === 0) throw new Error("Aucune ligne sélectionnée");
-      // Grouper par (vendor_id, order_id, type)
-      const groups = new Map<string, BacklogRow[]>();
+
+      // Consolidated mode: ONE invoice per vendor regrouping all selected lines
+      // across all orders and both types (marketplace + trading).
+      if (consolidated) {
+        const groups = new Map<string, typeof rows>();
+        for (const r of rows) {
+          const k = r.vendor_id;
+          if (!groups.has(k)) groups.set(k, [] as any);
+          groups.get(k)!.push(r);
+        }
+        let count = 0;
+        for (const [vendorId, list] of groups) {
+          const dates = list
+            .map(x => x.order_created_at)
+            .filter(Boolean)
+            .sort();
+          const pStart = dates[0]?.slice(0, 10) ?? periodStart;
+          const pEnd = dates[dates.length - 1]?.slice(0, 10) ?? periodEnd;
+          const { error } = await supabase.rpc("admin_create_consolidated_commission_invoice", {
+            _vendor_id: vendorId,
+            _order_line_ids: list.map(x => x.order_line_id),
+            _period_start: pStart,
+            _period_end: pEnd,
+          });
+          if (error) throw error;
+          count++;
+        }
+        return count;
+      }
+
+      // Legacy mode: one invoice per (vendor, order, type)
+      const groups = new Map<string, typeof rows>();
       for (const r of rows) {
         const k = `${r.vendor_id}::${r.order_id}::${r.type}`;
-        if (!groups.has(k)) groups.set(k, []);
+        if (!groups.has(k)) groups.set(k, [] as any);
         groups.get(k)!.push(r);
       }
       let count = 0;

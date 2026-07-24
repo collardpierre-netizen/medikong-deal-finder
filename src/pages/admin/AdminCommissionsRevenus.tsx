@@ -182,6 +182,7 @@ export default function AdminCommissionsRevenus() {
   const [markInvoicedOpen, setMarkInvoicedOpen] = useState<InvoiceRow | null>(null);
   const [markPaidOpen, setMarkPaidOpen] = useState<InvoiceRow | null>(null);
   const [disputeOpen, setDisputeOpen] = useState<InvoiceRow | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const typeArg = filterType === "all" ? null : filterType;
   const channelArg = filterChannel === "all" ? null : filterChannel;

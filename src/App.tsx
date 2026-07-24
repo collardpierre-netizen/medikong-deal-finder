@@ -309,6 +309,7 @@ const VendorMarketIntelHub = lazyWithRetry(() => import("./pages/vendor/VendorMa
 const VendorTenders = lazyWithRetry(() => import("./pages/vendor/VendorTenders"), "VendorTenders");
 const VendorRfqInbox = lazyWithRetry(() => import("./pages/vendor/VendorRfqInbox"), "VendorRfqInbox");
 const VendorAnalytics = lazyWithRetry(() => import("./pages/vendor/VendorAnalytics"), "VendorAnalytics");
+const VendorTrackingCampaignsPage = lazyWithRetry(() => import("./pages/vendor/VendorTrackingCampaignsPage"), "VendorTrackingCampaignsPage");
 const VendorFinance = lazyWithRetry(() => import("./pages/vendor/VendorFinance"), "VendorFinance");
 const VendorLogistics = lazyWithRetry(() => import("./pages/vendor/VendorLogistics"), "VendorLogistics");
 const VendorHealth = lazyWithRetry(() => import("./pages/vendor/VendorHealth"), "VendorHealth");
@@ -689,6 +690,7 @@ const App = () => (
               <Route path="rfq" element={<LP><VendorRfqInbox /></LP>} />
               <Route path="exclusivities" element={<LP><VendorExclusivities /></LP>} />
               <Route path="analytics" element={<LP><VendorAnalytics /></LP>} />
+              <Route path="tracking" element={<LP><VendorTrackingCampaignsPage /></LP>} />
               <Route path="finance" element={<LP><VendorFinance /></LP>} />
               <Route path="logistics" element={<LP><VendorLogistics /></LP>} />
               <Route path="health" element={<LP><VendorHealth /></LP>} />

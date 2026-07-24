@@ -3,7 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Package, Tag, ShoppingCart, Lightbulb, Bell, FileText, BarChart3, Trophy,
   DollarSign, Truck, HeartPulse, MessageSquare, GraduationCap, Settings, ChevronLeft, ChevronRight, Receipt,
-  AlertOctagon, BookOpen, PlusSquare, Inbox, FolderArchive, ShieldCheck, PhoneCall,
+  AlertOctagon, BookOpen, PlusSquare, Inbox, FolderArchive, ShieldCheck, PhoneCall, QrCode,
 } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import { useCurrentVendor } from "@/hooks/useCurrentVendor";
@@ -52,6 +52,7 @@ const sidebarSections: { label: string | null; items: SidebarItem[] }[] = [
       { key: "marketIntel", icon: BarChart3, path: "/vendor/market-intel" },
       { key: "tenders", icon: FileText, path: "/vendor/tenders", comingSoon: true },
       { key: "analytics", icon: BarChart3, path: "/vendor/analytics" },
+      { key: "trackingCampaigns", icon: QrCode, path: "/vendor/tracking" },
     ],
   },
   {

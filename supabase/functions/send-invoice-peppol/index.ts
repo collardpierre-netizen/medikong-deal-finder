@@ -222,17 +222,12 @@ Deno.serve(async (req) => {
       logFalco("warn", "pdf_missing_auto_regenerate", { invoice_id: inv.id, type: inv.type, emit_fn: emitFn });
       // Mark row as failed so the emit function actually regenerates (it early-returns when pdf_path exists AND status != 'failed').
       await supabase.from("order_invoices").update({ status: "failed" }).eq("id", inv.id);
-      const emitRes = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/${emitFn}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-        },
-        body: JSON.stringify({ order_id: inv.order_id, vendor_id: inv.vendor_id }),
+      const { data: emitPayload, error: emitErr } = await supabase.functions.invoke(emitFn, {
+        body: { order_id: inv.order_id, vendor_id: inv.vendor_id },
       });
-      const emitPayload = await emitRes.json().catch(() => ({}));
-      if (!emitRes.ok) {
-        return json(502, { error: "invoice_pdf_regenerate_failed", details: emitPayload });
+      if (emitErr) {
+        console.error(`internal_invoke_failed: ${emitFn} — ${emitErr.message ?? emitErr}`);
+        return json(502, { error: "invoice_pdf_regenerate_failed", details: emitErr.message ?? String(emitErr) });
       }
       const refetch = await supabase
         .from("order_invoices")

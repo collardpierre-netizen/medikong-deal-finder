@@ -157,42 +157,50 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+const PROJECT_URL_RE = /^https:\/\/[a-z0-9]+\.supabase\.co\/?$/;
+
 async function callEdgeFunction(functionName: string, params: unknown, timeoutMs = 280000): Promise<unknown> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/${functionName}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-      },
-      body: JSON.stringify(params),
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
-    const text = await res.text();
-    let parsed: any;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      parsed = { raw: text, status: res.status };
-    }
-
-    if (!res.ok) {
-      const message = parsed?.error || parsed?.message || `Function ${functionName} failed with status ${res.status}`;
-      throw new Error(message);
-    }
-
-    return parsed;
-  } catch (e: any) {
-    clearTimeout(timer);
-    if (e.name === "AbortError") {
-      return { timeout: true, message: `Function ${functionName} timed out after ${timeoutMs}ms` };
-    }
-    throw e;
+  const supabaseUrl = (SUPABASE_URL ?? "").trim();
+  if (!PROJECT_URL_RE.test(supabaseUrl)) {
+    const msg = `internal_invoke_failed: ${functionName} — INVALID_PROJECT_URL (got="${supabaseUrl}")`;
+    console.error(msg);
+    throw new Error(msg);
   }
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    const msg = `internal_invoke_failed: ${functionName} — MISSING_SERVICE_ROLE_KEY`;
+    console.error(msg);
+    throw new Error(msg);
+  }
+
+  // Routage interne Edge Runtime — plus de fetch() vers l'URL publique du
+  // projet (échouait avec "TypeError: error sending request from 10.32.x.x
+  // for https://<ref>.supabase.co/...").
+  const internalClient = createClient(supabaseUrl, SUPABASE_SERVICE_ROLE_KEY);
+
+  const invokePromise = internalClient.functions
+    .invoke(functionName, { body: params })
+    .then(({ data, error }) => {
+      if (error) {
+        const details = (error as any)?.context?.text
+          ? `${error.message}: ${(error as any).context.text}`
+          : (error.message ?? String(error));
+        console.error(`internal_invoke_failed: ${functionName} — ${details}`);
+        throw new Error(details);
+      }
+      return data;
+    });
+
+  const timeoutPromise = new Promise((resolve) =>
+    setTimeout(() => resolve({ __timeout: true }), timeoutMs),
+  );
+
+  const result: any = await Promise.race([invokePromise, timeoutPromise]);
+  if (result && result.__timeout) {
+    return { timeout: true, message: `Function ${functionName} timed out after ${timeoutMs}ms` };
+  }
+  return result;
 }
+
 
 // Heartbeat staleness threshold: time since last progress bump (NOT total run duration).
 // Robust to long Full syncs (45+ min) as long as each step bumps last_progress_at.

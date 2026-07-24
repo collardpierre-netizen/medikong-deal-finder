@@ -14,12 +14,18 @@ export interface ValidationError {
     | "exceeds_stock"
     | "offer_not_available"
     | "vendor_mov_not_reached"
-    | "invalid_quantity";
+    | "invalid_quantity"
+    | "price_stale";
   item_index: number | null;
   vendor_name: string | null;
   offer_id?: string | null;
   details: Record<string, unknown>;
 }
+
+// Qogita API offers has been down since ~mid-July 2026. Any Qogita-backed offer
+// not verified since more than STALE_THRESHOLD_DAYS is considered unsafe for
+// checkout (reveal-at-purchase price integrity).
+const QOGITA_STALE_THRESHOLD_DAYS = 7;
 
 export interface ValidatedItem {
   offer_id: string;

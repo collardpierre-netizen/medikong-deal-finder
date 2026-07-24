@@ -87,6 +87,46 @@ async function fetchWithTimeout(url: string, init: RequestInit): Promise<Respons
   }
 }
 
+// Cache the discovered Next.js Server Action ID across invocations of the same
+// isolate. If Qogita redeploys the buyer app the ID rotates; we auto-refresh
+// by re-scanning /login on the next login attempt.
+let cachedLoginActionId: string | null = null;
+
+async function discoverLoginActionId(cookieHeader: string): Promise<{ id: string; cookies: string } | null> {
+  const res = await fetchWithTimeout(`${STOREFRONT_ORIGIN}/login/`, {
+    method: "GET",
+    headers: { "User-Agent": UA, Accept: "text/html", Cookie: cookieHeader },
+    redirect: "manual",
+  });
+  const nextCookies = mergeCookies(cookieHeader, extractSetCookies(res));
+  const html = await res.text();
+  const chunkRe = /\/_next\/static\/chunks\/[a-z0-9_-]+\.js\?dpl=[A-Za-z0-9]+/g;
+  const chunks = Array.from(new Set(html.match(chunkRe) ?? []));
+  // Heuristic: login action lives in a chunk that also contains the string
+  // "loginAction" registered via createServerReference. Scan chunks in
+  // parallel (limit concurrency) and short-circuit on first match.
+  for (let i = 0; i < chunks.length; i += 6) {
+    const batch = chunks.slice(i, i + 6);
+    const results = await Promise.all(batch.map(async (path) => {
+      try {
+        const r = await fetchWithTimeout(`${STOREFRONT_ORIGIN}${path}`, {
+          method: "GET",
+          headers: { "User-Agent": UA },
+        });
+        if (!r.ok) return null;
+        const txt = await r.text();
+        const m = txt.match(/createServerReference\("([0-9a-f]{40})",[^)]*?"loginAction"/);
+        return m ? m[1] : null;
+      } catch (_) {
+        return null;
+      }
+    }));
+    const hit = results.find((x) => !!x);
+    if (hit) return { id: hit, cookies: nextCookies };
+  }
+  return null;
+}
+
 async function loginStorefront(): Promise<Session> {
   const email = Deno.env.get("QOGITA_STOREFRONT_EMAIL");
   const password = Deno.env.get("QOGITA_STOREFRONT_PASSWORD");
@@ -94,24 +134,80 @@ async function loginStorefront(): Promise<Session> {
     throw new Error("storefront_credentials_missing");
   }
 
-  // Strategy A — call the storefront login endpoint directly. NextAuth-ish path
-  // used by the www.qogita.com app. Cookies (session token + CSRF) are set by
-  // the response and cover subsequent product pages.
-  //
-  // If Qogita renames the route this will 404 → we fall through to strategy B.
-  const csrfHeaders = { "User-Agent": UA, Accept: "*/*" } as Record<string, string>;
+  // Bootstrap cookies (Cloudflare `__cf_bm`, consent, etc.) via a home GET.
   let cookieHeader = "";
-
   try {
     const initRes = await fetchWithTimeout(`${STOREFRONT_ORIGIN}/`, {
       method: "GET",
-      headers: csrfHeaders,
+      headers: { "User-Agent": UA, Accept: "*/*" },
       redirect: "manual",
     });
     cookieHeader = mergeCookies(cookieHeader, extractSetCookies(initRes));
-  } catch (_) {
-    // ignore, continue
+  } catch (_) { /* ignore */ }
+
+  // ── Strategy 0 — Next.js Server Action against /login/ ───────────────
+  // Real login flow observed in the buyer app: POST /login/ with
+  //   Next-Action: <40-hex id>  Content-Type: text/plain;charset=UTF-8
+  //   body = [{"email","password","redirectTo":"/categories"}]
+  // Sets the `qsession` cookie (httpOnly) which authorises product pages.
+  try {
+    if (!cachedLoginActionId) {
+      const disc = await discoverLoginActionId(cookieHeader);
+      if (disc) { cachedLoginActionId = disc.id; cookieHeader = disc.cookies; }
+    }
+    if (cachedLoginActionId) {
+      const res = await fetchWithTimeout(`${STOREFRONT_ORIGIN}/login/`, {
+        method: "POST",
+        headers: {
+          "User-Agent": UA,
+          "Content-Type": "text/plain;charset=UTF-8",
+          Accept: "text/x-component,*/*;q=0.9",
+          Origin: STOREFRONT_ORIGIN,
+          Referer: `${STOREFRONT_ORIGIN}/login/`,
+          "Next-Action": cachedLoginActionId,
+          "Next-Router-State-Tree": "%5B%22%22%2C%7B%22children%22%3A%5B%22(auth)%22%2C%7B%22children%22%3A%5B%22login%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%2C0%5D%7D%2Cnull%2Cnull%2C0%5D%7D%2Cnull%2Cnull%2C0%5D%7D%2Cnull%2Cnull%2Ctrue%5D",
+          Cookie: cookieHeader,
+        },
+        body: JSON.stringify([{ email, password, redirectTo: "/categories" }]),
+        redirect: "manual",
+      });
+      const merged = mergeCookies(cookieHeader, extractSetCookies(res));
+      const hasSession = /(?:^|; )qsession=/.test(merged);
+      console.log(JSON.stringify({ tag: "storefront_login", strategy: "server_action_login", status: res.status, qsession: hasSession }));
+      if (hasSession) {
+        return { cookieHeader: merged, accessToken: null, loggedInAt: Date.now(), strategy: "server_action_login" };
+      }
+      // ID may have rotated after a Qogita redeploy — bust cache and try once more.
+      cachedLoginActionId = null;
+      const disc2 = await discoverLoginActionId(cookieHeader);
+      if (disc2) {
+        cachedLoginActionId = disc2.id;
+        const res2 = await fetchWithTimeout(`${STOREFRONT_ORIGIN}/login/`, {
+          method: "POST",
+          headers: {
+            "User-Agent": UA,
+            "Content-Type": "text/plain;charset=UTF-8",
+            Accept: "text/x-component,*/*;q=0.9",
+            Origin: STOREFRONT_ORIGIN,
+            Referer: `${STOREFRONT_ORIGIN}/login/`,
+            "Next-Action": cachedLoginActionId,
+            "Next-Router-State-Tree": "%5B%22%22%2C%7B%22children%22%3A%5B%22(auth)%22%2C%7B%22children%22%3A%5B%22login%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%2C0%5D%7D%2Cnull%2Cnull%2C0%5D%7D%2Cnull%2Cnull%2C0%5D%7D%2Cnull%2Cnull%2Ctrue%5D",
+            Cookie: disc2.cookies,
+          },
+          body: JSON.stringify([{ email, password, redirectTo: "/categories" }]),
+          redirect: "manual",
+        });
+        const merged2 = mergeCookies(disc2.cookies, extractSetCookies(res2));
+        if (/(?:^|; )qsession=/.test(merged2)) {
+          console.log(JSON.stringify({ tag: "storefront_login", strategy: "server_action_login_refreshed", status: res2.status, qsession: true }));
+          return { cookieHeader: merged2, accessToken: null, loggedInAt: Date.now(), strategy: "server_action_login" };
+        }
+      }
+    }
+  } catch (e) {
+    console.log(JSON.stringify({ tag: "storefront_login_error", strategy: "server_action_login", error: (e as Error).message }));
   }
+
 
   const strategies: Array<{
     name: string;
@@ -135,6 +231,7 @@ async function loginStorefront(): Promise<Session> {
 
   for (const s of strategies) {
     try {
+      const before = cookieHeader;
       const res = await fetchWithTimeout(s.url, {
         method: "POST",
         headers: {
@@ -149,17 +246,32 @@ async function loginStorefront(): Promise<Session> {
         redirect: "manual",
       });
       if (res.status >= 200 && res.status < 400) {
-        cookieHeader = mergeCookies(cookieHeader, extractSetCookies(res));
-        // Verify session by hitting an authenticated endpoint (home page).
-        return {
-          cookieHeader,
-          accessToken: null,
-          loggedInAt: Date.now(),
-          strategy: s.name,
-        };
+        const merged = mergeCookies(cookieHeader, extractSetCookies(res));
+        // Only accept if the response actually issued a new cookie AND the
+        // response body isn't an { error: ... } payload. Otherwise fall through.
+        let bodyLooksOk = true;
+        try {
+          const txt = await res.clone().text();
+          if (txt && /"(error|errors|message)"\s*:/i.test(txt) && !/"user"|"accessToken"|"session"/i.test(txt)) {
+            bodyLooksOk = false;
+          }
+        } catch (_) { /* ignore */ }
+        if (merged !== before && bodyLooksOk) {
+          cookieHeader = merged;
+          console.log(JSON.stringify({ tag: "storefront_login", strategy: s.name, status: res.status, cookie_added: true }));
+          return {
+            cookieHeader,
+            accessToken: null,
+            loggedInAt: Date.now(),
+            strategy: s.name,
+          };
+        }
+        console.log(JSON.stringify({ tag: "storefront_login_skipped", strategy: s.name, status: res.status, cookie_added: merged !== before, body_ok: bodyLooksOk }));
+      } else {
+        console.log(JSON.stringify({ tag: "storefront_login_failed", strategy: s.name, status: res.status }));
       }
-    } catch (_) {
-      // try next
+    } catch (e) {
+      console.log(JSON.stringify({ tag: "storefront_login_error", strategy: s.name, error: (e as Error).message }));
     }
   }
 
@@ -220,11 +332,12 @@ async function ensureSession(force = false): Promise<Session> {
 }
 
 function isLoggedOutHtml(html: string): boolean {
-  // Public (signed-out) storefront masks the vendor list behind this CTA.
+  // Authoritative signal: authenticated product pages ship the RSC payload
+  // containing `allOffers`. If it is missing, the SSR layer served the
+  // public/masked variant — treat as logged out and refresh session.
+  if (!html.includes("allOffers")) return true;
   if (html.includes("Sign up to unlock")) return true;
   if (html.includes("Log in to see") && html.includes("offers")) return true;
-  // Explicit auth redirect
-  if (/\/login(\?|")/.test(html.slice(0, 4000))) return true;
   return false;
 }
 

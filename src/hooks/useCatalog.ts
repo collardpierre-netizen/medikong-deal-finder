@@ -386,203 +386,222 @@ export function useCatalogFilters() {
 }
 
 export function useCatalogProducts(filters: CatalogFilters) {
-  const { country } = useCountry();
+  const { country: outerCountry } = useCountry();
 
   return useQuery({
-    queryKey: ["catalog-products", filters, country],
+    queryKey: ["catalog-products", filters, outerCountry],
     queryFn: async () => {
-      const isMasterSlug = !!filters.category && filters.category.startsWith("mk-");
-      const [categoryIds, explicitBrandIds, mfIds, inactiveCategoryIdSet] = await Promise.all([
-        filters.category
-          // Catégorie + descendance via RPC (1 round-trip, gère les futures sous-catégories
-          // des taxons mk-* sans changement de code).
-          ? supabase
-              .rpc("category_descendants", { root_slug: filters.category })
-              .then(({ data }) => {
-                const ids = (data || []).map((r: any) => r.id as string);
-                return ids.length > 0 ? ids : null;
-              })
-          : Promise.resolve(null),
-        filters.brands && filters.brands.length > 0
-          ? supabase.from("brands").select("id").in("slug", filters.brands).then(({ data }) => data?.map(b => b.id) || null)
-          : Promise.resolve(null),
-        filters.manufacturers && filters.manufacturers.length > 0
-          ? supabase.from("manufacturers").select("id").in("slug", filters.manufacturers).then(({ data }) => data?.map(m => m.id) || null)
-          : Promise.resolve(null),
-        fetchInactiveCategoryIds().catch(() => new Set<string>()),
-      ]);
+      const attemptFetch = async (forceGlobalStats: boolean) => {
+        const country = forceGlobalStats ? null : outerCountry;
+        const isMasterSlug = !!filters.category && filters.category.startsWith("mk-");
+        const [categoryIds, explicitBrandIds, mfIds, inactiveCategoryIdSet] = await Promise.all([
+          filters.category
+            ? supabase
+                .rpc("category_descendants", { root_slug: filters.category })
+                .then(({ data }) => {
+                  const ids = (data || []).map((r: any) => r.id as string);
+                  return ids.length > 0 ? ids : null;
+                })
+            : Promise.resolve(null),
+          filters.brands && filters.brands.length > 0
+            ? supabase.from("brands").select("id").in("slug", filters.brands).then(({ data }) => data?.map(b => b.id) || null)
+            : Promise.resolve(null),
+          filters.manufacturers && filters.manufacturers.length > 0
+            ? supabase.from("manufacturers").select("id").in("slug", filters.manufacturers).then(({ data }) => data?.map(m => m.id) || null)
+            : Promise.resolve(null),
+          fetchInactiveCategoryIds().catch(() => new Set<string>()),
+        ]);
 
-      let resolvedBrandIds = explicitBrandIds;
-      let effectiveSearch = filters.search?.trim() || undefined;
+        let resolvedBrandIds = explicitBrandIds;
+        let effectiveSearch = filters.search?.trim() || undefined;
 
-      if (effectiveSearch && !resolvedBrandIds?.length && !categoryIds && !mfIds?.length) {
-        const { data: brandMatches } = await supabase
-          .from("brands")
-          .select("id, name, slug, product_count")
-          .eq("is_active", true)
-          .ilike("name", `%${effectiveSearch}%`)
-          .order("product_count", { ascending: false })
-          .limit(10);
+        if (effectiveSearch && !resolvedBrandIds?.length && !categoryIds && !mfIds?.length) {
+          const { data: brandMatches } = await supabase
+            .from("brands")
+            .select("id, name, slug, product_count")
+            .eq("is_active", true)
+            .ilike("name", `%${effectiveSearch}%`)
+            .order("product_count", { ascending: false })
+            .limit(10);
 
-        const implicitBrand = pickImplicitBrandMatch(effectiveSearch, (brandMatches || []) as BrandCount[]);
-        if (implicitBrand) {
-          resolvedBrandIds = [implicitBrand.id];
-          effectiveSearch = undefined;
-        }
-      }
-
-      const hasFilters = !!(
-        effectiveSearch ||
-        resolvedBrandIds?.length ||
-        categoryIds ||
-        mfIds?.length ||
-        filters.inStock ||
-        filters.hasOffers ||
-        filters.priceMin !== undefined ||
-        filters.priceMax !== undefined
-      );
-
-      const offset = (filters.page - 1) * filters.perPage;
-      const isDefaultCatalogueView = !effectiveSearch && !resolvedBrandIds?.length && !categoryIds && !mfIds?.length && !filters.inStock && !filters.hasOffers && filters.priceMin === undefined && filters.priceMax === undefined;
-      const filterContext = {
-        categoryIds,
-        categoryColumn: (isMasterSlug ? "primary_category_id" : "category_id") as "category_id" | "primary_category_id",
-        resolvedBrandIds,
-        manufacturerIds: mfIds,
-        effectiveSearch,
-      };
-
-      // Filtre client : exclure les produits dont la catégorie est admin-désactivée
-      // (cascade incluse). Évite de pousser 2k+ UUIDs dans l'URL PostgREST.
-      const dropInactive = <T extends { category_id?: string | null }>(rows: T[]): T[] =>
-        inactiveCategoryIdSet.size === 0
-          ? rows
-          : rows.filter((r) => !r.category_id || !inactiveCategoryIdSet.has(r.category_id));
-
-      // Mode country-aware : on lit la vue qui projette les stats du pays
-      // sélectionné. Les filtres prix/stock/has_offers et le tri prix/stock/relevance
-      // s'appliquent alors sur les colonnes pays-spécifiques côté SQL.
-      const useCountryView = !!country;
-      const columns: CatalogColumns = useCountryView ? COUNTRY_COLUMNS : GLOBAL_COLUMNS;
-      const filterContextWithCols = { ...filterContext, columns };
-
-      const buildProductQuery = () => {
-        const base = useCountryView
-          ? supabase
-              .from("products_with_country_stats_v")
-              .select(COUNTRY_VIEW_SELECT)
-              .eq("is_active", true)
-              // Inclure aussi les produits actifs sans offre (pas de ligne dans
-              // product_country_stats → country_code NULL via LEFT JOIN). Sinon
-              // un produit visible dans le moteur de recherche disparaît du
-              // catalogue dès qu'aucune offre BE n'existe encore.
-              .or(buildCountryFilterExpression(country))
-          : supabase.from("products").select(PRODUCT_SELECT_FIELDS).eq("is_active", true);
-        return applyCatalogProductFilters(applyHiddenCategoryFilter(base), filters, filterContextWithCols);
-      };
-
-      const buildCountQuery = () => {
-        const base = useCountryView
-          ? supabase
-              .from("products_with_country_stats_v")
-              .select("id", { count: hasFilters ? "estimated" : "exact" })
-              .eq("is_active", true)
-              .or(buildCountryFilterExpression(country))
-          : supabase
-              .from("products")
-              .select("id", { count: hasFilters ? "estimated" : "exact" })
-              .eq("is_active", true);
-        return applyCatalogProductFilters(applyHiddenCategoryFilter(base), filters, filterContextWithCols);
-      };
-
-      const countPromise = withTimeout(
-        (async () => await buildCountQuery().range(0, 0))(),
-        CATALOG_COUNT_TIMEOUT_MS,
-        "Le comptage des produits est trop lent."
-      ).catch(() => null);
-
-      // Normalise une ligne (vue ou table) vers la forme CatalogProduct.
-      const normalizeRows = (rows: any[]): CatalogProduct[] =>
-        useCountryView ? rows.map(mapCountryViewRow) : (rows as CatalogProduct[]);
-
-      if (filters.sort === "relevance" && isDefaultCatalogueView && filters.page <= 2) {
-        try {
-          const { data: featured } = await withTimeout(
-            (async () =>
-              await supabase
-                .from("cms_featured_categories")
-                .select("category_id")
-                .eq("is_active", true)
-                .order("sort_order", { ascending: true }))(),
-            CATEGORY_COUNT_TIMEOUT_MS,
-            "Le chargement des catégories vedettes est trop lent."
-          );
-
-          if (featured && featured.length > 0) {
-            const featuredIds = new Set(featured.map((f) => f.category_id));
-            const featuredOrder = featured.map((f) => f.category_id);
-            // Sur-fetch pour absorber le filtrage client des catégories inactives.
-            const fetchSize = Math.max(filters.perPage * 3, 72);
-            const boostedQuery = applyCatalogSort(buildProductQuery(), filters.sort, columns);
-            const { data: rawData, error: rawError } = await withTimeout(
-              (async () => await boostedQuery.range(0, fetchSize - 1))(),
-              CATALOG_QUERY_TIMEOUT_MS,
-              "Le chargement du catalogue est trop lent."
-            );
-            if (rawError) throw rawError;
-
-            const filtered = dropInactive(rawData || []);
-            const boosted = [...filtered].sort((a: any, b: any) => {
-              const aFeatured = featuredIds.has(a.category_id);
-              const bFeatured = featuredIds.has(b.category_id);
-              if (aFeatured && !bFeatured) return -1;
-              if (!aFeatured && bFeatured) return 1;
-              if (aFeatured && bFeatured) {
-                return featuredOrder.indexOf(a.category_id) - featuredOrder.indexOf(b.category_id);
-              }
-              return 0;
-            });
-
-            const countResult = await countPromise;
-
-            const pageRows = boosted.slice(offset, offset + filters.perPage);
-            const products = useCountryView
-              ? normalizeRows(pageRows)
-              : await applyCountryStats(pageRows as CatalogProduct[], country);
-
-            return {
-              products,
-              total: countResult?.count ?? boosted.length,
-            };
+          const implicitBrand = pickImplicitBrandMatch(effectiveSearch, (brandMatches || []) as BrandCount[]);
+          if (implicitBrand) {
+            resolvedBrandIds = [implicitBrand.id];
+            effectiveSearch = undefined;
           }
-        } catch {
-          // Fallback to normal paginated query
         }
+
+        const hasFilters = !!(
+          effectiveSearch ||
+          resolvedBrandIds?.length ||
+          categoryIds ||
+          mfIds?.length ||
+          filters.inStock ||
+          filters.hasOffers ||
+          filters.priceMin !== undefined ||
+          filters.priceMax !== undefined
+        );
+
+        const offset = (filters.page - 1) * filters.perPage;
+        const isDefaultCatalogueView = !effectiveSearch && !resolvedBrandIds?.length && !categoryIds && !mfIds?.length && !filters.inStock && !filters.hasOffers && filters.priceMin === undefined && filters.priceMax === undefined;
+        const filterContext = {
+          categoryIds,
+          categoryColumn: (isMasterSlug ? "primary_category_id" : "category_id") as "category_id" | "primary_category_id",
+          resolvedBrandIds,
+          manufacturerIds: mfIds,
+          effectiveSearch,
+        };
+
+        const dropInactive = <T extends { category_id?: string | null }>(rows: T[]): T[] =>
+          inactiveCategoryIdSet.size === 0
+            ? rows
+            : rows.filter((r) => !r.category_id || !inactiveCategoryIdSet.has(r.category_id));
+
+        const useCountryView = !!country;
+        const columns: CatalogColumns = useCountryView ? COUNTRY_COLUMNS : GLOBAL_COLUMNS;
+        const filterContextWithCols = { ...filterContext, columns };
+
+        const buildProductQuery = () => {
+          const base = useCountryView
+            ? supabase
+                .from("products_with_country_stats_v")
+                .select(COUNTRY_VIEW_SELECT)
+                .eq("is_active", true)
+                .or(buildCountryFilterExpression(country))
+            : supabase.from("products").select(PRODUCT_SELECT_FIELDS).eq("is_active", true);
+          return applyCatalogProductFilters(applyHiddenCategoryFilter(base), filters, filterContextWithCols);
+        };
+
+        const buildCountQuery = () => {
+          const base = useCountryView
+            ? supabase
+                .from("products_with_country_stats_v")
+                .select("id", { count: hasFilters ? "estimated" : "exact" })
+                .eq("is_active", true)
+                .or(buildCountryFilterExpression(country))
+            : supabase
+                .from("products")
+                .select("id", { count: hasFilters ? "estimated" : "exact" })
+                .eq("is_active", true);
+          return applyCatalogProductFilters(applyHiddenCategoryFilter(base), filters, filterContextWithCols);
+        };
+
+        const countPromise = withTimeout(
+          (async () => await buildCountQuery().range(0, 0))(),
+          CATALOG_COUNT_TIMEOUT_MS,
+          "Le comptage des produits est trop lent."
+        ).catch(() => null);
+
+        const normalizeRows = (rows: any[]): CatalogProduct[] =>
+          useCountryView ? rows.map(mapCountryViewRow) : (rows as CatalogProduct[]);
+
+        if (filters.sort === "relevance" && isDefaultCatalogueView && filters.page <= 2) {
+          try {
+            const { data: featured } = await withTimeout(
+              (async () =>
+                await supabase
+                  .from("cms_featured_categories")
+                  .select("category_id")
+                  .eq("is_active", true)
+                  .order("sort_order", { ascending: true }))(),
+              CATEGORY_COUNT_TIMEOUT_MS,
+              "Le chargement des catégories vedettes est trop lent."
+            );
+
+            if (featured && featured.length > 0) {
+              const featuredIds = new Set(featured.map((f) => f.category_id));
+              const featuredOrder = featured.map((f) => f.category_id);
+              const fetchSize = Math.max(filters.perPage * 3, 72);
+              const boostedQuery = applyCatalogSort(buildProductQuery(), filters.sort, columns);
+              const { data: rawData, error: rawError } = await withTimeout(
+                (async () => await boostedQuery.range(0, fetchSize - 1))(),
+                CATALOG_QUERY_TIMEOUT_MS,
+                "Le chargement du catalogue est trop lent."
+              );
+              if (rawError) throw rawError;
+
+              const filtered = dropInactive(rawData || []);
+              const boosted = [...filtered].sort((a: any, b: any) => {
+                const aFeatured = featuredIds.has(a.category_id);
+                const bFeatured = featuredIds.has(b.category_id);
+                if (aFeatured && !bFeatured) return -1;
+                if (!aFeatured && bFeatured) return 1;
+                if (aFeatured && bFeatured) {
+                  return featuredOrder.indexOf(a.category_id) - featuredOrder.indexOf(b.category_id);
+                }
+                return 0;
+              });
+
+              const countResult = await countPromise;
+
+              const pageRows = boosted.slice(offset, offset + filters.perPage);
+              const products = useCountryView
+                ? normalizeRows(pageRows)
+                : await applyCountryStats(pageRows as CatalogProduct[], country);
+
+              return {
+                products,
+                total: countResult?.count ?? boosted.length,
+              };
+            }
+          } catch (e) {
+            // Re-throw permission errors so the outer fallback can catch and switch to global stats.
+            if (isCountryStatsPermError(e)) throw e;
+            // Otherwise: fallback to normal paginated query below.
+          }
+        }
+
+        const overFetch = filters.perPage + Math.min(filters.perPage, 24);
+        const query = applyCatalogSort(buildProductQuery(), filters.sort, columns);
+        const { data, error } = await withTimeout(
+          (async () => await query.range(offset, offset + overFetch - 1))(),
+          CATALOG_QUERY_TIMEOUT_MS,
+          "Le chargement du catalogue est trop lent."
+        );
+        if (error) throw error;
+
+        const filteredRows = dropInactive(data || []).slice(0, filters.perPage);
+        const countResult = await countPromise;
+        const total = countResult?.count ?? (filteredRows.length === filters.perPage ? offset + filteredRows.length + 1 : offset + filteredRows.length);
+
+        const products = useCountryView
+          ? normalizeRows(filteredRows)
+          : await applyCountryStats(filteredRows as CatalogProduct[], country);
+        return { products, total };
+      };
+
+      try {
+        const res = await attemptFetch(false);
+        return { ...res, countryStatsUnavailable: false as const };
+      } catch (e: any) {
+        if (outerCountry && isCountryStatsPermError(e)) {
+          // Fallback transparent : on rebascule sur la vue produits globale
+          // (sans colonnes country_*) pour ne pas casser l'affichage acheteur.
+          const res = await attemptFetch(true);
+          return { ...res, countryStatsUnavailable: true as const };
+        }
+        throw e;
       }
-
-      // Sur-fetch côté serveur pour absorber le filtrage client (catégories désactivées).
-      const overFetch = filters.perPage + Math.min(filters.perPage, 24);
-      const query = applyCatalogSort(buildProductQuery(), filters.sort, columns);
-      const { data, error } = await withTimeout(
-        (async () => await query.range(offset, offset + overFetch - 1))(),
-        CATALOG_QUERY_TIMEOUT_MS,
-        "Le chargement du catalogue est trop lent."
-      );
-      if (error) throw error;
-
-      const filteredRows = dropInactive(data || []).slice(0, filters.perPage);
-      const countResult = await countPromise;
-      const total = countResult?.count ?? (filteredRows.length === filters.perPage ? offset + filteredRows.length + 1 : offset + filteredRows.length);
-
-      const products = useCountryView
-        ? normalizeRows(filteredRows)
-        : await applyCountryStats(filteredRows as CatalogProduct[], country);
-      return { products, total };
     },
     placeholderData: (previousData) => previousData,
     staleTime: 2 * 60 * 1000,
     retry: false,
+    // Récupération auto : si on est en mode fallback, on retente la vue
+    // country toutes les 30 s (au cas où les droits ont été rétablis).
+    refetchInterval: (q: any) =>
+      q?.state?.data?.countryStatsUnavailable ? 30_000 : false,
   });
+}
+
+/** True quand une erreur PostgREST vient d'un permission-denied sur la vue/table country-stats. */
+function isCountryStatsPermError(e: any): boolean {
+  if (!e) return false;
+  const code = String(e?.code || "");
+  const msg = String(e?.message || e || "");
+  return (
+    code === "42501" ||
+    /permission denied for (table|view) (public\.)?(product_country_stats|products_with_country_stats_v)/i.test(msg)
+  );
 }
 
 export function useCatalogCategories() {

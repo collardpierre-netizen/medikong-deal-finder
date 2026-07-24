@@ -293,10 +293,11 @@ Deno.serve(async (req) => {
       y += 5;
     }
 
-    // Notes
-    if (order.notes) {
+    // Notes (fallback sur draft_payload.customer_notes pour les brouillons non persistés)
+    const notesText = order.notes || (order as any).draft_payload?.customer_notes || "";
+    if (notesText) {
       doc.setFillColor(239, 246, 255);
-      const noteLines = doc.splitTextToSize(String(order.notes), pageW - 2 * M - 6);
+      const noteLines = doc.splitTextToSize(String(notesText), pageW - 2 * M - 6);
       const noteH = noteLines.length * 4 + 6;
       doc.rect(M, y, pageW - 2 * M, noteH, "F");
       doc.setFontSize(9);

@@ -1,11 +1,17 @@
 // Shared read/act view for a tracking campaign (used by admin + vendor).
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import QRCode from "qrcode";
-import { Copy, Download, QrCode } from "lucide-react";
+import { Copy, Download, QrCode, Maximize2, RefreshCw } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 
 export type CampaignLite = {
@@ -43,6 +49,8 @@ export function CampaignDetailView({
   canEdit?: boolean;
 }) {
   const url = publicTrackedUrl(campaign.slug);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [regenOpen, setRegenOpen] = useState(false);
 
   const { data: qrPng } = useQuery({
     queryKey: ["qr-png", url],
@@ -78,6 +86,25 @@ export function CampaignDetailView({
     },
     onSuccess: () => { toast.success("Statut mis à jour"); onUpdated?.(); },
     onError: (e: any) => toast.error(e.message ?? "Erreur"),
+  });
+
+  const regenerate = useMutation({
+    mutationFn: async () => {
+      // Preserve human-readable base slug, append a fresh 8-char token.
+      const baseSlug = campaign.slug.replace(/-[a-z0-9]{6,}$/i, "");
+      const token = Array.from(crypto.getRandomValues(new Uint8Array(6)))
+        .map((b) => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36]).join("");
+      const newSlug = `${baseSlug || "camp"}-${token}`;
+      const { error } = await supabase.from("tracking_campaigns").update({ slug: newSlug }).eq("id", campaign.id);
+      if (error) throw error;
+      return newSlug;
+    },
+    onSuccess: (newSlug) => {
+      toast.success(`QR régénéré : /go/${newSlug}`, { description: "L'ancien QR est désactivé." });
+      setRegenOpen(false);
+      onUpdated?.();
+    },
+    onError: (e: any) => toast.error(e.message ?? "Erreur régénération"),
   });
 
   const copy = async (text: string, label: string) => {
@@ -120,17 +147,42 @@ export function CampaignDetailView({
         <Card>
           <CardHeader><CardTitle className="text-base flex items-center gap-2"><QrCode className="h-4 w-4" />QR & lien</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex justify-center bg-white rounded-lg p-4 border">
+            <button
+              type="button"
+              onClick={() => qrPng && setPreviewOpen(true)}
+              className="w-full flex justify-center bg-white rounded-lg p-4 border hover:border-primary transition-colors group relative"
+              aria-label="Agrandir le QR"
+            >
               {qrPng ? <img src={qrPng} alt="QR" className="w-48 h-48" /> : <div className="w-48 h-48 animate-pulse bg-muted" />}
-            </div>
+              {qrPng && (
+                <span className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-background/90 border rounded p-1">
+                  <Maximize2 className="h-3 w-3" />
+                </span>
+              )}
+            </button>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <code className="flex-1 text-xs bg-muted p-2 rounded break-all">{url}</code>
                 <Button size="sm" variant="outline" onClick={() => copy(url, "Lien")}><Copy className="h-3 w-3" /></Button>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => setPreviewOpen(true)} disabled={!qrPng}>
+                  <Maximize2 className="h-3 w-3 mr-1" />Aperçu
+                </Button>
                 <Button size="sm" variant="outline" onClick={downloadPng} disabled={!qrPng}><Download className="h-3 w-3 mr-1" />PNG</Button>
                 <Button size="sm" variant="outline" onClick={downloadSvg} disabled={!qrSvg}><Download className="h-3 w-3 mr-1" />SVG</Button>
+                {canEdit && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setRegenOpen(true)}
+                    disabled={regenerate.isPending}
+                    className="ml-auto"
+                  >
+                    <RefreshCw className={`h-3 w-3 mr-1 ${regenerate.isPending ? "animate-spin" : ""}`} />
+                    Régénérer
+                  </Button>
+                )}
               </div>
               <p className="text-xs text-muted-foreground">
                 Collez ce QR sur vos flyers. Chaque scan est journalisé puis redirigé vers <code>{campaign.landing_path}</code>
@@ -163,6 +215,41 @@ export function CampaignDetailView({
           </ResponsiveContainer>
         </CardContent>
       </Card>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Aperçu QR — {campaign.name}</DialogTitle></DialogHeader>
+          <div className="flex justify-center bg-white rounded-lg p-6 border">
+            {qrPng ? <img src={qrPng} alt="QR" className="w-80 h-80" /> : <div className="w-80 h-80 animate-pulse bg-muted" />}
+          </div>
+          <code className="text-xs bg-muted p-2 rounded break-all block">{url}</code>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" size="sm" onClick={downloadPng} disabled={!qrPng}><Download className="h-3 w-3 mr-1" />PNG</Button>
+            <Button variant="outline" size="sm" onClick={downloadSvg} disabled={!qrSvg}><Download className="h-3 w-3 mr-1" />SVG</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={regenOpen} onOpenChange={setRegenOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Régénérer le QR ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Un nouveau token va remplacer le slug actuel <code className="font-mono">{campaign.slug}</code>.
+              <strong className="block mt-2 text-destructive">
+                Tous les QR/flyers imprimés avec l'ancien lien cesseront de fonctionner.
+              </strong>
+              Les statistiques historiques (scans, inscriptions…) sont conservées.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={() => regenerate.mutate()} disabled={regenerate.isPending}>
+              Régénérer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

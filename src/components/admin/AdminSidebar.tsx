@@ -90,6 +90,7 @@ const sections: NavSection[] = [
       { labelKey: "priceWatch", path: "/admin/veille-prix", icon: Eye },
       { labelKey: "priceAlerts", path: "/admin/price-alerts", icon: AlertTriangle },
       { labelKey: "leads", path: "/admin/leads", icon: Link },
+      { label: "Liens & QR tracés", path: "/admin/tracking-campaigns", icon: QrCode },
       { labelKey: "analytics", path: "/admin/analytics", icon: BarChart3 },
       { label: "Analytics clients", path: "/admin/analytics-clients", icon: Users },
       { label: "Recherches utilisateurs", path: "/admin/recherches", icon: Search },

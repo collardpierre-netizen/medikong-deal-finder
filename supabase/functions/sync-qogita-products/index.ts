@@ -319,12 +319,13 @@ async function streamDownloadToStorage(sb: any, country: string, vat: number, lo
     progress_message: `${country}: téléchargement Qogita (TUS streaming)...`,
   }).eq("id", logId);
 
-  const res = await fetch(`${baseUrl}/variants/search/download/?country=${country}`, {
+  const csvUrl = `${baseUrl}/variants/search/download/?country=${country}`;
+  const res = await fetch(csvUrl, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok || !res.body) {
     const errBody = await res.text().catch(() => "");
-    throw new Error(`CSV download ${country}: ${res.status} ${errBody.slice(0, 300)}`);
+    throw new Error(`QOGITA_CSV_DOWNLOAD_FAILED ${res.status} ${csvUrl} — ${errBody.slice(0, 300)}`);
   }
 
   const csvPath = `qogita-products-${country}-${Date.now()}.csv`;

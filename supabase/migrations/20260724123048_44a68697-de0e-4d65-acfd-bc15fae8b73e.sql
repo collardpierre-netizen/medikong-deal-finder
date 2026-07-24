@@ -1,0 +1,1 @@
+ALTER VIEW public.vendors_public SET (security_invoker = false);

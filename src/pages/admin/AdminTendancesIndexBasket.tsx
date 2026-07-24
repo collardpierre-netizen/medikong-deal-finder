@@ -108,7 +108,7 @@ export default function AdminTendancesIndexBasket() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ product_id, patch }: { product_id: string; patch: Partial<BasketRow> }) => {
+    mutationFn: async ({ product_id, patch }: { product_id: string; patch: { priority?: number; is_active?: boolean; reason?: string | null } }) => {
       const { error } = await supabase.from("tendances_index_basket").update(patch).eq("product_id", product_id);
       if (error) throw error;
     },

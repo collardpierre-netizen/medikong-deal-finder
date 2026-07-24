@@ -102,6 +102,7 @@ async function discoverLoginActionId(cookieHeader: string): Promise<{ id: string
   const html = await res.text();
   const chunkRe = /\/_next\/static\/chunks\/[a-z0-9_-]+\.js\?dpl=[A-Za-z0-9]+/g;
   const chunks = Array.from(new Set(html.match(chunkRe) ?? []));
+  console.log(JSON.stringify({ tag: "storefront_login_discovery", chunks_found: chunks.length, html_len: html.length }));
   // Heuristic: login action lives in a chunk that also contains the string
   // "loginAction" registered via createServerReference. Scan chunks in
   // parallel (limit concurrency) and short-circuit on first match.
@@ -122,10 +123,15 @@ async function discoverLoginActionId(cookieHeader: string): Promise<{ id: string
       }
     }));
     const hit = results.find((x) => !!x);
-    if (hit) return { id: hit, cookies: nextCookies };
+    if (hit) {
+      console.log(JSON.stringify({ tag: "storefront_login_discovery", found_action_id: hit }));
+      return { id: hit, cookies: nextCookies };
+    }
   }
+  console.log(JSON.stringify({ tag: "storefront_login_discovery", found_action_id: null }));
   return null;
 }
+
 
 async function loginStorefront(): Promise<Session> {
   const email = Deno.env.get("QOGITA_STOREFRONT_EMAIL");

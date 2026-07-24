@@ -714,17 +714,34 @@ export default function AdminCommissionsRevenus() {
           {/* --- BACKLOG --- */}
           <TabsContent value="backlog">
             <div className="bg-white border border-[#E2E8F0] rounded-[10px]">
-              <div className="p-4 border-b border-[#E2E8F0] flex items-center justify-between">
+              <div className="p-4 border-b border-[#E2E8F0] flex items-center justify-between gap-4 flex-wrap">
                 <div className="text-sm text-[#616B7C]">
                   {selectedLines.size} ligne(s) sélectionnée(s) — {fmtEurFromCents(backlogSelectedAmount)}
                 </div>
-                <Button
-                  size="sm"
-                  disabled={selectedLines.size === 0 || createInvoiceM.isPending}
-                  onClick={() => createInvoiceM.mutate()}
-                >
-                  {createInvoiceM.isPending ? "Création…" : `Créer facture(s) commission`}
-                </Button>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 text-xs text-[#616B7C] cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4"
+                      checked={consolidated}
+                      onChange={(e) => setConsolidatedM.mutate(e.target.checked)}
+                      disabled={setConsolidatedM.isPending}
+                    />
+                    Facturation consolidée
+                    <span className="text-[#8B95A5]" title="Une seule facture par vendeur regroupant toutes les commandes sélectionnées et les deux types (marketplace + trading).">ⓘ</span>
+                  </label>
+                  <Button
+                    size="sm"
+                    disabled={selectedLines.size === 0 || createInvoiceM.isPending}
+                    onClick={() => createInvoiceM.mutate()}
+                  >
+                    {createInvoiceM.isPending
+                      ? "Création…"
+                      : consolidated
+                        ? "Créer facture(s) consolidée(s)"
+                        : "Créer facture(s) commission"}
+                  </Button>
+                </div>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">

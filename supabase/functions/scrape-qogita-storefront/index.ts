@@ -116,7 +116,7 @@ async function discoverLoginActionId(cookieHeader: string): Promise<{ id: string
         });
         if (!r.ok) return null;
         const txt = await r.text();
-        const m = txt.match(/createServerReference\)?\("([0-9a-f]{40})"[^)]{0,200}?"loginAction"/);
+        const m = txt.match(/createServerReference\)?\("([0-9a-f]{40,64})"[^)]{0,200}?"loginAction"/);
         return m ? m[1] : null;
       } catch (_) {
         return null;

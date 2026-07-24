@@ -546,6 +546,7 @@ const App = () => (
 
               <Route path="abonnements" element={<LP><AdminAbonnements /></LP>} />
               <Route path="announcement-bar" element={<LP><AdminAnnouncementBar /></LP>} />
+              <Route path="tracking-campaigns" element={<LP><AdminTrackingCampaignsPage /></LP>} />
               <Route path="modules" element={<LP><AdminFeatureFlags /></LP>} />
               <Route path="i18n-pilot" element={<LP><AdminI18nPilot /></LP>} />
               <Route path="fabricants" element={<LP><AdminFabricants /></LP>} />

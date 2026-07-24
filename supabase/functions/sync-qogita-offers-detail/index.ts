@@ -626,7 +626,11 @@ Deno.serve(async (req) => {
   const vatRate = ctryRow.default_vat_rate || 21;
   const vatMultiplier = 1 + vatRate / 100;
 
-  const syncType = fetchMultiVendor ? "offers_multi_vendor" : "offers_detail";
+  // P1-a — plus jamais de sync_type "offers_multi_vendor" (fausse entrée d'étape
+  // qui polluait l'historique). Le mode multi-vendeur est signalé via un flag
+  // dans les stats (multi_vendor: true). Les sweeps A/B/C key sur last_sync_run_id,
+  // pas sur sync_type → aucun risque de régression.
+  const syncType = "offers_detail";
 
   const { data: resumableLogs } = await sb
     .from("sync_logs")
@@ -692,19 +696,21 @@ Deno.serve(async (req) => {
   let productsEnriched = 0;
   let offersUpserted = 0;
   let syncResult: any = null;
+  let syncError: { message: string; stack?: string } | null = null;
   try {
     syncResult = await syncOffers(sb, targetCountry, vatRate, vatMultiplier, syncLogId, startTime, fetchMultiVendor, recordEndpointError, recordProgress, resyncLogId, afterCreatedAt, syncRunId, productIds, fastMode);
     productsEnriched = syncResult?.products_enriched || 0;
     offersUpserted = syncResult?.offers_upserted || 0;
   } catch (e: any) {
     console.error("Sync offers error:", e);
+    syncError = { message: e?.message ?? String(e), stack: e?.stack };
     await sb
       .from("sync_logs")
       .update({
         status: "error",
         completed_at: new Date().toISOString(),
-        error_message: e.message,
-        progress_message: `Erreur: ${e.message}`,
+        error_message: syncError.message,
+        progress_message: `Erreur: ${syncError.message}`,
       })
       .eq("id", syncLogId);
   }
@@ -751,7 +757,13 @@ Deno.serve(async (req) => {
 
   return new Response(
     JSON.stringify({
-      success: true,
+      // P0-b — Propager le message d'erreur exact du sync vers l'orchestrateur.
+      // Avant : success:true + "0 enrichis" masquaient toute erreur amont (TypeError
+      // sending request, etc.). Maintenant : status="error" + error string réel.
+      success: syncError === null,
+      status: syncError ? "error" : (updatedLog?.status || "unknown"),
+      error: syncError?.message,
+      error_stack: syncError?.stack,
       sync_log_id: syncLogId,
       country: targetCountry,
       multi_vendor: fetchMultiVendor,
@@ -762,10 +774,11 @@ Deno.serve(async (req) => {
       remaining,
       deferred,
       defer_reason: deferred ? "rate_limited" : undefined,
-      status: updatedLog?.status || "unknown",
-      message: `Sync offres ${targetCountry} — ${productsEnriched} enrichis${nextCursor ? ` (partiel, remaining=${remaining}${deferred ? ", deferred=rate_limited" : ""})` : ""}`,
+      message: syncError
+        ? `Sync offres ${targetCountry} ÉCHEC — ${syncError.message}`
+        : `Sync offres ${targetCountry} — ${productsEnriched} enrichis${nextCursor ? ` (partiel, remaining=${remaining}${deferred ? ", deferred=rate_limited" : ""})` : ""}`,
     }),
-    { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    { status: syncError ? 500 : 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );
 });
 
@@ -944,36 +957,48 @@ async function syncOffersPage({
   incrementalProductFilter: string;
 }) {
 
-  // Keyset pagination : fetch next 1000 products after cursor.
-  let productsQuery = sb
+  // P0-a — LE fix racine du "TypeError: error sending request".
+  // Avant : .in("id", productIds) avec ~500 uuid → URL PostgREST géante
+  // (id=in.(uuid1,uuid2,…)) qui pétait au transport avant même d'atteindre
+  // Qogita. Maintenant : chunking dur à PRODUCT_ID_CHUNK=100, plusieurs
+  // sous-requêtes concaténées côté fonction. Aucune URL ne dépasse ~4 KB.
+  const PRODUCT_ID_CHUNK = 100;
+
+  let products: any[] | null = null;
+  let pErr: any = null;
+
+  const baseSelect = () => sb
     .from("products")
     .select("id, gtin, qogita_qid, qogita_fid, slug, created_at")
     .eq("is_active", true)
     .not("gtin", "is", null)
     .order("created_at", { ascending: true })
-    .order("id", { ascending: true })
-    .limit(chunkLimit);
+    .order("id", { ascending: true });
 
   if (productIds.length > 0) {
-    productsQuery = productsQuery.in("id", productIds);
-  } else if (fastMode) {
-    // Fast mode without explicit ids : never happens (enqueue always passes ids),
-    // but guard anyway — require fid+slug so we can hit /offers/ directly.
-    productsQuery = productsQuery.not("qogita_fid", "is", null).not("slug", "is", null);
+    const collected: any[] = [];
+    for (let i = 0; i < productIds.length; i += PRODUCT_ID_CHUNK) {
+      const slice = productIds.slice(i, i + PRODUCT_ID_CHUNK);
+      let q = baseSelect().in("id", slice).limit(slice.length);
+      if (fastMode) q = q.not("qogita_fid", "is", null).not("slug", "is", null);
+      if (afterCreatedAt) q = q.gt("created_at", afterCreatedAt);
+      const { data, error } = await q;
+      if (error) { pErr = error; break; }
+      if (data?.length) collected.push(...data);
+    }
+    products = collected;
   } else {
-    productsQuery = productsQuery.or(incrementalProductFilter);
+    let productsQuery = baseSelect().limit(chunkLimit);
+    if (fastMode) {
+      productsQuery = productsQuery.not("qogita_fid", "is", null).not("slug", "is", null);
+    } else {
+      productsQuery = productsQuery.or(incrementalProductFilter);
+    }
+    if (afterCreatedAt) productsQuery = productsQuery.gt("created_at", afterCreatedAt);
+    const res = await productsQuery;
+    products = res.data;
+    pErr = res.error;
   }
-
-  if (fastMode) {
-    // Fast mode still needs fid+slug regardless of product_ids.
-    productsQuery = productsQuery.not("qogita_fid", "is", null).not("slug", "is", null);
-  }
-
-  if (afterCreatedAt) {
-    productsQuery = productsQuery.gt("created_at", afterCreatedAt);
-  }
-
-  const { data: products, error: pErr } = await productsQuery;
 
   if (pErr) throw pErr;
 

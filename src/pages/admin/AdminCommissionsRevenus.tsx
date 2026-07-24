@@ -777,14 +777,6 @@ export default function AdminCommissionsRevenus() {
                   </label>
                   <Button
                     size="sm"
-                    variant="outline"
-                    disabled={selectedLines.size === 0}
-                    onClick={() => setPreviewOpen(true)}
-                  >
-                    Aperçu…
-                  </Button>
-                  <Button
-                    size="sm"
                     disabled={selectedLines.size === 0 || createInvoiceM.isPending}
                     onClick={() => setPreviewOpen(true)}
                   >

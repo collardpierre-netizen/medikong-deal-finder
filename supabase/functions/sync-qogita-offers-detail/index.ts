@@ -757,7 +757,13 @@ Deno.serve(async (req) => {
 
   return new Response(
     JSON.stringify({
-      success: true,
+      // P0-b — Propager le message d'erreur exact du sync vers l'orchestrateur.
+      // Avant : success:true + "0 enrichis" masquaient toute erreur amont (TypeError
+      // sending request, etc.). Maintenant : status="error" + error string réel.
+      success: syncError === null,
+      status: syncError ? "error" : (updatedLog?.status || "unknown"),
+      error: syncError?.message,
+      error_stack: syncError?.stack,
       sync_log_id: syncLogId,
       country: targetCountry,
       multi_vendor: fetchMultiVendor,
@@ -768,10 +774,11 @@ Deno.serve(async (req) => {
       remaining,
       deferred,
       defer_reason: deferred ? "rate_limited" : undefined,
-      status: updatedLog?.status || "unknown",
-      message: `Sync offres ${targetCountry} — ${productsEnriched} enrichis${nextCursor ? ` (partiel, remaining=${remaining}${deferred ? ", deferred=rate_limited" : ""})` : ""}`,
+      message: syncError
+        ? `Sync offres ${targetCountry} ÉCHEC — ${syncError.message}`
+        : `Sync offres ${targetCountry} — ${productsEnriched} enrichis${nextCursor ? ` (partiel, remaining=${remaining}${deferred ? ", deferred=rate_limited" : ""})` : ""}`,
     }),
-    { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    { status: syncError ? 500 : 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );
 });
 

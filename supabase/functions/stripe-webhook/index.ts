@@ -61,8 +61,24 @@ Deno.serve(async (req) => {
   try {
     switch (event.type) {
       case "checkout.session.completed":
-        await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
+      case "checkout.session.async_payment_succeeded": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        // Route SEPA/self-billing invoice sessions to the invoice handler
+        if (session.metadata?.invoice_id) {
+          await handleInvoiceCheckoutSucceeded(session);
+        } else {
+          await handleCheckoutSessionCompleted(session);
+        }
         break;
+      }
+
+      case "checkout.session.async_payment_failed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        if (session.metadata?.invoice_id) {
+          await handleInvoiceCheckoutFailed(session);
+        }
+        break;
+      }
 
       case "payment_intent.succeeded":
         await handlePaymentSucceeded(event.data.object as Stripe.PaymentIntent);

@@ -113,7 +113,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
           }}
           role="button"
           tabIndex={0}
-          aria-label={`Voir le produit ${p.name}`}
+          aria-label={`Voir le produit ${displayName}`}
           className="group/img w-full md:w-[190px] bg-white flex items-center justify-center relative shrink-0 cursor-pointer
                      h-[180px] md:h-[220px] md:aspect-square border-b md:border-b-0 md:border-r border-border
                      outline-none transition-shadow

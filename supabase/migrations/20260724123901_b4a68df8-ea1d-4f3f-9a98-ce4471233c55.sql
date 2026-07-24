@@ -1,0 +1,1 @@
+ALTER VIEW public.offers_public_v SET (security_invoker = false);

@@ -483,8 +483,11 @@ export default function AdminCommissionsRevenus() {
         return c.company.toLowerCase().includes(q) || c.email.toLowerCase().includes(q);
       });
     }
+    if (filterVendorId !== "all") {
+      rows = rows.filter(r => r.vendor_id === filterVendorId);
+    }
     return rows;
-  }, [backlogQ.data, filterOrderStatus, customerSearch, customersQ.data]);
+  }, [backlogQ.data, filterOrderStatus, customerSearch, customersQ.data, filterVendorId]);
 
   const backlogSelectedAmount = useMemo(() => {
     return filteredBacklog

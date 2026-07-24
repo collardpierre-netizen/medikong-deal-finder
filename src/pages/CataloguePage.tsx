@@ -164,6 +164,24 @@ export default function CataloguePage() {
 
             <CatalogPagination page={filters.page} perPage={filters.perPage} total={total} onPageChange={p => setFilter("page", p)} />
 
+            {countryStatsUnavailable && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 flex items-center justify-between gap-3"
+              >
+                <span>
+                  Les statistiques par pays sont temporairement indisponibles. Nous affichons le catalogue global — récupération automatique en cours.
+                </span>
+                <button
+                  onClick={() => refetch()}
+                  className="shrink-0 text-xs font-medium underline hover:no-underline"
+                >
+                  Réessayer maintenant
+                </button>
+              </div>
+            )}
+
             {isLoading ? (
               <div className="flex items-center justify-center py-20">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />

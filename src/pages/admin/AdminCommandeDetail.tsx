@@ -15,6 +15,7 @@ import OrderSourceBadge from "@/components/orders/OrderSourceBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { lineMetrics, type ManualLineInput } from "@/lib/manual-order-metrics";
 import { VendorsEmbedError } from "@/lib/vendors-embed-error";
+import GeneratePaymentLinkButton from "@/components/admin/GeneratePaymentLinkButton";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Brouillon",

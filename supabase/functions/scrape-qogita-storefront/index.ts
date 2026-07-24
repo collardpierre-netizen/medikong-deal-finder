@@ -919,7 +919,7 @@ Deno.serve(async (req) => {
     }
     let res: ProductResult;
     try {
-      res = await scrapeProduct(sb, p as never, stats, { dryRun: !!body.dryRun, resourceOffers });
+      res = await scrapeProduct(sb, p as never, stats, { dryRun: !!body.dryRun, resourceOffers, marginMul });
     } catch (e) {
       res = { status: "error", offersWritten: 0, tiersWritten: 0, historyPoints: 0, error: (e as Error).message };
     }

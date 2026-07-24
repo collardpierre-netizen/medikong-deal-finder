@@ -96,5 +96,6 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'order-delivery-confirmation': orderDeliveryConfirmation,
   'vendor-statement-ready': vendorStatementReady,
   'vendor-peppol-id-reminder': vendorPeppolIdReminder,
+  'invoice-payment-link': invoicePaymentLink,
 }
 

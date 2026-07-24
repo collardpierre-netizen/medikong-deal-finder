@@ -87,6 +87,7 @@ const sections: NavSection[] = [
       { label: "Écarts prix anormaux", path: "/admin/market-delta-anomalies", icon: AlertTriangle },
       { label: "Seuils écarts prix", path: "/admin/market-delta-thresholds", icon: SlidersHorizontal },
       { label: "Audit conditionnements", path: "/admin/pack-audit", icon: Package },
+      { label: "Panier Tendances (Qogita)", path: "/admin/tendances-index-basket", icon: TrendingDown },
       { labelKey: "priceWatch", path: "/admin/veille-prix", icon: Eye },
       { labelKey: "priceAlerts", path: "/admin/price-alerts", icon: AlertTriangle },
       { labelKey: "leads", path: "/admin/leads", icon: Link },

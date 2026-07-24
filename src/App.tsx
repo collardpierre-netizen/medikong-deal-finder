@@ -627,6 +627,7 @@ const App = () => (
               <Route path="commissions-revenus" element={<LP><AdminCommissionsRevenus /></LP>} />
               <Route path="commissions-revenus/:id" element={<LP><AdminCommissionInvoiceDetail /></LP>} />
               <Route path="sync" element={<LP><AdminSync /></LP>} />
+              <Route path="tendances-index-basket" element={<LP><AdminTendancesIndexBasket /></LP>} />
               <Route path="qogita-connection" element={<LP><AdminQogitaConnection /></LP>} />
               <Route path="qogita-status" element={<LP><AdminQogitaStatus /></LP>} />
               <Route path="api-keys" element={<LP><AdminApiKeys /></LP>} />

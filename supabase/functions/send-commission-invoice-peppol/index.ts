@@ -65,12 +65,13 @@ Deno.serve(async (req) => {
 
     // Auto-generate PDF if missing.
     if (!inv.pdf_path) {
-      const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-commission-invoice-pdf`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceRole}` },
-        body: JSON.stringify({ invoice_id: invoiceId }),
+      const { error: pdfErr } = await supabase.functions.invoke("generate-commission-invoice-pdf", {
+        body: { invoice_id: invoiceId },
       });
-      if (!r.ok) return json(502, { error: "pdf_generate_failed", details: await r.text() });
+      if (pdfErr) {
+        console.error(`internal_invoke_failed: generate-commission-invoice-pdf — ${pdfErr.message ?? pdfErr}`);
+        return json(502, { error: "pdf_generate_failed", details: pdfErr.message ?? String(pdfErr) });
+      }
       const refetch = await supabase.from("commission_invoices").select("*").eq("id", invoiceId).maybeSingle();
       inv = refetch.data;
       if (!inv?.pdf_path) return json(400, { error: "pdf_still_missing" });

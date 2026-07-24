@@ -632,6 +632,20 @@ export default function AdminCommissionsRevenus() {
             </Select>
           </div>
           <div>
+            <Label className="text-xs text-[#616B7C]">Vendeur</Label>
+            <Select value={filterVendorId} onValueChange={v => setFilterVendorId(v)}>
+              <SelectTrigger className="w-56"><SelectValue placeholder="Tous" /></SelectTrigger>
+              <SelectContent className="max-h-80">
+                <SelectItem value="all">Tous les vendeurs</SelectItem>
+                {(byVendorQ.data ?? []).map(v => (
+                  <SelectItem key={v.vendor_id} value={v.vendor_id}>
+                    {v.vendor_display_name}{v.vendor_country_code ? ` (${v.vendor_country_code})` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
             <Label className="text-xs text-[#616B7C]">Client (raison sociale ou email)</Label>
             <div className="flex items-center gap-1">
               <Input

@@ -71,12 +71,13 @@ serve(async (req) => {
       offersUrl = `${QOGITA_API}/variants/${actualFid}/${actualSlug}/offers/`;
       const offersRes = await fetch(offersUrl, { headers });
       offersStatus = offersRes.status;
+      const rawText = await offersRes.text();
       try {
-        offersData = await offersRes.json();
+        offersData = JSON.parse(rawText);
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e);
         offersError = `Failed to parse JSON: ${message}`;
-        offersData = await offersRes.text();
+        offersData = rawText;
       }
     } else {
       offersError = "No fid/slug available to call offers endpoint";

@@ -1166,7 +1166,7 @@ function WatchListDialog({ product, user, bestPrice, isTVAC }: { product: any; u
             <img src="/medikong-placeholder.png" alt="" className="w-16 h-16 object-contain rounded border border-border bg-muted p-1" />
           )}
           <div className="min-w-0">
-            <p className="font-medium text-sm text-foreground line-clamp-2">{product.name}</p>
+            <p className="font-medium text-sm text-foreground line-clamp-2">{displayName}</p>
             <p className="text-xs text-muted-foreground mt-0.5">Prix actuel : {formatEur(bestPrice)} € {isTVAC ? "TVAC" : "HTVA"}</p>
           </div>
         </div>

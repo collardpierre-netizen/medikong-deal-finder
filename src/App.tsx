@@ -690,6 +690,7 @@ const App = () => (
               <Route path="rfq" element={<LP><VendorRfqInbox /></LP>} />
               <Route path="exclusivities" element={<LP><VendorExclusivities /></LP>} />
               <Route path="analytics" element={<LP><VendorAnalytics /></LP>} />
+              <Route path="tracking" element={<LP><VendorTrackingCampaignsPage /></LP>} />
               <Route path="finance" element={<LP><VendorFinance /></LP>} />
               <Route path="logistics" element={<LP><VendorLogistics /></LP>} />
               <Route path="health" element={<LP><VendorHealth /></LP>} />

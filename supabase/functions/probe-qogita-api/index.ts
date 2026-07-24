@@ -110,68 +110,77 @@ Deno.serve(async (req) => {
 
   const results: Record<string, any> = {};
 
-  // 1) variants search par GTIN (est-ce que la liste porte un prix ?)
-  results["variants_search_by_gtin"] = await probe(
-    `${QOGITA_API}/variants/?query=${encodeURIComponent(gtin)}&country=${country}`,
-    H,
-  );
-
-  // 2) variant retrieve (ancien endroit du "price")
+  // 2) variant retrieve
   results["variant_retrieve"] = await probe(
     `${QOGITA_API}/variants/${gtin}/?country=${country}`,
     H,
   );
-
-  // Extraire fid/slug pour tester l'ancien /offers/ (attendu 404) + autres sous-chemins
   const retrieveJson = results["variant_retrieve"]?.json;
   const fid = retrieveJson?.fid ?? null;
   const slug = retrieveJson?.slug ?? null;
   const qid = retrieveJson?.qid ?? null;
 
-  // 3) ancien endpoint offres (control) + variantes plausibles de nommage
+  // 1bis) plusieurs signatures possibles pour "variants search"
+  const searchVariants = [
+    `${QOGITA_API}/variants/search/?query=${encodeURIComponent(gtin)}&country=${country}`,
+    `${QOGITA_API}/variants/search/?gtin=${encodeURIComponent(gtin)}&country=${country}`,
+    `${QOGITA_API}/search/variants/?query=${encodeURIComponent(gtin)}&country=${country}`,
+    `${QOGITA_API}/variants/?query=${encodeURIComponent(gtin)}&country=${country}`,
+    `${QOGITA_API}/variants/?search=${encodeURIComponent(gtin)}&country=${country}`,
+  ];
+  for (const url of searchVariants) {
+    results[`search__${url.split("?")[0].replace(QOGITA_API, "")}__${url.split("?")[1]?.split("&")[0]}`] = await probe(url, H);
+  }
+
+  // 3) endpoints "par vendeur" plausibles
   if (fid && slug) {
-    results["legacy_offers"] = await probe(`${QOGITA_API}/variants/${fid}/${slug}/offers/`, H);
-    results["variant_sellers"] = await probe(`${QOGITA_API}/variants/${fid}/${slug}/sellers/`, H);
-    results["variant_prices"] = await probe(`${QOGITA_API}/variants/${fid}/${slug}/prices/`, H);
+    results["legacy_offers_fid_slug"] = await probe(`${QOGITA_API}/variants/${fid}/${slug}/offers/`, H);
+    results["variant_sellers_fid_slug"] = await probe(`${QOGITA_API}/variants/${fid}/${slug}/sellers/`, H);
   }
   if (qid) {
     results["variant_by_qid"] = await probe(`${QOGITA_API}/variants/${qid}/?country=${country}`, H);
+    results["variant_qid_offers"] = await probe(`${QOGITA_API}/variants/${qid}/offers/?country=${country}`, H);
+    results["variant_qid_sellers"] = await probe(`${QOGITA_API}/variants/${qid}/sellers/?country=${country}`, H);
+    results["variant_qid_prices"] = await probe(`${QOGITA_API}/variants/${qid}/prices/?country=${country}`, H);
+  }
+  if (gtin) {
+    results["variant_gtin_offers"] = await probe(`${QOGITA_API}/variants/${gtin}/offers/?country=${country}`, H);
+    results["variant_gtin_sellers"] = await probe(`${QOGITA_API}/variants/${gtin}/sellers/?country=${country}`, H);
   }
 
-  // 4) Export CSV — tests de plusieurs signatures
+  // 4) Export CSV — plusieurs signatures
   results["csv_download_basic"] = await probe(
     `${QOGITA_API}/variants/search/download/?country=${country}`,
     { ...H, Accept: "text/csv,application/json;q=0.9,*/*;q=0.8" },
   );
-  results["csv_download_format_csv"] = await probe(
-    `${QOGITA_API}/variants/search/download/?country=${country}&format=csv`,
+  results["csv_variants_download"] = await probe(
+    `${QOGITA_API}/variants/download/?country=${country}`,
     { ...H, Accept: "text/csv,application/json;q=0.9,*/*;q=0.8" },
   );
-  results["csv_download_post"] = await probe(
-    `${QOGITA_API}/variants/search/download/`,
-    { ...H, "Content-Type": "application/json" },
-    { method: "POST", body: JSON.stringify({ country, format: "csv" }) },
+  results["csv_export"] = await probe(
+    `${QOGITA_API}/variants/export/?country=${country}`,
+    { ...H, Accept: "text/csv,application/json;q=0.9,*/*;q=0.8" },
   );
 
-  // 5) Prix via panier ? — on tente une création de cart puis add item pour voir la structure prix.
-  //    On ne finalise JAMAIS un checkout ; on lit juste la réponse.
-  const cartCreate = await probe(
+  // 5) Panier — GET liste + POST création (plusieurs signatures)
+  results["carts_list_get"] = await probe(`${QOGITA_API}/carts/?country=${country}`, H);
+  results["carts_active_get"] = await probe(`${QOGITA_API}/carts/active/?country=${country}`, H);
+  results["carts_my_get"] = await probe(`${QOGITA_API}/carts/my/?country=${country}`, H);
+  results["cart_create_no_body"] = await probe(
     `${QOGITA_API}/carts/`,
     { ...H, "Content-Type": "application/json" },
-    { method: "POST", body: JSON.stringify({ country }) },
+    { method: "POST", body: JSON.stringify({}) },
   );
-  results["cart_create"] = cartCreate;
-  const cartId = cartCreate?.json?.qid ?? cartCreate?.json?.id ?? cartCreate?.json?.uuid ?? null;
-  if (cartId && qid) {
-    results["cart_add_item"] = await probe(
-      `${QOGITA_API}/carts/${cartId}/items/`,
-      { ...H, "Content-Type": "application/json" },
-      { method: "POST", body: JSON.stringify({ variantQid: qid, quantity: 1 }) },
-    );
-    results["cart_retrieve"] = await probe(`${QOGITA_API}/carts/${cartId}/`, H);
-  }
+  results["cart_create_with_country"] = await probe(
+    `${QOGITA_API}/carts/`,
+    { ...H, "Content-Type": "application/json" },
+    { method: "POST", body: JSON.stringify({ country, shippingCountry: country }) },
+  );
 
-  // 6) Catégories root (pour recouper les surfaces de l'API)
+  // 6) Watchlist (peut porter des prix ?)
+  results["watchlist_list"] = await probe(`${QOGITA_API}/watchlist/?country=${country}`, H);
+
+  // 7) Categories (sanity check)
   results["categories_root"] = await probe(`${QOGITA_API}/categories/?country=${country}`, H);
 
   return new Response(

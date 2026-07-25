@@ -27981,6 +27981,7 @@ export type Database = {
         Returns: undefined
       }
       admin_notifications_unread_count: { Args: never; Returns: number }
+      admin_offer_margin_distribution: { Args: never; Returns: Json }
       admin_preview_apply_category_aliases: {
         Args: never
         Returns: {

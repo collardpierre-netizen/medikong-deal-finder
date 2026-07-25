@@ -1015,6 +1015,7 @@ Deno.serve(async (req) => {
           vendors_created: stats.vendors_created,
           tiers_written: totalTiers,
           history_points: totalHistory,
+          stale_recalculated: totalStaleRecalc,
         },
       })
       .eq("id", resyncLog.id);

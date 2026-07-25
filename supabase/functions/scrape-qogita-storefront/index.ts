@@ -1047,6 +1047,39 @@ Deno.serve(async (req) => {
       .eq("id", resyncLog.id);
   }
 
+  // Reflet UI /admin/sync : le scraper storefront alimente aussi
+  //  - qogita_config.last_offers_sync_at (bandeau "Dernière sync offres")
+  //  - sync_logs (sync_type='offers_storefront') pour l'historique
+  const completedAtIso = new Date().toISOString();
+  try {
+    await sb.from("qogita_config").upsert(
+      { key: "last_offers_sync_at", value: completedAtIso, updated_at: completedAtIso },
+      { onConflict: "key" },
+    );
+  } catch (_) { /* best effort */ }
+  try {
+    await sb.from("sync_logs").insert({
+      sync_type: "offers_storefront",
+      status: errors > 0 && ok === 0 ? "error" : "completed",
+      started_at: new Date(startedAt).toISOString(),
+      completed_at: completedAtIso,
+      records_processed: ok + notFound + loggedOut + errors,
+      records_created: totalOffers,
+      records_updated: resourced,
+      error_message: errorSamples.length ? JSON.stringify(errorSamples.slice(0, 3)) : null,
+      metadata: {
+        source: "scrape-qogita-storefront",
+        mode: cronMode,
+        strategy: sessionCache?.strategy ?? null,
+        tiers_written: totalTiers,
+        history_points: totalHistory,
+        stale_recalculated: totalStaleRecalc,
+        vendors_created: stats.vendors_created,
+      },
+    });
+  } catch (_) { /* best effort */ }
+
+
   return new Response(JSON.stringify({
     ok: true,
     strategy: sessionCache?.strategy ?? null,

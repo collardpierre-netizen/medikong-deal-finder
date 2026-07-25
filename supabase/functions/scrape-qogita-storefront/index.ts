@@ -982,7 +982,7 @@ Deno.serve(async (req) => {
       triggered_by: body.productIds?.length || body.gtins?.length ? "manual" : "cron",
       country_code: "BE",
       products_targeted: products?.length ?? 0,
-      metadata: { strategy: sessionCache?.strategy ?? null, dry_run: !!body.dryRun },
+      metadata: { strategy: sessionCache?.strategy ?? null, dry_run: !!body.dryRun, sub_mode: cronMode },
     })
     .select("id")
     .single();
@@ -1084,10 +1084,13 @@ Deno.serve(async (req) => {
         error_message: errorSamples.length ? JSON.stringify(errorSamples.slice(0, 3)) : null,
         metadata: {
           strategy: sessionCache?.strategy ?? null,
+          sub_mode: cronMode,
           vendors_created: stats.vendors_created,
           tiers_written: totalTiers,
           history_points: totalHistory,
           stale_recalculated: totalStaleRecalc,
+          throttled,
+          throttle_hits: throttleHits,
         },
       })
       .eq("id", resyncLog.id);

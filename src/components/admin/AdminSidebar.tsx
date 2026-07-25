@@ -66,6 +66,7 @@ const sections: NavSection[] = [
       { labelKey: "stripeConnect", path: "/admin/stripe-commissions", icon: CreditCard },
       { labelKey: "stripeRevenue", path: "/admin/stripe-revenue", icon: TrendingUp },
       { labelKey: "syncQogita", path: "/admin/sync", icon: RefreshCw },
+      { label: "Distribution des marges", path: "/admin/marges-distribution", icon: Percent },
       { label: "Statut sync Qogita", path: "/admin/qogita-status", icon: Activity },
       { label: "Connexion Qogita", path: "/admin/qogita-connection", icon: Key },
       { labelKey: "marketCodes", path: "/admin/market-codes", icon: Hash },

@@ -845,15 +845,28 @@ Deno.serve(async (req) => {
     dryRun?: boolean;
     resourceOffers?: boolean;
     forceLogin?: boolean;
-    mode?: "catalog" | "basket";
+    mode?: "catalog" | "basket" | "catalog_wide";
+    freshWindowHours?: number;
+    walltimeMs?: number;
   } = {};
   try { body = await req.json(); } catch (_) { /* cron */ }
 
-  const limit = Math.min(Math.max(body.limit ?? DEFAULT_BATCH, 1), 100);
   // Default cron mode = "catalog" : rafraîchit d'abord les produits catalogue
   // (offres qogita-backed actives) les plus anciennement vérifiés. Fallback
   // sur tendances_index_basket si le catalogue ne renvoie rien.
-  const cronMode: "catalog" | "basket" = body.mode ?? "catalog";
+  // "catalog_wide" étend à TOUT le catalogue Qogita actif (~458k produits) :
+  // curseur last_verified_at ASC NULLS FIRST + exclusion des produits déjà
+  // frais (< freshWindowHours) pour ne pas doubler l'hourly basket.
+  const cronMode: "catalog" | "basket" | "catalog_wide" = body.mode ?? "catalog";
+  // "catalog_wide" a besoin d'un plafond plus haut (batchs 200) et d'une
+  // walltime plus longue pour drainer le catalogue en semaines, pas mois.
+  const CAP = cronMode === "catalog_wide" ? 200 : 100;
+  const limit = Math.min(Math.max(body.limit ?? DEFAULT_BATCH, 1), CAP);
+  const walltimeMs = Math.min(
+    Math.max(body.walltimeMs ?? (cronMode === "catalog_wide" ? 120_000 : MAX_WALLTIME_MS), 10_000),
+    140_000,
+  );
+  const freshWindowHours = Math.min(Math.max(body.freshWindowHours ?? 12, 1), 168);
   const resourceOffers = body.resourceOffers ?? true;
 
   // Load the commercial margin (fallback 25%) once per run and apply it

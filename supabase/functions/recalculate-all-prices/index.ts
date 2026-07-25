@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { requireCronOrService } from "../_shared/cron-or-admin.ts";
+import { recalcOfferPricing } from "../_shared/recalc-offer-pricing.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

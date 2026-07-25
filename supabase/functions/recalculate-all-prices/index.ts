@@ -88,6 +88,7 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({
       success: true,
+      scanned,
       updated,
       skipped_stale: skippedStale,
       skipped_no_base: skippedNoBase,

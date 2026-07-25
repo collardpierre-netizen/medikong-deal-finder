@@ -637,6 +637,7 @@ const App = () => (
               <Route path="tendances-index-basket" element={<LP><AdminTendancesIndexBasket /></LP>} />
               <Route path="qogita-connection" element={<LP><AdminQogitaConnection /></LP>} />
               <Route path="qogita-status" element={<LP><AdminQogitaStatus /></LP>} />
+              <Route path="catalog-wide" element={<LP><AdminCatalogWideProgress /></LP>} />
               <Route path="api-keys" element={<LP><AdminApiKeys /></LP>} />
               <Route path="api-docs" element={<LP><AdminApiDocs /></LP>} />
               <Route path="pays" element={<LP><AdminCountries /></LP>} />

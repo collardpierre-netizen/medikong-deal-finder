@@ -660,6 +660,7 @@ type ProductResult = {
   offersWritten: number;
   tiersWritten: number;
   historyPoints: number;
+  staleRecalculated: number;
   error?: string;
 };
 

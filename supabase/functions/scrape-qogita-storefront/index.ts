@@ -992,7 +992,7 @@ Deno.serve(async (req) => {
         notes:
           `storefront strategy=${sessionCache?.strategy ?? "unknown"} ` +
           `vendors_created=${stats.vendors_created} offers=${totalOffers} tiers=${totalTiers} ` +
-          `retries=${stats.retries} logged_out=${loggedOut}`,
+          `stale_recalc=${totalStaleRecalc} retries=${stats.retries} logged_out=${loggedOut}`,
       })
       .eq("id", logRow.id);
   }

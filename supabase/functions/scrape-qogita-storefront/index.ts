@@ -911,16 +911,26 @@ Deno.serve(async (req) => {
   } else {
     // Cron mode.
     let ids: string[] = [];
-    if (cronMode === "catalog") {
+    const freshCutoffIso = new Date(Date.now() - freshWindowHours * 3_600_000).toISOString();
+
+    if (cronMode === "catalog" || cronMode === "catalog_wide") {
       // Priorité catalogue : produits ayant une offre qogita-backed active,
       // triés par last_verified_at le plus ancien (nulls d'abord).
-      const { data: catalogRows } = await sb
+      // catalog_wide : on exclut aussi les offres déjà rafraîchies récemment
+      // pour ne pas piétiner l'hourly basket ni re-scraper la même chose.
+      // On fetche large (limit * 6) puis on déduplique côté client.
+      let catQ = sb
         .from("offers")
         .select("product_id, last_verified_at")
         .eq("is_qogita_backed", true)
         .eq("is_active", true)
         .order("last_verified_at", { ascending: true, nullsFirst: true })
-        .limit(limit * 4);
+        .limit(limit * 6);
+      if (cronMode === "catalog_wide") {
+        // Deux conditions dans un .or() : jamais vérifié OU + vieux que la fenêtre
+        catQ = catQ.or(`last_verified_at.is.null,last_verified_at.lt.${freshCutoffIso}`);
+      }
+      const { data: catalogRows } = await catQ;
       const seen = new Set<string>();
       for (const row of (catalogRows ?? []) as { product_id: string }[]) {
         if (!row.product_id || seen.has(row.product_id)) continue;
@@ -929,7 +939,7 @@ Deno.serve(async (req) => {
       }
       ids = Array.from(seen);
     }
-    if (ids.length === 0) {
+    if (ids.length === 0 && cronMode !== "catalog_wide") {
       const { data: basket } = await sb
         .from("tendances_index_basket")
         .select("product_id")

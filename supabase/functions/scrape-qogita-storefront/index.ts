@@ -723,6 +723,7 @@ async function scrapeProduct(
       offersWritten: allOffers.length,
       tiersWritten: allOffers.reduce((n, o) => n + (o.tieredPrices?.length || 0) + 1, 0),
       historyPoints: priceHistory.length,
+      staleRecalculated: 0,
     };
   }
 

@@ -660,6 +660,7 @@ type ProductResult = {
   offersWritten: number;
   tiersWritten: number;
   historyPoints: number;
+  staleRecalculated: number;
   error?: string;
 };
 
@@ -671,7 +672,7 @@ async function scrapeProduct(
   opts: { dryRun: boolean; resourceOffers: boolean; marginMul: number },
 ): Promise<ProductResult> {
   if (!product.qogita_fid || !product.qogita_slug) {
-    return { status: "error", offersWritten: 0, tiersWritten: 0, historyPoints: 0, error: "missing_qogita_ids" };
+    return { status: "error", offersWritten: 0, tiersWritten: 0, historyPoints: 0, staleRecalculated: 0, error: "missing_qogita_ids" };
   }
   const url = `${STOREFRONT_ORIGIN}/products/${product.qogita_fid}/${product.qogita_slug}/`;
 
@@ -691,14 +692,14 @@ async function scrapeProduct(
       },
       redirect: "follow",
     });
-    if (res.status === 404) return { status: "not_found", offersWritten: 0, tiersWritten: 0, historyPoints: 0 };
+    if (res.status === 404) return { status: "not_found", offersWritten: 0, tiersWritten: 0, historyPoints: 0, staleRecalculated: 0 };
     if (res.status === 401 || res.status === 403) {
       session = await ensureSession(true);
       stats.retries += 1;
       attempt++;
       continue;
     }
-    if (!res.ok) return { status: "error", offersWritten: 0, tiersWritten: 0, historyPoints: 0, error: `http_${res.status}` };
+    if (!res.ok) return { status: "error", offersWritten: 0, tiersWritten: 0, historyPoints: 0, staleRecalculated: 0, error: `http_${res.status}` };
     html = await res.text();
     if (isLoggedOutHtml(html)) {
       session = await ensureSession(true);
@@ -709,7 +710,7 @@ async function scrapeProduct(
     break;
   }
   if (!html) {
-    return { status: "logged_out", offersWritten: 0, tiersWritten: 0, historyPoints: 0, error: "no_session" };
+    return { status: "logged_out", offersWritten: 0, tiersWritten: 0, historyPoints: 0, staleRecalculated: 0, error: "no_session" };
   }
 
   const { allOffers, priceHistory } = parseStorefront(html);
@@ -722,6 +723,7 @@ async function scrapeProduct(
       offersWritten: allOffers.length,
       tiersWritten: allOffers.reduce((n, o) => n + (o.tieredPrices?.length || 0) + 1, 0),
       historyPoints: priceHistory.length,
+      staleRecalculated: 0,
     };
   }
 
@@ -759,19 +761,45 @@ async function scrapeProduct(
     tiersWritten += await syncTiers(sb, offerId, basePriceExcl, baseMov, vatRate, offer.tieredPrices ?? [], opts.marginMul);
   }
 
-  // ── Re-source best-price on stale Qogita-backed offers ────────────
+  // ── Re-source + recalcul différé des offres stale du même produit ─
+  // Pour chaque offre Qogita stale de ce produit (non touchée par le scrape
+  // ci-dessus car pas dans allOffers), on lève le flag price_stale ET on
+  // recalcule immédiatement price_excl_vat/price_incl_vat/margin en
+  // appliquant la marge courante à qogita_base_price. Cela évite d'attendre
+  // le prochain run de `recalculate-all-prices` pour publier le prix propre.
+  let staleRecalculated = 0;
   if (opts.resourceOffers && Number.isFinite(bestExcl) && bestExcl > 0) {
-    await sb
+    const { data: staleRows } = await sb
       .from("offers")
-      .update({
-        price_stale: false,
-        price_stale_since: null,
-        price_source: "qogita_storefront",
-        price_source_updated_at: new Date().toISOString(),
-      })
+      .select("id, qogita_base_price, vat_rate")
       .eq("product_id", product.id)
       .eq("is_qogita_backed", true)
       .eq("price_stale", true);
+
+    const nowIso = new Date().toISOString();
+    for (const row of (staleRows ?? [])) {
+      const base = Number(row.qogita_base_price);
+      if (!Number.isFinite(base) || base <= 0) continue;
+      const sellExcl = Math.round(base * opts.marginMul * 100) / 100;
+      const vr = Number(row.vat_rate) || 0;
+      const sellIncl = Math.round(sellExcl * (1 + vr) * 100) / 100;
+      const marginPct = Math.round((opts.marginMul - 1) * 10000) / 100;
+      const { error: recalcErr } = await sb
+        .from("offers")
+        .update({
+          price_excl_vat: sellExcl,
+          price_incl_vat: sellIncl,
+          margin_amount: Math.round((sellExcl - base) * 100) / 100,
+          applied_margin_percentage: marginPct,
+          price_stale: false,
+          price_stale_since: null,
+          price_source: "qogita_margin_recalc",
+          price_source_updated_at: nowIso,
+          last_verified_at: nowIso,
+        })
+        .eq("id", row.id);
+      if (!recalcErr) staleRecalculated += 1;
+    }
   }
 
   // ── Persist priceHistory (Tendances) ──────────────────────────────
@@ -800,7 +828,7 @@ async function scrapeProduct(
     }
   }
 
-  return { status: "ok", offersWritten, tiersWritten, historyPoints };
+  return { status: "ok", offersWritten, tiersWritten, historyPoints, staleRecalculated };
 }
 
 // ─────────────────────────────── HTTP handler ───────────────────────────────
@@ -912,7 +940,7 @@ Deno.serve(async (req) => {
 
   const stats = { vendors_created: 0, retries: 0 };
   let ok = 0, notFound = 0, loggedOut = 0, errors = 0;
-  let totalOffers = 0, totalTiers = 0, totalHistory = 0, resourced = 0;
+  let totalOffers = 0, totalTiers = 0, totalHistory = 0, resourced = 0, totalStaleRecalc = 0;
   const errorSamples: unknown[] = [];
 
   for (const p of products ?? []) {
@@ -924,13 +952,14 @@ Deno.serve(async (req) => {
     try {
       res = await scrapeProduct(sb, p as never, stats, { dryRun: !!body.dryRun, resourceOffers, marginMul });
     } catch (e) {
-      res = { status: "error", offersWritten: 0, tiersWritten: 0, historyPoints: 0, error: (e as Error).message };
+      res = { status: "error", offersWritten: 0, tiersWritten: 0, historyPoints: 0, staleRecalculated: 0, error: (e as Error).message };
     }
     if (res.status === "ok") {
       ok++;
       totalOffers += res.offersWritten;
       totalTiers += res.tiersWritten;
       totalHistory += res.historyPoints;
+      totalStaleRecalc += res.staleRecalculated;
       if (resourceOffers) resourced++;
     } else if (res.status === "not_found") notFound++;
     else if (res.status === "logged_out") loggedOut++;
@@ -963,7 +992,7 @@ Deno.serve(async (req) => {
         notes:
           `storefront strategy=${sessionCache?.strategy ?? "unknown"} ` +
           `vendors_created=${stats.vendors_created} offers=${totalOffers} tiers=${totalTiers} ` +
-          `retries=${stats.retries} logged_out=${loggedOut}`,
+          `stale_recalc=${totalStaleRecalc} retries=${stats.retries} logged_out=${loggedOut}`,
       })
       .eq("id", logRow.id);
   }
@@ -986,6 +1015,7 @@ Deno.serve(async (req) => {
           vendors_created: stats.vendors_created,
           tiers_written: totalTiers,
           history_points: totalHistory,
+          stale_recalculated: totalStaleRecalc,
         },
       })
       .eq("id", resyncLog.id);
@@ -1003,6 +1033,7 @@ Deno.serve(async (req) => {
     tiers_written: totalTiers,
     vendors_created: stats.vendors_created,
     history_points: totalHistory,
+    stale_recalculated: totalStaleRecalc,
     session_retries: stats.retries,
     elapsedMs: Date.now() - startedAt,
   }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });

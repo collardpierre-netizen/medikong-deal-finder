@@ -845,10 +845,15 @@ Deno.serve(async (req) => {
     dryRun?: boolean;
     resourceOffers?: boolean;
     forceLogin?: boolean;
+    mode?: "catalog" | "basket";
   } = {};
   try { body = await req.json(); } catch (_) { /* cron */ }
 
   const limit = Math.min(Math.max(body.limit ?? DEFAULT_BATCH, 1), 100);
+  // Default cron mode = "catalog" : rafraîchit d'abord les produits catalogue
+  // (offres qogita-backed actives) les plus anciennement vérifiés. Fallback
+  // sur tendances_index_basket si le catalogue ne renvoie rien.
+  const cronMode: "catalog" | "basket" = body.mode ?? "catalog";
   const resourceOffers = body.resourceOffers ?? true;
 
   // Load the commercial margin (fallback 25%) once per run and apply it

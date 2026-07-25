@@ -41,36 +41,49 @@ Deno.serve(async (req) => {
       .eq("is_active", true)
       .order("priority", { ascending: false });
 
-    // Load all Qogita-backed offers
-    const { data: offers, error } = await supabase
-      .from("offers")
-      .select("*, products(category_id, brand_id)")
-      .eq("is_qogita_backed", true)
-      .eq("is_active", true);
-
-    if (error) throw error;
-
+    // Load all Qogita-backed offers — paginated to bypass PostgREST 1000-row cap.
+    const PAGE = 1000;
+    let from = 0;
     let updated = 0;
     let skippedStale = 0;
     let skippedNoBase = 0;
+    let scanned = 0;
     const nowIso = new Date().toISOString();
 
-    for (const offer of (offers || [])) {
-      const result = recalcOfferPricing(
-        offer as any,
-        (marginRules || []) as any,
-        defaultMarginPct,
-      );
-      if (result.action === "skipped_no_base") { skippedNoBase++; continue; }
-      if (result.action === "skipped_stale") { skippedStale++; continue; }
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const { data: offers, error } = await supabase
+        .from("offers")
+        .select("*, products(category_id, brand_id)")
+        .eq("is_qogita_backed", true)
+        .eq("is_active", true)
+        .order("id", { ascending: true })
+        .range(from, from + PAGE - 1);
 
-      await supabase.from("offers").update({
-        ...result.patch,
-        price_source: "qogita_margin_recalc",
-        price_source_updated_at: nowIso,
-      }).eq("id", offer.id);
+      if (error) throw error;
+      if (!offers || offers.length === 0) break;
+      scanned += offers.length;
 
-      updated++;
+      for (const offer of offers) {
+        const result = recalcOfferPricing(
+          offer as any,
+          (marginRules || []) as any,
+          defaultMarginPct,
+        );
+        if (result.action === "skipped_no_base") { skippedNoBase++; continue; }
+        if (result.action === "skipped_stale") { skippedStale++; continue; }
+
+        await supabase.from("offers").update({
+          ...result.patch,
+          price_source: "qogita_margin_recalc",
+          price_source_updated_at: nowIso,
+        }).eq("id", offer.id);
+
+        updated++;
+      }
+
+      if (offers.length < PAGE) break;
+      from += PAGE;
     }
 
     return new Response(JSON.stringify({

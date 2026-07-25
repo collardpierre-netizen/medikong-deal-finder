@@ -1217,6 +1217,13 @@ Deno.serve(async (req) => {
     session_retries: stats.retries,
     throttled,
     throttle_hits: throttleHits,
+    throttle_reason: throttleReason,
+    backoff_ms: backoffMs,
+    http_429_count: http429Count,
+    http_403_count: http403Count,
+    captcha_count: captchaCount,
+    run_id: resyncLog?.id ?? null,
     elapsedMs: Date.now() - startedAt,
+
   }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 });

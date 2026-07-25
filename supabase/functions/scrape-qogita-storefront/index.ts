@@ -828,7 +828,7 @@ async function scrapeProduct(
     }
   }
 
-  return { status: "ok", offersWritten, tiersWritten, historyPoints };
+  return { status: "ok", offersWritten, tiersWritten, historyPoints, staleRecalculated };
 }
 
 // ─────────────────────────────── HTTP handler ───────────────────────────────

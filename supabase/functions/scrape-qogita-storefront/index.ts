@@ -991,9 +991,14 @@ Deno.serve(async (req) => {
   let ok = 0, notFound = 0, loggedOut = 0, errors = 0;
   let totalOffers = 0, totalTiers = 0, totalHistory = 0, resourced = 0, totalStaleRecalc = 0;
   const errorSamples: unknown[] = [];
+  // Back-off : dès qu'on voit un 429 / 403 consécutif on suspend le run
+  // pour laisser Qogita respirer. Le prochain tick cron reprendra depuis
+  // le curseur (last_verified_at) sans marquer les produits comme scannés.
+  let throttleHits = 0;
+  let throttled = false;
 
   for (const p of products ?? []) {
-    if (Date.now() - startedAt > MAX_WALLTIME_MS) {
+    if (Date.now() - startedAt > walltimeMs) {
       errorSamples.push({ reason: "walltime_exceeded" });
       break;
     }
@@ -1010,21 +1015,39 @@ Deno.serve(async (req) => {
       totalHistory += res.historyPoints;
       totalStaleRecalc += res.staleRecalculated;
       if (resourceOffers) resourced++;
+      throttleHits = 0;
     } else if (res.status === "not_found") notFound++;
     else if (res.status === "logged_out") loggedOut++;
     else {
       errors++;
       if (errorSamples.length < 10) errorSamples.push({ id: (p as { id: string }).id, error: res.error });
+      // Détecte rate-limit / anti-bot et coupe court avant escalade
+      if (res.error && (res.error.includes("http_429") || res.error.includes("http_403"))) {
+        throttleHits += 1;
+        if (throttleHits >= 3) {
+          throttled = true;
+          errorSamples.push({ reason: "throttled_backoff", hits: throttleHits });
+          // Attente 30s avant de rendre la main → protection anti-cascade
+          await new Promise((r) => setTimeout(r, 30_000));
+          break;
+        }
+      }
     }
-    await sb
-      .from("tendances_index_basket")
-      .update({
-        last_scraped_at: new Date().toISOString(),
-        last_scrape_status: res.status,
-        last_scrape_error: res.error ?? null,
-      })
-      .eq("product_id", (p as { id: string }).id);
-    await new Promise((r) => setTimeout(r, REQUEST_DELAY_MS));
+    // La table tendances_index_basket ne track que les produits panier ;
+    // on ne l'écrit que pour les modes historiques.
+    if (cronMode !== "catalog_wide") {
+      await sb
+        .from("tendances_index_basket")
+        .update({
+          last_scraped_at: new Date().toISOString(),
+          last_scrape_status: res.status,
+          last_scrape_error: res.error ?? null,
+        })
+        .eq("product_id", (p as { id: string }).id);
+    }
+    // Pacing adaptatif : on ralentit dès qu'on voit un throttle
+    const pacing = throttleHits > 0 ? REQUEST_DELAY_MS * 4 : REQUEST_DELAY_MS;
+    await new Promise((r) => setTimeout(r, pacing));
   }
 
   if (logRow?.id) {

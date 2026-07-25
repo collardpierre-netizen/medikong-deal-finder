@@ -707,11 +707,16 @@ async function scrapeProduct(
       attempt++;
       continue;
     }
+    // Détection captcha / anti-bot (Cloudflare Turnstile, hCaptcha, reCAPTCHA, challenge page)
+    if (/cf-turnstile|hcaptcha|recaptcha|challenge-platform|cf_chl_opt|__cf_chl|Attention Required/i.test(html)) {
+      return { status: "error", offersWritten: 0, tiersWritten: 0, historyPoints: 0, staleRecalculated: 0, error: "captcha_detected" };
+    }
     break;
   }
   if (!html) {
     return { status: "logged_out", offersWritten: 0, tiersWritten: 0, historyPoints: 0, staleRecalculated: 0, error: "no_session" };
   }
+
 
   const { allOffers, priceHistory } = parseStorefront(html);
   console.log(JSON.stringify({ tag: "storefront_parse", slug: product.qogita_slug ?? product.id, html_len: html.length, offers: allOffers.length, history: priceHistory.length, has_allOffers_marker: html.includes("allOffers") }));

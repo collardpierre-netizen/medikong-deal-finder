@@ -1111,10 +1111,61 @@ Deno.serve(async (req) => {
           stale_recalculated: totalStaleRecalc,
           throttled,
           throttle_hits: throttleHits,
+          throttle_reason: throttleReason,
+          backoff_ms: backoffMs,
+          http_429_count: http429Count,
+          http_403_count: http403Count,
+          captcha_count: captchaCount,
         },
       })
       .eq("id", resyncLog.id);
   }
+
+  // ── Alerting admin : throttling / captcha ─────────────────────────
+  // Émet une notification quand le run a été freiné pour permettre une
+  // intervention rapide (rotation session, pause manuelle du cron, etc.).
+  const shouldAlert = throttled || captchaCount > 0 || http429Count >= 5 || http403Count >= 5;
+  if (shouldAlert) {
+    try {
+      const sev = captchaCount > 0 ? "critical" : (throttled ? "warning" : "info");
+      const trigger = captchaCount > 0
+        ? `Captcha détecté (${captchaCount})`
+        : throttleReason === "http_429"
+          ? `Rate-limit 429 (${http429Count})`
+          : throttleReason === "http_403"
+            ? `Anti-bot 403 (${http403Count})`
+            : `${http429Count} × 429 / ${http403Count} × 403`;
+      await sb.from("admin_notifications").insert({
+        type: "qogita_scraper_throttled",
+        severity: sev,
+        title: `Scraper catalogue freiné — ${trigger}`,
+        body:
+          `Mode ${cronMode} · Run ${resyncLog?.id ?? "n/a"} — ` +
+          `${http429Count} × 429, ${http403Count} × 403, ${captchaCount} × captcha ` +
+          `(hits consécutifs: ${throttleHits}${backoffMs ? `, back-off ${Math.round(backoffMs / 1000)}s` : ""}). ` +
+          `Prochain tick cron reprendra depuis le curseur.`,
+        cta_url: "/admin/catalog-wide",
+        source_type: "qogita_resync_logs",
+        source_id: resyncLog?.id ?? null,
+        payload: {
+          run_id: resyncLog?.id ?? null,
+          mode: cronMode,
+          http_429_count: http429Count,
+          http_403_count: http403Count,
+          captcha_count: captchaCount,
+          throttle_hits: throttleHits,
+          throttled,
+          throttle_reason: throttleReason,
+          backoff_ms: backoffMs,
+          products_ok: ok,
+          products_error: errors,
+        },
+      });
+    } catch (e) {
+      console.error("admin_notifications insert failed", e);
+    }
+  }
+
 
   // Reflet UI /admin/sync : le scraper storefront alimente aussi
   //  - qogita_config.last_offers_sync_at (bandeau "Dernière sync offres")

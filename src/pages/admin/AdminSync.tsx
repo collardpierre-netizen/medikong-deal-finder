@@ -53,9 +53,22 @@ const usePipelineRuns = () =>
   useQuery({
     queryKey: ["pipeline-runs"],
     queryFn: async () => {
+      // Ronde de ménage : tout run "running" qui n'a pas bougé depuis > 1h est
+      // marqué comme "stale" pour purger les zombies bloqués dans l'admin.
+      const stuckCutoff = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      await supabase
+        .from("sync_pipeline_runs" as any)
+        .update({ status: "stale", completed_at: new Date().toISOString() })
+        .eq("status", "running")
+        .lt("created_at", stuckCutoff);
+
+      // Fenêtre d'affichage : les 3 dernières heures uniquement (évite les
+      // vieux runs qui polluent la vue "sync en cours").
+      const windowStart = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
       const { data, error } = await supabase
         .from("sync_pipeline_runs" as any)
         .select("*")
+        .gte("created_at", windowStart)
         .order("created_at", { ascending: false })
         .limit(10);
       if (error) throw error;

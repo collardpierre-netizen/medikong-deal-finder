@@ -940,7 +940,7 @@ Deno.serve(async (req) => {
 
   const stats = { vendors_created: 0, retries: 0 };
   let ok = 0, notFound = 0, loggedOut = 0, errors = 0;
-  let totalOffers = 0, totalTiers = 0, totalHistory = 0, resourced = 0;
+  let totalOffers = 0, totalTiers = 0, totalHistory = 0, resourced = 0, totalStaleRecalc = 0;
   const errorSamples: unknown[] = [];
 
   for (const p of products ?? []) {

@@ -845,15 +845,28 @@ Deno.serve(async (req) => {
     dryRun?: boolean;
     resourceOffers?: boolean;
     forceLogin?: boolean;
-    mode?: "catalog" | "basket";
+    mode?: "catalog" | "basket" | "catalog_wide";
+    freshWindowHours?: number;
+    walltimeMs?: number;
   } = {};
   try { body = await req.json(); } catch (_) { /* cron */ }
 
-  const limit = Math.min(Math.max(body.limit ?? DEFAULT_BATCH, 1), 100);
   // Default cron mode = "catalog" : rafraîchit d'abord les produits catalogue
   // (offres qogita-backed actives) les plus anciennement vérifiés. Fallback
   // sur tendances_index_basket si le catalogue ne renvoie rien.
-  const cronMode: "catalog" | "basket" = body.mode ?? "catalog";
+  // "catalog_wide" étend à TOUT le catalogue Qogita actif (~458k produits) :
+  // curseur last_verified_at ASC NULLS FIRST + exclusion des produits déjà
+  // frais (< freshWindowHours) pour ne pas doubler l'hourly basket.
+  const cronMode: "catalog" | "basket" | "catalog_wide" = body.mode ?? "catalog";
+  // "catalog_wide" a besoin d'un plafond plus haut (batchs 200) et d'une
+  // walltime plus longue pour drainer le catalogue en semaines, pas mois.
+  const CAP = cronMode === "catalog_wide" ? 200 : 100;
+  const limit = Math.min(Math.max(body.limit ?? DEFAULT_BATCH, 1), CAP);
+  const walltimeMs = Math.min(
+    Math.max(body.walltimeMs ?? (cronMode === "catalog_wide" ? 120_000 : MAX_WALLTIME_MS), 10_000),
+    140_000,
+  );
+  const freshWindowHours = Math.min(Math.max(body.freshWindowHours ?? 12, 1), 168);
   const resourceOffers = body.resourceOffers ?? true;
 
   // Load the commercial margin (fallback 25%) once per run and apply it
@@ -898,16 +911,26 @@ Deno.serve(async (req) => {
   } else {
     // Cron mode.
     let ids: string[] = [];
-    if (cronMode === "catalog") {
+    const freshCutoffIso = new Date(Date.now() - freshWindowHours * 3_600_000).toISOString();
+
+    if (cronMode === "catalog" || cronMode === "catalog_wide") {
       // Priorité catalogue : produits ayant une offre qogita-backed active,
       // triés par last_verified_at le plus ancien (nulls d'abord).
-      const { data: catalogRows } = await sb
+      // catalog_wide : on exclut aussi les offres déjà rafraîchies récemment
+      // pour ne pas piétiner l'hourly basket ni re-scraper la même chose.
+      // On fetche large (limit * 6) puis on déduplique côté client.
+      let catQ = sb
         .from("offers")
         .select("product_id, last_verified_at")
         .eq("is_qogita_backed", true)
         .eq("is_active", true)
         .order("last_verified_at", { ascending: true, nullsFirst: true })
-        .limit(limit * 4);
+        .limit(limit * 6);
+      if (cronMode === "catalog_wide") {
+        // Deux conditions dans un .or() : jamais vérifié OU + vieux que la fenêtre
+        catQ = catQ.or(`last_verified_at.is.null,last_verified_at.lt.${freshCutoffIso}`);
+      }
+      const { data: catalogRows } = await catQ;
       const seen = new Set<string>();
       for (const row of (catalogRows ?? []) as { product_id: string }[]) {
         if (!row.product_id || seen.has(row.product_id)) continue;
@@ -916,7 +939,7 @@ Deno.serve(async (req) => {
       }
       ids = Array.from(seen);
     }
-    if (ids.length === 0) {
+    if (ids.length === 0 && cronMode !== "catalog_wide") {
       const { data: basket } = await sb
         .from("tendances_index_basket")
         .select("product_id")
@@ -968,9 +991,14 @@ Deno.serve(async (req) => {
   let ok = 0, notFound = 0, loggedOut = 0, errors = 0;
   let totalOffers = 0, totalTiers = 0, totalHistory = 0, resourced = 0, totalStaleRecalc = 0;
   const errorSamples: unknown[] = [];
+  // Back-off : dès qu'on voit un 429 / 403 consécutif on suspend le run
+  // pour laisser Qogita respirer. Le prochain tick cron reprendra depuis
+  // le curseur (last_verified_at) sans marquer les produits comme scannés.
+  let throttleHits = 0;
+  let throttled = false;
 
   for (const p of products ?? []) {
-    if (Date.now() - startedAt > MAX_WALLTIME_MS) {
+    if (Date.now() - startedAt > walltimeMs) {
       errorSamples.push({ reason: "walltime_exceeded" });
       break;
     }
@@ -987,21 +1015,39 @@ Deno.serve(async (req) => {
       totalHistory += res.historyPoints;
       totalStaleRecalc += res.staleRecalculated;
       if (resourceOffers) resourced++;
+      throttleHits = 0;
     } else if (res.status === "not_found") notFound++;
     else if (res.status === "logged_out") loggedOut++;
     else {
       errors++;
       if (errorSamples.length < 10) errorSamples.push({ id: (p as { id: string }).id, error: res.error });
+      // Détecte rate-limit / anti-bot et coupe court avant escalade
+      if (res.error && (res.error.includes("http_429") || res.error.includes("http_403"))) {
+        throttleHits += 1;
+        if (throttleHits >= 3) {
+          throttled = true;
+          errorSamples.push({ reason: "throttled_backoff", hits: throttleHits });
+          // Attente 30s avant de rendre la main → protection anti-cascade
+          await new Promise((r) => setTimeout(r, 30_000));
+          break;
+        }
+      }
     }
-    await sb
-      .from("tendances_index_basket")
-      .update({
-        last_scraped_at: new Date().toISOString(),
-        last_scrape_status: res.status,
-        last_scrape_error: res.error ?? null,
-      })
-      .eq("product_id", (p as { id: string }).id);
-    await new Promise((r) => setTimeout(r, REQUEST_DELAY_MS));
+    // La table tendances_index_basket ne track que les produits panier ;
+    // on ne l'écrit que pour les modes historiques.
+    if (cronMode !== "catalog_wide") {
+      await sb
+        .from("tendances_index_basket")
+        .update({
+          last_scraped_at: new Date().toISOString(),
+          last_scrape_status: res.status,
+          last_scrape_error: res.error ?? null,
+        })
+        .eq("product_id", (p as { id: string }).id);
+    }
+    // Pacing adaptatif : on ralentit dès qu'on voit un throttle
+    const pacing = throttleHits > 0 ? REQUEST_DELAY_MS * 4 : REQUEST_DELAY_MS;
+    await new Promise((r) => setTimeout(r, pacing));
   }
 
   if (logRow?.id) {
@@ -1082,6 +1128,7 @@ Deno.serve(async (req) => {
 
   return new Response(JSON.stringify({
     ok: true,
+    mode: cronMode,
     strategy: sessionCache?.strategy ?? null,
     targeted: products?.length ?? 0,
     products_ok: ok,
@@ -1094,6 +1141,8 @@ Deno.serve(async (req) => {
     history_points: totalHistory,
     stale_recalculated: totalStaleRecalc,
     session_retries: stats.retries,
+    throttled,
+    throttle_hits: throttleHits,
     elapsedMs: Date.now() - startedAt,
   }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 });

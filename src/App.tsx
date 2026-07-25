@@ -267,6 +267,7 @@ const AdminCommissionsRevenus = lazyWithRetry(() => import("./pages/admin/AdminC
 const AdminCommissionInvoiceDetail = lazyWithRetry(() => import("./pages/admin/AdminCommissionInvoiceDetail"), "AdminCommissionInvoiceDetail");
 const AdminOnboardingCMS = lazyWithRetry(() => import("./pages/admin/AdminOnboardingCMS"), "AdminOnboardingCMS");
 const AdminSync = lazyWithRetry(() => import("./pages/admin/AdminSync"), "AdminSync");
+const AdminMarginDistribution = lazyWithRetry(() => import("./pages/admin/AdminMarginDistribution"), "AdminMarginDistribution");
 const AdminTendancesIndexBasket = lazyWithRetry(() => import("./pages/admin/AdminTendancesIndexBasket"), "AdminTendancesIndexBasket");
 const AdminQogitaConnection = lazyWithRetry(() => import("./pages/admin/AdminQogitaConnection"), "AdminQogitaConnection");
 const AdminQogitaStatus = lazyWithRetry(() => import("./pages/admin/AdminQogitaStatus"), "AdminQogitaStatus");
@@ -631,6 +632,7 @@ const App = () => (
               <Route path="commissions-revenus" element={<LP><AdminCommissionsRevenus /></LP>} />
               <Route path="commissions-revenus/:id" element={<LP><AdminCommissionInvoiceDetail /></LP>} />
               <Route path="sync" element={<LP><AdminSync /></LP>} />
+              <Route path="marges-distribution" element={<LP><AdminMarginDistribution /></LP>} />
               <Route path="tendances-index-basket" element={<LP><AdminTendancesIndexBasket /></LP>} />
               <Route path="qogita-connection" element={<LP><AdminQogitaConnection /></LP>} />
               <Route path="qogita-status" element={<LP><AdminQogitaStatus /></LP>} />

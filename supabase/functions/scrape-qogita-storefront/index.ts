@@ -959,6 +959,7 @@ Deno.serve(async (req) => {
       totalOffers += res.offersWritten;
       totalTiers += res.tiersWritten;
       totalHistory += res.historyPoints;
+      totalStaleRecalc += res.staleRecalculated;
       if (resourceOffers) resourced++;
     } else if (res.status === "not_found") notFound++;
     else if (res.status === "logged_out") loggedOut++;

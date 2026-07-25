@@ -982,7 +982,7 @@ Deno.serve(async (req) => {
       triggered_by: body.productIds?.length || body.gtins?.length ? "manual" : "cron",
       country_code: "BE",
       products_targeted: products?.length ?? 0,
-      metadata: { strategy: sessionCache?.strategy ?? null, dry_run: !!body.dryRun },
+      metadata: { strategy: sessionCache?.strategy ?? null, dry_run: !!body.dryRun, sub_mode: cronMode },
     })
     .select("id")
     .single();

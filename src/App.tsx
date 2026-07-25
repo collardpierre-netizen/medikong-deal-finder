@@ -271,6 +271,7 @@ const AdminMarginDistribution = lazyWithRetry(() => import("./pages/admin/AdminM
 const AdminTendancesIndexBasket = lazyWithRetry(() => import("./pages/admin/AdminTendancesIndexBasket"), "AdminTendancesIndexBasket");
 const AdminQogitaConnection = lazyWithRetry(() => import("./pages/admin/AdminQogitaConnection"), "AdminQogitaConnection");
 const AdminQogitaStatus = lazyWithRetry(() => import("./pages/admin/AdminQogitaStatus"), "AdminQogitaStatus");
+const AdminCatalogWideProgress = lazyWithRetry(() => import("./pages/admin/AdminCatalogWideProgress"), "AdminCatalogWideProgress");
 const AdminFabricants = lazyWithRetry(() => import("./pages/admin/AdminFabricants"), "AdminFabricants");
 const AdminApiKeys = lazyWithRetry(() => import("./pages/admin/AdminApiKeys"), "AdminApiKeys");
 const AdminApiDocs = lazyWithRetry(() => import("./pages/admin/AdminApiDocs"), "AdminApiDocs");

@@ -924,12 +924,18 @@ Deno.serve(async (req) => {
       // catalog_wide : on exclut aussi les offres déjà rafraîchies récemment
       // pour ne pas piétiner l'hourly basket ni re-scraper la même chose.
       // On fetche large (limit * 6) puis on déduplique côté client.
+      // Tri primaire : last_verified_at ASC NULLS FIRST (les plus anciens d'abord).
+      // Tri secondaire : seller_count DESC puis popularity DESC via jointure products
+      //   → à ancienneté équivalente (ou nulle), on rafraîchit d'abord les produits
+      //   "liquides" (fort seller_count / popularité) pour maximiser l'impact catalogue.
       let catQ = sb
         .from("offers")
-        .select("product_id, last_verified_at")
+        .select("product_id, last_verified_at, products!inner(seller_count, popularity)")
         .eq("is_qogita_backed", true)
         .eq("is_active", true)
         .order("last_verified_at", { ascending: true, nullsFirst: true })
+        .order("seller_count", { foreignTable: "products", ascending: false, nullsFirst: false })
+        .order("popularity", { foreignTable: "products", ascending: false, nullsFirst: false })
         .limit(limit * 6);
       if (cronMode === "catalog_wide") {
         // Deux conditions dans un .or() : jamais vérifié OU + vieux que la fenêtre

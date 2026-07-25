@@ -1033,6 +1033,7 @@ Deno.serve(async (req) => {
     tiers_written: totalTiers,
     vendors_created: stats.vendors_created,
     history_points: totalHistory,
+    stale_recalculated: totalStaleRecalc,
     session_retries: stats.retries,
     elapsedMs: Date.now() - startedAt,
   }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });

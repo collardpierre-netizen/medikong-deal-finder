@@ -845,10 +845,15 @@ Deno.serve(async (req) => {
     dryRun?: boolean;
     resourceOffers?: boolean;
     forceLogin?: boolean;
+    mode?: "catalog" | "basket";
   } = {};
   try { body = await req.json(); } catch (_) { /* cron */ }
 
   const limit = Math.min(Math.max(body.limit ?? DEFAULT_BATCH, 1), 100);
+  // Default cron mode = "catalog" : rafraîchit d'abord les produits catalogue
+  // (offres qogita-backed actives) les plus anciennement vérifiés. Fallback
+  // sur tendances_index_basket si le catalogue ne renvoie rien.
+  const cronMode: "catalog" | "basket" = body.mode ?? "catalog";
   const resourceOffers = body.resourceOffers ?? true;
 
   // Load the commercial margin (fallback 25%) once per run and apply it
@@ -891,17 +896,38 @@ Deno.serve(async (req) => {
   } else if (body.gtins?.length) {
     query = query.in("gtin", body.gtins).limit(limit);
   } else {
-    // Cron mode: pick from tendances_index_basket, oldest first.
-    const { data: basket } = await sb
-      .from("tendances_index_basket")
-      .select("product_id")
-      .eq("is_active", true)
-      .order("last_scraped_at", { ascending: true, nullsFirst: true })
-      .order("priority", { ascending: true })
-      .limit(limit);
-    const ids = (basket ?? []).map((b: { product_id: string }) => b.product_id);
+    // Cron mode.
+    let ids: string[] = [];
+    if (cronMode === "catalog") {
+      // Priorité catalogue : produits ayant une offre qogita-backed active,
+      // triés par last_verified_at le plus ancien (nulls d'abord).
+      const { data: catalogRows } = await sb
+        .from("offers")
+        .select("product_id, last_verified_at")
+        .eq("is_qogita_backed", true)
+        .eq("is_active", true)
+        .order("last_verified_at", { ascending: true, nullsFirst: true })
+        .limit(limit * 4);
+      const seen = new Set<string>();
+      for (const row of (catalogRows ?? []) as { product_id: string }[]) {
+        if (!row.product_id || seen.has(row.product_id)) continue;
+        seen.add(row.product_id);
+        if (seen.size >= limit) break;
+      }
+      ids = Array.from(seen);
+    }
     if (ids.length === 0) {
-      return new Response(JSON.stringify({ ok: true, message: "basket_empty" }),
+      const { data: basket } = await sb
+        .from("tendances_index_basket")
+        .select("product_id")
+        .eq("is_active", true)
+        .order("last_scraped_at", { ascending: true, nullsFirst: true })
+        .order("priority", { ascending: true })
+        .limit(limit);
+      ids = (basket ?? []).map((b: { product_id: string }) => b.product_id);
+    }
+    if (ids.length === 0) {
+      return new Response(JSON.stringify({ ok: true, message: "no_targets", mode: cronMode }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     query = query.in("id", ids);
@@ -1020,6 +1046,39 @@ Deno.serve(async (req) => {
       })
       .eq("id", resyncLog.id);
   }
+
+  // Reflet UI /admin/sync : le scraper storefront alimente aussi
+  //  - qogita_config.last_offers_sync_at (bandeau "Dernière sync offres")
+  //  - sync_logs (sync_type='offers_storefront') pour l'historique
+  const completedAtIso = new Date().toISOString();
+  try {
+    await sb.from("qogita_config").upsert(
+      { key: "last_offers_sync_at", value: completedAtIso, updated_at: completedAtIso },
+      { onConflict: "key" },
+    );
+  } catch (_) { /* best effort */ }
+  try {
+    await sb.from("sync_logs").insert({
+      sync_type: "offers_storefront",
+      status: errors > 0 && ok === 0 ? "error" : "completed",
+      started_at: new Date(startedAt).toISOString(),
+      completed_at: completedAtIso,
+      records_processed: ok + notFound + loggedOut + errors,
+      records_created: totalOffers,
+      records_updated: resourced,
+      error_message: errorSamples.length ? JSON.stringify(errorSamples.slice(0, 3)) : null,
+      metadata: {
+        source: "scrape-qogita-storefront",
+        mode: cronMode,
+        strategy: sessionCache?.strategy ?? null,
+        tiers_written: totalTiers,
+        history_points: totalHistory,
+        stale_recalculated: totalStaleRecalc,
+        vendors_created: stats.vendors_created,
+      },
+    });
+  } catch (_) { /* best effort */ }
+
 
   return new Response(JSON.stringify({
     ok: true,

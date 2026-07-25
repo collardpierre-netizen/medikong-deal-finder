@@ -27463,6 +27463,8 @@ export type Database = {
         Args: { _invoice_id: string; _reason?: string }
         Returns: undefined
       }
+      admin_catalog_wide_coverage: { Args: never; Returns: Json }
+      admin_catalog_wide_progress: { Args: { _hours?: number }; Returns: Json }
       admin_category_mapping_dashboard: { Args: never; Returns: Json }
       admin_category_source_aliases_list: {
         Args: {

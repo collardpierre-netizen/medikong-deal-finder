@@ -672,7 +672,7 @@ async function scrapeProduct(
   opts: { dryRun: boolean; resourceOffers: boolean; marginMul: number },
 ): Promise<ProductResult> {
   if (!product.qogita_fid || !product.qogita_slug) {
-    return { status: "error", offersWritten: 0, tiersWritten: 0, historyPoints: 0, error: "missing_qogita_ids" };
+    return { status: "error", offersWritten: 0, tiersWritten: 0, historyPoints: 0, staleRecalculated: 0, error: "missing_qogita_ids" };
   }
   const url = `${STOREFRONT_ORIGIN}/products/${product.qogita_fid}/${product.qogita_slug}/`;
 
@@ -692,14 +692,14 @@ async function scrapeProduct(
       },
       redirect: "follow",
     });
-    if (res.status === 404) return { status: "not_found", offersWritten: 0, tiersWritten: 0, historyPoints: 0 };
+    if (res.status === 404) return { status: "not_found", offersWritten: 0, tiersWritten: 0, historyPoints: 0, staleRecalculated: 0 };
     if (res.status === 401 || res.status === 403) {
       session = await ensureSession(true);
       stats.retries += 1;
       attempt++;
       continue;
     }
-    if (!res.ok) return { status: "error", offersWritten: 0, tiersWritten: 0, historyPoints: 0, error: `http_${res.status}` };
+    if (!res.ok) return { status: "error", offersWritten: 0, tiersWritten: 0, historyPoints: 0, staleRecalculated: 0, error: `http_${res.status}` };
     html = await res.text();
     if (isLoggedOutHtml(html)) {
       session = await ensureSession(true);
@@ -710,7 +710,7 @@ async function scrapeProduct(
     break;
   }
   if (!html) {
-    return { status: "logged_out", offersWritten: 0, tiersWritten: 0, historyPoints: 0, error: "no_session" };
+    return { status: "logged_out", offersWritten: 0, tiersWritten: 0, historyPoints: 0, staleRecalculated: 0, error: "no_session" };
   }
 
   const { allOffers, priceHistory } = parseStorefront(html);
@@ -951,7 +951,7 @@ Deno.serve(async (req) => {
     try {
       res = await scrapeProduct(sb, p as never, stats, { dryRun: !!body.dryRun, resourceOffers, marginMul });
     } catch (e) {
-      res = { status: "error", offersWritten: 0, tiersWritten: 0, historyPoints: 0, error: (e as Error).message };
+      res = { status: "error", offersWritten: 0, tiersWritten: 0, historyPoints: 0, staleRecalculated: 0, error: (e as Error).message };
     }
     if (res.status === "ok") {
       ok++;

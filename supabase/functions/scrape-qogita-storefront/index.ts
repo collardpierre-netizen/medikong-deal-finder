@@ -759,19 +759,45 @@ async function scrapeProduct(
     tiersWritten += await syncTiers(sb, offerId, basePriceExcl, baseMov, vatRate, offer.tieredPrices ?? [], opts.marginMul);
   }
 
-  // ── Re-source best-price on stale Qogita-backed offers ────────────
+  // ── Re-source + recalcul différé des offres stale du même produit ─
+  // Pour chaque offre Qogita stale de ce produit (non touchée par le scrape
+  // ci-dessus car pas dans allOffers), on lève le flag price_stale ET on
+  // recalcule immédiatement price_excl_vat/price_incl_vat/margin en
+  // appliquant la marge courante à qogita_base_price. Cela évite d'attendre
+  // le prochain run de `recalculate-all-prices` pour publier le prix propre.
+  let staleRecalculated = 0;
   if (opts.resourceOffers && Number.isFinite(bestExcl) && bestExcl > 0) {
-    await sb
+    const { data: staleRows } = await sb
       .from("offers")
-      .update({
-        price_stale: false,
-        price_stale_since: null,
-        price_source: "qogita_storefront",
-        price_source_updated_at: new Date().toISOString(),
-      })
+      .select("id, qogita_base_price, vat_rate")
       .eq("product_id", product.id)
       .eq("is_qogita_backed", true)
       .eq("price_stale", true);
+
+    const nowIso = new Date().toISOString();
+    for (const row of (staleRows ?? [])) {
+      const base = Number(row.qogita_base_price);
+      if (!Number.isFinite(base) || base <= 0) continue;
+      const sellExcl = Math.round(base * opts.marginMul * 100) / 100;
+      const vr = Number(row.vat_rate) || 0;
+      const sellIncl = Math.round(sellExcl * (1 + vr) * 100) / 100;
+      const marginPct = Math.round((opts.marginMul - 1) * 10000) / 100;
+      const { error: recalcErr } = await sb
+        .from("offers")
+        .update({
+          price_excl_vat: sellExcl,
+          price_incl_vat: sellIncl,
+          margin_amount: Math.round((sellExcl - base) * 100) / 100,
+          applied_margin_percentage: marginPct,
+          price_stale: false,
+          price_stale_since: null,
+          price_source: "qogita_margin_recalc",
+          price_source_updated_at: nowIso,
+          last_verified_at: nowIso,
+        })
+        .eq("id", row.id);
+      if (!recalcErr) staleRecalculated += 1;
+    }
   }
 
   // ── Persist priceHistory (Tendances) ──────────────────────────────

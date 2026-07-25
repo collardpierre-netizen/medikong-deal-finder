@@ -1128,6 +1128,7 @@ Deno.serve(async (req) => {
 
   return new Response(JSON.stringify({
     ok: true,
+    mode: cronMode,
     strategy: sessionCache?.strategy ?? null,
     targeted: products?.length ?? 0,
     products_ok: ok,
@@ -1140,6 +1141,8 @@ Deno.serve(async (req) => {
     history_points: totalHistory,
     stale_recalculated: totalStaleRecalc,
     session_retries: stats.retries,
+    throttled,
+    throttle_hits: throttleHits,
     elapsedMs: Date.now() - startedAt,
   }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 });

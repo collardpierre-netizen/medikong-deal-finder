@@ -896,17 +896,38 @@ Deno.serve(async (req) => {
   } else if (body.gtins?.length) {
     query = query.in("gtin", body.gtins).limit(limit);
   } else {
-    // Cron mode: pick from tendances_index_basket, oldest first.
-    const { data: basket } = await sb
-      .from("tendances_index_basket")
-      .select("product_id")
-      .eq("is_active", true)
-      .order("last_scraped_at", { ascending: true, nullsFirst: true })
-      .order("priority", { ascending: true })
-      .limit(limit);
-    const ids = (basket ?? []).map((b: { product_id: string }) => b.product_id);
+    // Cron mode.
+    let ids: string[] = [];
+    if (cronMode === "catalog") {
+      // Priorité catalogue : produits ayant une offre qogita-backed active,
+      // triés par last_verified_at le plus ancien (nulls d'abord).
+      const { data: catalogRows } = await sb
+        .from("offers")
+        .select("product_id, last_verified_at")
+        .eq("is_qogita_backed", true)
+        .eq("is_active", true)
+        .order("last_verified_at", { ascending: true, nullsFirst: true })
+        .limit(limit * 4);
+      const seen = new Set<string>();
+      for (const row of (catalogRows ?? []) as { product_id: string }[]) {
+        if (!row.product_id || seen.has(row.product_id)) continue;
+        seen.add(row.product_id);
+        if (seen.size >= limit) break;
+      }
+      ids = Array.from(seen);
+    }
     if (ids.length === 0) {
-      return new Response(JSON.stringify({ ok: true, message: "basket_empty" }),
+      const { data: basket } = await sb
+        .from("tendances_index_basket")
+        .select("product_id")
+        .eq("is_active", true)
+        .order("last_scraped_at", { ascending: true, nullsFirst: true })
+        .order("priority", { ascending: true })
+        .limit(limit);
+      ids = (basket ?? []).map((b: { product_id: string }) => b.product_id);
+    }
+    if (ids.length === 0) {
+      return new Response(JSON.stringify({ ok: true, message: "no_targets", mode: cronMode }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     query = query.in("id", ids);

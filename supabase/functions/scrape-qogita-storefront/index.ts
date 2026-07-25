@@ -707,11 +707,16 @@ async function scrapeProduct(
       attempt++;
       continue;
     }
+    // Détection captcha / anti-bot (Cloudflare Turnstile, hCaptcha, reCAPTCHA, challenge page)
+    if (/cf-turnstile|hcaptcha|recaptcha|challenge-platform|cf_chl_opt|__cf_chl|Attention Required/i.test(html)) {
+      return { status: "error", offersWritten: 0, tiersWritten: 0, historyPoints: 0, staleRecalculated: 0, error: "captcha_detected" };
+    }
     break;
   }
   if (!html) {
     return { status: "logged_out", offersWritten: 0, tiersWritten: 0, historyPoints: 0, staleRecalculated: 0, error: "no_session" };
   }
+
 
   const { allOffers, priceHistory } = parseStorefront(html);
   console.log(JSON.stringify({ tag: "storefront_parse", slug: product.qogita_slug ?? product.id, html_len: html.length, offers: allOffers.length, history: priceHistory.length, has_allOffers_marker: html.includes("allOffers") }));
@@ -991,11 +996,17 @@ Deno.serve(async (req) => {
   let ok = 0, notFound = 0, loggedOut = 0, errors = 0;
   let totalOffers = 0, totalTiers = 0, totalHistory = 0, resourced = 0, totalStaleRecalc = 0;
   const errorSamples: unknown[] = [];
-  // Back-off : dès qu'on voit un 429 / 403 consécutif on suspend le run
+  // Back-off : dès qu'on voit un 429 / 403 / captcha consécutif on suspend le run
   // pour laisser Qogita respirer. Le prochain tick cron reprendra depuis
   // le curseur (last_verified_at) sans marquer les produits comme scannés.
   let throttleHits = 0;
   let throttled = false;
+  let http429Count = 0;
+  let http403Count = 0;
+  let captchaCount = 0;
+  let backoffMs = 0;
+  let throttleReason: string | null = null;
+  const BACKOFF_MS = 30_000;
 
   for (const p of products ?? []) {
     if (Date.now() - startedAt > walltimeMs) {
@@ -1021,14 +1032,22 @@ Deno.serve(async (req) => {
     else {
       errors++;
       if (errorSamples.length < 10) errorSamples.push({ id: (p as { id: string }).id, error: res.error });
+      // Compteurs par type pour alerting
+      const errStr = res.error ?? "";
+      if (errStr.includes("http_429")) http429Count++;
+      if (errStr.includes("http_403")) http403Count++;
+      if (errStr.includes("captcha")) captchaCount++;
       // Détecte rate-limit / anti-bot et coupe court avant escalade
-      if (res.error && (res.error.includes("http_429") || res.error.includes("http_403"))) {
+      if (errStr.includes("http_429") || errStr.includes("http_403") || errStr.includes("captcha")) {
         throttleHits += 1;
-        if (throttleHits >= 3) {
+        // Captcha = seuil immédiat (1 hit suffit)
+        if (errStr.includes("captcha") || throttleHits >= 3) {
           throttled = true;
-          errorSamples.push({ reason: "throttled_backoff", hits: throttleHits });
+          throttleReason = errStr.includes("captcha") ? "captcha" : (http429Count >= http403Count ? "http_429" : "http_403");
+          backoffMs = BACKOFF_MS;
+          errorSamples.push({ reason: "throttled_backoff", hits: throttleHits, trigger: throttleReason });
           // Attente 30s avant de rendre la main → protection anti-cascade
-          await new Promise((r) => setTimeout(r, 30_000));
+          await new Promise((r) => setTimeout(r, BACKOFF_MS));
           break;
         }
       }
@@ -1049,6 +1068,7 @@ Deno.serve(async (req) => {
     const pacing = throttleHits > 0 ? REQUEST_DELAY_MS * 4 : REQUEST_DELAY_MS;
     await new Promise((r) => setTimeout(r, pacing));
   }
+
 
   if (logRow?.id) {
     await sb
@@ -1091,10 +1111,61 @@ Deno.serve(async (req) => {
           stale_recalculated: totalStaleRecalc,
           throttled,
           throttle_hits: throttleHits,
+          throttle_reason: throttleReason,
+          backoff_ms: backoffMs,
+          http_429_count: http429Count,
+          http_403_count: http403Count,
+          captcha_count: captchaCount,
         },
       })
       .eq("id", resyncLog.id);
   }
+
+  // ── Alerting admin : throttling / captcha ─────────────────────────
+  // Émet une notification quand le run a été freiné pour permettre une
+  // intervention rapide (rotation session, pause manuelle du cron, etc.).
+  const shouldAlert = throttled || captchaCount > 0 || http429Count >= 5 || http403Count >= 5;
+  if (shouldAlert) {
+    try {
+      const sev = captchaCount > 0 ? "critical" : (throttled ? "warning" : "info");
+      const trigger = captchaCount > 0
+        ? `Captcha détecté (${captchaCount})`
+        : throttleReason === "http_429"
+          ? `Rate-limit 429 (${http429Count})`
+          : throttleReason === "http_403"
+            ? `Anti-bot 403 (${http403Count})`
+            : `${http429Count} × 429 / ${http403Count} × 403`;
+      await sb.from("admin_notifications").insert({
+        type: "qogita_scraper_throttled",
+        severity: sev,
+        title: `Scraper catalogue freiné — ${trigger}`,
+        body:
+          `Mode ${cronMode} · Run ${resyncLog?.id ?? "n/a"} — ` +
+          `${http429Count} × 429, ${http403Count} × 403, ${captchaCount} × captcha ` +
+          `(hits consécutifs: ${throttleHits}${backoffMs ? `, back-off ${Math.round(backoffMs / 1000)}s` : ""}). ` +
+          `Prochain tick cron reprendra depuis le curseur.`,
+        cta_url: "/admin/catalog-wide",
+        source_type: "qogita_resync_logs",
+        source_id: resyncLog?.id ?? null,
+        payload: {
+          run_id: resyncLog?.id ?? null,
+          mode: cronMode,
+          http_429_count: http429Count,
+          http_403_count: http403Count,
+          captcha_count: captchaCount,
+          throttle_hits: throttleHits,
+          throttled,
+          throttle_reason: throttleReason,
+          backoff_ms: backoffMs,
+          products_ok: ok,
+          products_error: errors,
+        },
+      });
+    } catch (e) {
+      console.error("admin_notifications insert failed", e);
+    }
+  }
+
 
   // Reflet UI /admin/sync : le scraper storefront alimente aussi
   //  - qogita_config.last_offers_sync_at (bandeau "Dernière sync offres")
@@ -1146,6 +1217,13 @@ Deno.serve(async (req) => {
     session_retries: stats.retries,
     throttled,
     throttle_hits: throttleHits,
+    throttle_reason: throttleReason,
+    backoff_ms: backoffMs,
+    http_429_count: http429Count,
+    http_403_count: http403Count,
+    captcha_count: captchaCount,
+    run_id: resyncLog?.id ?? null,
     elapsedMs: Date.now() - startedAt,
+
   }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 });

@@ -28793,6 +28793,10 @@ export type Database = {
       }
       check_qogita_stale_refresh_alert: { Args: never; Returns: undefined }
       cleanup_old_savings_simulations: { Args: never; Returns: number }
+      close_stale_qogita_resync_logs: {
+        Args: { _older_than?: string }
+        Returns: number
+      }
       confirm_pickup: {
         Args: { _code?: string; _qr_token?: string; _transaction_id: string }
         Returns: Json
@@ -29846,6 +29850,18 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      recalc_qogita_offers_batch: {
+        Args: { _last_id?: string; _limit?: number }
+        Returns: {
+          last_id: string
+          remaining: number
+          updated: number
+        }[]
+      }
+      recalc_qogita_offers_run: {
+        Args: { _batch_size?: number; _max_batches?: number }
+        Returns: Json
       }
       recompute_brand_top20: { Args: never; Returns: undefined }
       recompute_brand_top20_with_log: { Args: never; Returns: string }

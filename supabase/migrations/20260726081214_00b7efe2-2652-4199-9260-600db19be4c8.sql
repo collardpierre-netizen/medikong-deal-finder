@@ -1,0 +1,1 @@
+REVOKE SELECT (qogita_base_price) ON public.offers FROM anon, authenticated;

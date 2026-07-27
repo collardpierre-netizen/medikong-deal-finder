@@ -27,6 +27,17 @@ const SLUGS = (process.env.SMOKE_PRODUCT_SLUGS || DEFAULT_SLUGS.join(","))
   .map((s) => s.trim())
   .filter(Boolean);
 
+/**
+ * Détecte toute erreur React connue :
+ * - erreurs minifiées #NNN (prod)
+ * - « Rendered more/fewer hooks » (#310, dev)
+ * - « change in the order of Hooks » (dev)
+ * - « Maximum update depth exceeded » (boucle setState, dev)
+ * - warnings graves promus en error (Invalid hook call, Cannot update a component)
+ */
+const REACT_ERROR_PATTERN =
+  /Minified React error #\d+|Rendered (more|fewer) hooks|change in the order of Hooks|Maximum update depth exceeded|Invalid hook call|Cannot update a component|React will try to recreate this component tree/i;
+
 test.describe("Fiche produit — smoke SafeBoundary", () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
@@ -78,11 +89,19 @@ test.describe("Fiche produit — smoke SafeBoundary", () => {
         "aucun fallback ProductPageErrorBoundary"
       ).toHaveCount(0);
 
-      // 3. Aucun message d'erreur React minifié dans la console
-      const react310 = [...consoleErrors, ...pageErrors].filter((m) =>
-        /Minified React error #310|Rendered (more|fewer) hooks/i.test(m)
-      );
-      expect(react310, "aucune erreur React #310 dans la console").toEqual([]);
+      // 3. Aucune erreur React (console + pageerror) — strict, incluant #310
+      const allMessages = [...consoleErrors, ...pageErrors];
+      const reactErrors = allMessages.filter((m) => REACT_ERROR_PATTERN.test(m));
+      expect(
+        reactErrors,
+        `Erreur React détectée dans la console/pageerror :\n${reactErrors.join("\n")}`
+      ).toEqual([]);
+
+      // Ceinture + bretelles : aucune erreur JS non capturée (pageerror)
+      expect(
+        pageErrors,
+        `Erreurs JS non capturées (pageerror) :\n${pageErrors.join("\n")}`
+      ).toEqual([]);
     });
   }
 
@@ -178,15 +197,16 @@ test.describe("Fiche produit — smoke SafeBoundary", () => {
     await waitProductReady();
     await assertNoFallback("retour produit A");
 
-    // Aucun message React #310 (« more/fewer hooks », #310 minifié) sur TOUT le run
-    const react310 = [...consoleErrors, ...pageErrors].filter((m) =>
-      /Minified React error #310|Rendered (more|fewer) hooks|change in the order of Hooks/i.test(
-        m
-      )
-    );
+    // Aucune erreur React (dont #310) sur TOUT le run, ni erreur JS non capturée
+    const allMessages = [...consoleErrors, ...pageErrors];
+    const reactErrors = allMessages.filter((m) => REACT_ERROR_PATTERN.test(m));
     expect(
-      react310,
-      `Erreur React #310 détectée pendant les transitions enabled/disabled :\n${react310.join("\n")}`
+      reactErrors,
+      `Erreur React détectée pendant les transitions enabled/disabled :\n${reactErrors.join("\n")}`
+    ).toEqual([]);
+    expect(
+      pageErrors,
+      `Erreurs JS non capturées (pageerror) pendant les transitions :\n${pageErrors.join("\n")}`
     ).toEqual([]);
   });
 });

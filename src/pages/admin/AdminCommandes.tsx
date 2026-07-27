@@ -1881,33 +1881,64 @@ const AdminCommandes = () => {
       )}
 
       {activeTab === "buyers" && (
-        <div className="grid grid-cols-3 gap-4">
-          {buyerProfiles.map((bp) => {
-            const bc = buyerColors[bp.type] || { bg: "#F1F5F9", text: "#475569" };
+        <div>
+          {(() => {
+            const totalOrders = buyerProfiles.reduce((s, b) => s + b.orders, 0);
+            const totalGmv = buyerProfiles.reduce((s, b) => s + b.gmv, 0);
             return (
-              <div key={bp.type} className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="px-2.5 py-1 rounded-full text-[11px] font-bold" style={{ backgroundColor: bc.bg, color: bc.text }}>
-                    {bp.type}
-                  </span>
+              <div className="mb-4 p-4 rounded-[10px] flex items-center gap-6" style={{ backgroundColor: "#F8FAFC", border: "1px solid #E2E8F0" }}>
+                <div>
+                  <span className="text-[11px]" style={{ color: "#8B95A5" }}>Commandes (filtre actif)</span>
+                  <p className="text-[16px] font-bold" style={{ color: "#1D2530" }}>{totalOrders}</p>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <span className="text-[11px]" style={{ color: "#8B95A5" }}>Commandes</span>
-                    <p className="text-[18px] font-bold" style={{ color: "#1D2530" }}>{bp.orders}</p>
-                  </div>
-                  <div>
-                    <span className="text-[11px]" style={{ color: "#8B95A5" }}>GMV</span>
-                    <p className="text-[18px] font-bold" style={{ color: "#1B5BDA" }}>{fmt(bp.gmv)} EUR</p>
-                  </div>
-                  <div>
-                    <span className="text-[11px]" style={{ color: "#8B95A5" }}>Panier moyen</span>
-                    <p className="text-[14px] font-bold" style={{ color: "#1D2530" }}>{fmt(bp.avgBasket)} EUR</p>
-                  </div>
+                <div>
+                  <span className="text-[11px]" style={{ color: "#8B95A5" }}>GMV HTVA cumulée</span>
+                  <p className="text-[16px] font-bold" style={{ color: "#1B5BDA" }}>{fmt(totalGmv)} EUR</p>
                 </div>
+                {buyerBreakdownQ.isFetching && (
+                  <span className="text-[11px]" style={{ color: "#8B95A5" }}>Actualisation…</span>
+                )}
               </div>
             );
-          })}
+          })()}
+          {buyerBreakdownQ.isLoading ? (
+            <div className="py-8 text-center text-[12px]" style={{ color: "#8B95A5" }}>Chargement…</div>
+          ) : buyerProfiles.length === 0 ? (
+            <div className="py-8 text-center text-[12px]" style={{ color: "#8B95A5" }}>Aucune commande pour ce filtre</div>
+          ) : (
+            <div className="grid grid-cols-3 gap-4">
+              {buyerProfiles.map((bp) => {
+                const bc = buyerColors[bp.type] || { bg: "#F1F5F9", text: "#475569" };
+                return (
+                  <div key={bp.type} className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-bold" style={{ backgroundColor: bc.bg, color: bc.text }}>
+                        {bp.label}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <span className="text-[11px]" style={{ color: "#8B95A5" }}>Commandes</span>
+                        <p className="text-[18px] font-bold" style={{ color: "#1D2530" }}>{bp.orders}</p>
+                      </div>
+                      <div>
+                        <span className="text-[11px]" style={{ color: "#8B95A5" }}>GMV HTVA</span>
+                        <p className="text-[18px] font-bold" style={{ color: "#1B5BDA" }}>{fmt(bp.gmv)} EUR</p>
+                      </div>
+                      <div>
+                        <span className="text-[11px]" style={{ color: "#8B95A5" }}>GMV TTC</span>
+                        <p className="text-[14px] font-bold" style={{ color: "#1D2530" }}>{fmt(bp.gmvTtc)} EUR</p>
+                      </div>
+                      <div>
+                        <span className="text-[11px]" style={{ color: "#8B95A5" }}>Panier moyen HT</span>
+                        <p className="text-[14px] font-bold" style={{ color: "#1D2530" }}>{fmt(bp.avgBasket)} EUR</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

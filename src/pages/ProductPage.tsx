@@ -1363,6 +1363,22 @@ function ProductPageInner() {
   const { isFavorite, toggleFavorite } = useFavorites();
   const { trackActivity } = useRecentActivity();
 
+  // Update render snapshot on every render for the page-level error boundary.
+  // Kept synchronous (not inside useEffect) so the snapshot is up-to-date even
+  // if the crash happens during render, before effects run.
+  const renderCountRef = useRef(0);
+  renderCountRef.current += 1;
+  productPageRenderSnapshot.current = {
+    slug: slug ?? null,
+    isLoading: !!isLoading,
+    hasProduct: !!product,
+    productId: product?.id ?? null,
+    offersLoading: !!offersLoading,
+    offersError: offersError ? (offersError as Error).message || String(offersError) : null,
+    renderCount: renderCountRef.current,
+    lastRenderAt: new Date().toISOString(),
+  };
+
   // Fetch brand (by id or fallback by name / brand_name)
   const brandLookupName = product?.brand;
   const { data: brandData } = useQuery({

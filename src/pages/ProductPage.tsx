@@ -3086,25 +3086,30 @@ function ProductPageInner() {
                           </p>
                         )}
 
-                        {hasAnyRef && (
-                          <div className="mb-4">
-                            <label className="text-xs text-muted-foreground mb-1.5 block">Mode de saisie</label>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => setCalcMode('manual')}
-                                className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${calcMode === 'manual' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:border-primary/50'}`}
-                              >
-                                Prix manuel
-                              </button>
-                              <button
-                                onClick={() => { setCalcMode('pct'); setUserPrice(""); }}
-                                className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${calcMode === 'pct' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:border-primary/50'}`}
-                              >
-                                % remise vs prix marché
-                              </button>
-                            </div>
+                        <div className="mb-4">
+                          <label className="text-xs text-muted-foreground mb-1.5 block">Mode de saisie</label>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setCalcMode('manual')}
+                              className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${calcMode === 'manual' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:border-primary/50'}`}
+                            >
+                              Prix manuel
+                            </button>
+                            <button
+                              onClick={() => { setCalcMode('pct'); setUserPrice(""); }}
+                              disabled={!hasAnyRef}
+                              title={!hasAnyRef ? "Aucun prix de référence marché (public / pharmacien / grossiste) disponible pour ce produit" : undefined}
+                              className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${calcMode === 'pct' && hasAnyRef ? 'bg-primary text-primary-foreground border-primary' : hasAnyRef ? 'bg-background text-muted-foreground border-border hover:border-primary/50' : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'}`}
+                            >
+                              % remise vs prix marché
+                            </button>
                           </div>
-                        )}
+                          {!hasAnyRef && (
+                            <p className="text-[11px] text-muted-foreground mt-1.5">
+                              Le mode « % remise vs prix marché » sera disponible dès qu'un prix public / pharmacien / grossiste sera référencé pour ce produit.
+                            </p>
+                          )}
+                        </div>
 
                         {(calcMode === 'manual' || !hasAnyRef) ? (
                           /* Manual mode */

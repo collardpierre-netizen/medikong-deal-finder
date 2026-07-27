@@ -197,15 +197,16 @@ test.describe("Fiche produit — smoke SafeBoundary", () => {
     await waitProductReady();
     await assertNoFallback("retour produit A");
 
-    // Aucun message React #310 (« more/fewer hooks », #310 minifié) sur TOUT le run
-    const react310 = [...consoleErrors, ...pageErrors].filter((m) =>
-      /Minified React error #310|Rendered (more|fewer) hooks|change in the order of Hooks/i.test(
-        m
-      )
-    );
+    // Aucune erreur React (dont #310) sur TOUT le run, ni erreur JS non capturée
+    const allMessages = [...consoleErrors, ...pageErrors];
+    const reactErrors = allMessages.filter((m) => REACT_ERROR_PATTERN.test(m));
     expect(
-      react310,
-      `Erreur React #310 détectée pendant les transitions enabled/disabled :\n${react310.join("\n")}`
+      reactErrors,
+      `Erreur React détectée pendant les transitions enabled/disabled :\n${reactErrors.join("\n")}`
+    ).toEqual([]);
+    expect(
+      pageErrors,
+      `Erreurs JS non capturées (pageerror) pendant les transitions :\n${pageErrors.join("\n")}`
     ).toEqual([]);
   });
 });

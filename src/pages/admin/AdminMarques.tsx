@@ -102,7 +102,7 @@ const AdminMarques = () => {
           <Table>
             <TableHeader>
               <TableRow style={{ backgroundColor: "#F8FAFC" }}>
-                {["Marque", "Produits", "Featured", "Statut", ""].map(h => (
+                {["Marque", "Produits", "Featured", "Priorité scraper", "Statut", ""].map(h => (
                   <TableHead key={h} className="text-[11px] font-semibold" style={{ color: "#8B95A5" }}>{h}</TableHead>
                 ))}
               </TableRow>

@@ -37,10 +37,9 @@ describe("ProductPage — ordre des hooks stable", () => {
     const hookCallLines = findLineNumbers(/useLocalizedProductField\s*\(/);
     expect(hookCallLines.length).toBeGreaterThanOrEqual(1);
 
-    // Premier early return du corps du composant : `if (isLoading)` ou `if (!product)`
-    const earlyReturnLines = findLineNumbers(
-      /^\s*if\s*\(\s*(isLoading|!product)\b/,
-    );
+    // Premier early return du corps du composant : ancre stable = `if (isLoading) {`
+    const earlyReturnLines = findLineNumbers(/^\s*if\s*\(isLoading\)\s*\{/);
+
     expect(earlyReturnLines.length).toBeGreaterThanOrEqual(1);
 
     const firstEarlyReturn = Math.min(...earlyReturnLines);

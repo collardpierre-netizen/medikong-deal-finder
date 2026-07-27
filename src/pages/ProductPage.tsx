@@ -1533,6 +1533,17 @@ export default function ProductPage() {
     return () => window.clearInterval(id);
   }, [autoplayEnabled, isGalleryHover, _galleryLen]);
 
+  // Champs produit localisés selon la langue de l'UI (cascade DB name_<lang> > cache IA > source).
+  // ⚠️ DOIT être appelé AVANT les early returns pour garder l'ordre des hooks stable (React error #310).
+  const displayName = useLocalizedProductField(product?.id, productDetails, "name", product?.name);
+  const displayShortDescription = useLocalizedProductField(product?.id, productDetails, "short_description", product?.descriptionShort);
+  const displayDescription = useLocalizedProductField(
+    product?.id,
+    productDetails,
+    "description",
+    (productDetails as any)?.description || (productDetails as any)?.label || product?.descriptionShort,
+  );
+
   if (isLoading) {
     return (
       <Layout>
@@ -1554,11 +1565,8 @@ export default function ProductPage() {
   const hasImages = images.length > 0;
   const galleryImages = images.slice(0, 6);
 
-  // Champs produit localisés selon la langue de l'UI (cascade DB name_<lang> > cache IA > source).
-  const displayName = useLocalizedProductField(product.id, productDetails, "name", product.name);
-  const displayShortDescription = useLocalizedProductField(product.id, productDetails, "short_description", product.descriptionShort);
-  const displayDescription = useLocalizedProductField(product.id, productDetails, "description", (productDetails as any)?.description || (productDetails as any)?.label || product.descriptionShort);
   const description = displayDescription || "";
+
 
   const bestOfferPack = resolvePackSize({
     offerOverride: bestOffer?.packSizeOverride,

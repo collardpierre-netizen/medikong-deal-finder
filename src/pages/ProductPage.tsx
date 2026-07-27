@@ -1219,7 +1219,86 @@ function WatchListDialog({ product, user, bestPrice, isTVAC }: { product: any; u
   );
 }
 
-export default function ProductPage() {
+/**
+ * Latest render snapshot exposed to the page-level error boundary.
+ *
+ * Boundaries only see the error + component stack; they do NOT have access to
+ * the hook state of the crashed component. To accelerate diagnosis of hook
+ * ordering bugs (React error #310) and stale-data crashes on the product page,
+ * `ProductPageInner` writes `{ slug, isLoading, hasProduct, productId,
+ * offersLoading, offersError }` to this ref on every render, and
+ * `ProductPageErrorBoundary` reads it inside `componentDidCatch`.
+ */
+type ProductPageRenderSnapshot = {
+  slug: string | null;
+  isLoading: boolean;
+  hasProduct: boolean;
+  productId: string | null;
+  offersLoading: boolean;
+  offersError: string | null;
+  renderCount: number;
+  lastRenderAt: string;
+};
+
+const productPageRenderSnapshot: { current: ProductPageRenderSnapshot | null } = {
+  current: null,
+};
+
+class ProductPageErrorBoundary extends (require("react") as typeof import("react")).Component<
+  { children: React.ReactNode },
+  { error: Error | null }
+> {
+  state = { error: null as Error | null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  componentDidCatch(error: Error, info: { componentStack?: string }) {
+    const snapshot = productPageRenderSnapshot.current;
+    // Structured console log — grep-friendly in Sentry / browser devtools.
+    // eslint-disable-next-line no-console
+    console.error("[ProductPage] Render error captured by boundary", {
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
+      componentStack: info.componentStack,
+      snapshot,
+    });
+    void reportClientError({
+      source: "boundary",
+      level: "error",
+      component: "ProductPage",
+      message: `[ProductPage] ${error.name || "Error"}: ${error.message || String(error)}`,
+      stack: error.stack || info.componentStack || null,
+      metadata: {
+        componentStack: info.componentStack,
+        snapshot,
+        // Explicit flag so we can query React error #310 quickly.
+        isReactHookOrderError:
+          /Rendered (more|fewer) hooks|Minified React error #310/i.test(error.message || ""),
+      },
+    });
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <Layout>
+          <div className="mk-container py-20 text-center text-muted-foreground">
+            <p className="font-medium text-foreground mb-2">Fiche produit indisponible</p>
+            <p className="text-sm">
+              Une erreur est survenue lors de l'affichage. L'incident a été enregistré, veuillez réessayer dans un instant.
+            </p>
+          </div>
+        </Layout>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function ProductPageInner() {
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [isGalleryHover, setIsGalleryHover] = useState(false);
   const [autoplayEnabled, setAutoplayEnabled] = useState(true);

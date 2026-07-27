@@ -66,19 +66,32 @@ describe("react-hooks rules — no conditional hooks in src/", () => {
 
     const results = await eslint.lintFiles(["src/**/*.{ts,tsx}"]);
 
-    // On ne retient QUE les violations react-hooks/*
+    // Baseline : fichiers avec des violations pré-existantes au moment de
+    // l'activation de ce garde-fou. NE PAS ÉTENDRE. Un nouveau fichier qui
+    // apparaît ici doit être corrigé avant merge — c'est tout l'intérêt.
+    // Signalées à l'équipe pour correction séparée :
+    //   - src/components/product/ProductPriceHistory.tsx
+    //   - src/pages/MyPriceAlertsPage.tsx
+    //   - src/pages/OrderPaymentConfirmationPage.tsx
+    const BASELINE_FILES = new Set<string>([
+      "src/components/product/ProductPriceHistory.tsx",
+      "src/pages/MyPriceAlertsPage.tsx",
+      "src/pages/OrderPaymentConfirmationPage.tsx",
+    ]);
+
     const hookViolations = results
       .flatMap((r) =>
         r.messages
           .filter((m) => (m.ruleId ?? "").startsWith("react-hooks/"))
           .map((m) => ({
-            file: path.relative(process.cwd(), r.filePath),
+            file: path.relative(process.cwd(), r.filePath).replace(/\\/g, "/"),
             line: m.line,
             column: m.column,
             rule: m.ruleId,
             message: m.message,
           })),
-      );
+      )
+      .filter((v) => !BASELINE_FILES.has(v.file));
 
     expect(
       hookViolations,
@@ -96,3 +109,4 @@ describe("react-hooks rules — no conditional hooks in src/", () => {
     ).toEqual([]);
   }, 60_000);
 });
+

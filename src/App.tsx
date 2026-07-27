@@ -403,7 +403,7 @@ const App = () => (
             <Route path="/" element={<LP><HomePage /></LP>} />
             <Route path="/pitchdeck" element={<PitchdeckRedirect />} />
             <Route path="/recherche" element={<LP><SearchResultsPage /></LP>} />
-            <Route path="/produit/:slug" element={<LP><SafeBoundary label="la fiche produit"><ProductPage /></SafeBoundary></LP>} />
+            <Route path="/produit/:slug" element={<LP><SafeBoundary label="la fiche produit" context={{ feature: "product_page_root", route: "/produit/:slug" }}><ProductPage /></SafeBoundary></LP>} />
             <Route path="/go/:slug" element={<LP><TrackedRedirectPage /></LP>} />
             <Route path="/marques" element={<LP><BrandsPage /></LP>} />
             <Route path="/tendances" element={<LP><TendancesPage /></LP>} />

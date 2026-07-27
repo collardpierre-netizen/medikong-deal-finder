@@ -29,6 +29,7 @@ import { type VendorCommissionConfig } from "@/lib/vendorMargin";
 import { computeCommissionFromLines as computeCommissionFromLinesPure } from "@/lib/order-commission-fallback";
 import { AdminCommandesCommissionCell } from "./AdminCommandesCommissionCell";
 import OrderPdfPreviewDialog from "@/components/orders/OrderPdfPreviewDialog";
+import { CUSTOMER_TYPE_OPTIONS } from "./AdminCustomers";
 
 type PeriodKey = "7d" | "30d" | "90d" | "12m" | "all";
 const PERIODS: { key: PeriodKey; label: string; days: number | null }[] = [

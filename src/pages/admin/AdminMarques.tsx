@@ -11,7 +11,7 @@ import { BrandFormDialog } from "@/components/admin/BrandFormDialog";
 import { exportBrands, importBrands } from "@/lib/xlsx-utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Tag, Package, Plus, Download, Upload, Search, ExternalLink, Globe, Shield, GitMerge, Star } from "lucide-react";
+import { Tag, Package, Plus, Download, Upload, Search, ExternalLink, Globe, Shield, GitMerge, Star, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 

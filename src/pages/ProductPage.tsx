@@ -21,7 +21,8 @@ import { VendorTrustProvider, useVendorTrustForId } from "@/contexts/VendorTrust
 import { VendorTrustHeader, countryName, formatJoined } from "@/components/product/VendorTrustHeader";
 import { OfferTrustPanel } from "@/components/product/OfferTrustPanel";
 import { ProductPriceHistory } from "@/components/product/ProductPriceHistory";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Component, type ReactNode, type ErrorInfo } from "react";
+import { report as reportClientError } from "@/lib/errorReporter";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";

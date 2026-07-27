@@ -51,6 +51,14 @@ const AdminMarques = () => {
     qc.invalidateQueries({ queryKey: ["featured-brands-homepage"] });
   };
 
+  const togglePriority = async (brand: any) => {
+    const next = (brand.is_priority ?? 0) > 0 ? 0 : 1;
+    const { error } = await supabase.from("brands").update({ is_priority: next }).eq("id", brand.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(next > 0 ? `${brand.name} priorisée pour le scraper` : `${brand.name} retirée de la priorité scraper`);
+    qc.invalidateQueries({ queryKey: ["admin-brands"] });
+  };
+
   return (
     <div>
       <AdminTopBar title="Marques" subtitle="Gestion du portefeuille marques"

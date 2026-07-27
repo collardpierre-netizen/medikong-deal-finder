@@ -13,4 +13,6 @@ if (typeof window !== "undefined") {
     removeEventListener: () => {},
     dispatchEvent: () => {},
   }),
-});
+  });
+}
+

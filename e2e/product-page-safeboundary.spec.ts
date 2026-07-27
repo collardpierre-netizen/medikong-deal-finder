@@ -27,6 +27,17 @@ const SLUGS = (process.env.SMOKE_PRODUCT_SLUGS || DEFAULT_SLUGS.join(","))
   .map((s) => s.trim())
   .filter(Boolean);
 
+/**
+ * Détecte toute erreur React connue :
+ * - erreurs minifiées #NNN (prod)
+ * - « Rendered more/fewer hooks » (#310, dev)
+ * - « change in the order of Hooks » (dev)
+ * - « Maximum update depth exceeded » (boucle setState, dev)
+ * - warnings graves promus en error (Invalid hook call, Cannot update a component)
+ */
+const REACT_ERROR_PATTERN =
+  /Minified React error #\d+|Rendered (more|fewer) hooks|change in the order of Hooks|Maximum update depth exceeded|Invalid hook call|Cannot update a component|React will try to recreate this component tree/i;
+
 test.describe("Fiche produit — smoke SafeBoundary", () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 

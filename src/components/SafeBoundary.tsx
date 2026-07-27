@@ -10,6 +10,11 @@ interface SafeBoundaryProps {
   label?: string;
   /** Called once when an error is caught. */
   onError?: (error: Error) => void;
+  /**
+   * Structured context merged into the persisted metadata (product id, slug,
+   * feature name, …). Kept small — the reporter truncates aggressive keys.
+   */
+  context?: Record<string, unknown>;
 }
 
 interface SafeBoundaryState {
@@ -17,9 +22,46 @@ interface SafeBoundaryState {
 }
 
 /**
+ * Classify a caught error to help future triage without opening the stack.
+ * Returned as `probableReason` in the persisted metadata.
+ */
+export function classifyBoundaryError(error: Error): string {
+  const msg = `${error?.message || ""} ${error?.stack || ""}`;
+  if (
+    /Minified React error #310|Rendered (more|fewer) hooks|change in the order of Hooks/i.test(
+      msg,
+    )
+  ) {
+    return "react_hook_order_310";
+  }
+  if (/Minified React error #(185|418|419|423|425)/i.test(msg)) {
+    return "react_hydration_or_suspense";
+  }
+  if (/Loading chunk .* failed|Failed to fetch dynamically imported module|ChunkLoadError/i.test(msg)) {
+    return "chunk_load_failure";
+  }
+  if (/NetworkError|Failed to fetch|net::ERR_/i.test(msg)) {
+    return "network_error";
+  }
+  if (/Cannot read propert(y|ies) of (undefined|null)|is not a function|is not iterable/i.test(msg)) {
+    return "null_or_type_error";
+  }
+  if (/Minified React error #\d+/i.test(msg)) {
+    return "react_generic";
+  }
+  return "unknown";
+}
+
+/**
  * Lightweight error boundary used to isolate optional UI blocks
  * (e.g. a single offer row) so that one broken record does not
  * blank the whole page.
+ *
+ * Every catch is journalised via `errorReporter.report` with:
+ *   - source: "boundary"
+ *   - route  : window.location (added by the reporter)
+ *   - component: `label`
+ *   - metadata: componentStack + probableReason + user-supplied context
  */
 export class SafeBoundary extends Component<SafeBoundaryProps, SafeBoundaryState> {
   state: SafeBoundaryState = { error: null };
@@ -30,6 +72,7 @@ export class SafeBoundary extends Component<SafeBoundaryProps, SafeBoundaryState
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     this.props.onError?.(error);
+    const probableReason = classifyBoundaryError(error);
     // Centralised reporting (console + persisted to client_error_logs)
     void reportClientError({
       source: "boundary",
@@ -37,7 +80,13 @@ export class SafeBoundary extends Component<SafeBoundaryProps, SafeBoundaryState
       message: error.message || String(error),
       stack: error.stack || info.componentStack || null,
       component: this.props.label || null,
-      metadata: { componentStack: info.componentStack },
+      metadata: {
+        componentStack: info.componentStack,
+        probableReason,
+        errorName: error.name || null,
+        boundaryLabel: this.props.label || null,
+        ...(this.props.context || {}),
+      },
     });
   }
 
@@ -66,3 +115,4 @@ export class SafeBoundary extends Component<SafeBoundaryProps, SafeBoundaryState
 }
 
 export default SafeBoundary;
+

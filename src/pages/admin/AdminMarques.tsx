@@ -144,6 +144,19 @@ const AdminMarques = () => {
                       </button>
                     </TableCell>
                     <TableCell>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); togglePriority(b); }}
+                        className="inline-flex items-center gap-1 text-[10px] font-bold rounded px-1.5 py-0.5 hover:bg-blue-50 transition-colors"
+                        title={(b.is_priority ?? 0) > 0 ? "Retirer de la priorité scraper" : "Prioriser dans le scraper storefront"}
+                      >
+                        <Zap size={12} className={(b.is_priority ?? 0) > 0 ? "fill-blue-500 text-blue-500" : "text-muted-foreground"} />
+                        <span className={(b.is_priority ?? 0) > 0 ? "text-blue-700" : "text-muted-foreground"}>
+                          {(b.is_priority ?? 0) > 0 ? `Tier ${b.is_priority}` : "Normal"}
+                        </span>
+                      </button>
+                    </TableCell>
+                    <TableCell>
                       <Badge variant="outline" className="text-[10px] font-bold" style={{
                         backgroundColor: b.is_active ? "#ECFDF5" : "#FEF2F2",
                         color: b.is_active ? "#059669" : "#EF4444",

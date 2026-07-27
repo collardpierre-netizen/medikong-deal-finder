@@ -29,6 +29,7 @@ import { type VendorCommissionConfig } from "@/lib/vendorMargin";
 import { computeCommissionFromLines as computeCommissionFromLinesPure } from "@/lib/order-commission-fallback";
 import { AdminCommandesCommissionCell } from "./AdminCommandesCommissionCell";
 import OrderPdfPreviewDialog from "@/components/orders/OrderPdfPreviewDialog";
+import { CUSTOMER_TYPE_OPTIONS } from "./AdminCustomers";
 
 type PeriodKey = "7d" | "30d" | "90d" | "12m" | "all";
 const PERIODS: { key: PeriodKey; label: string; days: number | null }[] = [
@@ -720,19 +721,51 @@ const AdminCommandes = () => {
     confirmed: "#059669", processing: "#1B5BDA", shipped: "#7C3AED", pending: "#F59E0B", delivered: "#059669", cancelled: "#EF4343",
   };
 
-  const buyerTypeMap = new Map<string, { orders: number; gmv: number }>();
-  displayOrders.forEach(o => {
-    const existing = buyerTypeMap.get(o.buyerType) || { orders: 0, gmv: 0 };
-    existing.orders++;
-    existing.gmv += o.amountHT;
-    buyerTypeMap.set(o.buyerType, existing);
+  // Ventilation par type d'acheteur : sur l'INTÉGRALITÉ du set filtré côté serveur
+  // (pas seulement la page courante) — évite l'incohérence avec le KPI GMV.
+  const buyerBreakdownQ = useQuery({
+    queryKey: ["admin-orders-buyer-breakdown", filtersKey],
+    enabled: activeTab === "buyers",
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_orders_buyer_type_breakdown" as any, {
+        _status: statusFilter,
+        _date_from: periodStartIso,
+        _date_to: periodEndIso,
+        _vendor_ids: selectedVendorIds.length > 0 ? selectedVendorIds : null,
+        _search: search || null,
+        _only_with_commission: onlyWithCommission,
+        _forecast_filter: forecastFilter,
+        _hide_test: hideTest,
+        _hide_deleted: true,
+        _buyer_type: buyerType,
+        _payment_status: paymentStatusFilter,
+        _billing_status: billingStatusFilter,
+        _billing_updated_from: billingUpdatedFrom ? new Date(billingUpdatedFrom + "T00:00:00").toISOString() : null,
+        _billing_updated_to: billingUpdatedTo ? new Date(billingUpdatedTo + "T23:59:59").toISOString() : null,
+      });
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        customer_type: string;
+        orders: number;
+        gmv_ht: number;
+        gmv_ttc: number;
+        avg_basket: number;
+      }>;
+    },
   });
 
-  const buyerProfiles = Array.from(buyerTypeMap.entries()).map(([type, data]) => ({
-    type,
-    orders: data.orders,
-    gmv: data.gmv,
-    avgBasket: data.orders > 0 ? Math.round(data.gmv / data.orders) : 0,
+  const buyerTypeLabelMap = Object.fromEntries(
+    CUSTOMER_TYPE_OPTIONS.map((o) => [o.value, o.label]),
+  ) as Record<string, string>;
+
+  const buyerProfiles = (buyerBreakdownQ.data ?? []).map((r) => ({
+    type: r.customer_type,
+    label: buyerTypeLabelMap[r.customer_type] || (r.customer_type === "unknown" ? "Non renseigné" : r.customer_type),
+    orders: Number(r.orders) || 0,
+    gmv: Number(r.gmv_ht) || 0,
+    gmvTtc: Number(r.gmv_ttc) || 0,
+    avgBasket: Number(r.avg_basket) || 0,
   }));
 
   const toggleExpand = (orderId: string) => {
@@ -1848,33 +1881,64 @@ const AdminCommandes = () => {
       )}
 
       {activeTab === "buyers" && (
-        <div className="grid grid-cols-3 gap-4">
-          {buyerProfiles.map((bp) => {
-            const bc = buyerColors[bp.type] || { bg: "#F1F5F9", text: "#475569" };
+        <div>
+          {(() => {
+            const totalOrders = buyerProfiles.reduce((s, b) => s + b.orders, 0);
+            const totalGmv = buyerProfiles.reduce((s, b) => s + b.gmv, 0);
             return (
-              <div key={bp.type} className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="px-2.5 py-1 rounded-full text-[11px] font-bold" style={{ backgroundColor: bc.bg, color: bc.text }}>
-                    {bp.type}
-                  </span>
+              <div className="mb-4 p-4 rounded-[10px] flex items-center gap-6" style={{ backgroundColor: "#F8FAFC", border: "1px solid #E2E8F0" }}>
+                <div>
+                  <span className="text-[11px]" style={{ color: "#8B95A5" }}>Commandes (filtre actif)</span>
+                  <p className="text-[16px] font-bold" style={{ color: "#1D2530" }}>{totalOrders}</p>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <span className="text-[11px]" style={{ color: "#8B95A5" }}>Commandes</span>
-                    <p className="text-[18px] font-bold" style={{ color: "#1D2530" }}>{bp.orders}</p>
-                  </div>
-                  <div>
-                    <span className="text-[11px]" style={{ color: "#8B95A5" }}>GMV</span>
-                    <p className="text-[18px] font-bold" style={{ color: "#1B5BDA" }}>{fmt(bp.gmv)} EUR</p>
-                  </div>
-                  <div>
-                    <span className="text-[11px]" style={{ color: "#8B95A5" }}>Panier moyen</span>
-                    <p className="text-[14px] font-bold" style={{ color: "#1D2530" }}>{fmt(bp.avgBasket)} EUR</p>
-                  </div>
+                <div>
+                  <span className="text-[11px]" style={{ color: "#8B95A5" }}>GMV HTVA cumulée</span>
+                  <p className="text-[16px] font-bold" style={{ color: "#1B5BDA" }}>{fmt(totalGmv)} EUR</p>
                 </div>
+                {buyerBreakdownQ.isFetching && (
+                  <span className="text-[11px]" style={{ color: "#8B95A5" }}>Actualisation…</span>
+                )}
               </div>
             );
-          })}
+          })()}
+          {buyerBreakdownQ.isLoading ? (
+            <div className="py-8 text-center text-[12px]" style={{ color: "#8B95A5" }}>Chargement…</div>
+          ) : buyerProfiles.length === 0 ? (
+            <div className="py-8 text-center text-[12px]" style={{ color: "#8B95A5" }}>Aucune commande pour ce filtre</div>
+          ) : (
+            <div className="grid grid-cols-3 gap-4">
+              {buyerProfiles.map((bp) => {
+                const bc = buyerColors[bp.type] || { bg: "#F1F5F9", text: "#475569" };
+                return (
+                  <div key={bp.type} className="p-5 rounded-[10px]" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-bold" style={{ backgroundColor: bc.bg, color: bc.text }}>
+                        {bp.label}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <span className="text-[11px]" style={{ color: "#8B95A5" }}>Commandes</span>
+                        <p className="text-[18px] font-bold" style={{ color: "#1D2530" }}>{bp.orders}</p>
+                      </div>
+                      <div>
+                        <span className="text-[11px]" style={{ color: "#8B95A5" }}>GMV HTVA</span>
+                        <p className="text-[18px] font-bold" style={{ color: "#1B5BDA" }}>{fmt(bp.gmv)} EUR</p>
+                      </div>
+                      <div>
+                        <span className="text-[11px]" style={{ color: "#8B95A5" }}>GMV TTC</span>
+                        <p className="text-[14px] font-bold" style={{ color: "#1D2530" }}>{fmt(bp.gmvTtc)} EUR</p>
+                      </div>
+                      <div>
+                        <span className="text-[11px]" style={{ color: "#8B95A5" }}>Panier moyen HT</span>
+                        <p className="text-[14px] font-bold" style={{ color: "#1D2530" }}>{fmt(bp.avgBasket)} EUR</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

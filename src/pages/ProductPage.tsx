@@ -3432,3 +3432,11 @@ function ProductPageInner() {
     </Layout>
   );
 }
+
+export default function ProductPage() {
+  return (
+    <ProductPageErrorBoundary>
+      <ProductPageInner />
+    </ProductPageErrorBoundary>
+  );
+}

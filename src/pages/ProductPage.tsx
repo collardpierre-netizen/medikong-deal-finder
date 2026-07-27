@@ -1255,7 +1255,7 @@ class ProductPageErrorBoundary extends Component<
     return { error };
   }
 
-  componentDidCatch(error: Error, info: { componentStack?: string }) {
+  componentDidCatch(error: Error, info: ErrorInfo) {
     const snapshot = productPageRenderSnapshot.current;
     // Structured console log — grep-friendly in Sentry / browser devtools.
     // eslint-disable-next-line no-console

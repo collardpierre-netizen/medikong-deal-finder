@@ -2353,6 +2353,13 @@ function ProductPageInner() {
                               <SafeBoundary
                                 key={offer.id}
                                 label={`l'offre de ${offer.sellerName || "ce fournisseur"}`}
+                                context={{
+                                  feature: "product_page_other_offers",
+                                  productId: product.id,
+                                  productSlug: product.slug,
+                                  offerId: offer.id,
+                                  vendorId: (offer as any).vendorId ?? null,
+                                }}
                               >
                                 <OfferRow
                                   offer={offer}

@@ -54,6 +54,63 @@ const normalizeForKey = (s: string | null | undefined) =>
   (s ?? "").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 120);
 
+// ------- Safe paginated helpers -------
+// PostgREST tronque SILENCIEUSEMENT à 1000 lignes tout .select() non paginé.
+// Ces helpers protègent tous les balayages > 100 clés / > 1000 lignes attendues.
+const IN_CHUNK = 100;
+const PAGE_SIZE = 1000;
+
+async function selectInChunked<T = any>(
+  sb: any,
+  table: string,
+  cols: string,
+  column: string,
+  values: string[],
+  applyFilters?: (q: any) => any,
+): Promise<T[]> {
+  const out: T[] = [];
+  for (let i = 0; i < values.length; i += IN_CHUNK) {
+    const slice = values.slice(i, i + IN_CHUNK);
+    let q = sb.from(table).select(cols).in(column, slice);
+    if (applyFilters) q = applyFilters(q);
+    const { data, error } = await q;
+    if (error) throw new Error(`selectInChunked ${table}.${column}: ${error.message}`);
+    if (data) out.push(...(data as T[]));
+  }
+  return out;
+}
+
+// Pagination range keyset pour .in() qui peut ramener > 1000 lignes
+// (ex: offers.in(product_id, ...) — plusieurs offres par produit).
+async function selectInPaginated<T = any>(
+  sb: any,
+  table: string,
+  cols: string,
+  column: string,
+  values: string[],
+  applyFilters?: (q: any) => any,
+  order?: { column: string; ascending?: boolean }[],
+): Promise<T[]> {
+  const out: T[] = [];
+  for (let i = 0; i < values.length; i += IN_CHUNK) {
+    const slice = values.slice(i, i + IN_CHUNK);
+    let from = 0;
+    while (true) {
+      let q = sb.from(table).select(cols).in(column, slice);
+      if (applyFilters) q = applyFilters(q);
+      if (order) for (const o of order) q = q.order(o.column, { ascending: o.ascending !== false });
+      q = q.range(from, from + PAGE_SIZE - 1);
+      const { data, error } = await q;
+      if (error) throw new Error(`selectInPaginated ${table}.${column}: ${error.message}`);
+      const rows = (data ?? []) as T[];
+      out.push(...rows);
+      if (rows.length < PAGE_SIZE) break;
+      from += PAGE_SIZE;
+    }
+  }
+  return out;
+}
+
 // ------- Buyer comparator processor -------
 async function processBuyerComparator(
   jobId: string,
@@ -84,24 +141,19 @@ async function processBuyerComparator(
     const cnks = [...new Set(chunk.map((l) => l.cnk).filter(Boolean))] as string[];
     const skus = [...new Set(chunk.map((l) => l.sku).filter(Boolean))] as string[];
 
-    // Lookup WITHOUT is_active filter — we want inactive matches too
+    // Lookup WITHOUT is_active filter — we want inactive matches too.
+    // Chunké à 100 clés par .in() (défense en profondeur URL length).
     const productCols = "id, name, image_url, gtin, cnk_code, sku, is_active, brand_id";
     const [byEan, byCnk, bySku] = await Promise.all([
-      eans.length
-        ? sb.from("products").select(productCols).in("gtin", eans)
-        : Promise.resolve({ data: [], error: null }),
-      cnks.length
-        ? sb.from("products").select(productCols).in("cnk_code", cnks)
-        : Promise.resolve({ data: [], error: null }),
-      skus.length
-        ? sb.from("products").select(productCols).in("sku", skus)
-        : Promise.resolve({ data: [], error: null }),
+      eans.length ? selectInChunked<any>(sb, "products", productCols, "gtin", eans) : Promise.resolve([]),
+      cnks.length ? selectInChunked<any>(sb, "products", productCols, "cnk_code", cnks) : Promise.resolve([]),
+      skus.length ? selectInChunked<any>(sb, "products", productCols, "sku", skus) : Promise.resolve([]),
     ]);
 
     const mapEan = new Map<string, any>();
     const mapCnk = new Map<string, any>();
     const mapSku = new Map<string, any>();
-    for (const p of [...(byEan.data || []), ...(byCnk.data || []), ...(bySku.data || [])]) {
+    for (const p of [...byEan, ...byCnk, ...bySku]) {
       if (p.gtin && !mapEan.has(p.gtin)) mapEan.set(p.gtin, p);
       if (p.cnk_code && !mapCnk.has(p.cnk_code)) mapCnk.set(p.cnk_code, p);
       if (p.sku && !mapSku.has(p.sku)) mapSku.set(p.sku, p);
@@ -131,15 +183,25 @@ async function processBuyerComparator(
       }).filter(Boolean),
     )] as string[];
 
+    // BUG FIX: sans pagination, un batch de 200 produits × N offres pouvait dépasser
+    // le plafond silencieux de 1000 lignes de PostgREST et perdre des offres →
+    // produits marqués "unavailable" à tort. `selectInPaginated` garantit qu'on
+    // récupère TOUTES les offres actives des produits du batch.
     const offerByProduct = new Map<string, any>();
     if (activeProductIds.length) {
-      const { data: offers } = await sb.from("offers")
-        .select("id, product_id, price_excl_vat, vendor_id")
-        .in("product_id", activeProductIds)
-        .eq("is_active", true)
-        .order("product_id", { ascending: true })
-        .order("price_excl_vat", { ascending: true });
-      for (const o of (offers || [])) {
+      const offers = await selectInPaginated<any>(
+        sb,
+        "offers",
+        "id, product_id, price_excl_vat, vendor_id",
+        "product_id",
+        activeProductIds,
+        (q) => q.eq("is_active", true),
+        [
+          { column: "product_id", ascending: true },
+          { column: "price_excl_vat", ascending: true },
+        ],
+      );
+      for (const o of offers) {
         if (!offerByProduct.has(o.product_id)) offerByProduct.set(o.product_id, o);
       }
     }

@@ -78,11 +78,19 @@ test.describe("Fiche produit — smoke SafeBoundary", () => {
         "aucun fallback ProductPageErrorBoundary"
       ).toHaveCount(0);
 
-      // 3. Aucun message d'erreur React minifié dans la console
-      const react310 = [...consoleErrors, ...pageErrors].filter((m) =>
-        /Minified React error #310|Rendered (more|fewer) hooks/i.test(m)
-      );
-      expect(react310, "aucune erreur React #310 dans la console").toEqual([]);
+      // 3. Aucune erreur React (console + pageerror) — strict, incluant #310
+      const allMessages = [...consoleErrors, ...pageErrors];
+      const reactErrors = allMessages.filter((m) => REACT_ERROR_PATTERN.test(m));
+      expect(
+        reactErrors,
+        `Erreur React détectée dans la console/pageerror :\n${reactErrors.join("\n")}`
+      ).toEqual([]);
+
+      // Ceinture + bretelles : aucune erreur JS non capturée (pageerror)
+      expect(
+        pageErrors,
+        `Erreurs JS non capturées (pageerror) :\n${pageErrors.join("\n")}`
+      ).toEqual([]);
     });
   }
 

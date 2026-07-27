@@ -55,8 +55,9 @@ describe("ProductPage — ordre des hooks stable", () => {
     // Garde-fou léger : on vérifie juste qu'aucun `useLocalizedProductField`
     // n'apparaît après le premier early return du composant principal.
     const firstEarlyReturn = Math.min(
-      ...findLineNumbers(/^\s*if\s*\(\s*(isLoading|!product)\b/),
+      ...findLineNumbers(/^\s*if\s*\(isLoading\)\s*\{/),
     );
+
     const hookCallsAfter = findLineNumbers(/useLocalizedProductField\s*\(/)
       .filter((ln) => ln > firstEarlyReturn);
 

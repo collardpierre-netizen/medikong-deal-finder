@@ -294,6 +294,7 @@ ${JSON.stringify(sourcesForAi)}`;
           )
           .then(() => {});
 
+        const item = items[idx];
         if (isAdmin && item.productId && item.field && PRODUCT_FIELD_MAP[item.field]) {
           const colName = `${PRODUCT_FIELD_MAP[item.field].col}_${targetLang}`;
           admin

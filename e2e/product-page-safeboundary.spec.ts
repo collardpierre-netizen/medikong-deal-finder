@@ -85,4 +85,108 @@ test.describe("Fiche produit — smoke SafeBoundary", () => {
       expect(react310, "aucune erreur React #310 dans la console").toEqual([]);
     });
   }
+
+  /**
+   * Régression React #310 spécifique à `ProductPriceHistory` : quand `gtin`
+   * bascule entre `null | undefined` (composant désactivé, `enabled = false`)
+   * et une chaîne (composant activé), l'ordre des hooks doit rester stable.
+   *
+   * On enchaîne dans une même page (donc même contexte React, sans reload) :
+   *   1. produit A (gtin défini → historique ENABLED)
+   *   2. navigation SPA vers /catalogue (composant DÉMONTÉ)
+   *   3. produit B (gtin défini → nouveau montage, ENABLED)
+   *   4. navigation SPA vers /catalogue (DÉMONTÉ)
+   *   5. retour produit A (REMONTÉ)
+   *
+   * À chaque étape on vérifie qu'aucun SafeBoundary / ErrorBoundary
+   * n'apparaît et qu'aucune erreur React #310 n'est journalisée.
+   */
+  test.skip(
+    SLUGS.length < 2,
+    "Il faut au moins 2 slugs pour tester les transitions enabled/disabled"
+  );
+  test(`transitions enabled/disabled de l'historique de prix — aucun fallback`, async ({
+    page,
+  }) => {
+    const consoleErrors: string[] = [];
+    const pageErrors: string[] = [];
+
+    page.on("console", (msg) => {
+      if (msg.type() === "error") consoleErrors.push(msg.text());
+    });
+    page.on("pageerror", (err) => {
+      pageErrors.push(err.message || String(err));
+    });
+
+    async function waitProductReady() {
+      await page
+        .locator('[role="status"][aria-busy="true"]')
+        .first()
+        .waitFor({ state: "detached", timeout: 20_000 })
+        .catch(() => {});
+      const h1 = page.locator("h1").first();
+      await expect(h1, "H1 fiche produit visible").toBeVisible({ timeout: 15_000 });
+      await expect(h1).not.toHaveText(/^\s*$/);
+    }
+
+    async function assertNoFallback(step: string) {
+      await expect(
+        page.getByText(/Données indisponibles/i),
+        `[${step}] aucun SafeBoundary`
+      ).toHaveCount(0);
+      await expect(
+        page.getByText(/Impossible d'afficher cette fiche produit/i),
+        `[${step}] aucun ProductPageErrorBoundary`
+      ).toHaveCount(0);
+    }
+
+    // Navigation SPA — pushState + popstate déclenche le routeur React sans reload,
+    // donc ProductPriceHistory (dé)monte réellement et son état enabled bascule.
+    async function spaNavigate(pathname: string) {
+      await page.evaluate((p) => {
+        window.history.pushState({}, "", p);
+        window.dispatchEvent(new PopStateEvent("popstate"));
+      }, pathname);
+      await page.waitForURL(new RegExp(pathname.replace(/[/]/g, "\\/") + "(?:$|\\?)"), {
+        timeout: 15_000,
+      });
+    }
+
+    const [slugA, slugB] = SLUGS;
+
+    // 1. Produit A → historique enabled
+    const res = await page.goto(`/produit/${slugA}`, { waitUntil: "domcontentloaded" });
+    expect(res!.status(), "status HTTP produit A").toBeLessThan(500);
+    await waitProductReady();
+    await assertNoFallback("produit A initial");
+
+    // 2. Route sans fiche produit → composant démonté
+    await spaNavigate("/catalogue");
+    await assertNoFallback("catalogue après A");
+
+    // 3. Produit B → nouveau montage
+    await spaNavigate(`/produit/${slugB}`);
+    await waitProductReady();
+    await assertNoFallback("produit B après catalogue");
+
+    // 4. Retour catalogue
+    await spaNavigate("/catalogue");
+    await assertNoFallback("catalogue après B");
+
+    // 5. Retour produit A
+    await spaNavigate(`/produit/${slugA}`);
+    await waitProductReady();
+    await assertNoFallback("retour produit A");
+
+    // Aucun message React #310 (« more/fewer hooks », #310 minifié) sur TOUT le run
+    const react310 = [...consoleErrors, ...pageErrors].filter((m) =>
+      /Minified React error #310|Rendered (more|fewer) hooks|change in the order of Hooks/i.test(
+        m
+      )
+    );
+    expect(
+      react310,
+      `Erreur React #310 détectée pendant les transitions enabled/disabled :\n${react310.join("\n")}`
+    ).toEqual([]);
+  });
 });

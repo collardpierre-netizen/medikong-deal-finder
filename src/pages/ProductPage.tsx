@@ -1245,8 +1245,8 @@ const productPageRenderSnapshot: { current: ProductPageRenderSnapshot | null } =
   current: null,
 };
 
-class ProductPageErrorBoundary extends (require("react") as typeof import("react")).Component<
-  { children: React.ReactNode },
+class ProductPageErrorBoundary extends Component<
+  { children: ReactNode },
   { error: Error | null }
 > {
   state = { error: null as Error | null };

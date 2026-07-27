@@ -2208,7 +2208,16 @@ function ProductPageInner() {
                           <span className="text-right">Commander</span>
                         </div>
 
-                        <SafeBoundary label={`l'offre de ${bestOffer.sellerName || "ce fournisseur"}`}>
+                        <SafeBoundary
+                          label={`l'offre de ${bestOffer.sellerName || "ce fournisseur"}`}
+                          context={{
+                            feature: "product_page_best_offer",
+                            productId: product.id,
+                            productSlug: product.slug,
+                            offerId: bestOffer.id,
+                            vendorId: (bestOffer as any).vendorId ?? null,
+                          }}
+                        >
                           <OfferRow
                             offer={bestOffer}
                             productId={product.id}

@@ -21,6 +21,7 @@ import { VendorTrustProvider, useVendorTrustForId } from "@/contexts/VendorTrust
 import { VendorTrustHeader, countryName, formatJoined } from "@/components/product/VendorTrustHeader";
 import { OfferTrustPanel } from "@/components/product/OfferTrustPanel";
 import { ProductPriceHistory } from "@/components/product/ProductPriceHistory";
+import { ProductPageSkeleton } from "@/components/product/ProductPageSkeleton";
 import { useState, useEffect, useRef, Component, type ReactNode, type ErrorInfo } from "react";
 import { report as reportClientError } from "@/lib/errorReporter";
 import { toast } from "sonner";
@@ -1640,20 +1641,10 @@ function ProductPageInner() {
     (productDetails as any)?.description || (productDetails as any)?.label || product?.descriptionShort,
   );
 
-  if (isLoading) {
-    return (
-      <Layout>
-        <div className="mk-container py-20 text-center text-muted-foreground">Chargement du produit...</div>
-      </Layout>
-    );
+  if (isLoading || !product) {
+    return <ProductPageSkeleton notFound={!isLoading && !product} />;
   }
-  if (!product) {
-    return (
-      <Layout>
-        <div className="mk-container py-20 text-center text-muted-foreground">Produit introuvable</div>
-      </Layout>
-    );
-  }
+
 
   // Build images from real data only — no fallbacks, no Qogita placeholders
   // (Reuses _rawImages computed above the early returns to keep hooks order stable)

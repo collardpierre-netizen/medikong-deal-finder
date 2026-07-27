@@ -27984,6 +27984,31 @@ export type Database = {
       }
       admin_notifications_unread_count: { Args: never; Returns: number }
       admin_offer_margin_distribution: { Args: never; Returns: Json }
+      admin_orders_buyer_type_breakdown: {
+        Args: {
+          _billing_status?: string
+          _billing_updated_from?: string
+          _billing_updated_to?: string
+          _buyer_type?: string
+          _date_from?: string
+          _date_to?: string
+          _forecast_filter?: string
+          _hide_deleted?: boolean
+          _hide_test?: boolean
+          _only_with_commission?: boolean
+          _payment_status?: string
+          _search?: string
+          _status?: string
+          _vendor_ids?: string[]
+        }
+        Returns: {
+          avg_basket: number
+          customer_type: string
+          gmv_ht: number
+          gmv_ttc: number
+          orders: number
+        }[]
+      }
       admin_preview_apply_category_aliases: {
         Args: never
         Returns: {

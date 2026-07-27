@@ -250,8 +250,6 @@ export function ProductPriceHistory({ gtin, productName }: Props) {
     return { min, max, avg, last };
   }, [chartData]);
 
-  if (!enabled) return null;
-
   const isLoading = historyLoading || trendLoading;
   const hasHistory = !!history && history.length > 0;
 
@@ -271,6 +269,8 @@ export function ProductPriceHistory({ gtin, productName }: Props) {
   const [isKeyboardActive, setIsKeyboardActive] = useState(false);
   const chartWrapperRef = useRef<HTMLDivElement | null>(null);
   const liveRef = useRef<HTMLDivElement | null>(null);
+
+  if (!enabled) return null;
 
   const onChartFocus = useCallback(() => {
     if (!chartData.length) return;

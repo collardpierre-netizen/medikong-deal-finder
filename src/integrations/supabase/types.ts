@@ -935,6 +935,7 @@ export type Database = {
           inami_reimbursement_pct: number | null
           is_active: boolean
           is_featured: boolean
+          is_priority: number
           is_top20: boolean
           last_sync_run_id: string | null
           logo_url: string | null
@@ -983,6 +984,7 @@ export type Database = {
           inami_reimbursement_pct?: number | null
           is_active?: boolean
           is_featured?: boolean
+          is_priority?: number
           is_top20?: boolean
           last_sync_run_id?: string | null
           logo_url?: string | null
@@ -1031,6 +1033,7 @@ export type Database = {
           inami_reimbursement_pct?: number | null
           is_active?: boolean
           is_featured?: boolean
+          is_priority?: number
           is_top20?: boolean
           last_sync_run_id?: string | null
           logo_url?: string | null
@@ -11308,6 +11311,7 @@ export type Database = {
           brand: string | null
           brand_id: string | null
           brand_name: string | null
+          brand_priority: number
           brand_qid: string | null
           category: string | null
           category_id: string | null
@@ -11403,6 +11407,7 @@ export type Database = {
           brand?: string | null
           brand_id?: string | null
           brand_name?: string | null
+          brand_priority?: number
           brand_qid?: string | null
           category?: string | null
           category_id?: string | null
@@ -11498,6 +11503,7 @@ export type Database = {
           brand?: string | null
           brand_id?: string | null
           brand_name?: string | null
+          brand_priority?: number
           brand_qid?: string | null
           category?: string | null
           category_id?: string | null

@@ -928,11 +928,16 @@ Deno.serve(async (req) => {
       // Tri secondaire : seller_count DESC puis popularity DESC via jointure products
       //   → à ancienneté équivalente (ou nulle), on rafraîchit d'abord les produits
       //   "liquides" (fort seller_count / popularité) pour maximiser l'impact catalogue.
+      // Tri primaire : brand_priority DESC (dermocosmétiques d'abord, table brands.is_priority
+      //   dénormalisée sur products.brand_priority par trigger).
+      // Puis last_verified_at ASC NULLS FIRST (les plus anciens d'abord).
+      // Puis seller_count DESC / popularity DESC pour prioriser les produits liquides.
       let catQ = sb
         .from("offers")
-        .select("product_id, last_verified_at, products!inner(seller_count, popularity)")
+        .select("product_id, last_verified_at, products!inner(brand_priority, seller_count, popularity)")
         .eq("is_qogita_backed", true)
         .eq("is_active", true)
+        .order("brand_priority", { foreignTable: "products", ascending: false, nullsFirst: false })
         .order("last_verified_at", { ascending: true, nullsFirst: true })
         .order("seller_count", { foreignTable: "products", ascending: false, nullsFirst: false })
         .order("popularity", { foreignTable: "products", ascending: false, nullsFirst: false })

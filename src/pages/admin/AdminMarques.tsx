@@ -11,7 +11,7 @@ import { BrandFormDialog } from "@/components/admin/BrandFormDialog";
 import { exportBrands, importBrands } from "@/lib/xlsx-utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Tag, Package, Plus, Download, Upload, Search, ExternalLink, Globe, Shield, GitMerge, Star } from "lucide-react";
+import { Tag, Package, Plus, Download, Upload, Search, ExternalLink, Globe, Shield, GitMerge, Star, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -49,6 +49,14 @@ const AdminMarques = () => {
     toast.success(next ? `${brand.name} épinglée` : `${brand.name} retirée des featured`);
     qc.invalidateQueries({ queryKey: ["admin-brands"] });
     qc.invalidateQueries({ queryKey: ["featured-brands-homepage"] });
+  };
+
+  const togglePriority = async (brand: any) => {
+    const next = (brand.is_priority ?? 0) > 0 ? 0 : 1;
+    const { error } = await supabase.from("brands").update({ is_priority: next }).eq("id", brand.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(next > 0 ? `${brand.name} priorisée pour le scraper` : `${brand.name} retirée de la priorité scraper`);
+    qc.invalidateQueries({ queryKey: ["admin-brands"] });
   };
 
   return (
@@ -94,7 +102,7 @@ const AdminMarques = () => {
           <Table>
             <TableHeader>
               <TableRow style={{ backgroundColor: "#F8FAFC" }}>
-                {["Marque", "Produits", "Featured", "Statut", ""].map(h => (
+                {["Marque", "Produits", "Featured", "Priorité scraper", "Statut", ""].map(h => (
                   <TableHead key={h} className="text-[11px] font-semibold" style={{ color: "#8B95A5" }}>{h}</TableHead>
                 ))}
               </TableRow>
@@ -132,6 +140,19 @@ const AdminMarques = () => {
                         <Star size={12} className={b.is_featured ? "fill-amber-500 text-amber-500" : "text-muted-foreground"} />
                         <span className={b.is_featured ? "text-amber-700" : "text-muted-foreground"}>
                           {b.is_featured ? "Featured" : "Standard"}
+                        </span>
+                      </button>
+                    </TableCell>
+                    <TableCell>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); togglePriority(b); }}
+                        className="inline-flex items-center gap-1 text-[10px] font-bold rounded px-1.5 py-0.5 hover:bg-blue-50 transition-colors"
+                        title={(b.is_priority ?? 0) > 0 ? "Retirer de la priorité scraper" : "Prioriser dans le scraper storefront"}
+                      >
+                        <Zap size={12} className={(b.is_priority ?? 0) > 0 ? "fill-blue-500 text-blue-500" : "text-muted-foreground"} />
+                        <span className={(b.is_priority ?? 0) > 0 ? "text-blue-700" : "text-muted-foreground"}>
+                          {(b.is_priority ?? 0) > 0 ? `Tier ${b.is_priority}` : "Normal"}
                         </span>
                       </button>
                     </TableCell>

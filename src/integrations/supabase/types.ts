@@ -15488,6 +15488,33 @@ export type Database = {
         }
         Relationships: []
       }
+      scraper_locks: {
+        Row: {
+          created_at: string
+          expires_at: string
+          holder: string | null
+          lock_key: string
+          locked_at: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          holder?: string | null
+          lock_key: string
+          locked_at?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          holder?: string | null
+          lock_key?: string
+          locked_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       search_logs: {
         Row: {
           buyer_profile_id: string | null
@@ -27376,6 +27403,10 @@ export type Database = {
         Args: { _membership_id: string; _new_role: string }
         Returns: undefined
       }
+      acquire_scraper_lock: {
+        Args: { _holder?: string; _key: string; _ttl_seconds?: number }
+        Returns: boolean
+      }
       activate_vendor_market_intel_subscription: {
         Args: {
           _billing_method: Database["public"]["Enums"]["vendor_market_intel_billing"]
@@ -28094,6 +28125,19 @@ export type Database = {
           product_name: string
           pvp_ttc: number
           worst_action_score: number
+        }[]
+      }
+      admin_priority_brands_freshness: {
+        Args: { _fresh_hours?: number }
+        Returns: {
+          brand_id: string
+          brand_name: string
+          is_priority: number
+          last_verified_at: string
+          offers_fresh: number
+          offers_total: number
+          pct_fresh: number
+          products_total: number
         }[]
       }
       admin_purge_test_orders: {
@@ -29933,6 +29977,7 @@ export type Database = {
         Args: { _reason: string; _req_id: string }
         Returns: undefined
       }
+      release_scraper_lock: { Args: { _key: string }; Returns: undefined }
       request_subscription_extension: {
         Args: { _callback_window?: string; _reason?: string }
         Returns: string
@@ -30448,6 +30493,13 @@ export type Database = {
           total_savings_eur_cents: number
           vendor_id: string
           vendor_name: string
+        }[]
+      }
+      select_priority_scrape_targets: {
+        Args: { _fresh_hours?: number; _limit?: number }
+        Returns: {
+          last_verified_at: string
+          product_id: string
         }[]
       }
       self_start_vendor_market_intel_trial: {

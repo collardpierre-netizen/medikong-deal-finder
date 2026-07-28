@@ -28,6 +28,13 @@ const REQUEST_DELAY_MS = 1200; // ~0.8 req/s pacing on www.qogita.com
 const MAX_WALLTIME_MS = 55_000;
 const FETCH_TIMEOUT_MS = 20_000;
 const DEFAULT_BATCH = 20;
+// Débit mesuré en prod : ~3,4 s par produit (fetch + parse + upserts + pacing).
+// On dimensionne le batch sur ce coût réel pour que
+// products_processed / products_targeted ≈ 1 (fini les 89% de walltime_exceeded).
+const AVG_PRODUCT_MS = 4_000;
+// Fenêtre de fraîcheur de la voie prioritaire (marques dermocosmétiques tier 1).
+const PRIORITY_FRESH_HOURS = 48;
+
 
 // ─────────────────────────────── Session cache ──────────────────────────────
 // Module-scope cookie jar so consecutive product fetches within one invocation
@@ -863,15 +870,17 @@ Deno.serve(async (req) => {
   // curseur last_verified_at ASC NULLS FIRST + exclusion des produits déjà
   // frais (< freshWindowHours) pour ne pas doubler l'hourly basket.
   const cronMode: "catalog" | "basket" | "catalog_wide" = body.mode ?? "catalog";
-  // "catalog_wide" a besoin d'un plafond plus haut (batchs 200) et d'une
-  // walltime plus longue pour drainer le catalogue en semaines, pas mois.
-  const CAP = cronMode === "catalog_wide" ? 200 : 100;
-  const limit = Math.min(Math.max(body.limit ?? DEFAULT_BATCH, 1), CAP);
   const walltimeMs = Math.min(
     Math.max(body.walltimeMs ?? (cronMode === "catalog_wide" ? 120_000 : MAX_WALLTIME_MS), 10_000),
     140_000,
   );
+  // Le plafond de batch est calé sur ce qui tient RÉELLEMENT dans la walltime
+  // (walltime / coût moyen par produit) : demander 100 produits pour n'en
+  // traiter que 35 gaspillait 60% du run et faisait patiner le curseur.
+  const CAP = Math.max(5, Math.floor(walltimeMs / AVG_PRODUCT_MS));
+  const limit = Math.min(Math.max(body.limit ?? DEFAULT_BATCH, 1), CAP);
   const freshWindowHours = Math.min(Math.max(body.freshWindowHours ?? 12, 1), 168);
+
   const resourceOffers = body.resourceOffers ?? true;
 
   // Load the commercial margin (fallback 25%) once per run and apply it
@@ -903,12 +912,33 @@ Deno.serve(async (req) => {
     }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 
+  // Anti-overlap : le cron tourne toutes les 5 min alors qu'un run peut durer
+  // ~2 min + back-off. Un lock TTL empêche deux runs concurrents qui se
+  // marcheraient dessus (double scrape des mêmes produits, curseur gaspillé).
+  let lockKey: string | null = null;
+  if (!body.productIds?.length && !body.gtins?.length) {
+    lockKey = `scrape-qogita-storefront:${cronMode}`;
+    const { data: got } = await sb.rpc("acquire_scraper_lock", {
+      _key: lockKey,
+      _ttl_seconds: Math.ceil(walltimeMs / 1000) + 60,
+      _holder: `run-${startedAt}`,
+    });
+    if (got !== true) {
+      return new Response(JSON.stringify({ ok: true, message: "locked_run_in_progress", mode: cronMode }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+  }
+  const releaseLock = async () => {
+    if (lockKey) { try { await sb.rpc("release_scraper_lock", { _key: lockKey }); } catch (_) { /* ttl fallback */ } }
+  };
+
   // Resolve targets
   let query = sb
     .from("products")
     .select("id, gtin, qogita_fid, qogita_slug")
     .not("qogita_fid", "is", null)
     .not("qogita_slug", "is", null);
+  let priorityTargeted = 0;
   if (body.productIds?.length) {
     query = query.in("id", body.productIds).limit(limit);
   } else if (body.gtins?.length) {
@@ -919,39 +949,46 @@ Deno.serve(async (req) => {
     const freshCutoffIso = new Date(Date.now() - freshWindowHours * 3_600_000).toISOString();
 
     if (cronMode === "catalog" || cronMode === "catalog_wide") {
-      // Priorité catalogue : produits ayant une offre qogita-backed active,
-      // triés par last_verified_at le plus ancien (nulls d'abord).
-      // catalog_wide : on exclut aussi les offres déjà rafraîchies récemment
-      // pour ne pas piétiner l'hourly basket ni re-scraper la même chose.
-      // On fetche large (limit * 6) puis on déduplique côté client.
-      // Tri primaire : last_verified_at ASC NULLS FIRST (les plus anciens d'abord).
-      // Tri secondaire : seller_count DESC puis popularity DESC via jointure products
-      //   → à ancienneté équivalente (ou nulle), on rafraîchit d'abord les produits
-      //   "liquides" (fort seller_count / popularité) pour maximiser l'impact catalogue.
-      // Tri primaire : brand_priority DESC (dermocosmétiques d'abord, table brands.is_priority
-      //   dénormalisée sur products.brand_priority par trigger).
-      // Puis last_verified_at ASC NULLS FIRST (les plus anciens d'abord).
-      // Puis seller_count DESC / popularity DESC pour prioriser les produits liquides.
-      let catQ = sb
-        .from("offers")
-        .select("product_id, last_verified_at, products!inner(brand_priority, seller_count, popularity)")
-        .eq("is_qogita_backed", true)
-        .eq("is_active", true)
-        .order("brand_priority", { foreignTable: "products", ascending: false, nullsFirst: false })
-        .order("last_verified_at", { ascending: true, nullsFirst: true })
-        .order("seller_count", { foreignTable: "products", ascending: false, nullsFirst: false })
-        .order("popularity", { foreignTable: "products", ascending: false, nullsFirst: false })
-        .limit(limit * 6);
-      if (cronMode === "catalog_wide") {
-        // Deux conditions dans un .or() : jamais vérifié OU + vieux que la fenêtre
-        catQ = catQ.or(`last_verified_at.is.null,last_verified_at.lt.${freshCutoffIso}`);
-      }
-      const { data: catalogRows } = await catQ;
+      // ── VOIE PRIORITAIRE (dédiée, périmètre borné) ────────────────
+      // Un ORDER BY brand_priority sur ~900k lignes ne trie pas entre les
+      // pages du scan keyset : la priorisation était invisible (7,8% de
+      // re-scans prio = simple poids naturel). On sélectionne donc d'abord,
+      // via une RPC bornée aux marques prioritaires (~6 600 produits), les
+      // produits prio NON frais (<48h), triés last_verified_at ASC NULLS FIRST.
+      const { data: prioRows, error: prioErr } = await sb.rpc("select_priority_scrape_targets", {
+        _limit: limit,
+        _fresh_hours: PRIORITY_FRESH_HOURS,
+      });
+      if (prioErr) console.error("priority lane failed", prioErr.message);
       const seen = new Set<string>();
-      for (const row of (catalogRows ?? []) as { product_id: string }[]) {
+      for (const row of (prioRows ?? []) as { product_id: string }[]) {
         if (!row.product_id || seen.has(row.product_id)) continue;
         seen.add(row.product_id);
         if (seen.size >= limit) break;
+      }
+      priorityTargeted = seen.size;
+
+      // ── VOIE GÉNÉRALE (reste du catalogue) ────────────────────────
+      // Seulement avec le budget restant, une fois la voie prioritaire servie.
+      if (seen.size < limit) {
+        const remaining = limit - seen.size;
+        let catQ = sb
+          .from("offers")
+          .select("product_id, last_verified_at")
+          .eq("is_qogita_backed", true)
+          .eq("is_active", true)
+          .order("last_verified_at", { ascending: true, nullsFirst: true })
+          .limit(remaining * 6);
+        if (cronMode === "catalog_wide") {
+          // Deux conditions dans un .or() : jamais vérifié OU + vieux que la fenêtre
+          catQ = catQ.or(`last_verified_at.is.null,last_verified_at.lt.${freshCutoffIso}`);
+        }
+        const { data: catalogRows } = await catQ;
+        for (const row of (catalogRows ?? []) as { product_id: string }[]) {
+          if (!row.product_id || seen.has(row.product_id)) continue;
+          seen.add(row.product_id);
+          if (seen.size >= limit) break;
+        }
       }
       ids = Array.from(seen);
     }
@@ -966,17 +1003,21 @@ Deno.serve(async (req) => {
       ids = (basket ?? []).map((b: { product_id: string }) => b.product_id);
     }
     if (ids.length === 0) {
+      await releaseLock();
       return new Response(JSON.stringify({ ok: true, message: "no_targets", mode: cronMode }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     query = query.in("id", ids);
   }
 
+
   const { data: products, error: prodErr } = await query;
   if (prodErr) {
+    await releaseLock();
     return new Response(JSON.stringify({ error: prodErr.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
+
 
   // Open log row (reuse existing table)
   const { data: logRow } = await sb
@@ -998,7 +1039,15 @@ Deno.serve(async (req) => {
       triggered_by: body.productIds?.length || body.gtins?.length ? "manual" : "cron",
       country_code: "BE",
       products_targeted: products?.length ?? 0,
-      metadata: { strategy: sessionCache?.strategy ?? null, dry_run: !!body.dryRun, sub_mode: cronMode },
+      metadata: {
+        strategy: sessionCache?.strategy ?? null,
+        dry_run: !!body.dryRun,
+        sub_mode: cronMode,
+        priority_targeted: priorityTargeted,
+        batch_limit: limit,
+        walltime_ms: walltimeMs,
+      },
+
     })
     .select("id")
     .single();
@@ -1116,6 +1165,10 @@ Deno.serve(async (req) => {
         metadata: {
           strategy: sessionCache?.strategy ?? null,
           sub_mode: cronMode,
+          priority_targeted: priorityTargeted,
+          batch_limit: limit,
+          walltime_ms: walltimeMs,
+
           vendors_created: stats.vendors_created,
           tiers_written: totalTiers,
           history_points: totalHistory,
@@ -1210,12 +1263,16 @@ Deno.serve(async (req) => {
     });
   } catch (_) { /* best effort */ }
 
+  await releaseLock();
 
   return new Response(JSON.stringify({
     ok: true,
     mode: cronMode,
     strategy: sessionCache?.strategy ?? null,
     targeted: products?.length ?? 0,
+    priority_targeted: priorityTargeted,
+    batch_limit: limit,
+
     products_ok: ok,
     products_404: notFound,
     products_logged_out: loggedOut,

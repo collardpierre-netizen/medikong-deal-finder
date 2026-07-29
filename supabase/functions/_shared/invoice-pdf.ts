@@ -338,6 +338,75 @@ function drawFooter(doc: jsPDF) {
   );
 }
 
+/**
+ * Filigrane diagonal "BROUILLON" + bandeau d'avertissement sur toutes les pages.
+ * À appeler juste avant doc.output() pour couvrir toutes les pages générées.
+ */
+export function applyDraftMarkings(doc: jsPDF, notice?: string) {
+  const pageW = 210;
+  const pageH = 297;
+  const pageCount = (doc as any).internal.getNumberOfPages();
+  for (let p = 1; p <= pageCount; p++) {
+    doc.setPage(p);
+
+    try {
+      (doc as any).saveGraphicsState?.();
+      (doc as any).setGState?.(new (doc as any).GState({ opacity: 0.12 }));
+    } catch (_) { /* jsPDF sans GState */ }
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(220, 38, 38);
+    const wmAngle = 30;
+    const rad = (wmAngle * Math.PI) / 180;
+    let wmSize = 110;
+    doc.setFontSize(wmSize);
+    const maxSpan = (pageW - 2 * M.left) / Math.cos(rad);
+    const rawWidth = doc.getTextWidth("BROUILLON");
+    if (rawWidth > maxSpan) {
+      wmSize = Math.max(40, Math.floor((wmSize * maxSpan) / rawWidth));
+      doc.setFontSize(wmSize);
+    }
+    const wmWidth = doc.getTextWidth("BROUILLON");
+    const wmX = pageW / 2 - (wmWidth / 2) * Math.cos(rad);
+    const wmY = pageH / 2 + (wmWidth / 2) * Math.sin(rad);
+    doc.text("BROUILLON", wmX, wmY, { angle: wmAngle });
+    try { (doc as any).restoreGraphicsState?.(); } catch (_) { /* noop */ }
+
+    // Bandeau d'avertissement au-dessus du footer
+    setFill(doc, [254, 226, 226]);
+    setDraw(doc, [220, 38, 38]);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(M.left, pageH - 24, M.width, 7, 1.2, 1.2, "FD");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    setText(doc, [153, 27, 27]);
+    doc.text(
+      notice || "DOCUMENT PROVISOIRE — BROUILLON · Sans valeur comptable ni fiscale",
+      105, pageH - 19.5, { align: "center" },
+    );
+    doc.setFont("helvetica", "normal");
+    setText(doc, C.mute);
+  }
+}
+
+/** Badge "BROUILLON" placé sous le titre du document (coin supérieur droit). */
+function drawDraftBadge(doc: jsPDF) {
+  const label = "BROUILLON";
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  const w = doc.getTextWidth(label) + 8;
+  const h = 6.5;
+  const x = M.right - w;
+  const y = 32;
+  setFill(doc, [254, 226, 226]);
+  setDraw(doc, [220, 38, 38]);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(x, y, w, h, 1.5, 1.5, "FD");
+  setText(doc, [153, 27, 27]);
+  doc.text(label, x + w / 2, y + h / 2 + 1.5, { align: "center" });
+  doc.setFont("helvetica", "normal");
+}
+
+
 export interface CommissionParams {
   order: any;
   vendor: any;

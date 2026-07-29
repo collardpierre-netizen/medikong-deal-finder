@@ -303,6 +303,7 @@ export default function VendorOrderDetail() {
           <DeliveryNotesPanel
             orderId={order.order_id}
             orderNumber={order.order_number}
+            orderStatus={(order as any).status ?? null}
             shippingAddress={(order as any).shipping_address ?? null}
           />
         </div>

@@ -29,9 +29,12 @@ interface Props {
   orderNumber?: string | null;
   customerName?: string | null;
   shippingAddress?: Record<string, any> | null;
+  /** Statut de la commande : si "draft", les BL sont marqués BROUILLON. */
+  orderStatus?: string | null;
 }
 
-export default function DeliveryNotesPanel({ orderId, orderNumber, customerName, shippingAddress }: Props) {
+export default function DeliveryNotesPanel({ orderId, orderNumber, customerName, shippingAddress, orderStatus }: Props) {
+  const isDraftOrder = String(orderStatus || "").toLowerCase() === "draft";
   const statusQuery = useOrderDeliveryStatus(orderId);
   const notesQuery = useOrderDeliveryNotes(orderId);
   const createMut = useCreateDeliveryNote(orderId);
@@ -94,6 +97,7 @@ export default function DeliveryNotesPanel({ orderId, orderNumber, customerName,
       documentNumber: dn.document_number,
       issuedAt: dn.issued_at,
       status: dn.status,
+      isDraft: isDraftOrder,
       orderNumber: orderNumber ?? null,
       customerName,
       shippingAddress,

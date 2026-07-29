@@ -526,6 +526,9 @@ export function buildCreditNotePdf(p: CreditNoteParams): {
 } {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   drawHeader(doc, "NOTE DE CRÉDIT", `N° ${p.creditNoteNumber}`);
+  if (p.isDraft) drawDraftBadge(doc);
+
+
 
   // Red banner referring to the cancelled invoice
   const bannerY = 46;

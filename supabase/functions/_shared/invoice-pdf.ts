@@ -511,6 +511,7 @@ export interface CreditNoteParams {
     line_total_excl_vat: number;
     line_total_incl_vat: number;
   }>;
+  isDraft?: boolean;
 }
 
 /**

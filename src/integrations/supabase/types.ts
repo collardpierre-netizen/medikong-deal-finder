@@ -3964,6 +3964,198 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_note_lines: {
+        Row: {
+          created_at: string
+          delivery_note_id: string
+          id: string
+          order_line_id: string
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          delivery_note_id: string
+          id?: string
+          order_line_id: string
+          quantity: number
+        }
+        Update: {
+          created_at?: string
+          delivery_note_id?: string
+          id?: string
+          order_line_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_note_lines_delivery_note_id_fkey"
+            columns: ["delivery_note_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_note_lines_order_line_id_fkey"
+            columns: ["order_line_id"]
+            isOneToOne: false
+            referencedRelation: "admin_commission_backlog_v"
+            referencedColumns: ["order_line_id"]
+          },
+          {
+            foreignKeyName: "delivery_note_lines_order_line_id_fkey"
+            columns: ["order_line_id"]
+            isOneToOne: false
+            referencedRelation: "customer_order_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_note_lines_order_line_id_fkey"
+            columns: ["order_line_id"]
+            isOneToOne: false
+            referencedRelation: "order_lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivery_notes: {
+        Row: {
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          carrier: string | null
+          created_at: string
+          document_number: string | null
+          id: string
+          issued_at: string
+          issued_by: string | null
+          note: string | null
+          order_id: string
+          shipping_address: Json | null
+          status: string
+          tracking_number: string | null
+          updated_at: string
+          vendor_id: string | null
+        }
+        Insert: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          carrier?: string | null
+          created_at?: string
+          document_number?: string | null
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          note?: string | null
+          order_id: string
+          shipping_address?: Json | null
+          status?: string
+          tracking_number?: string | null
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Update: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          carrier?: string | null
+          created_at?: string
+          document_number?: string | null
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          note?: string | null
+          order_id?: string
+          shipping_address?: Json | null
+          status?: string
+          tracking_number?: string | null
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_notes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "delivery_notes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_with_forecast_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_notes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_notes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders_visible_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_notes_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "delivery_notes_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "delivery_notes_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_notes_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_intelligence_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "delivery_notes_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "delivery_notes_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "delivery_notes_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_notes_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       discount_tiers: {
         Row: {
           created_at: string | null
@@ -8920,6 +9112,9 @@ export type Database = {
       }
       order_lines: {
         Row: {
+          backorder_note: string | null
+          backorder_status: string | null
+          backorder_updated_at: string | null
           buyer_confirmation_note: string | null
           buyer_confirmation_source: string | null
           buyer_confirmation_status:
@@ -8961,6 +9156,9 @@ export type Database = {
           vendor_id: string
         }
         Insert: {
+          backorder_note?: string | null
+          backorder_status?: string | null
+          backorder_updated_at?: string | null
           buyer_confirmation_note?: string | null
           buyer_confirmation_source?: string | null
           buyer_confirmation_status?:
@@ -9002,6 +9200,9 @@ export type Database = {
           vendor_id: string
         }
         Update: {
+          backorder_note?: string | null
+          backorder_status?: string | null
+          backorder_updated_at?: string | null
           buyer_confirmation_note?: string | null
           buyer_confirmation_source?: string | null
           buyer_confirmation_status?:
@@ -28820,6 +29021,10 @@ export type Database = {
         Args: { _product_id: string; _vendor_id: string }
         Returns: boolean
       }
+      cancel_delivery_note: {
+        Args: { _delivery_note_id: string; _reason?: string }
+        Returns: undefined
+      }
       cancel_subscription: {
         Args: { _reason?: string; _sub_id: string }
         Returns: undefined
@@ -28909,6 +29114,16 @@ export type Database = {
       }
       create_buyer_delivery_token: {
         Args: { _order_id: string }
+        Returns: string
+      }
+      create_delivery_note: {
+        Args: {
+          _carrier?: string
+          _lines: Json
+          _note?: string
+          _order_id: string
+          _tracking_number?: string
+        }
         Returns: string
       }
       create_offers_from_products: {
@@ -29197,6 +29412,21 @@ export type Database = {
           purchase_price: number
           purchase_price_excl_vat: number
           qogita_base_price: number
+        }[]
+      }
+      get_order_delivery_status: {
+        Args: { _order_id: string }
+        Returns: {
+          backorder_note: string
+          backorder_status: string
+          cnk_code: string
+          delivered_quantity: number
+          gtin: string
+          order_line_id: string
+          product_name: string
+          quantity: number
+          remaining_quantity: number
+          vendor_id: string
         }[]
       }
       get_pickup_details: { Args: { _transaction_id: string }; Returns: Json }
@@ -30532,6 +30762,10 @@ export type Database = {
         Args: { _account_id: string; _kind: string }
         Returns: Json
       }
+      set_order_line_backorder_status: {
+        Args: { _note?: string; _order_line_id: string; _status: string }
+        Returns: undefined
+      }
       set_user_preference: {
         Args: { _key: string; _value: string }
         Returns: undefined
@@ -30992,6 +31226,9 @@ export type Database = {
           _tracking_url?: string
         }
         Returns: {
+          backorder_note: string | null
+          backorder_status: string | null
+          backorder_updated_at: string | null
           buyer_confirmation_note: string | null
           buyer_confirmation_source: string | null
           buyer_confirmation_status:

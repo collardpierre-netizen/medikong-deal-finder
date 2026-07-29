@@ -185,6 +185,7 @@ export interface SelfBillingParams {
   invoiceNumber: string;
   paidAt: Date;
   mandateSignedAt?: Date | string | null;
+  isDraft?: boolean;
 }
 
 /** Fixed legal mention required by BE self-billing rules (mandat de facturation). */

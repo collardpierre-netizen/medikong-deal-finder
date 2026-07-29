@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
 
     // Resolve order + vendor + lines + rate
     const [{ data: order }, { data: vendor }, { data: lines }] = await Promise.all([
-      supabase.from("orders").select("id, order_number, created_at").eq("id", orderId).maybeSingle(),
+      supabase.from("orders").select("id, order_number, created_at, status").eq("id", orderId).maybeSingle(),
       supabase.from("vendors").select("id, name, company_name, vat_number, peppol_id, address_line1, city, postal_code, country_code, commission_rate").eq("id", vendorId).maybeSingle(),
       supabase.from("order_lines").select("line_total_excl_vat, commission_rate, commission_amount").eq("order_id", orderId).eq("vendor_id", vendorId),
     ]);
@@ -105,6 +105,7 @@ Deno.serve(async (req) => {
 
     const { pdf, commissionHt, vat, commissionTtc } = buildCommissionPdf({
       order, vendor, gmvExclVat, commissionRate, invoiceNumber, paidAt,
+      isDraft: String(order.status || "").toLowerCase() === "draft",
     });
 
     const pdfPath = `${orderId}/commission-${vendorId}.pdf`;

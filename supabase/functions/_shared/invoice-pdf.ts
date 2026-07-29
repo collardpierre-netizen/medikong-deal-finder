@@ -185,6 +185,7 @@ export interface SelfBillingParams {
   invoiceNumber: string;
   paidAt: Date;
   mandateSignedAt?: Date | string | null;
+  isDraft?: boolean;
 }
 
 /** Fixed legal mention required by BE self-billing rules (mandat de facturation). */
@@ -238,6 +239,7 @@ function drawTotalsBlock(
 export function buildSelfBillingPdf(p: SelfBillingParams): Uint8Array {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   drawHeader(doc, "FACTURE", `N° ${p.invoiceNumber}`);
+  if (p.isDraft) drawDraftBadge(doc);
   let y = 54;
   y = drawParties(doc, p.vendor, p.customer, y);
   y = drawInvoiceMeta(doc, {
@@ -320,6 +322,7 @@ export function buildSelfBillingPdf(p: SelfBillingParams): Uint8Array {
 
   // Footer
   drawFooter(doc);
+  if (p.isDraft) applyDraftMarkings(doc, "FACTURE PROVISOIRE — BROUILLON · Sans valeur comptable ni fiscale");
   return doc.output("arraybuffer") as any;
 }
 
@@ -338,6 +341,75 @@ function drawFooter(doc: jsPDF) {
   );
 }
 
+/**
+ * Filigrane diagonal "BROUILLON" + bandeau d'avertissement sur toutes les pages.
+ * À appeler juste avant doc.output() pour couvrir toutes les pages générées.
+ */
+export function applyDraftMarkings(doc: jsPDF, notice?: string) {
+  const pageW = 210;
+  const pageH = 297;
+  const pageCount = (doc as any).internal.getNumberOfPages();
+  for (let p = 1; p <= pageCount; p++) {
+    doc.setPage(p);
+
+    try {
+      (doc as any).saveGraphicsState?.();
+      (doc as any).setGState?.(new (doc as any).GState({ opacity: 0.12 }));
+    } catch (_) { /* jsPDF sans GState */ }
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(220, 38, 38);
+    const wmAngle = 30;
+    const rad = (wmAngle * Math.PI) / 180;
+    let wmSize = 110;
+    doc.setFontSize(wmSize);
+    const maxSpan = (pageW - 2 * M.left) / Math.cos(rad);
+    const rawWidth = doc.getTextWidth("BROUILLON");
+    if (rawWidth > maxSpan) {
+      wmSize = Math.max(40, Math.floor((wmSize * maxSpan) / rawWidth));
+      doc.setFontSize(wmSize);
+    }
+    const wmWidth = doc.getTextWidth("BROUILLON");
+    const wmX = pageW / 2 - (wmWidth / 2) * Math.cos(rad);
+    const wmY = pageH / 2 + (wmWidth / 2) * Math.sin(rad);
+    doc.text("BROUILLON", wmX, wmY, { angle: wmAngle });
+    try { (doc as any).restoreGraphicsState?.(); } catch (_) { /* noop */ }
+
+    // Bandeau d'avertissement au-dessus du footer
+    setFill(doc, [254, 226, 226]);
+    setDraw(doc, [220, 38, 38]);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(M.left, pageH - 24, M.width, 7, 1.2, 1.2, "FD");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    setText(doc, [153, 27, 27]);
+    doc.text(
+      notice || "DOCUMENT PROVISOIRE — BROUILLON · Sans valeur comptable ni fiscale",
+      105, pageH - 19.5, { align: "center" },
+    );
+    doc.setFont("helvetica", "normal");
+    setText(doc, C.mute);
+  }
+}
+
+/** Badge "BROUILLON" placé sous le titre du document (coin supérieur droit). */
+function drawDraftBadge(doc: jsPDF) {
+  const label = "BROUILLON";
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  const w = doc.getTextWidth(label) + 8;
+  const h = 6.5;
+  const x = M.right - w;
+  const y = 32;
+  setFill(doc, [254, 226, 226]);
+  setDraw(doc, [220, 38, 38]);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(x, y, w, h, 1.5, 1.5, "FD");
+  setText(doc, [153, 27, 27]);
+  doc.text(label, x + w / 2, y + h / 2 + 1.5, { align: "center" });
+  doc.setFont("helvetica", "normal");
+}
+
+
 export interface CommissionParams {
   order: any;
   vendor: any;
@@ -345,6 +417,7 @@ export interface CommissionParams {
   commissionRate: number; // %
   invoiceNumber: string;
   paidAt: Date;
+  isDraft?: boolean;
 }
 
 export function buildCommissionPdf(p: CommissionParams): { pdf: Uint8Array; commissionHt: number; vat: number; commissionTtc: number } {
@@ -354,6 +427,7 @@ export function buildCommissionPdf(p: CommissionParams): { pdf: Uint8Array; comm
 
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   drawHeader(doc, "COMMISSION", `N° ${p.invoiceNumber}`);
+  if (p.isDraft) drawDraftBadge(doc);
   let y = 54;
   y = drawParties(doc, {
     company_name: MEDIKONG.name,
@@ -413,6 +487,7 @@ export function buildCommissionPdf(p: CommissionParams): { pdf: Uint8Array; comm
   );
 
   drawFooter(doc);
+  if (p.isDraft) applyDraftMarkings(doc, "FACTURE DE COMMISSION PROVISOIRE — BROUILLON · Sans valeur comptable ni fiscale");
   return { pdf: doc.output("arraybuffer") as any, commissionHt, vat, commissionTtc };
 }
 
@@ -436,6 +511,7 @@ export interface CreditNoteParams {
     line_total_excl_vat: number;
     line_total_incl_vat: number;
   }>;
+  isDraft?: boolean;
 }
 
 /**
@@ -450,6 +526,9 @@ export function buildCreditNotePdf(p: CreditNoteParams): {
 } {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   drawHeader(doc, "NOTE DE CRÉDIT", `N° ${p.creditNoteNumber}`);
+  if (p.isDraft) drawDraftBadge(doc);
+
+
 
   // Red banner referring to the cancelled invoice
   const bannerY = 46;
@@ -533,6 +612,7 @@ export function buildCreditNotePdf(p: CreditNoteParams): {
   doc.text(p.reason || "Annulation de la facture originale.", M.left + 4, y + 11, { maxWidth: M.width - 8 });
 
   drawFooter(doc);
+  if (p.isDraft) applyDraftMarkings(doc, "NOTE DE CRÉDIT PROVISOIRE — BROUILLON · Sans valeur comptable ni fiscale");
   return {
     pdf: doc.output("arraybuffer") as any,
     baseAmount: subtotal,

@@ -535,6 +535,7 @@ const AdminCommandeDetail = () => {
           <DeliveryNotesPanel
             orderId={order.id}
             orderNumber={order.order_number}
+            orderStatus={(order as any).status ?? null}
             customerName={(order as any).customer?.company_name ?? (order as any).customer?.email ?? null}
             shippingAddress={(order as any).shipping_address ?? null}
           />

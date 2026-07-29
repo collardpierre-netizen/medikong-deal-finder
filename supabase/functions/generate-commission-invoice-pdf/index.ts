@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
       supabase.from("vendors").select("id, name, company_name, vat_number, peppol_id, address_line1, city, postal_code, country_code")
         .eq("id", inv.vendor_id).maybeSingle(),
       inv.order_id
-        ? supabase.from("orders").select("id, order_number, created_at").eq("id", inv.order_id).maybeSingle()
+        ? supabase.from("orders").select("id, order_number, created_at, status").eq("id", inv.order_id).maybeSingle()
         : Promise.resolve({ data: null }),
       supabase.from("commission_invoice_lines").select("*").eq("commission_invoice_id", inv.id),
     ]);
@@ -81,6 +81,8 @@ Deno.serve(async (req) => {
       commissionRate: rate,
       invoiceNumber: inv.invoice_number || `MK-COM-${inv.id.slice(0, 8)}`,
       paidAt: inv.invoiced_at ? new Date(inv.invoiced_at) : new Date(),
+      isDraft: String(inv.status || "").toLowerCase() === "draft"
+        || String((order as any)?.status || "").toLowerCase() === "draft",
     });
 
     const pdfPath = `commission-invoices/${inv.id}.pdf`;

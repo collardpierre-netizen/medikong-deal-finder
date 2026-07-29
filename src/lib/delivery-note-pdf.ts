@@ -192,7 +192,7 @@ export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(8.5);
         doc.text(
-          "DOCUMENT PROVISOIRE — BROUILLON · Ne pas utiliser comme bon de livraison definitif",
+          "DOCUMENT PROVISOIRE — BROUILLON · Ne pas utiliser comme bon de livraison définitif",
           pageW / 2,
           pageH - 15.5,
           { align: "center" },

@@ -77,6 +77,7 @@ export default function AdminUsers() {
   const [deleteModal, setDeleteModal] = useState<UserRow | null>(null);
   const [deleteReason, setDeleteReason] = useState("");
   const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [resettingId, setResettingId] = useState<string | null>(null);
   const { startImpersonation } = useImpersonation();
   const navigate = useNavigate();
 

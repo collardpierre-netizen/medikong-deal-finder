@@ -283,6 +283,33 @@ export default function AdminUsers() {
     navigate(user.type === "vendor" ? "/vendor" : "/");
   }
 
+  async function handleSendPasswordReset(user: UserRow) {
+    if (!user.email) {
+      toast.error("Impossible : aucune adresse email pour ce compte.");
+      return;
+    }
+    setResettingId(user.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-send-password-reset", {
+        body: { user_id: user.userId ?? undefined, email: user.email },
+      });
+      if (error) throw error;
+      if (data && data.success === false) throw new Error(data.error || "Échec de l'envoi");
+      toast.success(`Email de réinitialisation envoyé à ${user.email}`);
+      logAdminAudit("customer.password_reset_sent", {
+        targetId: user.userId ?? user.id,
+        targetType: "auth_user",
+        metadata: { email: user.email },
+      });
+    } catch (e) {
+      toast.error("Erreur : " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setResettingId(null);
+    }
+  }
+
+
+
   const filtered = users.filter(u => {
     if (typeFilter === "pending") { if (u.status !== "pending") return false; }
     else if (typeFilter !== "all" && u.type !== typeFilter) return false;

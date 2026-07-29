@@ -7,7 +7,7 @@ import StatusBadge from "@/components/admin/StatusBadge";
 import {
   Eye, Users, Store, ShoppingBag, AlertTriangle, Search, Plus,
   Ban, CheckCircle, Trash2, X, Building2, Mail, Phone, MapPin,
-  Calendar, FileText, Clock, ChevronRight, UserCheck, UserX
+  Calendar, FileText, Clock, ChevronRight, UserCheck, UserX, KeyRound
 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";

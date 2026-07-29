@@ -417,6 +417,7 @@ export interface CommissionParams {
   commissionRate: number; // %
   invoiceNumber: string;
   paidAt: Date;
+  isDraft?: boolean;
 }
 
 export function buildCommissionPdf(p: CommissionParams): { pdf: Uint8Array; commissionHt: number; vat: number; commissionTtc: number } {
@@ -426,6 +427,7 @@ export function buildCommissionPdf(p: CommissionParams): { pdf: Uint8Array; comm
 
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   drawHeader(doc, "COMMISSION", `N° ${p.invoiceNumber}`);
+  if (p.isDraft) drawDraftBadge(doc);
   let y = 54;
   y = drawParties(doc, {
     company_name: MEDIKONG.name,

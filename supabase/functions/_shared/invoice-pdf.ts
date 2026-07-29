@@ -239,6 +239,7 @@ function drawTotalsBlock(
 export function buildSelfBillingPdf(p: SelfBillingParams): Uint8Array {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   drawHeader(doc, "FACTURE", `N° ${p.invoiceNumber}`);
+  if (p.isDraft) drawDraftBadge(doc);
   let y = 54;
   y = drawParties(doc, p.vendor, p.customer, y);
   y = drawInvoiceMeta(doc, {

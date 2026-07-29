@@ -530,6 +530,14 @@ const AdminCommandeDetail = () => {
 
           <OrderProductsSummary lines={lines} />
 
+          <DeliveryNotesPanel
+            orderId={order.id}
+            orderNumber={order.order_number}
+            customerName={(order as any).customer?.company_name ?? (order as any).customer?.email ?? null}
+            shippingAddress={(order as any).shipping_address ?? null}
+          />
+
+
           <div className="bg-white border rounded-lg overflow-hidden" style={{ borderColor: "#E2E8F0" }}>
             <table className="w-full text-sm">
               <thead style={{ backgroundColor: "#F8FAFC" }}>

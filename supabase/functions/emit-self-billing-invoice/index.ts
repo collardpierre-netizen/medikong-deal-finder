@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
     }
 
     const [{ data: order }, { data: vendor }] = await Promise.all([
-      supabase.from("orders").select("id, order_number, created_at, customer_id, customers:customers!orders_customer_id_fkey(company_name, email, vat_number, address_line1, city, postal_code, country_code)").eq("id", orderId).maybeSingle(),
+      supabase.from("orders").select("id, order_number, created_at, status, customer_id, customers:customers!orders_customer_id_fkey(company_name, email, vat_number, address_line1, city, postal_code, country_code)").eq("id", orderId).maybeSingle(),
       supabase.from("vendors").select("id, name, company_name, email, vat_number, peppol_id, address_line1, city, postal_code, country_code, mandate_signed_at").eq("id", vendorId).maybeSingle(),
     ]);
     if (!order) return json(404, { error: "order_not_found" });
@@ -119,6 +119,7 @@ Deno.serve(async (req) => {
       invoiceNumber,
       paidAt: paidAtInput,
       mandateSignedAt: vendor.mandate_signed_at,
+      isDraft: String(order.status || "").toLowerCase() === "draft",
     });
 
     const pdfPath = `${orderId}/self_billing-${vendorId}.pdf`;

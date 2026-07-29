@@ -604,19 +604,62 @@ Deno.serve(async (req) => {
 
     y += summaryH + 6;
 
-    // Footer
+    // Footer + filigrane BROUILLON si la commande est en brouillon
+    const isDraftOrder = String(order.status || "").toLowerCase() === "draft";
     const pageCount = (doc as any).internal.getNumberOfPages();
     for (let p = 1; p <= pageCount; p++) {
       doc.setPage(p);
+
+      if (isDraftOrder) {
+        try {
+          (doc as any).saveGraphicsState?.();
+          (doc as any).setGState?.(new (doc as any).GState({ opacity: 0.12 }));
+        } catch (_) { /* jsPDF sans GState */ }
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(220, 38, 38);
+        const wmAngle = 30;
+        const rad = (wmAngle * Math.PI) / 180;
+        let wmSize = 110;
+        doc.setFontSize(wmSize);
+        const maxSpan = (pageW - 2 * M) / Math.cos(rad);
+        const rawWidth = doc.getTextWidth("BROUILLON");
+        if (rawWidth > maxSpan) {
+          wmSize = Math.max(40, Math.floor((wmSize * maxSpan) / rawWidth));
+          doc.setFontSize(wmSize);
+        }
+        const wmWidth = doc.getTextWidth("BROUILLON");
+        doc.text(
+          "BROUILLON",
+          pageW / 2 - (wmWidth / 2) * Math.cos(rad),
+          pageH / 2 + (wmWidth / 2) * Math.sin(rad),
+          { angle: wmAngle },
+        );
+        try { (doc as any).restoreGraphicsState?.(); } catch (_) { /* noop */ }
+
+        doc.setFillColor(254, 226, 226);
+        doc.setDrawColor(220, 38, 38);
+        doc.setLineWidth(0.4);
+        doc.roundedRect(M, pageH - 24, pageW - 2 * M, 7, 1.2, 1.2, "FD");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8.5);
+        doc.setTextColor(153, 27, 27);
+        doc.text(
+          "DOCUMENT PROVISOIRE — BROUILLON NON CONFIRMÉ · Ne pas utiliser comme bon de commande définitif",
+          pageW / 2, pageH - 19.5, { align: "center" },
+        );
+        doc.setFont("helvetica", "normal");
+      }
+
       doc.setDrawColor(...LINE);
       doc.line(M, pageH - 14, pageW - M, pageH - 14);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(7.5);
       doc.setTextColor(...MUTED);
-      doc.text(`Bon de commande ${order.order_number} — vue vendeur`, M, pageH - 9);
+      doc.text(`Bon de commande ${order.order_number}${isDraftOrder ? " · BROUILLON" : ""} — vue vendeur`, M, pageH - 9);
       doc.text("MediKong SRL · TVA BE 1005.771.323 · medikong.pro", pageW / 2, pageH - 9, { align: "center" });
       doc.text(`Page ${p} / ${pageCount}`, pageW - M, pageH - 9, { align: "right" });
     }
+
 
     // Upload
     const pdfBytes = doc.output("arraybuffer");

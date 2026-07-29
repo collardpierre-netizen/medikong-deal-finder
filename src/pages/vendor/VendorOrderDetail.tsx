@@ -297,6 +297,15 @@ export default function VendorOrderDetail() {
           />
         </div>
 
+        <div className="p-4 border-b border-border">
+          <DeliveryNotesPanel
+            orderId={order.order_id}
+            orderNumber={order.order_number}
+            shippingAddress={(order as any).shipping_address ?? null}
+          />
+        </div>
+
+
         <div className="divide-y divide-border">
           {order.lines.map((line) => (
             <VendorOrderLineRow key={line.id} line={line} order={order} readOnly />

@@ -16,6 +16,8 @@ import OrderInvoiceStatusPanel from "@/components/orders/OrderInvoiceStatusPanel
 import StripePaymentStatusBadge from "@/components/orders/StripePaymentStatusBadge";
 import OrderSourceBadge from "@/components/orders/OrderSourceBadge";
 import OrderProductsSummary from "@/components/orders/OrderProductsSummary";
+import DeliveryNotesPanel from "@/components/orders/DeliveryNotesPanel";
+
 
 import {
   OrderInfoBlocks,

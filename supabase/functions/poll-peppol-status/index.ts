@@ -93,7 +93,8 @@ Deno.serve(async (req) => {
       return json(400, { ok: false, error: "falco_not_configured", details: e?.message });
     }
 
-    const url = `${cfg.baseUrl}/documents/sales?page_size=100&sort_by=created_at&sort_direction=desc`;
+    // Route confirmée par le support Falco : /v1/documents/sales (pagination page/page_size).
+    const url = `${cfg.baseUrl}/documents/sales?page=0&page_size=200&sort_by=created_at&sort_direction=desc`;
     const started = Date.now();
     const res = await fetch(url, {
       headers: {

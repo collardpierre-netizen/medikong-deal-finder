@@ -469,10 +469,9 @@ export async function checkPeppolReceiverRegistered(
 }
 
 /**
- * Best-effort: mark a Falco document as paid via POST /documents/{id}/payments.
- * Never throws — returns { ok, http_status, error } for logging.
- * Call after a successful submitInvoiceToFalco() when the invoice is already
- * cashed on our side (Stripe Connect payout).
+ * DÉSACTIVÉ (confirmé par le support Falco, juillet 2026) : le marquage de
+ * paiement via API n'est pas encore disponible côté Falco. Cette fonction est
+ * un no-op tant que Falco n'a pas communiqué la route officielle.
  */
 export async function markFalcoInvoicePaid(params: {
   documentId: string;
@@ -480,45 +479,9 @@ export async function markFalcoInvoicePaid(params: {
   paidAt?: string | null;
   note?: string;
 }): Promise<{ ok: boolean; http_status?: number; error?: string; payload?: unknown }> {
-  try {
-    const { appSecret, apiKey, baseUrl } = getFalcoConfig();
-    if (!params.documentId) return { ok: false, error: "missing_document_id" };
-    const date = (params.paidAt || new Date().toISOString()).slice(0, 10);
-    const started = Date.now();
-    const res = await fetch(`${baseUrl}/documents/${params.documentId}/payments`, {
-      method: "POST",
-      headers: {
-        "X-Falco-Api-Key": apiKey,
-        "X-Falco-App-Secret": appSecret,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        amount: Number(params.amountInclVat || 0),
-        date,
-        method: "other",
-        note: params.note || "Paiement encaissé via Stripe Connect — MediKong",
-      }),
-    });
-    const ct = res.headers.get("content-type") || "";
-    const payload = ct.includes("json") ? await res.json().catch(() => null) : await res.text().catch(() => null);
-    if (!res.ok) {
-      logFalco("warn", "mark_paid_failed", {
-        document_id: params.documentId,
-        http_status: res.status,
-        latency_ms: Date.now() - started,
-        payload: typeof payload === "string" ? payload.slice(0, 300) : payload,
-      });
-      return { ok: false, http_status: res.status, error: "falco_mark_paid_failed", payload };
-    }
-    logFalco("info", "mark_paid_ok", {
-      document_id: params.documentId,
-      amount: params.amountInclVat,
-      latency_ms: Date.now() - started,
-    });
-    return { ok: true, http_status: res.status, payload };
-  } catch (e: any) {
-    logFalco("warn", "mark_paid_exception", { error: String(e?.message || e) });
-    return { ok: false, error: String(e?.message || e) };
-  }
+  logFalco("info", "mark_paid_disabled", {
+    document_id: params.documentId,
+    reason: "falco_api_not_available",
+  });
+  return { ok: false, error: "falco_mark_paid_disabled" };
 }

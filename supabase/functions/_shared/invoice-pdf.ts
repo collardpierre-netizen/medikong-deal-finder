@@ -612,6 +612,7 @@ export function buildCreditNotePdf(p: CreditNoteParams): {
   doc.text(p.reason || "Annulation de la facture originale.", M.left + 4, y + 11, { maxWidth: M.width - 8 });
 
   drawFooter(doc);
+  if (p.isDraft) applyDraftMarkings(doc, "NOTE DE CRÉDIT PROVISOIRE — BROUILLON · Sans valeur comptable ni fiscale");
   return {
     pdf: doc.output("arraybuffer") as any,
     baseAmount: subtotal,

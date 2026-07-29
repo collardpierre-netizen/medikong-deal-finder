@@ -114,14 +114,20 @@ export async function generateExpressOrderPdf(orderId: string) {
   // Statut / badge draft
   let cursorY = 30;
   if (isDraft) {
-    doc.setFillColor(220, 38, 38);
-    doc.roundedRect(M, cursorY - 4, 32, 6, 1, 1, "F");
-    doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.text("BROUILLON", M + 16, cursorY, { align: "center" });
+    const badgeLabel = "BROUILLON";
+    const badgeW = Math.max(32, doc.getTextWidth(badgeLabel) + 8);
+    const badgeH = 6;
+    const badgeY = cursorY - 4;
+    doc.setFillColor(220, 38, 38);
+    doc.roundedRect(M, badgeY, badgeW, badgeH, 1, 1, "F");
+    doc.setTextColor(255, 255, 255);
+    // Centrage vertical dans la pastille (baseline ≈ milieu + 1/3 de la hauteur de casse)
+    doc.text(badgeLabel, M + badgeW / 2, badgeY + badgeH / 2 + 1, { align: "center" });
     cursorY += 6;
   }
+
   if (order.customer) {
     doc.setTextColor(...NAVY);
     doc.setFont("helvetica", "bold");

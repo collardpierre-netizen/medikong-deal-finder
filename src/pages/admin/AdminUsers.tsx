@@ -7,7 +7,7 @@ import StatusBadge from "@/components/admin/StatusBadge";
 import {
   Eye, Users, Store, ShoppingBag, AlertTriangle, Search, Plus,
   Ban, CheckCircle, Trash2, X, Building2, Mail, Phone, MapPin,
-  Calendar, FileText, Clock, ChevronRight, UserCheck, UserX
+  Calendar, FileText, Clock, ChevronRight, UserCheck, UserX, KeyRound
 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -77,6 +77,7 @@ export default function AdminUsers() {
   const [deleteModal, setDeleteModal] = useState<UserRow | null>(null);
   const [deleteReason, setDeleteReason] = useState("");
   const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [resettingId, setResettingId] = useState<string | null>(null);
   const { startImpersonation } = useImpersonation();
   const navigate = useNavigate();
 
@@ -283,6 +284,33 @@ export default function AdminUsers() {
     navigate(user.type === "vendor" ? "/vendor" : "/");
   }
 
+  async function handleSendPasswordReset(user: UserRow) {
+    if (!user.email) {
+      toast.error("Impossible : aucune adresse email pour ce compte.");
+      return;
+    }
+    setResettingId(user.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-send-password-reset", {
+        body: { user_id: user.userId ?? undefined, email: user.email },
+      });
+      if (error) throw error;
+      if (data && data.success === false) throw new Error(data.error || "Échec de l'envoi");
+      toast.success(`Email de réinitialisation envoyé à ${user.email}`);
+      logAdminAudit("customer.password_reset_sent", {
+        targetId: user.userId ?? user.id,
+        targetType: "auth_user",
+        metadata: { email: user.email },
+      });
+    } catch (e) {
+      toast.error("Erreur : " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setResettingId(null);
+    }
+  }
+
+
+
   const filtered = users.filter(u => {
     if (typeFilter === "pending") { if (u.status !== "pending") return false; }
     else if (typeFilter !== "all" && u.type !== typeFilter) return false;
@@ -464,19 +492,35 @@ export default function AdminUsers() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {!u.linked ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="gap-1 text-[11px] h-7"
-                        onClick={(e) => { e.stopPropagation(); handleCreateAccess(u); }}
-                      >
-                        <UserCheck size={12} /> Créer l'accès
-                      </Button>
-                    ) : (
-                      <ChevronRight size={16} className="inline text-muted-foreground" />
-                    )}
+                    <div className="flex items-center justify-end gap-2">
+                      {!u.linked ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1 text-[11px] h-7"
+                          onClick={(e) => { e.stopPropagation(); handleCreateAccess(u); }}
+                        >
+                          <UserCheck size={12} /> Créer l'accès
+                        </Button>
+                      ) : (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1 text-[11px] h-7"
+                            disabled={resettingId === u.id}
+                            title="Envoyer un email de réinitialisation du mot de passe"
+                            onClick={(e) => { e.stopPropagation(); handleSendPasswordReset(u); }}
+                          >
+                            <KeyRound size={12} />
+                            {resettingId === u.id ? "Envoi…" : "Reset mot de passe"}
+                          </Button>
+                          <ChevronRight size={16} className="inline text-muted-foreground" />
+                        </>
+                      )}
+                    </div>
                   </td>
+
                 </tr>
               ))}
             </tbody>

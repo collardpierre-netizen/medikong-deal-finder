@@ -16,6 +16,8 @@ import OrderInvoiceStatusPanel from "@/components/orders/OrderInvoiceStatusPanel
 import StripePaymentStatusBadge from "@/components/orders/StripePaymentStatusBadge";
 import OrderSourceBadge from "@/components/orders/OrderSourceBadge";
 import OrderProductsSummary from "@/components/orders/OrderProductsSummary";
+import DeliveryNotesPanel from "@/components/orders/DeliveryNotesPanel";
+
 
 import {
   OrderInfoBlocks,
@@ -296,6 +298,15 @@ export default function VendorOrderDetail() {
             }))}
           />
         </div>
+
+        <div className="p-4 border-b border-border">
+          <DeliveryNotesPanel
+            orderId={order.order_id}
+            orderNumber={order.order_number}
+            shippingAddress={(order as any).shipping_address ?? null}
+          />
+        </div>
+
 
         <div className="divide-y divide-border">
           {order.lines.map((line) => (

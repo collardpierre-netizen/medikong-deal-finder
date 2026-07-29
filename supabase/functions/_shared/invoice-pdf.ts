@@ -487,6 +487,7 @@ export function buildCommissionPdf(p: CommissionParams): { pdf: Uint8Array; comm
   );
 
   drawFooter(doc);
+  if (p.isDraft) applyDraftMarkings(doc, "FACTURE DE COMMISSION PROVISOIRE — BROUILLON · Sans valeur comptable ni fiscale");
   return { pdf: doc.output("arraybuffer") as any, commissionHt, vat, commissionTtc };
 }
 

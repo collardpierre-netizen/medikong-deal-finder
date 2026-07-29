@@ -322,6 +322,7 @@ export function buildSelfBillingPdf(p: SelfBillingParams): Uint8Array {
 
   // Footer
   drawFooter(doc);
+  if (p.isDraft) applyDraftMarkings(doc, "FACTURE PROVISOIRE — BROUILLON · Sans valeur comptable ni fiscale");
   return doc.output("arraybuffer") as any;
 }
 

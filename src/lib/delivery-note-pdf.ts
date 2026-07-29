@@ -5,6 +5,8 @@ export type DeliveryNotePdfInput = {
   documentNumber: string | null;
   issuedAt: string;
   status: "issued" | "cancelled";
+  /** Commande encore en brouillon : le BL est provisoire. */
+  isDraft?: boolean;
   orderNumber: string | null;
   customerName?: string | null;
   shippingAddress?: Record<string, any> | null;
@@ -43,6 +45,7 @@ export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
   const pageH = 297;
   const M = 15;
   const cancelled = input.status === "cancelled";
+  const isDraft = input.isDraft === true;
 
   doc.setFillColor(...NAVY);
   doc.rect(0, 0, pageW, 22, "F");
@@ -55,7 +58,24 @@ export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
   doc.text(input.documentNumber || "Sans numéro", pageW - M, 10, { align: "right" });
   doc.text(new Date(input.issuedAt).toLocaleDateString("fr-BE"), pageW - M, 16, { align: "right" });
 
-  let y = 32;
+  if (isDraft) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    const label = "BROUILLON";
+    const bw = doc.getTextWidth(label) + 8;
+    const bh = 6.5;
+    const bx = pageW / 2 - bw / 2;
+    const by = 25;
+    doc.setFillColor(254, 226, 226);
+    doc.setDrawColor(220, 38, 38);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(bx, by, bw, bh, 1.5, 1.5, "FD");
+    doc.setTextColor(153, 27, 27);
+    doc.text(label, pageW / 2, by + bh / 2 + 1.5, { align: "center" });
+    doc.setFont("helvetica", "normal");
+  }
+
+  let y = isDraft ? 38 : 32;
   doc.setTextColor(...NAVY);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
@@ -140,6 +160,44 @@ export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
     },
     margin: { left: M, right: M },
     didDrawPage: () => {
+      if (isDraft) {
+        const gsD = (doc as any).GState ? new (doc as any).GState({ opacity: 0.12 }) : null;
+        if (gsD) (doc as any).setGState(gsD);
+        doc.setTextColor(220, 38, 38);
+        doc.setFont("helvetica", "bold");
+        const wmAngle = 30;
+        const rad = (wmAngle * Math.PI) / 180;
+        let wmSize = 110;
+        doc.setFontSize(wmSize);
+        const maxSpan = (pageW - 2 * M) / Math.cos(rad);
+        const rawWidth = doc.getTextWidth("BROUILLON");
+        if (rawWidth > maxSpan) {
+          wmSize = Math.max(40, Math.floor((wmSize * maxSpan) / rawWidth));
+          doc.setFontSize(wmSize);
+        }
+        const wmWidth = doc.getTextWidth("BROUILLON");
+        doc.text(
+          "BROUILLON",
+          pageW / 2 - (wmWidth / 2) * Math.cos(rad),
+          pageH / 2 + (wmWidth / 2) * Math.sin(rad),
+          { angle: wmAngle },
+        );
+        if (gsD) (doc as any).setGState(new (doc as any).GState({ opacity: 1 }));
+
+        doc.setFillColor(254, 226, 226);
+        doc.setDrawColor(220, 38, 38);
+        doc.setLineWidth(0.4);
+        doc.roundedRect(M, pageH - 20, pageW - 2 * M, 7, 1.2, 1.2, "FD");
+        doc.setTextColor(153, 27, 27);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8.5);
+        doc.text(
+          "DOCUMENT PROVISOIRE — BROUILLON · Ne pas utiliser comme bon de livraison definitif",
+          pageW / 2,
+          pageH - 15.5,
+          { align: "center" },
+        );
+      }
       if (cancelled) {
         const gs = (doc as any).GState ? new (doc as any).GState({ opacity: 0.09 }) : null;
         if (gs) (doc as any).setGState(gs);

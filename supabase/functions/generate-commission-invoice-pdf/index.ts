@@ -81,7 +81,8 @@ Deno.serve(async (req) => {
       commissionRate: rate,
       invoiceNumber: inv.invoice_number || `MK-COM-${inv.id.slice(0, 8)}`,
       paidAt: inv.invoiced_at ? new Date(inv.invoiced_at) : new Date(),
-      isDraft: String(inv.status || "").toLowerCase() === "draft",
+      isDraft: String(inv.status || "").toLowerCase() === "draft"
+        || String((order as any)?.status || "").toLowerCase() === "draft",
     });
 
     const pdfPath = `commission-invoices/${inv.id}.pdf`;

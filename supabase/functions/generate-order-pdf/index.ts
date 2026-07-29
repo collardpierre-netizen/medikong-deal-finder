@@ -612,10 +612,25 @@ Deno.serve(async (req) => {
           (doc as any).setGState?.(new (doc as any).GState({ opacity: 0.12 }));
         } catch (_) { /* jsPDF sans GState : on continue sans opacité */ }
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(110);
         doc.setTextColor(220, 38, 38);
-        doc.text("BROUILLON", pageW / 2, pageH / 2 + 20, { align: "center", angle: 32 });
+        // Taille adaptée pour que le filigrane incliné tienne dans la page
+        const wmAngle = 30; // degrés, sens anti-horaire
+        const rad = (wmAngle * Math.PI) / 180;
+        let wmSize = 110;
+        doc.setFontSize(wmSize);
+        const maxSpan = (pageW - 2 * M) / Math.cos(rad);
+        const rawWidth = doc.getTextWidth("BROUILLON");
+        if (rawWidth > maxSpan) {
+          wmSize = Math.max(40, Math.floor((wmSize * maxSpan) / rawWidth));
+          doc.setFontSize(wmSize);
+        }
+        const wmWidth = doc.getTextWidth("BROUILLON");
+        // Centrage manuel : jsPDF fait tourner autour du point d'ancrage
+        const wmX = pageW / 2 - (wmWidth / 2) * Math.cos(rad);
+        const wmY = pageH / 2 + (wmWidth / 2) * Math.sin(rad);
+        doc.text("BROUILLON", wmX, wmY, { angle: wmAngle });
         try { (doc as any).restoreGraphicsState?.(); } catch (_) { /* noop */ }
+
         doc.setTextColor(...MUTED);
 
         // Bandeau d'avertissement en bas (au-dessus du footer)

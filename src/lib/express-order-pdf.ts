@@ -207,9 +207,27 @@ export async function generateExpressOrderPdf(orderId: string) {
         if (gs) (doc as any).setGState(gs);
         doc.setTextColor(220, 38, 38);
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(90);
-        doc.text("BROUILLON", pageW / 2, pageH / 2 + 20, { align: "center", angle: -30 });
+        // Centrage manuel : jsPDF pivote autour du point d'ancrage,
+        // `align: "center"` + `angle` sortait le filigrane de la page.
+        const wmAngle = 30; // degrés, sens anti-horaire
+        const wmRad = (wmAngle * Math.PI) / 180;
+        let wmSize = 90;
+        doc.setFontSize(wmSize);
+        const wmMaxSpan = (pageW - 2 * M) / Math.cos(wmRad);
+        const wmRaw = doc.getTextWidth("BROUILLON");
+        if (wmRaw > wmMaxSpan) {
+          wmSize = Math.max(36, Math.floor((wmSize * wmMaxSpan) / wmRaw));
+          doc.setFontSize(wmSize);
+        }
+        const wmW = doc.getTextWidth("BROUILLON");
+        doc.text(
+          "BROUILLON",
+          pageW / 2 - (wmW / 2) * Math.cos(wmRad),
+          pageH / 2 + (wmW / 2) * Math.sin(wmRad),
+          { angle: wmAngle },
+        );
         if (gs) (doc as any).setGState(new (doc as any).GState({ opacity: 1 }));
+
         doc.setFillColor(254, 226, 226);
         doc.rect(0, pageH - 12, pageW, 12, "F");
         doc.setTextColor(153, 27, 27);

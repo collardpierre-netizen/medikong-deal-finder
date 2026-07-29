@@ -236,8 +236,27 @@ function drawTotalsBlock(
   return y + boxH + 6;
 }
 
+/** Métadonnées PDF indiquant clairement le statut brouillon / final. */
+function setDocStatusMetadata(
+  doc: jsPDF,
+  docLabel: string,
+  number: string,
+  isDraft: boolean,
+) {
+  doc.setProperties({
+    title: `${isDraft ? "BROUILLON" : "FINAL"} — ${docLabel} ${number}`.trim(),
+    subject: isDraft
+      ? "Document provisoire (brouillon) — sans valeur comptable ni fiscale"
+      : "Document final",
+    keywords: isDraft ? "brouillon,draft,provisoire,MediKong" : "final,definitif,MediKong",
+    author: "MediKong",
+    creator: "MediKong",
+  });
+}
+
 export function buildSelfBillingPdf(p: SelfBillingParams): Uint8Array {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
+  setDocStatusMetadata(doc, "Facture", p.invoiceNumber, p.isDraft === true);
   drawHeader(doc, "FACTURE", `N° ${p.invoiceNumber}`);
   if (p.isDraft) drawDraftBadge(doc);
   let y = 54;
@@ -426,6 +445,7 @@ export function buildCommissionPdf(p: CommissionParams): { pdf: Uint8Array; comm
   const commissionTtc = commissionHt + vat;
 
   const doc = new jsPDF({ unit: "mm", format: "a4" });
+  setDocStatusMetadata(doc, "Facture de commission", p.invoiceNumber, p.isDraft === true);
   drawHeader(doc, "COMMISSION", `N° ${p.invoiceNumber}`);
   if (p.isDraft) drawDraftBadge(doc);
   let y = 54;
@@ -525,6 +545,7 @@ export function buildCreditNotePdf(p: CreditNoteParams): {
   totalAmount: number;      // negative
 } {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
+  setDocStatusMetadata(doc, "Note de crédit", p.creditNoteNumber, p.isDraft === true);
   drawHeader(doc, "NOTE DE CRÉDIT", `N° ${p.creditNoteNumber}`);
   if (p.isDraft) drawDraftBadge(doc);
 

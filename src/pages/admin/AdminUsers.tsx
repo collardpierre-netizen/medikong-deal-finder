@@ -492,19 +492,35 @@ export default function AdminUsers() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {!u.linked ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="gap-1 text-[11px] h-7"
-                        onClick={(e) => { e.stopPropagation(); handleCreateAccess(u); }}
-                      >
-                        <UserCheck size={12} /> Créer l'accès
-                      </Button>
-                    ) : (
-                      <ChevronRight size={16} className="inline text-muted-foreground" />
-                    )}
+                    <div className="flex items-center justify-end gap-2">
+                      {!u.linked ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1 text-[11px] h-7"
+                          onClick={(e) => { e.stopPropagation(); handleCreateAccess(u); }}
+                        >
+                          <UserCheck size={12} /> Créer l'accès
+                        </Button>
+                      ) : (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1 text-[11px] h-7"
+                            disabled={resettingId === u.id}
+                            title="Envoyer un email de réinitialisation du mot de passe"
+                            onClick={(e) => { e.stopPropagation(); handleSendPasswordReset(u); }}
+                          >
+                            <KeyRound size={12} />
+                            {resettingId === u.id ? "Envoi…" : "Reset mot de passe"}
+                          </Button>
+                          <ChevronRight size={16} className="inline text-muted-foreground" />
+                        </>
+                      )}
+                    </div>
                   </td>
+
                 </tr>
               ))}
             </tbody>

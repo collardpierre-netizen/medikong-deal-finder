@@ -183,6 +183,15 @@ Deno.serve(async (req) => {
     doc.setTextColor(...MUTED);
     doc.text("Statut", M, y + 27);
     const isDraft = String(order.status || "").toLowerCase() === "draft";
+    doc.setProperties({
+      title: `${isDraft ? "BROUILLON" : "FINAL"} — Bon de commande ${order.order_number || ""}`.trim(),
+      subject: isDraft
+        ? "Document provisoire (brouillon) — sans valeur contractuelle"
+        : "Document final",
+      keywords: isDraft ? "brouillon,draft,provisoire,MediKong" : "final,definitif,MediKong",
+      author: "MediKong",
+      creator: "MediKong",
+    });
     const STATUS_LABELS: Record<string, string> = {
       draft: "Brouillon",
       pending: "En attente",

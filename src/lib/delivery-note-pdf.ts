@@ -46,6 +46,15 @@ export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
   const M = 15;
   const cancelled = input.status === "cancelled";
   const isDraft = input.isDraft === true;
+  doc.setProperties({
+    title: `${isDraft ? "BROUILLON" : "FINAL"} — Bon de livraison ${input.documentNumber || ""}`.trim(),
+    subject: isDraft
+      ? "Bon de livraison provisoire (brouillon) — sans valeur définitive"
+      : "Bon de livraison final",
+    keywords: isDraft ? "brouillon,draft,provisoire,MediKong" : "final,definitif,MediKong",
+    author: "MediKong",
+    creator: "MediKong",
+  });
 
   doc.setFillColor(...NAVY);
   doc.rect(0, 0, pageW, 22, "F");
@@ -215,5 +224,7 @@ export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
     },
   });
 
-  doc.save(`bon-livraison_${input.documentNumber || "sans-numero"}.pdf`);
+  doc.save(
+    `bon-livraison_${input.documentNumber || "sans-numero"}_${isDraft ? "BROUILLON" : "FINAL"}.pdf`,
+  );
 }

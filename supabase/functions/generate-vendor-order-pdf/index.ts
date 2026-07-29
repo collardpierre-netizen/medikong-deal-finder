@@ -606,6 +606,15 @@ Deno.serve(async (req) => {
 
     // Footer + filigrane BROUILLON si la commande est en brouillon
     const isDraftOrder = String(order.status || "").toLowerCase() === "draft";
+    doc.setProperties({
+      title: `${isDraftOrder ? "BROUILLON" : "FINAL"} — Bon de commande vendeur ${order.order_number || ""}`.trim(),
+      subject: isDraftOrder
+        ? "Document provisoire (brouillon) — sans valeur contractuelle"
+        : "Document final",
+      keywords: isDraftOrder ? "brouillon,draft,provisoire,MediKong" : "final,definitif,MediKong",
+      author: "MediKong",
+      creator: "MediKong",
+    });
     const pageCount = (doc as any).internal.getNumberOfPages();
     for (let p = 1; p <= pageCount; p++) {
       doc.setPage(p);

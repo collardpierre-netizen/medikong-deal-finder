@@ -90,6 +90,15 @@ export async function generateExpressOrderPdf(orderId: string) {
   const currency = order.currency || "EUR";
 
   const doc = new jsPDF({ unit: "mm", format: "a4" });
+  doc.setProperties({
+    title: `${isDraft ? "BROUILLON" : "FINAL"} — Recap commande ${order.order_number || ""}`.trim(),
+    subject: isDraft
+      ? "Document provisoire (brouillon) — sans valeur contractuelle"
+      : "Document final",
+    keywords: isDraft ? "brouillon,draft,provisoire,MediKong" : "final,definitif,MediKong",
+    author: "MediKong",
+    creator: "MediKong",
+  });
   const pageW = 210;
   const pageH = 297;
   const M = 15;
@@ -253,7 +262,7 @@ export async function generateExpressOrderPdf(orderId: string) {
     },
   });
 
-  const suffix = isDraft ? "_brouillon" : "";
+  const suffix = isDraft ? "_BROUILLON" : "_FINAL";
   doc.save(`recap_${order.order_number || "commande-sans-numero"}${suffix}.pdf`);
 
 }

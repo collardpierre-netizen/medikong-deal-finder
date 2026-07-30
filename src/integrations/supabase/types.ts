@@ -30919,6 +30919,21 @@ export type Database = {
           vendor_name: string
         }[]
       }
+      select_price_history_backfill_targets: {
+        Args: {
+          _fresh_hours?: number
+          _include_rest?: boolean
+          _limit?: number
+        }
+        Returns: {
+          brand_priority: number
+          gtin: string
+          id: string
+          last_point: string
+          qogita_fid: string
+          qogita_slug: string
+        }[]
+      }
       select_priority_scrape_targets: {
         Args: { _fresh_hours?: number; _limit?: number }
         Returns: {

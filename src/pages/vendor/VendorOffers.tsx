@@ -148,6 +148,10 @@ interface OfferForm {
   packaging_languages: string[];
   /** Source fournisseur privée (ex. "Quirumed") — sert au vendeur à retrouver où repasser commande. */
   source_supplier: string;
+  /** Prix public conseillé TTC (€) — réservé fabricants / distributeurs officiels. */
+  suggested_retail_price: string;
+  /** Source du PVP : manufacturer | distributor. */
+  suggested_retail_price_source: string;
 }
 
 const emptyForm: OfferForm = {
@@ -155,7 +159,9 @@ const emptyForm: OfferForm = {
   pack_size_override: "", product_pack_size_fallback: null, vendor_note: "",
   carton_size_override: "", packaging_languages: [],
   source_supplier: "",
+  suggested_retail_price: "", suggested_retail_price_source: "manufacturer",
 };
+
 
 function ProductThumb({ imageUrls, alt = "" }: { imageUrls?: string[] | null; alt?: string }) {
   const validImage = Array.isArray(imageUrls) ? imageUrls.find((url) => isValidProductImage(url)) : undefined;

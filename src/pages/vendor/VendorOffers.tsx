@@ -1791,7 +1791,19 @@ export default function VendorOffers() {
         packaging_languages: form.packaging_languages.length > 0 ? form.packaging_languages : null,
         source_supplier: form.source_supplier?.trim() ? form.source_supplier.trim().slice(0, 120) : null,
         is_active: true,
+        ...(canSetPvp
+          ? (() => {
+              const raw = form.suggested_retail_price?.trim();
+              const num = raw ? parseFloat(raw.replace(",", ".")) : NaN;
+              const cents = Number.isFinite(num) && num > 0 ? Math.round(num * 100) : null;
+              return {
+                suggested_retail_price_cents: cents,
+                suggested_retail_price_source: cents ? form.suggested_retail_price_source : null,
+              };
+            })()
+          : {}),
       };
+
       let offerId = editingId;
       if (editingId) {
         const { error } = await supabase.from("offers").update(payload).eq("id", editingId);

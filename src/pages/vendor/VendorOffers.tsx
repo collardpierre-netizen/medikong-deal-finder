@@ -1498,6 +1498,21 @@ export default function VendorOffers() {
     },
   });
 
+  // Droit d'encoder un prix public conseillé (fabricant / distributeur officiel de la marque)
+  const { data: canSetPvp } = useQuery({
+    queryKey: ["can-set-pvp", vendor?.id ?? null, form.product_id || null],
+    enabled: !!vendor?.id && !!form.product_id,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("can_vendor_set_suggested_price", {
+        _vendor_id: vendor!.id,
+        _product_id: form.product_id,
+      });
+      if (error) throw error;
+      return data as boolean;
+    },
+  });
+
+
   const openCreate = () => { setForm(emptyForm); setInitialSnapshot(null); setEditingId(null); setShowForm(true); };
   const [openingOfferId, setOpeningOfferId] = useState<string | null>(null);
   const openEdit = async (offer: any) => {

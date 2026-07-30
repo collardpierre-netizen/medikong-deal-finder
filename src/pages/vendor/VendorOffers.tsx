@@ -41,9 +41,10 @@ const COUNTRIES = [
 ];
 
 /* ─── Product search hook (server-side, paginated) ─── */
-const useProductSearch = (searchTerm: string, brandFilter: string, categoryFilter: string) =>
-  useQuery({
-    queryKey: ["product-search", searchTerm, brandFilter, categoryFilter],
+const useProductSearch = (searchTerm: string, brandFilter: string, categoryFilter: string) => {
+  const term = searchTerm.trim();
+  return useQuery({
+    queryKey: ["product-search", term, brandFilter, categoryFilter],
     queryFn: async () => {
       let q = supabase
         .from("products")
@@ -51,16 +52,40 @@ const useProductSearch = (searchTerm: string, brandFilter: string, categoryFilte
         .eq("is_active", true)
         .order("name")
         .limit(50);
-      if (searchTerm.length >= 2) {
-        q = q.or(`name.ilike.%${searchTerm}%,gtin.ilike.%${searchTerm}%,cnk_code.ilike.%${searchTerm}%`);
+      if (term.length >= 2) {
+        const safe = term.replace(/[%,()]/g, " ").trim();
+        const digits = safe.replace(/\D/g, "");
+        const filters = [
+          `name.ilike.%${safe}%`,
+          `gtin.ilike.%${safe}%`,
+          `cnk_code.ilike.%${safe}%`,
+        ];
+        if (digits.length >= 2 && digits !== safe) {
+          filters.push(`gtin.ilike.%${digits}%`, `cnk_code.ilike.%${digits}%`);
+        }
+        // Tolère les zéros de tête omis/ajoutés sur le CNK
+        if (/^\d+$/.test(safe)) {
+          const trimmedZeros = safe.replace(/^0+/, "");
+          if (trimmedZeros && trimmedZeros !== safe) {
+            filters.push(`cnk_code.ilike.%${trimmedZeros}%`);
+          }
+        }
+        q = q.or(filters.join(","));
       }
       if (brandFilter) q = q.ilike("brand_name", `%${brandFilter}%`);
       if (categoryFilter) q = q.ilike("category_name", `%${categoryFilter}%`);
       const { data } = await q;
       return data || [];
     },
-    enabled: searchTerm.length >= 2 || !!brandFilter || !!categoryFilter,
+    enabled: term.length >= 2 || !!brandFilter || !!categoryFilter,
+    // Le catalogue peut recevoir un produit à l'instant (validation d'une
+    // proposition) : on ne sert jamais un résultat mis en cache.
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
   });
+};
+
 
 /* ─── Filters data ─── */
 const useFilterOptions = () =>

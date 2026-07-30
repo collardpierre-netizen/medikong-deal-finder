@@ -130,9 +130,9 @@ Deno.serve(async (req) => {
       // Défaut cron : marques prioritaires (export léger).
       const { data: brands } = await sb
         .from("brands")
-        .select("name")
-        .eq("is_priority", true)
-        .order("name", { ascending: true })
+        .select("name, is_priority")
+        .gt("is_priority", 0)
+        .order("is_priority", { ascending: false })
         .limit(Number(body.maxBrands ?? 40));
       const names = (brands || []).map((b: { name: string }) => b.name).filter(Boolean);
       if (names.length === 0) return json({ error: "no_priority_brands" }, 400);

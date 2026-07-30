@@ -183,20 +183,50 @@ export default function VendorProductSubmissionPage() {
                 {gtinDiag.fix && (
                   <p className="text-[11px] text-muted-foreground leading-relaxed">{gtinDiag.fix}</p>
                 )}
-                {gtinDiag.suggestion && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-[11px]"
-                    onClick={() => update("gtin", gtinDiag.suggestion!)}
-                  >
-                    Utiliser {gtinDiag.suggestion}
-                  </Button>
+                {!!gtinDiag.suggestions?.length && (
+                  <div className="space-y-1">
+                    <p className="text-[11px] font-medium text-[#1D2530]">
+                      Correction{gtinDiag.suggestions.length > 1 ? "s" : ""} proposée
+                      {gtinDiag.suggestions.length > 1 ? "s" : ""} :
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {gtinDiag.suggestions.map((s) => (
+                        <Button
+                          key={s.code}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-[11px]"
+                          title={s.label}
+                          onClick={() => update("gtin", s.code)}
+                        >
+                          Utiliser {s.code}
+                        </Button>
+                      ))}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      {gtinDiag.suggestions[0].label}
+                    </p>
+                  </div>
                 )}
                 {gtinDiag.rule && (
                   <p className="text-[11px] text-muted-foreground leading-relaxed">{gtinDiag.rule}</p>
                 )}
+              </div>
+            ) : gtinDiag.suggestions?.length ? (
+              <div className="rounded-md border bg-muted/40 p-2.5 space-y-1">
+                <p className="text-[11px] text-muted-foreground">
+                  Code à 12 chiffres accepté. Version EAN-13 complétée disponible :
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-[11px]"
+                  onClick={() => update("gtin", gtinDiag.suggestions![0].code)}
+                >
+                  Utiliser {gtinDiag.suggestions[0].code}
+                </Button>
               </div>
             ) : (
               <p className="text-[11px] text-muted-foreground">

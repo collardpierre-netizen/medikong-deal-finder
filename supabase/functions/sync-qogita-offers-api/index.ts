@@ -51,7 +51,6 @@ type ProductRow = {
   qogita_fid: string | null;
   qogita_slug: string | null;
   gtin: string | null;
-  country_code: string | null;
   brand_priority: number | null;
 };
 
@@ -411,7 +410,7 @@ async function processProduct(
   dryRun: boolean,
 ): Promise<void> {
   stats.products_scanned += 1;
-  const country = product.country_code || "BE";
+  const country = "BE";
   const fid = product.qogita_fid!;
 
   let result: { status: number; json: unknown | null };
@@ -517,7 +516,7 @@ Deno.serve(async (req) => {
     // ── Sélection des cibles : priorité marques puis fraîcheur ──
     let query = sb
       .from("products")
-      .select("id, qogita_fid, qogita_slug, gtin, country_code, brand_priority")
+      .select("id, qogita_fid, qogita_slug, gtin, brand_priority")
       .not("qogita_fid", "is", null)
       .eq("is_active", true);
 

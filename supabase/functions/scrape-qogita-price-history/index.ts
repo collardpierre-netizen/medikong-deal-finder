@@ -15,6 +15,8 @@ const REQUEST_DELAY_MS = 800 // ~1.25 req/s
 const MAX_WALLTIME_MS = 55_000
 const FETCH_TIMEOUT_MS = 15_000
 const DEFAULT_BATCH = 40
+const LOCK_KEY = 'qogita_price_history_backfill'
+const LOCK_TTL_MS = 4 * 60_000
 
 type ScrapeResult = {
   status: 'ok' | 'not_found' | 'error' | 'no_history'
@@ -178,6 +180,9 @@ Deno.serve(async (req) => {
     limit?: number
     resourceOffers?: boolean
     dryRun?: boolean
+    mode?: 'basket' | 'backfill'
+    priorityOnly?: boolean
+    freshHours?: number
   } = {}
   try {
     body = await req.json()
@@ -196,10 +201,58 @@ Deno.serve(async (req) => {
     .not('qogita_fid', 'is', null)
     .not('qogita_slug', 'is', null)
 
+  let backfillMode = false
   if (body.productIds?.length) {
     query = query.in('id', body.productIds).limit(limit)
   } else if (body.gtins?.length) {
     query = query.in('gtin', body.gtins).limit(limit)
+  } else if (body.mode === 'backfill') {
+    backfillMode = true
+    // Dedicated lock so we never collide with the offers scrape lane
+    const nowIso = new Date().toISOString()
+    const { data: lockRow } = await supabase
+      .from('scraper_locks')
+      .select('lock_key, expires_at')
+      .eq('lock_key', LOCK_KEY)
+      .maybeSingle()
+    if (lockRow && lockRow.expires_at && lockRow.expires_at > nowIso) {
+      return new Response(JSON.stringify({ ok: true, skipped: 'locked' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    await supabase.from('scraper_locks').upsert(
+      {
+        lock_key: LOCK_KEY,
+        locked_at: nowIso,
+        expires_at: new Date(Date.now() + LOCK_TTL_MS).toISOString(),
+        holder: 'scrape-qogita-price-history',
+      },
+      { onConflict: 'lock_key' },
+    )
+
+    const { data: targets, error: tErr } = await supabase.rpc(
+      'select_price_history_backfill_targets',
+      {
+        _limit: limit,
+        _fresh_hours: body.freshHours ?? 168,
+        _include_rest: body.priorityOnly === true ? false : true,
+      },
+    )
+    if (tErr) {
+      await supabase.from('scraper_locks').delete().eq('lock_key', LOCK_KEY)
+      return new Response(JSON.stringify({ error: tErr.message }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    const ids = (targets ?? []).map((t: any) => t.id)
+    if (ids.length === 0) {
+      await supabase.from('scraper_locks').delete().eq('lock_key', LOCK_KEY)
+      return new Response(JSON.stringify({ ok: true, message: 'nothing_to_backfill', targeted: 0 }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    query = query.in('id', ids)
   } else {
     // Cron mode: pick from tendances_index_basket, oldest first
     const { data: basket } = await supabase
@@ -239,6 +292,8 @@ Deno.serve(async (req) => {
   let errors = 0
   let points = 0
   let resourced = 0
+  let blocked = 0
+  let backoffMs = 0
   const errorSamples: any[] = []
 
   for (const p of products ?? []) {
@@ -262,16 +317,35 @@ Deno.serve(async (req) => {
       errors++
       if (errorSamples.length < 10) errorSamples.push({ id: p.id, gtin: p.gtin, error: res.error })
     }
-    await supabase
-      .from('tendances_index_basket')
-      .update({
-        last_scraped_at: new Date().toISOString(),
-        last_scrape_status: res.status,
-        last_scrape_error: res.error ?? null,
-      })
-      .eq('product_id', p.id)
+    if (!backfillMode) {
+      await supabase
+        .from('tendances_index_basket')
+        .update({
+          last_scraped_at: new Date().toISOString(),
+          last_scrape_status: res.status,
+          last_scrape_error: res.error ?? null,
+        })
+        .eq('product_id', p.id)
+    }
 
-    await sleep(REQUEST_DELAY_MS)
+    // Anti-bot back-off: slow down hard on 429/403, abort the run if it persists
+    if (res.error && /http_(429|403)/.test(res.error)) {
+      blocked++
+      backoffMs = Math.min(backoffMs === 0 ? 5_000 : backoffMs * 2, 60_000)
+      if (blocked >= 3) {
+        errorSamples.push({ reason: 'anti_bot_abort', blocked })
+        break
+      }
+      await sleep(backoffMs)
+    } else if (res.status === 'ok') {
+      backoffMs = 0
+    }
+
+    await sleep(REQUEST_DELAY_MS + backoffMs)
+  }
+
+  if (backfillMode) {
+    await supabase.from('scraper_locks').delete().eq('lock_key', LOCK_KEY)
   }
 
   if (logRow?.id) {
@@ -298,6 +372,8 @@ Deno.serve(async (req) => {
       products_error: errors,
       points_upserted: points,
       offers_resourced: resourced,
+      blocked,
+      mode: backfillMode ? 'backfill' : 'basket',
       elapsedMs: Date.now() - startedAt,
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },

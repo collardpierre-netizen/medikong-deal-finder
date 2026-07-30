@@ -111,11 +111,19 @@ export function VendorSubmissionsList() {
                 <span className="font-semibold">Modifications demandées : </span>{it.review_comment}
               </div>
             )}
+            {awaitingCreation && (
+              <div className="mt-2 text-[12px] bg-sky-50 border border-sky-200 text-sky-900 rounded p-2">
+                Votre proposition a été validée, mais la fiche produit n'est pas encore créée dans
+                le catalogue. Elle apparaîtra dans la recherche produit (et vous pourrez créer une
+                offre) dès que la fiche sera générée.
+              </div>
+            )}
             {status === "approved" && it.review_comment && (
               <div className="mt-2 text-[12px] bg-emerald-50 border border-emerald-200 text-emerald-900 rounded p-2">
                 {it.review_comment}
               </div>
             )}
+
           </div>
         );
       })}

@@ -1537,7 +1537,12 @@ export default function VendorOffers() {
       carton_size_override: (offer as any).carton_size_override != null ? String((offer as any).carton_size_override) : "",
       packaging_languages: Array.isArray((offer as any).packaging_languages) ? (offer as any).packaging_languages : [],
       source_supplier: (offer as any).source_supplier ?? "",
+      suggested_retail_price: (offer as any).suggested_retail_price_cents != null
+        ? ((offer as any).suggested_retail_price_cents / 100).toFixed(2)
+        : "",
+      suggested_retail_price_source: (offer as any).suggested_retail_price_source ?? "manufacturer",
     });
+
     setInitialSnapshot({
       priceExcl: Number(offer.price_excl_vat) || 0,
       effectivePack: initialEffectivePack,

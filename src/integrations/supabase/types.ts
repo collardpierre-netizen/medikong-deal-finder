@@ -8325,6 +8325,8 @@ export type Database = {
           last_sync_run_id: string | null
           last_verified_at: string | null
           margin_amount: number | null
+          margin_share_medikong_pct: number | null
+          margin_share_medista_pct: number | null
           margin_split_pct: number | null
           max_delivery_days: number | null
           min_delivery_days: number | null
@@ -8398,6 +8400,8 @@ export type Database = {
           last_sync_run_id?: string | null
           last_verified_at?: string | null
           margin_amount?: number | null
+          margin_share_medikong_pct?: number | null
+          margin_share_medista_pct?: number | null
           margin_split_pct?: number | null
           max_delivery_days?: number | null
           min_delivery_days?: number | null
@@ -8471,6 +8475,8 @@ export type Database = {
           last_sync_run_id?: string | null
           last_verified_at?: string | null
           margin_amount?: number | null
+          margin_share_medikong_pct?: number | null
+          margin_share_medista_pct?: number | null
           margin_split_pct?: number | null
           max_delivery_days?: number | null
           min_delivery_days?: number | null
@@ -8894,6 +8900,8 @@ export type Database = {
           id: string
           line_total_excl_vat: number
           line_total_incl_vat: number
+          margin_share_medikong_pct: number | null
+          margin_share_medista_pct: number | null
           offer_id: string | null
           order_id: string
           product_id: string | null
@@ -8910,6 +8918,8 @@ export type Database = {
           id?: string
           line_total_excl_vat?: number
           line_total_incl_vat?: number
+          margin_share_medikong_pct?: number | null
+          margin_share_medista_pct?: number | null
           offer_id?: string | null
           order_id: string
           product_id?: string | null
@@ -8926,6 +8936,8 @@ export type Database = {
           id?: string
           line_total_excl_vat?: number
           line_total_incl_vat?: number
+          margin_share_medikong_pct?: number | null
+          margin_share_medista_pct?: number | null
           offer_id?: string | null
           order_id?: string
           product_id?: string | null
@@ -28625,6 +28637,8 @@ export type Database = {
           last_sync_run_id: string | null
           last_verified_at: string | null
           margin_amount: number | null
+          margin_share_medikong_pct: number | null
+          margin_share_medista_pct: number | null
           margin_split_pct: number | null
           max_delivery_days: number | null
           min_delivery_days: number | null
@@ -28980,6 +28994,8 @@ export type Database = {
           last_sync_run_id: string | null
           last_verified_at: string | null
           margin_amount: number | null
+          margin_share_medikong_pct: number | null
+          margin_share_medista_pct: number | null
           margin_split_pct: number | null
           max_delivery_days: number | null
           min_delivery_days: number | null

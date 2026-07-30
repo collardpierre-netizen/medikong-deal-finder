@@ -61,7 +61,7 @@ export default function VendorProductSubmissionPage() {
       const errs: Record<string, string> = {};
       const gtin = parsed.data.gtin ? normalizeDigits(parsed.data.gtin) : "";
       const cnk = parsed.data.cnk_code ? normalizeDigits(parsed.data.cnk_code) : "";
-      if (gtin && !isValidGtin(gtin)) errs.gtin = "Clé de contrôle GTIN invalide";
+      if (gtin && !isValidGtin(gtin)) errs.gtin = diagnoseGtin(gtin).message;
       if (cnk && !isValidCnk(cnk)) errs.cnk_code = "CNK invalide (7 chiffres attendus)";
       if (Object.keys(errs).length) { setErrors(errs); throw new Error("invalid"); }
 

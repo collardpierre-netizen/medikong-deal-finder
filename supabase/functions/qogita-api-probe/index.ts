@@ -44,29 +44,43 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const fids: string[] = body.fids ?? [];
     const paths: string[] = body.paths ?? ["/buyers/variants/{fid}/offers/"];
+    const method: string = body.method ?? "GET";
+    const payload = body.payload ?? null;
+    const parallel: boolean = !!body.parallel;
     const token = await login();
-    const headers = { Authorization: `Bearer ${token}`, Accept: "application/json" };
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    };
 
-    const results: any[] = [];
+    const jobs: { url: string }[] = [];
     for (const fid of fids) {
-      for (const tpl of paths) {
-        const url = `${QOGITA_API}${tpl.replace("{fid}", fid)}`;
-        const t0 = Date.now();
-        const res = await fetch(url, { headers });
-        const ms = Date.now() - t0;
-        const text = await res.text();
-        let json: any = null;
-        try { json = JSON.parse(text); } catch { /* raw */ }
-        const hdrs: Record<string, string> = {};
-        res.headers.forEach((v, k) => {
-          if (/ratelimit|retry-after|x-request|throttle/i.test(k)) hdrs[k] = v;
-        });
-        results.push({
-          url, status: res.status, latency_ms: ms, headers: hdrs,
-          body: json ?? text.slice(0, 800),
-        });
-      }
+      for (const tpl of paths) jobs.push({ url: `${QOGITA_API}${tpl.replace("{fid}", fid)}` });
     }
+
+    const run = async ({ url }: { url: string }) => {
+      const t0 = Date.now();
+      const res = await fetch(url, {
+        method,
+        headers,
+        body: payload ? JSON.stringify(payload) : undefined,
+      });
+      const ms = Date.now() - t0;
+      const text = await res.text();
+      let json: any = null;
+      try { json = JSON.parse(text); } catch { /* raw */ }
+      const hdrs: Record<string, string> = {};
+      res.headers.forEach((v, k) => {
+        if (/ratelimit|retry-after|x-request|throttle/i.test(k)) hdrs[k] = v;
+      });
+      return { url, status: res.status, latency_ms: ms, headers: hdrs, body: json ?? text.slice(0, 400) };
+    };
+
+    const results = parallel
+      ? await Promise.all(jobs.map(run))
+      : await (async () => { const acc: any[] = []; for (const j of jobs) acc.push(await run(j)); return acc; })();
+
     return new Response(JSON.stringify({ results }, null, 2), { headers: corsHeaders });
   } catch (e) {
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), { status: 500, headers: corsHeaders });

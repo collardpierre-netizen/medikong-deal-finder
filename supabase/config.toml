@@ -93,6 +93,10 @@ verify_jwt = false
 [functions.falco-webhook]
 verify_jwt = false
 
+[functions.qogita-catalog-webhook]
+verify_jwt = false
+
+
 
 
 

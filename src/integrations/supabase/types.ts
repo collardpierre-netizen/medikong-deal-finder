@@ -12350,6 +12350,200 @@ export type Database = {
         }
         Relationships: []
       }
+      qogita_catalog_downloads: {
+        Row: {
+          catalog_request_id: string | null
+          completed_at: string | null
+          created_at: string
+          csv_columns: string[]
+          error_code: string | null
+          error_message: string | null
+          failed_at: string | null
+          filename: string | null
+          filters: Json
+          generation_ms: number | null
+          id: string
+          requested_at: string | null
+          rows_inserted: number
+          rows_total: number
+          rows_updated: number
+          scope: string
+          status: string
+          triggered_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          catalog_request_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          csv_columns?: string[]
+          error_code?: string | null
+          error_message?: string | null
+          failed_at?: string | null
+          filename?: string | null
+          filters?: Json
+          generation_ms?: number | null
+          id?: string
+          requested_at?: string | null
+          rows_inserted?: number
+          rows_total?: number
+          rows_updated?: number
+          scope?: string
+          status?: string
+          triggered_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          catalog_request_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          csv_columns?: string[]
+          error_code?: string | null
+          error_message?: string | null
+          failed_at?: string | null
+          filename?: string | null
+          filters?: Json
+          generation_ms?: number | null
+          id?: string
+          requested_at?: string | null
+          rows_inserted?: number
+          rows_total?: number
+          rows_updated?: number
+          scope?: string
+          status?: string
+          triggered_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      qogita_catalog_items: {
+        Row: {
+          brand_name: string | null
+          category_name: string | null
+          category_slug: string | null
+          created_at: string
+          disappeared_at: string | null
+          first_seen_at: string
+          gtin: string
+          id: string
+          indicative_price: number | null
+          indicative_price_currency: string | null
+          indicative_price_includes_shipping: boolean
+          inventory: number | null
+          is_present_in_catalog: boolean
+          last_download_id: string | null
+          last_seen_at: string
+          name: string | null
+          product_id: string | null
+          qogita_fid: string | null
+          raw: Json
+          supplier_alias: string | null
+          supplier_url: string | null
+          unit_size: number | null
+          updated_at: string
+        }
+        Insert: {
+          brand_name?: string | null
+          category_name?: string | null
+          category_slug?: string | null
+          created_at?: string
+          disappeared_at?: string | null
+          first_seen_at?: string
+          gtin: string
+          id?: string
+          indicative_price?: number | null
+          indicative_price_currency?: string | null
+          indicative_price_includes_shipping?: boolean
+          inventory?: number | null
+          is_present_in_catalog?: boolean
+          last_download_id?: string | null
+          last_seen_at?: string
+          name?: string | null
+          product_id?: string | null
+          qogita_fid?: string | null
+          raw?: Json
+          supplier_alias?: string | null
+          supplier_url?: string | null
+          unit_size?: number | null
+          updated_at?: string
+        }
+        Update: {
+          brand_name?: string | null
+          category_name?: string | null
+          category_slug?: string | null
+          created_at?: string
+          disappeared_at?: string | null
+          first_seen_at?: string
+          gtin?: string
+          id?: string
+          indicative_price?: number | null
+          indicative_price_currency?: string | null
+          indicative_price_includes_shipping?: boolean
+          inventory?: number | null
+          is_present_in_catalog?: boolean
+          last_download_id?: string | null
+          last_seen_at?: string
+          name?: string | null
+          product_id?: string | null
+          qogita_fid?: string | null
+          raw?: Json
+          supplier_alias?: string | null
+          supplier_url?: string | null
+          unit_size?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qogita_catalog_items_last_download_id_fkey"
+            columns: ["last_download_id"]
+            isOneToOne: false
+            referencedRelation: "qogita_catalog_downloads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qogita_catalog_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "qogita_catalog_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qogita_catalog_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "qogita_catalog_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qogita_catalog_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qogita_catalog_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
       qogita_config: {
         Row: {
           description: string | null
@@ -30819,6 +31013,7 @@ export type Database = {
         Args: { _quote_id: string }
         Returns: string
       }
+      trigger_qogita_catalog_action: { Args: { _body?: Json }; Returns: number }
       trigger_qogita_offers_api_sync: {
         Args: { _body?: Json }
         Returns: number

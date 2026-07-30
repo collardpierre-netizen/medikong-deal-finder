@@ -67,9 +67,17 @@ export function VendorSubmissionsList() {
     <div className="space-y-2">
       {items.map((it: any) => {
         const status = (it.status as Status) ?? "submitted";
-        const meta = STATUS_META[status] ?? STATUS_META.submitted;
+        const awaitingCreation = status === "approved" && !it.resulting_product_id;
+        const meta = awaitingCreation
+          ? {
+              label: "Validé — en attente de création",
+              icon: Clock,
+              className: "bg-sky-100 text-sky-800 border-sky-200",
+            }
+          : STATUS_META[status] ?? STATUS_META.submitted;
         const Icon = meta.icon;
         const payload = (it.proposed_payload ?? {}) as Record<string, any>;
+
         return (
           <div
             key={it.id}

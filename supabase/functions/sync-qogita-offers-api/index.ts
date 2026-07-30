@@ -595,7 +595,15 @@ Deno.serve(async (req) => {
         await sb.rpc("finalize_qogita_resync_log", {
           _id: logId,
           _status: "success",
-          _stats: { ...stats, remaining_in_batch: queue.length, duration_ms: durationMs, fallback_triggered: fallbackTriggered },
+          _stats: {
+            products_targeted: products.length,
+            products_processed: stats.products_scanned,
+            offers_processed: stats.offers_upserted + stats.offers_failed,
+            offers_updated: stats.offers_upserted,
+            tiers_synced: stats.tiers_written,
+            total_errors: stats.products_error + stats.offers_failed,
+            metadata: { ...stats, remaining_in_batch: queue.length, duration_ms: durationMs, fallback_triggered: fallbackTriggered, source: "sync-qogita-offers-api" },
+          },
         });
       } catch { /* best effort */ }
     }

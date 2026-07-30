@@ -192,7 +192,8 @@ export function parseCsv(text: string): { columns: string[]; rows: Record<string
 function pick(row: Record<string, string>, aliases: string[]): string | null {
   const keys = Object.keys(row);
   for (const alias of aliases) {
-    const k = keys.find((kk) => kk.toLowerCase().replace(/[\s_-]/g, "") === alias.toLowerCase().replace(/[\s_-]/g, ""));
+    const norm = (v: string) => v.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const k = keys.find((kk) => norm(kk) === norm(alias));
     if (k && row[k] !== "") return row[k];
   }
   return null;
@@ -232,12 +233,16 @@ export function normalizeCatalogRow(row: Record<string, string>): CatalogItemNor
     category_slug: pick(row, ["categoryslug", "category_slug"]),
     category_name: pick(row, ["category", "categoryname"]),
     indicative_price: toNumber(pick(row, [
-      "lowestpriceinclshipping", "lowestprice", "priceinclshipping", "price",
+      "€ Lowest Price inc. shipping", "lowestpriceincshipping", "lowestpriceinclshipping",
+      "lowestprice", "priceinclshipping", "price",
     ])),
     indicative_price_currency: pick(row, ["currency", "currencycode"]) ?? "EUR",
-    inventory: toNumber(pick(row, ["inventory", "stock", "quantity", "availablequantity"])) ?? null,
+    inventory: toNumber(pick(row, [
+      "inventory", "Total Inventory of All Offers", "Lowest Priced Offer Inventory",
+      "stock", "quantity", "availablequantity",
+    ])) ?? null,
     supplier_alias: pick(row, ["supplieralias", "selleralias", "supplier"]),
-    supplier_url: pick(row, ["supplierlink", "supplierurl", "link", "url"]),
+    supplier_url: pick(row, ["Product Link", "supplierlink", "supplierurl", "link", "url"]),
     unit_size: toNumber(pick(row, ["unitsize", "unit"])) ?? null,
     raw: row,
   };

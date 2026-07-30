@@ -148,6 +148,10 @@ interface OfferForm {
   packaging_languages: string[];
   /** Source fournisseur privée (ex. "Quirumed") — sert au vendeur à retrouver où repasser commande. */
   source_supplier: string;
+  /** Prix public conseillé TTC (€) — réservé fabricants / distributeurs officiels. */
+  suggested_retail_price: string;
+  /** Source du PVP : manufacturer | distributor. */
+  suggested_retail_price_source: string;
 }
 
 const emptyForm: OfferForm = {
@@ -155,7 +159,9 @@ const emptyForm: OfferForm = {
   pack_size_override: "", product_pack_size_fallback: null, vendor_note: "",
   carton_size_override: "", packaging_languages: [],
   source_supplier: "",
+  suggested_retail_price: "", suggested_retail_price_source: "manufacturer",
 };
+
 
 function ProductThumb({ imageUrls, alt = "" }: { imageUrls?: string[] | null; alt?: string }) {
   const validImage = Array.isArray(imageUrls) ? imageUrls.find((url) => isValidProductImage(url)) : undefined;
@@ -1492,6 +1498,21 @@ export default function VendorOffers() {
     },
   });
 
+  // Droit d'encoder un prix public conseillé (fabricant / distributeur officiel de la marque)
+  const { data: canSetPvp } = useQuery({
+    queryKey: ["can-set-pvp", vendor?.id ?? null, form.product_id || null],
+    enabled: !!vendor?.id && !!form.product_id,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("can_vendor_set_suggested_price", {
+        _vendor_id: vendor!.id,
+        _product_id: form.product_id,
+      });
+      if (error) throw error;
+      return data as boolean;
+    },
+  });
+
+
   const openCreate = () => { setForm(emptyForm); setInitialSnapshot(null); setEditingId(null); setShowForm(true); };
   const [openingOfferId, setOpeningOfferId] = useState<string | null>(null);
   const openEdit = async (offer: any) => {
@@ -1531,7 +1552,12 @@ export default function VendorOffers() {
       carton_size_override: (offer as any).carton_size_override != null ? String((offer as any).carton_size_override) : "",
       packaging_languages: Array.isArray((offer as any).packaging_languages) ? (offer as any).packaging_languages : [],
       source_supplier: (offer as any).source_supplier ?? "",
+      suggested_retail_price: (offer as any).suggested_retail_price_cents != null
+        ? ((offer as any).suggested_retail_price_cents / 100).toFixed(2)
+        : "",
+      suggested_retail_price_source: (offer as any).suggested_retail_price_source ?? "manufacturer",
     });
+
     setInitialSnapshot({
       priceExcl: Number(offer.price_excl_vat) || 0,
       effectivePack: initialEffectivePack,
@@ -1765,7 +1791,19 @@ export default function VendorOffers() {
         packaging_languages: form.packaging_languages.length > 0 ? form.packaging_languages : null,
         source_supplier: form.source_supplier?.trim() ? form.source_supplier.trim().slice(0, 120) : null,
         is_active: true,
+        ...(canSetPvp
+          ? (() => {
+              const raw = form.suggested_retail_price?.trim();
+              const num = raw ? parseFloat(raw.replace(",", ".")) : NaN;
+              const cents = Number.isFinite(num) && num > 0 ? Math.round(num * 100) : null;
+              return {
+                suggested_retail_price_cents: cents,
+                suggested_retail_price_source: (cents ? form.suggested_retail_price_source : null) as "manufacturer" | "distributor" | null,
+              };
+            })()
+          : {}),
       };
+
       let offerId = editingId;
       if (editingId) {
         const { error } = await supabase.from("offers").update(payload).eq("id", editingId);
@@ -2132,6 +2170,47 @@ export default function VendorOffers() {
               <input type="number" min="1" className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
                 style={{ borderColor: "#E2E8F0" }} value={form.delivery_days} onChange={e => setForm(p => ({ ...p, delivery_days: e.target.value }))} />
             </div>
+
+            {/* Prix public conseillé (PVP TTC) — fabricants / distributeurs officiels */}
+            {canSetPvp ? (
+              <>
+                <div>
+                  <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>
+                    Prix public conseillé — PVP TTC (€)
+                  </label>
+                  <input
+                    type="number" step="0.01" min="0" placeholder="Ex. 24,90"
+                    className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
+                    style={{ borderColor: "#E2E8F0" }}
+                    value={form.suggested_retail_price}
+                    onChange={e => setForm(p => ({ ...p, suggested_retail_price: e.target.value }))}
+                  />
+                  <p className="text-[11px] mt-1" style={{ color: "#8B95A5" }}>
+                    Indicatif, affiché à l'acheteur comme référence de marge. Un PVP officiel APB encodé par MediKong reste prioritaire.
+                  </p>
+                </div>
+                <div>
+                  <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>Source du PVP</label>
+                  <select
+                    className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
+                    style={{ borderColor: "#E2E8F0" }}
+                    value={form.suggested_retail_price_source}
+                    onChange={e => setForm(p => ({ ...p, suggested_retail_price_source: e.target.value }))}
+                  >
+                    <option value="manufacturer">Fabricant</option>
+                    <option value="distributor">Distributeur officiel</option>
+                  </select>
+                </div>
+              </>
+            ) : form.product_id ? (
+              <div className="md:col-span-2 rounded-lg border border-dashed p-3" style={{ borderColor: "#E2E8F0", background: "#F8FAFC" }}>
+                <p className="text-[12px] font-semibold" style={{ color: "#1D2530" }}>Prix public conseillé (PVP) — verrouillé</p>
+                <p className="text-[11px] mt-0.5" style={{ color: "#8B95A5" }}>
+                  Réservé aux fabricants et distributeurs officiels de la marque. Contactez MediKong pour faire valider votre statut.
+                </p>
+              </div>
+            ) : null}
+
 
             {/* Conditionnement carton (master case) + €/unité dérivé */}
             <div>

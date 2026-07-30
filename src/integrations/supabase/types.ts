@@ -31013,6 +31013,7 @@ export type Database = {
         Args: { _quote_id: string }
         Returns: string
       }
+      trigger_qogita_catalog_action: { Args: { _body?: Json }; Returns: number }
       trigger_qogita_offers_api_sync: {
         Args: { _body?: Json }
         Returns: number

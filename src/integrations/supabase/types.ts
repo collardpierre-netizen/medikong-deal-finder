@@ -30819,6 +30819,10 @@ export type Database = {
         Args: { _quote_id: string }
         Returns: string
       }
+      trigger_qogita_offers_api_sync: {
+        Args: { _body?: Json }
+        Returns: number
+      }
       unaccent: { Args: { "": string }; Returns: string }
       update_brand_product_counts: { Args: never; Returns: undefined }
       update_contract_template_draft: {

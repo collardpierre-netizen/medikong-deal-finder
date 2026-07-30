@@ -170,7 +170,39 @@ export default function VendorProductSubmissionPage() {
               placeholder="Ex : 3400930000000"
               inputMode="numeric"
               maxLength={14}
+              aria-invalid={!gtinDiag.valid || !!errors.gtin}
+              aria-describedby={!gtinDiag.valid ? "gtin-help" : undefined}
             />
+            {!gtinDiag.valid ? (
+              <div
+                id="gtin-help"
+                role="alert"
+                className="rounded-md border border-destructive/40 bg-destructive/5 p-2.5 space-y-1.5"
+              >
+                <p className="text-xs font-medium text-destructive">{gtinDiag.message}</p>
+                {gtinDiag.fix && (
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">{gtinDiag.fix}</p>
+                )}
+                {gtinDiag.suggestion && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-[11px]"
+                    onClick={() => update("gtin", gtinDiag.suggestion!)}
+                  >
+                    Utiliser {gtinDiag.suggestion}
+                  </Button>
+                )}
+                {gtinDiag.rule && (
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">{gtinDiag.rule}</p>
+                )}
+              </div>
+            ) : (
+              <p className="text-[11px] text-muted-foreground">
+                13 chiffres (EAN-13), clé de contrôle GS1 mod 10 vérifiée automatiquement.
+              </p>
+            )}
             {errors.gtin && <p className="text-xs text-destructive">{errors.gtin}</p>}
           </div>
           <div className="space-y-1.5">

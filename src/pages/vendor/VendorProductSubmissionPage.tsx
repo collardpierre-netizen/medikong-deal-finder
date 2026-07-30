@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { isValidGtin, isValidCnk, normalizeDigits } from "@/lib/product-codes";
+import { isValidGtin, isValidCnk, normalizeDigits, diagnoseGtin } from "@/lib/product-codes";
 import { useCategorySuggestion } from "@/hooks/useCategorySuggestion";
 
 const submissionSchema = z.object({

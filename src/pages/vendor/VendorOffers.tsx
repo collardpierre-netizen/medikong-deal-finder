@@ -2171,6 +2171,47 @@ export default function VendorOffers() {
                 style={{ borderColor: "#E2E8F0" }} value={form.delivery_days} onChange={e => setForm(p => ({ ...p, delivery_days: e.target.value }))} />
             </div>
 
+            {/* Prix public conseillé (PVP TTC) — fabricants / distributeurs officiels */}
+            {canSetPvp ? (
+              <>
+                <div>
+                  <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>
+                    Prix public conseillé — PVP TTC (€)
+                  </label>
+                  <input
+                    type="number" step="0.01" min="0" placeholder="Ex. 24,90"
+                    className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
+                    style={{ borderColor: "#E2E8F0" }}
+                    value={form.suggested_retail_price}
+                    onChange={e => setForm(p => ({ ...p, suggested_retail_price: e.target.value }))}
+                  />
+                  <p className="text-[11px] mt-1" style={{ color: "#8B95A5" }}>
+                    Indicatif, affiché à l'acheteur comme référence de marge. Un PVP officiel APB encodé par MediKong reste prioritaire.
+                  </p>
+                </div>
+                <div>
+                  <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>Source du PVP</label>
+                  <select
+                    className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
+                    style={{ borderColor: "#E2E8F0" }}
+                    value={form.suggested_retail_price_source}
+                    onChange={e => setForm(p => ({ ...p, suggested_retail_price_source: e.target.value }))}
+                  >
+                    <option value="manufacturer">Fabricant</option>
+                    <option value="distributor">Distributeur officiel</option>
+                  </select>
+                </div>
+              </>
+            ) : form.product_id ? (
+              <div className="md:col-span-2 rounded-lg border border-dashed p-3" style={{ borderColor: "#E2E8F0", background: "#F8FAFC" }}>
+                <p className="text-[12px] font-semibold" style={{ color: "#1D2530" }}>Prix public conseillé (PVP) — verrouillé</p>
+                <p className="text-[11px] mt-0.5" style={{ color: "#8B95A5" }}>
+                  Réservé aux fabricants et distributeurs officiels de la marque. Contactez MediKong pour faire valider votre statut.
+                </p>
+              </div>
+            ) : null}
+
+
             {/* Conditionnement carton (master case) + €/unité dérivé */}
             <div>
               <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>

@@ -284,6 +284,7 @@ async function upsertOffer(
     vendor_id: vendorId,
     country_code: country,
     qogita_offer_qid: offer.qid,
+    qogita_seller_fid: offer.seller || null,
     qogita_base_price: base,
     is_qogita_backed: true,
     price_excl_vat: sellExcl,

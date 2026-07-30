@@ -40,6 +40,7 @@ export default function VendorProductSubmissionPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { suggestion: catSuggestion } = useCategorySuggestion(form.gtin || undefined, form.cnk_code || undefined);
+  const gtinDiag = diagnoseGtin(form.gtin || "");
 
   const update = (key: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));

@@ -108,7 +108,7 @@ export function suggestGtinFixes(raw: string, max = 4): GtinSuggestion[] {
   };
 
   // Cas 1 : il manque le chiffre de contrôle (12 chiffres → EAN-13)
-  if ([7, 11, 12, 13].includes(s.length)) {
+  if ([7, 11, 12].includes(s.length)) {
     const key = computeGtinCheckDigit(s);
     if (key !== null) {
       push({

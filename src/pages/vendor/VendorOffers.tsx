@@ -1798,7 +1798,7 @@ export default function VendorOffers() {
               const cents = Number.isFinite(num) && num > 0 ? Math.round(num * 100) : null;
               return {
                 suggested_retail_price_cents: cents,
-                suggested_retail_price_source: cents ? form.suggested_retail_price_source : null,
+                suggested_retail_price_source: (cents ? form.suggested_retail_price_source : null) as "manufacturer" | "distributor" | null,
               };
             })()
           : {}),

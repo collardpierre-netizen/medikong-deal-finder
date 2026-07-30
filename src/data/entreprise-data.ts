@@ -59,13 +59,13 @@ export interface Tier {
 }
 
 export const aboutTimeline: TimelineNode[] = [
-  { year: "2020", title: "Création de MediKong SRL", desc: "Fondation de la holding mère à Ath, Belgique.", status: "past" },
-  { year: "2022", title: "Lancement beta", desc: "50 fournisseurs, tests de marché en Belgique.", status: "past" },
-  { year: "2023", title: "500 produits en ligne", desc: "Première levée de fonds seed de 1M€.", status: "past" },
-  { year: "2024", title: "40 000+ références", desc: "Expansion Pays-Bas, API ERP, croissance 10x.", status: "past" },
-  { year: "2025", title: "Expansion Benelux", desc: "Luxembourg et Wallonie, 500+ acheteurs actifs.", status: "active" },
-  { year: "2026", title: "Phase 2 levée de fonds", desc: "Tax Shelter 45%, objectif 5M€, valorisation 160M€.", status: "future" },
+  { year: "2026", title: "Création de MediKong", desc: "Fondation de la société en Belgique (Ath).", status: "past" },
+  { year: "Mai 2026", title: "Lancement de la plateforme", desc: "41 000 produits en ligne dès l'ouverture.", status: "past" },
+  { year: "Juin 2026", title: "Croissance du catalogue", desc: "Élargissement de l'offre et des fournisseurs référencés.", status: "active" },
+  { year: "Fin 2026", title: "Levée de fonds", desc: "Financement de la croissance et de l'expansion.", status: "future" },
+  { year: "2027", title: "Expansion Luxembourg & France", desc: "Ouverture des catalogues locaux LU et FR.", status: "future" },
 ];
+
 
 export const teamMembers: TeamMember[] = [
   {

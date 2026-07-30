@@ -243,45 +243,26 @@ function normalizeOffers(payload: unknown): { offers: NormOffer[]; excluded: num
   return { offers, excluded, skippedNoStock, skippedNoTier };
 }
 
-// ── Vendeurs ────────────────────────────────────────────────────────────────
+// ── Vendeur de référence ────────────────────────────────────────────────────
+// Toutes les offres issues de l'API Qogita sont rattachées à Medista (vendeur
+// officiel / distributeur autorisé / logisticien). Le code vendeur Qogita reste
+// stocké dans offers.qogita_seller_fid pour la traçabilité interne uniquement.
+const MEDISTA_VENDOR_ID = "dc577ab0-3422-4daa-9052-d5999333880e";
+let medistaVendorIdCache: string | null = null;
+
 // deno-lint-ignore no-explicit-any
-async function resolveVendorId(sb: any, sellerCode: string, country: string, stats: Stats): Promise<string | null> {
-  if (!sellerCode || sellerCode === "UNKNOWN") return null;
-  const { data: byAlias } = await sb
-    .from("vendors").select("id").eq("qogita_seller_alias", sellerCode).maybeSingle();
-  if (byAlias?.id) return byAlias.id;
-
-  const slug = `qogita-seller-${sellerCode.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
-  const { data: bySlug } = await sb.from("vendors").select("id").eq("slug", slug).maybeSingle();
-  if (bySlug?.id) {
-    await sb.from("vendors").update({ qogita_seller_alias: sellerCode }).eq("id", bySlug.id);
-    return bySlug.id;
-  }
-
-  const { data: inserted, error } = await sb
-    .from("vendors")
-    .insert({
-      name: `Vendeur ${sellerCode}`,
-      slug,
-      type: "qogita_virtual",
-      is_active: true,
-      is_verified: false,
-      auto_forward_to_qogita: true,
-      can_manage_offers: false,
-      country_code: country,
-      commission_rate: 0,
-      qogita_seller_alias: sellerCode,
-      display_code: sellerCode,
-    })
-    .select("id")
-    .maybeSingle();
-  if (error || !inserted?.id) {
-    console.error("[qogita-api] vendor_insert_failed", sellerCode, error?.message);
-    return null;
-  }
-  stats.vendors_created += 1;
-  return inserted.id;
+async function resolveReferenceVendorId(sb: any): Promise<string | null> {
+  if (medistaVendorIdCache) return medistaVendorIdCache;
+  const { data } = await sb
+    .from("vendors").select("id").eq("id", MEDISTA_VENDOR_ID).maybeSingle();
+  if (data?.id) { medistaVendorIdCache = data.id; return data.id; }
+  const { data: bySlug } = await sb
+    .from("vendors").select("id").eq("slug", "medista-nv").maybeSingle();
+  if (bySlug?.id) { medistaVendorIdCache = bySlug.id; return bySlug.id; }
+  console.error("[qogita-api] medista_vendor_not_found");
+  return null;
 }
+
 
 // ── Upsert offre + paliers ──────────────────────────────────────────────────
 // deno-lint-ignore no-explicit-any

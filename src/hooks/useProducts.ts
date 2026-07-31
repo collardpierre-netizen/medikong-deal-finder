@@ -367,7 +367,7 @@ export function useProductOffers(productId: string | undefined) {
         priceTiersMap.set(t.offer_id, arr);
       }
 
-      const mapped = visibleOffers.map((o: any): Offer => {
+      const mapped = publishableOffers.map((o: any): Offer => {
         const vendor = vendorMap.get(o.vendor_id);
         const safeVendorId: string = o.vendor_id || "";
         const resolved = resolvedPriceMap.get(o.id);

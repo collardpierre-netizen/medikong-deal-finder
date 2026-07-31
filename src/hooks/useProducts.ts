@@ -340,6 +340,18 @@ export function useProductOffers(productId: string | undefined) {
       ]);
 
       const vendorMap = new Map((vendorsResult.data || []).map((v: any) => [v.id, v]));
+
+      // Masquage front des vendeurs désactivés : `vendors_public` ne renvoie que
+      // les vendeurs `is_active = true`. Une offre encore active rattachée à un
+      // vendeur désactivé (ex. vendeur retiré côté source) n'a donc pas de ligne
+      // vendeur → on la retire de l'affichage. Garde-fou : si la lecture vendeurs
+      // a échoué, on n'applique pas le filtre (sinon on masquerait tout).
+      const vendorsReadFailed = !!(vendorsResult as any)?.error;
+      const publishableOffers =
+        vendorsReadFailed || vendorIds.length === 0
+          ? visibleOffers
+          : visibleOffers.filter((o: any) => vendorMap.has(o.vendor_id));
+
       const visibilityRules: VendorVisibilityRule[] = (rulesResult.data || []) as any[];
       const visibilityContext = { country, customerType: buyerProfileId || undefined };
       const tiersMap = new Map<string, any[]>();
@@ -355,7 +367,7 @@ export function useProductOffers(productId: string | undefined) {
         priceTiersMap.set(t.offer_id, arr);
       }
 
-      const mapped = visibleOffers.map((o: any): Offer => {
+      const mapped = publishableOffers.map((o: any): Offer => {
         const vendor = vendorMap.get(o.vendor_id);
         const safeVendorId: string = o.vendor_id || "";
         const resolved = resolvedPriceMap.get(o.id);

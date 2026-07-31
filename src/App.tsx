@@ -152,6 +152,7 @@ const AdminLayout = lazyWithRetry(() => import("./components/admin/AdminLayout")
 const AdminDashboard = lazyWithRetry(() => import("./pages/admin/AdminDashboard"), "AdminDashboard");
 const AdminAnalyticsClients = lazyWithRetry(() => import("./pages/admin/AdminAnalyticsClients"), "AdminAnalyticsClients");
 const AdminVendeurs = lazyWithRetry(() => import("./pages/admin/AdminVendeurs"), "AdminVendeurs");
+const AdminVendeursAValider = lazyWithRetry(() => import("./pages/admin/AdminVendeursAValider"), "AdminVendeursAValider");
 const AdminAbonnements = lazyWithRetry(() => import("./pages/admin/AdminAbonnements"), "AdminAbonnements");
 const AdminVendors = lazyWithRetry(() => import("./pages/admin/AdminVendors"), "AdminVendors");
 const AdminVendeurDetail = lazyWithRetry(() => import("./pages/admin/AdminVendeurDetail"), "AdminVendeurDetail");

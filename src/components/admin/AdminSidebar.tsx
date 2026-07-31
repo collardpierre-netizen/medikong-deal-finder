@@ -33,6 +33,7 @@ const sections: NavSection[] = [
     labelKey: "management",
     items: [
       { labelKey: "sellers", path: "/admin/vendeurs", icon: Store },
+      { label: "Vendeurs à valider", path: "/admin/vendeurs/a-valider", icon: ShieldCheck },
       { label: "Anonymisation vendeurs", path: "/admin/vendor-visibility", icon: EyeOff },
       { label: "Vendors Stripe", path: "/admin/vendors-stripe", icon: CreditCard },
       { labelKey: "externalVendors", path: "/admin/vendeurs-externes", icon: ExternalLink },

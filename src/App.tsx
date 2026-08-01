@@ -233,6 +233,7 @@ const AdminContractTemplate = lazyWithRetry(() => import("./pages/admin/AdminCon
 const AdminEmailTemplates = lazyWithRetry(() => import("./pages/admin/AdminEmailTemplates"), "AdminEmailTemplates");
 const AdminDbBackups = lazyWithRetry(() => import("./pages/admin/AdminDbBackups"), "AdminDbBackups");
 const AdminBackupRlsAudit = lazyWithRetry(() => import("./pages/admin/AdminBackupRlsAudit"), "AdminBackupRlsAudit");
+const AdminCagnotte = lazyWithRetry(() => import("./pages/admin/AdminCagnotte"), "AdminCagnotte");
 const AdminTableGrantsAudit = lazyWithRetry(() => import("./pages/admin/AdminTableGrantsAudit"), "AdminTableGrantsAudit");
 const AdminRfqCreditsPage = lazyWithRetry(() => import("./pages/admin/AdminRfqCreditsPage"), "AdminRfqCreditsPage");
 const AdminRfqConsolePage = lazyWithRetry(() => import("./pages/admin/AdminRfqConsolePage"), "AdminRfqConsolePage");

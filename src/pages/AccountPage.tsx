@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { isAutoRefreshDisabled, setAutoRefreshDisabled } from "@/lib/auto-refresh-preference";
 import { useCountry } from "@/contexts/CountryContext";
+import { CagnotteHero } from "@/components/cagnotte/CagnotteHero";
 
 
 const tabs = [
@@ -507,6 +508,7 @@ export default function AccountPage() {
           </div>
         </motion.div>
         <div className="mk-container py-6 md:py-8">
+          <CagnotteHero />
           <div className="flex flex-col md:flex-row gap-6 md:gap-8">
             {/* Sidebar */}
             <motion.aside

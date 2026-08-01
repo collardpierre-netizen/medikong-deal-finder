@@ -54,6 +54,7 @@ const sections: NavSection[] = [
       // Entrée "productPrices" supprimée — édition prix par offre via /vendor/offers (offer_buyer_profile_prices)
       { labelKey: "orders", path: "/admin/commandes", icon: ShoppingCart },
       { label: "Commissions & Revenus", path: "/admin/commissions-revenus", icon: DollarSign },
+      { label: "Cagnotte MediKong", path: "/admin/cagnotte", icon: DollarSign },
       { label: "Nouvelle commande manuelle", path: "/admin/commandes/nouvelle", icon: Plus },
       { label: "Devis", path: "/admin/devis", icon: FileText },
       { label: "Commandes en retard", path: "/admin/commandes-en-retard", icon: AlertTriangle },

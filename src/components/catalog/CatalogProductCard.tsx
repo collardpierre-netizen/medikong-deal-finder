@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { useLocalizedProductField } from "@/hooks/useLocalizedProductField";
 import type { CatalogProduct } from "@/hooks/useCatalog";
 import { PvpEconomyBadge } from "@/components/product/PvpEconomyBadge";
+import { ProductCardCagnotteBadge } from "@/components/cagnotte/ProductCardCagnotteBadge";
 
 
 interface Props {
@@ -241,6 +242,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid", searchQu
             {product.promotion_label || t("catalog.promo")}
           </span>
         )}
+        <ProductCardCagnotteBadge eligible={product.cagnotte_eligible} className="absolute top-1.5 right-1.5 z-10" />
         <Link to={`/produit/${product.slug}`} state={fromState}>
           <ProductImg product={product} className="aspect-square" />
         </Link>

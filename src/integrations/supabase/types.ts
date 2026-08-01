@@ -2108,6 +2108,74 @@ export type Database = {
         }
         Relationships: []
       }
+      cagnotte_ledger: {
+        Row: {
+          amount_eur: number
+          balance_after: number
+          created_at: string
+          created_by: string | null
+          description: string
+          expires_on: string | null
+          id: string
+          movement_type: string
+          order_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_eur: number
+          balance_after: number
+          created_at?: string
+          created_by?: string | null
+          description: string
+          expires_on?: string | null
+          id?: string
+          movement_type: string
+          order_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_eur?: number
+          balance_after?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          expires_on?: string | null
+          id?: string
+          movement_type?: string
+          order_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cagnotte_ledger_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "cagnotte_ledger_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_with_forecast_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cagnotte_ledger_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cagnotte_ledger_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders_visible_v"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cart_items: {
         Row: {
           created_at: string
@@ -8896,6 +8964,9 @@ export type Database = {
       }
       order_items: {
         Row: {
+          cagnotte_eligible_snapshot: boolean | null
+          commission_ht: number | null
+          commission_rate_snapshot: number | null
           created_at: string
           id: string
           line_total_excl_vat: number
@@ -8914,6 +8985,9 @@ export type Database = {
           vat_rate: number
         }
         Insert: {
+          cagnotte_eligible_snapshot?: boolean | null
+          commission_ht?: number | null
+          commission_rate_snapshot?: number | null
           created_at?: string
           id?: string
           line_total_excl_vat?: number
@@ -8932,6 +9006,9 @@ export type Database = {
           vat_rate?: number
         }
         Update: {
+          cagnotte_eligible_snapshot?: boolean | null
+          commission_ht?: number | null
+          commission_rate_snapshot?: number | null
           created_at?: string
           id?: string
           line_total_excl_vat?: number
@@ -9783,6 +9860,10 @@ export type Database = {
           admin_notes: string | null
           api_key_id: string | null
           billing_address: Json
+          cagnotte_earned: number | null
+          cagnotte_eligible_ht: number | null
+          cagnotte_used: number | null
+          commission_total_ht: number | null
           created_at: string
           created_by_admin: string | null
           customer_id: string
@@ -9835,6 +9916,10 @@ export type Database = {
           admin_notes?: string | null
           api_key_id?: string | null
           billing_address?: Json
+          cagnotte_earned?: number | null
+          cagnotte_eligible_ht?: number | null
+          cagnotte_used?: number | null
+          commission_total_ht?: number | null
           created_at?: string
           created_by_admin?: string | null
           customer_id: string
@@ -9887,6 +9972,10 @@ export type Database = {
           admin_notes?: string | null
           api_key_id?: string | null
           billing_address?: Json
+          cagnotte_earned?: number | null
+          cagnotte_eligible_ht?: number | null
+          cagnotte_used?: number | null
+          commission_total_ht?: number | null
           created_at?: string
           created_by_admin?: string | null
           customer_id?: string
@@ -11526,11 +11615,13 @@ export type Database = {
           brand_name: string | null
           brand_priority: number
           brand_qid: string | null
+          cagnotte_eligible: boolean | null
           category: string | null
           category_id: string | null
           category_name: string | null
           category_qid: string | null
           cnk_code: string | null
+          commission_rate: number
           created_at: string
           delay_days: number | null
           depth: number | null
@@ -11622,11 +11713,13 @@ export type Database = {
           brand_name?: string | null
           brand_priority?: number
           brand_qid?: string | null
+          cagnotte_eligible?: boolean | null
           category?: string | null
           category_id?: string | null
           category_name?: string | null
           category_qid?: string | null
           cnk_code?: string | null
+          commission_rate?: number
           created_at?: string
           delay_days?: number | null
           depth?: number | null
@@ -11718,11 +11811,13 @@ export type Database = {
           brand_name?: string | null
           brand_priority?: number
           brand_qid?: string | null
+          cagnotte_eligible?: boolean | null
           category?: string | null
           category_id?: string | null
           category_name?: string | null
           category_qid?: string | null
           cnk_code?: string | null
+          commission_rate?: number
           created_at?: string
           delay_days?: number | null
           depth?: number | null
@@ -16243,6 +16338,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
       }
       shipment_events: {
         Row: {
@@ -23899,6 +24012,15 @@ export type Database = {
         }
         Relationships: []
       }
+      cagnotte_balance: {
+        Row: {
+          amount_expiring_soon: number | null
+          current_balance: number | null
+          next_expiry_date: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
       catalog_health_missing_offers_frequency_v: {
         Row: {
           country_code: string | null
@@ -25514,6 +25636,7 @@ export type Database = {
         Row: {
           brand_id: string | null
           brand_name: string | null
+          cagnotte_eligible: boolean | null
           category_id: string | null
           category_name: string | null
           cnk_code: string | null
@@ -27903,6 +28026,10 @@ export type Database = {
           raw_label: string
         }[]
       }
+      admin_cagnotte_kpis: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: Json
+      }
       admin_cancel_commission_invoice: {
         Args: { _invoice_id: string; _reason?: string }
         Returns: undefined
@@ -28032,6 +28159,10 @@ export type Database = {
           admin_notes: string | null
           api_key_id: string | null
           billing_address: Json
+          cagnotte_earned: number | null
+          cagnotte_eligible_ht: number | null
+          cagnotte_used: number | null
+          commission_total_ht: number | null
           created_at: string
           created_by_admin: string | null
           customer_id: string
@@ -29905,6 +30036,17 @@ export type Database = {
         Args: { _code: string; _supplier: string }
         Returns: undefined
       }
+      insert_ledger_entry: {
+        Args: {
+          p_amount_eur: number
+          p_description: string
+          p_expires_on?: string
+          p_movement_type: string
+          p_order_id?: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       intelligence_access: {
         Args: {
           _module: Database["public"]["Enums"]["intelligence_module"]
@@ -30996,6 +31138,7 @@ export type Database = {
         Returns: undefined
       }
       slugify_category_label: { Args: { _label: string }; Returns: string }
+      snapshot_order_commission: { Args: { p_order_id: string }; Returns: Json }
       snapshot_vendor_offer_history: { Args: never; Returns: Json }
       start_buyer_impersonation: {
         Args: { _reason?: string; _target_user_id: string }

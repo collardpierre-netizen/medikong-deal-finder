@@ -603,6 +603,9 @@ export default function CartPage() {
                     </div>
                   </div>
 
+                  {/* Promesse cagnotte MediKong */}
+                  <CartCagnotteBanner items={items as any} className="mb-4" />
+
                   {/* Order total */}
                   <div className="border-t border-mk-line pt-4 mb-5 space-y-1">
                     <div className="flex justify-between items-baseline text-sm">

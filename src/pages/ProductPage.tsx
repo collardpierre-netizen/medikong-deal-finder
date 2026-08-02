@@ -452,6 +452,12 @@ function OfferRow({
       {/* Desktop grid */}
       <div className="hidden lg:grid grid-cols-[minmax(150px,1fr)_minmax(180px,1fr)_minmax(96px,auto)_176px] gap-x-3 items-start">
         <div className="flex flex-col gap-1.5">
+          <OfferCagnotteBadge
+            eligible={(offer as any).cagnotteEligible}
+            unitPriceExclVat={offer.unitPriceEur}
+            className="self-start"
+          />
+
           {(() => {
             if (vendorTrust) {
               return <VendorTrustHeader trust={vendorTrust} variant="full" realNameOverride={offer.sellerName ?? null} />;

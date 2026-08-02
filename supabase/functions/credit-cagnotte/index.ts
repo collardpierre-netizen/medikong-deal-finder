@@ -129,7 +129,7 @@ Deno.serve(async (req) => {
       if (orderMail && !orderMail.email_cagnotte_earned_sent_at) {
         const { data: cust } = await admin
           .from("customers")
-          .select("email, contact_name, company_name")
+          .select("email, company_name")
           .eq("id", order.customer_id)
           .maybeSingle();
 
@@ -144,7 +144,7 @@ Deno.serve(async (req) => {
           const expiresLabel = new Date(expiryDate).toLocaleDateString("fr-BE", {
             day: "numeric", month: "long", year: "numeric",
           });
-          const firstName = String(cust.contact_name || cust.company_name || "").split(" ")[0] || null;
+          const firstName = String(cust.company_name || "").split(" ")[0] || null;
 
           await admin.functions.invoke("send-transactional-email", {
             body: {

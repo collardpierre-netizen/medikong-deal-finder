@@ -186,7 +186,7 @@ const AdminDashboard = () => {
   const CATEGORY_COLORS = ["#1B5BDA", "#7C3AED", "#059669", "#F59E0B", "#EF4444", "#0EA5E9", "#EC4899", "#14B8A6", "#8B5CF6", "#F97316"];
 
   const recentOrders = (ordersQuery.data || [])
-    .filter((o: any) => !o.hidden_from_list && !o.deleted_at)
+    .filter((o: any) => !o.hidden_from_list && !o.deleted_at && !o.is_test)
     .slice(0, 6).map((o: any) => {
     const persistedLines = (o.order_lines || []) as Array<{ vendor_id: string | null; line_total_incl_vat?: number | null; unit_price_incl_vat?: number | null; quantity?: number | null; vendors?: { company_name?: string | null; slug?: string | null } | null }>;
     const draftLines = (o.status === "draft" && Array.isArray(o.draft_payload?.lines)) ? o.draft_payload.lines as Array<{ vendor_id?: string | null; line_total_incl_vat?: number | null; unit_price_incl_vat?: number | null; quantity?: number | null }> : [];

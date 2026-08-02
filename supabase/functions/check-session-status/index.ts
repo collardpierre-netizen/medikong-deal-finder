@@ -179,8 +179,6 @@ Deno.serve(async (req) => {
               },
             },
           });
-            },
-          });
         }
       } catch (e) {
         console.error("[check-session-status] order-confirmation failed", e);

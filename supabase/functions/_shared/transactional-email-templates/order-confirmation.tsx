@@ -177,6 +177,13 @@ export const template = {
     itemCount: 3,
     shippingAddress: '23 rue de la Procession, B-7822 Ath',
     paymentMethod: 'Virement SEPA',
+    cagnotteUsed: '45,00 EUR',
+    subtotalHt: '1 029,00 EUR',
+    vatBase: '1 029,00 EUR',
+    vatBaseHint: 'HT plein (la cagnotte est un moyen de paiement)',
+    vatAmount: '216,09 EUR',
+    vatModeLabel: 'Moyen de paiement (TVA sur le HT plein)',
+    netToPay: '1 200,09 EUR',
   },
 } satisfies TemplateEntry
 

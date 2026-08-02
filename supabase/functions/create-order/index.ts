@@ -292,18 +292,24 @@ Deno.serve(async (req) => {
       return json(500, { error: "Insertion order_items : " + itemsErr.message });
     }
 
-    // order_lines (routing-aware)
+    // order_lines (routing-aware) — les lignes issues du flux fournisseur
+    // automatisé sont routées vers le vendeur de référence (Medista), qui
+    // reçoit la réf. + le nom du vendeur fournisseur, le produit, la quantité
+    // et le prix d'achat. Le client final n'est jamais exposé au fournisseur ;
+    // le fournisseur n'est jamais exposé au client.
+    const referenceVendorId = await resolveReferenceVendorId(supabase);
     const orderLines = validation.items.map((v) => {
       const ref = offerMap.get(v.offer_id);
       const vId = ref?.vendor_id ?? v.vendor_id;
       const vType = vId ? vendorTypeMap.get(vId) : null;
-      const isQogita = vType === "qogita_virtual";
+      const isQogita = vType === "qogita_virtual" || vType === "qogita";
       const vatPct = Number(v.vat_rate ?? 21);
       return {
         order_id: order.id,
         offer_id: v.offer_id,
         product_id: v.product_id,
-        vendor_id: isQogita ? MEDIKONG_VENDOR_ID : vId,
+        vendor_id: isQogita ? referenceVendorId : vId,
+
         quantity: v.quantity,
         unit_price_excl_vat: v.unit_price_excl_vat,
         unit_price_incl_vat: v.unit_price_incl_vat,

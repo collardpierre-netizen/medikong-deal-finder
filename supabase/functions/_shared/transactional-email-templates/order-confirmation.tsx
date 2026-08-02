@@ -15,6 +15,14 @@ interface OrderConfirmationProps {
   shippingAddress?: string
   paymentMethod?: string
   invoiceLinks?: Array<{ label: string; url: string }>
+  /** Récapitulatif cagnotte / TVA (uniquement si de la cagnotte a été utilisée) */
+  cagnotteUsed?: string
+  subtotalHt?: string
+  vatBase?: string
+  vatAmount?: string
+  vatBaseHint?: string
+  vatModeLabel?: string
+  netToPay?: string
 }
 
 const OrderConfirmationEmail = ({
@@ -25,7 +33,15 @@ const OrderConfirmationEmail = ({
   shippingAddress,
   paymentMethod,
   invoiceLinks = [],
+  cagnotteUsed,
+  subtotalHt,
+  vatBase,
+  vatAmount,
+  vatBaseHint,
+  vatModeLabel,
+  netToPay,
 }: OrderConfirmationProps) => (
+
   <Html lang="fr" dir="ltr">
     <Head />
     <Preview>Confirmation de votre commande {orderNumber} — {SITE_NAME}</Preview>

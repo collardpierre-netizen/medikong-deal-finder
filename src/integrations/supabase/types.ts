@@ -12699,6 +12699,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           csv_columns: string[]
+          download_url: string | null
           error_code: string | null
           error_message: string | null
           failed_at: string | null
@@ -12706,6 +12707,9 @@ export type Database = {
           filters: Json
           generation_ms: number | null
           id: string
+          ingest_cursor: number
+          ingest_rows: number
+          ingest_state: Json
           requested_at: string | null
           rows_inserted: number
           rows_total: number
@@ -12720,6 +12724,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           csv_columns?: string[]
+          download_url?: string | null
           error_code?: string | null
           error_message?: string | null
           failed_at?: string | null
@@ -12727,6 +12732,9 @@ export type Database = {
           filters?: Json
           generation_ms?: number | null
           id?: string
+          ingest_cursor?: number
+          ingest_rows?: number
+          ingest_state?: Json
           requested_at?: string | null
           rows_inserted?: number
           rows_total?: number
@@ -12741,6 +12749,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           csv_columns?: string[]
+          download_url?: string | null
           error_code?: string | null
           error_message?: string | null
           failed_at?: string | null
@@ -12748,6 +12757,9 @@ export type Database = {
           filters?: Json
           generation_ms?: number | null
           id?: string
+          ingest_cursor?: number
+          ingest_rows?: number
+          ingest_state?: Json
           requested_at?: string | null
           rows_inserted?: number
           rows_total?: number
@@ -30942,6 +30954,10 @@ export type Database = {
           last_median: number
           product_count: number
         }[]
+      }
+      qogita_deactivate_dead_products: {
+        Args: { _download_id: string; _dry_run?: boolean }
+        Returns: Json
       }
       qogita_deactivate_zero_stock_offers: {
         Args: { _offer_ids: string[] }

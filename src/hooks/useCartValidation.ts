@@ -109,3 +109,30 @@ export async function validateCartNow(items: ValidateCartItemInput[]): Promise<V
   if (error) throw error;
   return data as ValidateCartResponse;
 }
+
+export interface RevalidateStaleOffersResponse {
+  ok: boolean;
+  triggered: boolean;
+  reason?: string;
+  products_targeted?: number;
+  products_on_cooldown?: number;
+  revalidated: string[];
+  still_stale: string[];
+  should_revalidate_cart?: boolean;
+}
+
+/**
+ * Relance une vérification ciblée du prix fournisseur sur les offres bloquées
+ * par le garde-fou `price_stale`. À appeler juste avant la tentative de commande.
+ */
+export async function revalidateStaleOffers(offerIds: string[]): Promise<RevalidateStaleOffersResponse> {
+  const ids = [...new Set(offerIds.filter(Boolean))];
+  if (ids.length === 0) {
+    return { ok: true, triggered: false, reason: "no_offer_ids", revalidated: [], still_stale: [] };
+  }
+  const { data, error } = await supabase.functions.invoke("revalidate-stale-offers", {
+    body: { offer_ids: ids },
+  });
+  if (error) throw error;
+  return data as RevalidateStaleOffersResponse;
+}

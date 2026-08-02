@@ -217,7 +217,8 @@ async function sendBuyerOrderConfirmation(orderId: string) {
     if (cagnotteUsed > 0) {
       const { vatMode, vatRate } = await loadCagnotteVatSettings(supabase);
       const subtotalHt = Number(order.subtotal_excl_vat || 0);
-      const b = computeVatBase(subtotalHt, cagnotteUsed, vatMode, vatRate, Number(order.vat_amount ?? NaN));
+      const fullVat = Number.isFinite(Number(order.vat_amount)) ? Number(order.vat_amount) : undefined;
+      const b = computeVatBase(subtotalHt, cagnotteUsed, vatMode, vatRate, fullVat);
       cagnotteData = {
         cagnotteUsed: formatEUR(cagnotteUsed),
         subtotalHt: formatEUR(subtotalHt),

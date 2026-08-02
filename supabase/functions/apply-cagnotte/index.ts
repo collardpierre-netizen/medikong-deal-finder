@@ -73,11 +73,13 @@ Deno.serve(async (req) => {
     }
 
     if (!isService && callerId !== customer.auth_user_id) {
-      const { data: isAdmin } = await admin.rpc("is_admin_user", { _user_id: callerId }).then(
-        (r) => r,
-        () => ({ data: false }),
-      );
-      if (!isAdmin) return json({ success: false, error: "Accès refusé" }, 403);
+      const { data: adminRow } = await admin
+        .from("admin_users")
+        .select("id")
+        .eq("user_id", callerId)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (!adminRow) return json({ success: false, error: "Accès refusé" }, 403);
     }
 
     // 3. Sous-total HT de la commande

@@ -6,14 +6,15 @@ import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
 import { Download, Upload, Trash2, Minus, Plus, ShoppingCart, ChevronDown, ChevronUp, Package, AlertTriangle, HelpCircle, CheckCircle2, Store, Truck, AlertCircle } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
 import { useVendorMov } from "@/hooks/useVendorMov";
-import { useCartValidation } from "@/hooks/useCartValidation";
+import { useCartValidation, validateCartNow, revalidateStaleOffers, type ValidateCartResponse } from "@/hooks/useCartValidation";
+import { toast } from "sonner";
 import { useVendorLabels } from "@/hooks/useVendorLabels";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
 import VendorDelegateCompact from "@/components/vendor/VendorDelegateCompact";
@@ -42,6 +43,9 @@ export default function CartPage() {
   const [expandedSuppliers, setExpandedSuppliers] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<FilterType>("all");
   const [remark, setRemark] = useState("");
+  const navigate = useNavigate();
+  const [revalidating, setRevalidating] = useState(false);
+  const [recheck, setRecheck] = useState<ValidateCartResponse | null>(null);
 
   // Scroll position memory: restore where the user left off when returning to the cart.
   // Falls back to top on first visit (e.g. after "Ajouter au panier").

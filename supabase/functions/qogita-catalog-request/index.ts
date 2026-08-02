@@ -110,7 +110,80 @@ Deno.serve(async (req) => {
       return json({ error: "test_endpoint_not_found", tried: paths }, 404);
     }
 
-    // ── unregister ──────────────────────────────────────────────────────────
+    // ── poll : filet de sécurité si l'événement webhook n'arrive jamais ─────
+    // Interroge Qogita sur les downloads encore "requested" et, dès qu'une URL
+    // est disponible, délègue au worker d'ingestion (streaming + reprise).
+    if (action === "poll") {
+      const { data: pending } = await sb
+        .from("qogita_catalog_downloads")
+        .select("id, catalog_request_id, scope, status, requested_at")
+        .in("status", ["requested", "ready_to_ingest", "download_error"])
+        .not("catalog_request_id", "is", null)
+        .order("requested_at", { ascending: true })
+        .limit(Number(body.limit ?? 5));
+
+      const out: unknown[] = [];
+      for (const p of pending || []) {
+        const paths = [
+          `/public/buyers/catalog-downloads/${p.catalog_request_id}/`,
+          `/public/buyers/catalog-downloads/${p.catalog_request_id}`,
+        ];
+        // deno-lint-ignore no-explicit-any
+        let remote: any = null;
+        let httpStatus = 0;
+        let detail = "";
+        for (const path of paths) {
+          const res = await fetch(`${QOGITA_API}${path}`, { headers: auth });
+          httpStatus = res.status;
+          const text = await res.text();
+          if (res.ok) {
+            try { remote = JSON.parse(text); } catch { detail = text.slice(0, 300); }
+            break;
+          }
+          detail = text.slice(0, 300);
+          if (res.status !== 404) break;
+        }
+
+        const url = remote?.downloadUrl ?? remote?.download_url ?? null;
+        const remoteStatus = remote?.status ?? remote?.state ?? null;
+
+        if (url) {
+          await sb.from("qogita_catalog_downloads").update({
+            status: "ready_to_ingest",
+            download_url: url,
+            ingest_cursor: 0,
+            ingest_rows: 0,
+            ingest_state: {},
+            filename: remote?.filename ?? null,
+            completed_at: remote?.completedAt ?? remote?.completed_at ?? null,
+            error_message: null,
+          }).eq("id", p.id);
+
+          // Non bloquant : le worker streame et se relance seul.
+          fetch(`${supabaseUrl}/functions/v1/qogita-catalog-ingest`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            },
+            body: JSON.stringify({ downloadId: p.id }),
+          }).catch((e) => console.error("[catalog-poll] dispatch", (e as Error).message));
+        }
+
+        out.push({
+          download_id: p.id,
+          catalog_request_id: p.catalog_request_id,
+          scope: p.scope,
+          http: httpStatus,
+          remote_status: remoteStatus,
+          dispatched: !!url,
+          detail: url ? undefined : detail || undefined,
+        });
+      }
+      return json({ ok: true, polled: out.length, results: out });
+    }
+
+
     if (action === "unregister") {
       if (!qid) return json({ error: "webhook_not_registered" }, 400);
       const res = await fetch(`${QOGITA_API}/public/webhooks/${qid}`, { method: "DELETE", headers: auth });

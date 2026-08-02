@@ -5,9 +5,13 @@
 // pas être téléchargé + parsé + upserté dans la fenêtre d'une requête webhook.
 // Le webhook se contente donc d'enregistrer `download_url` puis délègue ici.
 //
-// Reprise : `qogita_catalog_downloads.ingest_cursor` = offset OCTETS déjà
-// ingérés (requêtes HTTP Range sur l'URL présignée). Chaque invocation traite
-// ~90 s puis se ré-invoque elle-même jusqu'à épuisement du flux.
+// Reprise FIABLE : `qogita_catalog_downloads.ingest_cursor` = offset OCTETS
+// déjà ingérés, PERSISTÉ À CHAQUE FLUSH (lot de 500). Une passe tuée par la
+// limite CPU/wall-clock reprend donc au bon offset (et non à l'octet 0).
+// Chaque invocation traite ~55 s puis se ré-invoque jusqu'à épuisement du flux.
+// Un watchdog (`action: "watchdog"`) relance les downloads figés.
+//
+// Idempotence : upsert onConflict gtin → aucun doublon en cas de recouvrement.
 //
 // ⚠️ RÈGLE PRIX inchangée : `indicative_price` (prix plancher CSV) ne sert
 // QUE au référentiel/couverture, jamais au calcul de marge.
@@ -26,7 +30,8 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: corsHeaders });
 
 const CHUNK = 500;
-const TIME_BUDGET_MS = 90_000;
+const TIME_BUDGET_MS = 55_000;
+const STALL_MINUTES = 5;
 const enc = new TextEncoder();
 
 /** Découpe un buffer texte en enregistrements CSV complets (RFC4180) + reste. */
@@ -83,6 +88,35 @@ Deno.serve(async (req) => {
   const sb = createClient(supabaseUrl, serviceKey);
 
   const body = await req.json().catch(() => ({}));
+
+  const selfInvoke = (downloadId: string) =>
+    fetch(`${supabaseUrl}/functions/v1/qogita-catalog-ingest`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },
+      body: JSON.stringify({ downloadId }),
+    }).catch((e) => console.error("[catalog-ingest] self-invoke", (e as Error).message));
+
+  // ── Watchdog : relance les ingestions figées ───────────────────────────────
+  if (body.action === "watchdog") {
+    const staleBefore = new Date(Date.now() - STALL_MINUTES * 60_000).toISOString();
+    const { data: stuck } = await sb
+      .from("qogita_catalog_downloads")
+      .select("id, updated_at, ingest_cursor, ingest_rows")
+      .in("status", ["ingesting", "ready_to_ingest"])
+      .lt("updated_at", staleBefore)
+      .not("download_url", "is", null)
+      .order("updated_at", { ascending: true })
+      .limit(Number(body.limit ?? 3));
+
+    for (const d of stuck || []) await selfInvoke(d.id);
+    return json({
+      ok: true, restarted: (stuck || []).length,
+      downloads: (stuck || []).map((d) => ({
+        id: d.id, cursor: d.ingest_cursor, rows: d.ingest_rows, stalled_since: d.updated_at,
+      })),
+    });
+  }
+
   const downloadId: string | null = body.downloadId ?? body.download_id ?? null;
   if (!downloadId) return json({ error: "downloadId_required" }, 400);
 
@@ -95,10 +129,12 @@ Deno.serve(async (req) => {
   if (!dl.download_url) return json({ error: "missing_download_url" }, 400);
 
   const startedAt = Date.now();
-  let cursor: number = Number(dl.ingest_cursor ?? 0);
+  const startCursor: number = Number(dl.ingest_cursor ?? 0);
+  let cursor = startCursor;
   let rowsSeen: number = Number(dl.ingest_rows ?? 0);
   const state = (dl.ingest_state ?? {}) as Record<string, unknown>;
   let columns: string[] = Array.isArray(state.columns) ? state.columns as string[] : [];
+  let upsertedTotal: number = Number(state.upserted ?? 0);
 
   await sb.from("qogita_catalog_downloads")
     .update({ status: "ingesting" }).eq("id", downloadId);
@@ -106,7 +142,7 @@ Deno.serve(async (req) => {
   let res: Response;
   try {
     res = await fetch(dl.download_url, {
-      headers: cursor > 0 ? { Range: `bytes=${cursor}-` } : {},
+      headers: startCursor > 0 ? { Range: `bytes=${startCursor}-` } : {},
     });
   } catch (e) {
     await sb.from("qogita_catalog_downloads").update({
@@ -123,65 +159,95 @@ Deno.serve(async (req) => {
     return json({ error: "download_failed", detail, expired_url: res.status === 403 }, 502);
   }
 
-  const totalBytes = Number(res.headers.get("content-length") ?? 0) + cursor;
+  const totalBytes = Number(res.headers.get("content-length") ?? 0) + startCursor;
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
   let bytesRead = 0;
-  let upserted = 0;
+  let upsertedThisPass = 0;
   let skipped = 0;
   let done = false;
   let pending: Record<string, string>[] = [];
   let lastError: string | null = null;
 
-  async function flush(force = false) {
-    while (pending.length >= CHUNK || (force && pending.length > 0)) {
+  /** Upsert d'un lot (idempotent sur gtin). */
+  async function upsertBatch(slice: Record<string, string>[]) {
+    const items = slice.map(normalizeCatalogRow).filter(Boolean) as NonNullable<
+      ReturnType<typeof normalizeCatalogRow>
+    >[];
+    skipped += slice.length - items.length;
+    if (items.length === 0) return;
+
+    const gtins = items.map((it) => it.gtin);
+    const { data: prods } = await sb.from("products").select("id, gtin").in("gtin", gtins);
+    const byGtin = new Map<string, string>(
+      (prods || []).map((p: { id: string; gtin: string }) => [p.gtin, p.id]),
+    );
+    const nowIso = new Date().toISOString();
+
+    const payload = items.map((it) => ({
+      gtin: it.gtin,
+      qogita_fid: it.qogita_fid,
+      name: it.name,
+      brand_name: it.brand_name,
+      category_slug: it.category_slug,
+      category_name: it.category_name,
+      indicative_price: it.indicative_price,
+      indicative_price_currency: it.indicative_price_currency,
+      indicative_price_includes_shipping: true,
+      inventory: it.inventory,
+      supplier_alias: it.supplier_alias,
+      supplier_url: it.supplier_url,
+      unit_size: it.unit_size,
+      raw: it.raw,
+      product_id: byGtin.get(it.gtin) ?? null,
+      is_present_in_catalog: true,
+      last_seen_at: nowIso,
+      disappeared_at: null,
+      last_download_id: downloadId,
+    }));
+
+    const { error } = await sb.from("qogita_catalog_items")
+      .upsert(payload, { onConflict: "gtin" });
+    if (error) {
+      lastError = error.message;
+      console.error("[catalog-ingest] upsert error", error.message);
+    } else {
+      upsertedThisPass += payload.length;
+      upsertedTotal += payload.length;
+    }
+  }
+
+  /** Persiste le curseur : appelé après chaque flush complet (pending vide). */
+  async function persistProgress(status: "ingesting" | "completed" | "completed_empty") {
+    cursor = startCursor + Math.max(0, bytesRead - enc.encode(buffer).byteLength);
+    const patch: Record<string, unknown> = {
+      status,
+      ingest_cursor: cursor,
+      ingest_rows: rowsSeen,
+      ingest_state: { ...state, columns, upserted: upsertedTotal, total_bytes: totalBytes || null },
+      csv_columns: columns,
+      rows_total: rowsSeen,
+      rows_updated: upsertedTotal,
+      error_message: lastError,
+      updated_at: new Date().toISOString(),
+    };
+    if (status !== "ingesting") patch.completed_at = new Date().toISOString();
+    await sb.from("qogita_catalog_downloads").update(patch).eq("id", downloadId);
+  }
+
+  /**
+   * Vide TOUT le pending (par lots de 500) puis persiste le curseur.
+   * On ne laisse jamais de reliquat en mémoire : le curseur reste ainsi
+   * strictement égal aux octets réellement ingérés.
+   */
+  async function flushAllAndCheckpoint() {
+    while (pending.length > 0) {
       const slice = pending.slice(0, CHUNK);
       pending = pending.slice(CHUNK);
-      const items = slice.map(normalizeCatalogRow).filter(Boolean) as NonNullable<
-        ReturnType<typeof normalizeCatalogRow>
-      >[];
-      skipped += slice.length - items.length;
-      if (items.length === 0) continue;
-
-      const gtins = items.map((it) => it.gtin);
-      const { data: prods } = await sb.from("products").select("id, gtin").in("gtin", gtins);
-      const byGtin = new Map<string, string>(
-        (prods || []).map((p: { id: string; gtin: string }) => [p.gtin, p.id]),
-      );
-      const nowIso = new Date().toISOString();
-
-      const payload = items.map((it) => ({
-        gtin: it.gtin,
-        qogita_fid: it.qogita_fid,
-        name: it.name,
-        brand_name: it.brand_name,
-        category_slug: it.category_slug,
-        category_name: it.category_name,
-        indicative_price: it.indicative_price,
-        indicative_price_currency: it.indicative_price_currency,
-        indicative_price_includes_shipping: true,
-        inventory: it.inventory,
-        supplier_alias: it.supplier_alias,
-        supplier_url: it.supplier_url,
-        unit_size: it.unit_size,
-        raw: it.raw,
-        product_id: byGtin.get(it.gtin) ?? null,
-        is_present_in_catalog: true,
-        last_seen_at: nowIso,
-        disappeared_at: null,
-        last_download_id: downloadId,
-      }));
-
-      const { error } = await sb.from("qogita_catalog_items")
-        .upsert(payload, { onConflict: "gtin" });
-      if (error) {
-        lastError = error.message;
-        console.error("[catalog-ingest] upsert error", error.message);
-      } else {
-        upserted += payload.length;
-      }
+      await upsertBatch(slice);
     }
+    await persistProgress("ingesting");
   }
 
   try {
@@ -203,7 +269,7 @@ Deno.serve(async (req) => {
       const objs = toObjects(rows, columns);
       rowsSeen += objs.length;
       pending.push(...objs);
-      await flush();
+      if (pending.length >= CHUNK) await flushAllAndCheckpoint();
     }
 
     if (done) {
@@ -222,40 +288,20 @@ Deno.serve(async (req) => {
         buffer = "";
       }
     }
-    await flush(true);
+    while (pending.length > 0) {
+      const slice = pending.slice(0, CHUNK);
+      pending = pending.slice(CHUNK);
+      await upsertBatch(slice);
+    }
   } finally {
     try { await reader.cancel(); } catch { /* ignore */ }
   }
 
-  // Offset exact = octets lus − octets du reste non consommé.
-  const consumed = bytesRead - enc.encode(buffer).byteLength;
-  cursor += Math.max(0, consumed);
-
-  const patch: Record<string, unknown> = {
-    ingest_cursor: done ? cursor : cursor,
-    ingest_rows: rowsSeen,
-    ingest_state: { ...state, columns, total_bytes: totalBytes || null },
-    csv_columns: columns,
-    rows_total: rowsSeen,
-    rows_updated: (Number(dl.ingest_state && (dl.ingest_state as any).upserted) || 0) + upserted,
-    error_message: lastError,
-  };
-
-  if (done) {
-    patch.status = rowsSeen === 0 ? "completed_empty" : "completed";
-    patch.completed_at = new Date().toISOString();
-  } else {
-    patch.status = "ingesting";
-  }
-  await sb.from("qogita_catalog_downloads").update(patch).eq("id", downloadId);
+  await persistProgress(done ? (rowsSeen === 0 ? "completed_empty" : "completed") : "ingesting");
 
   // Poursuite : ré-invocation asynchrone tant que le flux n'est pas épuisé.
   if (!done) {
-    fetch(`${supabaseUrl}/functions/v1/qogita-catalog-ingest`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },
-      body: JSON.stringify({ downloadId }),
-    }).catch((e) => console.error("[catalog-ingest] self-invoke", (e as Error).message));
+    selfInvoke(downloadId);
   } else {
     await sb.from("sync_logs").insert({
       sync_type: "qogita_catalog_download",
@@ -264,8 +310,8 @@ Deno.serve(async (req) => {
       error_message: lastError,
       metadata: {
         catalog_request_id: dl.catalog_request_id, scope: dl.scope,
-        rows: rowsSeen, upserted_this_pass: upserted, skipped_no_gtin: skipped,
-        bytes: cursor, columns,
+        rows: rowsSeen, upserted_total: upsertedTotal, upserted_this_pass: upsertedThisPass,
+        skipped_no_gtin: skipped, bytes: cursor, columns,
         note: "indicative_price = prix plancher CSV, jamais utilisé pour la marge",
       },
     });
@@ -273,8 +319,8 @@ Deno.serve(async (req) => {
 
   return json({
     ok: true, download_id: downloadId, done,
-    rows_seen: rowsSeen, upserted_this_pass: upserted, skipped_no_gtin: skipped,
-    bytes_cursor: cursor, total_bytes: totalBytes || null,
+    rows_seen: rowsSeen, upserted_this_pass: upsertedThisPass, upserted_total: upsertedTotal,
+    skipped_no_gtin: skipped, bytes_cursor: cursor, total_bytes: totalBytes || null,
     columns, duration_ms: Date.now() - startedAt, last_error: lastError,
   });
 });

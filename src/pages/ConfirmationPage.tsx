@@ -372,6 +372,22 @@ export default function ConfirmationPage() {
             </motion.div>
           )}
 
+          {order && Number((order as any).cagnotte_used || 0) > 0 && (
+            <motion.div className="mb-6"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.52 }}>
+              <OrderCagnotteRecap
+                subtotalHt={Number((order as any).subtotal_excl_vat || 0)}
+                cagnotteUsed={Number((order as any).cagnotte_used || 0)}
+                fullVatAmount={
+                  Number.isFinite(Number((order as any).vat_amount))
+                    ? Number((order as any).vat_amount)
+                    : undefined
+                }
+              />
+            </motion.div>
+          )}
+
+
           {confirmed && (
             <motion.div className="border border-mk-line rounded-lg p-5 mb-6 text-left"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }}>

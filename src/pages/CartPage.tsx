@@ -103,6 +103,10 @@ export default function CartPage() {
   );
   const { data: validation, loading: validating } = useCartValidation(validationItems, { enabled: items.length > 0 });
 
+  // Toute nouvelle validation serveur (changement de panier) invalide le résultat
+  // de la revalidation ponctuelle.
+  useEffect(() => { setRecheck(null); }, [validation]);
+
   const vendorSummaryMap = useMemo(() => {
     const m = new Map<string, { mov_required: number; mov_reached: boolean; subtotal_excl_vat: number; amount_missing: number }>();
     validation?.vendors.forEach(v => m.set(v.vendor_id, v));

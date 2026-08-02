@@ -72,7 +72,7 @@ export default function ConfirmationPage() {
         // Charge les détails d'affichage (méthode, montant, adresse...) en lecture
         const { data: details } = await supabase
           .from("orders")
-          .select("payment_method, total_incl_vat, shipping_address, created_at, updated_at")
+          .select("id, payment_method, total_incl_vat, subtotal_excl_vat, vat_amount, cagnotte_used, shipping_address, created_at, updated_at")
           .eq("order_number", orderNumber)
           .maybeSingle();
 

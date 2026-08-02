@@ -30,8 +30,10 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: corsHeaders });
 
 const CHUNK = 500;
-const TIME_BUDGET_MS = 55_000;
-const STALL_MINUTES = 5;
+const TIME_BUDGET_MS = 50_000;
+// Une passe tuée par la limite CPU n'a pas toujours le temps de se ré-invoquer :
+// le watchdog (cron chaque minute) reprend au bout de 90 s sans progression.
+const STALL_SECONDS = 90;
 const enc = new TextEncoder();
 
 /** Découpe un buffer texte en enregistrements CSV complets (RFC4180) + reste. */

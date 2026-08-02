@@ -1,4 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
+import { CartCagnotteBanner } from "@/components/cagnotte/CartCagnotteBanner";
 import { computeCartTotals } from "@/lib/cart-totals";
 import { formatPrice } from "@/data/mock";
 import { useCart } from "@/hooks/useCart";
@@ -602,6 +603,9 @@ export default function CartPage() {
                       })()}
                     </div>
                   </div>
+
+                  {/* Promesse cagnotte MediKong */}
+                  <CartCagnotteBanner items={items as any} className="mb-4" />
 
                   {/* Order total */}
                   <div className="border-t border-mk-line pt-4 mb-5 space-y-1">

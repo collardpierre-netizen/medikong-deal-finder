@@ -18,6 +18,9 @@ import { useQuery } from "@tanstack/react-query";
 import { StripePaymentFlow, type PaymentIntentInfo } from "@/components/checkout/StripePaymentFlow";
 import { BankTransferInstructions } from "@/components/checkout/BankTransferInstructions";
 import { useVendorLabels } from "@/hooks/useVendorLabels";
+import { CheckoutCagnotteToggle } from "@/components/cagnotte/CheckoutCagnotteToggle";
+import { useApplyCagnotte, useCagnotteSettings } from "@/hooks/useCagnotte";
+import { computeVatBase } from "@/lib/cagnotte-vat";
 
 
 
@@ -202,7 +205,20 @@ export default function CheckoutPage() {
     computeCartTotals(items as any);
   const selectedOpt = shippingOpts[shipping] || shippingOpts[0];
   const shippingCost = selectedOpt ? Number(selectedOpt.price_adjustment) || 0 : 0;
-  const total = subtotalTTC + shippingCost;
+
+  // 🪙 Cagnotte MediKong — état LOCAL uniquement (aucune écriture ledger avant paiement)
+  const [cagnotteUsed, setCagnotteUsed] = useState(0);
+  const { data: cagnotteSettings } = useCagnotteSettings();
+  const applyCagnotte = useApplyCagnotte();
+  const vatBreakdown = computeVatBase(
+    subtotal,
+    cagnotteUsed,
+    cagnotteSettings?.vatMode ?? "payment",
+    Number(cagnotteSettings?.raw?.cagnotte_vat_rate ?? 0.21),
+    vatAmount,
+  );
+  const displayedVat = cagnotteUsed > 0 ? vatBreakdown.vat_amount : vatAmount;
+  const total = (cagnotteUsed > 0 ? vatBreakdown.net_to_pay : subtotalTTC) + shippingCost;
 
   // Live cart validation (MOV, MOQ, stock, offre indispo) — debounced
   const validateItems = useMemo(
@@ -352,6 +368,20 @@ export default function CheckoutPage() {
         setOrderNumber(onum);
       }
 
+      // 🪙 Application de la cagnotte — écriture du mouvement 'spend' à la validation finale.
+      // Idempotent côté serveur : un second appel sur la même commande échoue proprement.
+      if (cagnotteUsed > 0 && oid) {
+        const res = await applyCagnotte.mutateAsync({ orderId: oid, amount: cagnotteUsed });
+        if (!res.success) {
+          toast.error(res.error || "Application de la cagnotte impossible");
+          setSubmitting(false);
+          setInitLoading(false);
+          return;
+        }
+      }
+
+
+
       // Enregistrement en adresse par défaut (best-effort)
       if (saveAsDefault && customerId) {
         try {
@@ -430,7 +460,7 @@ export default function CheckoutPage() {
   }, [
     submitting, initLoading, orderId, orderNumber, sameAsBilling, shippingAddr, billingAddr,
     paymentMethods, payment, subtotal, total, items, createOrder, clearCart, navigate,
-    saveAsDefault, customerId,
+    saveAsDefault, customerId, cagnotteUsed, applyCagnotte,
   ]);
 
 
@@ -871,7 +901,16 @@ export default function CheckoutPage() {
                 </div>
                 <div className="space-y-2 text-sm mb-4">
                   <div className="flex justify-between"><span className="text-mk-sec">Sous-total HTVA ({items.length} article{items.length > 1 ? "s" : ""})</span><span className="text-mk-navy">{formatPrice(subtotal)} EUR</span></div>
-                  <div className="flex justify-between"><span className="text-mk-sec">TVA</span><span className="text-mk-navy">{formatPrice(vatAmount)} EUR</span></div>
+                  {cagnotteUsed > 0 && (
+                    <div className="flex justify-between"><span className="text-mk-sec">Cagnotte appliquée</span><span className="font-medium text-[#D89620]">− {formatPrice(cagnotteUsed)} EUR</span></div>
+                  )}
+                  {cagnotteUsed > 0 && vatBreakdown.vat_mode === "discount" && (
+                    <div className="flex justify-between"><span className="text-mk-sec">Sous-total HTVA net</span><span className="text-mk-navy">{formatPrice(vatBreakdown.vat_base)} EUR</span></div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-mk-sec">TVA{cagnotteUsed > 0 ? ` (sur ${formatPrice(vatBreakdown.vat_base)} EUR)` : ""}</span>
+                    <span className="text-mk-navy">{formatPrice(displayedVat)} EUR</span>
+                  </div>
                   <div className="flex justify-between"><span className="text-mk-sec">Livraison</span><span className="text-mk-navy">{shippingCost === 0 ? "Incluse" : `${formatPrice(shippingCost)} EUR`}</span></div>
                   <div className="flex justify-between items-center">
                     <span className="text-mk-sec flex items-center gap-1"><Truck size={13} /> Délai estimé</span>
@@ -883,6 +922,13 @@ export default function CheckoutPage() {
                       })()}
                     </span>
                   </div>
+                </div>
+                <div className="mb-4">
+                  <CheckoutCagnotteToggle
+                    subtotalHt={subtotal}
+                    value={cagnotteUsed}
+                    onChange={setCagnotteUsed}
+                  />
                 </div>
                 <div className="border-t border-mk-line pt-3">
                   {hasBlocking && (
@@ -924,7 +970,7 @@ export default function CheckoutPage() {
                     key={`${subtotal}-${shipping}`}
                     initial={{ scale: 1.05, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
                     transition={{ type: "spring", stiffness: 300, damping: 20 }}>
-                    <span>Total TTC</span><span>{formatPrice(total)} EUR</span>
+                    <span>{cagnotteUsed > 0 ? "Net à payer" : "Total TTC"}</span><span>{formatPrice(total)} EUR</span>
                   </motion.div>
                 </div>
               </div>

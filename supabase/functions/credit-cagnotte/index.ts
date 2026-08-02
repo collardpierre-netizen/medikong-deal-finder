@@ -118,6 +118,63 @@ Deno.serve(async (req) => {
       .update({ cagnotte_eligible_ht: eligibleHt, cagnotte_earned: earned })
       .eq("id", orderId);
 
+    // 8. Email "cagnotte gagnée" — idempotent via orders.email_cagnotte_earned_sent_at
+    try {
+      const { data: orderMail } = await admin
+        .from("orders")
+        .select("id, order_number, subtotal_excl_vat, email_cagnotte_earned_sent_at")
+        .eq("id", orderId)
+        .maybeSingle();
+
+      if (orderMail && !orderMail.email_cagnotte_earned_sent_at) {
+        const { data: cust } = await admin
+          .from("customers")
+          .select("email, company_name")
+          .eq("id", order.customer_id)
+          .maybeSingle();
+
+        const { data: bal } = await admin
+          .from("cagnotte_balance")
+          .select("current_balance, next_expiry_date")
+          .eq("user_id", customer.auth_user_id)
+          .maybeSingle();
+
+        if (cust?.email) {
+          const expiryDate = bal?.next_expiry_date ?? expiresOn;
+          const expiresLabel = new Date(expiryDate).toLocaleDateString("fr-BE", {
+            day: "numeric", month: "long", year: "numeric",
+          });
+          const firstName = String(cust.company_name || "").split(" ")[0] || null;
+
+          await admin.functions.invoke("send-transactional-email", {
+            body: {
+              templateName: "cagnotte-earned",
+              recipientEmail: cust.email,
+              idempotencyKey: `cagnotte-earned-${orderId}`,
+              templateData: {
+                pharmacien_prenom: firstName,
+                order_number: orderMail.order_number,
+                order_ht: Number(orderMail.subtotal_excl_vat ?? 0),
+                eligible_ht: eligibleHt,
+                cagnotte_earned: earned,
+                cagnotte_balance_total: Number(bal?.current_balance ?? earned),
+                expires_on: expiresLabel,
+                cta_url: `${Deno.env.get("APP_URL") ?? "https://www.medikong.pro"}/compte`,
+              },
+            },
+          });
+
+          await admin
+            .from("orders")
+            .update({ email_cagnotte_earned_sent_at: new Date().toISOString() })
+            .eq("id", orderId)
+            .is("email_cagnotte_earned_sent_at", null);
+        }
+      }
+    } catch (mailErr) {
+      console.error("cagnotte-earned email error:", mailErr);
+    }
+
     return json({
       success: true,
       ledger_id: ledgerId,

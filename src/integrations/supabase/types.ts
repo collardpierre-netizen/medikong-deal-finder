@@ -10042,6 +10042,7 @@ export type Database = {
           delivery_confirmation_requested_at: string | null
           draft_fingerprint: string | null
           draft_payload: Json | null
+          email_cagnotte_earned_sent_at: string | null
           estimated_delivery_date: string | null
           forecast_converted_at: string | null
           forecast_created_at: string | null
@@ -10098,6 +10099,7 @@ export type Database = {
           delivery_confirmation_requested_at?: string | null
           draft_fingerprint?: string | null
           draft_payload?: Json | null
+          email_cagnotte_earned_sent_at?: string | null
           estimated_delivery_date?: string | null
           forecast_converted_at?: string | null
           forecast_created_at?: string | null
@@ -10154,6 +10156,7 @@ export type Database = {
           delivery_confirmation_requested_at?: string | null
           draft_fingerprint?: string | null
           draft_payload?: Json | null
+          email_cagnotte_earned_sent_at?: string | null
           estimated_delivery_date?: string | null
           forecast_converted_at?: string | null
           forecast_created_at?: string | null
@@ -28661,6 +28664,7 @@ export type Database = {
           delivery_confirmation_requested_at: string | null
           draft_fingerprint: string | null
           draft_payload: Json | null
+          email_cagnotte_earned_sent_at: string | null
           estimated_delivery_date: string | null
           forecast_converted_at: string | null
           forecast_created_at: string | null

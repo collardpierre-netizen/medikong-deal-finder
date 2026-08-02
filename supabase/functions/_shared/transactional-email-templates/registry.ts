@@ -51,6 +51,7 @@ import { template as orderDeliveryConfirmation } from './order-delivery-confirma
 import { template as vendorStatementReady } from './vendor-statement-ready.tsx'
 import { template as vendorPeppolIdReminder } from './vendor-peppol-id-reminder.tsx'
 import { template as invoicePaymentLink } from './invoice-payment-link.tsx'
+import { template as cagnotteEarned } from './cagnotte-earned.tsx'
 
 
 
@@ -97,5 +98,6 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'vendor-statement-ready': vendorStatementReady,
   'vendor-peppol-id-reminder': vendorPeppolIdReminder,
   'invoice-payment-link': invoicePaymentLink,
+  'cagnotte-earned': cagnotteEarned,
 }
 

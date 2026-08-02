@@ -18,7 +18,31 @@ export interface VatBreakdown {
   net_to_pay: number;
 }
 
-const r2 = (n: number) => Math.round(n * 100) / 100;
+/**
+ * Arrondi monétaire de référence (2 décimales, demi-supérieur sur la valeur absolue,
+ * insensible aux erreurs de représentation flottante : 1.005 → 1.01, 8.575 → 8.58).
+ * Doit rester identique au miroir serveur `supabase/functions/_shared/cagnotte-vat.ts`.
+ */
+export function roundEur(n: number): number {
+  if (!Number.isFinite(n)) return 0;
+  const sign = n < 0 ? -1 : 1;
+  const cents = Math.round(Number((Math.abs(n) * 100).toPrecision(12)));
+  return (sign * cents) / 100;
+}
+
+/**
+ * Formatage monétaire belge : virgule décimale, toujours 2 décimales,
+ * espace insécable comme séparateur de milliers, suffixe « € ».
+ * Miroir strict de la version serveur (mêmes chaînes dans le récap et dans l'email).
+ */
+export function formatEurBe(value: number): string {
+  const rounded = roundEur(value);
+  const [intPart, decPart] = Math.abs(rounded).toFixed(2).split(".");
+  const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0");
+  return `${rounded < 0 ? "-" : ""}${grouped},${decPart}\u00A0€`;
+}
+
+const r2 = roundEur;
 
 /**
  * @param subtotalHt      sous-total HT de la commande

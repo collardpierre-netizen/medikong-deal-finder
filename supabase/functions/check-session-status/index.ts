@@ -1,6 +1,6 @@
 import Stripe from "https://esm.sh/stripe@14";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { computeVatBase, cagnotteVatModeLabel, loadCagnotteVatSettings, formatEurBe } from "../_shared/cagnotte-vat.ts";
+import { computeVatBaseSafe, cagnotteVatModeLabel, loadCagnotteVatSettings, formatEurBe } from "../_shared/cagnotte-vat.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
             const { vatMode, vatRate } = await loadCagnotteVatSettings(supabase);
             const subtotalHt = Number((fullOrder as any)?.subtotal_excl_vat || 0);
             const rawVat = Number((fullOrder as any)?.vat_amount);
-            const b = computeVatBase(
+            const b = computeVatBaseSafe(
               subtotalHt,
               cagnotteUsed,
               vatMode,
@@ -155,10 +155,10 @@ Deno.serve(async (req) => {
               subtotalHt: formatEUR(subtotalHt),
               vatBase: formatEUR(b.vat_base),
               vatAmount: formatEUR(b.vat_amount),
-              vatBaseHint: vatMode === "discount"
+              vatBaseHint: b.vat_mode === "discount"
                 ? "HT net (sous-total − cagnotte)"
                 : "HT plein (la cagnotte est un moyen de paiement)",
-              vatModeLabel: cagnotteVatModeLabel(vatMode),
+              vatModeLabel: cagnotteVatModeLabel(b.vat_mode),
               netToPay: formatEUR(b.net_to_pay),
             };
           }

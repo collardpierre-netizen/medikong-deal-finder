@@ -1,6 +1,6 @@
 import Stripe from "https://esm.sh/stripe@14";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { computeVatBase, cagnotteVatModeLabel, loadCagnotteVatSettings, formatEurBe } from "../_shared/cagnotte-vat.ts";
+import { computeVatBaseSafe, cagnotteVatModeLabel, loadCagnotteVatSettings, formatEurBe } from "../_shared/cagnotte-vat.ts";
 
 // Lazy-initialized singletons so tests can inject stubs before any handler runs.
 let stripe: any = null;
@@ -217,16 +217,16 @@ async function sendBuyerOrderConfirmation(orderId: string) {
       const { vatMode, vatRate } = await loadCagnotteVatSettings(supabase);
       const subtotalHt = Number(order.subtotal_excl_vat || 0);
       const fullVat = Number.isFinite(Number(order.vat_amount)) ? Number(order.vat_amount) : undefined;
-      const b = computeVatBase(subtotalHt, cagnotteUsed, vatMode, vatRate, fullVat);
+      const b = computeVatBaseSafe(subtotalHt, cagnotteUsed, vatMode, vatRate, fullVat);
       cagnotteData = {
         cagnotteUsed: formatEUR(cagnotteUsed),
         subtotalHt: formatEUR(subtotalHt),
         vatBase: formatEUR(b.vat_base),
         vatAmount: formatEUR(b.vat_amount),
-        vatBaseHint: vatMode === "discount"
+        vatBaseHint: b.vat_mode === "discount"
           ? "HT net (sous-total − cagnotte)"
           : "HT plein (la cagnotte est un moyen de paiement)",
-        vatModeLabel: cagnotteVatModeLabel(vatMode),
+        vatModeLabel: cagnotteVatModeLabel(b.vat_mode),
         netToPay: formatEUR(b.net_to_pay),
       };
     }

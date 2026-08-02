@@ -1,6 +1,6 @@
 import { Wallet, Info } from "lucide-react";
 import { useCagnotteSettings } from "@/hooks/useCagnotte";
-import { computeVatBase, cagnotteVatModeLabel, formatEurBe } from "@/lib/cagnotte-vat";
+import { computeVatBaseSafe, cagnotteVatModeLabel, formatEurBe } from "@/lib/cagnotte-vat";
 
 interface OrderCagnotteRecapProps {
   subtotalHt: number;
@@ -25,7 +25,8 @@ export function OrderCagnotteRecap({
 
   const vatMode = settings?.vatMode ?? "payment";
   const vatRate = Number(settings?.raw?.cagnotte_vat_rate ?? 0.21);
-  const b = computeVatBase(subtotalHt, cagnotteUsed, vatMode, vatRate, fullVatAmount);
+  const b = computeVatBaseSafe(subtotalHt, cagnotteUsed, vatMode, vatRate, fullVatAmount);
+  const effectiveMode = b.vat_mode;
 
   const rows: Array<{ label: string; value: string; hint?: string; strong?: boolean }> = [
     { label: "Sous-total HT", value: formatEurBe(subtotalHt) },
@@ -34,7 +35,7 @@ export function OrderCagnotteRecap({
       label: "Base TVA",
       value: formatEurBe(b.vat_base),
       hint:
-        vatMode === "discount"
+        effectiveMode === "discount"
           ? "HT net (sous-total − cagnotte)"
           : "HT plein (la cagnotte est un moyen de paiement)",
     },
@@ -50,8 +51,14 @@ export function OrderCagnotteRecap({
       </h2>
       <p className="flex items-start gap-1.5 text-[11px] text-mk-sec mb-3">
         <Info size={12} className="mt-0.5 shrink-0" />
-        Mode TVA appliqué : <strong className="font-semibold text-mk-navy">{cagnotteVatModeLabel(vatMode)}</strong>
+        Mode TVA appliqué : <strong className="font-semibold text-mk-navy">{cagnotteVatModeLabel(effectiveMode)}</strong>
       </p>
+      {b.degraded && (
+        <p className="text-[11px] text-mk-sec mb-3">
+          Récapitulatif recalculé en mode sécurisé (TVA sur le HT plein). Le montant net à payer
+          reste exact ; en cas de doute, la facture fait foi.
+        </p>
+      )}
       <dl className="divide-y divide-mk-line/70">
         {rows.map((r) => (
           <div key={r.label} className="flex items-baseline justify-between gap-4 py-1.5">

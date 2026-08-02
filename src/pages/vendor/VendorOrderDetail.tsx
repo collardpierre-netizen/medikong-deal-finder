@@ -17,6 +17,7 @@ import StripePaymentStatusBadge from "@/components/orders/StripePaymentStatusBad
 import OrderSourceBadge from "@/components/orders/OrderSourceBadge";
 import OrderProductsSummary from "@/components/orders/OrderProductsSummary";
 import DeliveryNotesPanel from "@/components/orders/DeliveryNotesPanel";
+import { SupplierSourcingPanel } from "@/components/vendor/SupplierSourcingPanel";
 
 
 import {

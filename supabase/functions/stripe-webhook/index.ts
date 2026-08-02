@@ -211,6 +211,26 @@ async function sendBuyerOrderConfirmation(orderId: string) {
     // Generate invoices (self-billing + commission) and get download links for the buyer email
     const invoiceLinks = await emitOrderInvoices(orderId, new Date().toISOString());
 
+    // Récapitulatif cagnotte / TVA (uniquement si de la cagnotte a été appliquée)
+    const cagnotteUsed = Number(order.cagnotte_used || 0);
+    let cagnotteData: Record<string, string> = {};
+    if (cagnotteUsed > 0) {
+      const { vatMode, vatRate } = await loadCagnotteVatSettings(supabase);
+      const subtotalHt = Number(order.subtotal_excl_vat || 0);
+      const b = computeVatBase(subtotalHt, cagnotteUsed, vatMode, vatRate, Number(order.vat_amount ?? NaN));
+      cagnotteData = {
+        cagnotteUsed: formatEUR(cagnotteUsed),
+        subtotalHt: formatEUR(subtotalHt),
+        vatBase: formatEUR(b.vat_base),
+        vatAmount: formatEUR(b.vat_amount),
+        vatBaseHint: vatMode === "discount"
+          ? "HT net (sous-total − cagnotte)"
+          : "HT plein (la cagnotte est un moyen de paiement)",
+        vatModeLabel: cagnotteVatModeLabel(vatMode),
+        netToPay: formatEUR(b.net_to_pay),
+      };
+    }
+
     await supabase.functions.invoke("send-transactional-email", {
       body: {
         templateName: "order-confirmation",
@@ -224,6 +244,7 @@ async function sendBuyerOrderConfirmation(orderId: string) {
           shippingAddress,
           paymentMethod: paymentMethodLabel[order.payment_method] || order.payment_method,
           invoiceLinks,
+          ...cagnotteData,
         },
       },
     });

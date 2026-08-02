@@ -17,8 +17,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import {
   loadSigningSecret,
   verifyWebhookSignature,
-  parseCsv,
-  normalizeCatalogRow,
 } from "../_shared/qogita-catalog.ts";
 
 const corsHeaders = {
@@ -27,8 +25,7 @@ const corsHeaders = {
   "Content-Type": "application/json",
 };
 
-const MAX_RETRY = 2;
-const CHUNK = 500;
+
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: corsHeaders });
@@ -107,130 +104,57 @@ Deno.serve(async (req) => {
     return json({ received: true, status: "failed" });
   }
 
-  // ── 4. completed → téléchargement + ingestion ─────────────────────────────
+  // ── 4. completed → enregistrement + délégation au worker d'ingestion ──────
+  // On ne parse PLUS le CSV ici : un export FULL (>450k lignes) dépasse le
+  // budget mémoire/temps d'un webhook, ce qui laissait le download bloqué.
   const downloadUrl: string | null = obj.download_url ?? obj.downloadUrl ?? null;
   if (!downloadUrl) return json({ error: "missing_download_url" }, 400);
 
-  const startedAt = Date.now();
-  let csv = "";
-  let lastErr = "";
-  for (let attempt = 0; attempt <= MAX_RETRY; attempt++) {
-    try {
-      const res = await fetch(downloadUrl);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      csv = await res.text();
-      lastErr = "";
-      break;
-    } catch (e) {
-      lastErr = (e as Error).message;
-      if (attempt < MAX_RETRY) await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
-    }
-  }
-  if (lastErr) {
-    if (dl) {
-      await sb.from("qogita_catalog_downloads").update({
-        status: "download_error", error_message: `download_url: ${lastErr}`,
-      }).eq("id", dl.id);
-    }
-    return json({ error: "download_failed", detail: lastErr }, 502);
-  }
-
-  const { columns, rows } = parseCsv(csv);
-  const items = rows.map(normalizeCatalogRow).filter(Boolean) as NonNullable<ReturnType<typeof normalizeCatalogRow>>[];
-
-  // Enregistrement (ou création si le trigger n'a pas été tracé côté MediKong)
-  let downloadId = dl?.id as string | undefined;
-  const scope = dl?.scope ?? (obj.filters && Object.keys(obj.filters).length ? "filtered" : "full");
-  if (!downloadId) {
-    const { data: created } = await sb.from("qogita_catalog_downloads").insert({
-      catalog_request_id: requestId, scope, triggered_by: "webhook",
-      filters: obj.filters ?? {},
-    }).select("id").maybeSingle();
-    downloadId = created?.id;
-  }
-
-  const seenGtins: string[] = [];
-  let upserted = 0;
   const nowIso = new Date().toISOString();
-
-  for (let i = 0; i < items.length; i += CHUNK) {
-    const slice = items.slice(i, i + CHUNK);
-    // Résolution produit existante par GTIN (facultative, best effort).
-    const gtins = slice.map((it) => it.gtin);
-    const { data: prods } = await sb.from("products").select("id, gtin").in("gtin", gtins);
-    const byGtin = new Map<string, string>((prods || []).map((p: { id: string; gtin: string }) => [p.gtin, p.id]));
-
-    const payload = slice.map((it) => ({
-      gtin: it.gtin,
-      qogita_fid: it.qogita_fid,
-      name: it.name,
-      brand_name: it.brand_name,
-      category_slug: it.category_slug,
-      category_name: it.category_name,
-      indicative_price: it.indicative_price,
-      indicative_price_currency: it.indicative_price_currency,
-      indicative_price_includes_shipping: true,
-      inventory: it.inventory,
-      supplier_alias: it.supplier_alias,
-      supplier_url: it.supplier_url,
-      unit_size: it.unit_size,
-      raw: it.raw,
-      product_id: byGtin.get(it.gtin) ?? null,
-      is_present_in_catalog: true,
-      last_seen_at: nowIso,
-      disappeared_at: null,
-      last_download_id: downloadId ?? null,
-    }));
-
-    const { error } = await sb.from("qogita_catalog_items").upsert(payload, { onConflict: "gtin" });
-    if (error) console.error("[qogita-webhook] upsert error", error.message);
-    else upserted += payload.length;
-
-    seenGtins.push(...gtins);
-  }
-
-  // Disparitions : uniquement sur un export FULL (un export filtré ne prouve rien).
-  let disappeared = 0;
-  if (scope === "full" && items.length > 0) {
-    const { count } = await sb
-      .from("qogita_catalog_items")
-      .update({ is_present_in_catalog: false, disappeared_at: nowIso }, { count: "exact" })
-      .eq("is_present_in_catalog", true)
-      .lt("last_seen_at", nowIso);
-    disappeared = count ?? 0;
-  }
-
+  const scope = dl?.scope ?? (obj.filters && Object.keys(obj.filters).length ? "filtered" : "full");
   const generationMs = obj.requested_at && obj.completed_at
     ? new Date(obj.completed_at).getTime() - new Date(obj.requested_at).getTime()
     : null;
 
-  if (downloadId) {
-    await sb.from("qogita_catalog_downloads").update({
-      status: items.length === 0 ? "completed_empty" : "completed",
-      completed_at: obj.completed_at ?? nowIso,
-      requested_at: obj.requested_at ?? null,
-      generation_ms: generationMs,
-      filename: obj.filename ?? null,
-      rows_total: rows.length,
-      rows_updated: upserted,
-      csv_columns: columns,
-      filters: obj.filters ?? dl?.filters ?? {},
-    }).eq("id", downloadId);
+  const patch: Record<string, unknown> = {
+    status: "ready_to_ingest",
+    download_url: downloadUrl,
+    ingest_cursor: 0,
+    ingest_rows: 0,
+    ingest_state: {},
+    generation_ms: generationMs,
+    filename: obj.filename ?? null,
+    filters: obj.filters ?? dl?.filters ?? {},
+    error_message: null,
+  };
+
+
+  let downloadId = dl?.id as string | undefined;
+  if (!downloadId) {
+    const { data: created } = await sb.from("qogita_catalog_downloads").insert({
+      catalog_request_id: requestId, scope, triggered_by: "webhook",
+      requested_at: obj.requested_at ?? nowIso, ...patch,
+    }).select("id").maybeSingle();
+    downloadId = created?.id;
+  } else {
+    await sb.from("qogita_catalog_downloads").update(patch).eq("id", downloadId);
   }
 
-  await sb.from("sync_logs").insert({
-    sync_type: "qogita_catalog_download",
-    status: "success",
-    records_processed: upserted,
-    metadata: {
-      catalog_request_id: requestId, scope, rows: rows.length, columns,
-      disappeared, generation_ms: generationMs, ingest_ms: Date.now() - startedAt,
-      note: "indicative_price = prix plancher CSV, jamais utilisé pour la marge",
+  if (!downloadId) return json({ error: "download_row_unavailable" }, 500);
+
+  // Délégation non bloquante : le worker streame le CSV et se relance seul.
+  fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/qogita-catalog-ingest`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
     },
-  });
+    body: JSON.stringify({ downloadId }),
+  }).catch((e) => console.error("[qogita-webhook] ingest dispatch", (e as Error).message));
 
   return json({
-    received: true, status: "completed", rows: rows.length,
-    upserted, disappeared, columns, generation_ms: generationMs,
+    received: true, status: "ready_to_ingest", download_id: downloadId,
+    scope, generation_ms: generationMs,
   });
 });
+

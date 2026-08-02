@@ -13,11 +13,15 @@ import { render, screen, cleanup } from "@testing-library/react";
 import {
   computeVatBase as computeVatBaseClient,
   cagnotteVatModeLabel as labelClient,
+  formatEurBe as formatEurBeClient,
+  roundEur as roundEurClient,
   type CagnotteVatMode,
 } from "@/lib/cagnotte-vat";
 import {
   computeVatBase as computeVatBaseServer,
   cagnotteVatModeLabel as labelServer,
+  formatEurBe as formatEurBeServer,
+  roundEur as roundEurServer,
 } from "../../supabase/functions/_shared/cagnotte-vat.ts";
 
 // --- Mock du hook settings (piloté par /admin/cagnotte en prod) --------------
@@ -45,8 +49,7 @@ function buildEmailPayload(
   vatRate: number,
   fullVatAmount?: number,
 ) {
-  const formatEUR = (n: number) =>
-    new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(n);
+  const formatEUR = formatEurBeServer;
   const b = computeVatBaseServer(subtotalHt, cagnotteUsed, vatMode, vatRate, fullVatAmount);
   return {
     cagnotteUsed: formatEUR(cagnotteUsed),
@@ -70,6 +73,13 @@ function toNumber(text: string): number {
     .replace(/[−–-]/g, "-")
     .replace(",", ".");
   return Number(normalized);
+}
+
+/** Lit la chaîne affichée en face d'un libellé du récapitulatif rendu. */
+function readRowText(label: string): string {
+  const dt = screen.getByText(label, { selector: "dt, dt *" });
+  const row = dt.closest("div");
+  return (row?.querySelector("dd")?.textContent ?? "").trim();
 }
 
 /** Lit la valeur affichée en face d'un libellé du récapitulatif rendu. */
@@ -132,6 +142,16 @@ describe("Cagnotte MediKong & TVA — confirmation UI == email transactionnel", 
       expect(readRow("TVA")).toBeCloseTo(toNumber(email.vatAmount), 2);
       expect(readRow("Net à payer")).toBeCloseTo(toNumber(email.netToPay), 2);
 
+      // 4 bis) Formatage belge strictement identique (virgule décimale, 2 décimales)
+      expect(readRowText("Sous-total HT")).toBe(email.subtotalHt);
+      expect(readRowText("Cagnotte MediKong utilisée")).toBe(`− ${email.cagnotteUsed}`);
+      expect(readRowText("Base TVA")).toBe(email.vatBase);
+      expect(readRowText("TVA")).toBe(email.vatAmount);
+      expect(readRowText("Net à payer")).toBe(email.netToPay);
+      for (const label of ["Sous-total HT", "Base TVA", "TVA", "Total TTC", "Net à payer"]) {
+        expect(readRowText(label)).toMatch(/^-?\d{1,3}(\u00A0\d{3})*,\d{2}\u00A0€$/);
+      }
+
       // 5) Libellés de mode et note de base TVA identiques
       expect(screen.getByText(email.vatModeLabel)).toBeTruthy();
       expect(screen.getByText(email.vatBaseHint)).toBeTruthy();
@@ -142,5 +162,41 @@ describe("Cagnotte MediKong & TVA — confirmation UI == email transactionnel", 
     mockSettings = { vatMode: "payment", raw: { cagnotte_vat_rate: 0.21 } };
     const { container } = render(<OrderCagnotteRecap subtotalHt={1000} cagnotteUsed={0} />);
     expect(container.textContent).toBe("");
+  });
+
+  describe("arrondi et formatage belge", () => {
+    it.each([
+      [1.005, 1.01],
+      [8.575, 8.58],
+      [2.675, 2.68],
+      [-1.005, -1.01],
+      [0.004, 0],
+    ])("roundEur(%s) === %s côté client et serveur", (input, expected) => {
+      expect(roundEurClient(input)).toBe(expected);
+      expect(roundEurServer(input)).toBe(expected);
+    });
+
+    it.each([
+      [0, "0,00\u00A0€"],
+      [9.5, "9,50\u00A0€"],
+      [1234.5, "1\u00A0234,50\u00A0€"],
+      [1234567.891, "1\u00A0234\u00A0567,89\u00A0€"],
+      [-45, "-45,00\u00A0€"],
+    ])("formatEurBe(%s) === %s côté client et serveur", (input, expected) => {
+      expect(formatEurBeClient(input)).toBe(expected);
+      expect(formatEurBeServer(input)).toBe(expected);
+    });
+
+    it("TVA + base = total TTC après arrondi (mode discount)", () => {
+      const b = computeVatBaseClient(1234.567, 100.005, "discount", 0.21);
+      expect(roundEurClient(b.vat_base + b.vat_amount)).toBe(b.total_ttc);
+      expect(b.net_to_pay).toBe(b.total_ttc);
+    });
+
+    it("net à payer = total TTC − cagnotte après arrondi (mode payment)", () => {
+      const b = computeVatBaseClient(1234.567, 100.005, "payment", 0.21);
+      expect(roundEurClient(b.vat_base + b.vat_amount)).toBe(b.total_ttc);
+      expect(roundEurClient(b.total_ttc - 100.01)).toBe(b.net_to_pay);
+    });
   });
 });

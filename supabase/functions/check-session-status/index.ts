@@ -1,5 +1,6 @@
 import Stripe from "https://esm.sh/stripe@14";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { computeVatBase, cagnotteVatModeLabel, loadCagnotteVatSettings } from "../_shared/cagnotte-vat.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

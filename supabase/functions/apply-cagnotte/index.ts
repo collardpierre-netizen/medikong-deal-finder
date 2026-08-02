@@ -129,7 +129,7 @@ Deno.serve(async (req) => {
       }, 400);
     }
 
-    // 7. Idempotence
+    // 7. Idempotence — pré-check applicatif (chemin rapide)
     const { data: existing } = await admin
       .from("cagnotte_ledger")
       .select("id")
@@ -146,6 +146,10 @@ Deno.serve(async (req) => {
     }
 
     // 8. Mouvement 'spend' (montant négatif)
+    // L'unicité réelle est garantie en base par l'index partiel
+    // idx_cagnotte_spend_unique_order (order_id) WHERE movement_type='spend'.
+    // En cas de double appel concurrent (double webhook, double clic), le second
+    // insert échoue avec 23505 → on répond 409 already_applied sans rien écrire.
     const { error: ledgerError } = await admin.rpc("insert_ledger_entry", {
       p_user_id: customer.auth_user_id,
       p_movement_type: "spend",
@@ -154,8 +158,20 @@ Deno.serve(async (req) => {
       p_order_id: orderId,
     });
     if (ledgerError) {
-      return json({ success: false, error: ledgerError.message || "Erreur lors de l'écriture du mouvement" }, 500);
+      const code = (ledgerError as { code?: string }).code;
+      const msg = ledgerError.message ?? "";
+      const isDuplicate = code === "23505" || /idx_cagnotte_spend_unique_order|duplicate key/i.test(msg);
+      if (isDuplicate) {
+        return json({
+          success: false,
+          error: "Cagnotte déjà appliquée sur cette commande",
+          balance_after: currentBalance,
+          already_applied: true,
+        }, 409);
+      }
+      return json({ success: false, error: msg || "Erreur lors de l'écriture du mouvement" }, 500);
     }
+
 
     // 9. Trace sur la commande — SEUL cagnotte_used change.
     // La commission fournisseur reste calculée sur le sous-total HT plein.

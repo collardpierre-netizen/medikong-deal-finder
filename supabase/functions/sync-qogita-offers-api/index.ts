@@ -243,25 +243,57 @@ function normalizeOffers(payload: unknown): { offers: NormOffer[]; excluded: num
   return { offers, excluded, skippedNoStock, skippedNoTier };
 }
 
-// ── Vendeur de référence ────────────────────────────────────────────────────
-// Toutes les offres issues de l'API Qogita sont rattachées à Medista (vendeur
-// officiel / distributeur autorisé / logisticien). Le code vendeur Qogita reste
-// stocké dans offers.qogita_seller_fid pour la traçabilité interne uniquement.
-const MEDISTA_VENDOR_ID = "dc577ab0-3422-4daa-9052-d5999333880e";
-let medistaVendorIdCache: string | null = null;
+// ── Vendeurs virtuels anonymisés ────────────────────────────────────────────
+// Une offre par (produit, vendeur fournisseur) : chaque vendeur du flux est
+// matérialisé en vendeur virtuel anonymisé ("Vendeur <FID>"), affiché anonymisé
+// par défaut (show_real_name = false, révélable en admin).
+// La conformité (distributeur autorisé + mandat) est portée par le vendeur de
+// référence à la COMMANDE, pas par le vendeur affiché.
+const virtualVendorCache = new Map<string, string>();
 
 // deno-lint-ignore no-explicit-any
-async function resolveReferenceVendorId(sb: any): Promise<string | null> {
-  if (medistaVendorIdCache) return medistaVendorIdCache;
-  const { data } = await sb
-    .from("vendors").select("id").eq("id", MEDISTA_VENDOR_ID).maybeSingle();
-  if (data?.id) { medistaVendorIdCache = data.id; return data.id; }
-  const { data: bySlug } = await sb
-    .from("vendors").select("id").eq("slug", "medista-nv").maybeSingle();
-  if (bySlug?.id) { medistaVendorIdCache = bySlug.id; return bySlug.id; }
-  console.error("[qogita-api] medista_vendor_not_found");
-  return null;
+async function resolveVirtualVendorId(sb: any, fid: string, stats: Stats): Promise<string | null> {
+  const alias = fid.trim();
+  if (!alias) return null;
+  const cached = virtualVendorCache.get(alias);
+  if (cached) return cached;
+
+  const { data: existing } = await sb
+    .from("vendors").select("id").eq("qogita_seller_alias", alias).maybeSingle();
+  if (existing?.id) {
+    virtualVendorCache.set(alias, existing.id);
+    return existing.id;
+  }
+
+  const { data: created, error } = await sb.from("vendors").insert({
+    type: "qogita_virtual",
+    name: `Vendeur ${alias}`,
+    slug: `qogita-seller-${alias.toLowerCase()}`,
+    qogita_seller_alias: alias,
+    country_code: "BE",
+    shipping_country: "BE",
+    can_manage_offers: false,
+    auto_forward_to_qogita: true,
+    is_verified: true,
+    is_active: true,
+    show_real_name: false,
+    validation_status: "approved",
+  }).select("id").maybeSingle();
+
+  if (error || !created?.id) {
+    // Course entre deux workers : relire
+    const { data: retry } = await sb
+      .from("vendors").select("id").eq("qogita_seller_alias", alias).maybeSingle();
+    if (retry?.id) { virtualVendorCache.set(alias, retry.id); return retry.id; }
+    console.error("[qogita-api] virtual_vendor_failed", alias, error?.message);
+    return null;
+  }
+
+  stats.vendors_created += 1;
+  virtualVendorCache.set(alias, created.id);
+  return created.id;
 }
+
 
 
 // ── Upsert offre + paliers ──────────────────────────────────────────────────
@@ -440,26 +472,26 @@ async function processProduct(
     if (typeof vat === "number" && vat >= 0) vatRate = vat;
   } catch { /* fallback */ }
 
-  // Une seule offre de référence par produit/pays : la meilleure (prix d'achat
-  // applicable le plus bas, en stock), toujours rattachée à Medista.
-  const vendorId = await resolveReferenceVendorId(sb);
-  if (!vendorId) {
-    stats.offers_failed += offers.length;
-    await stampProbed(sb, product.id);
-    return;
+  // Multi-vendeurs : une offre par (produit, vendeur fournisseur), chacune
+  // rattachée à son vendeur virtuel anonymisé. Paliers/MOV/stock par offre.
+  const seen = new Set<string>();
+  for (const o of offers) {
+    const fid = (o.seller || "").trim();
+    if (!fid || seen.has(fid)) continue; // 1 offre max par vendeur (contrainte produit+vendeur)
+    seen.add(fid);
+
+    const vendorId = await resolveVirtualVendorId(sb, fid, stats);
+    if (!vendorId) { stats.offers_failed += 1; continue; }
+
+    const offerId = await upsertOffer(sb, product.id, vendorId, country, o, vatRate, marginMul);
+    if (!offerId) {
+      stats.offers_failed += 1;
+    } else {
+      stats.offers_upserted += 1;
+      stats.tiers_written += await syncTiers(sb, offerId, o, vatRate, marginMul);
+    }
   }
 
-  const inStock = offers.filter((o) => o.inventory > 0);
-  const candidates = inStock.length > 0 ? inStock : offers;
-  const best = candidates.reduce((a, b) => (b.basePrice < a.basePrice ? b : a));
-
-  const offerId = await upsertOffer(sb, product.id, vendorId, country, best, vatRate, marginMul);
-  if (!offerId) {
-    stats.offers_failed += 1;
-  } else {
-    stats.offers_upserted += 1;
-    stats.tiers_written += await syncTiers(sb, offerId, best, vatRate, marginMul);
-  }
 
 
   await stampProbed(sb, product.id);

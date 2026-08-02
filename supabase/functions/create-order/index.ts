@@ -10,6 +10,34 @@ const corsHeaders = {
 };
 
 const MEDIKONG_VENDOR_ID = "b3aa8188-7584-47eb-9b5f-fd50e33ec569";
+// Vendeur de référence des ventes issues du flux fournisseur automatisé :
+// il porte la conformité (distributeur autorisé + mandat de facturation),
+// commande chez le fournisseur, reçoit la marchandise et livre le client final.
+const REFERENCE_VENDOR_ID = "dc577ab0-3422-4daa-9052-d5999333880e"; // Medista NV
+
+// deno-lint-ignore no-explicit-any
+async function resolveReferenceVendorId(sb: any): Promise<string> {
+  const { data } = await sb
+    .from("vendors")
+    .select("id")
+    .eq("id", REFERENCE_VENDOR_ID)
+    .eq("is_active", true)
+    .eq("is_authorized_distributor", true)
+    .not("mandate_signed_at", "is", null)
+    .maybeSingle();
+  if (data?.id) return data.id;
+
+  const { data: fallback } = await sb
+    .from("vendors")
+    .select("id")
+    .eq("is_active", true)
+    .eq("is_authorized_distributor", true)
+    .not("mandate_signed_at", "is", null)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return fallback?.id ?? MEDIKONG_VENDOR_ID;
+}
 
 interface CustomerInfo {
   company: string;
@@ -183,7 +211,8 @@ Deno.serve(async (req) => {
         const ref = offerMap.get(v.offer_id);
         const vId = ref?.vendor_id ?? v.vendor_id;
         const vType = vId ? vendorTypeMap.get(vId) : null;
-        if (!vId || vType === "qogita_virtual") continue; // qogita always goes via MediKong card
+        if (!vId || vType === "qogita_virtual" || vType === "qogita") continue; // flux fournisseur : toujours via carte MediKong
+
         perVendor.set(vId, (perVendor.get(vId) || 0) + Number(v.total_excl_vat));
       }
       let eligibleAny = false;
@@ -264,18 +293,24 @@ Deno.serve(async (req) => {
       return json(500, { error: "Insertion order_items : " + itemsErr.message });
     }
 
-    // order_lines (routing-aware)
+    // order_lines (routing-aware) — les lignes issues du flux fournisseur
+    // automatisé sont routées vers le vendeur de référence (Medista), qui
+    // reçoit la réf. + le nom du vendeur fournisseur, le produit, la quantité
+    // et le prix d'achat. Le client final n'est jamais exposé au fournisseur ;
+    // le fournisseur n'est jamais exposé au client.
+    const referenceVendorId = await resolveReferenceVendorId(supabase);
     const orderLines = validation.items.map((v) => {
       const ref = offerMap.get(v.offer_id);
       const vId = ref?.vendor_id ?? v.vendor_id;
       const vType = vId ? vendorTypeMap.get(vId) : null;
-      const isQogita = vType === "qogita_virtual";
+      const isQogita = vType === "qogita_virtual" || vType === "qogita";
       const vatPct = Number(v.vat_rate ?? 21);
       return {
         order_id: order.id,
         offer_id: v.offer_id,
         product_id: v.product_id,
-        vendor_id: isQogita ? MEDIKONG_VENDOR_ID : vId,
+        vendor_id: isQogita ? referenceVendorId : vId,
+
         quantity: v.quantity,
         unit_price_excl_vat: v.unit_price_excl_vat,
         unit_price_incl_vat: v.unit_price_incl_vat,

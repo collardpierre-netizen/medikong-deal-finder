@@ -403,6 +403,7 @@ export function useProductOffers(productId: string | undefined) {
           updatedAt: o.updated_at ?? null,
           syncedAt: o.synced_at ?? null,
           isQogitaBacked: !!o.is_qogita_backed,
+          cagnotteEligible: o.cagnotte_eligible ?? null,
           sellerName: resolveVendorLabel(
             {
               id: o.vendor_id,

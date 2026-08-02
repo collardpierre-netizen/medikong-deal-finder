@@ -29414,6 +29414,10 @@ export type Database = {
       }
       check_qogita_stale_refresh_alert: { Args: never; Returns: undefined }
       cleanup_old_savings_simulations: { Args: never; Returns: number }
+      close_orphan_qogita_resync_logs: {
+        Args: { _stale_minutes?: number }
+        Returns: number
+      }
       close_stale_qogita_resync_logs: {
         Args: { _older_than?: string }
         Returns: number

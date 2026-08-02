@@ -33,18 +33,71 @@ const corsHeaders = {
 };
 
 const QOGITA_API = "https://api.qogita.com";
-const DEFAULT_LIMIT = 150;
+// ⚠️ Budget CPU des edge functions : un run DOIT terminer avant d'être tué,
+// sinon le journal reste bloqué en `running`. Lot volontairement petit.
+const DEFAULT_LIMIT = 60;
 const MAX_LIMIT = 600;
-const DEFAULT_CONCURRENCY = 8;
-const DEFAULT_WALLTIME_MS = 150_000;
+// Anti-429 : concurrence basse + débit global plafonné (req/s), pas 8-10.
+const DEFAULT_CONCURRENCY = 4;
+const DEFAULT_RPS = 2;
+const MIN_RPS = 0.4;
+const DEFAULT_WALLTIME_MS = 55_000;
 const REQUEST_TIMEOUT_MS = 15_000;
 const MAX_RETRIES = 4;
 const FALLBACK_MAX_PRODUCTS = 10;
+const CHECKPOINT_EVERY_MS = 8_000;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-// Cooldown global déclenché par un 429 (aucun 429 observé au test, mais prévu).
+// Cooldown global déclenché par un 429.
 let cooldownUntil = 0;
+
+// ── Limiteur de débit GLOBAL (token bucket sérialisé, req/s) ────────────────
+// Plafonne le débit réel toutes concurrences confondues et s'auto-dégrade sur
+// 429 (halve), puis récupère lentement quand les appels repassent au vert.
+class RateLimiter {
+  private rps: number;
+  private readonly ceiling: number;
+  private nextSlot = 0;
+  private gate: Promise<void> = Promise.resolve();
+  private okStreak = 0;
+
+  constructor(rps: number) {
+    this.rps = rps;
+    this.ceiling = rps;
+  }
+
+  get currentRps() { return Math.round(this.rps * 100) / 100; }
+
+  /** Réserve un créneau d'appel (sérialisé, respecte rps + cooldown 429). */
+  take(): Promise<void> {
+    const run = this.gate.then(async () => {
+      const interval = 1000 / this.rps;
+      const now = Date.now();
+      const target = Math.max(now, this.nextSlot, cooldownUntil);
+      this.nextSlot = target + interval;
+      const wait = target - now;
+      if (wait > 0) await sleep(wait);
+    });
+    this.gate = run.catch(() => {});
+    return run;
+  }
+
+  penalize() {
+    this.okStreak = 0;
+    this.rps = Math.max(MIN_RPS, this.rps / 2);
+  }
+
+  reward() {
+    this.okStreak += 1;
+    if (this.okStreak >= 20 && this.rps < this.ceiling) {
+      this.rps = Math.min(this.ceiling, this.rps * 1.25);
+      this.okStreak = 0;
+    }
+  }
+}
+
+let limiter = new RateLimiter(DEFAULT_RPS);
 
 type ProductRow = {
   id: string;
@@ -107,8 +160,8 @@ async function fetchOffers(
 ): Promise<{ status: number; json: unknown | null }> {
   const url = `${QOGITA_API}/buyers/variants/${fid}/offers/`;
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    const now = Date.now();
-    if (now < cooldownUntil) await sleep(cooldownUntil - now);
+    // Créneau accordé par le limiteur global (rps) + respect du cooldown 429.
+    await limiter.take();
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -130,20 +183,32 @@ async function fetchOffers(
 
     if (res.status === 429) {
       stats.http_429 += 1;
-      const retryAfter = parseInt(res.headers.get("Retry-After") || "2", 10);
-      const waitMs = Math.min(Math.max(retryAfter, 1) * 1000 * Math.pow(2, attempt), 30_000);
+      limiter.penalize();
+      // Retry-After honoré tel quel (secondes ou date HTTP), défaut 2 s,
+      // puis backoff exponentiel plafonné à 30 s.
+      const raw = res.headers.get("Retry-After") || "";
+      let retryAfterMs = 2_000;
+      const asInt = parseInt(raw, 10);
+      if (Number.isFinite(asInt) && String(asInt) === raw.trim()) {
+        retryAfterMs = Math.max(asInt, 1) * 1000;
+      } else if (raw) {
+        const t = Date.parse(raw);
+        if (Number.isFinite(t)) retryAfterMs = Math.max(1_000, t - Date.now());
+      }
+      const waitMs = Math.min(retryAfterMs * Math.pow(2, attempt), 30_000);
       cooldownUntil = Math.max(cooldownUntil, Date.now() + waitMs);
-      console.warn(`[qogita-api] 429 fid=${fid} cooldown=${waitMs}ms attempt=${attempt + 1}`);
-      if (attempt < MAX_RETRIES) { await sleep(waitMs); continue; }
+      console.warn(`[qogita-api] 429 fid=${fid} wait=${waitMs}ms rps=${limiter.currentRps} attempt=${attempt + 1}`);
+      if (attempt < MAX_RETRIES) continue; // le limiteur attendra le cooldown
       return { status: 429, json: null };
     }
-    if (res.status === 404) return { status: 404, json: null };
+    if (res.status === 404) { limiter.reward(); return { status: 404, json: null }; }
     if (res.status >= 500 && attempt < MAX_RETRIES) {
       await sleep(500 * Math.pow(2, attempt));
       continue;
     }
     if (!res.ok) return { status: res.status, json: null };
     const json = await res.json().catch(() => null);
+    limiter.reward();
     return { status: 200, json };
   }
   return { status: 429, json: null };
@@ -519,7 +584,11 @@ Deno.serve(async (req) => {
   const startedAt = Date.now();
   const body = await req.json().catch(() => ({} as Record<string, unknown>));
   const limit = Math.min(Math.max(Number(body.limit ?? DEFAULT_LIMIT), 1), MAX_LIMIT);
-  const concurrency = Math.min(Math.max(Number(body.concurrency ?? DEFAULT_CONCURRENCY), 1), 10);
+  // Anti-429 : concurrence plafonnée à 6 (10 auparavant) — le vrai levier est `rps`.
+  const concurrency = Math.min(Math.max(Number(body.concurrency ?? DEFAULT_CONCURRENCY), 1), 6);
+  const rps = Math.min(Math.max(Number(body.rps ?? DEFAULT_RPS), MIN_RPS), 8);
+  limiter = new RateLimiter(rps);
+  cooldownUntil = 0;
   const walltimeMs = Math.min(Math.max(Number(body.walltimeMs ?? DEFAULT_WALLTIME_MS), 10_000), 240_000);
   const freshHours = Math.min(Math.max(Number(body.freshHours ?? 12), 1), 720);
   const dryRun = Boolean(body.dryRun);
@@ -533,6 +602,58 @@ Deno.serve(async (req) => {
     offers_skipped_no_active_tier: 0, excluded_offers_reported: 0,
     http_429: 0, fallback_products: [],
   };
+
+  // ── Journal : id + checkpoints périodiques ────────────────────────────────
+  // Le budget CPU des edge functions peut tuer le run sans laisser tourner le
+  // `finally`. On écrit donc des compteurs PARTIELS toutes les 8 s : même un run
+  // tué garde des chiffres réels, et le watchdog SQL le clôture en `partial`.
+  let logId: string | null = null;
+  let checkpointTimer: number | undefined;
+  let targeted = 0;
+
+  const partialStats = () => ({
+    products_targeted: targeted,
+    products_processed: stats.products_scanned,
+    offers_processed: stats.offers_upserted + stats.offers_failed,
+    offers_updated: stats.offers_upserted,
+    tiers_synced: stats.tiers_written,
+    total_errors: stats.products_error + stats.offers_failed,
+  });
+
+  const checkpoint = async () => {
+    if (!logId) return;
+    try {
+      await sb.from("qogita_resync_logs").update({
+        ...partialStats(),
+        duration_ms: Date.now() - startedAt,
+        metadata: {
+          source: "sync-qogita-offers-api", limit, concurrency, rps,
+          dry_run: dryRun, http_429: stats.http_429,
+          rps_current: limiter.currentRps, checkpoint_at: new Date().toISOString(),
+        },
+      }).eq("id", logId);
+    } catch { /* best effort */ }
+  };
+
+  const finalize = async (status: "success" | "partial" | "error", extra: Record<string, unknown> = {}) => {
+    if (checkpointTimer !== undefined) clearInterval(checkpointTimer);
+    if (!logId) return;
+    try {
+      await sb.rpc("finalize_qogita_resync_log", {
+        _id: logId,
+        _status: status,
+        _stats: {
+          ...partialStats(),
+          metadata: {
+            ...stats, ...extra, duration_ms: Date.now() - startedAt,
+            rps_configured: rps, rps_final: limiter.currentRps,
+            concurrency, source: "sync-qogita-offers-api",
+          },
+        },
+      });
+    } catch { /* best effort */ }
+  };
+
 
   try {
     // ── Marge commerciale courante (config) ──
@@ -564,21 +685,22 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ ok: true, message: "no_targets", stats }), { headers: corsHeaders });
     }
 
-    // ── Journal (qogita_resync_logs) ──
-    let logId: string | null = null;
+    // ── Journal (qogita_resync_logs) + checkpoints ──
+    targeted = products.length;
     try {
       const { data: logRow } = await sb.from("qogita_resync_logs").insert({
         mode: "manual",
         status: "running",
         triggered_by: productIds?.length ? "manual" : "cron",
-        metadata: { source: "sync-qogita-offers-api", limit, concurrency, dry_run: dryRun },
+        metadata: { source: "sync-qogita-offers-api", limit, concurrency, rps, dry_run: dryRun },
       }).select("id").maybeSingle();
       logId = logRow?.id ?? null;
     } catch { /* journal best-effort */ }
+    if (logId) checkpointTimer = setInterval(() => { void checkpoint(); }, CHECKPOINT_EVERY_MS);
 
     const token = await login(sb);
 
-    // ── Boucle bornée par walltime, concurrence 5–10 ──
+    // ── Boucle bornée par walltime, concurrence basse + débit plafonné ──
     const queue = [...products] as ProductRow[];
     let stopped = false;
     const worker = async () => {
@@ -616,23 +738,10 @@ Deno.serve(async (req) => {
     }
 
     const durationMs = Date.now() - startedAt;
-    if (logId) {
-      try {
-        await sb.rpc("finalize_qogita_resync_log", {
-          _id: logId,
-          _status: "success",
-          _stats: {
-            products_targeted: products.length,
-            products_processed: stats.products_scanned,
-            offers_processed: stats.offers_upserted + stats.offers_failed,
-            offers_updated: stats.offers_upserted,
-            tiers_synced: stats.tiers_written,
-            total_errors: stats.products_error + stats.offers_failed,
-            metadata: { ...stats, remaining_in_batch: queue.length, duration_ms: durationMs, fallback_triggered: fallbackTriggered, source: "sync-qogita-offers-api" },
-          },
-        });
-      } catch { /* best effort */ }
-    }
+    await finalize(queue.length > 0 ? "partial" : "success", {
+      remaining_in_batch: queue.length,
+      fallback_triggered: fallbackTriggered,
+    });
 
     return new Response(JSON.stringify({
       ok: true,
@@ -641,12 +750,18 @@ Deno.serve(async (req) => {
       margin_pct: Math.round((marginMul - 1) * 10000) / 100,
       remaining_in_batch: queue.length,
       fallback_triggered: fallbackTriggered,
+      rps_configured: rps,
+      rps_final: limiter.currentRps,
+      concurrency,
       stats,
     }), { headers: corsHeaders });
   } catch (e) {
     console.error("[qogita-api] fatal", (e as Error).message);
+    await finalize("error", { error: (e as Error).message });
     return new Response(JSON.stringify({ ok: false, error: (e as Error).message, stats }), {
       status: 500, headers: corsHeaders,
     });
+  } finally {
+    if (checkpointTimer !== undefined) clearInterval(checkpointTimer);
   }
 });

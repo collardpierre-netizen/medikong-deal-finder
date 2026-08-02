@@ -39,8 +39,11 @@ export function ProductCardCagnotteBadge({
           </span>
         </TooltipTrigger>
         <TooltipContent>
-          Ce produit vous fait gagner {pct}% de cagnotte fidélité.
+          {nbTotalOffers && nbEligibleOffers != null && nbEligibleOffers < nbTotalOffers
+            ? `${nbEligibleOffers} offre(s) sur ${nbTotalOffers} vous font gagner ${pct}% de cagnotte fidélité.`
+            : `Ce produit vous fait gagner ${pct}% de cagnotte fidélité.`}
         </TooltipContent>
+
       </Tooltip>
     </TooltipProvider>
   );

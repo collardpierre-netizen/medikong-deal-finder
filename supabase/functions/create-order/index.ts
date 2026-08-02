@@ -211,7 +211,8 @@ Deno.serve(async (req) => {
         const ref = offerMap.get(v.offer_id);
         const vId = ref?.vendor_id ?? v.vendor_id;
         const vType = vId ? vendorTypeMap.get(vId) : null;
-        if (!vId || vType === "qogita_virtual") continue; // qogita always goes via MediKong card
+        if (!vId || vType === "qogita_virtual" || vType === "qogita") continue; // flux fournisseur : toujours via carte MediKong
+
         perVendor.set(vId, (perVendor.get(vId) || 0) + Number(v.total_excl_vat));
       }
       let eligibleAny = false;

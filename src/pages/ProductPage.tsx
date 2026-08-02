@@ -140,6 +140,8 @@ function MarginCalcPctMode({
 
 import { formatUpdatedAt, formatUpdatedAtFull } from "@/lib/format-date";
 import { SHIPPING_COPY, FAST_SHIPPING_MAX_DAYS } from "@/config/copy";
+import { OfferCagnotteBadge } from "@/components/cagnotte/OfferCagnotteBadge";
+import { ProductDetailCagnotteBanner } from "@/components/cagnotte/ProductDetailCagnotteBanner";
 
 /** @deprecated use formatUpdatedAt from @/lib/format-date */
 function formatRelative(iso?: string | null): string | null {

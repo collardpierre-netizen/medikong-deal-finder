@@ -1892,6 +1892,12 @@ function ProductPageInner() {
               {/* Name */}
               <h1 className="text-xl md:text-2xl font-bold text-foreground mb-3 leading-tight">{displayName}</h1>
 
+              {/* Cagnotte : éligibilité dérivée des offres du produit */}
+              <div className="mb-3">
+                <ProductDetailCagnotteBanner productId={product.id} />
+              </div>
+
+
               {/* GTIN + Copy */}
               <div className="flex items-center gap-3 mb-2 flex-wrap">
                 <span className="text-xs text-muted-foreground">GTIN : {product.gtin || product.ean}</span>

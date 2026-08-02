@@ -13,7 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
 import { useVendorMov } from "@/hooks/useVendorMov";
-import { useCartValidation, validateCartNow, revalidateStaleOffers, verifyOffersJit, type ValidateCartResponse } from "@/hooks/useCartValidation";
+import { useCartValidation, validateCartNow, verifyOffersJit, type ValidateCartResponse } from "@/hooks/useCartValidation";
 import { toast } from "sonner";
 import { useVendorLabels } from "@/hooks/useVendorLabels";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";

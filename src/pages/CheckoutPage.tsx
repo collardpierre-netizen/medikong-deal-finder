@@ -18,6 +18,9 @@ import { useQuery } from "@tanstack/react-query";
 import { StripePaymentFlow, type PaymentIntentInfo } from "@/components/checkout/StripePaymentFlow";
 import { BankTransferInstructions } from "@/components/checkout/BankTransferInstructions";
 import { useVendorLabels } from "@/hooks/useVendorLabels";
+import { CheckoutCagnotteToggle } from "@/components/cagnotte/CheckoutCagnotteToggle";
+import { useApplyCagnotte, useCagnotteSettings } from "@/hooks/useCagnotte";
+import { computeVatBase } from "@/lib/cagnotte-vat";
 
 
 

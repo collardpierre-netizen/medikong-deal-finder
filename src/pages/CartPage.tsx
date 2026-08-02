@@ -644,10 +644,13 @@ export default function CartPage() {
                       if (e.type === "below_moq") return `Quantité minimum non respectée chez ${e.vendor_name}`;
                       if (e.type === "exceeds_stock") return `Stock insuffisant chez ${e.vendor_name}`;
                       if (e.type === "offer_not_available") return `Une offre n'est plus disponible`;
+                      if (e.type === "price_stale") return `Prix à revérifier sur une offre : la commande est bloquée le temps de la mise à jour du prix fournisseur`;
+                      if (e.type === "invalid_quantity") return `Quantité invalide sur une ligne du panier`;
                       return null;
                     }).filter(Boolean) || [];
                     const disabled = isInvalid || readyCount === 0;
                     const tooltip = disabled ? (reasons.length > 0 ? reasons.join("\n") : "Atteignez les minimums vendeur pour continuer") : undefined;
+
                     return (
                       <motion.div whileHover={{ scale: disabled ? 1 : 1.02 }} whileTap={{ scale: disabled ? 1 : 0.98 }} title={tooltip}>
                         <Link

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface ValidationError {
-  type: "below_moq" | "exceeds_stock" | "offer_not_available" | "vendor_mov_not_reached" | "invalid_quantity";
+  type: "below_moq" | "exceeds_stock" | "offer_not_available" | "vendor_mov_not_reached" | "invalid_quantity" | "price_stale";
   item_index: number | null;
   vendor_name: string | null;
   offer_id?: string | null;

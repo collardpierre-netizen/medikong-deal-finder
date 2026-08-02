@@ -136,3 +136,52 @@ export async function revalidateStaleOffers(offerIds: string[]): Promise<Revalid
   if (error) throw error;
   return data as RevalidateStaleOffersResponse;
 }
+
+export interface JitVerifyResult {
+  offer_id: string;
+  product_id: string | null;
+  status: "fresh" | "confirmed" | "price_changed" | "switch_vendor" | "unavailable" | "still_stale";
+  resolved_offer_id?: string;
+  previous_price_excl_vat?: number | null;
+  price_excl_vat?: number | null;
+  price_incl_vat?: number | null;
+  stock_quantity?: number | null;
+  moq?: number | null;
+  vendor_label?: string | null;
+  last_verified_at?: string | null;
+  alternative?: {
+    offer_id: string;
+    price_excl_vat: number;
+    price_incl_vat: number | null;
+    stock_quantity: number | null;
+    moq: number | null;
+    vendor_label: string | null;
+  } | null;
+}
+
+export interface JitVerifyResponse {
+  ok: boolean;
+  triggered: boolean;
+  reason?: string;
+  products_targeted?: number;
+  products_cached?: number;
+  unblocked?: number;
+  should_revalidate_cart?: boolean;
+  results: JitVerifyResult[];
+}
+
+/**
+ * Vérification just-in-time des offres fournisseur (prix / stock / paliers)
+ * au point de vente : le garde-fou `price_stale` n'est pas contourné, on
+ * déclenche la vérification pour qu'il passe légitimement.
+ */
+export async function verifyOffersJit(offerIds: string[]): Promise<JitVerifyResponse> {
+  const ids = [...new Set(offerIds.filter(Boolean))].slice(0, 25);
+  if (ids.length === 0) return { ok: true, triggered: false, reason: "no_offer_ids", results: [] };
+  const { data, error } = await supabase.functions.invoke("verify-offer-jit", {
+    body: { offer_ids: ids },
+  });
+  if (error) throw error;
+  return data as JitVerifyResponse;
+}
+

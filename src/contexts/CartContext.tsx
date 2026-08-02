@@ -231,7 +231,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return next;
       });
       setIsDrawerOpen(true);
+      // Vérification just-in-time du prix fournisseur dès l'ajout au panier :
+      // best-effort, silencieux (le garde-fou checkout reste seul juge).
+      void (async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) return;
+          await supabase.functions.invoke("verify-offer-jit", { body: { offer_ids: [offerId] } });
+        } catch { /* silencieux */ }
+      })();
     },
+
     isPending: false,
   }), [persistItems]);
 

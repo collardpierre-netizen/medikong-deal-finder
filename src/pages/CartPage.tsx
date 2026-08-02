@@ -13,7 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
 import { useVendorMov } from "@/hooks/useVendorMov";
-import { useCartValidation, validateCartNow, revalidateStaleOffers, type ValidateCartResponse } from "@/hooks/useCartValidation";
+import { useCartValidation, validateCartNow, verifyOffersJit, type ValidateCartResponse } from "@/hooks/useCartValidation";
 import { toast } from "sonner";
 import { useVendorLabels } from "@/hooks/useVendorLabels";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
@@ -676,23 +676,36 @@ export default function CartPage() {
                             onClick={async () => {
                               setRevalidating(true);
                               try {
-                                const res = await revalidateStaleOffers(staleOfferIds);
+                                const res = await verifyOffersJit(staleOfferIds);
+                                const changed = res.results.filter(r => r.status === "price_changed");
+                                const switched = res.results.filter(r => r.status === "switch_vendor");
+                                const gone = res.results.filter(r => r.status === "unavailable");
                                 const fresh = await validateCartNow(validationItems);
                                 setRecheck(fresh);
+                                if (changed.length > 0) {
+                                  toast.info(`Prix fournisseur mis à jour sur ${changed.length} ligne(s) — vérifiez le montant avant de valider.`);
+                                }
+                                if (switched.length > 0) {
+                                  toast.warning(`${switched.length} offre(s) ont disparu : un autre fournisseur vérifié est disponible sur la fiche produit.`);
+                                }
+                                if (gone.length > 0) {
+                                  toast.error(`${gone.length} produit(s) sont indisponibles chez le fournisseur.`);
+                                }
                                 if (fresh.valid) {
-                                  toast.success("Prix revérifiés — vous pouvez finaliser la commande.");
-                                  navigate("/checkout");
-                                } else if (res.revalidated.length > 0) {
+                                  toast.success("Prix vérifiés — vous pouvez finaliser la commande.");
+                                  if (changed.length === 0 && switched.length === 0) navigate("/checkout");
+                                } else if ((res.unblocked ?? 0) > 0) {
                                   toast.info("Certains prix ont été mis à jour, mais le panier reste bloqué.");
                                 } else {
                                   toast.error("Prix fournisseur toujours indisponible, réessayez dans quelques minutes.");
                                 }
                               } catch (e: any) {
-                                toast.error(e?.message || "Revalidation impossible");
+                                toast.error(e?.message || "Vérification impossible");
                               } finally {
                                 setRevalidating(false);
                               }
                             }}
+
                             className="block w-full text-center font-bold py-3.5 rounded-lg text-sm transition-colors bg-mk-navy text-white hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
                           >
                             {revalidating ? "Revérification des prix…" : "Revérifier les prix et commander"}

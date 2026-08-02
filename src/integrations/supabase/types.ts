@@ -13038,6 +13038,86 @@ export type Database = {
         }
         Relationships: []
       }
+      qogita_product_absence: {
+        Row: {
+          consecutive_missing_full: number
+          created_at: string
+          last_full_download_id: string | null
+          last_missing_at: string | null
+          last_present_at: string | null
+          product_id: string
+          updated_at: string
+        }
+        Insert: {
+          consecutive_missing_full?: number
+          created_at?: string
+          last_full_download_id?: string | null
+          last_missing_at?: string | null
+          last_present_at?: string | null
+          product_id: string
+          updated_at?: string
+        }
+        Update: {
+          consecutive_missing_full?: number
+          created_at?: string
+          last_full_download_id?: string | null
+          last_missing_at?: string | null
+          last_present_at?: string | null
+          product_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qogita_product_absence_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "qogita_product_absence_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qogita_product_absence_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "qogita_product_absence_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "qogita_product_absence_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qogita_product_absence_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qogita_product_absence_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
       qogita_rate_limit: {
         Row: {
           available_tokens: number
@@ -30804,6 +30884,7 @@ export type Database = {
       }
       next_commission_invoice_number: { Args: never; Returns: string }
       normalize_brand_name: { Args: { _name: string }; Returns: string }
+      normalize_gtin: { Args: { _gtin: string }; Returns: string }
       normalize_product_gtin: { Args: { _gtin: string }; Returns: string }
       offer_exclusivity_flags: {
         Args: {
@@ -30985,6 +31066,10 @@ export type Database = {
       }
       qogita_reactivate_entity: {
         Args: { _id: string; _kind: string; _reason?: string }
+        Returns: Json
+      }
+      qogita_record_full_export_presence: {
+        Args: { _download_id: string }
         Returns: Json
       }
       qogita_sweep_run_id: {

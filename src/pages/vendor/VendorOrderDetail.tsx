@@ -300,6 +300,11 @@ export default function VendorOrderDetail() {
         </div>
 
         <div className="p-4 border-b border-border">
+          <SupplierSourcingPanel lines={order.lines as any} />
+        </div>
+
+
+        <div className="p-4 border-b border-border">
           <DeliveryNotesPanel
             orderId={order.order_id}
             orderNumber={order.order_number}

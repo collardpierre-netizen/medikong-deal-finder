@@ -57,6 +57,11 @@ verify_jwt = true
 [functions.revalidate-stale-offers]
 verify_jwt = true
 
+[functions.verify-offer-jit]
+verify_jwt = true
+
+
+
 [functions.generate-savings-report]
 verify_jwt = false
 

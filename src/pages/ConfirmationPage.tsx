@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { useVendorLabels } from "@/hooks/useVendorLabels";
+import { OrderCagnotteRecap } from "@/components/cagnotte/OrderCagnotteRecap";
 
 export default function ConfirmationPage() {
   const [searchParams] = useSearchParams();

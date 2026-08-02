@@ -17,8 +17,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import {
   loadSigningSecret,
   verifyWebhookSignature,
-  parseCsv,
-  normalizeCatalogRow,
 } from "../_shared/qogita-catalog.ts";
 
 const corsHeaders = {
@@ -27,8 +25,7 @@ const corsHeaders = {
   "Content-Type": "application/json",
 };
 
-const MAX_RETRY = 2;
-const CHUNK = 500;
+
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: corsHeaders });

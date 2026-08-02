@@ -14,6 +14,9 @@ import {
   computeVatBase as computeVatBaseClient,
   cagnotteVatModeLabel as labelClient,
   formatEurBe as formatEurBeClient,
+  computeVatBaseSafe as computeVatBaseSafeClient,
+  fallbackVatBreakdown as fallbackClient,
+  isVatBreakdownCoherent,
   roundEur as roundEurClient,
   type CagnotteVatMode,
 } from "@/lib/cagnotte-vat";
@@ -21,6 +24,7 @@ import {
   computeVatBase as computeVatBaseServer,
   cagnotteVatModeLabel as labelServer,
   formatEurBe as formatEurBeServer,
+  computeVatBaseSafe as computeVatBaseSafeServer,
   roundEur as roundEurServer,
 } from "../../supabase/functions/_shared/cagnotte-vat.ts";
 
@@ -197,6 +201,52 @@ describe("Cagnotte MediKong & TVA — confirmation UI == email transactionnel", 
       const b = computeVatBaseClient(1234.567, 100.005, "payment", 0.21);
       expect(roundEurClient(b.vat_base + b.vat_amount)).toBe(b.total_ttc);
       expect(roundEurClient(b.total_ttc - 100.01)).toBe(b.net_to_pay);
+    });
+  });
+
+  describe("fallback si le helper miroir échoue", () => {
+    it("entrées invalides (NaN) → repli cohérent, jamais de NaN affiché", () => {
+      const b = computeVatBaseSafeClient(Number.NaN, 45, "discount", 0.21);
+      expect(b.degraded).toBe(true);
+      expect(b.vat_mode).toBe("payment");
+      for (const v of [b.vat_base, b.vat_amount, b.total_ttc, b.net_to_pay]) {
+        expect(Number.isFinite(v)).toBe(true);
+      }
+      expect(formatEurBeClient(b.net_to_pay)).toBe("0,00\u00A0€");
+    });
+
+    it("client et serveur produisent le même repli", () => {
+      const c = computeVatBaseSafeClient(Number.NaN, 45, "discount", 0.21);
+      const s = computeVatBaseSafeServer(Number.NaN, 45, "discount", 0.21);
+      expect(c).toEqual(s);
+      expect(fallbackClient(1000, 45, 0.21)).toEqual({
+        vat_base: 1000,
+        vat_amount: 210,
+        vat_mode: "payment",
+        total_ttc: 1210,
+        net_to_pay: 1165,
+      });
+    });
+
+    it("un récap contradictoire est rejeté par le contrôle de cohérence", () => {
+      expect(
+        isVatBreakdownCoherent(
+          { vat_base: 1200, vat_amount: 210, vat_mode: "payment", total_ttc: 999, net_to_pay: 999 },
+          1000,
+          45,
+        ),
+      ).toBe(false);
+      expect(isVatBreakdownCoherent(null, 1000, 45)).toBe(false);
+    });
+
+    it("le récap affiché en mode dégradé reste complet et signale le repli", () => {
+      mockSettings = { vatMode: "discount", raw: { cagnotte_vat_rate: Number.NaN } };
+      render(<OrderCagnotteRecap subtotalHt={Number.NaN} cagnotteUsed={45} />);
+      expect(screen.getByText(/mode sécurisé/i)).toBeTruthy();
+      for (const label of ["Sous-total HT", "Base TVA", "TVA", "Total TTC", "Net à payer"]) {
+        expect(readRowText(label)).toMatch(/^-?\d{1,3}(\u00A0\d{3})*,\d{2}\u00A0€$/);
+      }
+      expect(screen.getByText(labelClient("payment"))).toBeTruthy();
     });
   });
 });

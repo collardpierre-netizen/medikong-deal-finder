@@ -560,9 +560,11 @@ export function useCatalogProducts(filters: CatalogFilters) {
               const countResult = await countPromise;
 
               const pageRows = boosted.slice(offset, offset + filters.perPage);
-              const products = useCountryView
-                ? normalizeRows(pageRows)
-                : await applyCountryStats(pageRows as CatalogProduct[], country);
+              const products = await withOfferCagnotte(
+                useCountryView
+                  ? normalizeRows(pageRows)
+                  : await applyCountryStats(pageRows as CatalogProduct[], country)
+              );
 
               return {
                 products,
@@ -589,9 +591,11 @@ export function useCatalogProducts(filters: CatalogFilters) {
         const countResult = await countPromise;
         const total = countResult?.count ?? (filteredRows.length === filters.perPage ? offset + filteredRows.length + 1 : offset + filteredRows.length);
 
-        const products = useCountryView
-          ? normalizeRows(filteredRows)
-          : await applyCountryStats(filteredRows as CatalogProduct[], country);
+        const products = await withOfferCagnotte(
+          useCountryView
+            ? normalizeRows(filteredRows)
+            : await applyCountryStats(filteredRows as CatalogProduct[], country)
+        );
         return { products, total };
       };
 

@@ -6,14 +6,15 @@ import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
 import { Download, Upload, Trash2, Minus, Plus, ShoppingCart, ChevronDown, ChevronUp, Package, AlertTriangle, HelpCircle, CheckCircle2, Store, Truck, AlertCircle } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
 import { useVendorMov } from "@/hooks/useVendorMov";
-import { useCartValidation } from "@/hooks/useCartValidation";
+import { useCartValidation, validateCartNow, revalidateStaleOffers, type ValidateCartResponse } from "@/hooks/useCartValidation";
+import { toast } from "sonner";
 import { useVendorLabels } from "@/hooks/useVendorLabels";
 import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
 import VendorDelegateCompact from "@/components/vendor/VendorDelegateCompact";
@@ -42,6 +43,9 @@ export default function CartPage() {
   const [expandedSuppliers, setExpandedSuppliers] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<FilterType>("all");
   const [remark, setRemark] = useState("");
+  const navigate = useNavigate();
+  const [revalidating, setRevalidating] = useState(false);
+  const [recheck, setRecheck] = useState<ValidateCartResponse | null>(null);
 
   // Scroll position memory: restore where the user left off when returning to the cart.
   // Falls back to top on first visit (e.g. after "Ajouter au panier").
@@ -98,6 +102,10 @@ export default function CartPage() {
     [items],
   );
   const { data: validation, loading: validating } = useCartValidation(validationItems, { enabled: items.length > 0 });
+
+  // Toute nouvelle validation serveur (changement de panier) invalide le résultat
+  // de la revalidation ponctuelle.
+  useEffect(() => { setRecheck(null); }, [validation]);
 
   const vendorSummaryMap = useMemo(() => {
     const m = new Map<string, { mov_required: number; mov_reached: boolean; subtotal_excl_vat: number; amount_missing: number }>();
@@ -638,8 +646,7 @@ export default function CartPage() {
 
                   {/* Checkout button */}
                   {(() => {
-                    const isInvalid = !!validation && !validation.valid;
-                    const reasons = validation?.errors.map(e => {
+                    const describe = (e: { type: string; vendor_name: string | null; details: Record<string, any> }) => {
                       if (e.type === "vendor_mov_not_reached") return `MOV non atteint pour ${e.vendor_name} (manque ${formatPrice(Number(e.details.missing))}€)`;
                       if (e.type === "below_moq") return `Quantité minimum non respectée chez ${e.vendor_name}`;
                       if (e.type === "exceeds_stock") return `Stock insuffisant chez ${e.vendor_name}`;
@@ -647,9 +654,55 @@ export default function CartPage() {
                       if (e.type === "price_stale") return `Prix à revérifier sur une offre : la commande est bloquée le temps de la mise à jour du prix fournisseur`;
                       if (e.type === "invalid_quantity") return `Quantité invalide sur une ligne du panier`;
                       return null;
-                    }).filter(Boolean) || [];
+                    };
+                    const errors = recheck?.errors ?? validation?.errors ?? [];
+                    const isInvalid = (!!recheck && !recheck.valid) || (!recheck && !!validation && !validation.valid);
+                    const reasons = errors.map(describe).filter(Boolean) as string[];
+                    const staleOfferIds = errors
+                      .filter(e => e.type === "price_stale" && e.offer_id)
+                      .map(e => e.offer_id as string);
+                    const onlyStale = isInvalid && errors.length > 0 && errors.every(e => e.type === "price_stale");
                     const disabled = isInvalid || readyCount === 0;
                     const tooltip = disabled ? (reasons.length > 0 ? reasons.join("\n") : "Atteignez les minimums vendeur pour continuer") : undefined;
+
+                    // Revalidation à la demande : on relance la vérification du prix
+                    // fournisseur sur les offres périmées, puis on rejoue la validation serveur.
+                    if (onlyStale && readyCount > 0) {
+                      return (
+                        <div title={tooltip}>
+                          <button
+                            type="button"
+                            disabled={revalidating}
+                            onClick={async () => {
+                              setRevalidating(true);
+                              try {
+                                const res = await revalidateStaleOffers(staleOfferIds);
+                                const fresh = await validateCartNow(validationItems);
+                                setRecheck(fresh);
+                                if (fresh.valid) {
+                                  toast.success("Prix revérifiés — vous pouvez finaliser la commande.");
+                                  navigate("/checkout");
+                                } else if (res.revalidated.length > 0) {
+                                  toast.info("Certains prix ont été mis à jour, mais le panier reste bloqué.");
+                                } else {
+                                  toast.error("Prix fournisseur toujours indisponible, réessayez dans quelques minutes.");
+                                }
+                              } catch (e: any) {
+                                toast.error(e?.message || "Revalidation impossible");
+                              } finally {
+                                setRevalidating(false);
+                              }
+                            }}
+                            className="block w-full text-center font-bold py-3.5 rounded-lg text-sm transition-colors bg-mk-navy text-white hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
+                          >
+                            {revalidating ? "Revérification des prix…" : "Revérifier les prix et commander"}
+                          </button>
+                          <p className="text-xs text-mk-ter mt-2 text-center">
+                            Un prix fournisseur doit être revérifié avant la commande.
+                          </p>
+                        </div>
+                      );
+                    }
 
                     return (
                       <motion.div whileHover={{ scale: disabled ? 1 : 1.02 }} whileTap={{ scale: disabled ? 1 : 0.98 }} title={tooltip}>
@@ -667,6 +720,7 @@ export default function CartPage() {
                       </motion.div>
                     );
                   })()}
+
                 </div>
 
                 {/* Footer info */}

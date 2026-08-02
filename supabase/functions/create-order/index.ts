@@ -10,6 +10,34 @@ const corsHeaders = {
 };
 
 const MEDIKONG_VENDOR_ID = "b3aa8188-7584-47eb-9b5f-fd50e33ec569";
+// Vendeur de référence des ventes issues du flux fournisseur automatisé :
+// il porte la conformité (distributeur autorisé + mandat de facturation),
+// commande chez le fournisseur, reçoit la marchandise et livre le client final.
+const REFERENCE_VENDOR_ID = "dc577ab0-3422-4daa-9052-d5999333880e"; // Medista NV
+
+// deno-lint-ignore no-explicit-any
+async function resolveReferenceVendorId(sb: any): Promise<string> {
+  const { data } = await sb
+    .from("vendors")
+    .select("id")
+    .eq("id", REFERENCE_VENDOR_ID)
+    .eq("is_active", true)
+    .eq("is_authorized_distributor", true)
+    .not("mandate_signed_at", "is", null)
+    .maybeSingle();
+  if (data?.id) return data.id;
+
+  const { data: fallback } = await sb
+    .from("vendors")
+    .select("id")
+    .eq("is_active", true)
+    .eq("is_authorized_distributor", true)
+    .not("mandate_signed_at", "is", null)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return fallback?.id ?? MEDIKONG_VENDOR_ID;
+}
 
 interface CustomerInfo {
   company: string;

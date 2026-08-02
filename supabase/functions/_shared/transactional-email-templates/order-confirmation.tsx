@@ -87,6 +87,53 @@ const OrderConfirmationEmail = ({
           </Row>
         </Section>
 
+        {cagnotteUsed && (
+          <Section style={summaryBox}>
+            <Text style={{ ...footerText, fontWeight: 600, color: '#1e3a5f', margin: '0 0 4px' }}>
+              Cagnotte MediKong &amp; TVA
+            </Text>
+            {vatModeLabel && (
+              <Text style={{ fontSize: '11px', color: '#6b7280', margin: '0 0 12px' }}>
+                Mode TVA appliqué : {vatModeLabel}
+              </Text>
+            )}
+            {subtotalHt && (
+              <Row>
+                <Column style={summaryLabel}>Sous-total HT</Column>
+                <Column style={summaryValue}>{subtotalHt}</Column>
+              </Row>
+            )}
+            <Row>
+              <Column style={summaryLabel}>Cagnotte utilisée</Column>
+              <Column style={{ ...summaryValue, color: '#1B5BDA', fontWeight: 'bold' }}>− {cagnotteUsed}</Column>
+            </Row>
+            {vatBase && (
+              <Row>
+                <Column style={summaryLabel}>
+                  Base TVA
+                  {vatBaseHint ? <span style={{ display: 'block', fontSize: '10px', color: '#9ca3af' }}>{vatBaseHint}</span> : null}
+                </Column>
+                <Column style={summaryValue}>{vatBase}</Column>
+              </Row>
+            )}
+            {vatAmount && (
+              <Row>
+                <Column style={summaryLabel}>TVA</Column>
+                <Column style={summaryValue}>{vatAmount}</Column>
+              </Row>
+            )}
+            {netToPay && (
+              <>
+                <Hr style={divider} />
+                <Row>
+                  <Column style={summaryLabel}><strong>Net à payer</strong></Column>
+                  <Column style={{ ...summaryValue, fontWeight: 'bold', fontSize: '16px' }}>{netToPay}</Column>
+                </Row>
+              </>
+            )}
+          </Section>
+        )}
+
         <Button href="https://medikong.pro/compte?tab=commandes" style={button}>
           Suivre ma commande
         </Button>

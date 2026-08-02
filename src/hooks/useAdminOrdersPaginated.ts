@@ -1,5 +1,6 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { ADMIN_HIDE_TEST_ORDERS_DEFAULT } from "@/lib/admin-order-filters";
 
 export type OrdersPageFilters = {
   status?: string;                        // 'all' | order status
@@ -59,7 +60,7 @@ export const useAdminOrdersPaginated = (
         _search: filters.search || null,
         _only_with_commission: !!filters.onlyWithCommission,
         _forecast_filter: filters.forecastFilter ?? "all",
-        _hide_test: filters.hideTest ?? true,
+        _hide_test: filters.hideTest ?? ADMIN_HIDE_TEST_ORDERS_DEFAULT,
         _hide_deleted: filters.hideDeleted ?? true,
         _limit: pageSize,
         _offset: offset,

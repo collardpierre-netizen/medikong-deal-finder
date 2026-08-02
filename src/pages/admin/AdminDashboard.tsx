@@ -11,6 +11,7 @@ import { fmtEur, withDotThousands } from "@/lib/format-currency";
 import { CUSTOMER_TYPE_OPTIONS } from "./AdminCustomers";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { excludeTestOrders } from "@/lib/admin-order-filters";
 import { PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer, Legend } from "recharts";
 import {
   DollarSign, ShoppingCart, Store, Package, AlertTriangle,
@@ -75,6 +76,8 @@ const AdminDashboard = () => {
   });
   const vendorsQuery = useVendors();
   const ordersQuery = useOrders();
+  // Filtrage unifié : les commandes de test sont masquées partout côté admin.
+  const adminOrders = useMemo(() => excludeTestOrders((ordersQuery.data || []) as any[]), [ordersQuery.data]);
 
   // Répartition des clients par typologie (camembert dashboard)
   const customersByTypeQuery = useQuery({
@@ -138,7 +141,7 @@ const AdminDashboard = () => {
 
   const topVendors = useMemo(() => {
     const totals = new Map<string, number>();
-    for (const o of (ordersQuery.data || []) as any[]) {
+    for (const o of adminOrders) {
       if (!isActiveOrForecast(o)) continue;
       const persisted = (o.order_lines || []) as any[];
       const draft = o.status === "draft" && Array.isArray(o.draft_payload?.lines) ? o.draft_payload.lines : [];
@@ -160,11 +163,11 @@ const AdminDashboard = () => {
       }))
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 5);
-  }, [ordersQuery.data, vendorLabelById]);
+  }, [adminOrders, vendorLabelById]);
 
   const categoryBreakdown = useMemo(() => {
     const totals = new Map<string, { name: string; amount: number }>();
-    for (const o of (ordersQuery.data || []) as any[]) {
+    for (const o of adminOrders) {
       if (!isActiveOrForecast(o)) continue;
       const lines = (o.order_lines || []) as any[];
       for (const l of lines) {
@@ -181,12 +184,12 @@ const AdminDashboard = () => {
     return Array.from(totals.entries())
       .map(([id, v]) => ({ id, name: v.name, value: Math.round(v.amount * 100) / 100 }))
       .sort((a, b) => b.value - a.value);
-  }, [ordersQuery.data, rootCategoryById]);
+  }, [adminOrders, rootCategoryById]);
 
   const CATEGORY_COLORS = ["#1B5BDA", "#7C3AED", "#059669", "#F59E0B", "#EF4444", "#0EA5E9", "#EC4899", "#14B8A6", "#8B5CF6", "#F97316"];
 
-  const recentOrders = (ordersQuery.data || [])
-    .filter((o: any) => !o.hidden_from_list && !o.deleted_at && !o.is_test)
+  const recentOrders = adminOrders
+    .filter((o: any) => !o.hidden_from_list && !o.deleted_at)
     .slice(0, 6).map((o: any) => {
     const persistedLines = (o.order_lines || []) as Array<{ vendor_id: string | null; line_total_incl_vat?: number | null; unit_price_incl_vat?: number | null; quantity?: number | null; vendors?: { company_name?: string | null; slug?: string | null } | null }>;
     const draftLines = (o.status === "draft" && Array.isArray(o.draft_payload?.lines)) ? o.draft_payload.lines as Array<{ vendor_id?: string | null; line_total_incl_vat?: number | null; unit_price_incl_vat?: number | null; quantity?: number | null }> : [];
@@ -490,9 +493,9 @@ const AdminDashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* GMV Chart */}
-        <GmvEvolutionChart title={t("gmvEvolution")} orders={(ordersQuery.data || []) as any} includeForecast={includeForecast} onIncludeForecastChange={setIncludeForecast} />
+        <GmvEvolutionChart title={t("gmvEvolution")} orders={adminOrders as any} includeForecast={includeForecast} onIncludeForecastChange={setIncludeForecast} />
 
-        <OrdersStatusPieChart title="Répartition des commandes par statut" orders={(ordersQuery.data || []) as any} />
+        <OrdersStatusPieChart title="Répartition des commandes par statut" orders={adminOrders as any} />
 
 
         {/* Recent Orders */}

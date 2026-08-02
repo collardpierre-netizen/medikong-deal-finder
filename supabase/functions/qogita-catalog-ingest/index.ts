@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
 
   // ── Watchdog : relance les ingestions figées ───────────────────────────────
   if (body.action === "watchdog") {
-    const staleBefore = new Date(Date.now() - STALL_MINUTES * 60_000).toISOString();
+    const staleBefore = new Date(Date.now() - STALL_SECONDS * 1000).toISOString();
     const { data: stuck } = await sb
       .from("qogita_catalog_downloads")
       .select("id, updated_at, ingest_cursor, ingest_rows")

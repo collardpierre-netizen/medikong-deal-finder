@@ -1577,6 +1577,13 @@ export type Database = {
             foreignKeyName: "buyer_comparator_sourcing_items_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "buyer_comparator_sourcing_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -1813,6 +1820,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_p2p_listings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "buyer_p2p_listings_product_id_fkey"
@@ -4525,6 +4539,13 @@ export type Database = {
             foreignKeyName: "external_leads_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "external_leads_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -4621,6 +4642,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "external_offers_product_id_fkey"
@@ -4885,6 +4913,13 @@ export type Database = {
             foreignKeyName: "favorite_list_items_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "favorite_list_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -4971,6 +5006,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorites_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "favorites_product_id_fkey"
@@ -5066,6 +5108,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flash_deals_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "flash_deals_product_id_fkey"
@@ -5382,6 +5431,13 @@ export type Database = {
             foreignKeyName: "home_featured_products_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "home_featured_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -5467,6 +5523,13 @@ export type Database = {
             foreignKeyName: "home_showcase_events_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "home_showcase_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -5540,6 +5603,13 @@ export type Database = {
             foreignKeyName: "home_showcase_settings_demo_cta_product_id_fkey"
             columns: ["demo_cta_product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "home_showcase_settings_demo_cta_product_id_fkey"
+            columns: ["demo_cta_product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -5577,6 +5647,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_showcase_settings_pinned_product_id_fkey"
+            columns: ["pinned_product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "home_showcase_settings_pinned_product_id_fkey"
@@ -6665,6 +6742,13 @@ export type Database = {
             foreignKeyName: "market_delta_anomalies_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "market_delta_anomalies_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -6860,6 +6944,13 @@ export type Database = {
             foreignKeyName: "market_delta_thresholds_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "market_delta_thresholds_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -6934,6 +7025,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_price_observations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "market_price_observations_product_id_fkey"
@@ -7039,6 +7137,13 @@ export type Database = {
             foreignKeyName: "market_price_pack_anomalies_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "market_price_pack_anomalies_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -7123,6 +7228,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_price_pack_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "market_price_pack_history_product_id_fkey"
@@ -7272,6 +7384,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "market_prices_product_id_fkey"
@@ -7973,6 +8092,13 @@ export type Database = {
             foreignKeyName: "offer_data_quality_logs_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "offer_data_quality_logs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -8123,6 +8249,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_margin_snapshots_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "offer_margin_snapshots_product_id_fkey"
@@ -8364,6 +8497,7 @@ export type Database = {
           admin_hidden_reason: string | null
           applied_margin_percentage: number | null
           applied_margin_rule_id: string | null
+          cagnotte_eligible: boolean | null
           campaign_id: string | null
           carton_size_override: number | null
           commission_model: string | null
@@ -8439,6 +8573,7 @@ export type Database = {
           admin_hidden_reason?: string | null
           applied_margin_percentage?: number | null
           applied_margin_rule_id?: string | null
+          cagnotte_eligible?: boolean | null
           campaign_id?: string | null
           carton_size_override?: number | null
           commission_model?: string | null
@@ -8514,6 +8649,7 @@ export type Database = {
           admin_hidden_reason?: string | null
           applied_margin_percentage?: number | null
           applied_margin_rule_id?: string | null
+          cagnotte_eligible?: boolean | null
           campaign_id?: string | null
           carton_size_override?: number | null
           commission_model?: string | null
@@ -8610,6 +8746,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "offers_product_id_fkey"
@@ -8964,11 +9107,13 @@ export type Database = {
       }
       order_items: {
         Row: {
+          applied_margin_pct_snapshot: number | null
           cagnotte_eligible_snapshot: boolean | null
           commission_ht: number | null
           commission_rate_snapshot: number | null
           created_at: string
           id: string
+          is_qogita_backed_snapshot: boolean | null
           line_total_excl_vat: number
           line_total_incl_vat: number
           margin_share_medikong_pct: number | null
@@ -8983,13 +9128,16 @@ export type Database = {
           unit_price_excl_vat: number
           unit_price_incl_vat: number
           vat_rate: number
+          vendor_id_snapshot: string | null
         }
         Insert: {
+          applied_margin_pct_snapshot?: number | null
           cagnotte_eligible_snapshot?: boolean | null
           commission_ht?: number | null
           commission_rate_snapshot?: number | null
           created_at?: string
           id?: string
+          is_qogita_backed_snapshot?: boolean | null
           line_total_excl_vat?: number
           line_total_incl_vat?: number
           margin_share_medikong_pct?: number | null
@@ -9004,13 +9152,16 @@ export type Database = {
           unit_price_excl_vat?: number
           unit_price_incl_vat?: number
           vat_rate?: number
+          vendor_id_snapshot?: string | null
         }
         Update: {
+          applied_margin_pct_snapshot?: number | null
           cagnotte_eligible_snapshot?: boolean | null
           commission_ht?: number | null
           commission_rate_snapshot?: number | null
           created_at?: string
           id?: string
+          is_qogita_backed_snapshot?: boolean | null
           line_total_excl_vat?: number
           line_total_incl_vat?: number
           margin_share_medikong_pct?: number | null
@@ -9025,6 +9176,7 @@ export type Database = {
           unit_price_excl_vat?: number
           unit_price_incl_vat?: number
           vat_rate?: number
+          vendor_id_snapshot?: string | null
         }
         Relationships: [
           {
@@ -9117,6 +9269,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "order_items_product_id_fkey"
@@ -9423,6 +9582,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "order_lines_product_id_fkey"
@@ -10227,6 +10393,13 @@ export type Database = {
             foreignKeyName: "price_adjustment_log_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "price_adjustment_log_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -10548,6 +10721,13 @@ export type Database = {
             foreignKeyName: "price_alerts_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "price_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -10637,6 +10817,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "price_history_product_id_fkey"
@@ -10850,6 +11037,13 @@ export type Database = {
             foreignKeyName: "product_alerts_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -10957,6 +11151,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_category_anomalies_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "product_category_anomalies_product_id_fkey"
@@ -11090,6 +11291,13 @@ export type Database = {
             foreignKeyName: "product_category_anomaly_actions_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_category_anomaly_actions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -11182,6 +11390,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_country_stats_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "product_country_stats_product_id_fkey"
@@ -11297,6 +11512,13 @@ export type Database = {
             foreignKeyName: "product_market_codes_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_market_codes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -11378,6 +11600,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "product_prices_product_id_fkey"
@@ -11518,6 +11747,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_submissions_resulting_product_id_fkey"
+            columns: ["resulting_product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "product_submissions_resulting_product_id_fkey"
@@ -12625,6 +12861,13 @@ export type Database = {
             foreignKeyName: "qogita_catalog_items_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "qogita_catalog_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -13017,6 +13260,13 @@ export type Database = {
             foreignKeyName: "quote_lines_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "quote_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -13274,6 +13524,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recent_activity_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "recent_activity_product_id_fkey"
@@ -13735,6 +13992,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restock_offers_matched_product_id_fkey"
+            columns: ["matched_product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "restock_offers_matched_product_id_fkey"
@@ -15761,6 +16025,13 @@ export type Database = {
             foreignKeyName: "rfqs_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "rfqs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -15865,6 +16136,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "savings_simulation_lines_matched_product_id_fkey"
+            columns: ["matched_product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "savings_simulation_lines_matched_product_id_fkey"
@@ -17435,6 +17713,13 @@ export type Database = {
             foreignKeyName: "supplier_proprietary_codes_matched_product_id_fkey"
             columns: ["matched_product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "supplier_proprietary_codes_matched_product_id_fkey"
+            columns: ["matched_product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -17620,6 +17905,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tendances_index_basket_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "tendances_index_basket_product_id_fkey"
@@ -17928,6 +18220,13 @@ export type Database = {
             foreignKeyName: "user_price_watches_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "user_price_watches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -17999,6 +18298,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "user_prices_product_id_fkey"
@@ -18973,6 +19279,13 @@ export type Database = {
             foreignKeyName: "vendor_competitor_alerts_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -19343,6 +19656,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivities_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "vendor_exclusivities_product_id_fkey"
@@ -20449,6 +20769,13 @@ export type Database = {
             foreignKeyName: "vendor_manual_sell_in_lines_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "vendor_manual_sell_in_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -21457,6 +21784,13 @@ export type Database = {
             foreignKeyName: "vendor_offer_history_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "vendor_offer_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -21779,6 +22113,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_price_alert_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "vendor_price_alert_events_product_id_fkey"
@@ -22155,6 +22496,13 @@ export type Database = {
             foreignKeyName: "vendor_price_challenges_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "vendor_price_challenges_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -22317,6 +22665,13 @@ export type Database = {
             foreignKeyName: "vendor_product_commissions_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "vendor_product_commissions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -22444,6 +22799,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_product_costs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "vendor_product_costs_product_id_fkey"
@@ -24288,6 +24650,13 @@ export type Database = {
             foreignKeyName: "order_lines_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "order_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -24501,6 +24870,13 @@ export type Database = {
             foreignKeyName: "vendor_exclusivities_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "vendor_exclusivities_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -24609,6 +24985,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "offers_product_id_fkey"
@@ -24737,6 +25120,13 @@ export type Database = {
             foreignKeyName: "external_offers_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "external_offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -24789,6 +25179,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_price_observations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "market_price_observations_product_id_fkey"
@@ -25058,6 +25455,13 @@ export type Database = {
             foreignKeyName: "offers_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -25296,6 +25700,13 @@ export type Database = {
             foreignKeyName: "offers_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -25407,6 +25818,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "offers_product_id_fkey"
@@ -25613,6 +26031,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      product_cagnotte_status: {
+        Row: {
+          has_eligible_offer: boolean | null
+          nb_eligible_offers: number | null
+          nb_total_offers: number | null
+          product_id: string | null
+        }
+        Insert: {
+          has_eligible_offer?: never
+          nb_eligible_offers?: never
+          nb_total_offers?: never
+          product_id?: string | null
+        }
+        Update: {
+          has_eligible_offer?: never
+          nb_eligible_offers?: never
+          nb_total_offers?: never
+          product_id?: string | null
+        }
+        Relationships: []
       }
       product_pack_audit_v: {
         Row: {
@@ -25846,6 +26285,13 @@ export type Database = {
             foreignKeyName: "home_featured_products_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "home_featured_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -26038,6 +26484,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "offers_product_id_fkey"
@@ -26331,6 +26784,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restock_offers_matched_product_id_fkey"
+            columns: ["matched_product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "restock_offers_matched_product_id_fkey"
@@ -26902,6 +27362,13 @@ export type Database = {
             foreignKeyName: "rfqs_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "rfqs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "product_pack_audit_v"
             referencedColumns: ["product_id"]
           },
@@ -27274,6 +27741,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalog_products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_competitor_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "vendor_competitor_alerts_product_id_fkey"
@@ -28739,6 +29213,7 @@ export type Database = {
           admin_hidden_reason: string | null
           applied_margin_percentage: number | null
           applied_margin_rule_id: string | null
+          cagnotte_eligible: boolean | null
           campaign_id: string | null
           carton_size_override: number | null
           commission_model: string | null
@@ -29096,6 +29571,7 @@ export type Database = {
           admin_hidden_reason: string | null
           applied_margin_percentage: number | null
           applied_margin_rule_id: string | null
+          cagnotte_eligible: boolean | null
           campaign_id: string | null
           carton_size_override: number | null
           commission_model: string | null

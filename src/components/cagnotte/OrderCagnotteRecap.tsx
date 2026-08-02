@@ -1,6 +1,6 @@
 import { Wallet, Info } from "lucide-react";
-import { useCagnotteSettings, formatEur } from "@/hooks/useCagnotte";
-import { computeVatBase, cagnotteVatModeLabel } from "@/lib/cagnotte-vat";
+import { useCagnotteSettings } from "@/hooks/useCagnotte";
+import { computeVatBase, cagnotteVatModeLabel, formatEurBe } from "@/lib/cagnotte-vat";
 
 interface OrderCagnotteRecapProps {
   subtotalHt: number;
@@ -28,19 +28,19 @@ export function OrderCagnotteRecap({
   const b = computeVatBase(subtotalHt, cagnotteUsed, vatMode, vatRate, fullVatAmount);
 
   const rows: Array<{ label: string; value: string; hint?: string; strong?: boolean }> = [
-    { label: "Sous-total HT", value: `${formatEur(subtotalHt)}` },
-    { label: "Cagnotte MediKong utilisée", value: `− ${formatEur(cagnotteUsed)}` },
+    { label: "Sous-total HT", value: formatEurBe(subtotalHt) },
+    { label: "Cagnotte MediKong utilisée", value: `− ${formatEurBe(cagnotteUsed)}` },
     {
       label: "Base TVA",
-      value: formatEur(b.vat_base),
+      value: formatEurBe(b.vat_base),
       hint:
         vatMode === "discount"
           ? "HT net (sous-total − cagnotte)"
           : "HT plein (la cagnotte est un moyen de paiement)",
     },
-    { label: "TVA", value: formatEur(b.vat_amount) },
-    { label: "Total TTC", value: formatEur(b.total_ttc) },
-    { label: "Net à payer", value: formatEur(b.net_to_pay), strong: true },
+    { label: "TVA", value: formatEurBe(b.vat_amount) },
+    { label: "Total TTC", value: formatEurBe(b.total_ttc) },
+    { label: "Net à payer", value: formatEurBe(b.net_to_pay), strong: true },
   ];
 
   return (

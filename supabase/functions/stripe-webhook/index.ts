@@ -1,6 +1,6 @@
 import Stripe from "https://esm.sh/stripe@14";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { computeVatBase, cagnotteVatModeLabel, loadCagnotteVatSettings } from "../_shared/cagnotte-vat.ts";
+import { computeVatBase, cagnotteVatModeLabel, loadCagnotteVatSettings, formatEurBe } from "../_shared/cagnotte-vat.ts";
 
 // Lazy-initialized singletons so tests can inject stubs before any handler runs.
 let stripe: any = null;
@@ -194,8 +194,7 @@ async function sendBuyerOrderConfirmation(orderId: string) {
       .select("id", { count: "exact", head: true })
       .eq("order_id", orderId);
 
-    const formatEUR = (n: number) =>
-      new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(n);
+    const formatEUR = formatEurBe;
     const addr = order.shipping_address as any;
     const shippingAddress = addr && typeof addr === "object"
       ? [addr.line1 || addr.address_line1, addr.line2 || addr.address_line2, [addr.postal_code, addr.city].filter(Boolean).join(" "), addr.country || addr.country_code]

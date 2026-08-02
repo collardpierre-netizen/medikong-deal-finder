@@ -472,26 +472,26 @@ async function processProduct(
     if (typeof vat === "number" && vat >= 0) vatRate = vat;
   } catch { /* fallback */ }
 
-  // Une seule offre de référence par produit/pays : la meilleure (prix d'achat
-  // applicable le plus bas, en stock), toujours rattachée à Medista.
-  const vendorId = await resolveReferenceVendorId(sb);
-  if (!vendorId) {
-    stats.offers_failed += offers.length;
-    await stampProbed(sb, product.id);
-    return;
+  // Multi-vendeurs : une offre par (produit, vendeur fournisseur), chacune
+  // rattachée à son vendeur virtuel anonymisé. Paliers/MOV/stock par offre.
+  const seen = new Set<string>();
+  for (const o of offers) {
+    const fid = (o.seller || "").trim();
+    if (!fid || seen.has(fid)) continue; // 1 offre max par vendeur (contrainte produit+vendeur)
+    seen.add(fid);
+
+    const vendorId = await resolveVirtualVendorId(sb, fid, stats);
+    if (!vendorId) { stats.offers_failed += 1; continue; }
+
+    const offerId = await upsertOffer(sb, product.id, vendorId, country, o, vatRate, marginMul);
+    if (!offerId) {
+      stats.offers_failed += 1;
+    } else {
+      stats.offers_upserted += 1;
+      stats.tiers_written += await syncTiers(sb, offerId, o, vatRate, marginMul);
+    }
   }
 
-  const inStock = offers.filter((o) => o.inventory > 0);
-  const candidates = inStock.length > 0 ? inStock : offers;
-  const best = candidates.reduce((a, b) => (b.basePrice < a.basePrice ? b : a));
-
-  const offerId = await upsertOffer(sb, product.id, vendorId, country, best, vatRate, marginMul);
-  if (!offerId) {
-    stats.offers_failed += 1;
-  } else {
-    stats.offers_upserted += 1;
-    stats.tiers_written += await syncTiers(sb, offerId, best, vatRate, marginMul);
-  }
 
 
   await stampProbed(sb, product.id);

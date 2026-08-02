@@ -197,6 +197,8 @@ export interface Offer {
   updatedAt?: string | null;
   syncedAt?: string | null;
   isQogitaBacked?: boolean;
+  /** Éligibilité cagnotte au niveau OFFRE (marge appliquée >= seuil, offre active/visible). */
+  cagnotteEligible?: boolean | null;
   sellerName?: string;
   sellerSlug?: string;
   isVerified?: boolean;

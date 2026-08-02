@@ -497,6 +497,29 @@ export function useCatalogProducts(filters: CatalogFilters) {
         const normalizeRows = (rows: any[]): CatalogProduct[] =>
           useCountryView ? rows.map(mapCountryViewRow) : (rows as CatalogProduct[]);
 
+        // Éligibilité cagnotte OFFER-LEVEL : la vérité vit sur les offres
+        // (`offers.cagnotte_eligible`), agrégée par la vue `product_cagnotte_status`.
+        // 1 round-trip pour la page courante ; `products.cagnotte_eligible`
+        // (legacy, product-level) reste le fallback si la vue ne répond pas.
+        const withOfferCagnotte = async (rows: CatalogProduct[]): Promise<CatalogProduct[]> => {
+          const ids = rows.map((r) => r.id).filter(Boolean);
+          if (ids.length === 0) return rows;
+          try {
+            const { data, error } = await supabase
+              .from("product_cagnotte_status" as any)
+              .select("product_id, has_eligible_offer")
+              .in("product_id", ids);
+            if (error || !data) return rows;
+            const map = new Map((data as any[]).map((r) => [r.product_id, !!r.has_eligible_offer]));
+            return rows.map((r) =>
+              map.has(r.id) ? { ...r, cagnotte_eligible: map.get(r.id)! } : r
+            );
+          } catch {
+            return rows;
+          }
+        };
+
+
         if (filters.sort === "relevance" && isDefaultCatalogueView && filters.page <= 2) {
           try {
             const { data: featured } = await withTimeout(

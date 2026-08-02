@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Coins, History } from "lucide-react";
 import { useCagnotteBalance, formatEur } from "@/hooks/useCagnotte";
+import { CagnotteHistoryModal } from "./CagnotteHistoryModal";
 
 function formatDate(d: string | null) {
   if (!d) return "—";
@@ -12,6 +14,7 @@ function formatDate(d: string | null) {
  */
 export function CagnotteHero() {
   const { data, isLoading } = useCagnotteBalance();
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   if (isLoading || !data) return null;
 
@@ -45,14 +48,17 @@ export function CagnotteHero() {
           >
             Utiliser ma cagnotte
           </Link>
-          <Link
-            to="/compte?tab=commandes"
+          <button
+            type="button"
+            onClick={() => setHistoryOpen(true)}
             className="px-4 py-2 rounded-lg text-sm font-semibold border border-white/60 text-white hover:bg-white/10 inline-flex items-center gap-1.5"
           >
             <History size={14} /> Voir l'historique
-          </Link>
+          </button>
         </div>
       </div>
+
+      <CagnotteHistoryModal open={historyOpen} onOpenChange={setHistoryOpen} />
 
       {data.amount_expiring_soon > 0 && (
         <div

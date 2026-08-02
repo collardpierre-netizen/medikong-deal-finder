@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Coins, Loader2, RefreshCw, Save, AlertTriangle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Kpis {
   from: string;
@@ -25,6 +26,7 @@ const SETTING_LABELS: Record<string, string> = {
   cagnotte_max_spend_pct: "Plafond d'utilisation en % du sous-total HT",
   cagnotte_min_spend: "Minimum d'utilisation (€)",
   cagnotte_vat_mode: 'Mode TVA ("discount" ou "payment")',
+  cagnotte_vat_rate: "Taux de TVA utilisé pour le calcul cagnotte (0.21 = 21%)",
 };
 
 function eur(v: number | null | undefined) {
@@ -109,6 +111,12 @@ export default function AdminCagnotte() {
 
   const ratioAlert = kpis?.ratio_pct != null && kpis.ratio_pct > 15;
 
+  let vatMode = "payment";
+  try {
+    const parsed = settings.cagnotte_vat_mode ? JSON.parse(settings.cagnotte_vat_mode) : "payment";
+    if (parsed === "discount" || parsed === "payment") vatMode = parsed;
+  } catch { /* valeur en cours d'édition */ }
+
   return (
     <div className="container mx-auto py-8 space-y-6">
       <Helmet>
@@ -175,6 +183,42 @@ export default function AdminCagnotte() {
           ) : (
             kpis?.ratio_pct != null && <Badge variant="secondary">Sous le seuil de 15 %</Badge>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Configuration TVA</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="min-w-[260px]">
+              <label className="text-xs text-muted-foreground block mb-1">Mode TVA cagnotte</label>
+              <Select
+                value={vatMode}
+                onValueChange={(v) => setSettings((s) => ({ ...s, cagnotte_vat_mode: JSON.stringify(v) }))}
+              >
+                <SelectTrigger className="w-[220px]">
+                  <SelectValue placeholder="Mode TVA" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="payment">payment</SelectItem>
+                  <SelectItem value="discount">discount</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={() => saveSetting("cagnotte_vat_mode")} disabled={saving === "cagnotte_vat_mode"}>
+              {saving === "cagnotte_vat_mode" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              <span className="ml-2">Sauvegarder</span>
+            </Button>
+          </div>
+          <ul className="text-xs text-muted-foreground space-y-1">
+            <li><strong>payment</strong> : TVA calculée sur le sous-total HT plein (avoir commercial)</li>
+            <li><strong>discount</strong> : TVA calculée sur le sous-total HT − cagnotte utilisée (remise commerciale)</li>
+          </ul>
+          <p className="text-xs text-destructive">
+            ⚠️ Changer ce paramètre a des implications comptables — confirmer avec votre expert-comptable.
+          </p>
         </CardContent>
       </Card>
 

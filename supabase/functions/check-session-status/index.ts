@@ -1,5 +1,6 @@
 import Stripe from "https://esm.sh/stripe@14";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { computeVatBase, cagnotteVatModeLabel, loadCagnotteVatSettings } from "../_shared/cagnotte-vat.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -114,7 +115,7 @@ Deno.serve(async (req) => {
       try {
         const { data: fullOrder } = await supabase
           .from("orders")
-          .select("id, order_number, total_incl_vat, payment_method, shipping_address, customer:customers!orders_customer_id_fkey(email, company_name)")
+          .select("id, order_number, total_incl_vat, subtotal_excl_vat, vat_amount, cagnotte_used, payment_method, shipping_address, customer:customers!orders_customer_id_fkey(email, company_name)")
           .eq("id", order.id)
           .maybeSingle();
         const customerRow: any = (fullOrder as any)?.customer;
@@ -136,6 +137,32 @@ Deno.serve(async (req) => {
             sepa: "Virement SEPA",
             invoice: "Facture",
           };
+          // Récapitulatif cagnotte / TVA (uniquement si de la cagnotte a été appliquée)
+          const cagnotteUsed = Number((fullOrder as any)?.cagnotte_used || 0);
+          let cagnotteData: Record<string, string> = {};
+          if (cagnotteUsed > 0) {
+            const { vatMode, vatRate } = await loadCagnotteVatSettings(supabase);
+            const subtotalHt = Number((fullOrder as any)?.subtotal_excl_vat || 0);
+            const rawVat = Number((fullOrder as any)?.vat_amount);
+            const b = computeVatBase(
+              subtotalHt,
+              cagnotteUsed,
+              vatMode,
+              vatRate,
+              Number.isFinite(rawVat) ? rawVat : undefined,
+            );
+            cagnotteData = {
+              cagnotteUsed: formatEUR(cagnotteUsed),
+              subtotalHt: formatEUR(subtotalHt),
+              vatBase: formatEUR(b.vat_base),
+              vatAmount: formatEUR(b.vat_amount),
+              vatBaseHint: vatMode === "discount"
+                ? "HT net (sous-total − cagnotte)"
+                : "HT plein (la cagnotte est un moyen de paiement)",
+              vatModeLabel: cagnotteVatModeLabel(vatMode),
+              netToPay: formatEUR(b.net_to_pay),
+            };
+          }
           await supabase.functions.invoke("send-transactional-email", {
             body: {
               templateName: "order-confirmation",
@@ -148,6 +175,7 @@ Deno.serve(async (req) => {
                 itemCount: itemCount ?? 0,
                 shippingAddress,
                 paymentMethod: paymentMethodLabel[(fullOrder as any)?.payment_method] || (fullOrder as any)?.payment_method,
+                ...cagnotteData,
               },
             },
           });

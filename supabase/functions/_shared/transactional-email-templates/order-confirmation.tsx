@@ -15,6 +15,14 @@ interface OrderConfirmationProps {
   shippingAddress?: string
   paymentMethod?: string
   invoiceLinks?: Array<{ label: string; url: string }>
+  /** Récapitulatif cagnotte / TVA (uniquement si de la cagnotte a été utilisée) */
+  cagnotteUsed?: string
+  subtotalHt?: string
+  vatBase?: string
+  vatAmount?: string
+  vatBaseHint?: string
+  vatModeLabel?: string
+  netToPay?: string
 }
 
 const OrderConfirmationEmail = ({
@@ -25,7 +33,15 @@ const OrderConfirmationEmail = ({
   shippingAddress,
   paymentMethod,
   invoiceLinks = [],
+  cagnotteUsed,
+  subtotalHt,
+  vatBase,
+  vatAmount,
+  vatBaseHint,
+  vatModeLabel,
+  netToPay,
 }: OrderConfirmationProps) => (
+
   <Html lang="fr" dir="ltr">
     <Head />
     <Preview>Confirmation de votre commande {orderNumber} — {SITE_NAME}</Preview>
@@ -71,6 +87,53 @@ const OrderConfirmationEmail = ({
           </Row>
         </Section>
 
+        {cagnotteUsed && (
+          <Section style={summaryBox}>
+            <Text style={{ ...footerText, fontWeight: 600, color: '#1e3a5f', margin: '0 0 4px' }}>
+              Cagnotte MediKong &amp; TVA
+            </Text>
+            {vatModeLabel && (
+              <Text style={{ fontSize: '11px', color: '#6b7280', margin: '0 0 12px' }}>
+                Mode TVA appliqué : {vatModeLabel}
+              </Text>
+            )}
+            {subtotalHt && (
+              <Row>
+                <Column style={summaryLabel}>Sous-total HT</Column>
+                <Column style={summaryValue}>{subtotalHt}</Column>
+              </Row>
+            )}
+            <Row>
+              <Column style={summaryLabel}>Cagnotte utilisée</Column>
+              <Column style={{ ...summaryValue, color: '#1B5BDA', fontWeight: 'bold' }}>− {cagnotteUsed}</Column>
+            </Row>
+            {vatBase && (
+              <Row>
+                <Column style={summaryLabel}>
+                  Base TVA
+                  {vatBaseHint ? <span style={{ display: 'block', fontSize: '10px', color: '#9ca3af' }}>{vatBaseHint}</span> : null}
+                </Column>
+                <Column style={summaryValue}>{vatBase}</Column>
+              </Row>
+            )}
+            {vatAmount && (
+              <Row>
+                <Column style={summaryLabel}>TVA</Column>
+                <Column style={summaryValue}>{vatAmount}</Column>
+              </Row>
+            )}
+            {netToPay && (
+              <>
+                <Hr style={divider} />
+                <Row>
+                  <Column style={summaryLabel}><strong>Net à payer</strong></Column>
+                  <Column style={{ ...summaryValue, fontWeight: 'bold', fontSize: '16px' }}>{netToPay}</Column>
+                </Row>
+              </>
+            )}
+          </Section>
+        )}
+
         <Button href="https://medikong.pro/compte?tab=commandes" style={button}>
           Suivre ma commande
         </Button>
@@ -114,6 +177,13 @@ export const template = {
     itemCount: 3,
     shippingAddress: '23 rue de la Procession, B-7822 Ath',
     paymentMethod: 'Virement SEPA',
+    cagnotteUsed: '45,00 EUR',
+    subtotalHt: '1 029,00 EUR',
+    vatBase: '1 029,00 EUR',
+    vatBaseHint: 'HT plein (la cagnotte est un moyen de paiement)',
+    vatAmount: '216,09 EUR',
+    vatModeLabel: 'Moyen de paiement (TVA sur le HT plein)',
+    netToPay: '1 200,09 EUR',
   },
 } satisfies TemplateEntry
 

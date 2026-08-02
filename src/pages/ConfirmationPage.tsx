@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { useVendorLabels } from "@/hooks/useVendorLabels";
+import { OrderCagnotteRecap } from "@/components/cagnotte/OrderCagnotteRecap";
 
 export default function ConfirmationPage() {
   const [searchParams] = useSearchParams();
@@ -72,7 +73,7 @@ export default function ConfirmationPage() {
         // Charge les détails d'affichage (méthode, montant, adresse...) en lecture
         const { data: details } = await supabase
           .from("orders")
-          .select("payment_method, total_incl_vat, shipping_address, created_at, updated_at")
+          .select("id, payment_method, total_incl_vat, subtotal_excl_vat, vat_amount, cagnotte_used, shipping_address, created_at, updated_at")
           .eq("order_number", orderNumber)
           .maybeSingle();
 
@@ -370,6 +371,22 @@ export default function ConfirmationPage() {
               <p className="text-sm text-mk-navy">{shippingStr}</p>
             </motion.div>
           )}
+
+          {order && Number((order as any).cagnotte_used || 0) > 0 && (
+            <motion.div className="mb-6"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.52 }}>
+              <OrderCagnotteRecap
+                subtotalHt={Number((order as any).subtotal_excl_vat || 0)}
+                cagnotteUsed={Number((order as any).cagnotte_used || 0)}
+                fullVatAmount={
+                  Number.isFinite(Number((order as any).vat_amount))
+                    ? Number((order as any).vat_amount)
+                    : undefined
+                }
+              />
+            </motion.div>
+          )}
+
 
           {confirmed && (
             <motion.div className="border border-mk-line rounded-lg p-5 mb-6 text-left"

@@ -368,6 +368,20 @@ export default function CheckoutPage() {
         setOrderNumber(onum);
       }
 
+      // 🪙 Application de la cagnotte — écriture du mouvement 'spend' à la validation finale.
+      // Idempotent côté serveur : un second appel sur la même commande échoue proprement.
+      if (cagnotteUsed > 0 && oid) {
+        const res = await applyCagnotte.mutateAsync({ orderId: oid, amount: cagnotteUsed });
+        if (!res.success) {
+          toast.error(res.error || "Application de la cagnotte impossible");
+          setSubmitting(false);
+          setInitLoading(false);
+          return;
+        }
+      }
+
+
+
       // Enregistrement en adresse par défaut (best-effort)
       if (saveAsDefault && customerId) {
         try {

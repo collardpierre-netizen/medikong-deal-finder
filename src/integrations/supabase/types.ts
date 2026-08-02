@@ -10028,6 +10028,7 @@ export type Database = {
           billing_address: Json
           cagnotte_earned: number | null
           cagnotte_eligible_ht: number | null
+          cagnotte_restituted_at: string | null
           cagnotte_used: number | null
           commission_total_ht: number | null
           created_at: string
@@ -10085,6 +10086,7 @@ export type Database = {
           billing_address?: Json
           cagnotte_earned?: number | null
           cagnotte_eligible_ht?: number | null
+          cagnotte_restituted_at?: string | null
           cagnotte_used?: number | null
           commission_total_ht?: number | null
           created_at?: string
@@ -10142,6 +10144,7 @@ export type Database = {
           billing_address?: Json
           cagnotte_earned?: number | null
           cagnotte_eligible_ht?: number | null
+          cagnotte_restituted_at?: string | null
           cagnotte_used?: number | null
           commission_total_ht?: number | null
           created_at?: string
@@ -28650,6 +28653,7 @@ export type Database = {
           billing_address: Json
           cagnotte_earned: number | null
           cagnotte_eligible_ht: number | null
+          cagnotte_restituted_at: string | null
           cagnotte_used: number | null
           commission_total_ht: number | null
           created_at: string

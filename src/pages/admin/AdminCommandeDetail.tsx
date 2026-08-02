@@ -429,6 +429,29 @@ const AdminCommandeDetail = () => {
     <div>
       <AdminTopBar title={`Commande ${order.order_number}`} subtitle={`Statut : ${STATUS_LABEL[order.status] ?? order.status}`} />
 
+      {(order as any).is_test && (
+        <div
+          className="mb-4 flex items-start gap-3 rounded-lg px-4 py-3"
+          style={{ backgroundColor: "#FFFBEB", border: "1px solid #FDE68A" }}
+        >
+          <AlertTriangle size={16} className="mt-0.5 shrink-0" style={{ color: "#B45309" }} />
+          <div className="text-[13px]" style={{ color: "#92400E" }}>
+            <div className="font-semibold flex items-center gap-2">
+              Commande de test
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>
+                is_test
+              </span>
+            </div>
+            <div className="mt-1">
+              Cette commande est marquée comme test : elle est <strong>exclue par défaut</strong> de la liste
+              <Link to="/admin/commandes" className="underline mx-1">/admin/commandes</Link>
+              et du widget « Dernières commandes » du dashboard. Activez « Afficher les commandes de test » dans les
+              filtres de la liste pour la retrouver. Elle ne doit pas être comptée dans le chiffre d'affaires réel.
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mb-4">
         <Link to="/admin/commandes" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900">
           <ArrowLeft size={14} /> Retour aux commandes

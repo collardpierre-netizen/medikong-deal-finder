@@ -982,10 +982,10 @@ const AdminCommandes = () => {
                 className="flex-1 text-[13px] outline-none bg-transparent" style={{ color: "#1D2530" }} />
             </div>
             <label className="flex items-center gap-2 px-3 py-2 rounded-md text-[12px] font-medium cursor-pointer select-none"
-              style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", color: "#616B7C" }}
-              title="Masquer les commandes payées avec une clé Stripe de test">
-              <input type="checkbox" checked={hideTest} onChange={(e) => setHideTest(e.target.checked)} />
-              Masquer commandes test
+              style={{ backgroundColor: hideTest ? "#fff" : "#FFFBEB", border: `1px solid ${hideTest ? "#E2E8F0" : "#FDE68A"}`, color: hideTest ? "#616B7C" : "#92400E" }}
+              title="Inclure dans la liste les commandes marquées comme test (is_test)">
+              <input type="checkbox" checked={!hideTest} onChange={(e) => setHideTest(!e.target.checked)} />
+              Afficher les commandes de test
               {testCount > 0 && (
                 <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>
                   {testCount}

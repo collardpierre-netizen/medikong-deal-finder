@@ -205,7 +205,20 @@ export default function CheckoutPage() {
     computeCartTotals(items as any);
   const selectedOpt = shippingOpts[shipping] || shippingOpts[0];
   const shippingCost = selectedOpt ? Number(selectedOpt.price_adjustment) || 0 : 0;
-  const total = subtotalTTC + shippingCost;
+
+  // 🪙 Cagnotte MediKong — état LOCAL uniquement (aucune écriture ledger avant paiement)
+  const [cagnotteUsed, setCagnotteUsed] = useState(0);
+  const { data: cagnotteSettings } = useCagnotteSettings();
+  const applyCagnotte = useApplyCagnotte();
+  const vatBreakdown = computeVatBase(
+    subtotal,
+    cagnotteUsed,
+    cagnotteSettings?.vatMode ?? "payment",
+    Number(cagnotteSettings?.raw?.cagnotte_vat_rate ?? 0.21),
+    vatAmount,
+  );
+  const displayedVat = cagnotteUsed > 0 ? vatBreakdown.vat_amount : vatAmount;
+  const total = (cagnotteUsed > 0 ? vatBreakdown.net_to_pay : subtotalTTC) + shippingCost;
 
   // Live cart validation (MOV, MOQ, stock, offre indispo) — debounced
   const validateItems = useMemo(

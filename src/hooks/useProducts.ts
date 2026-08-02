@@ -197,6 +197,8 @@ export interface Offer {
   updatedAt?: string | null;
   syncedAt?: string | null;
   isQogitaBacked?: boolean;
+  /** Éligibilité cagnotte au niveau OFFRE (marge appliquée >= seuil, offre active/visible). */
+  cagnotteEligible?: boolean | null;
   sellerName?: string;
   sellerSlug?: string;
   isVerified?: boolean;
@@ -229,7 +231,7 @@ export function useProductOffers(productId: string | undefined) {
       const { data: offers, error } = await supabase
         .from("offers")
         .select(
-          "id, product_id, vendor_id, price_excl_vat, price_incl_vat, vat_rate, stock_quantity, stock_status, moq, mov, mov_amount, mov_currency, delivery_days, shipping_from_country, price_tiers, is_active, synced_at, updated_at, country_code, is_traceable, has_extended_delivery, min_delivery_days, max_delivery_days, estimated_delivery_days, is_qogita_backed, qogita_offer_qid, is_top_seller, pack_size_override, suggested_retail_price_cents, suggested_retail_price_source, carton_size_override, packaging_languages, campaign_id"
+          "id, product_id, vendor_id, price_excl_vat, price_incl_vat, vat_rate, stock_quantity, stock_status, moq, mov, mov_amount, mov_currency, delivery_days, shipping_from_country, price_tiers, is_active, synced_at, updated_at, country_code, is_traceable, has_extended_delivery, min_delivery_days, max_delivery_days, estimated_delivery_days, is_qogita_backed, qogita_offer_qid, is_top_seller, pack_size_override, suggested_retail_price_cents, suggested_retail_price_source, carton_size_override, packaging_languages, campaign_id, cagnotte_eligible"
         )
         .eq("product_id", productId!)
         .eq("is_active", true)
@@ -401,6 +403,7 @@ export function useProductOffers(productId: string | undefined) {
           updatedAt: o.updated_at ?? null,
           syncedAt: o.synced_at ?? null,
           isQogitaBacked: !!o.is_qogita_backed,
+          cagnotteEligible: o.cagnotte_eligible ?? null,
           sellerName: resolveVendorLabel(
             {
               id: o.vendor_id,

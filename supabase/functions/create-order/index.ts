@@ -170,7 +170,7 @@ Deno.serve(async (req) => {
     const offerIds = validation.items.map((v) => v.offer_id);
     const { data: offers } = await supabase
       .from("offers")
-      .select("id, vendor_id, qogita_offer_qid, qogita_seller_fid, qogita_base_price")
+      .select("id, vendor_id, qogita_offer_qid, qogita_seller_fid, qogita_base_price, applied_margin_percentage, cagnotte_eligible")
       .in("id", offerIds);
     const offerMap = new Map((offers || []).map((o: any) => [o.id, o]));
 
@@ -285,6 +285,12 @@ Deno.serve(async (req) => {
         qogita_offer_qid: ref?.qogita_offer_qid ?? null,
         qogita_seller_fid: ref?.qogita_seller_fid ?? null,
         qogita_base_price: ref?.qogita_base_price ?? null,
+        // Snapshot OFFER-LEVEL au moment de la vente : la cagnotte et la
+        // commission doivent rester figées même si l'offre change ensuite.
+        applied_margin_pct_snapshot: ref?.applied_margin_percentage ?? null,
+        cagnotte_eligible_snapshot: ref?.cagnotte_eligible ?? null,
+        vendor_id_snapshot: ref?.vendor_id ?? v.vendor_id ?? null,
+        is_qogita_backed_snapshot: !!ref?.qogita_seller_fid,
       };
     });
     const { error: itemsErr } = await supabase.from("order_items").insert(orderItems);

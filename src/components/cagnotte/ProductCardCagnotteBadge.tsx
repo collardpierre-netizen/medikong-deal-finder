@@ -2,18 +2,24 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useCagnotteSettings } from "@/hooks/useCagnotte";
 
 /**
- * Badge doré affiché uniquement sur les produits éligibles à la cagnotte
- * (commission MediKong >= 12%). Aucun affichage pour les non éligibles.
+ * Badge doré affiché dès qu'AU MOINS UNE offre du produit est éligible à la
+ * cagnotte (source : `product_cagnotte_status.has_eligible_offer`, dérivé de
+ * `offers.cagnotte_eligible`). `products.cagnotte_eligible` reste un fallback legacy.
  */
 export function ProductCardCagnotteBadge({
   eligible,
+  nbEligibleOffers,
+  nbTotalOffers,
   className = "",
 }: {
   eligible?: boolean | null;
+  nbEligibleOffers?: number | null;
+  nbTotalOffers?: number | null;
   className?: string;
 }) {
   const { data: settings } = useCagnotteSettings();
   if (!eligible) return null;
+
 
   const pct = Math.round((settings?.rate ?? 0.02) * 100);
 
@@ -33,8 +39,11 @@ export function ProductCardCagnotteBadge({
           </span>
         </TooltipTrigger>
         <TooltipContent>
-          Ce produit vous fait gagner {pct}% de cagnotte fidélité.
+          {nbTotalOffers && nbEligibleOffers != null && nbEligibleOffers < nbTotalOffers
+            ? `${nbEligibleOffers} offre(s) sur ${nbTotalOffers} vous font gagner ${pct}% de cagnotte fidélité.`
+            : `Ce produit vous fait gagner ${pct}% de cagnotte fidélité.`}
         </TooltipContent>
+
       </Tooltip>
     </TooltipProvider>
   );

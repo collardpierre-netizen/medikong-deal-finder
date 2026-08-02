@@ -140,6 +140,8 @@ function MarginCalcPctMode({
 
 import { formatUpdatedAt, formatUpdatedAtFull } from "@/lib/format-date";
 import { SHIPPING_COPY, FAST_SHIPPING_MAX_DAYS } from "@/config/copy";
+import { OfferCagnotteBadge } from "@/components/cagnotte/OfferCagnotteBadge";
+import { ProductDetailCagnotteBanner } from "@/components/cagnotte/ProductDetailCagnotteBanner";
 
 /** @deprecated use formatUpdatedAt from @/lib/format-date */
 function formatRelative(iso?: string | null): string | null {
@@ -452,6 +454,12 @@ function OfferRow({
       {/* Desktop grid */}
       <div className="hidden lg:grid grid-cols-[minmax(150px,1fr)_minmax(180px,1fr)_minmax(96px,auto)_176px] gap-x-3 items-start">
         <div className="flex flex-col gap-1.5">
+          <OfferCagnotteBadge
+            eligible={(offer as any).cagnotteEligible}
+            unitPriceExclVat={offer.unitPriceEur}
+            className="self-start"
+          />
+
           {(() => {
             if (vendorTrust) {
               return <VendorTrustHeader trust={vendorTrust} variant="full" realNameOverride={offer.sellerName ?? null} />;
@@ -1883,6 +1891,12 @@ function ProductPageInner() {
 
               {/* Name */}
               <h1 className="text-xl md:text-2xl font-bold text-foreground mb-3 leading-tight">{displayName}</h1>
+
+              {/* Cagnotte : éligibilité dérivée des offres du produit */}
+              <div className="mb-3">
+                <ProductDetailCagnotteBanner productId={product.id} />
+              </div>
+
 
               {/* GTIN + Copy */}
               <div className="flex items-center gap-3 mb-2 flex-wrap">

@@ -147,6 +147,18 @@ export function computeVatBaseSafe(
   vatRate = 0.21,
   fullVatAmount?: number,
 ): SafeVatBreakdown {
+  const invalidInput =
+    !Number.isFinite(subtotalHt) ||
+    !Number.isFinite(cagnotteUsed) ||
+    !Number.isFinite(vatRate) ||
+    (fullVatAmount !== undefined && !Number.isFinite(fullVatAmount));
+  if (invalidInput) {
+    return {
+      ...fallbackVatBreakdown(subtotalHt, cagnotteUsed, vatRate, fullVatAmount),
+      degraded: true,
+      degraded_reason: "invalid_input",
+    };
+  }
   try {
     const b = computeVatBase(subtotalHt, cagnotteUsed, vatMode, vatRate, fullVatAmount);
     if (isVatBreakdownCoherent(b, subtotalHt, cagnotteUsed)) return { ...b, degraded: false };

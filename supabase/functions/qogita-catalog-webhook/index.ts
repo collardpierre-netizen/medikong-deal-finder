@@ -119,19 +119,18 @@ Deno.serve(async (req) => {
     ? new Date(obj.completed_at).getTime() - new Date(obj.requested_at).getTime()
     : null;
 
-  const patch = {
+  const patch: Record<string, unknown> = {
     status: "ready_to_ingest",
     download_url: downloadUrl,
     ingest_cursor: 0,
     ingest_rows: 0,
     ingest_state: {},
-    requested_at: obj.requested_at ?? dl ? undefined : null,
     generation_ms: generationMs,
     filename: obj.filename ?? null,
     filters: obj.filters ?? dl?.filters ?? {},
     error_message: null,
-  } as Record<string, unknown>;
-  delete patch.requested_at;
+  };
+
 
   let downloadId = dl?.id as string | undefined;
   if (!downloadId) {

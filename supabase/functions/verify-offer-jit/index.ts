@@ -139,7 +139,24 @@ Deno.serve(async (req) => {
   let syncStatus: number | null = null;
   let syncError: string | null = null;
 
+  // 🛑 GEL : si les écritures de prix sont gelées, on ne déclenche AUCUNE
+  // vérification (le garde-fou price_stale reste actif → commande bloquée).
+  const { data: freezeRow } = await admin
+    .from("qogita_config").select("value").eq("key", "price_writes_enabled").maybeSingle();
+  const frozen = String(freezeRow?.value ?? "true").toLowerCase() === "false";
+  if (frozen) {
+    return new Response(JSON.stringify({
+      ok: true,
+      triggered: false,
+      frozen: true,
+      reason: "price_writes_frozen",
+      should_revalidate_cart: false,
+      results,
+    }), { headers: corsHeaders });
+  }
+
   if (targets.length > 0) {
+
     try {
       // Le sync de fond exécute l'appel /buyers/variants/{fid}/offers/ :
       // limiteur de débit + Retry-After mutualisés, écriture en service role.

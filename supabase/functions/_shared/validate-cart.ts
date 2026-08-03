@@ -92,7 +92,7 @@ export async function validateCart(
   const { data: offers, error: offerErr } = await supabase
     .from("offers")
     .select(
-      "id, vendor_id, product_id, price_excl_vat, price_incl_vat, stock_quantity, moq, mov, is_active, vat_rate, is_qogita_backed, price_stale, last_verified_at, vendors:vendor_id(name, slug, company_name, show_real_name, display_code)",
+      "id, vendor_id, product_id, price_excl_vat, price_incl_vat, stock_quantity, moq, mov, is_active, vat_rate, is_qogita_backed, price_stale, last_verified_at, price_source, qogita_base_price, vendors:vendor_id(name, slug, company_name, show_real_name, display_code)",
     )
     .in("id", offerIds);
 
@@ -123,8 +123,15 @@ export async function validateCart(
     // re-vérifié depuis plus de 7 jours. Sans ça on vendrait à un prix figé
     // au 10/07/2026, avant retrait de l'API. Cohérent avec reveal-at-purchase.
     const lastVerifiedMs = offer.last_verified_at ? Date.parse(offer.last_verified_at) : null;
+    // 🛑 Prix d'achat corrompu par le bug de mapping (le nombre d'unités par
+    // colis, `unit = 1`, écrit dans le champ prix → 1,00 € d'achat / 1,25 € de
+    // vente). Aucune vente possible tant que l'offre n'a pas été re-vérifiée
+    // avec le mapping corrigé.
+    const corruptedBasePrice =
+      offer.price_source === "qogita_api" && Number(offer.qogita_base_price) === 1;
     const isStale =
       offer.price_stale === true ||
+      corruptedBasePrice ||
       (offer.is_qogita_backed === true &&
         (lastVerifiedMs == null || lastVerifiedMs < staleCutoffMs));
     if (isStale) {
@@ -135,12 +142,13 @@ export async function validateCart(
         offer_id: offer.id,
         details: {
           offer_id: offer.id,
-          reason: "qogita_source_unhealthy",
+          reason: corruptedBasePrice ? "purchase_price_mapping_invalid" : "qogita_source_unhealthy",
           last_verified_at: offer.last_verified_at,
         },
       });
       continue;
     }
+
 
     const v = offer.vendors || {};
     // 🔒 GARDE-FOU : toujours anonymisé côté edge — show_real_name ignoré.

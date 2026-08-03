@@ -265,32 +265,33 @@ function normalizeOffers(payload: unknown): { offers: NormOffer[]; excluded: num
     // Offres sans stock : ignorées (jamais publiées comme commandables).
     if (inventory <= 0) { skippedNoStock += 1; continue; }
 
-    // Paliers : on ignore ceux marqués isActive === false.
+    // ⚠️ Paliers : `isActive` reflète l'ÉTAT DU PANIER (movProgress), pas la
+    // validité du prix — l'API renvoie `isActive: false` sur TOUS les paliers
+    // quand le panier est vide. Les filtrer vidait la liste et faisait tomber
+    // dans un fallback qui lisait `o.unit` (nombre d'unités par colis, ex. 1)
+    // COMME SI c'était un prix → prix d'achat 1,00 € → vente 1,25 €.
+    // On garde donc TOUS les paliers portant un `tierPrice` exploitable.
     const rawTiers = Array.isArray(o.tieredPrices) ? o.tieredPrices as unknown[] : [];
     const tiers: NormTier[] = rawTiers
       .map((t) => t as Record<string, unknown>)
-      .filter((t) => t.isActive !== false)
       .map((t) => ({ unit: num(t.tierPrice ?? t.price), mov: num(t.tierMov ?? t.mov) }))
       .filter((t) => t.unit > 0)
       // Tri croissant par MOV → tiers[0] = MOV le plus bas = prix unitaire le plus élevé.
       .sort((a, b) => a.mov - b.mov);
 
-    let basePrice = 0;
-    let baseMov = 0;
-    if (tiers.length > 0) {
-      basePrice = tiers[0].unit;
-      baseMov = tiers[0].mov;
-    } else {
-      // Pas de palier actif exploitable → prix unitaire de l'offre si présent.
-      const unit = num(o.unit ?? o.price ?? o.unitPrice);
-      if (unit > 0) { basePrice = unit; baseMov = num(o.mov); }
+    // Prix d'achat de base = palier au MOV le plus BAS (prix unitaire le plus
+    // ÉLEVÉ). AUCUN fallback sur un autre champ : `unit` / `inventory` /
+    // `movProgress` ne sont PAS des prix. Sans palier prix → offre ignorée.
+    if (tiers.length === 0) { skippedNoTier += 1; continue; }
+    let basePrice = tiers[0].unit;
+    const baseMov = tiers[0].mov;
+    // Garde-fou : jamais moins que le prix unitaire max des paliers au MOV mini.
+    const maxUnit = Math.max(...tiers.map((t) => t.unit));
+    if (basePrice < maxUnit && tiers[0].mov === Math.min(...tiers.map((t) => t.mov))) {
+      basePrice = maxUnit;
     }
     if (!(basePrice > 0)) { skippedNoTier += 1; continue; }
 
-    // Garde-fou : le prix retenu doit être le MAX des paliers actifs au MOV mini,
-    // jamais le plancher. On vérifie explicitement.
-    const floor = Math.min(...tiers.map((t) => t.unit), basePrice);
-    if (tiers.length > 1 && basePrice < floor) basePrice = floor;
 
     offers.push({
       qid,
@@ -656,10 +657,26 @@ Deno.serve(async (req) => {
 
 
   try {
+    // ── 🛑 GEL DES ÉCRITURES DE PRIX (kill switch) ──
+    // `qogita_config.price_writes_enabled = 'false'` → aucune écriture de prix
+    // (ni sync de fond, ni chemin JIT). Le code reste en place, on court-circuite.
+    const { data: freezeRow } = await sb.from("qogita_config").select("value").eq("key", "price_writes_enabled").maybeSingle();
+    const priceWritesEnabled = String(freezeRow?.value ?? "true").toLowerCase() !== "false";
+    if (!priceWritesEnabled && !dryRun) {
+      await finalize("success", { frozen: true });
+      return new Response(JSON.stringify({
+        ok: true, frozen: true,
+        reason: "price_writes_frozen",
+        message: "Écritures de prix gelées (qogita_config.price_writes_enabled=false)",
+        stats,
+      }), { headers: corsHeaders });
+    }
+
     // ── Marge commerciale courante (config) ──
     const { data: cfgRow } = await sb.from("qogita_config").select("value").eq("key", "margin_percentage").maybeSingle();
     const marginPct = cfgRow?.value ? parseFloat(cfgRow.value) : 25;
     const marginMul = 1 + (Number.isFinite(marginPct) ? marginPct : 25) / 100;
+
 
     // ── Sélection des cibles : priorité marques puis fraîcheur ──
     let query = sb

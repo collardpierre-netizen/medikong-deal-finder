@@ -657,10 +657,26 @@ Deno.serve(async (req) => {
 
 
   try {
+    // ── 🛑 GEL DES ÉCRITURES DE PRIX (kill switch) ──
+    // `qogita_config.price_writes_enabled = 'false'` → aucune écriture de prix
+    // (ni sync de fond, ni chemin JIT). Le code reste en place, on court-circuite.
+    const { data: freezeRow } = await sb.from("qogita_config").select("value").eq("key", "price_writes_enabled").maybeSingle();
+    const priceWritesEnabled = String(freezeRow?.value ?? "true").toLowerCase() !== "false";
+    if (!priceWritesEnabled && !dryRun) {
+      await finalize("success", { frozen: true });
+      return new Response(JSON.stringify({
+        ok: true, frozen: true,
+        reason: "price_writes_frozen",
+        message: "Écritures de prix gelées (qogita_config.price_writes_enabled=false)",
+        stats,
+      }), { headers: corsHeaders });
+    }
+
     // ── Marge commerciale courante (config) ──
     const { data: cfgRow } = await sb.from("qogita_config").select("value").eq("key", "margin_percentage").maybeSingle();
     const marginPct = cfgRow?.value ? parseFloat(cfgRow.value) : 25;
     const marginMul = 1 + (Number.isFinite(marginPct) ? marginPct : 25) / 100;
+
 
     // ── Sélection des cibles : priorité marques puis fraîcheur ──
     let query = sb

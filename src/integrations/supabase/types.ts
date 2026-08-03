@@ -25359,6 +25359,7 @@ export type Database = {
           admin_hidden_reason: string | null
           applied_margin_percentage: number | null
           applied_margin_rule_id: string | null
+          cagnotte_eligible: boolean | null
           campaign_id: string | null
           carton_size_override: number | null
           commission_model: string | null
@@ -25386,7 +25387,10 @@ export type Database = {
           is_top_seller: boolean | null
           is_traceable: boolean | null
           last_sync_run_id: string | null
+          last_verified_at: string | null
           margin_amount: number | null
+          margin_share_medikong_pct: number | null
+          margin_share_medista_pct: number | null
           margin_split_pct: number | null
           max_delivery_days: number | null
           min_delivery_days: number | null
@@ -25398,6 +25402,10 @@ export type Database = {
           packaging_languages: string[] | null
           price_excl_vat: number | null
           price_incl_vat: number | null
+          price_source: string | null
+          price_source_updated_at: string | null
+          price_stale: boolean | null
+          price_stale_since: string | null
           price_tiers: Json | null
           product_id: string | null
           purchase_price: number | null
@@ -25427,6 +25435,7 @@ export type Database = {
           admin_hidden_reason?: string | null
           applied_margin_percentage?: number | null
           applied_margin_rule_id?: string | null
+          cagnotte_eligible?: boolean | null
           campaign_id?: string | null
           carton_size_override?: number | null
           commission_model?: string | null
@@ -25454,7 +25463,10 @@ export type Database = {
           is_top_seller?: boolean | null
           is_traceable?: boolean | null
           last_sync_run_id?: string | null
+          last_verified_at?: string | null
           margin_amount?: number | null
+          margin_share_medikong_pct?: number | null
+          margin_share_medista_pct?: number | null
           margin_split_pct?: number | null
           max_delivery_days?: number | null
           min_delivery_days?: number | null
@@ -25466,6 +25478,10 @@ export type Database = {
           packaging_languages?: string[] | null
           price_excl_vat?: number | null
           price_incl_vat?: number | null
+          price_source?: string | null
+          price_source_updated_at?: string | null
+          price_stale?: boolean | null
+          price_stale_since?: string | null
           price_tiers?: Json | null
           product_id?: string | null
           purchase_price?: number | null
@@ -25495,6 +25511,7 @@ export type Database = {
           admin_hidden_reason?: string | null
           applied_margin_percentage?: number | null
           applied_margin_rule_id?: string | null
+          cagnotte_eligible?: boolean | null
           campaign_id?: string | null
           carton_size_override?: number | null
           commission_model?: string | null
@@ -25522,7 +25539,10 @@ export type Database = {
           is_top_seller?: boolean | null
           is_traceable?: boolean | null
           last_sync_run_id?: string | null
+          last_verified_at?: string | null
           margin_amount?: number | null
+          margin_share_medikong_pct?: number | null
+          margin_share_medista_pct?: number | null
           margin_split_pct?: number | null
           max_delivery_days?: number | null
           min_delivery_days?: number | null
@@ -25534,6 +25554,10 @@ export type Database = {
           packaging_languages?: string[] | null
           price_excl_vat?: number | null
           price_incl_vat?: number | null
+          price_source?: string | null
+          price_source_updated_at?: string | null
+          price_stale?: boolean | null
+          price_stale_since?: string | null
           price_tiers?: Json | null
           product_id?: string | null
           purchase_price?: number | null

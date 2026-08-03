@@ -70,7 +70,7 @@ export const useActiveOfferCount = () =>
     queryFn: async () => {
       const { count, error } = await supabase
         .from("offers")
-        .select("*", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true })
         .eq("is_active", true);
       if (error) throw error;
       return count ?? 0;
@@ -82,7 +82,7 @@ export const useOffers = () =>
     queryKey: ["admin-offers"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("offers")
+        .from("offers_private" as any)
         .select("*, vendors(name, company_name), products(name)")
         .order("updated_at", { ascending: false })
         .limit(200);

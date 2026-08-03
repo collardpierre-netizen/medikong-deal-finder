@@ -48,7 +48,7 @@ function useAdminPaginatedOffers(
       const countMode: "exact" | "estimated" = hasRestrictiveFilter ? "exact" : "estimated";
 
       let query = supabase
-        .from("offers")
+        .from("offers_private" as any)
         .select("*, vendors(name, company_name), products(name, brand_name, gtin, cnk_code)", { count: countMode });
 
       if (statusFilter === "active") query = query.eq("is_active", true).eq("admin_hidden", false);

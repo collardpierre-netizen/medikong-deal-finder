@@ -137,6 +137,11 @@ export default function RestockAdminOffers() {
           Offres agrégées
         </h1>
         <div className="flex items-center gap-3">
+          <RestockOffersBulkImport>
+            <Button variant="outline" className="gap-2 rounded-lg border-[#D0D5DC] text-[#5C6470] hover:text-[#1E252F]">
+              <FileSpreadsheet size={16} /> Import en lots
+            </Button>
+          </RestockOffersBulkImport>
           <Link to="/restock/opportunities" target="_blank">
             <Button variant="outline" className="gap-2 rounded-lg border-[#D0D5DC] text-[#5C6470] hover:text-[#1E252F]">
               <ExternalLink size={16} /> Voir côté acheteur

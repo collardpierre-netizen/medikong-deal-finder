@@ -13038,6 +13038,42 @@ export type Database = {
         }
         Relationships: []
       }
+      qogita_price_write_anomalies: {
+        Row: {
+          anomaly_type: string
+          attempted_base_price: number | null
+          created_at: string
+          details: Json
+          id: string
+          indicative_price: number | null
+          offer_qid: string | null
+          product_id: string | null
+          seller_fid: string | null
+        }
+        Insert: {
+          anomaly_type: string
+          attempted_base_price?: number | null
+          created_at?: string
+          details?: Json
+          id?: string
+          indicative_price?: number | null
+          offer_qid?: string | null
+          product_id?: string | null
+          seller_fid?: string | null
+        }
+        Update: {
+          anomaly_type?: string
+          attempted_base_price?: number | null
+          created_at?: string
+          details?: Json
+          id?: string
+          indicative_price?: number | null
+          offer_qid?: string | null
+          product_id?: string | null
+          seller_fid?: string | null
+        }
+        Relationships: []
+      }
       qogita_product_absence: {
         Row: {
           consecutive_missing_full: number

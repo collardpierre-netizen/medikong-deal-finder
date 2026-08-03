@@ -122,7 +122,33 @@ interface Stats {
   excluded_offers_reported: number;
   http_429: number;
   fallback_products: string[];
+  /** Garde-fou permanent : écritures refusées car base < seuil du prix indicatif. */
+  offers_blocked_implausible: number;
+  /** Garde-fou permanent : écritures refusées car base ≤ plancher suspect (1,00 €). */
+  offers_blocked_floor: number;
+  /** Détecteur de valeur constante suspecte (ex. 1,25 partout). */
+  written_bases: number[];
 }
+
+// ── Garde-fous PERMANENTS d'écriture de prix ────────────────────────────────
+// 1) Plancher : un prix d'achat ≤ 1,00 € est toujours suspect (c'était la
+//    signature exacte du bug de mapping `unit` lu comme prix → vente 1,25 €).
+const BASE_PRICE_FLOOR = 1.0;
+// 2) Plausibilité croisée avec le référentiel catalogue (Lot 3) : si la base
+//    écrite est < 20% du prix indicatif connu, on n'écrit pas et on flague.
+const IMPLAUSIBLE_RATIO = 0.2;
+// 3) Alerte si un lot d'écritures produit une valeur constante.
+const CONSTANT_ALERT_MIN_WRITES = 20;
+
+// deno-lint-ignore no-explicit-any
+async function flagAnomaly(sb: any, row: Record<string, unknown>) {
+  try {
+    await sb.from("qogita_price_write_anomalies").insert(row);
+  } catch (e) {
+    console.warn("[qogita-api] anomaly_log_failed", (e as Error).message);
+  }
+}
+
 
 // ── Auth ────────────────────────────────────────────────────────────────────
 // deno-lint-ignore no-explicit-any
@@ -538,6 +564,21 @@ async function processProduct(
     if (typeof vat === "number" && vat >= 0) vatRate = vat;
   } catch { /* fallback */ }
 
+  // Prix indicatif du référentiel catalogue (Lot 3) = filet de sécurité croisé.
+  let indicative: number | null = null;
+  try {
+    const { data: cat } = await sb
+      .from("qogita_catalog_items")
+      .select("indicative_price")
+      .eq("product_id", product.id)
+      .not("indicative_price", "is", null)
+      .order("last_seen_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const v = cat?.indicative_price != null ? Number(cat.indicative_price) : null;
+    if (v != null && Number.isFinite(v) && v > 0) indicative = v;
+  } catch { /* pas de référentiel → on garde le seul garde-fou plancher */ }
+
   // Multi-vendeurs : une offre par (produit, vendeur fournisseur), chacune
   // rattachée à son vendeur virtuel anonymisé. Paliers/MOV/stock par offre.
   const seen = new Set<string>();
@@ -545,6 +586,30 @@ async function processProduct(
     const fid = (o.seller || "").trim();
     if (!fid || seen.has(fid)) continue; // 1 offre max par vendeur (contrainte produit+vendeur)
     seen.add(fid);
+
+    // ── GARDE-FOU 1 (permanent) : plancher suspect ──
+    if (!(o.basePrice > BASE_PRICE_FLOOR)) {
+      stats.offers_blocked_floor += 1;
+      await flagAnomaly(sb, {
+        product_id: product.id, offer_qid: o.qid, seller_fid: fid,
+        anomaly_type: "base_price_floor",
+        attempted_base_price: o.basePrice, indicative_price: indicative,
+        details: { floor: BASE_PRICE_FLOOR, tiers: o.tiers },
+      });
+      continue;
+    }
+
+    // ── GARDE-FOU 2 (permanent) : plausibilité vs prix indicatif catalogue ──
+    if (indicative != null && o.basePrice < indicative * IMPLAUSIBLE_RATIO) {
+      stats.offers_blocked_implausible += 1;
+      await flagAnomaly(sb, {
+        product_id: product.id, offer_qid: o.qid, seller_fid: fid,
+        anomaly_type: "implausible_vs_indicative",
+        attempted_base_price: o.basePrice, indicative_price: indicative,
+        details: { ratio_min: IMPLAUSIBLE_RATIO, tiers: o.tiers },
+      });
+      continue;
+    }
 
     const vendorId = await resolveVirtualVendorId(sb, fid, stats);
     if (!vendorId) { stats.offers_failed += 1; continue; }
@@ -554,9 +619,11 @@ async function processProduct(
       stats.offers_failed += 1;
     } else {
       stats.offers_upserted += 1;
+      if (stats.written_bases.length < 5_000) stats.written_bases.push(o.basePrice);
       stats.tiers_written += await syncTiers(sb, offerId, o, vatRate, marginMul);
     }
   }
+
 
 
 
@@ -595,6 +662,11 @@ Deno.serve(async (req) => {
   const dryRun = Boolean(body.dryRun);
   const enableFallback = body.fallback !== false;
   const productIds = Array.isArray(body.productIds) ? body.productIds as string[] : null;
+  // ── Mode RÉPARATION ──
+  // Autorise l'écriture MALGRÉ le gel global, uniquement sur une liste ciblée
+  // de produits (job de réparation des offres corrompues à 1,00 €). Les
+  // garde-fous permanents (plancher + plausibilité) restent actifs.
+  const repair = Boolean(body.repair) && !!productIds?.length;
 
   const stats: Stats = {
     products_scanned: 0, products_with_offers: 0, products_no_offers: 0,
@@ -602,7 +674,9 @@ Deno.serve(async (req) => {
     tiers_written: 0, vendors_created: 0, offers_skipped_no_stock: 0,
     offers_skipped_no_active_tier: 0, excluded_offers_reported: 0,
     http_429: 0, fallback_products: [],
+    offers_blocked_implausible: 0, offers_blocked_floor: 0, written_bases: [],
   };
+
 
   // ── Journal : id + checkpoints périodiques ────────────────────────────────
   // Le budget CPU des edge functions peut tuer le run sans laisser tourner le
@@ -639,6 +713,7 @@ Deno.serve(async (req) => {
   const finalize = async (status: "success" | "partial" | "error", extra: Record<string, unknown> = {}) => {
     if (checkpointTimer !== undefined) clearInterval(checkpointTimer);
     if (!logId) return;
+    const { written_bases: _wb, ...statsForLog } = stats;
     try {
       await sb.rpc("finalize_qogita_resync_log", {
         _id: logId,
@@ -646,7 +721,7 @@ Deno.serve(async (req) => {
         _stats: {
           ...partialStats(),
           metadata: {
-            ...stats, ...extra, duration_ms: Date.now() - startedAt,
+            ...statsForLog, ...extra, duration_ms: Date.now() - startedAt,
             rps_configured: rps, rps_final: limiter.currentRps,
             concurrency, source: "sync-qogita-offers-api",
           },
@@ -660,9 +735,11 @@ Deno.serve(async (req) => {
     // ── 🛑 GEL DES ÉCRITURES DE PRIX (kill switch) ──
     // `qogita_config.price_writes_enabled = 'false'` → aucune écriture de prix
     // (ni sync de fond, ni chemin JIT). Le code reste en place, on court-circuite.
+    // Exception unique : `repair: true` + liste `productIds` (job de réparation
+    // du mapping de prix), qui doit pouvoir écrire pendant que le gel tient.
     const { data: freezeRow } = await sb.from("qogita_config").select("value").eq("key", "price_writes_enabled").maybeSingle();
     const priceWritesEnabled = String(freezeRow?.value ?? "true").toLowerCase() !== "false";
-    if (!priceWritesEnabled && !dryRun) {
+    if (!priceWritesEnabled && !dryRun && !repair) {
       await finalize("success", { frozen: true });
       return new Response(JSON.stringify({
         ok: true, frozen: true,
@@ -671,6 +748,7 @@ Deno.serve(async (req) => {
         stats,
       }), { headers: corsHeaders });
     }
+
 
     // ── Marge commerciale courante (config) ──
     const { data: cfgRow } = await sb.from("qogita_config").select("value").eq("key", "margin_percentage").maybeSingle();
@@ -754,15 +832,35 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ── GARDE-FOU 3 (permanent) : valeur constante suspecte sur le lot ──
+    // Un lot entier qui écrit exactement le même prix d'achat = signature d'un
+    // bug de mapping (c'est ainsi que 1,25 € s'est propagé partout).
+    const bases = stats.written_bases;
+    const distinctBases = new Set(bases.map((b) => Math.round(b * 100)));
+    let constantAlert: number | null = null;
+    if (bases.length >= CONSTANT_ALERT_MIN_WRITES && distinctBases.size === 1) {
+      constantAlert = bases[0];
+      console.error("[qogita-api] CONSTANT_PRICE_ALERT", { value: constantAlert, writes: bases.length });
+      await flagAnomaly(sb, {
+        anomaly_type: "constant_base_price_batch",
+        attempted_base_price: constantAlert,
+        details: { writes: bases.length, repair, limit, source: "sync-qogita-offers-api" },
+      });
+    }
+
     const durationMs = Date.now() - startedAt;
+    const { written_bases: _wb2, ...statsOut } = stats;
     await finalize(queue.length > 0 ? "partial" : "success", {
       remaining_in_batch: queue.length,
       fallback_triggered: fallbackTriggered,
+      repair,
+      constant_price_alert: constantAlert,
     });
 
     return new Response(JSON.stringify({
       ok: true,
       source: "qogita_api",
+      repair,
       duration_ms: durationMs,
       margin_pct: Math.round((marginMul - 1) * 10000) / 100,
       remaining_in_batch: queue.length,
@@ -770,8 +868,11 @@ Deno.serve(async (req) => {
       rps_configured: rps,
       rps_final: limiter.currentRps,
       concurrency,
-      stats,
+      constant_price_alert: constantAlert,
+      bases_written_distinct: distinctBases.size,
+      stats: statsOut,
     }), { headers: corsHeaders });
+
   } catch (e) {
     console.error("[qogita-api] fatal", (e as Error).message);
     await finalize("error", { error: (e as Error).message });

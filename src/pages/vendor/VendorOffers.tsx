@@ -1710,7 +1710,7 @@ export default function VendorOffers() {
     editDeepLinkRef.current = editId;
     (async () => {
       const { data: offer, error } = await supabase
-        .from("offers")
+        .from("offers_private" as any)
         .select("*, products(name, pack_size)")
         .eq("id", editId)
         .maybeSingle();
@@ -1991,7 +1991,7 @@ export default function VendorOffers() {
   const bulkDuplicate = useMutation({
     mutationFn: async (ids: string[]) => {
       const { data: src, error } = await supabase
-        .from("offers")
+        .from("offers_private" as any)
         .select("*")
         .in("id", ids);
       if (error) throw error;

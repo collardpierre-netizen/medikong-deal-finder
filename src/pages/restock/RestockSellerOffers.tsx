@@ -111,11 +111,14 @@ export default function RestockSellerOffers() {
     <div className="p-6 max-w-6xl mx-auto" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-[#1E252F]">Mes offres</h1>
-        <Link to="/restock/faq">
-          <Button size="sm" variant="outline" className="border-[#D0D5DC] text-[#5C6470] hover:bg-[#F7F8FA] rounded-lg gap-1 text-xs">
-            <HelpCircle size={14} /> FAQ juridique
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <RestockOffersBulkImport />
+          <Link to="/restock/faq">
+            <Button size="sm" variant="outline" className="border-[#D0D5DC] text-[#5C6470] hover:bg-[#F7F8FA] rounded-lg gap-1 text-xs">
+              <HelpCircle size={14} /> FAQ juridique
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* KPI cards */}

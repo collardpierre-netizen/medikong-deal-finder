@@ -60,7 +60,7 @@ const AdminProduitDetail = () => {
     queryKey: ["product-offers", id],
     queryFn: async () => {
       const { data } = await supabase.from("offers_private" as any).select("*, vendors(name, company_name, display_code, qogita_seller_alias)").eq("product_id", id!);
-      return data || [];
+      return ((data as any[]) || []) as any[];
     },
     enabled: !!id,
   });

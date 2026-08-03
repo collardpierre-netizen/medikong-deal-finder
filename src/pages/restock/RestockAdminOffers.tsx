@@ -3,9 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Send, Package, Users, MessageSquare, CheckCircle, ExternalLink } from "lucide-react";
+import { Search, Send, Package, Users, MessageSquare, CheckCircle, ExternalLink, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
+import { RestockOffersBulkImport } from "@/components/restock/RestockOffersBulkImport";
 
 interface AggregatedOffer {
   ean: string;

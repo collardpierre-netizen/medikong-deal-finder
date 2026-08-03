@@ -8,6 +8,7 @@ import { Package, MessageSquare, CheckCircle, DollarSign, Pencil, HelpCircle, Al
 import { Link } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { EditRestockOfferDialog } from "@/components/restock/EditRestockOfferDialog";
+import { RestockOffersBulkImport } from "@/components/restock/RestockOffersBulkImport";
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
   published: { label: "Publiée", color: "#00B85C", bg: "#EEFBF4" },

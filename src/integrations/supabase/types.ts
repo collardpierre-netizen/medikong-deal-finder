@@ -3419,6 +3419,44 @@ export type Database = {
         }
         Relationships: []
       }
+      cnk_category_mapping: {
+        Row: {
+          category: string
+          cnk_code: string | null
+          cnk_prefix: string | null
+          created_at: string
+          id: string
+          note: string | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          cnk_code?: string | null
+          cnk_prefix?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          cnk_code?: string | null
+          cnk_prefix?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cnk_category_mapping_category_fkey"
+            columns: ["category"]
+            isOneToOne: false
+            referencedRelation: "product_eligibility_categories"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       cnk_vat_mapping: {
         Row: {
           cnk_code: string | null
@@ -16634,6 +16672,7 @@ export type Database = {
           matched_product_id: string | null
           medikong_min_price_excl_vat: number | null
           medikong_supplier_count: number | null
+          product_category: string | null
           raw_text: string | null
           simulation_id: string
         }
@@ -16656,6 +16695,7 @@ export type Database = {
           matched_product_id?: string | null
           medikong_min_price_excl_vat?: number | null
           medikong_supplier_count?: number | null
+          product_category?: string | null
           raw_text?: string | null
           simulation_id: string
         }
@@ -16678,6 +16718,7 @@ export type Database = {
           matched_product_id?: string | null
           medikong_min_price_excl_vat?: number | null
           medikong_supplier_count?: number | null
+          product_category?: string | null
           raw_text?: string | null
           simulation_id?: string
         }
@@ -16732,6 +16773,13 @@ export type Database = {
             referencedColumns: ["product_id"]
           },
           {
+            foreignKeyName: "savings_simulation_lines_product_category_fkey"
+            columns: ["product_category"]
+            isOneToOne: false
+            referencedRelation: "product_eligibility_categories"
+            referencedColumns: ["code"]
+          },
+          {
             foreignKeyName: "savings_simulation_lines_simulation_id_fkey"
             columns: ["simulation_id"]
             isOneToOne: false
@@ -16747,6 +16795,7 @@ export type Database = {
           commercial_status: string
           consent_given_at: string
           created_at: string
+          created_via: string
           email: string | null
           email_sent_at: string | null
           error_message: string | null
@@ -16759,11 +16808,13 @@ export type Database = {
           medikong_total_excl_vat: number | null
           ocr_extraction_rate: number | null
           pharmacy_name: string | null
+          price_trend_ref_analysis_id: string | null
           processing_timeout_at: string | null
           region: string | null
           report_path: string | null
           savings_amount: number | null
           savings_pct: number | null
+          sent_at: string | null
           source_file_path: string | null
           source_file_type: string | null
           source_supplier: string
@@ -16784,6 +16835,7 @@ export type Database = {
           commercial_status?: string
           consent_given_at?: string
           created_at?: string
+          created_via?: string
           email?: string | null
           email_sent_at?: string | null
           error_message?: string | null
@@ -16796,11 +16848,13 @@ export type Database = {
           medikong_total_excl_vat?: number | null
           ocr_extraction_rate?: number | null
           pharmacy_name?: string | null
+          price_trend_ref_analysis_id?: string | null
           processing_timeout_at?: string | null
           region?: string | null
           report_path?: string | null
           savings_amount?: number | null
           savings_pct?: number | null
+          sent_at?: string | null
           source_file_path?: string | null
           source_file_type?: string | null
           source_supplier: string
@@ -16821,6 +16875,7 @@ export type Database = {
           commercial_status?: string
           consent_given_at?: string
           created_at?: string
+          created_via?: string
           email?: string | null
           email_sent_at?: string | null
           error_message?: string | null
@@ -16833,11 +16888,13 @@ export type Database = {
           medikong_total_excl_vat?: number | null
           ocr_extraction_rate?: number | null
           pharmacy_name?: string | null
+          price_trend_ref_analysis_id?: string | null
           processing_timeout_at?: string | null
           region?: string | null
           report_path?: string | null
           savings_amount?: number | null
           savings_pct?: number | null
+          sent_at?: string | null
           source_file_path?: string | null
           source_file_type?: string | null
           source_supplier?: string
@@ -16852,7 +16909,15 @@ export type Database = {
           user_id?: string | null
           vat_number?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "savings_simulations_price_trend_ref_analysis_id_fkey"
+            columns: ["price_trend_ref_analysis_id"]
+            isOneToOne: false
+            referencedRelation: "savings_simulations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scraper_locks: {
         Row: {
@@ -29979,6 +30044,10 @@ export type Database = {
           total_savings: number
         }[]
       }
+      admin_savings_mark_sent: {
+        Args: { _simulation_id: string }
+        Returns: undefined
+      }
       admin_search_brands_fuzzy: {
         Args: { _limit?: number; _q: string }
         Returns: {
@@ -32137,6 +32206,10 @@ export type Database = {
           vat_rate: number
         }[]
       }
+      resolve_savings_line_category: {
+        Args: { _cnk: string; _name: string }
+        Returns: string
+      }
       resolve_vendor_by_public_code: {
         Args: { _code: string }
         Returns: {
@@ -32471,6 +32544,54 @@ export type Database = {
         Returns: Json
       }
       run_pack_mismatch_alert_job: { Args: never; Returns: Json }
+      savings_can_access: { Args: { _simulation_id: string }; Returns: boolean }
+      savings_category_breakdown: {
+        Args: { _simulation_id: string }
+        Returns: {
+          catalog_match_rate: number
+          group_label: string
+          lines_count: number
+          matched_lines: number
+          pct_of_basket: number
+          total_amount: number
+          total_savings: number
+        }[]
+      }
+      savings_category_group_label: { Args: { _code: string }; Returns: string }
+      savings_group_key: {
+        Args: { _email: string; _pharmacy_name: string }
+        Returns: string
+      }
+      savings_pharmacy_category_breakdown: {
+        Args: { _group_key?: string }
+        Returns: {
+          catalog_match_rate: number
+          group_label: string
+          lines_count: number
+          matched_lines: number
+          pct_of_basket: number
+          total_amount: number
+          total_savings: number
+        }[]
+      }
+      savings_top_products: {
+        Args: { _group_key?: string; _limit?: number }
+        Returns: {
+          analyses_count: number
+          cnk: string
+          first_price: number
+          first_seen_at: string
+          group_label: string
+          last_price: number
+          last_seen_at: string
+          price_trend: string
+          price_trend_pct: number
+          product_name: string
+          total_amount: number
+          total_quantity: number
+          total_savings: number
+        }[]
+      }
       scan_order_line_sla_alerts: {
         Args: never
         Returns: {

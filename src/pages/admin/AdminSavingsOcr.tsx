@@ -53,14 +53,19 @@ const catalogMatchPct = (r: Sim) =>
 export default function AdminSavingsOcr() {
   const [rows, setRows] = useState<Sim[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "completed" | "failed" | "pending">("all");
+  const [filter, setFilter] = useState<"all" | "completed" | "failed" | "pending" | "ready_to_send" | "sent">("all");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  const [form, setForm] = useState({ email: "", pharmacy_name: "", city: "", supplier: "febelco" });
+  const [file, setFile] = useState<File | null>(null);
 
   async function load() {
     setLoading(true);
     let q = (supabase as any)
       .from("savings_simulations")
       .select(
-        "id,email,pharmacy_name,source_supplier,source_file_type,total_lines,matched_lines,match_rate,catalog_match_rate,source_total_excl_vat,medikong_total_excl_vat,savings_amount,savings_pct,status,error_message,created_at",
+        "id,email,pharmacy_name,source_supplier,source_file_type,total_lines,matched_lines,match_rate,catalog_match_rate,source_total_excl_vat,medikong_total_excl_vat,savings_amount,savings_pct,status,error_message,created_at,created_via,sent_at",
       )
       .order("created_at", { ascending: false })
       .limit(200);
@@ -73,6 +78,64 @@ export default function AdminSavingsOcr() {
   useEffect(() => {
     void load();
   }, [filter]);
+
+  // Analyse manuelle créée par un admin pour un client : aucun email automatique.
+  async function createManual() {
+    if (!file || !form.email.trim() || !form.pharmacy_name.trim()) {
+      toast.error("Fichier, email et nom de pharmacie sont requis");
+      return;
+    }
+    setCreating(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("email", form.email.trim());
+      fd.append("pharmacy_name", form.pharmacy_name.trim());
+      if (form.city.trim()) fd.append("city", form.city.trim());
+      fd.append("source_supplier", form.supplier);
+      fd.append("consent_given", "true");
+      fd.append("created_via", "admin_manual");
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-savings-upload`, {
+        method: "POST",
+        headers: {
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${session.session?.access_token ?? ""}`,
+        },
+        body: fd,
+      });
+      if (!res.ok) throw new Error(await res.text());
+      toast.success("Analyse lancée — aucun email envoyé au client");
+      setDialogOpen(false);
+      setFile(null);
+      setTimeout(() => void load(), 1500);
+    } catch (e) {
+      toast.error("Création impossible");
+      console.error("[admin-savings] manual create", e);
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function sendToClient(r: Sim) {
+    if (!r.email) {
+      toast.error("Aucun email sur cette analyse");
+      return;
+    }
+    setSendingId(r.id);
+    const { error } = await supabase.functions.invoke("generate-savings-report", {
+      body: { simulation_id: r.id, email: r.email },
+    });
+    if (!error) {
+      await (supabase as any).rpc("admin_savings_mark_sent", { _simulation_id: r.id });
+      toast.success("Rapport envoyé au client");
+      void load();
+    } else {
+      toast.error("Envoi impossible");
+    }
+    setSendingId(null);
+  }
+
 
   return (
     <div className="container mx-auto py-8 space-y-6 max-w-7xl">

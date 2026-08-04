@@ -755,34 +755,42 @@ Deno.serve(async (req) => {
         .select("product_category,detected_quantity,detected_unit_price_excl_vat,medikong_min_price_excl_vat,line_savings")
         .eq("simulation_id", id)
         .limit(2000);
-      const groups = new Map<
-        string,
-        { lines_count: number; total_amount: number; matched_lines: number; total_savings: number }
-      >();
+      type Bucket = { lines_count: number; total_amount: number; matched_lines: number; total_savings: number };
+      const groups = new Map<string, Bucket>();
+      const eligGroups = new Map<string, Bucket>();
       let grandTotal = 0;
-      for (const l of catLines ?? []) {
-        const label = categoryGroupLabel(l.product_category as string | null);
-        const amount = Number(l.detected_unit_price_excl_vat ?? 0) * Number(l.detected_quantity ?? 1);
-        grandTotal += amount;
-        const g = groups.get(label) ?? { lines_count: 0, total_amount: 0, matched_lines: 0, total_savings: 0 };
+      const bump = (m: Map<string, Bucket>, key: string, amount: number, matched: boolean, savings: number) => {
+        const g = m.get(key) ?? { lines_count: 0, total_amount: 0, matched_lines: 0, total_savings: 0 };
         g.lines_count += 1;
         g.total_amount += amount;
-        if (l.medikong_min_price_excl_vat != null) g.matched_lines += 1;
-        g.total_savings += Number(l.line_savings ?? 0);
-        groups.set(label, g);
+        if (matched) g.matched_lines += 1;
+        g.total_savings += savings;
+        m.set(key, g);
+      };
+      for (const l of catLines ?? []) {
+        const amount = Number(l.detected_unit_price_excl_vat ?? 0) * Number(l.detected_quantity ?? 1);
+        grandTotal += amount;
+        const matched = l.medikong_min_price_excl_vat != null;
+        const savings = Number(l.line_savings ?? 0);
+        bump(groups, categoryGroupLabel(l.product_category as string | null), amount, matched, savings);
+        bump(eligGroups, eligibilityLabel(l.product_category as string | null), amount, matched, savings);
       }
-      const category_breakdown = Array.from(groups.entries())
-        .map(([group_label, g]) => ({
-          group_label,
-          lines_count: g.lines_count,
-          total_amount: Number(g.total_amount.toFixed(2)),
-          pct_of_basket: grandTotal > 0 ? Number(((g.total_amount / grandTotal) * 100).toFixed(1)) : 0,
-          matched_lines: g.matched_lines,
-          catalog_match_rate: Number(((g.matched_lines / g.lines_count) * 100).toFixed(1)),
-          total_savings: Number(g.total_savings.toFixed(2)),
-        }))
-        .sort((a, b) => b.total_amount - a.total_amount);
-      return Response.json({ ...data, category_breakdown }, { headers: corsHeaders });
+      const toRows = (m: Map<string, Bucket>) =>
+        Array.from(m.entries())
+          .map(([group_label, g]) => ({
+            group_label,
+            lines_count: g.lines_count,
+            total_amount: Number(g.total_amount.toFixed(2)),
+            pct_of_basket: grandTotal > 0 ? Number(((g.total_amount / grandTotal) * 100).toFixed(1)) : 0,
+            matched_lines: g.matched_lines,
+            catalog_match_rate: Number(((g.matched_lines / g.lines_count) * 100).toFixed(1)),
+            total_savings: Number(g.total_savings.toFixed(2)),
+          }))
+          .sort((a, b) => b.total_amount - a.total_amount);
+      const category_breakdown = toRows(groups);
+      const eligibility_breakdown = toRows(eligGroups);
+      return Response.json({ ...data, category_breakdown, eligibility_breakdown }, { headers: corsHeaders });
+
 
     } catch (err) {
       return Response.json({ error: String(err) }, { status: 500, headers: corsHeaders });

@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, Building2 } from "lucide-react";
+import { Loader2, RefreshCw, Building2, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import SavingsCategoryPie, { type SavingsCategoryRow } from "@/components/savings/SavingsCategoryPie";
+import SavingsTopProducts, { type SavingsTopProduct } from "@/components/savings/SavingsTopProducts";
+
 
 type Row = {
   group_key: string;
@@ -29,6 +32,28 @@ export default function AdminSavingsByPharmacy() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const [details, setDetails] = useState<
+    Record<string, { cats: SavingsCategoryRow[]; top: SavingsTopProduct[] }>
+  >({});
+
+  async function toggle(groupKey: string) {
+    if (openKey === groupKey) {
+      setOpenKey(null);
+      return;
+    }
+    setOpenKey(groupKey);
+    if (details[groupKey]) return;
+    const [{ data: cats }, { data: top }] = await Promise.all([
+      (supabase as any).rpc("savings_pharmacy_category_breakdown", { _group_key: groupKey }),
+      (supabase as any).rpc("savings_top_products", { _group_key: groupKey, _limit: 30 }),
+    ]);
+    setDetails((prev) => ({
+      ...prev,
+      [groupKey]: { cats: (cats as SavingsCategoryRow[]) ?? [], top: (top as SavingsTopProduct[]) ?? [] },
+    }));
+  }
+
 
   async function load() {
     setLoading(true);
@@ -80,6 +105,7 @@ export default function AdminSavingsByPharmacy() {
           <table className="w-full text-sm">
             <thead className="text-left text-xs text-muted-foreground border-b">
               <tr>
+                <th className="py-2 pr-3" />
                 <th className="py-2 pr-3">Pharmacie</th>
                 <th className="py-2 pr-3">Email(s)</th>
                 <th className="py-2 pr-3 text-right">Analyses</th>
@@ -90,34 +116,68 @@ export default function AdminSavingsByPharmacy() {
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.group_key} className="border-b last:border-0 hover:bg-muted/40">
-                  <td className="py-2 pr-3 font-medium">{r.pharmacy_name || <span className="text-muted-foreground">— (email)</span>}</td>
-                  <td className="py-2 pr-3 text-xs">{(r.emails ?? []).join(", ") || "—"}</td>
-                  <td className="py-2 pr-3 text-right">{r.analyses_count}</td>
-                  <td className="py-2 pr-3 text-right">
-                    <span className={Number(r.total_savings ?? 0) > 0 ? "text-emerald-600 font-semibold" : ""}>
-                      {fmtEur(r.total_savings)}
-                    </span>
-                  </td>
-                  <td className="py-2 pr-3 whitespace-nowrap">
-                    {r.last_analysis_at ? new Date(r.last_analysis_at).toLocaleString("fr-BE") : "—"}
-                  </td>
-                  <td className="py-2 pr-3">
-                    <select
-                      value={r.commercial_status ?? "to_contact"}
-                      disabled={saving === r.group_key}
-                      onChange={(e) => setStatus(r.group_key, e.target.value)}
-                      className="h-8 px-2 rounded-md border border-input bg-background text-xs"
-                    >
-                      {STATUSES.map((s) => (
-                        <option key={s.value} value={s.value}>
-                          {s.label}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                </tr>
+                <>
+                  <tr key={r.group_key} className="border-b last:border-0 hover:bg-muted/40">
+                    <td className="py-2 pr-1">
+                      <button
+                        type="button"
+                        onClick={() => toggle(r.group_key)}
+                        aria-label={openKey === r.group_key ? "Masquer le détail" : "Voir le détail"}
+                        className="p-1 rounded hover:bg-muted"
+                      >
+                        {openKey === r.group_key ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
+                      </button>
+                    </td>
+                    <td className="py-2 pr-3 font-medium">{r.pharmacy_name || <span className="text-muted-foreground">— (email)</span>}</td>
+                    <td className="py-2 pr-3 text-xs">{(r.emails ?? []).join(", ") || "—"}</td>
+                    <td className="py-2 pr-3 text-right">{r.analyses_count}</td>
+                    <td className="py-2 pr-3 text-right">
+                      <span className={Number(r.total_savings ?? 0) > 0 ? "text-emerald-600 font-semibold" : ""}>
+                        {fmtEur(r.total_savings)}
+                      </span>
+                    </td>
+                    <td className="py-2 pr-3 whitespace-nowrap">
+                      {r.last_analysis_at ? new Date(r.last_analysis_at).toLocaleString("fr-BE") : "—"}
+                    </td>
+                    <td className="py-2 pr-3">
+                      <select
+                        value={r.commercial_status ?? "to_contact"}
+                        disabled={saving === r.group_key}
+                        onChange={(e) => setStatus(r.group_key, e.target.value)}
+                        className="h-8 px-2 rounded-md border border-input bg-background text-xs"
+                      >
+                        {STATUSES.map((s) => (
+                          <option key={s.value} value={s.value}>
+                            {s.label}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                  </tr>
+                  {openKey === r.group_key && (
+                    <tr key={`${r.group_key}-detail`} className="border-b bg-muted/20">
+                      <td colSpan={7} className="p-4 space-y-6">
+                        {details[r.group_key] ? (
+                          <>
+                            <SavingsCategoryPie
+                              rows={details[r.group_key].cats}
+                              title="Ventilation cumulée par type de produit"
+                            />
+                            <SavingsTopProducts rows={details[r.group_key].top} />
+                          </>
+                        ) : (
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </>
               ))}
+
             </tbody>
           </table>
         )}

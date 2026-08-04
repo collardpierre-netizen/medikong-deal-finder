@@ -27,7 +27,31 @@ const TEXT_MODEL = "google/gemini-2.5-flash";
 type Supplier = "febelco" | "cerp" | "pharma_belgium" | "other";
 type FileKind = "pdf" | "image" | "csv";
 
+type CreatedVia = "public_tunnel" | "admin_manual";
+
+// Miroir de public.savings_category_group_label (SQL) pour le payload public.
+function categoryGroupLabel(code: string | null): string {
+  switch (code) {
+    case "excluded_rx":
+    case "excluded_narcotic":
+      return "Médicaments sur ordonnance (Rx)";
+    case "eligible_otc":
+      return "OTC";
+    case "eligible_device_low_class":
+    case "excluded_device_high_class":
+      return "Dispositifs médicaux";
+    case "eligible_cosmetic":
+      return "Parapharmacie / Cosmétique";
+    case "eligible_supplement":
+    case "eligible_nutrition":
+      return "Nutrition / Compléments";
+    default:
+      return "Autre / Non classé";
+  }
+}
+
 interface ExtractedLine {
+
   line_number: number;
   cnk: string | null;
   ean: string | null;
@@ -362,7 +386,14 @@ async function getMedikongMinPrice(
 }
 
 
-async function processSimulation(simulationId: string, file: File, fileKind: FileKind, supplier: Supplier) {
+async function processSimulation(
+  simulationId: string,
+  file: File,
+  fileKind: FileKind,
+  supplier: Supplier,
+  createdVia: CreatedVia = "public_tunnel",
+) {
+
   const supabase = getAdminClient();
   console.log("[pipeline] start", { simulationId, fileKind, supplier, mime: file.type, size: file.size });
   try {
@@ -633,7 +664,10 @@ async function processSimulation(simulationId: string, file: File, fileKind: Fil
     const savingsAmount = totalSourceMatchedOnly - totalMedikongMatchedOnly;
     const savingsPct =
       totalSourceMatchedOnly > 0 ? (savingsAmount / totalSourceMatchedOnly) * 100 : 0;
-    const finalStatus = pricedCount === 0 ? "no_match" : "done";
+    // Analyse créée manuellement en admin : pas d'envoi automatique, attente de validation.
+    const finalStatus =
+      pricedCount === 0 ? "no_match" : createdVia === "admin_manual" ? "ready_to_send" : "done";
+
 
     await supabase
       .from("savings_simulations")
@@ -691,12 +725,46 @@ Deno.serve(async (req) => {
       const { data, error } = await supabase
         .from("savings_simulations")
         .select(
-          "id,status,total_lines,matched_lines,match_rate,catalog_match_rate,ocr_extraction_rate,total_lines_count,matched_lines_count,total_source_matched_only,total_medikong_matched_only,source_total_excl_vat,medikong_total_excl_vat,savings_amount,savings_pct,error_message,failure_reason,report_path,email_sent_at",
+          "id,status,total_lines,matched_lines,match_rate,catalog_match_rate,ocr_extraction_rate,total_lines_count,matched_lines_count,total_source_matched_only,total_medikong_matched_only,source_total_excl_vat,medikong_total_excl_vat,savings_amount,savings_pct,error_message,failure_reason,report_path,email_sent_at,created_via,sent_at",
         )
         .eq("id", id)
         .maybeSingle();
       if (error || !data) return Response.json({ error: "not found" }, { status: 404, headers: corsHeaders });
-      return Response.json(data, { headers: corsHeaders });
+      // Ventilation par catégorie : 100 % des lignes lues (pas seulement les lignes comparables)
+      const { data: catLines } = await supabase
+        .from("savings_simulation_lines")
+        .select("product_category,detected_quantity,detected_unit_price_excl_vat,medikong_min_price_excl_vat,line_savings")
+        .eq("simulation_id", id)
+        .limit(2000);
+      const groups = new Map<
+        string,
+        { lines_count: number; total_amount: number; matched_lines: number; total_savings: number }
+      >();
+      let grandTotal = 0;
+      for (const l of catLines ?? []) {
+        const label = categoryGroupLabel(l.product_category as string | null);
+        const amount = Number(l.detected_unit_price_excl_vat ?? 0) * Number(l.detected_quantity ?? 1);
+        grandTotal += amount;
+        const g = groups.get(label) ?? { lines_count: 0, total_amount: 0, matched_lines: 0, total_savings: 0 };
+        g.lines_count += 1;
+        g.total_amount += amount;
+        if (l.medikong_min_price_excl_vat != null) g.matched_lines += 1;
+        g.total_savings += Number(l.line_savings ?? 0);
+        groups.set(label, g);
+      }
+      const category_breakdown = Array.from(groups.entries())
+        .map(([group_label, g]) => ({
+          group_label,
+          lines_count: g.lines_count,
+          total_amount: Number(g.total_amount.toFixed(2)),
+          pct_of_basket: grandTotal > 0 ? Number(((g.total_amount / grandTotal) * 100).toFixed(1)) : 0,
+          matched_lines: g.matched_lines,
+          catalog_match_rate: Number(((g.matched_lines / g.lines_count) * 100).toFixed(1)),
+          total_savings: Number(g.total_savings.toFixed(2)),
+        }))
+        .sort((a, b) => b.total_amount - a.total_amount);
+      return Response.json({ ...data, category_breakdown }, { headers: corsHeaders });
+
     } catch (err) {
       return Response.json({ error: String(err) }, { status: 500, headers: corsHeaders });
     }
@@ -732,6 +800,28 @@ Deno.serve(async (req) => {
     const vatNumber = (form.get("vat_number") as string | null)?.trim();
     const supplier = (form.get("source_supplier") as Supplier | null) ?? "other";
     const consent = form.get("consent_given") === "true";
+    const requestedVia = (form.get("created_via") as string | null) ?? "public_tunnel";
+
+    // Création manuelle (admin) : réservée aux admins authentifiés.
+    let createdVia: CreatedVia = "public_tunnel";
+    if (requestedVia === "admin_manual") {
+      const authHeader = req.headers.get("Authorization") ?? "";
+      const jwt = authHeader.replace(/^Bearer\s+/i, "").trim();
+      let isAdmin = false;
+      if (jwt) {
+        const userClient = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
+        const { data: userRes } = await userClient.auth.getUser(jwt);
+        if (userRes?.user) {
+          const { data: ok } = await userClient.rpc("is_admin", { _user_id: userRes.user.id });
+          isAdmin = ok === true;
+        }
+      }
+      if (!isAdmin) {
+        return Response.json({ error: "admin_required" }, { status: 403, headers: corsHeaders });
+      }
+      createdVia = "admin_manual";
+    }
+
 
     if (!file) return Response.json({ error: "missing file" }, { status: 400, headers: corsHeaders });
     if (!consent)
@@ -789,6 +879,8 @@ Deno.serve(async (req) => {
         source_supplier: supplier,
         source_file_type: fileKind,
         status: "processing",
+        created_via: createdVia,
+
         processing_timeout_at: new Date(Date.now() + 3 * 60_000).toISOString(),
 
         ip_address: ip !== "unknown" ? ip : null,
@@ -820,7 +912,7 @@ Deno.serve(async (req) => {
 
     // Pipeline en arrière-plan — recrée un File à partir des bytes (le body initial a été consommé).
     const reusableFile = new File([fileBytes], file.name || `source.${ext}`, { type: check.mime });
-    const bgTask = processSimulation(sim.id, reusableFile, fileKind, supplier).catch(async (e) => {
+    const bgTask = processSimulation(sim.id, reusableFile, fileKind, supplier, createdVia).catch(async (e) => {
       console.error("[pipeline] uncaught", e);
       try {
         await supabase

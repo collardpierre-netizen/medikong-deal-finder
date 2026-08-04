@@ -5,9 +5,11 @@ import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, ShieldCheck, Spar
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import SavingsCategoryPie, { type SavingsCategoryRow } from "@/components/savings/SavingsCategoryPie";
 
 type Supplier = "febelco" | "cerp" | "pharma_belgium" | "other";
-type Status = "processing" | "done" | "failed" | "no_match";
+type Status = "processing" | "done" | "failed" | "no_match" | "ready_to_send" | "sent";
+
 
 interface SimulationStatus {
   id: string;
@@ -27,7 +29,9 @@ interface SimulationStatus {
   savings_pct: number | null;
   error_message: string | null;
   email_sent_at: string | null;
+  category_breakdown?: SavingsCategoryRow[] | null;
 }
+
 
 
 interface SimulationLine {
@@ -428,6 +432,14 @@ export default function EconomiesPage() {
                           </>
                         );
                       })()}
+
+                      {sim.category_breakdown && sim.category_breakdown.length > 0 && (
+                        <div className="border border-mk-border rounded-lg p-4 mb-4">
+                          <SavingsCategoryPie rows={sim.category_breakdown} />
+                        </div>
+                      )}
+
+
 
 
                       {/* Détail ligne par ligne à l'écran */}

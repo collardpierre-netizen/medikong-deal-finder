@@ -59,11 +59,12 @@ Deno.serve(async (req) => {
       status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-  if (sim.status !== "done") {
+  if (!["done", "ready_to_send", "sent"].includes(String(sim.status))) {
     return new Response(JSON.stringify({ error: "simulation_not_ready", status: sim.status }), {
       status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+
 
 
   const { data: lines } = await supabase

@@ -277,6 +277,8 @@ export default function AdminSavingsOcr() {
                   <th className="py-2 pr-3 text-right">Total MK</th>
                   <th className="py-2 pr-3 text-right">Économies</th>
                   <th className="py-2 pr-3">Statut</th>
+                  <th className="py-2 pr-3">Action</th>
+
                 </tr>
               </thead>
               <tbody>

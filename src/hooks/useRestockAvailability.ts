@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 export type SecondLifeInfo = {
   count: number;
   minPriceHt: number | null;
+  maxPriceHt: number | null;
   bestGrade: string | null;
 };
 

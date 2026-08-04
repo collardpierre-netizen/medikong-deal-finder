@@ -1,4 +1,5 @@
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import {
+  Handshake, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useI18n } from "@/contexts/I18nContext";
 import logoLight from "@/assets/logo-horizontal.png";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
@@ -55,6 +56,8 @@ const sections: NavSection[] = [
       { labelKey: "orders", path: "/admin/commandes", icon: ShoppingCart },
       { label: "Commissions & Revenus", path: "/admin/commissions-revenus", icon: DollarSign },
       { label: "Cagnotte MediKong", path: "/admin/cagnotte", icon: DollarSign },
+      { label: "Apporteurs d'affaires", path: "/admin/apporteurs", icon: Handshake },
+      { label: "Règles apporteurs", path: "/admin/apporteurs/regles", icon: Handshake },
       { label: "Nouvelle commande manuelle", path: "/admin/commandes/nouvelle", icon: Plus },
       { label: "Devis", path: "/admin/devis", icon: FileText },
       { label: "Commandes en retard", path: "/admin/commandes-en-retard", icon: AlertTriangle },

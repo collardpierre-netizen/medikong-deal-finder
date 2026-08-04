@@ -30294,6 +30294,38 @@ export type Database = {
           total_incl_vat: number
         }[]
       }
+      affiliate_admin_account: {
+        Args: { _affiliate_id: string }
+        Returns: Json
+      }
+      affiliate_admin_commissions: {
+        Args: { _affiliate_id?: string; _status?: string }
+        Returns: {
+          adjustment_of_id: string
+          adjustment_of_order_number: string
+          affiliate_code: string
+          affiliate_id: string
+          affiliate_name: string
+          base_amount_cents: number
+          calc_details: Json
+          cancelled_reason: string
+          client_email: string
+          client_name: string
+          commission_cents: number
+          created_at: string
+          id: string
+          invoice_number: string
+          margin_guard_hit: boolean
+          net_margin_cents: number
+          order_date: string
+          order_id: string
+          order_number: string
+          order_total_ht_cents: number
+          rule_version: number
+          status: string
+          validate_after: string
+        }[]
+      }
       affiliate_admin_kpis: { Args: never; Returns: Json }
       affiliate_admin_list: {
         Args: never
@@ -30314,14 +30346,59 @@ export type Database = {
           user_id: string
         }[]
       }
-      affiliate_admin_mark_payout_paid: {
-        Args: { _invoice_id: string }
-        Returns: undefined
+      affiliate_admin_mark_payout_paid:
+        | { Args: { _invoice_id: string }; Returns: undefined }
+        | {
+            Args: { _invoice_id: string; _paid_at: string }
+            Returns: undefined
+          }
+      affiliate_admin_payouts: {
+        Args: { _affiliate_id?: string }
+        Returns: {
+          affiliate_code: string
+          affiliate_id: string
+          affiliate_name: string
+          id: string
+          invoice_number: string
+          issued_at: string
+          paid_at: string
+          pdf_path: string
+          period_end: string
+          period_start: string
+          status: string
+          total_cents: number
+          vat_mode: string
+        }[]
       }
-      affiliate_admin_resolve_on_hold: {
-        Args: { _commission_id: string; _net_margin_cents: number }
-        Returns: Json
+      affiliate_admin_referrals: {
+        Args: { _affiliate_id: string }
+        Returns: {
+          attributed_at: string
+          company_name: string
+          email: string
+          first_order_at: string
+          full_name: string
+          id: string
+          orders_count: number
+          revenue_ht_cents: number
+          status: string
+          user_id: string
+          window_expires_at: string
+        }[]
       }
+      affiliate_admin_resolve_on_hold:
+        | {
+            Args: { _commission_id: string; _net_margin_cents: number }
+            Returns: Json
+          }
+        | {
+            Args: {
+              _commission_id: string
+              _justification: string
+              _net_margin_cents: number
+            }
+            Returns: Json
+          }
       affiliate_calc_commission: {
         Args: {
           _base_rate_bp: number
@@ -30336,30 +30413,76 @@ export type Database = {
         Args: { _order_id: string }
         Returns: number
       }
-      affiliate_current_rule: { Args: never; Returns: Json }
-      affiliate_dashboard_stats: { Args: never; Returns: Json }
+      affiliate_create_campaign: {
+        Args: { _affiliate_id?: string; _landing_path: string; _name: string }
+        Returns: string
+      }
+      affiliate_current_rule: {
+        Args: { _affiliate_id?: string }
+        Returns: Json
+      }
+      affiliate_dashboard_stats: {
+        Args: { _affiliate_id?: string }
+        Returns: Json
+      }
       affiliate_generate_monthly_payouts: {
         Args: { _period_end?: string; _period_start?: string }
         Returns: Json
       }
-      affiliate_my_commissions: {
-        Args: never
+      affiliate_my_account: { Args: never; Returns: Json }
+      affiliate_my_campaigns: {
+        Args: { _affiliate_id?: string }
         Returns: {
+          created_at: string
+          first_purchases: number
+          id: string
+          is_default: boolean
+          landing_path: string
+          name: string
+          scans: number
+          signups: number
+          slug: string
+          status: string
+          unique_visitors: number
+          utm_source: string
+        }[]
+      }
+      affiliate_my_commissions: {
+        Args: { _affiliate_id?: string }
+        Returns: {
+          adjustment_of_id: string
           calc_details: Json
+          cancelled_reason: string
           commission_cents: number
           id: string
           invoice_number: string
           margin_guard_hit: boolean
           order_date: string
           order_id: string
+          order_number: string
           order_total_ht_cents: number
           pseudo: string
           status: string
           validate_after: string
         }[]
       }
+      affiliate_my_payouts: {
+        Args: { _affiliate_id?: string }
+        Returns: {
+          id: string
+          invoice_number: string
+          issued_at: string
+          paid_at: string
+          pdf_path: string
+          period_end: string
+          period_start: string
+          status: string
+          total_cents: number
+          vat_mode: string
+        }[]
+      }
       affiliate_my_referrals: {
-        Args: never
+        Args: { _affiliate_id?: string }
         Returns: {
           attributed_at: string
           first_order_at: string
@@ -30373,6 +30496,14 @@ export type Database = {
       affiliate_process_order_commission: {
         Args: { _order_id: string }
         Returns: Json
+      }
+      affiliate_publish_cost_params: {
+        Args: {
+          _deduct_cagnotte?: boolean
+          _payment_fee_bp: number
+          _payment_fee_fixed_cents: number
+        }
+        Returns: string
       }
       affiliate_publish_rule: {
         Args: {
@@ -30416,6 +30547,32 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      affiliate_rule_history: {
+        Args: { _affiliate_id?: string; _scope?: string }
+        Returns: {
+          affiliate_id: string
+          attribution_months: number
+          base_rate_bp: number
+          created_at: string
+          created_by: string
+          created_by_email: string
+          effective_from: string
+          effective_to: string
+          id: string
+          margin_guard_threshold_bp: number
+          margin_rate_bp: number
+          monthly_cap_cents: number
+          payout_threshold_cents: number
+          scope: string
+          self_purchase_allowed: boolean
+          validation_delay_days: number
+          version: number
+        }[]
+      }
+      affiliate_set_campaign_status: {
+        Args: { _affiliate_id?: string; _campaign_id: string; _status: string }
+        Returns: undefined
+      }
       affiliate_simulate_commission: {
         Args: {
           _base_rate_bp?: number
@@ -30426,7 +30583,18 @@ export type Database = {
         }
         Returns: Json
       }
+      affiliate_target_id: { Args: { _affiliate_id: string }; Returns: string }
       affiliate_validate_due_commissions: { Args: never; Returns: number }
+      affiliate_weekly_series: {
+        Args: { _affiliate_id?: string; _weeks?: number }
+        Returns: {
+          commission_cents: number
+          orders: number
+          scans: number
+          signups: number
+          week_start: string
+        }[]
+      }
       apply_category_aliases: {
         Args: never
         Returns: {

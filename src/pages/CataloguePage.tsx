@@ -51,6 +51,14 @@ export default function CataloguePage() {
   const { view, setView } = useCatalogViewMode();
   // Disponibilité « seconde vie » (ReStock) pour la page courante — 1 requête.
   const secondLifeMap = useRestockAvailabilityMap(products);
+  // Les tris seconde vie sont appliqués sur la page courante (donnée hors SQL).
+  const displayProducts = useMemo(
+    () =>
+      filters.sort === "second_life" || filters.sort === "best_saving"
+        ? sortBySecondLife(products, secondLifeMap, filters.sort)
+        : products,
+    [products, secondLifeMap, filters.sort],
+  );
   const [mobileFilters, setMobileFilters] = useState(false);
 
   // Collect category IDs + brand IDs from results for contextual sidebar filtering.

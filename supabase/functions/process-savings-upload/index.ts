@@ -27,7 +27,31 @@ const TEXT_MODEL = "google/gemini-2.5-flash";
 type Supplier = "febelco" | "cerp" | "pharma_belgium" | "other";
 type FileKind = "pdf" | "image" | "csv";
 
+type CreatedVia = "public_tunnel" | "admin_manual";
+
+// Miroir de public.savings_category_group_label (SQL) pour le payload public.
+function categoryGroupLabel(code: string | null): string {
+  switch (code) {
+    case "excluded_rx":
+    case "excluded_narcotic":
+      return "Médicaments sur ordonnance (Rx)";
+    case "eligible_otc":
+      return "OTC";
+    case "eligible_device_low_class":
+    case "excluded_device_high_class":
+      return "Dispositifs médicaux";
+    case "eligible_cosmetic":
+      return "Parapharmacie / Cosmétique";
+    case "eligible_supplement":
+    case "eligible_nutrition":
+      return "Nutrition / Compléments";
+    default:
+      return "Autre / Non classé";
+  }
+}
+
 interface ExtractedLine {
+
   line_number: number;
   cnk: string | null;
   ean: string | null;

@@ -10,7 +10,7 @@ import { CatalogPagination } from "@/components/catalog/CatalogPagination";
 import { ActiveFilters } from "@/components/catalog/ActiveFilters";
 // MasterTaxonomyBar retiré : navigation par catégorie pilotée par la sidebar (vague 2 prévue pour un éventuel bandeau d'univers).
 import { useCatalogFilters, useCatalogProducts, useCatalogBrands } from "@/hooks/useCatalog";
-import { RestockAvailabilityContext, useRestockAvailabilityMap } from "@/hooks/useRestockAvailability";
+import { RestockAvailabilityContext, useRestockAvailabilityMap, sortBySecondLife } from "@/hooks/useRestockAvailability";
 import { useCatalogViewMode } from "@/hooks/useCatalogViewMode";
 import { Loader2, SlidersHorizontal, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";

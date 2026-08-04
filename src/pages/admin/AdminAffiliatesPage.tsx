@@ -144,6 +144,40 @@ export default function AdminAffiliatesPage() {
         ))}
       </div>
 
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-xs text-muted-foreground mb-2">
+            Tâches automatiques (heures UTC : 02:00 quotidien, 03:00 le 1er du mois)
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {CRON_JOBS.map((job) => {
+              const run = cronRuns.find((r) => r.jobname === job.name);
+              return (
+                <div key={job.name} className="rounded-lg border p-3 text-sm">
+                  <p className="font-medium">{job.label}</p>
+                  <p className="text-xs text-muted-foreground font-mono">{run?.schedule ?? "non planifié"}</p>
+                  {run?.last_start ? (
+                    <p className="text-xs mt-1">
+                      Dernier run : {new Date(run.last_start).toLocaleString("fr-BE")} ·{" "}
+                      <Badge className={run.last_status === "succeeded" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}>
+                        {run.last_status ?? "—"}
+                      </Badge>
+                    </p>
+                  ) : (
+                    <p className="text-xs mt-1 text-muted-foreground">Aucun run enregistré.</p>
+                  )}
+                  {run?.last_message && (
+                    <p className="text-[11px] text-muted-foreground mt-1 break-all">{run.last_message}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+
+
       <div className="flex flex-wrap gap-2">
         <div className="relative flex-1 min-w-[220px]">
           <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />

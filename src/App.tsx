@@ -262,6 +262,15 @@ const AdminCatalogDiagnostics = lazyWithRetry(() => import("./pages/admin/AdminC
 const AdminSearchDebug = lazyWithRetry(() => import("./pages/admin/AdminSearchDebug"), "AdminSearchDebug");
 const AdminOfferDataQuality = lazyWithRetry(() => import("./pages/admin/AdminOfferDataQuality"), "AdminOfferDataQuality");
 const AdminSavingsOcr = lazyWithRetry(() => import("./pages/admin/AdminSavingsOcr"), "AdminSavingsOcr");
+const AdminAffiliatesPage = lazyWithRetry(() => import("./pages/admin/AdminAffiliatesPage"), "AdminAffiliatesPage");
+const AdminAffiliateDetailPage = lazyWithRetry(() => import("./pages/admin/AdminAffiliateDetailPage"), "AdminAffiliateDetailPage");
+const AdminAffiliateRulesPage = lazyWithRetry(() => import("./pages/admin/AdminAffiliateRulesPage"), "AdminAffiliateRulesPage");
+const AffiliateLayout = lazyWithRetry(() => import("./components/affiliate/AffiliateLayout"), "AffiliateLayout");
+const AffiliateDashboardPage = lazyWithRetry(() => import("./pages/affiliate/AffiliateDashboardPage"), "AffiliateDashboardPage");
+const AffiliateLinksPage = lazyWithRetry(() => import("./pages/affiliate/AffiliateLinksPage"), "AffiliateLinksPage");
+const AffiliateClientsPage = lazyWithRetry(() => import("./pages/affiliate/AffiliateClientsPage"), "AffiliateClientsPage");
+const AffiliateCommissionsPage = lazyWithRetry(() => import("./pages/affiliate/AffiliateCommissionsPage"), "AffiliateCommissionsPage");
+const AffiliatePayoutsPage = lazyWithRetry(() => import("./pages/affiliate/AffiliatePayoutsPage"), "AffiliatePayoutsPage");
 const AdminProductSubmissions = lazyWithRetry(() => import("./pages/admin/AdminProductSubmissions"), "AdminProductSubmissions");
 const AdminCommissions = lazyWithRetry(() => import("./pages/admin/AdminCommissions"), "AdminCommissions");
 const AdminCommissionOverridesPage = lazyWithRetry(() => import("./pages/admin/AdminCommissionOverridesPage"), "AdminCommissionOverridesPage");
@@ -631,6 +640,9 @@ const App = () => (
               <Route path="search-debug" element={<LP><AdminSearchDebug /></LP>} />
               <Route path="offer-data-quality" element={<LP><AdminOfferDataQuality /></LP>} />
               <Route path="savings-ocr" element={<LP><AdminSavingsOcr /></LP>} />
+              <Route path="apporteurs" element={<LP><AdminAffiliatesPage /></LP>} />
+              <Route path="apporteurs/regles" element={<LP><AdminAffiliateRulesPage /></LP>} />
+              <Route path="apporteurs/:id" element={<LP><AdminAffiliateDetailPage /></LP>} />
               <Route path="onboarding-cms" element={<LP><AdminOnboardingCMS /></LP>} />
               <Route path="commissions" element={<LP><AdminCommissions /></LP>} />
               <Route path="commission-overrides" element={<LP><AdminCommissionOverridesPage /></LP>} />
@@ -765,6 +777,13 @@ const App = () => (
             <Route path="/demo/seller-trust-badge" element={<Suspense fallback={<PageLoader />}><SellerTrustBadgeDemo /></Suspense>} />
             <Route path="/demo/delegues" element={<Suspense fallback={<PageLoader />}><DelegateDesignDemoPage /></Suspense>} />
             <Route path="*" element={<LP><NotFound /></LP>} />
+            <Route path="/apporteur" element={<LP><AffiliateLayout /></LP>}>
+              <Route index element={<LP><AffiliateDashboardPage /></LP>} />
+              <Route path="liens" element={<LP><AffiliateLinksPage /></LP>} />
+              <Route path="clients" element={<LP><AffiliateClientsPage /></LP>} />
+              <Route path="commissions" element={<LP><AffiliateCommissionsPage /></LP>} />
+              <Route path="payouts" element={<LP><AffiliatePayoutsPage /></LP>} />
+            </Route>
           </Routes>
           </Suspense>
           </LazyRouteBoundary>

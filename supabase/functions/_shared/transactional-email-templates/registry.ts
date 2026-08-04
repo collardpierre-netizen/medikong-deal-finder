@@ -23,6 +23,7 @@ import { template as rfqVendorInvitation } from './rfq-vendor-invitation.tsx'
 import { template as vendorPriceChallenge } from './vendor-price-challenge.tsx'
 import { template as vendorNewOrder } from './vendor-new-order.tsx'
 import { template as wholesaleSavingsReport } from './wholesale-savings-report.tsx'
+import { template as savingsAnalysisFailed } from './savings-analysis-failed.tsx'
 import { template as subscriptionExtensionApproved } from './subscription-extension-approved.tsx'
 import { template as subscriptionExtensionRejected } from './subscription-extension-rejected.tsx'
 import { template as adminVendorMarketIntelNotification } from './admin-vendor-market-intel-notification.tsx'
@@ -59,6 +60,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'vendor-invoices': vendorInvoices,
   'rfq-vendor-invitation': rfqVendorInvitation,
   'wholesale-savings-report': wholesaleSavingsReport,
+  'savings-analysis-failed': savingsAnalysisFailed,
   'order-confirmation': orderConfirmation,
   'vendor-application': vendorApplication,
   'vendor-approved': vendorApproved,

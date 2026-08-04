@@ -308,19 +308,51 @@ export default function AdminSavingsOcr() {
                     <td className="py-2 pr-3">
                       <Badge
                         variant={
-                          r.status === "completed" ? "default" : r.status === "failed" ? "destructive" : "secondary"
+                          r.status === "completed" || r.status === "done" || r.status === "sent"
+                            ? "default"
+                            : r.status === "failed"
+                              ? "destructive"
+                              : "secondary"
                         }
                       >
                         {r.status ?? "—"}
                       </Badge>
+                      {r.created_via === "admin_manual" && (
+                        <span className="ml-1 text-[10px] text-muted-foreground uppercase">manuelle</span>
+                      )}
                       {r.error_message && (
                         <p className="text-[10px] text-destructive mt-1 max-w-xs truncate" title={r.error_message}>
                           {r.error_message}
                         </p>
                       )}
                     </td>
+                    <td className="py-2 pr-3">
+                      {["ready_to_send", "done", "completed", "sent"].includes(String(r.status)) && r.email ? (
+                        <Button
+                          size="sm"
+                          variant={r.status === "sent" ? "outline" : "default"}
+                          disabled={sendingId === r.id}
+                          onClick={() => void sendToClient(r)}
+                        >
+                          {sendingId === r.id ? (
+                            <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                          ) : (
+                            <Send className="h-3.5 w-3.5 mr-1.5" />
+                          )}
+                          {r.status === "sent" ? "Renvoyer" : "Envoyer"}
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                      {r.sent_at && (
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          {new Date(r.sent_at).toLocaleString("fr-BE")}
+                        </p>
+                      )}
+                    </td>
                   </tr>
                 ))}
+
               </tbody>
             </table>
           )}

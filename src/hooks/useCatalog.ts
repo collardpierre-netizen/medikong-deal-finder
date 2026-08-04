@@ -416,7 +416,7 @@ export function useCatalogProducts(filters: CatalogFilters) {
       const attemptFetch = async (forceGlobalStats: boolean) => {
         const country = forceGlobalStats ? null : outerCountry;
         const isMasterSlug = !!filters.category && filters.category.startsWith("mk-");
-        const [categoryIds, explicitBrandIds, mfIds, inactiveCategoryIdSet] = await Promise.all([
+        const [categoryIds, explicitBrandIds, mfIds, inactiveCategoryIdSet, secondLifeKeys] = await Promise.all([
           filters.category
             ? supabase
                 .rpc("category_descendants", { root_slug: filters.category })
@@ -432,6 +432,9 @@ export function useCatalogProducts(filters: CatalogFilters) {
             ? supabase.from("manufacturers").select("id").in("slug", filters.manufacturers).then(({ data }) => data?.map(m => m.id) || null)
             : Promise.resolve(null),
           fetchInactiveCategoryIds().catch(() => new Set<string>()),
+          filters.secondLife
+            ? fetchSecondLifeKeys().catch(() => ({ eans: [], cnks: [] }))
+            : Promise.resolve(null),
         ]);
 
         let resolvedBrandIds = explicitBrandIds;

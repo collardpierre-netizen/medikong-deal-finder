@@ -177,6 +177,9 @@ interface CatalogColumns {
   isInStock: string;
 }
 
+/** UUID sentinelle : force un résultat vide sans casser la requête PostgREST. */
+const NO_MATCH_UUID = "00000000-0000-0000-0000-000000000000";
+
 const GLOBAL_COLUMNS: CatalogColumns = {
   bestPriceExclVat: "best_price_excl_vat",
   offerCount: "offer_count",

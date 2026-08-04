@@ -407,8 +407,12 @@ async function processSimulation(simulationId: string, file: File, fileKind: Fil
       .single();
 
     let totalSource = 0;
-    let totalMedikong = 0;
-    let matchedCount = 0;
+    // Totaux calculés SUR LES SEULES LIGNES COMPARABLES (prix MediKong trouvé).
+    let totalSourceMatchedOnly = 0;
+    let totalMedikongMatchedOnly = 0;
+    let matchedCount = 0; // lignes rattachées à un produit du catalogue
+    let pricedCount = 0; // lignes avec un prix MediKong réel (= comparables)
+
     const linesToInsert: any[] = [];
     const observationsToInsert: any[] = [];
     const weekObserved = startOfIsoWeek(new Date(sim?.created_at ?? new Date().toISOString()));

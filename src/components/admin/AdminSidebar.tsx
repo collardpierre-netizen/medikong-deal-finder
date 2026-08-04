@@ -1,5 +1,5 @@
-import {
-  Handshake, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Handshake } from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import logoLight from "@/assets/logo-horizontal.png";
 import { useAdminAuth } from "@/hooks/useAdminAuth";

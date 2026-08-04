@@ -92,7 +92,7 @@ export async function validateCart(
   const { data: offers, error: offerErr } = await supabase
     .from("offers")
     .select(
-      "id, vendor_id, product_id, price_excl_vat, price_incl_vat, stock_quantity, moq, mov, is_active, vat_rate, is_qogita_backed, price_stale, last_verified_at, price_source, qogita_base_price, vendors:vendor_id(name, slug, company_name, show_real_name, display_code)",
+      "id, vendor_id, product_id, price_excl_vat, price_incl_vat, stock_quantity, moq, mov, is_active, vat_rate, is_qogita_backed, price_stale, price_needs_confirmation, last_verified_at, price_source, qogita_base_price, vendors:vendor_id(name, slug, company_name, show_real_name, display_code)",
     )
     .in("id", offerIds);
 
@@ -129,9 +129,13 @@ export async function validateCart(
     // avec le mapping corrigé.
     const corruptedBasePrice =
       offer.price_source === "qogita_api" && Number(offer.qogita_base_price) === 1;
+    // 🛑 Prix d'achat anormalement bas vs les autres offres du même produit
+    // (outlier intra-produit) tant qu'un contrôle API en direct ne l'a pas validé.
+    const unconfirmedOutlier = offer.price_needs_confirmation === true;
     const isStale =
       offer.price_stale === true ||
       corruptedBasePrice ||
+      unconfirmedOutlier ||
       (offer.is_qogita_backed === true &&
         (lastVerifiedMs == null || lastVerifiedMs < staleCutoffMs));
     if (isStale) {
@@ -142,7 +146,11 @@ export async function validateCart(
         offer_id: offer.id,
         details: {
           offer_id: offer.id,
-          reason: corruptedBasePrice ? "purchase_price_mapping_invalid" : "qogita_source_unhealthy",
+          reason: corruptedBasePrice
+            ? "purchase_price_mapping_invalid"
+            : unconfirmedOutlier
+              ? "intra_product_low_outlier_unconfirmed"
+              : "qogita_source_unhealthy",
           last_verified_at: offer.last_verified_at,
         },
       });

@@ -8939,8 +8939,12 @@ export type Database = {
           mov_currency: string | null
           pack_size_override: number | null
           packaging_languages: string[] | null
+          price_confirmed_at: string | null
           price_excl_vat: number
           price_incl_vat: number
+          price_needs_confirmation: boolean
+          price_outlier_ratio: number | null
+          price_outlier_reason: string | null
           price_source: string | null
           price_source_updated_at: string | null
           price_stale: boolean
@@ -9015,8 +9019,12 @@ export type Database = {
           mov_currency?: string | null
           pack_size_override?: number | null
           packaging_languages?: string[] | null
+          price_confirmed_at?: string | null
           price_excl_vat: number
           price_incl_vat: number
+          price_needs_confirmation?: boolean
+          price_outlier_ratio?: number | null
+          price_outlier_reason?: string | null
           price_source?: string | null
           price_source_updated_at?: string | null
           price_stale?: boolean
@@ -9091,8 +9099,12 @@ export type Database = {
           mov_currency?: string | null
           pack_size_override?: number | null
           packaging_languages?: string[] | null
+          price_confirmed_at?: string | null
           price_excl_vat?: number
           price_incl_vat?: number
+          price_needs_confirmation?: boolean
+          price_outlier_ratio?: number | null
+          price_outlier_reason?: string | null
           price_source?: string | null
           price_source_updated_at?: string | null
           price_stale?: boolean
@@ -29842,8 +29854,12 @@ export type Database = {
           mov_currency: string | null
           pack_size_override: number | null
           packaging_languages: string[] | null
+          price_confirmed_at: string | null
           price_excl_vat: number
           price_incl_vat: number
+          price_needs_confirmation: boolean
+          price_outlier_ratio: number | null
+          price_outlier_reason: string | null
           price_source: string | null
           price_source_updated_at: string | null
           price_stale: boolean
@@ -30200,8 +30216,12 @@ export type Database = {
           mov_currency: string | null
           pack_size_override: number | null
           packaging_languages: string[] | null
+          price_confirmed_at: string | null
           price_excl_vat: number
           price_incl_vat: number
+          price_needs_confirmation: boolean
+          price_outlier_ratio: number | null
+          price_outlier_reason: string | null
           price_source: string | null
           price_source_updated_at: string | null
           price_stale: boolean
@@ -30999,6 +31019,13 @@ export type Database = {
           variant_count: number
         }[]
       }
+      flag_low_price_outliers: {
+        Args: { _product_ids?: string[] }
+        Returns: {
+          cleared: number
+          flagged: number
+        }[]
+      }
       force_bonus_volume: {
         Args: { _reason: string; _sub_id: string }
         Returns: undefined
@@ -31696,6 +31723,10 @@ export type Database = {
       offer_is_hidden_by_exclusivity: {
         Args: { _product_id: string; _vendor_id: string }
         Returns: boolean
+      }
+      offers_low_outlier_ratio: {
+        Args: { _base: number; _offer_id: string; _product_id: string }
+        Returns: number
       }
       order_should_show_payment_info: {
         Args: { _order_id: string }

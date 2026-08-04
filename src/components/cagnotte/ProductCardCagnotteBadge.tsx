@@ -10,18 +10,23 @@ export function ProductCardCagnotteBadge({
   eligible,
   nbEligibleOffers,
   nbTotalOffers,
+  unitPriceExclVat,
   className = "",
 }: {
   eligible?: boolean | null;
   nbEligibleOffers?: number | null;
   nbTotalOffers?: number | null;
+  /** Prix HTVA unitaire, pour exprimer la cagnotte en valeur (€). */
+  unitPriceExclVat?: number | null;
   className?: string;
 }) {
   const { data: settings } = useCagnotteSettings();
   if (!eligible) return null;
 
 
-  const pct = Math.round((settings?.rate ?? 0.02) * 100);
+  const rate = settings?.rate ?? 0.02;
+  const pct = Math.round(rate * 100);
+  const perUnit = Number(unitPriceExclVat || 0) * rate;
 
   return (
     <TooltipProvider delayDuration={150}>
@@ -35,13 +40,13 @@ export function ProductCardCagnotteBadge({
               color: "#8A5A00",
             }}
           >
-            🪙 +{pct}%
+            🪙 {perUnit > 0 ? `+${perUnit.toFixed(2)} €` : `+${pct}%`}
           </span>
         </TooltipTrigger>
         <TooltipContent>
           {nbTotalOffers && nbEligibleOffers != null && nbEligibleOffers < nbTotalOffers
-            ? `${nbEligibleOffers} offre(s) sur ${nbTotalOffers} vous font gagner ${pct}% de cagnotte fidélité.`
-            : `Ce produit vous fait gagner ${pct}% de cagnotte fidélité.`}
+            ? `${nbEligibleOffers} offre(s) sur ${nbTotalOffers} vous font gagner ${perUnit > 0 ? `${perUnit.toFixed(2)} € (${pct}%)` : `${pct}%`} de cagnotte fidélité.`
+            : `Ce produit vous fait gagner ${perUnit > 0 ? `${perUnit.toFixed(2)} € (${pct}%)` : `${pct}%`} de cagnotte fidélité.`}
         </TooltipContent>
 
       </Tooltip>

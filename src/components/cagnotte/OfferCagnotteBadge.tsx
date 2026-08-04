@@ -30,7 +30,7 @@ export function OfferCagnotteBadge({
             className={`inline-flex items-center gap-0.5 text-[11px] font-semibold px-1.5 py-0.5 rounded cursor-default ${className}`}
             style={{ background: "rgba(244,185,66,0.15)", color: "#D89620" }}
           >
-            🪙 +{pct}%
+            🪙 {perUnit > 0 ? `+${perUnit.toFixed(2)} €` : `+${pct}%`}
           </span>
         </TooltipTrigger>
         <TooltipContent>

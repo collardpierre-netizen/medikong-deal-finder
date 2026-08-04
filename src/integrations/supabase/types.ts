@@ -378,6 +378,407 @@ export type Database = {
         }
         Relationships: []
       }
+      affiliate_commission_rules: {
+        Row: {
+          affiliate_id: string | null
+          attribution_months: number
+          base_rate_bp: number
+          created_at: string
+          created_by: string | null
+          effective_from: string
+          effective_to: string | null
+          id: string
+          margin_guard_threshold_bp: number
+          margin_rate_bp: number
+          monthly_cap_cents: number | null
+          payout_threshold_cents: number
+          scope: string
+          self_purchase_allowed: boolean
+          validation_delay_days: number
+          version: number
+        }
+        Insert: {
+          affiliate_id?: string | null
+          attribution_months?: number
+          base_rate_bp?: number
+          created_at?: string
+          created_by?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          margin_guard_threshold_bp?: number
+          margin_rate_bp?: number
+          monthly_cap_cents?: number | null
+          payout_threshold_cents?: number
+          scope?: string
+          self_purchase_allowed?: boolean
+          validation_delay_days?: number
+          version: number
+        }
+        Update: {
+          affiliate_id?: string | null
+          attribution_months?: number
+          base_rate_bp?: number
+          created_at?: string
+          created_by?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          margin_guard_threshold_bp?: number
+          margin_rate_bp?: number
+          monthly_cap_cents?: number | null
+          payout_threshold_cents?: number
+          scope?: string
+          self_purchase_allowed?: boolean
+          validation_delay_days?: number
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_commission_rules_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliate_commissions: {
+        Row: {
+          adjustment_of_id: string | null
+          affiliate_id: string
+          base_amount_cents: number
+          calc_details: Json
+          cancelled_reason: string | null
+          commission_cents: number
+          created_at: string
+          id: string
+          margin_guard_hit: boolean
+          net_margin_cents: number | null
+          order_id: string
+          order_total_ht_cents: number
+          payout_invoice_id: string | null
+          referral_id: string
+          rule_id: string
+          status: string
+          updated_at: string
+          validate_after: string
+        }
+        Insert: {
+          adjustment_of_id?: string | null
+          affiliate_id: string
+          base_amount_cents: number
+          calc_details?: Json
+          cancelled_reason?: string | null
+          commission_cents: number
+          created_at?: string
+          id?: string
+          margin_guard_hit?: boolean
+          net_margin_cents?: number | null
+          order_id: string
+          order_total_ht_cents: number
+          payout_invoice_id?: string | null
+          referral_id: string
+          rule_id: string
+          status?: string
+          updated_at?: string
+          validate_after?: string
+        }
+        Update: {
+          adjustment_of_id?: string | null
+          affiliate_id?: string
+          base_amount_cents?: number
+          calc_details?: Json
+          cancelled_reason?: string | null
+          commission_cents?: number
+          created_at?: string
+          id?: string
+          margin_guard_hit?: boolean
+          net_margin_cents?: number | null
+          order_id?: string
+          order_total_ht_cents?: number
+          payout_invoice_id?: string | null
+          referral_id?: string
+          rule_id?: string
+          status?: string
+          updated_at?: string
+          validate_after?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_commissions_adjustment_of_id_fkey"
+            columns: ["adjustment_of_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_commissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_commissions_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_commissions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "affiliate_commissions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_with_forecast_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_commissions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_commissions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders_visible_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_commissions_payout_invoice_id_fkey"
+            columns: ["payout_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_payout_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_commissions_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_referrals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_commissions_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_commission_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliate_margin_cost_params: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deduct_cagnotte: boolean
+          effective_from: string
+          effective_to: string | null
+          id: string
+          payment_fee_bp: number
+          payment_fee_fixed_cents: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deduct_cagnotte?: boolean
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          payment_fee_bp?: number
+          payment_fee_fixed_cents?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deduct_cagnotte?: boolean
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          payment_fee_bp?: number
+          payment_fee_fixed_cents?: number
+        }
+        Relationships: []
+      }
+      affiliate_payout_invoices: {
+        Row: {
+          affiliate_id: string
+          created_at: string
+          id: string
+          invoice_number: string | null
+          issued_at: string | null
+          paid_at: string | null
+          pdf_path: string | null
+          period_end: string
+          period_start: string
+          status: string
+          total_cents: number
+          vat_mode: string
+        }
+        Insert: {
+          affiliate_id: string
+          created_at?: string
+          id?: string
+          invoice_number?: string | null
+          issued_at?: string | null
+          paid_at?: string | null
+          pdf_path?: string | null
+          period_end: string
+          period_start: string
+          status?: string
+          total_cents: number
+          vat_mode?: string
+        }
+        Update: {
+          affiliate_id?: string
+          created_at?: string
+          id?: string
+          invoice_number?: string | null
+          issued_at?: string | null
+          paid_at?: string | null
+          pdf_path?: string | null
+          period_end?: string
+          period_start?: string
+          status?: string
+          total_cents?: number
+          vat_mode?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_payout_invoices_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliate_referrals: {
+        Row: {
+          affiliate_id: string
+          attributed_at: string
+          campaign_id: string | null
+          code_id: string | null
+          created_at: string
+          first_order_at: string | null
+          id: string
+          status: string
+          user_id: string
+          window_expires_at: string | null
+        }
+        Insert: {
+          affiliate_id: string
+          attributed_at?: string
+          campaign_id?: string | null
+          code_id?: string | null
+          created_at?: string
+          first_order_at?: string | null
+          id?: string
+          status?: string
+          user_id: string
+          window_expires_at?: string | null
+        }
+        Update: {
+          affiliate_id?: string
+          attributed_at?: string
+          campaign_id?: string | null
+          code_id?: string | null
+          created_at?: string
+          first_order_at?: string | null
+          id?: string
+          status?: string
+          user_id?: string
+          window_expires_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_referrals_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_referrals_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "tracking_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_referrals_code_id_fkey"
+            columns: ["code_id"]
+            isOneToOne: false
+            referencedRelation: "activation_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliates: {
+        Row: {
+          affiliate_code: string
+          company_name: string | null
+          created_at: string
+          created_by: string | null
+          default_campaign_id: string | null
+          display_name: string
+          email: string
+          iban: string | null
+          id: string
+          notes_admin: string | null
+          phone: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+          vat_number: string | null
+        }
+        Insert: {
+          affiliate_code: string
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          default_campaign_id?: string | null
+          display_name: string
+          email: string
+          iban?: string | null
+          id?: string
+          notes_admin?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          vat_number?: string | null
+        }
+        Update: {
+          affiliate_code?: string
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          default_campaign_id?: string | null
+          display_name?: string
+          email?: string
+          iban?: string | null
+          id?: string
+          notes_admin?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          vat_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliates_default_campaign_id_fkey"
+            columns: ["default_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "tracking_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_keys: {
         Row: {
           created_at: string
@@ -29893,6 +30294,139 @@ export type Database = {
           total_incl_vat: number
         }[]
       }
+      affiliate_admin_kpis: { Args: never; Returns: Json }
+      affiliate_admin_list: {
+        Args: never
+        Returns: {
+          affiliate_code: string
+          commissions_paid_cents: number
+          commissions_pending_cents: number
+          commissions_validated_cents: number
+          company_name: string
+          display_name: string
+          email: string
+          id: string
+          last_payout_at: string
+          referrals_active: number
+          referrals_total: number
+          revenue_ht_cents: number
+          status: string
+          user_id: string
+        }[]
+      }
+      affiliate_admin_mark_payout_paid: {
+        Args: { _invoice_id: string }
+        Returns: undefined
+      }
+      affiliate_admin_resolve_on_hold: {
+        Args: { _commission_id: string; _net_margin_cents: number }
+        Returns: Json
+      }
+      affiliate_calc_commission: {
+        Args: {
+          _base_rate_bp: number
+          _margin_guard_threshold_bp: number
+          _margin_rate_bp: number
+          _net_margin_cents: number
+          _order_total_ht_cents: number
+        }
+        Returns: Json
+      }
+      affiliate_compute_order_net_margin_cents: {
+        Args: { _order_id: string }
+        Returns: number
+      }
+      affiliate_current_rule: { Args: never; Returns: Json }
+      affiliate_dashboard_stats: { Args: never; Returns: Json }
+      affiliate_generate_monthly_payouts: {
+        Args: { _period_end?: string; _period_start?: string }
+        Returns: Json
+      }
+      affiliate_my_commissions: {
+        Args: never
+        Returns: {
+          calc_details: Json
+          commission_cents: number
+          id: string
+          invoice_number: string
+          margin_guard_hit: boolean
+          order_date: string
+          order_id: string
+          order_total_ht_cents: number
+          pseudo: string
+          status: string
+          validate_after: string
+        }[]
+      }
+      affiliate_my_referrals: {
+        Args: never
+        Returns: {
+          attributed_at: string
+          first_order_at: string
+          orders_count: number
+          pseudo: string
+          revenue_ht_cents: number
+          status: string
+          window_expires_at: string
+        }[]
+      }
+      affiliate_process_order_commission: {
+        Args: { _order_id: string }
+        Returns: Json
+      }
+      affiliate_publish_rule: {
+        Args: {
+          _affiliate_id: string
+          _attribution_months: number
+          _base_rate_bp: number
+          _margin_guard_threshold_bp: number
+          _margin_rate_bp: number
+          _monthly_cap_cents?: number
+          _payout_threshold_cents: number
+          _scope: string
+          _self_purchase_allowed?: boolean
+          _validation_delay_days: number
+        }
+        Returns: string
+      }
+      affiliate_resolve_rule: {
+        Args: { _affiliate_id: string }
+        Returns: {
+          affiliate_id: string | null
+          attribution_months: number
+          base_rate_bp: number
+          created_at: string
+          created_by: string | null
+          effective_from: string
+          effective_to: string | null
+          id: string
+          margin_guard_threshold_bp: number
+          margin_rate_bp: number
+          monthly_cap_cents: number | null
+          payout_threshold_cents: number
+          scope: string
+          self_purchase_allowed: boolean
+          validation_delay_days: number
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "affiliate_commission_rules"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      affiliate_simulate_commission: {
+        Args: {
+          _base_rate_bp?: number
+          _margin_guard_threshold_bp?: number
+          _margin_rate_bp?: number
+          _net_margin_cents: number
+          _order_total_ht_cents: number
+        }
+        Returns: Json
+      }
+      affiliate_validate_due_commissions: { Args: never; Returns: number }
       apply_category_aliases: {
         Args: never
         Returns: {
@@ -30144,6 +30678,7 @@ export type Database = {
       }
       current_active_account_id: { Args: never; Returns: string }
       current_active_account_kind: { Args: never; Returns: string }
+      current_affiliate_id: { Args: never; Returns: string }
       current_buyer_id: { Args: never; Returns: string }
       current_buyer_profile_id: { Args: never; Returns: string }
       current_guarantee_version_id: { Args: never; Returns: string }

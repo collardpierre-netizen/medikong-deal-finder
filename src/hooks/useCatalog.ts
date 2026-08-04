@@ -273,6 +273,13 @@ function applyCatalogSort(query: any, sort: string, columns: CatalogColumns = GL
       return query.order("created_at", { ascending: false });
     case "stock_desc":
       return query.order(columns.totalStock, { ascending: false });
+    // Tris « seconde vie » : la donnée ReStock vit dans une autre table, le
+    // classement final est appliqué côté client sur la page courante
+    // (`sortBySecondLife`). Ici on fixe seulement un ordre serveur stable.
+    case "second_life":
+      return query.order(columns.offerCount, { ascending: false });
+    case "best_saving":
+      return query.order(columns.bestPriceExclVat, { ascending: false, nullsFirst: false });
     default:
       return query.order(columns.offerCount, { ascending: false });
   }

@@ -10,7 +10,7 @@ import { CatalogPagination } from "@/components/catalog/CatalogPagination";
 import { ActiveFilters } from "@/components/catalog/ActiveFilters";
 // MasterTaxonomyBar retiré : navigation par catégorie pilotée par la sidebar (vague 2 prévue pour un éventuel bandeau d'univers).
 import { useCatalogFilters, useCatalogProducts, useCatalogBrands } from "@/hooks/useCatalog";
-import { RestockAvailabilityContext, useRestockAvailabilityMap } from "@/hooks/useRestockAvailability";
+import { RestockAvailabilityContext, useRestockAvailabilityMap, sortBySecondLife } from "@/hooks/useRestockAvailability";
 import { useCatalogViewMode } from "@/hooks/useCatalogViewMode";
 import { Loader2, SlidersHorizontal, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -51,6 +51,14 @@ export default function CataloguePage() {
   const { view, setView } = useCatalogViewMode();
   // Disponibilité « seconde vie » (ReStock) pour la page courante — 1 requête.
   const secondLifeMap = useRestockAvailabilityMap(products);
+  // Les tris seconde vie sont appliqués sur la page courante (donnée hors SQL).
+  const displayProducts = useMemo(
+    () =>
+      filters.sort === "second_life" || filters.sort === "best_saving"
+        ? sortBySecondLife(products, secondLifeMap, filters.sort)
+        : products,
+    [products, secondLifeMap, filters.sort],
+  );
   const [mobileFilters, setMobileFilters] = useState(false);
 
   // Collect category IDs + brand IDs from results for contextual sidebar filtering.
@@ -205,7 +213,7 @@ export default function CataloguePage() {
                 </button>
               </div>
             ) : view === "trivago" ? (
-              <SearchTrivagoView products={products.map(p => ({
+              <SearchTrivagoView products={displayProducts.map(p => ({
                 id: p.id, slug: p.slug, name: p.name, brand: p.brand_name || "",
                 gtin: p.gtin || "", cnk: p.cnk_code || "", ean: p.gtin || "",
                 price: p.best_price_excl_vat || 0, pub: p.best_price_incl_vat || 0,
@@ -217,7 +225,7 @@ export default function CataloguePage() {
             ) : (
               <RestockAvailabilityContext.Provider value={secondLifeMap}>
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-                  {products.map((p, i) => (
+                  {displayProducts.map((p, i) => (
                     <CatalogProductCard key={p.id} product={p} index={i} view="grid" />
                   ))}
                 </div>

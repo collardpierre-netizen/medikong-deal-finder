@@ -338,9 +338,10 @@ export default function EconomiesPage() {
                       <input required type="email" placeholder="Email professionnel *"
                         value={identity.email} onChange={(e) => setIdentity({ ...identity, email: e.target.value })}
                         className="border border-mk-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-mk-blue" />
-                      <input type="text" placeholder="Nom de la pharmacie"
+                      <input required type="text" placeholder="Nom de la pharmacie *" minLength={2}
                         value={identity.pharmacy_name} onChange={(e) => setIdentity({ ...identity, pharmacy_name: e.target.value })}
                         className="border border-mk-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-mk-blue" />
+
                       <input type="text" placeholder="Ville"
                         value={identity.city} onChange={(e) => setIdentity({ ...identity, city: e.target.value })}
                         className="border border-mk-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-mk-blue" />

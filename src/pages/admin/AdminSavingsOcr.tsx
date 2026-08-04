@@ -170,6 +170,9 @@ export default function AdminSavingsOcr() {
           )}
         </CardContent>
       </Card>
+
+      <AdminSavingsByPharmacy />
     </div>
+
   );
 }

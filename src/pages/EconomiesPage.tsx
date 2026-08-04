@@ -15,6 +15,12 @@ interface SimulationStatus {
   total_lines: number | null;
   matched_lines: number | null;
   match_rate: number | null;
+  catalog_match_rate?: number | null;
+  ocr_extraction_rate?: number | null;
+  total_lines_count?: number | null;
+  matched_lines_count?: number | null;
+  total_source_matched_only?: number | null;
+  total_medikong_matched_only?: number | null;
   source_total_excl_vat: number | null;
   medikong_total_excl_vat: number | null;
   savings_amount: number | null;
@@ -22,6 +28,7 @@ interface SimulationStatus {
   error_message: string | null;
   email_sent_at: string | null;
 }
+
 
 interface SimulationLine {
   id: string;

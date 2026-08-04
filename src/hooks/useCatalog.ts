@@ -285,6 +285,8 @@ export interface CatalogFilters {
   priceMax?: number;
   inStock?: boolean;
   hasOffers?: boolean;
+  /** Ne garder que les produits ayant aussi un lot ReStock « seconde vie » publié. */
+  secondLife?: boolean;
   sort: string;
   page: number;
   perPage: number;

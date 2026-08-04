@@ -371,7 +371,7 @@ export default function EconomiesPage() {
                     <div className="text-center py-10">
                       <Loader2 className="mx-auto mb-3 animate-spin text-mk-blue" size={32} />
                       <div className="font-semibold text-mk-navy mb-1">Analyse en cours…</div>
-                      <div className="text-sm text-mk-text/60">OCR du bon de commande, matching catalogue, calcul des économies. ~30 à 60 secondes.</div>
+                      <div className="text-sm text-mk-text/60">OCR du bon de commande, matching catalogue, calcul des économies. Comptez 1 à 3 minutes selon le nombre de lignes — vous pouvez aussi fermer cette page, le rapport vous sera envoyé par email.</div>
                     </div>
                   )}
 

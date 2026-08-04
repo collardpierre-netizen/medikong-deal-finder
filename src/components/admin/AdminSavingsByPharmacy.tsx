@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, Building2 } from "lucide-react";
+import { Loader2, RefreshCw, Building2, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import SavingsCategoryPie, { type SavingsCategoryRow } from "@/components/savings/SavingsCategoryPie";
+import SavingsTopProducts, { type SavingsTopProduct } from "@/components/savings/SavingsTopProducts";
+
 
 type Row = {
   group_key: string;

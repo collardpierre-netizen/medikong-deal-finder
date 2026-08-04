@@ -394,16 +394,31 @@ export function CatalogSidebar({ filters, setFilter, clearAll, resultCategoryIds
       {/* Has offers filter */}
       <div>
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Offres</h4>
-        <label className="flex items-center gap-2 text-sm cursor-pointer">
-          <input
-            type="checkbox"
-            checked={!!filters.hasOffers}
-            onChange={() => setFilter("has_offers", filters.hasOffers ? undefined : "1")}
-            className="rounded border-border"
-          />
-          <span className="text-foreground">Avec offres actives uniquement</span>
-        </label>
+        <div className="space-y-1.5">
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={!!filters.hasOffers}
+              onChange={() => setFilter("has_offers", filters.hasOffers ? undefined : "1")}
+              className="rounded border-border"
+            />
+            <span className="text-foreground">Avec offres actives uniquement</span>
+          </label>
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={!!filters.secondLife}
+              onChange={() => setFilter("second_life", filters.secondLife ? undefined : "1")}
+              className="rounded border-border"
+            />
+            <span className="text-foreground">
+              Aussi dispo en seconde vie
+              <span className="block text-[11px] text-muted-foreground">Lots ReStock : courte péremption / emballage abîmé</span>
+            </span>
+          </label>
+        </div>
       </div>
+
 
       {/* Manufacturers */}
       <div>

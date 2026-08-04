@@ -386,7 +386,14 @@ async function getMedikongMinPrice(
 }
 
 
-async function processSimulation(simulationId: string, file: File, fileKind: FileKind, supplier: Supplier) {
+async function processSimulation(
+  simulationId: string,
+  file: File,
+  fileKind: FileKind,
+  supplier: Supplier,
+  createdVia: CreatedVia = "public_tunnel",
+) {
+
   const supabase = getAdminClient();
   console.log("[pipeline] start", { simulationId, fileKind, supplier, mime: file.type, size: file.size });
   try {

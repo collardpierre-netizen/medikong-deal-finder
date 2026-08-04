@@ -60,6 +60,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'vendor-invoices': vendorInvoices,
   'rfq-vendor-invitation': rfqVendorInvitation,
   'wholesale-savings-report': wholesaleSavingsReport,
+  'savings-analysis-failed': savingsAnalysisFailed,
   'order-confirmation': orderConfirmation,
   'vendor-application': vendorApplication,
   'vendor-approved': vendorApproved,

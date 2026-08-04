@@ -336,29 +336,31 @@ async function getMedikongMinPrice(
   supabase: ReturnType<typeof getAdminClient>,
   productId: string,
 ): Promise<{ price: number | null; supplierCount: number }> {
-  // Lecture via la vue effective_offer_prices_v (si existe), sinon via offers directement
+  // Lecture via la vue effective_offer_prices_v (prix en EUROS HTVA)
   const { data, error } = await supabase
     .from("effective_offer_prices_v")
-    .select("effective_price_cents, vendor_id")
+    .select("effective_price_excl_vat, vendor_id")
     .eq("product_id", productId);
   if (!error && data && data.length > 0) {
-    const prices = data.map((r) => Number(r.effective_price_cents)).filter((n) => n > 0);
+    const prices = data.map((r) => Number(r.effective_price_excl_vat)).filter((n) => n > 0);
     if (prices.length === 0) return { price: null, supplierCount: 0 };
-    const minCents = Math.min(...prices);
     const distinctVendors = new Set(data.map((r) => r.vendor_id)).size;
-    return { price: minCents / 100, supplierCount: distinctVendors };
+    return { price: Math.min(...prices), supplierCount: distinctVendors };
   }
-  // Fallback offers direct
-  const { data: offers } = await supabase
+  if (error) console.error("[price] effective_offer_prices_v error", error);
+  // Fallback offers direct (price_excl_vat en euros)
+  const { data: offers, error: offErr } = await supabase
     .from("offers")
-    .select("price_ht_cents, vendor_id")
+    .select("price_excl_vat, vendor_id")
     .eq("product_id", productId)
     .eq("is_active", true);
+  if (offErr) console.error("[price] offers fallback error", offErr);
   if (!offers || offers.length === 0) return { price: null, supplierCount: 0 };
-  const prices = offers.map((o) => Number(o.price_ht_cents)).filter((n) => n > 0);
+  const prices = offers.map((o) => Number(o.price_excl_vat)).filter((n) => n > 0);
   if (prices.length === 0) return { price: null, supplierCount: 0 };
-  return { price: Math.min(...prices) / 100, supplierCount: new Set(offers.map((o) => o.vendor_id)).size };
+  return { price: Math.min(...prices), supplierCount: new Set(offers.map((o) => o.vendor_id)).size };
 }
+
 
 async function processSimulation(simulationId: string, file: File, fileKind: FileKind, supplier: Supplier) {
   const supabase = getAdminClient();
@@ -405,8 +407,12 @@ async function processSimulation(simulationId: string, file: File, fileKind: Fil
       .single();
 
     let totalSource = 0;
-    let totalMedikong = 0;
-    let matchedCount = 0;
+    // Totaux calculés SUR LES SEULES LIGNES COMPARABLES (prix MediKong trouvé).
+    let totalSourceMatchedOnly = 0;
+    let totalMedikongMatchedOnly = 0;
+    let matchedCount = 0; // lignes rattachées à un produit du catalogue
+    let pricedCount = 0; // lignes avec un prix MediKong réel (= comparables)
+
     const linesToInsert: any[] = [];
     const observationsToInsert: any[] = [];
     const weekObserved = startOfIsoWeek(new Date(sim?.created_at ?? new Date().toISOString()));
@@ -501,43 +507,60 @@ async function processSimulation(simulationId: string, file: File, fileKind: Fil
       }
     }
 
-    // Batch prix MediKong pour tous les product_id matchés
+    // Batch prix MediKong pour tous les product_id matchés (chunks pour éviter les URL trop longues)
     const matchedIds = Array.from(
       new Set(initialMatches.map((m) => m.product_id).filter(Boolean) as string[]),
     );
     const priceMap = new Map<string, { price: number; supplierCount: number }>();
     if (matchedIds.length > 0) {
-      const { data, error } = await supabase
-        .from("effective_offer_prices_v")
-        .select("product_id, effective_price_cents, vendor_id")
-        .in("product_id", matchedIds);
-      if (!error && data) {
-        const grouped = new Map<string, { prices: number[]; vendors: Set<string> }>();
-        for (const r of data) {
+      const grouped = new Map<string, { prices: number[]; vendors: Set<string> }>();
+      const CHUNK = 150;
+      for (let i = 0; i < matchedIds.length; i += CHUNK) {
+        const chunk = matchedIds.slice(i, i + CHUNK);
+        const { data, error } = await supabase
+          .from("effective_offer_prices_v")
+          .select("product_id, effective_price_excl_vat, vendor_id")
+          .in("product_id", chunk);
+        if (error) {
+          console.error("[pipeline] price batch error", error);
+          continue;
+        }
+        for (const r of data ?? []) {
           const pid = String(r.product_id);
           if (!grouped.has(pid)) grouped.set(pid, { prices: [], vendors: new Set() });
           const g = grouped.get(pid)!;
-          const c = Number(r.effective_price_cents);
-          if (c > 0) g.prices.push(c);
+          const p = Number(r.effective_price_excl_vat);
+          if (p > 0) g.prices.push(p);
           if (r.vendor_id) g.vendors.add(String(r.vendor_id));
         }
-        for (const [pid, g] of grouped) {
-          if (g.prices.length > 0)
-            priceMap.set(pid, { price: Math.min(...g.prices) / 100, supplierCount: g.vendors.size });
-        }
       }
+      for (const [pid, g] of grouped) {
+        if (g.prices.length > 0)
+          priceMap.set(pid, { price: Math.min(...g.prices), supplierCount: g.vendors.size });
+      }
+      console.log("[pipeline] prices resolved", { matchedIds: matchedIds.length, priced: priceMap.size });
     }
+
+    let ocrReadableLines = 0;
 
     for (let idx = 0; idx < extracted.lines.length; idx++) {
       const line = extracted.lines[idx];
       const match = initialMatches[idx];
-      const lineTotal = (line.unit_price_excl_vat || 0) * (line.quantity || 1);
+      const qty = line.quantity || 1;
+      const lineTotal = (line.unit_price_excl_vat || 0) * qty;
       totalSource += lineTotal;
+      if (
+        (line.cnk || line.ean || line.proprietary_code || line.normalized_name_guess) &&
+        (line.unit_price_excl_vat || 0) > 0
+      ) {
+        ocrReadableLines++;
+      }
 
       let mkPrice: number | null = null;
       let supplierCount = 0;
       let lineSavings: number | null = null;
       let lineSavingsPct: number | null = null;
+      let lineStatus: "cheaper" | "more_expensive" | "equal" | "not_matched" = "not_matched";
 
       if (match.product_id) {
         matchedCount++;
@@ -547,11 +570,18 @@ async function processSimulation(simulationId: string, file: File, fileKind: Fil
           supplierCount = p.supplierCount;
         }
         if (mkPrice !== null && line.unit_price_excl_vat > 0) {
-          lineSavings = (line.unit_price_excl_vat - mkPrice) * (line.quantity || 1);
+          // Ligne comparable : elle seule entre dans les totaux comparés.
+          pricedCount++;
+          lineSavings = (line.unit_price_excl_vat - mkPrice) * qty;
           lineSavingsPct = ((line.unit_price_excl_vat - mkPrice) / line.unit_price_excl_vat) * 100;
-          totalMedikong += mkPrice * (line.quantity || 1);
+          totalSourceMatchedOnly += lineTotal;
+          totalMedikongMatchedOnly += mkPrice * qty;
+          const delta = line.unit_price_excl_vat - mkPrice;
+          lineStatus = Math.abs(delta) <= 0.01 ? "equal" : delta > 0 ? "cheaper" : "more_expensive";
         } else {
-          totalMedikong += lineTotal; // fallback: pas de meilleure offre
+          // Produit reconnu mais aucun prix MediKong exploitable → non comparable.
+          mkPrice = null;
+          lineStatus = "not_matched";
         }
         // Observation marché
         observationsToInsert.push({
@@ -563,8 +593,6 @@ async function processSimulation(simulationId: string, file: File, fileKind: Fil
           region: sim?.region ?? null,
           pharmacy_size_bucket: pharmacyBucket(totalSource),
         });
-      } else {
-        totalMedikong += lineTotal;
       }
 
       linesToInsert.push({
@@ -581,10 +609,12 @@ async function processSimulation(simulationId: string, file: File, fileKind: Fil
         matched_product_id: match.product_id,
         match_confidence: match.confidence,
         match_method: match.method,
+        // JAMAIS le prix grossiste par défaut : null si pas de prix MediKong réel.
         medikong_min_price_excl_vat: mkPrice,
         medikong_supplier_count: supplierCount,
         line_savings: lineSavings,
         line_savings_pct: lineSavingsPct,
+        line_status: lineStatus,
       });
     }
 
@@ -597,31 +627,52 @@ async function processSimulation(simulationId: string, file: File, fileKind: Fil
     }
 
     const totalLines = extracted.lines.length;
-    const matchRate = totalLines > 0 ? matchedCount / totalLines : 0;
-    const savingsAmount = totalSource - totalMedikong;
-    const savingsPct = totalSource > 0 ? (savingsAmount / totalSource) * 100 : 0;
-    const finalStatus = matchedCount === 0 ? "no_match" : "done";
+    // Taux de correspondance catalogue = lignes réellement comparables / lignes totales
+    const catalogMatchRate = totalLines > 0 ? (pricedCount / totalLines) * 100 : 0;
+    const ocrExtractionRate = totalLines > 0 ? (ocrReadableLines / totalLines) * 100 : 0;
+    const savingsAmount = totalSourceMatchedOnly - totalMedikongMatchedOnly;
+    const savingsPct =
+      totalSourceMatchedOnly > 0 ? (savingsAmount / totalSourceMatchedOnly) * 100 : 0;
+    const finalStatus = pricedCount === 0 ? "no_match" : "done";
 
     await supabase
       .from("savings_simulations")
       .update({
         status: finalStatus,
         total_lines: totalLines,
-        matched_lines: matchedCount,
-        match_rate: Number(matchRate.toFixed(3)),
+        total_lines_count: totalLines,
+        matched_lines: pricedCount,
+        matched_lines_count: pricedCount,
+        match_rate: Number((catalogMatchRate / 100).toFixed(3)),
+        catalog_match_rate: Number(catalogMatchRate.toFixed(2)),
+        ocr_extraction_rate: Number(ocrExtractionRate.toFixed(2)),
         source_total_excl_vat: Number(totalSource.toFixed(2)),
-        medikong_total_excl_vat: Number(totalMedikong.toFixed(2)),
+        // Totaux comparés = lignes comparables uniquement
+        total_source_matched_only: Number(totalSourceMatchedOnly.toFixed(2)),
+        total_medikong_matched_only: Number(totalMedikongMatchedOnly.toFixed(2)),
+        medikong_total_excl_vat: Number(totalMedikongMatchedOnly.toFixed(2)),
         savings_amount: Number(savingsAmount.toFixed(2)),
         savings_pct: Number(savingsPct.toFixed(2)),
+        failure_reason: null,
       })
       .eq("id", simulationId);
+    console.log("[pipeline] done", {
+      simulationId,
+      totalLines,
+      pricedCount,
+      matchedCount,
+      savingsAmount,
+    });
+
   } catch (err) {
     console.error("[process-savings-upload] error", err);
     await supabase
       .from("savings_simulations")
       .update({
         status: "failed",
+        failure_reason: "pipeline_error",
         error_message: err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500),
+
       })
       .eq("id", simulationId);
   }
@@ -640,7 +691,7 @@ Deno.serve(async (req) => {
       const { data, error } = await supabase
         .from("savings_simulations")
         .select(
-          "id,status,total_lines,matched_lines,match_rate,source_total_excl_vat,medikong_total_excl_vat,savings_amount,savings_pct,error_message,report_path,email_sent_at",
+          "id,status,total_lines,matched_lines,match_rate,catalog_match_rate,ocr_extraction_rate,total_lines_count,matched_lines_count,total_source_matched_only,total_medikong_matched_only,source_total_excl_vat,medikong_total_excl_vat,savings_amount,savings_pct,error_message,failure_reason,report_path,email_sent_at",
         )
         .eq("id", id)
         .maybeSingle();
@@ -687,6 +738,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: "consent_required" }, { status: 400, headers: corsHeaders });
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255)
       return Response.json({ error: "invalid_email" }, { status: 400, headers: corsHeaders });
+    if (!pharmacyName || pharmacyName.length < 2 || pharmacyName.length > 200)
+      return Response.json({ error: "pharmacy_name_required" }, { status: 400, headers: corsHeaders });
+
+
 
     const fileKind = detectFileKind(file.type);
     if (!fileKind)
@@ -734,6 +789,8 @@ Deno.serve(async (req) => {
         source_supplier: supplier,
         source_file_type: fileKind,
         status: "processing",
+        processing_timeout_at: new Date(Date.now() + 3 * 60_000).toISOString(),
+
         ip_address: ip !== "unknown" ? ip : null,
         user_agent: req.headers.get("user-agent") || null,
       })

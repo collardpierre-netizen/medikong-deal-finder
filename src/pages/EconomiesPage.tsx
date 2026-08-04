@@ -15,6 +15,12 @@ interface SimulationStatus {
   total_lines: number | null;
   matched_lines: number | null;
   match_rate: number | null;
+  catalog_match_rate?: number | null;
+  ocr_extraction_rate?: number | null;
+  total_lines_count?: number | null;
+  matched_lines_count?: number | null;
+  total_source_matched_only?: number | null;
+  total_medikong_matched_only?: number | null;
   source_total_excl_vat: number | null;
   medikong_total_excl_vat: number | null;
   savings_amount: number | null;
@@ -22,6 +28,7 @@ interface SimulationStatus {
   error_message: string | null;
   email_sent_at: string | null;
 }
+
 
 interface SimulationLine {
   id: string;
@@ -38,6 +45,8 @@ interface SimulationLine {
   medikong_supplier_count: number | null;
   line_savings: number | null;
   line_savings_pct: number | null;
+  line_status?: "cheaper" | "more_expensive" | "equal" | "not_matched" | null;
+
   matched_product?: { name: string | null; slug: string | null } | null;
 }
 
@@ -143,6 +152,8 @@ export default function EconomiesPage() {
         match_method: r.match_method,
         match_confidence: r.match_confidence,
         medikong_min_price_excl_vat: r.medikong_min_price_excl_vat,
+        line_status: r.line_status,
+
         medikong_supplier_count: r.medikong_supplier_count,
         line_savings: r.line_savings,
         line_savings_pct: r.line_savings_pct,
@@ -174,6 +185,9 @@ export default function EconomiesPage() {
     if (!file) return toast.error("Veuillez ajouter votre bon de commande.");
     if (!consent) return toast.error("Vous devez accepter le traitement de vos données.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identity.email)) return toast.error("Email invalide.");
+    if (identity.pharmacy_name.trim().length < 2)
+      return toast.error("Veuillez indiquer le nom de votre pharmacie.");
+
 
     setSubmitting(true);
     try {
@@ -296,7 +310,7 @@ export default function EconomiesPage() {
                       <button type="button" onClick={() => { setFile(null); setStep(2); }} className="text-xs text-mk-blue hover:underline">changer</button>
                     </div>
                   )}
-                  {user && !editIdentity ? (
+                  {user && !editIdentity && identity.pharmacy_name.trim().length >= 2 ? (
                     <div className="flex items-start gap-3 bg-mk-alt/30 border border-mk-border rounded-lg p-3">
                       <UserCircle2 size={18} className="text-mk-blue mt-0.5 shrink-0" />
                       <div className="flex-1 min-w-0 text-sm">
@@ -324,9 +338,10 @@ export default function EconomiesPage() {
                       <input required type="email" placeholder="Email professionnel *"
                         value={identity.email} onChange={(e) => setIdentity({ ...identity, email: e.target.value })}
                         className="border border-mk-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-mk-blue" />
-                      <input type="text" placeholder="Nom de la pharmacie"
+                      <input required type="text" placeholder="Nom de la pharmacie *" minLength={2}
                         value={identity.pharmacy_name} onChange={(e) => setIdentity({ ...identity, pharmacy_name: e.target.value })}
                         className="border border-mk-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-mk-blue" />
+
                       <input type="text" placeholder="Ville"
                         value={identity.city} onChange={(e) => setIdentity({ ...identity, city: e.target.value })}
                         className="border border-mk-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-mk-blue" />
@@ -342,7 +357,7 @@ export default function EconomiesPage() {
                       et conserve une version anonymisée des prix observés (RGPD). Je peux supprimer ma simulation à tout moment.
                     </span>
                   </label>
-                  <button type="submit" disabled={submitting}
+                  <button type="submit" disabled={submitting || identity.pharmacy_name.trim().length < 2 || !consent}
                     className="w-full bg-mk-blue text-white rounded-lg px-4 py-3 text-sm font-semibold hover:bg-mk-blue/90 disabled:opacity-50 transition">
                     {submitting ? <Loader2 className="inline animate-spin mr-2" size={14} /> : <Sparkles className="inline mr-2" size={14} />}
                     {submitting ? "Envoi en cours…" : "Calculer mes économies"}
@@ -356,7 +371,7 @@ export default function EconomiesPage() {
                     <div className="text-center py-10">
                       <Loader2 className="mx-auto mb-3 animate-spin text-mk-blue" size={32} />
                       <div className="font-semibold text-mk-navy mb-1">Analyse en cours…</div>
-                      <div className="text-sm text-mk-text/60">OCR du bon de commande, matching catalogue, calcul des économies. ~30 à 60 secondes.</div>
+                      <div className="text-sm text-mk-text/60">OCR du bon de commande, matching catalogue, calcul des économies. Comptez 1 à 3 minutes selon le nombre de lignes — vous pouvez aussi fermer cette page, le rapport vous sera envoyé par email.</div>
                     </div>
                   )}
 
@@ -371,24 +386,49 @@ export default function EconomiesPage() {
                         <div className="text-4xl font-bold mb-1">{fmtMoney(sim.savings_amount)}</div>
                         <div className="text-sm opacity-90">soit {sim.savings_pct?.toFixed(1) ?? "—"} % de moins</div>
                       </div>
-                      <dl className="grid grid-cols-2 gap-3 text-sm mb-6">
-                        <div className="bg-mk-alt/30 rounded p-3">
-                          <dt className="text-xs text-mk-text/60">Lignes analysées</dt>
-                          <dd className="font-semibold text-mk-navy">{sim.matched_lines ?? 0} / {sim.total_lines ?? 0}</dd>
-                        </div>
-                        <div className="bg-mk-alt/30 rounded p-3">
-                          <dt className="text-xs text-mk-text/60">Taux de correspondance</dt>
-                          <dd className="font-semibold text-mk-navy">{((sim.match_rate ?? 0) * 100).toFixed(0)} %</dd>
-                        </div>
-                        <div className="bg-mk-alt/30 rounded p-3">
-                          <dt className="text-xs text-mk-text/60">Total grossiste</dt>
-                          <dd className="font-semibold text-mk-navy">{fmtMoney(sim.source_total_excl_vat)}</dd>
-                        </div>
-                        <div className="bg-mk-alt/30 rounded p-3">
-                          <dt className="text-xs text-mk-text/60">Total MediKong</dt>
-                          <dd className="font-semibold text-mk-navy">{fmtMoney(sim.medikong_total_excl_vat)}</dd>
-                        </div>
-                      </dl>
+                      {(() => {
+                        const totalLines = sim.total_lines_count ?? sim.total_lines ?? 0;
+                        const comparable = sim.matched_lines_count ?? sim.matched_lines ?? 0;
+                        const matchPct =
+                          sim.catalog_match_rate ?? (totalLines > 0 ? (comparable / totalLines) * 100 : 0);
+                        const totalSource = sim.total_source_matched_only ?? sim.source_total_excl_vat;
+                        const totalMk = sim.total_medikong_matched_only ?? sim.medikong_total_excl_vat;
+                        return (
+                          <>
+                            <dl className="grid grid-cols-2 gap-3 text-sm mb-2">
+                              <div className="bg-mk-alt/30 rounded p-3">
+                                <dt className="text-xs text-mk-text/60">Lignes comparables au catalogue MediKong</dt>
+                                <dd className="font-semibold text-mk-navy">{comparable} / {totalLines}</dd>
+                              </div>
+                              <div className="bg-mk-alt/30 rounded p-3">
+                                <dt className="text-xs text-mk-text/60">Taux de correspondance catalogue</dt>
+                                <dd className="font-semibold text-mk-navy">{matchPct.toFixed(0)} %</dd>
+                              </div>
+                              <div className="bg-mk-alt/30 rounded p-3">
+                                <dt className="text-xs text-mk-text/60">Total grossiste (lignes comparables)</dt>
+                                <dd className="font-semibold text-mk-navy">{fmtMoney(totalSource)}</dd>
+                              </div>
+                              <div className="bg-mk-alt/30 rounded p-3">
+                                <dt className="text-xs text-mk-text/60">Total MediKong (lignes comparables)</dt>
+                                <dd className="font-semibold text-mk-navy">{fmtMoney(totalMk)}</dd>
+                              </div>
+                            </dl>
+                            <p className="text-xs text-mk-text/60 mb-2">
+                              Comparaison basée sur les {comparable} lignes trouvées dans notre catalogue sur {totalLines} au total.
+                              Les autres lignes (médicaments sur ordonnance, produits non référencés) sont exclues du calcul.
+                            </p>
+                            <p className="text-[11px] text-mk-text/45 mb-6">
+                              Lignes lues par l'OCR : {sim.ocr_extraction_rate != null
+                                ? `${Math.round((sim.ocr_extraction_rate / 100) * totalLines)}/${totalLines}`
+                                : `${totalLines}/${totalLines}`} (indicateur technique)
+                              {sim.source_total_excl_vat != null
+                                ? ` · Total du bon de commande complet : ${fmtMoney(sim.source_total_excl_vat)}`
+                                : ""}
+                            </p>
+                          </>
+                        );
+                      })()}
+
 
                       {/* Détail ligne par ligne à l'écran */}
                       <div className="border border-mk-border rounded-lg overflow-hidden mb-4">
@@ -418,36 +458,53 @@ export default function EconomiesPage() {
                                 </thead>
                                 <tbody>
                                   {(showAllLines ? lines : lines.slice(0, 10)).map((l) => {
-                                    const matched = !!l.matched_product_id;
+                                    const status =
+                                      l.line_status ??
+                                      (l.medikong_min_price_excl_vat == null ? "not_matched" : "equal");
+                                    const comparable = status !== "not_matched";
                                     const name = l.matched_product?.name || l.detected_name || "—";
+                                    const notFoundBadge = (
+                                      <span className="inline-block rounded bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 text-[10px] font-medium">
+                                        Non trouvé
+                                      </span>
+                                    );
                                     return (
                                       <tr key={l.id} className="border-b border-mk-border/60 last:border-0 hover:bg-mk-alt/20">
                                         <td className="px-3 py-2">
                                           <div className="font-medium text-mk-navy line-clamp-1">{name}</div>
-                                          <div className="text-[11px] text-mk-text/50 flex gap-2">
+                                          <div className="text-[11px] text-mk-text/50 flex gap-2 items-center">
                                             {l.detected_brand && <span>{l.detected_brand}</span>}
                                             {l.detected_cnk && <span>CNK {l.detected_cnk}</span>}
-                                            {!matched && <span className="text-amber-600">Non trouvé</span>}
+                                            {!comparable && notFoundBadge}
+                                            {status === "more_expensive" && (
+                                              <span className="text-mk-text/60">MediKong plus cher</span>
+                                            )}
+                                            {status === "equal" && <span className="text-mk-text/60">Prix identique</span>}
                                           </div>
                                         </td>
                                         <td className="px-3 py-2 text-right tabular-nums">{l.detected_quantity ?? "—"}</td>
                                         <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(l.detected_unit_price_excl_vat)}</td>
                                         <td className="px-3 py-2 text-right tabular-nums">
-                                          {matched ? fmtMoney(l.medikong_min_price_excl_vat) : <span className="text-mk-text/40">—</span>}
+                                          {comparable ? fmtMoney(l.medikong_min_price_excl_vat) : notFoundBadge}
                                         </td>
                                         <td className="px-3 py-2 text-right tabular-nums">
-                                          {l.line_savings && l.line_savings > 0 ? (
+                                          {!comparable ? (
+                                            notFoundBadge
+                                          ) : l.line_savings != null && l.line_savings > 0 ? (
                                             <span className="font-semibold text-green-600">
                                               {fmtMoney(l.line_savings)}
                                               {l.line_savings_pct ? <span className="text-[10px] font-normal opacity-70 ml-1">({l.line_savings_pct.toFixed(0)}%)</span> : null}
                                             </span>
+                                          ) : l.line_savings != null && l.line_savings < 0 ? (
+                                            <span className="text-mk-text/70">{fmtMoney(l.line_savings)}</span>
                                           ) : (
-                                            <span className="text-mk-text/40">—</span>
+                                            <span className="text-mk-text/40">0,00</span>
                                           )}
                                         </td>
                                       </tr>
                                     );
                                   })}
+
                                 </tbody>
                               </table>
                             </div>

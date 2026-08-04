@@ -16206,6 +16206,7 @@ export type Database = {
           line_number: number | null
           line_savings: number | null
           line_savings_pct: number | null
+          line_status: string | null
           match_confidence: number | null
           match_method: string | null
           matched_product_id: string | null
@@ -16227,6 +16228,7 @@ export type Database = {
           line_number?: number | null
           line_savings?: number | null
           line_savings_pct?: number | null
+          line_status?: string | null
           match_confidence?: number | null
           match_method?: string | null
           matched_product_id?: string | null
@@ -16248,6 +16250,7 @@ export type Database = {
           line_number?: number | null
           line_savings?: number | null
           line_savings_pct?: number | null
+          line_status?: string | null
           match_confidence?: number | null
           match_method?: string | null
           matched_product_id?: string | null
@@ -16317,18 +16320,23 @@ export type Database = {
       }
       savings_simulations: {
         Row: {
+          catalog_match_rate: number | null
           city: string | null
           consent_given_at: string
           created_at: string
           email: string | null
           email_sent_at: string | null
           error_message: string | null
+          failure_reason: string | null
           id: string
           ip_address: string | null
           match_rate: number | null
           matched_lines: number | null
+          matched_lines_count: number | null
           medikong_total_excl_vat: number | null
+          ocr_extraction_rate: number | null
           pharmacy_name: string | null
+          processing_timeout_at: string | null
           region: string | null
           report_path: string | null
           savings_amount: number | null
@@ -16339,24 +16347,32 @@ export type Database = {
           source_total_excl_vat: number | null
           status: string
           total_lines: number | null
+          total_lines_count: number | null
+          total_medikong_matched_only: number | null
+          total_source_matched_only: number | null
           updated_at: string
           user_agent: string | null
           user_id: string | null
           vat_number: string | null
         }
         Insert: {
+          catalog_match_rate?: number | null
           city?: string | null
           consent_given_at?: string
           created_at?: string
           email?: string | null
           email_sent_at?: string | null
           error_message?: string | null
+          failure_reason?: string | null
           id?: string
           ip_address?: string | null
           match_rate?: number | null
           matched_lines?: number | null
+          matched_lines_count?: number | null
           medikong_total_excl_vat?: number | null
+          ocr_extraction_rate?: number | null
           pharmacy_name?: string | null
+          processing_timeout_at?: string | null
           region?: string | null
           report_path?: string | null
           savings_amount?: number | null
@@ -16367,24 +16383,32 @@ export type Database = {
           source_total_excl_vat?: number | null
           status?: string
           total_lines?: number | null
+          total_lines_count?: number | null
+          total_medikong_matched_only?: number | null
+          total_source_matched_only?: number | null
           updated_at?: string
           user_agent?: string | null
           user_id?: string | null
           vat_number?: string | null
         }
         Update: {
+          catalog_match_rate?: number | null
           city?: string | null
           consent_given_at?: string
           created_at?: string
           email?: string | null
           email_sent_at?: string | null
           error_message?: string | null
+          failure_reason?: string | null
           id?: string
           ip_address?: string | null
           match_rate?: number | null
           matched_lines?: number | null
+          matched_lines_count?: number | null
           medikong_total_excl_vat?: number | null
+          ocr_extraction_rate?: number | null
           pharmacy_name?: string | null
+          processing_timeout_at?: string | null
           region?: string | null
           report_path?: string | null
           savings_amount?: number | null
@@ -16395,6 +16419,9 @@ export type Database = {
           source_total_excl_vat?: number | null
           status?: string
           total_lines?: number | null
+          total_lines_count?: number | null
+          total_medikong_matched_only?: number | null
+          total_source_matched_only?: number | null
           updated_at?: string
           user_agent?: string | null
           user_id?: string | null
@@ -30199,6 +30226,7 @@ export type Database = {
         Returns: Json
       }
       expire_intelligence_trials: { Args: never; Returns: number }
+      expire_stuck_savings_simulations: { Args: never; Returns: number }
       expire_vendor_exclusivities: { Args: never; Returns: number }
       expire_vendor_market_intel_trials: { Args: never; Returns: number }
       export_table_as_sql: {
@@ -30460,6 +30488,7 @@ export type Database = {
           line_number: number
           line_savings: number
           line_savings_pct: number
+          line_status: string
           match_confidence: number
           match_method: string
           matched_product_id: string

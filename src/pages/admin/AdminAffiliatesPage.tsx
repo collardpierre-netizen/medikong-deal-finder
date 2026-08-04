@@ -21,6 +21,16 @@ type Row = {
   commissions_validated_cents: number; commissions_paid_cents: number; commissions_pending_cents: number;
 };
 
+type CronRun = {
+  jobname: string; schedule: string | null; last_start: string | null;
+  last_end: string | null; last_status: string | null; last_message: string | null;
+};
+
+const CRON_JOBS = [
+  { name: "affiliate-validate-daily", label: "Validation quotidienne des commissions" },
+  { name: "affiliate-payout-monthly", label: "Facturation mensuelle (self-billing)" },
+];
+
 export default function AdminAffiliatesPage() {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
@@ -64,6 +74,15 @@ export default function AdminAffiliatesPage() {
       ),
     [rows],
   );
+
+  const { data: cronRuns = [] } = useQuery<CronRun[]>({
+    queryKey: ["affiliate-cron-last-runs"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("affiliate_cron_last_runs");
+      if (error) throw error;
+      return (data as CronRun[]) ?? [];
+    },
+  });
 
   const create = useMutation({
     mutationFn: async () => {

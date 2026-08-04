@@ -17,6 +17,7 @@ import {
   isQogitaPlaceholder,
 } from "@/lib/image-utils";
 import { PvpEconomyBadge } from "@/components/product/PvpEconomyBadge";
+import { ProductCardCagnotteBadge } from "@/components/cagnotte/ProductCardCagnotteBadge";
 
 /**
  * Données minimales attendues par la carte produit utilisée sur la fiche
@@ -45,6 +46,8 @@ export interface BrandProductCardItem {
   is_in_stock?: boolean | null;
   /** Délai de livraison moyen indicatif en jours (facultatif). */
   avg_delivery_days?: number | null;
+  /** Au moins une offre éligible cagnotte (product_cagnotte_status). */
+  cagnotte_eligible?: boolean | null;
 }
 
 interface Props {
@@ -205,6 +208,11 @@ export function BrandProductCard({ product, index = 0, showBrand = false }: Prop
             {product.promotion_label || t("catalog.promo")}
           </span>
         )}
+        <ProductCardCagnotteBadge
+          eligible={product.cagnotte_eligible}
+          unitPriceExclVat={price}
+          className="absolute top-1.5 right-1.5 z-10"
+        />
         <Link to={`/produit/${product.slug}`} state={fromState}>
           <ProductImg product={product} className="aspect-square" />
         </Link>

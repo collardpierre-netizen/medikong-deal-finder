@@ -759,6 +759,11 @@ function OfferRow({
       <div className="lg:hidden space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-0.5">
+            <OfferCagnotteBadge
+              eligible={(offer as any).cagnotteEligible}
+              unitPriceExclVat={offer.unitPriceEur}
+              className="self-start mb-0.5"
+            />
             <span className="font-bold text-sm">{sellerLabel}</span>
             {offer.displayCode && (
               <Link

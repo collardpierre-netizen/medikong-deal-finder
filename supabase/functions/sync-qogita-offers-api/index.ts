@@ -426,6 +426,9 @@ async function upsertOffer(
     is_active: true,
     price_stale: false,
     price_stale_since: null,
+    // Confirmation en direct par l'endpoint authentifié : autorise un outlier
+    // bas légitime à rester sélectionnable (validité 7 j, cf. trigger DB).
+    price_confirmed_at: now,
     price_source: "qogita_api",
     price_source_updated_at: now,
     synced_at: now,

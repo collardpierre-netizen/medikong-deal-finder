@@ -35,6 +35,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
 import { usePriceDisplay } from "@/contexts/PriceDisplayContext";
 import { useProductVatRate, vatSourceLabel } from "@/hooks/useProductVatRate";
+import { computeDisplayDiscount } from "@/lib/discount-display";
 import { resolvePackSize, packSizeSourceLabel, packSizeSourceBadge } from "@/lib/pack-size";
 import { PackSizeExplainer } from "@/components/product/PackSizeExplainer";
 import { useProductPrice } from "@/hooks/useProductPriceLevel";
@@ -2249,7 +2250,10 @@ function ProductPageInner() {
                             isBest
                             isTVAC={isTVAC}
                             categoryId={categoryData?.category?.id}
-                            discountPercentage={Number((product as any)?.discount_percentage) || 0}
+                            discountPercentage={computeDisplayDiscount({
+                              bestPriceInclVat: (product as any)?.best_price_incl_vat,
+                              pvpTtcCents: (product as any)?.pvp_ttc_cents,
+                            }) ?? 0}
                             compareBasis={offerCompareBasis}
                             packSize={resolvePackSize({
                               offerOverride: (bestOffer as any)?.packSizeOverride,
@@ -2393,7 +2397,10 @@ function ProductPageInner() {
                                   isTVAC={isTVAC}
                                   categoryId={categoryData?.category?.id}
                                   bestPrice={bestOffer ? bestOfferDisplayPrice : undefined}
-                                  discountPercentage={Number((product as any)?.discount_percentage) || 0}
+                                  discountPercentage={computeDisplayDiscount({
+                              bestPriceInclVat: (product as any)?.best_price_incl_vat,
+                              pvpTtcCents: (product as any)?.pvp_ttc_cents,
+                            }) ?? 0}
                                   compareBasis={offerCompareBasis}
                                   packSize={resolvePackSize({
                                     offerOverride: (offer as any)?.packSizeOverride,

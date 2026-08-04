@@ -48,15 +48,18 @@ type OfferRow = {
   is_active: boolean | null;
   is_qogita_backed: boolean | null;
   price_stale: boolean | null;
+  price_needs_confirmation: boolean | null;
   last_verified_at: string | null;
   qogita_seller_fid: string | null;
 };
 
 const OFFER_COLS =
-  "id, product_id, vendor_id, price_excl_vat, price_incl_vat, stock_quantity, moq, is_active, is_qogita_backed, price_stale, last_verified_at, qogita_seller_fid";
+  "id, product_id, vendor_id, price_excl_vat, price_incl_vat, stock_quantity, moq, is_active, is_qogita_backed, price_stale, price_needs_confirmation, last_verified_at, qogita_seller_fid";
 
 const isStale = (o: OfferRow, cutoffMs: number) => {
   if (o.price_stale === true) return true;
+  // 🛑 Outlier bas intra-produit non confirmé par l'API : risque de vente à perte.
+  if (o.price_needs_confirmation === true) return true;
   if (o.is_qogita_backed !== true) return false;
   const ms = o.last_verified_at ? Date.parse(o.last_verified_at) : null;
   return ms == null || Number.isNaN(ms) || ms < cutoffMs;

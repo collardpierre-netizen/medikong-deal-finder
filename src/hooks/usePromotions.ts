@@ -59,7 +59,7 @@ export function usePromoProducts(filter: "all" | "20" | "40" | "flash" = "all", 
         const now = new Date().toISOString();
         let query = supabase
           .from("flash_deals")
-          .select("*, product:products(id, slug, name, brand_name, brand_id, category_id, image_url, image_urls, best_price_excl_vat, best_price_incl_vat, reference_price, discount_percentage, offer_count, is_in_stock, category_name, brands(slug))")
+          .select("*, product:products(id, slug, name, brand_name, brand_id, category_id, image_url, image_urls, best_price_excl_vat, best_price_incl_vat, reference_price, discount_percentage, offer_count, is_in_stock, category_name, pvp_ttc_cents, brands(slug))")
           .eq("is_active", true)
           .lte("starts_at", now)
           .gte("ends_at", now)
@@ -77,7 +77,7 @@ export function usePromoProducts(filter: "all" | "20" | "40" | "flash" = "all", 
       const minDiscount = filter === "40" ? 40 : filter === "20" ? 20 : 10;
       let query = supabase
         .from("products")
-        .select("id, slug, name, brand_name, brand_id, category_id, image_url, image_urls, best_price_excl_vat, best_price_incl_vat, reference_price, discount_percentage, offer_count, is_in_stock, category_name, brands(slug)")
+        .select("id, slug, name, brand_name, brand_id, category_id, image_url, image_urls, best_price_excl_vat, best_price_incl_vat, reference_price, discount_percentage, offer_count, is_in_stock, category_name, pvp_ttc_cents, brands(slug)")
         .eq("is_active", true)
         .not("reference_price", "is", null)
         .gte("discount_percentage", minDiscount)

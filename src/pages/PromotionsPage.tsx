@@ -1,5 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { usePromoProducts, usePromoCount, usePromotionCampaigns, usePromoCategories, usePromoBrands } from "@/hooks/usePromotions";
+import { computeDisplayDiscount, displayReferencePrice } from "@/lib/discount-display";
 import { Tag, TrendingDown, Truck, Calendar, Zap, Timer, Filter, X, SlidersHorizontal, ArrowUpDown, Search, Package } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
@@ -46,7 +47,10 @@ function FlashCountdown({ endsAt }: { endsAt: string }) {
 function PromoProductCard({ product, index, flashDeal }: { product: any; index: number; flashDeal?: any }) {
   const discount = flashDeal
     ? Math.round((1 - flashDeal.discount_price_incl_vat / flashDeal.original_price_incl_vat) * 100)
-    : Math.round(product.discount_percentage || 0);
+    : (computeDisplayDiscount({
+        bestPriceInclVat: product.best_price_incl_vat,
+        pvpTtcCents: product.pvp_ttc_cents,
+      }) ?? 0);
 
   const currentPrice = flashDeal
     ? flashDeal.discount_price_incl_vat
@@ -54,7 +58,10 @@ function PromoProductCard({ product, index, flashDeal }: { product: any; index: 
 
   const originalPrice = flashDeal
     ? flashDeal.original_price_incl_vat
-    : product.reference_price || product.best_price_incl_vat || 0;
+    : displayReferencePrice({
+        bestPriceInclVat: product.best_price_incl_vat,
+        pvpTtcCents: product.pvp_ttc_cents,
+      }) ?? product.best_price_incl_vat ?? 0;
 
   const imgSrc = (() => {
     const urls = Array.isArray(product.image_urls) ? product.image_urls.filter(isValidProductImage) : [];

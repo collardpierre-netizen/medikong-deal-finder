@@ -336,29 +336,31 @@ async function getMedikongMinPrice(
   supabase: ReturnType<typeof getAdminClient>,
   productId: string,
 ): Promise<{ price: number | null; supplierCount: number }> {
-  // Lecture via la vue effective_offer_prices_v (si existe), sinon via offers directement
+  // Lecture via la vue effective_offer_prices_v (prix en EUROS HTVA)
   const { data, error } = await supabase
     .from("effective_offer_prices_v")
-    .select("effective_price_cents, vendor_id")
+    .select("effective_price_excl_vat, vendor_id")
     .eq("product_id", productId);
   if (!error && data && data.length > 0) {
-    const prices = data.map((r) => Number(r.effective_price_cents)).filter((n) => n > 0);
+    const prices = data.map((r) => Number(r.effective_price_excl_vat)).filter((n) => n > 0);
     if (prices.length === 0) return { price: null, supplierCount: 0 };
-    const minCents = Math.min(...prices);
     const distinctVendors = new Set(data.map((r) => r.vendor_id)).size;
-    return { price: minCents / 100, supplierCount: distinctVendors };
+    return { price: Math.min(...prices), supplierCount: distinctVendors };
   }
-  // Fallback offers direct
-  const { data: offers } = await supabase
+  if (error) console.error("[price] effective_offer_prices_v error", error);
+  // Fallback offers direct (price_excl_vat en euros)
+  const { data: offers, error: offErr } = await supabase
     .from("offers")
-    .select("price_ht_cents, vendor_id")
+    .select("price_excl_vat, vendor_id")
     .eq("product_id", productId)
     .eq("is_active", true);
+  if (offErr) console.error("[price] offers fallback error", offErr);
   if (!offers || offers.length === 0) return { price: null, supplierCount: 0 };
-  const prices = offers.map((o) => Number(o.price_ht_cents)).filter((n) => n > 0);
+  const prices = offers.map((o) => Number(o.price_excl_vat)).filter((n) => n > 0);
   if (prices.length === 0) return { price: null, supplierCount: 0 };
-  return { price: Math.min(...prices) / 100, supplierCount: new Set(offers.map((o) => o.vendor_id)).size };
+  return { price: Math.min(...prices), supplierCount: new Set(offers.map((o) => o.vendor_id)).size };
 }
+
 
 async function processSimulation(simulationId: string, file: File, fileKind: FileKind, supplier: Supplier) {
   const supabase = getAdminClient();

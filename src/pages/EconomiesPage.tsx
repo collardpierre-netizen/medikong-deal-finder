@@ -310,7 +310,7 @@ export default function EconomiesPage() {
                       <button type="button" onClick={() => { setFile(null); setStep(2); }} className="text-xs text-mk-blue hover:underline">changer</button>
                     </div>
                   )}
-                  {user && !editIdentity ? (
+                  {user && !editIdentity && identity.pharmacy_name.trim().length >= 2 ? (
                     <div className="flex items-start gap-3 bg-mk-alt/30 border border-mk-border rounded-lg p-3">
                       <UserCircle2 size={18} className="text-mk-blue mt-0.5 shrink-0" />
                       <div className="flex-1 min-w-0 text-sm">

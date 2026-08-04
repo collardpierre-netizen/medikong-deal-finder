@@ -507,43 +507,60 @@ async function processSimulation(simulationId: string, file: File, fileKind: Fil
       }
     }
 
-    // Batch prix MediKong pour tous les product_id matchés
+    // Batch prix MediKong pour tous les product_id matchés (chunks pour éviter les URL trop longues)
     const matchedIds = Array.from(
       new Set(initialMatches.map((m) => m.product_id).filter(Boolean) as string[]),
     );
     const priceMap = new Map<string, { price: number; supplierCount: number }>();
     if (matchedIds.length > 0) {
-      const { data, error } = await supabase
-        .from("effective_offer_prices_v")
-        .select("product_id, effective_price_cents, vendor_id")
-        .in("product_id", matchedIds);
-      if (!error && data) {
-        const grouped = new Map<string, { prices: number[]; vendors: Set<string> }>();
-        for (const r of data) {
+      const grouped = new Map<string, { prices: number[]; vendors: Set<string> }>();
+      const CHUNK = 150;
+      for (let i = 0; i < matchedIds.length; i += CHUNK) {
+        const chunk = matchedIds.slice(i, i + CHUNK);
+        const { data, error } = await supabase
+          .from("effective_offer_prices_v")
+          .select("product_id, effective_price_excl_vat, vendor_id")
+          .in("product_id", chunk);
+        if (error) {
+          console.error("[pipeline] price batch error", error);
+          continue;
+        }
+        for (const r of data ?? []) {
           const pid = String(r.product_id);
           if (!grouped.has(pid)) grouped.set(pid, { prices: [], vendors: new Set() });
           const g = grouped.get(pid)!;
-          const c = Number(r.effective_price_cents);
-          if (c > 0) g.prices.push(c);
+          const p = Number(r.effective_price_excl_vat);
+          if (p > 0) g.prices.push(p);
           if (r.vendor_id) g.vendors.add(String(r.vendor_id));
         }
-        for (const [pid, g] of grouped) {
-          if (g.prices.length > 0)
-            priceMap.set(pid, { price: Math.min(...g.prices) / 100, supplierCount: g.vendors.size });
-        }
       }
+      for (const [pid, g] of grouped) {
+        if (g.prices.length > 0)
+          priceMap.set(pid, { price: Math.min(...g.prices), supplierCount: g.vendors.size });
+      }
+      console.log("[pipeline] prices resolved", { matchedIds: matchedIds.length, priced: priceMap.size });
     }
+
+    let ocrReadableLines = 0;
 
     for (let idx = 0; idx < extracted.lines.length; idx++) {
       const line = extracted.lines[idx];
       const match = initialMatches[idx];
-      const lineTotal = (line.unit_price_excl_vat || 0) * (line.quantity || 1);
+      const qty = line.quantity || 1;
+      const lineTotal = (line.unit_price_excl_vat || 0) * qty;
       totalSource += lineTotal;
+      if (
+        (line.cnk || line.ean || line.proprietary_code || line.normalized_name_guess) &&
+        (line.unit_price_excl_vat || 0) > 0
+      ) {
+        ocrReadableLines++;
+      }
 
       let mkPrice: number | null = null;
       let supplierCount = 0;
       let lineSavings: number | null = null;
       let lineSavingsPct: number | null = null;
+      let lineStatus: "cheaper" | "more_expensive" | "equal" | "not_matched" = "not_matched";
 
       if (match.product_id) {
         matchedCount++;
@@ -553,11 +570,18 @@ async function processSimulation(simulationId: string, file: File, fileKind: Fil
           supplierCount = p.supplierCount;
         }
         if (mkPrice !== null && line.unit_price_excl_vat > 0) {
-          lineSavings = (line.unit_price_excl_vat - mkPrice) * (line.quantity || 1);
+          // Ligne comparable : elle seule entre dans les totaux comparés.
+          pricedCount++;
+          lineSavings = (line.unit_price_excl_vat - mkPrice) * qty;
           lineSavingsPct = ((line.unit_price_excl_vat - mkPrice) / line.unit_price_excl_vat) * 100;
-          totalMedikong += mkPrice * (line.quantity || 1);
+          totalSourceMatchedOnly += lineTotal;
+          totalMedikongMatchedOnly += mkPrice * qty;
+          const delta = line.unit_price_excl_vat - mkPrice;
+          lineStatus = Math.abs(delta) <= 0.01 ? "equal" : delta > 0 ? "cheaper" : "more_expensive";
         } else {
-          totalMedikong += lineTotal; // fallback: pas de meilleure offre
+          // Produit reconnu mais aucun prix MediKong exploitable → non comparable.
+          mkPrice = null;
+          lineStatus = "not_matched";
         }
         // Observation marché
         observationsToInsert.push({
@@ -569,8 +593,6 @@ async function processSimulation(simulationId: string, file: File, fileKind: Fil
           region: sim?.region ?? null,
           pharmacy_size_bucket: pharmacyBucket(totalSource),
         });
-      } else {
-        totalMedikong += lineTotal;
       }
 
       linesToInsert.push({
@@ -587,10 +609,12 @@ async function processSimulation(simulationId: string, file: File, fileKind: Fil
         matched_product_id: match.product_id,
         match_confidence: match.confidence,
         match_method: match.method,
+        // JAMAIS le prix grossiste par défaut : null si pas de prix MediKong réel.
         medikong_min_price_excl_vat: mkPrice,
         medikong_supplier_count: supplierCount,
         line_savings: lineSavings,
         line_savings_pct: lineSavingsPct,
+        line_status: lineStatus,
       });
     }
 
@@ -603,24 +627,43 @@ async function processSimulation(simulationId: string, file: File, fileKind: Fil
     }
 
     const totalLines = extracted.lines.length;
-    const matchRate = totalLines > 0 ? matchedCount / totalLines : 0;
-    const savingsAmount = totalSource - totalMedikong;
-    const savingsPct = totalSource > 0 ? (savingsAmount / totalSource) * 100 : 0;
-    const finalStatus = matchedCount === 0 ? "no_match" : "done";
+    // Taux de correspondance catalogue = lignes réellement comparables / lignes totales
+    const catalogMatchRate = totalLines > 0 ? (pricedCount / totalLines) * 100 : 0;
+    const ocrExtractionRate = totalLines > 0 ? (ocrReadableLines / totalLines) * 100 : 0;
+    const savingsAmount = totalSourceMatchedOnly - totalMedikongMatchedOnly;
+    const savingsPct =
+      totalSourceMatchedOnly > 0 ? (savingsAmount / totalSourceMatchedOnly) * 100 : 0;
+    const finalStatus = pricedCount === 0 ? "no_match" : "done";
 
     await supabase
       .from("savings_simulations")
       .update({
         status: finalStatus,
         total_lines: totalLines,
-        matched_lines: matchedCount,
-        match_rate: Number(matchRate.toFixed(3)),
+        total_lines_count: totalLines,
+        matched_lines: pricedCount,
+        matched_lines_count: pricedCount,
+        match_rate: Number((catalogMatchRate / 100).toFixed(3)),
+        catalog_match_rate: Number(catalogMatchRate.toFixed(2)),
+        ocr_extraction_rate: Number(ocrExtractionRate.toFixed(2)),
         source_total_excl_vat: Number(totalSource.toFixed(2)),
-        medikong_total_excl_vat: Number(totalMedikong.toFixed(2)),
+        // Totaux comparés = lignes comparables uniquement
+        total_source_matched_only: Number(totalSourceMatchedOnly.toFixed(2)),
+        total_medikong_matched_only: Number(totalMedikongMatchedOnly.toFixed(2)),
+        medikong_total_excl_vat: Number(totalMedikongMatchedOnly.toFixed(2)),
         savings_amount: Number(savingsAmount.toFixed(2)),
         savings_pct: Number(savingsPct.toFixed(2)),
+        failure_reason: null,
       })
       .eq("id", simulationId);
+    console.log("[pipeline] done", {
+      simulationId,
+      totalLines,
+      pricedCount,
+      matchedCount,
+      savingsAmount,
+    });
+
   } catch (err) {
     console.error("[process-savings-upload] error", err);
     await supabase

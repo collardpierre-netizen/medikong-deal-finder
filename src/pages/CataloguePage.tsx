@@ -48,6 +48,8 @@ export default function CataloguePage() {
   const total = data?.total || 0;
   const countryStatsUnavailable = (data as any)?.countryStatsUnavailable === true;
   const { view, setView } = useCatalogViewMode();
+  // Disponibilité « seconde vie » (ReStock) pour la page courante — 1 requête.
+  const secondLifeMap = useRestockAvailabilityMap(products);
   const [mobileFilters, setMobileFilters] = useState(false);
 
   // Collect category IDs + brand IDs from results for contextual sidebar filtering.

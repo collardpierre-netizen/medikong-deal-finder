@@ -14,7 +14,6 @@ const corsHeaders = {
 
 const BUCKET = "order-pdfs";
 const SIGNED_URL_TTL = 60 * 60 * 24 * 7;
-const VAT_RATE_BP = 2100;
 
 // Coordonnées légales MediKong (Balooh SRL renommée MediKong).
 const ISSUER = {

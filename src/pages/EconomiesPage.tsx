@@ -185,6 +185,9 @@ export default function EconomiesPage() {
     if (!file) return toast.error("Veuillez ajouter votre bon de commande.");
     if (!consent) return toast.error("Vous devez accepter le traitement de vos données.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identity.email)) return toast.error("Email invalide.");
+    if (identity.pharmacy_name.trim().length < 2)
+      return toast.error("Veuillez indiquer le nom de votre pharmacie.");
+
 
     setSubmitting(true);
     try {

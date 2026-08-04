@@ -1894,7 +1894,7 @@ function ProductPageInner() {
 
               {/* Cagnotte : éligibilité dérivée des offres du produit */}
               <div className="mb-3">
-                <ProductDetailCagnotteBanner productId={product.id} />
+                <ProductDetailCagnotteBanner productId={product.id} bestPriceExclVat={(product as any).best_price_excl_vat ?? null} />
               </div>
 
 

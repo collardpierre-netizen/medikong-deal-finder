@@ -29,7 +29,9 @@ interface SimulationStatus {
   savings_pct: number | null;
   error_message: string | null;
   email_sent_at: string | null;
+  category_breakdown?: SavingsCategoryRow[] | null;
 }
+
 
 
 interface SimulationLine {

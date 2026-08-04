@@ -800,6 +800,28 @@ Deno.serve(async (req) => {
     const vatNumber = (form.get("vat_number") as string | null)?.trim();
     const supplier = (form.get("source_supplier") as Supplier | null) ?? "other";
     const consent = form.get("consent_given") === "true";
+    const requestedVia = (form.get("created_via") as string | null) ?? "public_tunnel";
+
+    // Création manuelle (admin) : réservée aux admins authentifiés.
+    let createdVia: CreatedVia = "public_tunnel";
+    if (requestedVia === "admin_manual") {
+      const authHeader = req.headers.get("Authorization") ?? "";
+      const jwt = authHeader.replace(/^Bearer\s+/i, "").trim();
+      let isAdmin = false;
+      if (jwt) {
+        const userClient = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
+        const { data: userRes } = await userClient.auth.getUser(jwt);
+        if (userRes?.user) {
+          const { data: ok } = await userClient.rpc("is_admin", { _user_id: userRes.user.id });
+          isAdmin = ok === true;
+        }
+      }
+      if (!isAdmin) {
+        return Response.json({ error: "admin_required" }, { status: 403, headers: corsHeaders });
+      }
+      createdVia = "admin_manual";
+    }
+
 
     if (!file) return Response.json({ error: "missing file" }, { status: 400, headers: corsHeaders });
     if (!consent)

@@ -36,6 +36,8 @@ export function CatalogToolbar({ filters, setFilter, total, view, setView, isLoa
             <SelectItem value="name_desc">{t("catalog.nameDesc")}</SelectItem>
             <SelectItem value="newest">{t("catalog.newest")}</SelectItem>
             <SelectItem value="stock_desc">{t("catalog.stockDesc")}</SelectItem>
+            <SelectItem value="second_life">Disponible en seconde vie</SelectItem>
+            <SelectItem value="best_saving">Meilleure économie (seconde vie)</SelectItem>
           </SelectContent>
         </Select>
       </div>

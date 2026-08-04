@@ -1,3 +1,5 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useProductCagnotteStatus } from "@/hooks/useProductCagnotteStatus";
 import { useCagnotteSettings } from "@/hooks/useCagnotte";
 
@@ -17,13 +19,39 @@ export function ProductDetailCagnotteBanner({
   const { data: status } = useProductCagnotteStatus(productId);
   const { data: settings } = useCagnotteSettings();
 
+  const propPrice = Number(bestPriceExclVat || 0);
+  const needsFallback = !(propPrice > 0);
+
+  // Filet de sécurité : si la page n'a pas (encore) de meilleur prix,
+  // on récupère le prix HTVA le plus bas parmi les offres actives du produit
+  // afin d'afficher malgré tout la valeur en € de la cagnotte.
+  const { data: fallbackPrice } = useQuery({
+    queryKey: ["product-cagnotte-fallback-price", productId],
+    queryFn: async (): Promise<number | null> => {
+      const { data, error } = await supabase
+        .from("offers")
+        .select("price_excl_vat")
+        .eq("product_id", productId!)
+        .eq("is_active", true)
+        .order("price_excl_vat", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (error) return null;
+      const p = Number((data as any)?.price_excl_vat);
+      return Number.isFinite(p) && p > 0 ? p : null;
+    },
+    enabled: !!productId && needsFallback,
+    staleTime: 5 * 60 * 1000,
+  });
+
   if (!status?.has_eligible_offer) return null;
 
   const rate = settings?.rate ?? 0.02;
   const pct = Math.round(rate * 100);
   const nb = status.nb_eligible_offers;
   const total = status.nb_total_offers;
-  const value = Number(bestPriceExclVat || 0) * rate;
+  const unitPrice = needsFallback ? Number(fallbackPrice || 0) : propPrice;
+  const value = unitPrice * rate;
 
   return (
     <div
@@ -39,8 +67,12 @@ export function ProductDetailCagnotteBanner({
       <span>
         {value > 0 ? (
           <>
-            Ce produit rapporte <strong>{value.toFixed(2)} € de cagnotte</strong> par unité
-            <span className="text-muted-foreground"> ({pct}%)</span>
+            Ce produit vous rapporte{" "}
+            <strong>
+              {value.toLocaleString("fr-BE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € de cagnotte
+            </strong>{" "}
+            par unité
+            <span className="text-muted-foreground"> ({pct}% du prix HTVA)</span>
           </>
         ) : (
           <>
@@ -53,4 +85,3 @@ export function ProductDetailCagnotteBanner({
     </div>
   );
 }
-

@@ -712,7 +712,9 @@ async function processSimulation(
         medikong_total_excl_vat: Number(totalMedikongMatchedOnly.toFixed(2)),
         savings_amount: Number(savingsAmount.toFixed(2)),
         savings_pct: Number(savingsPct.toFixed(2)),
-        failure_reason: null,
+        failure_reason: pricedCount === 0 ? "no_match" : null,
+        // Traitement terminé → plus de risque d'expiration par le watchdog.
+        processing_timeout_at: null,
       })
       .eq("id", simulationId);
     console.log("[pipeline] done", {
@@ -723,6 +725,20 @@ async function processSimulation(
       savingsAmount,
     });
 
+    // Notification email asynchrone (best-effort, ne bloque jamais le pipeline)
+    if (pricedCount === 0) {
+      await notifyFailure(supabase, simulationId, "no_match");
+    } else if (createdVia === "public_tunnel" && sim?.email) {
+      try {
+        const { error: repErr } = await supabase.functions.invoke("generate-savings-report", {
+          body: { simulation_id: simulationId, email: sim.email },
+        });
+        if (repErr) console.error("[pipeline] report/email invoke failed", repErr);
+      } catch (e) {
+        console.error("[pipeline] report/email exception", e);
+      }
+    }
+
   } catch (err) {
     console.error("[process-savings-upload] error", err);
     await supabase
@@ -731,9 +747,10 @@ async function processSimulation(
         status: "failed",
         failure_reason: "pipeline_error",
         error_message: err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500),
-
+        processing_timeout_at: null,
       })
       .eq("id", simulationId);
+    await notifyFailure(supabase, simulationId, "pipeline_error");
   }
 }
 

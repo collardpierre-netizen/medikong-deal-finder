@@ -161,6 +161,8 @@ export default function AdminSavingsOcr() {
           >
             <option value="all">Tous les statuts</option>
             <option value="completed">Terminés</option>
+            <option value="ready_to_send">À envoyer</option>
+            <option value="sent">Envoyés</option>
             <option value="pending">En cours</option>
             <option value="failed">Échecs</option>
           </select>
@@ -168,6 +170,79 @@ export default function AdminSavingsOcr() {
             {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             Actualiser
           </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="secondary">
+                <Plus className="h-4 w-4 mr-2" /> Analyse manuelle
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Nouvelle analyse pour un client</DialogTitle>
+                <DialogDescription>
+                  Aucun email n'est envoyé automatiquement : l'analyse reste « à envoyer » jusqu'à validation.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="ms-file">Bon de commande (PDF, image, CSV)</Label>
+                  <Input
+                    id="ms-file"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.csv"
+                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ms-email">Email du client</Label>
+                  <Input
+                    id="ms-email"
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ms-pharma">Pharmacie</Label>
+                  <Input
+                    id="ms-pharma"
+                    value={form.pharmacy_name}
+                    onChange={(e) => setForm((f) => ({ ...f, pharmacy_name: e.target.value }))}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ms-city">Ville</Label>
+                    <Input
+                      id="ms-city"
+                      value={form.city}
+                      onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ms-supplier">Grossiste</Label>
+                    <select
+                      id="ms-supplier"
+                      value={form.supplier}
+                      onChange={(e) => setForm((f) => ({ ...f, supplier: e.target.value }))}
+                      className="h-10 w-full px-3 rounded-md border border-input bg-background text-sm"
+                    >
+                      <option value="febelco">Febelco</option>
+                      <option value="cerp">CERP</option>
+                      <option value="pharma_belgium">Pharma Belgium</option>
+                      <option value="other">Autre</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button onClick={() => void createManual()} disabled={creating}>
+                  {creating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Lancer l'analyse
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <Button asChild size="sm">
             <Link to="/economies" target="_blank" rel="noopener noreferrer">
               <ExternalLink className="h-4 w-4 mr-2" /> Ouvrir /economies
@@ -175,6 +250,7 @@ export default function AdminSavingsOcr() {
           </Button>
         </div>
       </div>
+
 
       <Card>
         <CardHeader>

@@ -386,24 +386,49 @@ export default function EconomiesPage() {
                         <div className="text-4xl font-bold mb-1">{fmtMoney(sim.savings_amount)}</div>
                         <div className="text-sm opacity-90">soit {sim.savings_pct?.toFixed(1) ?? "—"} % de moins</div>
                       </div>
-                      <dl className="grid grid-cols-2 gap-3 text-sm mb-6">
-                        <div className="bg-mk-alt/30 rounded p-3">
-                          <dt className="text-xs text-mk-text/60">Lignes analysées</dt>
-                          <dd className="font-semibold text-mk-navy">{sim.matched_lines ?? 0} / {sim.total_lines ?? 0}</dd>
-                        </div>
-                        <div className="bg-mk-alt/30 rounded p-3">
-                          <dt className="text-xs text-mk-text/60">Taux de correspondance</dt>
-                          <dd className="font-semibold text-mk-navy">{((sim.match_rate ?? 0) * 100).toFixed(0)} %</dd>
-                        </div>
-                        <div className="bg-mk-alt/30 rounded p-3">
-                          <dt className="text-xs text-mk-text/60">Total grossiste</dt>
-                          <dd className="font-semibold text-mk-navy">{fmtMoney(sim.source_total_excl_vat)}</dd>
-                        </div>
-                        <div className="bg-mk-alt/30 rounded p-3">
-                          <dt className="text-xs text-mk-text/60">Total MediKong</dt>
-                          <dd className="font-semibold text-mk-navy">{fmtMoney(sim.medikong_total_excl_vat)}</dd>
-                        </div>
-                      </dl>
+                      {(() => {
+                        const totalLines = sim.total_lines_count ?? sim.total_lines ?? 0;
+                        const comparable = sim.matched_lines_count ?? sim.matched_lines ?? 0;
+                        const matchPct =
+                          sim.catalog_match_rate ?? (totalLines > 0 ? (comparable / totalLines) * 100 : 0);
+                        const totalSource = sim.total_source_matched_only ?? sim.source_total_excl_vat;
+                        const totalMk = sim.total_medikong_matched_only ?? sim.medikong_total_excl_vat;
+                        return (
+                          <>
+                            <dl className="grid grid-cols-2 gap-3 text-sm mb-2">
+                              <div className="bg-mk-alt/30 rounded p-3">
+                                <dt className="text-xs text-mk-text/60">Lignes comparables au catalogue MediKong</dt>
+                                <dd className="font-semibold text-mk-navy">{comparable} / {totalLines}</dd>
+                              </div>
+                              <div className="bg-mk-alt/30 rounded p-3">
+                                <dt className="text-xs text-mk-text/60">Taux de correspondance catalogue</dt>
+                                <dd className="font-semibold text-mk-navy">{matchPct.toFixed(0)} %</dd>
+                              </div>
+                              <div className="bg-mk-alt/30 rounded p-3">
+                                <dt className="text-xs text-mk-text/60">Total grossiste (lignes comparables)</dt>
+                                <dd className="font-semibold text-mk-navy">{fmtMoney(totalSource)}</dd>
+                              </div>
+                              <div className="bg-mk-alt/30 rounded p-3">
+                                <dt className="text-xs text-mk-text/60">Total MediKong (lignes comparables)</dt>
+                                <dd className="font-semibold text-mk-navy">{fmtMoney(totalMk)}</dd>
+                              </div>
+                            </dl>
+                            <p className="text-xs text-mk-text/60 mb-2">
+                              Comparaison basée sur les {comparable} lignes trouvées dans notre catalogue sur {totalLines} au total.
+                              Les autres lignes (médicaments sur ordonnance, produits non référencés) sont exclues du calcul.
+                            </p>
+                            <p className="text-[11px] text-mk-text/45 mb-6">
+                              Lignes lues par l'OCR : {sim.ocr_extraction_rate != null
+                                ? `${Math.round((sim.ocr_extraction_rate / 100) * totalLines)}/${totalLines}`
+                                : `${totalLines}/${totalLines}`} (indicateur technique)
+                              {sim.source_total_excl_vat != null
+                                ? ` · Total du bon de commande complet : ${fmtMoney(sim.source_total_excl_vat)}`
+                                : ""}
+                            </p>
+                          </>
+                        );
+                      })()}
+
 
                       {/* Détail ligne par ligne à l'écran */}
                       <div className="border border-mk-border rounded-lg overflow-hidden mb-4">

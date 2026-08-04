@@ -50,6 +50,15 @@
     --mk-mov-border: 45 96% 82%;
     --mk-amber: 38 92% 50%;
 
+    /* Ventilation catégories (rapport d'économies) */
+    --savings-cat-1: 221 77% 48%;
+    --savings-cat-2: 160 84% 39%;
+    --savings-cat-3: 38 92% 50%;
+    --savings-cat-4: 338 78% 55%;
+    --savings-cat-5: 262 70% 58%;
+    --savings-cat-6: 215 14% 65%;
+
+
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;

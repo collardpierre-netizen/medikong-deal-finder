@@ -21,6 +21,16 @@ type Row = {
   commissions_validated_cents: number; commissions_paid_cents: number; commissions_pending_cents: number;
 };
 
+type CronRun = {
+  jobname: string; schedule: string | null; last_start: string | null;
+  last_end: string | null; last_status: string | null; last_message: string | null;
+};
+
+const CRON_JOBS = [
+  { name: "affiliate-validate-daily", label: "Validation quotidienne des commissions" },
+  { name: "affiliate-payout-monthly", label: "Facturation mensuelle (self-billing)" },
+];
+
 export default function AdminAffiliatesPage() {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
@@ -64,6 +74,15 @@ export default function AdminAffiliatesPage() {
       ),
     [rows],
   );
+
+  const { data: cronRuns = [] } = useQuery<CronRun[]>({
+    queryKey: ["affiliate-cron-last-runs"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("affiliate_cron_last_runs");
+      if (error) throw error;
+      return (data as CronRun[]) ?? [];
+    },
+  });
 
   const create = useMutation({
     mutationFn: async () => {
@@ -143,6 +162,40 @@ export default function AdminAffiliatesPage() {
           </Card>
         ))}
       </div>
+
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-xs text-muted-foreground mb-2">
+            Tâches automatiques (heures UTC : 02:00 quotidien, 03:00 le 1er du mois)
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {CRON_JOBS.map((job) => {
+              const run = cronRuns.find((r) => r.jobname === job.name);
+              return (
+                <div key={job.name} className="rounded-lg border p-3 text-sm">
+                  <p className="font-medium">{job.label}</p>
+                  <p className="text-xs text-muted-foreground font-mono">{run?.schedule ?? "non planifié"}</p>
+                  {run?.last_start ? (
+                    <p className="text-xs mt-1">
+                      Dernier run : {new Date(run.last_start).toLocaleString("fr-BE")} ·{" "}
+                      <Badge className={run.last_status === "succeeded" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}>
+                        {run.last_status ?? "—"}
+                      </Badge>
+                    </p>
+                  ) : (
+                    <p className="text-xs mt-1 text-muted-foreground">Aucun run enregistré.</p>
+                  )}
+                  {run?.last_message && (
+                    <p className="text-[11px] text-muted-foreground mt-1 break-all">{run.last_message}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+
 
       <div className="flex flex-wrap gap-2">
         <div className="relative flex-1 min-w-[220px]">

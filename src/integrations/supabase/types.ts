@@ -616,7 +616,10 @@ export type Database = {
           period_start: string
           status: string
           total_cents: number
+          total_ttc_cents: number
+          vat_cents: number
           vat_mode: string
+          vat_rate_bp: number
         }
         Insert: {
           affiliate_id: string
@@ -630,7 +633,10 @@ export type Database = {
           period_start: string
           status?: string
           total_cents: number
+          total_ttc_cents?: number
+          vat_cents?: number
           vat_mode?: string
+          vat_rate_bp?: number
         }
         Update: {
           affiliate_id?: string
@@ -644,7 +650,10 @@ export type Database = {
           period_start?: string
           status?: string
           total_cents?: number
+          total_ttc_cents?: number
+          vat_cents?: number
           vat_mode?: string
+          vat_rate_bp?: number
         }
         Relationships: [
           {
@@ -30437,6 +30446,17 @@ export type Database = {
         Args: { _affiliate_id?: string; _landing_path: string; _name: string }
         Returns: string
       }
+      affiliate_cron_last_runs: {
+        Args: never
+        Returns: {
+          jobname: string
+          last_end: string
+          last_message: string
+          last_start: string
+          last_status: string
+          schedule: string
+        }[]
+      }
       affiliate_current_rule: {
         Args: { _affiliate_id?: string }
         Returns: Json
@@ -30498,7 +30518,10 @@ export type Database = {
           period_start: string
           status: string
           total_cents: number
+          total_ttc_cents: number
+          vat_cents: number
           vat_mode: string
+          vat_rate_bp: number
         }[]
       }
       affiliate_my_referrals: {
@@ -30512,6 +30535,10 @@ export type Database = {
           status: string
           window_expires_at: string
         }[]
+      }
+      affiliate_payout_vat: {
+        Args: { _total_cents: number; _vat_mode: string }
+        Returns: Json
       }
       affiliate_process_order_commission: {
         Args: { _order_id: string }

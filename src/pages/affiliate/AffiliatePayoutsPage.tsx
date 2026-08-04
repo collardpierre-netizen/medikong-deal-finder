@@ -16,6 +16,9 @@ type Payout = {
   period_end: string;
   total_cents: number;
   vat_mode: string;
+  vat_rate_bp: number | null;
+  vat_cents: number | null;
+  total_ttc_cents: number | null;
   status: string;
   pdf_path: string | null;
   issued_at: string | null;
@@ -29,10 +32,8 @@ const STATUS: Record<string, { label: string; className: string }> = {
   cancelled: { label: "Annulée", className: "bg-muted text-muted-foreground" },
 };
 
-/** TVA 21 % appliquée uniquement en mode vat_21 ; sinon 0 (hors champ / autoliquidation). */
-function vatCentsOf(p: Payout): number {
-  return p.vat_mode === "vat_21" ? Math.round((Number(p.total_cents) || 0) * 0.21) : 0;
-}
+// La TVA n'est jamais calculée côté client : elle est figée en base à l'émission
+// de la note (colonnes vat_rate_bp / vat_cents / total_ttc_cents).
 
 export default function AffiliatePayoutsPage() {
   const { account, asAffiliateId } = useAffiliateAccount();
@@ -117,17 +118,21 @@ export default function AffiliatePayoutsPage() {
             <tbody>
               {rows.map((p) => {
                 const st = STATUS[p.status] ?? { label: p.status, className: "" };
-                const vat = vatCentsOf(p);
+                const vatCents = Number(p.vat_cents) || 0;
+                const vatRateBp = Number(p.vat_rate_bp) || 0;
                 return (
                   <tr key={p.id} className="border-t">
                     <td className="p-3 font-mono text-xs">{p.invoice_number ?? "—"}</td>
                     <td className="p-3">{fmtDate(p.period_start)} → {fmtDate(p.period_end)}</td>
                     <td className="p-3 text-right">{fmtCents(p.total_cents)}</td>
                     <td className="p-3 text-right">
-                      {fmtCents(vat)}
-                      <p className="text-[11px] text-muted-foreground">{VAT_MODE_LABELS[p.vat_mode] ?? p.vat_mode}</p>
+                      {fmtCents(vatCents)}
+                      <p className="text-[11px] text-muted-foreground">
+                        {VAT_MODE_LABELS[p.vat_mode] ?? p.vat_mode}
+                        {vatRateBp > 0 ? ` · ${(vatRateBp / 100).toFixed(0)} %` : ""}
+                      </p>
                     </td>
-                    <td className="p-3 text-right font-medium">{fmtCents(Number(p.total_cents) + vat)}</td>
+                    <td className="p-3 text-right font-medium">{fmtCents(Number(p.total_ttc_cents ?? Number(p.total_cents) + vatCents))}</td>
                     <td className="p-3">
                       <Badge className={st.className}>{st.label}</Badge>
                       {p.paid_at && <p className="text-[11px] text-muted-foreground mt-1">le {fmtDate(p.paid_at)}</p>}

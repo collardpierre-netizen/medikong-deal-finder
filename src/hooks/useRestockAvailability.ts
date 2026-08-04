@@ -118,3 +118,50 @@ export function useSecondLife(gtin?: string | null, cnk?: string | null): Second
   const byCnk = cnk ? map.get(`cnk:${cnk}`) : undefined;
   return byCnk ?? null;
 }
+
+/**
+ * Reclasse la page courante selon la disponibilité seconde vie.
+ * - `second_life` : les produits ayant un lot ReStock d'abord (puis prix bas).
+ * - `best_saving` : plus grosse économie estimée (prix neuf − seconde vie) d'abord.
+ * Les produits sans lot ReStock restent après, dans l'ordre serveur.
+ */
+export function sortBySecondLife<T extends ProductKeyed & { best_price_excl_vat?: number | null }>(
+  products: T[],
+  map: Map<string, SecondLifeInfo>,
+  mode: "second_life" | "best_saving"
+): T[] {
+  if (map.size === 0) return products;
+
+  const infoOf = (p: T) =>
+    (p.gtin ? map.get(`ean:${p.gtin}`) : undefined) ?? (p.cnk_code ? map.get(`cnk:${p.cnk_code}`) : undefined) ?? null;
+
+  const savingOf = (p: T) => {
+    const info = infoOf(p);
+    const newPrice = p.best_price_excl_vat ?? null;
+    if (!info || info.minPriceHt == null || !newPrice || newPrice <= 0) return null;
+    const saving = newPrice - info.minPriceHt;
+    return saving > 0 ? saving : null;
+  };
+
+  return [...products]
+    .map((p, i) => ({ p, i }))
+    .sort((a, b) => {
+      if (mode === "best_saving") {
+        const sa = savingOf(a.p);
+        const sb = savingOf(b.p);
+        if (sa == null && sb == null) return a.i - b.i;
+        if (sa == null) return 1;
+        if (sb == null) return -1;
+        return sb - sa || a.i - b.i;
+      }
+      const ia = infoOf(a.p);
+      const ib = infoOf(b.p);
+      if (!ia && !ib) return a.i - b.i;
+      if (!ia) return 1;
+      if (!ib) return -1;
+      const pa = ia.minPriceHt ?? Number.POSITIVE_INFINITY;
+      const pb = ib.minPriceHt ?? Number.POSITIVE_INFINITY;
+      return pa - pb || a.i - b.i;
+    })
+    .map((x) => x.p);
+}

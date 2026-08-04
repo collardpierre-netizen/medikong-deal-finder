@@ -16,6 +16,7 @@ type Sim = {
   total_lines: number | null;
   matched_lines: number | null;
   match_rate: number | null;
+  catalog_match_rate: number | null;
   source_total_excl_vat: number | null;
   medikong_total_excl_vat: number | null;
   savings_amount: number | null;
@@ -28,6 +29,10 @@ type Sim = {
 const fmtEur = (n: number | null) =>
   n == null ? "—" : new Intl.NumberFormat("fr-BE", { style: "currency", currency: "EUR" }).format(Number(n));
 const fmtPct = (n: number | null) => (n == null ? "—" : `${Number(n).toFixed(1)}%`);
+// Taux de correspondance catalogue : `catalog_match_rate` est déjà en %.
+// Fallback rétrocompatible pour les anciennes lignes qui n'ont que `match_rate` (fraction 0–1).
+const catalogMatchPct = (r: Sim) =>
+  r.catalog_match_rate != null ? Number(r.catalog_match_rate) : r.match_rate != null ? Number(r.match_rate) * 100 : null;
 
 export default function AdminSavingsOcr() {
   const [rows, setRows] = useState<Sim[]>([]);
@@ -39,7 +44,7 @@ export default function AdminSavingsOcr() {
     let q = (supabase as any)
       .from("savings_simulations")
       .select(
-        "id,email,pharmacy_name,source_supplier,source_file_type,total_lines,matched_lines,match_rate,source_total_excl_vat,medikong_total_excl_vat,savings_amount,savings_pct,status,error_message,created_at",
+        "id,email,pharmacy_name,source_supplier,source_file_type,total_lines,matched_lines,match_rate,catalog_match_rate,source_total_excl_vat,medikong_total_excl_vat,savings_amount,savings_pct,status,error_message,created_at",
       )
       .order("created_at", { ascending: false })
       .limit(200);
@@ -134,7 +139,7 @@ export default function AdminSavingsOcr() {
                     <td className="py-2 pr-3 text-right">
                       {r.matched_lines ?? 0}/{r.total_lines ?? 0}
                     </td>
-                    <td className="py-2 pr-3 text-right">{fmtPct(r.match_rate)}</td>
+                    <td className="py-2 pr-3 text-right">{fmtPct(catalogMatchPct(r))}</td>
                     <td className="py-2 pr-3 text-right">{fmtEur(r.source_total_excl_vat)}</td>
                     <td className="py-2 pr-3 text-right">{fmtEur(r.medikong_total_excl_vat)}</td>
                     <td className="py-2 pr-3 text-right">

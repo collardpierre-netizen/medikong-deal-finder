@@ -32,6 +32,28 @@ export default function AdminSavingsByPharmacy() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const [details, setDetails] = useState<
+    Record<string, { cats: SavingsCategoryRow[]; top: SavingsTopProduct[] }>
+  >({});
+
+  async function toggle(groupKey: string) {
+    if (openKey === groupKey) {
+      setOpenKey(null);
+      return;
+    }
+    setOpenKey(groupKey);
+    if (details[groupKey]) return;
+    const [{ data: cats }, { data: top }] = await Promise.all([
+      (supabase as any).rpc("savings_pharmacy_category_breakdown", { _group_key: groupKey }),
+      (supabase as any).rpc("savings_top_products", { _group_key: groupKey, _limit: 30 }),
+    ]);
+    setDetails((prev) => ({
+      ...prev,
+      [groupKey]: { cats: (cats as SavingsCategoryRow[]) ?? [], top: (top as SavingsTopProduct[]) ?? [] },
+    }));
+  }
+
 
   async function load() {
     setLoading(true);

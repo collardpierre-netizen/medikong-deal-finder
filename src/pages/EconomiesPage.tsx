@@ -565,8 +565,14 @@ export default function EconomiesPage() {
                   {sim?.status === "failed" && (
                     <div className="text-center py-8">
                       <AlertCircle className="mx-auto text-red-600 mb-2" size={32} />
-                      <div className="font-semibold text-mk-navy mb-1">Une erreur est survenue</div>
-                      <div className="text-sm text-mk-text/60 mb-4">{sim.error_message || "Notre système n'a pas pu traiter votre fichier."}</div>
+                      <div className="font-semibold text-mk-navy mb-1">
+                        {sim.failure_reason === "timeout" ? "Analyse interrompue (délai dépassé)" : "Une erreur est survenue"}
+                      </div>
+                      <div className="text-sm text-mk-text/60 mb-4">
+                        {sim.failure_reason === "timeout"
+                          ? "Le traitement a dépassé le délai maximal. Cela arrive avec les documents très longs ou peu lisibles — un email de confirmation vous a été envoyé."
+                          : sim.error_message || "Notre système n'a pas pu traiter votre fichier."}
+                      </div>
                       <button onClick={() => { setSim(null); setSimId(null); setStep(2); setFile(null); }}
                         className="text-mk-blue text-sm font-medium hover:underline">← Réessayer</button>
                     </div>

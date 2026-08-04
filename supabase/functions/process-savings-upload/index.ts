@@ -670,7 +670,9 @@ async function processSimulation(simulationId: string, file: File, fileKind: Fil
       .from("savings_simulations")
       .update({
         status: "failed",
+        failure_reason: "pipeline_error",
         error_message: err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500),
+
       })
       .eq("id", simulationId);
   }

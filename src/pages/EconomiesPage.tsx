@@ -150,6 +150,8 @@ export default function EconomiesPage() {
         match_method: r.match_method,
         match_confidence: r.match_confidence,
         medikong_min_price_excl_vat: r.medikong_min_price_excl_vat,
+        line_status: r.line_status,
+
         medikong_supplier_count: r.medikong_supplier_count,
         line_savings: r.line_savings,
         line_savings_pct: r.line_savings_pct,

@@ -30,6 +30,7 @@ interface SimulationStatus {
   error_message: string | null;
   email_sent_at: string | null;
   category_breakdown?: SavingsCategoryRow[] | null;
+  eligibility_breakdown?: SavingsCategoryRow[] | null;
 }
 
 

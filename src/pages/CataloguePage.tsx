@@ -213,7 +213,7 @@ export default function CataloguePage() {
                 </button>
               </div>
             ) : view === "trivago" ? (
-              <SearchTrivagoView products={products.map(p => ({
+              <SearchTrivagoView products={displayProducts.map(p => ({
                 id: p.id, slug: p.slug, name: p.name, brand: p.brand_name || "",
                 gtin: p.gtin || "", cnk: p.cnk_code || "", ean: p.gtin || "",
                 price: p.best_price_excl_vat || 0, pub: p.best_price_incl_vat || 0,
@@ -225,7 +225,7 @@ export default function CataloguePage() {
             ) : (
               <RestockAvailabilityContext.Provider value={secondLifeMap}>
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-                  {products.map((p, i) => (
+                  {displayProducts.map((p, i) => (
                     <CatalogProductCard key={p.id} product={p} index={i} view="grid" />
                   ))}
                 </div>

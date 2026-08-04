@@ -31,7 +31,16 @@ export default function LoginPage() {
         toast({ title: "Erreur de connexion", description: error.message, variant: "destructive" });
       }
     } else {
-      navigate("/compte");
+      // Un apporteur d'affaires atterrit sur son portail dédié ; tout autre
+      // profil (acheteur, admin) garde la destination habituelle.
+      let target = "/compte";
+      try {
+        const { data } = await (supabase as any).rpc("affiliate_my_account");
+        if (data) target = "/apporteur";
+      } catch (e) {
+        console.error(e);
+      }
+      navigate(target);
     }
   };
 

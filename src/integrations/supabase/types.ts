@@ -16744,6 +16744,7 @@ export type Database = {
         Row: {
           catalog_match_rate: number | null
           city: string | null
+          commercial_status: string
           consent_given_at: string
           created_at: string
           email: string | null
@@ -16780,6 +16781,7 @@ export type Database = {
         Insert: {
           catalog_match_rate?: number | null
           city?: string | null
+          commercial_status?: string
           consent_given_at?: string
           created_at?: string
           email?: string | null
@@ -16816,6 +16818,7 @@ export type Database = {
         Update: {
           catalog_match_rate?: number | null
           city?: string | null
+          commercial_status?: string
           consent_given_at?: string
           created_at?: string
           email?: string | null
@@ -29964,6 +29967,18 @@ export type Database = {
         Args: { _draft_id: string; _payload: Json }
         Returns: string
       }
+      admin_savings_by_pharmacy: {
+        Args: never
+        Returns: {
+          analyses_count: number
+          commercial_status: string
+          emails: string[]
+          group_key: string
+          last_analysis_at: string
+          pharmacy_name: string
+          total_savings: number
+        }[]
+      }
       admin_search_brands_fuzzy: {
         Args: { _limit?: number; _q: string }
         Returns: {
@@ -30101,6 +30116,10 @@ export type Database = {
       admin_set_order_public_access: {
         Args: { _expires_at?: string; _order_id: string; _pin?: string }
         Returns: undefined
+      }
+      admin_set_savings_commercial_status: {
+        Args: { _group_key: string; _status: string }
+        Returns: number
       }
       admin_set_vendor_compliance: {
         Args: {

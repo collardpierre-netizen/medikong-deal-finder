@@ -60,6 +60,7 @@ const ManufacturerPage = lazyWithRetry(() => import("./pages/ManufacturerPage"),
 const FabricantsPage = lazyWithRetry(() => import("./pages/FabricantsPage"), "FabricantsPage");
 const CartPage = lazyWithRetry(() => import("./pages/CartPage"), "CartPage");
 const AccountPage = lazyWithRetry(() => import("./pages/AccountPage"), "AccountPage");
+const MesAnalysesEconomiesPage = lazyWithRetry(() => import("./pages/MesAnalysesEconomiesPage"), "MesAnalysesEconomiesPage");
 const CheckoutPage = lazyWithRetry(() => import("./pages/CheckoutPage"), "CheckoutPage");
 const ConfirmationPage = lazyWithRetry(() => import("./pages/ConfirmationPage"), "ConfirmationPage");
 const OrderPaymentConfirmationPage = lazyWithRetry(() => import("./pages/OrderPaymentConfirmationPage"), "OrderPaymentConfirmationPage");
@@ -431,6 +432,8 @@ const App = () => (
             <Route path="/compte/activer-acheteur" element={<LP><BuyerActivationPage /></LP>} />
             <Route path="/compte/mes-categories" element={<LP><MesCategoriesPage /></LP>} />
             <Route path="/compte/mes-rfq" element={<LP><MesRfqPage /></LP>} />
+            <Route path="/compte/mes-analyses-economies" element={<LP><MesAnalysesEconomiesPage /></LP>} />
+
             <Route path="/compte/rfq-credits" element={<LP><RfqCreditsPage /></LP>} />
             <Route path="/compte/ventes-privees" element={<LP><VentesPriveesPage /></LP>} />
             <Route path="/compte/offres-recues" element={<LP><OffresRecuesPage /></LP>} />

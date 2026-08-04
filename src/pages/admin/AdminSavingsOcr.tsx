@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, RefreshCw, ExternalLink, ScanLine } from "lucide-react";
+import AdminSavingsByPharmacy from "@/components/admin/AdminSavingsByPharmacy";
 
 type Sim = {
   id: string;
@@ -169,6 +170,9 @@ export default function AdminSavingsOcr() {
           )}
         </CardContent>
       </Card>
+
+      <AdminSavingsByPharmacy />
     </div>
+
   );
 }

@@ -5,7 +5,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, RefreshCw, ExternalLink, ScanLine } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Loader2, RefreshCw, ExternalLink, ScanLine, Plus, Send } from "lucide-react";
+import { toast } from "sonner";
 import AdminSavingsByPharmacy from "@/components/admin/AdminSavingsByPharmacy";
 
 type Sim = {
@@ -25,7 +37,10 @@ type Sim = {
   status: string | null;
   error_message: string | null;
   created_at: string;
+  created_via: string | null;
+  sent_at: string | null;
 };
+
 
 const fmtEur = (n: number | null) =>
   n == null ? "—" : new Intl.NumberFormat("fr-BE", { style: "currency", currency: "EUR" }).format(Number(n));

@@ -214,6 +214,7 @@ function applyCatalogProductFilters(
     manufacturerIds: string[] | null;
     effectiveSearch?: string;
     columns?: CatalogColumns;
+    secondLifeKeys?: { eans: string[]; cnks: string[] } | null;
   }
 ) {
   const cols = options.columns ?? GLOBAL_COLUMNS;
@@ -233,6 +234,18 @@ function applyCatalogProductFilters(
   if (filters.inStock) next = next.eq(cols.isInStock, true);
   if (filters.hasOffers) next = next.gt(cols.offerCount, 0);
 
+  // Filtre « aussi dispo en seconde vie » : les lots ReStock vivent dans une
+  // table séparée, on restreint donc le catalogue aux EAN/CNK concernés
+  // (liste courte, résolue en amont). Aucune clé → aucun résultat.
+  if (filters.secondLife) {
+    const eans = options.secondLifeKeys?.eans ?? [];
+    const cnks = options.secondLifeKeys?.cnks ?? [];
+    const ors: string[] = [];
+    if (eans.length) ors.push(`gtin.in.(${eans.join(",")})`);
+    if (cnks.length) ors.push(`cnk_code.in.(${cnks.join(",")})`);
+    next = ors.length > 0 ? next.or(ors.join(",")) : next.eq("id", NO_MATCH_UUID);
+  }
+
   if (options.effectiveSearch) {
     const pattern = `%${options.effectiveSearch}%`;
     next = next.or(`name.ilike.${pattern},gtin.ilike.${pattern},cnk_code.ilike.${pattern},brand_name.ilike.${pattern}`);
@@ -240,6 +253,7 @@ function applyCatalogProductFilters(
 
   return next;
 }
+
 
 function applyCatalogSort(query: any, sort: string, columns: CatalogColumns = GLOBAL_COLUMNS) {
   switch (sort) {

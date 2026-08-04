@@ -738,6 +738,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: "consent_required" }, { status: 400, headers: corsHeaders });
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255)
       return Response.json({ error: "invalid_email" }, { status: 400, headers: corsHeaders });
+    if (!pharmacyName || pharmacyName.length < 2 || pharmacyName.length > 200)
+      return Response.json({ error: "pharmacy_name_required" }, { status: 400, headers: corsHeaders });
+
+
 
     const fileKind = detectFileKind(file.type);
     if (!fileKind)

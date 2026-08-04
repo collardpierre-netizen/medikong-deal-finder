@@ -664,7 +664,10 @@ async function processSimulation(
     const savingsAmount = totalSourceMatchedOnly - totalMedikongMatchedOnly;
     const savingsPct =
       totalSourceMatchedOnly > 0 ? (savingsAmount / totalSourceMatchedOnly) * 100 : 0;
-    const finalStatus = pricedCount === 0 ? "no_match" : "done";
+    // Analyse créée manuellement en admin : pas d'envoi automatique, attente de validation.
+    const finalStatus =
+      pricedCount === 0 ? "no_match" : createdVia === "admin_manual" ? "ready_to_send" : "done";
+
 
     await supabase
       .from("savings_simulations")

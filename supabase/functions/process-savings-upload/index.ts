@@ -691,7 +691,7 @@ Deno.serve(async (req) => {
       const { data, error } = await supabase
         .from("savings_simulations")
         .select(
-          "id,status,total_lines,matched_lines,match_rate,source_total_excl_vat,medikong_total_excl_vat,savings_amount,savings_pct,error_message,report_path,email_sent_at",
+          "id,status,total_lines,matched_lines,match_rate,catalog_match_rate,ocr_extraction_rate,total_lines_count,matched_lines_count,total_source_matched_only,total_medikong_matched_only,source_total_excl_vat,medikong_total_excl_vat,savings_amount,savings_pct,error_message,failure_reason,report_path,email_sent_at",
         )
         .eq("id", id)
         .maybeSingle();

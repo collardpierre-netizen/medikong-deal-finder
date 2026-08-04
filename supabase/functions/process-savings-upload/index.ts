@@ -405,6 +405,38 @@ async function getMedikongMinPrice(
 }
 
 
+// Notification email d'échec (timeout / erreur pipeline / aucune ligne exploitable).
+// Best-effort : ne jette jamais, l'idempotencyKey évite les doublons.
+async function notifyFailure(
+  supabase: ReturnType<typeof getAdminClient>,
+  simulationId: string,
+  reason: "timeout" | "pipeline_error" | "no_match",
+) {
+  try {
+    const { data: sim } = await supabase
+      .from("savings_simulations")
+      .select("email, pharmacy_name, created_via")
+      .eq("id", simulationId)
+      .maybeSingle();
+    if (!sim?.email || sim.created_via === "admin_manual") return;
+    const { error } = await supabase.functions.invoke("send-transactional-email", {
+      body: {
+        templateName: "savings-analysis-failed",
+        recipientEmail: sim.email,
+        idempotencyKey: `savings-failed-${simulationId}`,
+        templateData: {
+          pharmacyName: sim.pharmacy_name || "votre pharmacie",
+          reason,
+          retryUrl: "https://medikong.pro/economies",
+        },
+      },
+    });
+    if (error) console.error("[notifyFailure] invoke failed", error);
+  } catch (e) {
+    console.error("[notifyFailure] exception", e);
+  }
+}
+
 async function processSimulation(
   simulationId: string,
   file: File,

@@ -444,15 +444,21 @@ async function processSimulation(
     if (!extracted.lines || extracted.lines.length === 0) {
       await supabase
         .from("savings_simulations")
-        .update({ status: "no_match", error_message: "Aucune ligne détectée" })
+        .update({
+          status: "no_match",
+          failure_reason: "no_match",
+          error_message: "Aucune ligne détectée",
+          processing_timeout_at: null,
+        })
         .eq("id", simulationId);
+      await notifyFailure(supabase, simulationId, "no_match");
       return;
     }
 
     // Récupère métadonnées simulation pour observation marché
     const { data: sim } = await supabase
       .from("savings_simulations")
-      .select("region, source_total_excl_vat, created_at")
+      .select("region, source_total_excl_vat, created_at, email, pharmacy_name")
       .eq("id", simulationId)
       .single();
 

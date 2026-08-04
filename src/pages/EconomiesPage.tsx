@@ -5,9 +5,11 @@ import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, ShieldCheck, Spar
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import SavingsCategoryPie, { type SavingsCategoryRow } from "@/components/savings/SavingsCategoryPie";
 
 type Supplier = "febelco" | "cerp" | "pharma_belgium" | "other";
-type Status = "processing" | "done" | "failed" | "no_match";
+type Status = "processing" | "done" | "failed" | "no_match" | "ready_to_send" | "sent";
+
 
 interface SimulationStatus {
   id: string;

@@ -45,6 +45,8 @@ interface SimulationLine {
   medikong_supplier_count: number | null;
   line_savings: number | null;
   line_savings_pct: number | null;
+  line_status?: "cheaper" | "more_expensive" | "equal" | "not_matched" | null;
+
   matched_product?: { name: string | null; slug: string | null } | null;
 }
 

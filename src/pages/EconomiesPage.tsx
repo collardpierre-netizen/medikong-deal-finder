@@ -440,6 +440,16 @@ export default function EconomiesPage() {
                         </div>
                       )}
 
+                      {sim.eligibility_breakdown && sim.eligibility_breakdown.length > 0 && (
+                        <div className="border border-mk-border rounded-lg p-4 mb-4">
+                          <SavingsCategoryPie
+                            rows={sim.eligibility_breakdown}
+                            title="Répartition par code d'éligibilité"
+                          />
+                        </div>
+                      )}
+
+
 
 
 

@@ -458,36 +458,53 @@ export default function EconomiesPage() {
                                 </thead>
                                 <tbody>
                                   {(showAllLines ? lines : lines.slice(0, 10)).map((l) => {
-                                    const matched = !!l.matched_product_id;
+                                    const status =
+                                      l.line_status ??
+                                      (l.medikong_min_price_excl_vat == null ? "not_matched" : "equal");
+                                    const comparable = status !== "not_matched";
                                     const name = l.matched_product?.name || l.detected_name || "—";
+                                    const notFoundBadge = (
+                                      <span className="inline-block rounded bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 text-[10px] font-medium">
+                                        Non trouvé
+                                      </span>
+                                    );
                                     return (
                                       <tr key={l.id} className="border-b border-mk-border/60 last:border-0 hover:bg-mk-alt/20">
                                         <td className="px-3 py-2">
                                           <div className="font-medium text-mk-navy line-clamp-1">{name}</div>
-                                          <div className="text-[11px] text-mk-text/50 flex gap-2">
+                                          <div className="text-[11px] text-mk-text/50 flex gap-2 items-center">
                                             {l.detected_brand && <span>{l.detected_brand}</span>}
                                             {l.detected_cnk && <span>CNK {l.detected_cnk}</span>}
-                                            {!matched && <span className="text-amber-600">Non trouvé</span>}
+                                            {!comparable && notFoundBadge}
+                                            {status === "more_expensive" && (
+                                              <span className="text-mk-text/60">MediKong plus cher</span>
+                                            )}
+                                            {status === "equal" && <span className="text-mk-text/60">Prix identique</span>}
                                           </div>
                                         </td>
                                         <td className="px-3 py-2 text-right tabular-nums">{l.detected_quantity ?? "—"}</td>
                                         <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(l.detected_unit_price_excl_vat)}</td>
                                         <td className="px-3 py-2 text-right tabular-nums">
-                                          {matched ? fmtMoney(l.medikong_min_price_excl_vat) : <span className="text-mk-text/40">—</span>}
+                                          {comparable ? fmtMoney(l.medikong_min_price_excl_vat) : notFoundBadge}
                                         </td>
                                         <td className="px-3 py-2 text-right tabular-nums">
-                                          {l.line_savings && l.line_savings > 0 ? (
+                                          {!comparable ? (
+                                            notFoundBadge
+                                          ) : l.line_savings != null && l.line_savings > 0 ? (
                                             <span className="font-semibold text-green-600">
                                               {fmtMoney(l.line_savings)}
                                               {l.line_savings_pct ? <span className="text-[10px] font-normal opacity-70 ml-1">({l.line_savings_pct.toFixed(0)}%)</span> : null}
                                             </span>
+                                          ) : l.line_savings != null && l.line_savings < 0 ? (
+                                            <span className="text-mk-text/70">{fmtMoney(l.line_savings)}</span>
                                           ) : (
-                                            <span className="text-mk-text/40">—</span>
+                                            <span className="text-mk-text/40">0,00</span>
                                           )}
                                         </td>
                                       </tr>
                                     );
                                   })}
+
                                 </tbody>
                               </table>
                             </div>

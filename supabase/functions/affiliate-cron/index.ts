@@ -3,11 +3,11 @@
 // action = "monthly_payout"  -> factures self-billing mensuelles (cron mensuel, idempotent)
 // action = "replay_order"    -> recalcul/rattrapage d'une commande payée (order_id)
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { requireAdminOrService } from "../_shared/admin-or-service.ts";
+import { requireCronOrService } from "../_shared/cron-or-admin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
 };
 
 function json(body: unknown, status = 200) {
@@ -20,7 +20,7 @@ function json(body: unknown, status = 200) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  const guard = await requireAdminOrService(req);
+  const guard = await requireCronOrService(req, { allowAdmin: true });
   if (!guard.ok) return json({ ok: false, error: guard.error }, guard.status);
 
   const admin = createClient(

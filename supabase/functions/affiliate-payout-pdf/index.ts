@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
 
     const { data: payout, error: pErr } = await admin
       .from("affiliate_payout_invoices")
-      .select("id, affiliate_id, invoice_number, period_start, period_end, total_cents, vat_mode, status, pdf_path, issued_at, paid_at")
+      .select("id, affiliate_id, invoice_number, period_start, period_end, total_cents, vat_mode, vat_rate_bp, vat_cents, total_ttc_cents, status, pdf_path, issued_at, paid_at")
       .eq("id", payoutId)
       .maybeSingle();
     if (pErr || !payout) return json(404, { error: "Note introuvable" });
@@ -110,9 +110,11 @@ Deno.serve(async (req) => {
       for (const o of orders ?? []) orderNumbers[o.id] = o.order_number ?? "";
     }
 
+    // Montants fiscaux : figés en base à l'émission, jamais recalculés ici.
     const htCents = Number(payout.total_cents) || 0;
-    const vatCents = payout.vat_mode === "vat_21" ? Math.round((htCents * VAT_RATE_BP) / 10000) : 0;
-    const totalCents = htCents + vatCents;
+    const vatCents = Number(payout.vat_cents) || 0;
+    const vatRateBp = Number(payout.vat_rate_bp) || 0;
+    const totalCents = Number(payout.total_ttc_cents) || htCents + vatCents;
 
     // --- Rendu PDF ---
     const doc = new jsPDF({ unit: "mm", format: "a4" });
@@ -178,7 +180,7 @@ Deno.serve(async (req) => {
     doc.text("Total HTVA", 150, y, { align: "right" });
     doc.text(fmtEur(htCents), W - 16, y, { align: "right" });
     y += 6;
-    doc.text("TVA", 150, y, { align: "right" });
+    doc.text(vatRateBp > 0 ? `TVA ${(vatRateBp / 100).toFixed(0)} %` : "TVA", 150, y, { align: "right" });
     doc.text(fmtEur(vatCents), W - 16, y, { align: "right" });
     y += 6;
     doc.setFontSize(11);

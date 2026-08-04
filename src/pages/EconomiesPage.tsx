@@ -366,10 +366,13 @@ export default function EconomiesPage() {
                     </span>
                   </label>
                   <button type="submit" disabled={submitting || identity.pharmacy_name.trim().length < 2 || !consent}
-                    className="w-full bg-mk-blue text-white rounded-lg px-4 py-3 text-sm font-semibold hover:bg-mk-blue/90 disabled:opacity-50 transition">
+                    className="w-full bg-mk-blue text-white rounded-lg px-4 py-3 text-sm font-semibold hover:bg-mk-blue/90 disabled:opacity-50 disabled:cursor-not-allowed transition">
                     {submitting ? <Loader2 className="inline animate-spin mr-2" size={14} /> : <Sparkles className="inline mr-2" size={14} />}
                     {submitting ? "Envoi en cours…" : "Calculer mes économies"}
                   </button>
+                  {identity.pharmacy_name.trim().length < 2 && (
+                    <p className="text-xs text-destructive">Le nom de la pharmacie est obligatoire pour lancer l'analyse.</p>
+                  )}
                 </motion.form>
               )}
 

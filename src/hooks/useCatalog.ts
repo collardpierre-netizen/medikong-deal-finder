@@ -464,18 +464,20 @@ export function useCatalogProducts(filters: CatalogFilters) {
           mfIds?.length ||
           filters.inStock ||
           filters.hasOffers ||
+          filters.secondLife ||
           filters.priceMin !== undefined ||
           filters.priceMax !== undefined
         );
 
         const offset = (filters.page - 1) * filters.perPage;
-        const isDefaultCatalogueView = !effectiveSearch && !resolvedBrandIds?.length && !categoryIds && !mfIds?.length && !filters.inStock && !filters.hasOffers && filters.priceMin === undefined && filters.priceMax === undefined;
+        const isDefaultCatalogueView = !effectiveSearch && !resolvedBrandIds?.length && !categoryIds && !mfIds?.length && !filters.inStock && !filters.hasOffers && !filters.secondLife && filters.priceMin === undefined && filters.priceMax === undefined;
         const filterContext = {
           categoryIds,
           categoryColumn: (isMasterSlug ? "primary_category_id" : "category_id") as "category_id" | "primary_category_id",
           resolvedBrandIds,
           manufacturerIds: mfIds,
           effectiveSearch,
+          secondLifeKeys,
         };
 
         const dropInactive = <T extends { category_id?: string | null }>(rows: T[]): T[] =>

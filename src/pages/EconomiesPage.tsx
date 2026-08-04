@@ -429,6 +429,14 @@ export default function EconomiesPage() {
                         );
                       })()}
 
+                      {sim.category_breakdown && sim.category_breakdown.length > 0 && (
+                        <div className="border border-mk-border rounded-lg p-4 mb-4">
+                          <SavingsCategoryPie rows={sim.category_breakdown} />
+                        </div>
+                      )}
+
+
+
 
                       {/* Détail ligne par ligne à l'écran */}
                       <div className="border border-mk-border rounded-lg overflow-hidden mb-4">

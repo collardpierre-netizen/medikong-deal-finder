@@ -10,6 +10,7 @@ import { CatalogPagination } from "@/components/catalog/CatalogPagination";
 import { ActiveFilters } from "@/components/catalog/ActiveFilters";
 // MasterTaxonomyBar retiré : navigation par catégorie pilotée par la sidebar (vague 2 prévue pour un éventuel bandeau d'univers).
 import { useCatalogFilters, useCatalogProducts, useCatalogBrands } from "@/hooks/useCatalog";
+import { RestockAvailabilityContext, useRestockAvailabilityMap } from "@/hooks/useRestockAvailability";
 import { useCatalogViewMode } from "@/hooks/useCatalogViewMode";
 import { Loader2, SlidersHorizontal, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -48,6 +49,8 @@ export default function CataloguePage() {
   const total = data?.total || 0;
   const countryStatsUnavailable = (data as any)?.countryStatsUnavailable === true;
   const { view, setView } = useCatalogViewMode();
+  // Disponibilité « seconde vie » (ReStock) pour la page courante — 1 requête.
+  const secondLifeMap = useRestockAvailabilityMap(products);
   const [mobileFilters, setMobileFilters] = useState(false);
 
   // Collect category IDs + brand IDs from results for contextual sidebar filtering.
@@ -212,12 +215,15 @@ export default function CataloguePage() {
                 category: p.category_name || undefined,
               }))} />
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-                {products.map((p, i) => (
-                  <CatalogProductCard key={p.id} product={p} index={i} view="grid" />
-                ))}
-              </div>
+              <RestockAvailabilityContext.Provider value={secondLifeMap}>
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+                  {products.map((p, i) => (
+                    <CatalogProductCard key={p.id} product={p} index={i} view="grid" />
+                  ))}
+                </div>
+              </RestockAvailabilityContext.Provider>
             )}
+
 
             <CatalogPagination page={filters.page} perPage={filters.perPage} total={total} onPageChange={p => setFilter("page", p)} />
 

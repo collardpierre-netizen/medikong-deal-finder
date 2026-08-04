@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCountry } from "@/contexts/CountryContext";
 import { getLocalizedName } from "@/lib/localization";
 import { applyHiddenCategoryFilter } from "@/lib/catalog-filters";
+import { fetchSecondLifeKeys } from "@/hooks/useRestockAvailability";
 import { useCallback, useMemo } from "react";
 
 const PRODUCT_SELECT_FIELDS = "id, slug, name, name_fr, name_nl, name_de, brand_name, brand_id, category_id, category_name, gtin, cnk_code, image_url, image_urls, short_description, is_promotion, promotion_label, best_price_excl_vat, best_price_incl_vat, offer_count, total_stock, is_in_stock, created_at, cagnotte_eligible";
@@ -177,6 +178,9 @@ interface CatalogColumns {
   isInStock: string;
 }
 
+/** UUID sentinelle : force un résultat vide sans casser la requête PostgREST. */
+const NO_MATCH_UUID = "00000000-0000-0000-0000-000000000000";
+
 const GLOBAL_COLUMNS: CatalogColumns = {
   bestPriceExclVat: "best_price_excl_vat",
   offerCount: "offer_count",
@@ -214,6 +218,7 @@ function applyCatalogProductFilters(
     manufacturerIds: string[] | null;
     effectiveSearch?: string;
     columns?: CatalogColumns;
+    secondLifeKeys?: { eans: string[]; cnks: string[] } | null;
   }
 ) {
   const cols = options.columns ?? GLOBAL_COLUMNS;
@@ -233,6 +238,18 @@ function applyCatalogProductFilters(
   if (filters.inStock) next = next.eq(cols.isInStock, true);
   if (filters.hasOffers) next = next.gt(cols.offerCount, 0);
 
+  // Filtre « aussi dispo en seconde vie » : les lots ReStock vivent dans une
+  // table séparée, on restreint donc le catalogue aux EAN/CNK concernés
+  // (liste courte, résolue en amont). Aucune clé → aucun résultat.
+  if (filters.secondLife) {
+    const eans = options.secondLifeKeys?.eans ?? [];
+    const cnks = options.secondLifeKeys?.cnks ?? [];
+    const ors: string[] = [];
+    if (eans.length) ors.push(`gtin.in.(${eans.join(",")})`);
+    if (cnks.length) ors.push(`cnk_code.in.(${cnks.join(",")})`);
+    next = ors.length > 0 ? next.or(ors.join(",")) : next.eq("id", NO_MATCH_UUID);
+  }
+
   if (options.effectiveSearch) {
     const pattern = `%${options.effectiveSearch}%`;
     next = next.or(`name.ilike.${pattern},gtin.ilike.${pattern},cnk_code.ilike.${pattern},brand_name.ilike.${pattern}`);
@@ -240,6 +257,7 @@ function applyCatalogProductFilters(
 
   return next;
 }
+
 
 function applyCatalogSort(query: any, sort: string, columns: CatalogColumns = GLOBAL_COLUMNS) {
   switch (sort) {
@@ -268,6 +286,8 @@ export interface CatalogFilters {
   priceMax?: number;
   inStock?: boolean;
   hasOffers?: boolean;
+  /** Ne garder que les produits ayant aussi un lot ReStock « seconde vie » publié. */
+  secondLife?: boolean;
   sort: string;
   page: number;
   perPage: number;
@@ -354,6 +374,7 @@ function parseFiltersFromParams(params: URLSearchParams): CatalogFilters {
     priceMax: params.get("price_max") ? Number(params.get("price_max")) : undefined,
     inStock: params.get("stock") === "1" ? true : undefined,
     hasOffers: params.get("has_offers") === "1" ? true : undefined,
+    secondLife: params.get("second_life") === "1" ? true : undefined,
     sort: params.get("sort") || "relevance",
     page: Number(params.get("page")) || 1,
     perPage: Number(params.get("per_page")) || 24,
@@ -396,7 +417,7 @@ export function useCatalogProducts(filters: CatalogFilters) {
       const attemptFetch = async (forceGlobalStats: boolean) => {
         const country = forceGlobalStats ? null : outerCountry;
         const isMasterSlug = !!filters.category && filters.category.startsWith("mk-");
-        const [categoryIds, explicitBrandIds, mfIds, inactiveCategoryIdSet] = await Promise.all([
+        const [categoryIds, explicitBrandIds, mfIds, inactiveCategoryIdSet, secondLifeKeys] = await Promise.all([
           filters.category
             ? supabase
                 .rpc("category_descendants", { root_slug: filters.category })
@@ -412,6 +433,9 @@ export function useCatalogProducts(filters: CatalogFilters) {
             ? supabase.from("manufacturers").select("id").in("slug", filters.manufacturers).then(({ data }) => data?.map(m => m.id) || null)
             : Promise.resolve(null),
           fetchInactiveCategoryIds().catch(() => new Set<string>()),
+          filters.secondLife
+            ? fetchSecondLifeKeys().catch(() => ({ eans: [], cnks: [] }))
+            : Promise.resolve(null),
         ]);
 
         let resolvedBrandIds = explicitBrandIds;
@@ -440,18 +464,20 @@ export function useCatalogProducts(filters: CatalogFilters) {
           mfIds?.length ||
           filters.inStock ||
           filters.hasOffers ||
+          filters.secondLife ||
           filters.priceMin !== undefined ||
           filters.priceMax !== undefined
         );
 
         const offset = (filters.page - 1) * filters.perPage;
-        const isDefaultCatalogueView = !effectiveSearch && !resolvedBrandIds?.length && !categoryIds && !mfIds?.length && !filters.inStock && !filters.hasOffers && filters.priceMin === undefined && filters.priceMax === undefined;
+        const isDefaultCatalogueView = !effectiveSearch && !resolvedBrandIds?.length && !categoryIds && !mfIds?.length && !filters.inStock && !filters.hasOffers && !filters.secondLife && filters.priceMin === undefined && filters.priceMax === undefined;
         const filterContext = {
           categoryIds,
           categoryColumn: (isMasterSlug ? "primary_category_id" : "category_id") as "category_id" | "primary_category_id",
           resolvedBrandIds,
           manufacturerIds: mfIds,
           effectiveSearch,
+          secondLifeKeys,
         };
 
         const dropInactive = <T extends { category_id?: string | null }>(rows: T[]): T[] =>

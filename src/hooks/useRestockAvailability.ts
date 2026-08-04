@@ -87,6 +87,8 @@ export function useRestockAvailabilityMap(products: ProductKeyed[]) {
             count: (prev?.count ?? 0) + 1,
             minPriceHt:
               price == null ? prev?.minPriceHt ?? null : Math.min(price, prev?.minPriceHt ?? price),
+            maxPriceHt:
+              price == null ? prev?.maxPriceHt ?? null : Math.max(price, prev?.maxPriceHt ?? price),
             bestGrade:
               grade == null
                 ? prev?.bestGrade ?? null

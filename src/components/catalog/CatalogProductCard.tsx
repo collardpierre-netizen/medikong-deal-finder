@@ -186,6 +186,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid", searchQu
             <p className="text-xs text-muted-foreground line-clamp-1">{displayShortDescription}</p>
           )}
           <p className="text-xs text-muted-foreground mt-1">EAN: {product.gtin || "—"}</p>
+          <SecondLifeBadge gtin={product.gtin} cnk={product.cnk_code} className="mt-1.5 w-fit" />
           <StockBadge product={product} />
         </div>
         <div className="text-right shrink-0 space-y-1">

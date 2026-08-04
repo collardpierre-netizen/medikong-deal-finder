@@ -47,7 +47,26 @@ function categoryGroupLabel(code: string | null): string {
       return "Nutrition / Compléments";
     default:
       return "Autre / Non classé";
-  }
+}
+
+// Libellés des codes d'éligibilité (miroir de public.product_eligibility_categories)
+const ELIGIBILITY_LABELS: Record<string, string> = {
+  eligible_otc: "OTC (vente libre)",
+  eligible_cosmetic: "Cosmétique / dermo",
+  eligible_supplement: "Complément alimentaire",
+  eligible_nutrition: "Nutrition médicale",
+  eligible_device_low_class: "Dispositif médical (Cl. I-IIa)",
+  excluded_device_high_class: "Dispositif médical (Cl. IIb-III) — hors scope",
+  excluded_rx: "Médicament sur ordonnance — hors scope",
+  excluded_narcotic: "Stupéfiant / méthylphénidate — hors scope",
+  unknown_needs_review: "À catégoriser",
+};
+
+function eligibilityLabel(code: string | null): string {
+  if (!code) return "Non classé";
+  return ELIGIBILITY_LABELS[code] ?? code;
+}
+
 }
 
 interface ExtractedLine {

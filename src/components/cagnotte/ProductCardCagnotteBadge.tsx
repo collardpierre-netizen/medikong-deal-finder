@@ -40,13 +40,13 @@ export function ProductCardCagnotteBadge({
               color: "#8A5A00",
             }}
           >
-            🪙 {perUnit > 0 ? `+${perUnit.toFixed(2)} €` : `+${pct}%`}
+            🪙 {perUnit > 0 ? `+${perUnit.toFixed(2)} €/u.` : `+${pct}%`}
           </span>
         </TooltipTrigger>
         <TooltipContent>
           {nbTotalOffers && nbEligibleOffers != null && nbEligibleOffers < nbTotalOffers
-            ? `${nbEligibleOffers} offre(s) sur ${nbTotalOffers} vous font gagner ${perUnit > 0 ? `${perUnit.toFixed(2)} € (${pct}%)` : `${pct}%`} de cagnotte fidélité.`
-            : `Ce produit vous fait gagner ${perUnit > 0 ? `${perUnit.toFixed(2)} € (${pct}%)` : `${pct}%`} de cagnotte fidélité.`}
+            ? `${nbEligibleOffers} offre(s) sur ${nbTotalOffers} vous font gagner ${perUnit > 0 ? `${perUnit.toFixed(2)} € de cagnotte par unité (${pct}% du prix HTVA)` : `${pct}% de cagnotte`}.`
+            : `Ce produit vous fait gagner ${perUnit > 0 ? `${perUnit.toFixed(2)} € de cagnotte par unité achetée (${pct}% du prix HTVA)` : `${pct}% de cagnotte fidélité`}.`}
         </TooltipContent>
 
       </Tooltip>

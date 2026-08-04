@@ -30,12 +30,12 @@ export function OfferCagnotteBadge({
             className={`inline-flex items-center gap-0.5 text-[11px] font-semibold px-1.5 py-0.5 rounded cursor-default ${className}`}
             style={{ background: "rgba(244,185,66,0.15)", color: "#D89620" }}
           >
-            🪙 {perUnit > 0 ? `+${perUnit.toFixed(2)} €` : `+${pct}%`}
+            🪙 Cagnotte {perUnit > 0 ? `+${perUnit.toFixed(2)} €/u.` : `+${pct}%`}
           </span>
         </TooltipTrigger>
         <TooltipContent>
           {perUnit > 0
-            ? `Cette offre vous rapporte ${perUnit.toFixed(2)} € de cagnotte par unité vendue.`
+            ? `Cette offre vous rapporte ${perUnit.toFixed(2)} € de cagnotte par unité achetée (${pct}% du prix HTVA), crédités sur votre cagnotte MediKong.`
             : `Cette offre vous rapporte ${pct}% de cagnotte fidélité.`}
         </TooltipContent>
       </Tooltip>

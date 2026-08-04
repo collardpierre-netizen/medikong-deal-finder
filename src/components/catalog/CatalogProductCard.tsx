@@ -14,6 +14,7 @@ import { useLocalizedProductField } from "@/hooks/useLocalizedProductField";
 import type { CatalogProduct } from "@/hooks/useCatalog";
 import { PvpEconomyBadge } from "@/components/product/PvpEconomyBadge";
 import { ProductCardCagnotteBadge } from "@/components/cagnotte/ProductCardCagnotteBadge";
+import { SecondLifeBadge } from "@/components/catalog/SecondLifeBadge";
 
 
 interface Props {

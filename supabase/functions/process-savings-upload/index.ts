@@ -879,6 +879,8 @@ Deno.serve(async (req) => {
         source_supplier: supplier,
         source_file_type: fileKind,
         status: "processing",
+        created_via: createdVia,
+
         processing_timeout_at: new Date(Date.now() + 3 * 60_000).toISOString(),
 
         ip_address: ip !== "unknown" ? ip : null,

@@ -319,8 +319,15 @@ export default function SearchTrivagoCard({ product: p }: Props) {
 
       {/* Secondary offers — lazy : on n'invoque useProductOffers qu'au clic */}
       {(() => {
-        const extraCount = Math.max(0, offerCount - 1);
+        // Le compteur du batch (`batchBest.offerCount`) peut être sous-estimé (1 ou 0)
+        // alors que la liste détaillée renvoie bien N autres vendeurs → on prend le max
+        // des sources connues, et dès que les offres détaillées sont chargées elles
+        // deviennent la vérité (plus de « + 0 autre offre » avec une liste pleine).
+        const offersLoaded = offersFull.length > 0 && !offersLoading;
+        const knownTotal = Math.max(offerCount, offersFull.length, p.sellers || 0);
+        const extraCount = offersLoaded ? otherOffers.length : Math.max(0, knownTotal - 1);
         if (extraCount === 0 && otherOffers.length === 0) return null;
+
         return (
           <div className="border-t border-border bg-muted/30">
             {expanded && offersLoading && (

@@ -79,7 +79,9 @@ export function installBackendRetry() {
     const method = init?.method ?? (input instanceof Request ? input.method : "GET");
 
     // Hors backend, ou requête non rejouable : comportement natif inchangé.
-    if (!url.startsWith(origin) || !isReplayableRequest(method, url)) {
+    // Un objet Request avec body ne peut pas être rejoué (stream consommé).
+    const isRequestWithBody = input instanceof Request && method.toUpperCase() !== "GET";
+    if (!url.startsWith(origin) || isRequestWithBody || !isReplayableRequest(method, url)) {
       return originalFetch(input as RequestInfo, init);
     }
 

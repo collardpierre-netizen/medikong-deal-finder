@@ -93,9 +93,11 @@ const AdminNetworkDiagnostics = () => {
         },
       );
     }
-    targets.push(
-      { label: "Application (même origine)", url `${window.location.origin}/favicon.ico`.length ? `${window.location.origin}/favicon.ico` : "" } as never,
-    );
+    targets.push({
+      label: "Application (même origine)",
+      url: `${window.location.origin}/favicon.ico`,
+    });
+
     const results: ProbeResult[] = [];
     for (const t of targets) {
       results.push(await probeEndpoint(t.label, t.url, t.init));

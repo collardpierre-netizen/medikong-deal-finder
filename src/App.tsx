@@ -20,6 +20,7 @@ import ImpersonationBanner from "@/components/admin/ImpersonationBanner";
 
 import ImpersonationPageTracker from "@/components/admin/ImpersonationPageTracker";
 import { EnvNoIndex } from "@/components/layout/EnvNoIndex";
+import { BackendHealthBanner } from "@/components/layout/BackendHealthBanner";
 import { AccountSelectionGuard } from "@/components/account/AccountSelectionGuard";
 import { CookieConsent } from "@/components/layout/CookieConsent";
 import { HelmetProvider } from "react-helmet-async";
@@ -402,6 +403,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <EnvNoIndex />
+          <BackendHealthBanner />
           <CountryUrlSync />
           <CountryOnboardingModal />
           <ImpersonationBanner />

@@ -173,6 +173,7 @@ const sections: NavSection[] = [
       { labelKey: "contractAudit", path: "/admin/contract-audit", icon: ShieldCheckAlt },
       { label: "Contrat vendeur (template)", path: "/admin/contract-template", icon: FileText },
       { label: "Email templates", path: "/admin/email-templates", icon: Mail },
+      { label: "Diagnostic réseau", path: "/admin/diagnostic-reseau", icon: Activity },
     ],
   },
 ];

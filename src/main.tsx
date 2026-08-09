@@ -10,6 +10,8 @@ import {
 import { checkAdminBuildIdOnBoot } from "@/lib/admin-cache-bust";
 import { runContractEnvValidationOnBoot } from "@/lib/contract/env-validation";
 import { installGlobalErrorReporting } from "@/lib/errorReporter";
+import { installBackendRetry } from "@/lib/network-retry";
+
 import {
   checkSupabaseEnv,
   renderSupabaseEnvError,

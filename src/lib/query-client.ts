@@ -12,7 +12,10 @@ export const queryClient = new QueryClient({
       staleTime: 5 * 60 * 1000,
       gcTime: 30 * 60 * 1000,
       refetchOnWindowFocus: false,
-      retry: 2,
+      retry: 3,
+      // Backoff exponentiel plafonné à 8 s (jitter géré côté fetch).
+      retryDelay: (attemptIndex) => Math.min(8000, 500 * 2 ** attemptIndex),
     },
   },
 });
+

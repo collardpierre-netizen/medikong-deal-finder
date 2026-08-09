@@ -78,32 +78,22 @@ export function installBackendRetry() {
           : input.url;
     const method = init?.method ?? (input instanceof Request ? input.method : "GET");
 
-    // Hors backend, ou requête non rejouable : comportement natif inchangé.
-    // Un objet Request avec body ne peut pas être rejoué (stream consommé).
-    const isRequestWithBody = input instanceof Request && method.toUpperCase() !== "GET";
-    if (!url.startsWith(origin) || isRequestWithBody || !isReplayableRequest(method, url)) {
+    // Hors backend ou requête non rejouable : comportement natif inchangé.
+    if (!url.startsWith(origin) || !isReplayableRequest(method, url)) {
       return originalFetch(input as RequestInfo, init);
     }
 
+    // Conserver un modèle clonable avant le premier essai : fetch consomme le
+    // body d'un Request, notamment pour le login et les RPC POST.
+    const requestTemplate = input instanceof Request ? input.clone() : null;
     let lastError: unknown = null;
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-      const attemptInit: RequestInit | undefined =
-        attempt === 1
-          ? init
-          : {
-              ...init,
-              headers: (() => {
-                const h = new Headers(
-                  init?.headers ?? (input instanceof Request ? input.headers : undefined),
-                );
-                h.set("x-retry-count", String(attempt - 1));
-                return h;
-              })(),
-            };
-
       try {
-        const response = await originalFetch(input as RequestInfo, attemptInit);
+        // Ne jamais ajouter de header de diagnostic ici : un header personnalisé
+        // déclenche un preflight CORS que l'API backend ne permet pas.
+        const attemptInput = requestTemplate ? requestTemplate.clone() : input;
+        const response = await originalFetch(attemptInput as RequestInfo, init);
         if (attempt < MAX_ATTEMPTS && isRetryableStatus(response.status)) {
           await sleep(computeBackoffDelay(attempt));
           continue;

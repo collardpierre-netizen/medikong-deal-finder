@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { pickProductImageUrl } from "@/lib/image-utils";
 
 export interface CartItem {
   id: string;
@@ -105,7 +106,7 @@ async function loadCartFromDB(customerId: string): Promise<CartItem[]> {
         brand: product.brand_name || "",
         slug: product.slug,
         price: offer?.price_excl_vat || 0,
-        imageUrl: (Array.isArray(product.image_urls) && product.image_urls.length > 0 ? product.image_urls[0] : product.image_url) || undefined,
+        imageUrl: pickProductImageUrl(product) || undefined,
       } : undefined,
     };
   });

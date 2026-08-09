@@ -76,3 +76,42 @@ export function isQogitaPlaceholder(img: HTMLImageElement): boolean {
   const h = img.naturalHeight;
   return (w === 618 && h === 602) || (w === 620 && h === 620);
 }
+
+/**
+ * Single source of truth for the ordered image set of a product.
+ * Merges `image_urls` + `image_url`, drops placeholders/invalid URLs and
+ * puts MediKong-hosted visuals first so every surface shows the same photo.
+ */
+export function pickProductImageUrls(
+  product:
+    | {
+        image_urls?: string[] | null;
+        image_url?: string | null;
+        imageUrls?: string[] | null;
+        imageUrl?: string | null;
+      }
+    | null
+    | undefined
+): string[] {
+  if (!product) return [];
+  return getPreferredProductImageUrls([
+    ...(Array.isArray(product.image_urls) ? product.image_urls : []),
+    ...(Array.isArray(product.imageUrls) ? product.imageUrls : []),
+    product.image_url,
+    product.imageUrl,
+  ]);
+}
+
+/** First valid image of a product, or null when it has none. */
+export function pickProductImageUrl(
+  product: Parameters<typeof pickProductImageUrls>[0]
+): string | null {
+  return pickProductImageUrls(product)[0] ?? null;
+}
+
+/** Ready-to-use <img src> (proxied when needed) with placeholder fallback. */
+export function pickProductImageSrc(
+  product: Parameters<typeof pickProductImageUrls>[0]
+): string {
+  return getProductImageSrc(pickProductImageUrl(product));
+}

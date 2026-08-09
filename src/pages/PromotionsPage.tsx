@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 import { ProductImage } from "@/components/shared/ProductCard";
 import { formatPrice } from "@/data/mock";
 import { motion } from "framer-motion";
-import { isValidProductImage, MEDIKONG_PLACEHOLDER } from "@/lib/image-utils";
+import { isValidProductImage, MEDIKONG_PLACEHOLDER, pickProductImageUrl } from "@/lib/image-utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -63,12 +63,7 @@ function PromoProductCard({ product, index, flashDeal }: { product: any; index: 
         pvpTtcCents: product.pvp_ttc_cents,
       }) ?? product.best_price_incl_vat ?? 0;
 
-  const imgSrc = (() => {
-    const urls = Array.isArray(product.image_urls) ? product.image_urls.filter(isValidProductImage) : [];
-    if (urls.length > 0) return urls[0];
-    if (isValidProductImage(product.image_url)) return product.image_url;
-    return MEDIKONG_PLACEHOLDER;
-  })();
+  const imgSrc = pickProductImageUrl(product) ?? MEDIKONG_PLACEHOLDER;
 
   const brandSlug = product.brands?.slug || undefined;
 

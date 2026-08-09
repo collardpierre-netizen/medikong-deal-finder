@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { motion } from "framer-motion";
 import { Helmet } from "react-helmet-async";
 import { PriceTypeInfo } from "@/components/product/PriceTypeInfo";
+import { pickProductImageUrl } from "@/lib/image-utils";
 
 function formatEur(n: number): string {
   return n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -384,7 +385,7 @@ export default function MyPricesPage() {
                                       brand: row.product?.brand_name || "",
                                       slug: row.product?.slug || "",
                                       price: offer.price_excl_vat,
-                                      imageUrl: row.product?.image_urls?.[0],
+                                      imageUrl: pickProductImageUrl(row.product) || undefined,
                                     },
                                   });
                                 }}

@@ -24,6 +24,7 @@ import { useHomeFeaturedBrands, useHomeFeaturedProducts, HOME_FEATURED_BADGE_LAB
 import { useTopPriceDeltas } from "@/hooks/useTopPriceDeltas";
 import { useHomeShowcaseSettings } from "@/hooks/useHomeShowcaseSettings";
 import { PriceDeltaShowcase } from "@/components/home/PriceDeltaShowcase";
+import { pickProductImageUrl } from "@/lib/image-utils";
 
 // Tracking analytics minimal (GTM dataLayer) pour mesurer l'inversion des CTAs.
 function trackHomeCta(type: "see_demo" | "create_account", extra?: Record<string, unknown>) {
@@ -556,7 +557,7 @@ export default function HomePage() {
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     {g.items.slice(0, 10).map((p) => {
-                      const img = p.image_url || (Array.isArray(p.image_urls) ? p.image_urls[0] : null);
+                      const img = pickProductImageUrl(p);
                       return (
                         <Link
                           key={p.id}

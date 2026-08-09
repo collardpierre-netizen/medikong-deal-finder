@@ -40,7 +40,7 @@ interface VendorFilters {
 
 const EMPTY_FILTERS: VendorFilters = { brands: [], categories: [], search: "" };
 
-import { MEDIKONG_PLACEHOLDER, isValidProductImage, isQogitaPlaceholder, getProductImageSrc } from "@/lib/image-utils";
+import { MEDIKONG_PLACEHOLDER, isValidProductImage, isQogitaPlaceholder, getProductImageSrc, pickProductImageUrl } from "@/lib/image-utils";
 
 /* ───── Vendor-specific product card (grid) ───── */
 function VendorProductCard({ product: p, index, addToCart, openDrawer, onQuickView }: { product: any; index: number; addToCart: any; openDrawer: () => void; onQuickView: (p: any) => void }) {
@@ -410,8 +410,8 @@ export default function VendorPublicPage() {
         brandSlug: p.brands?.slug || slugify(p.brand_name || ""),
         price,
         pub: price,
-        image: p.image_urls?.[0],
-        imageUrl: p.image_urls?.[0],
+        image: pickProductImageUrl(p) || undefined,
+        imageUrl: pickProductImageUrl(p) || undefined,
         imageUrls: p.image_urls || [],
         stock: o.stock_quantity > 0,
         stockQty: Number(o.stock_quantity || 0),

@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalizedName } from "@/lib/localization";
 import type { PriceDelta } from "./useTopPriceDeltas";
+import { pickProductImageUrl } from "@/lib/image-utils";
 
 export type FeaturedPriceDeltaResult =
   | { status: "ok"; delta: PriceDelta }
@@ -64,11 +65,7 @@ export function useFeaturedPriceDelta(productId: string | null | undefined) {
         slug: product.slug,
         name: getLocalizedName(product as any, lang),
         brandName: (product as any).brand?.name ?? null,
-        imageUrl:
-          product.image_url ??
-          (Array.isArray(product.image_urls) && product.image_urls.length > 0
-            ? (product.image_urls[0] as string)
-            : null),
+        imageUrl: pickProductImageUrl(product as any),
       };
 
       if (prices.length < 2) {

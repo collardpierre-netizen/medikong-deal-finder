@@ -3,7 +3,7 @@ import { parseTierSavingValue, type TierSavingInput } from "@/lib/tier-saving";
 import { recordTierSavingIssue } from "@/lib/tier-saving-diagnostics";
 import { resolveTierSaving } from "@/lib/tier-saving-guard";
 import { TierSavingAdminAlert } from "@/components/admin/TierSavingAdminAlert";
-import { isValidProductImage, getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder, getPreferredProductImageUrls } from "@/lib/image-utils";
+import { isValidProductImage, getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder, getPreferredProductImageUrls, pickProductImageUrl } from "@/lib/image-utils";
 import { useProduct, useProductOffers, type Offer } from "@/hooks/useProducts";
 import { useLocalizedProductField } from "@/hooks/useLocalizedProductField";
 import { OfferSkeletonRow } from "@/components/shared/OfferSkeletonRow";
@@ -1065,7 +1065,7 @@ function VendorSuggestions({ vendorId, vendorDisplayCode, vendorDisplayName, cur
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
                 {unique.map((s: any) => {
                   const p = s.products;
-                  const validImg = Array.isArray(p.image_urls) ? p.image_urls.find((u: string) => isValidProductImage(u)) : null;
+                  const validImg = pickProductImageUrl(p);
                   const img = validImg || getProductImageSrc(p.image_url);
                   return (
                     <Link key={p.id} to={`/produit/${p.slug}`} className="border border-border rounded-lg p-2 hover:shadow-sm transition-shadow group">
@@ -3337,8 +3337,8 @@ function ProductPageInner() {
                       <div className="aspect-square rounded-lg overflow-hidden bg-muted mb-2">
                         <img
                           src={getProductImageSrc(
-                            Array.isArray(p.image_urls)
-                              ? p.image_urls.find((url: string) => isValidProductImage(url)) || p.image_url
+                            Array.isArray(p.image_urls) || p.image_url
+                              ? pickProductImageUrl(p)
                               : p.image_url
                           )}
                           alt={p.name}

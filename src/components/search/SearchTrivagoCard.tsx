@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { ImageOff, Eye, Lock, Loader2 } from "lucide-react";
-import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
+import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder, pickProductImageSrc } from "@/lib/image-utils";
 import { Heart, Check, ChevronDown, ChevronUp, Package, Truck, RotateCcw, ArrowRight, AlertCircle } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useProductOffers } from "@/hooks/useProducts";
@@ -140,7 +140,7 @@ export default function SearchTrivagoCard({ product: p }: Props) {
             </div>
           ) : (
             <img
-              src={getProductImageSrc(p.imageUrls?.[0] || p.imageUrl)}
+              src={pickProductImageSrc(p)}
               alt={displayName}
               className={`w-full h-full object-contain p-3 md:p-4 transition-all duration-300 ease-out group-hover/img:scale-105 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
               loading="lazy"

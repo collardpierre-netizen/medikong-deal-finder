@@ -11,7 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePriceWatches, type PriceWatch } from "@/hooks/usePriceWatches";
 import { useToast } from "@/hooks/use-toast";
 import { formatUpdatedAt } from "@/lib/format-date";
-import { MEDIKONG_PLACEHOLDER, isValidProductImage } from "@/lib/image-utils";
+import { MEDIKONG_PLACEHOLDER, isValidProductImage, pickProductImageUrl } from "@/lib/image-utils";
 
 export default function MyPriceAlertsPage() {
   const { user, loading } = useAuth();
@@ -168,7 +168,7 @@ export default function MyPriceAlertsPage() {
           <ul className="space-y-2">
             {filtered.map((w) => {
               const p = w.products;
-              const img = p?.image_urls?.find(isValidProductImage) ?? MEDIKONG_PLACEHOLDER;
+              const img = pickProductImageUrl(p) ?? MEDIKONG_PLACEHOLDER;
               const mk = p?.best_price_excl_vat;
               const delta = mk != null ? w.user_price_excl_vat - mk : null;
               const triggered = delta != null && delta >= 0;

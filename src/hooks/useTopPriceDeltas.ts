@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalizedName } from "@/lib/localization";
+import { pickProductImageUrl } from "@/lib/image-utils";
 
 /**
  * SKU multi-vendeurs avec écart de prix significatif entre offres actives.
@@ -53,11 +54,7 @@ export function useTopPriceDeltas(limit = 3) {
           lang
         ),
         brandName: d.brand_name ?? null,
-        imageUrl:
-          d.image_url ??
-          (Array.isArray(d.image_urls) && d.image_urls.length > 0
-            ? d.image_urls[0]
-            : null),
+        imageUrl: pickProductImageUrl(d),
         minPrice: Number(d.min_price),
         maxPrice: Number(d.max_price),
         offerCount: Number(d.offer_count),

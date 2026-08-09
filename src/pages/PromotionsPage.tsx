@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 import { ProductImage } from "@/components/shared/ProductCard";
 import { formatPrice } from "@/data/mock";
 import { motion } from "framer-motion";
-import { isValidProductImage, MEDIKONG_PLACEHOLDER } from "@/lib/image-utils";
+import { isValidProductImage, MEDIKONG_PLACEHOLDER, pickProductImageUrl } from "@/lib/image-utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { isValidProductImage } from "@/lib/image-utils";
+import { isValidProductImage, pickProductImageUrl } from "@/lib/image-utils";
 import { useCountry } from "@/contexts/CountryContext";
 import { applyHiddenCategoryFilter, isHiddenCategoryName } from "@/lib/catalog-filters";
 import type { Product } from "./useProducts";

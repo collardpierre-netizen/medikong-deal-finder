@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { motion } from "framer-motion";
 import { Helmet } from "react-helmet-async";
 import { PriceTypeInfo } from "@/components/product/PriceTypeInfo";
+import { pickProductImageUrl } from "@/lib/image-utils";
 
 function formatEur(n: number): string {
   return n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });

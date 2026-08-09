@@ -15,6 +15,8 @@ import {
   MEDIKONG_PLACEHOLDER,
   getProductImageSrc,
   isQogitaPlaceholder,
+  pickProductImageSrc,
+  pickProductImageUrl,
 } from "@/lib/image-utils";
 import { PvpEconomyBadge } from "@/components/product/PvpEconomyBadge";
 import { ProductCardCagnotteBadge } from "@/components/cagnotte/ProductCardCagnotteBadge";

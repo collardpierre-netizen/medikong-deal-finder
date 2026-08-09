@@ -24,6 +24,7 @@ import { useHomeFeaturedBrands, useHomeFeaturedProducts, HOME_FEATURED_BADGE_LAB
 import { useTopPriceDeltas } from "@/hooks/useTopPriceDeltas";
 import { useHomeShowcaseSettings } from "@/hooks/useHomeShowcaseSettings";
 import { PriceDeltaShowcase } from "@/components/home/PriceDeltaShowcase";
+import { pickProductImageUrl } from "@/lib/image-utils";
 
 // Tracking analytics minimal (GTM dataLayer) pour mesurer l'inversion des CTAs.
 function trackHomeCta(type: "see_demo" | "create_account", extra?: Record<string, unknown>) {

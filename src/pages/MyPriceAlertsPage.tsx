@@ -11,7 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePriceWatches, type PriceWatch } from "@/hooks/usePriceWatches";
 import { useToast } from "@/hooks/use-toast";
 import { formatUpdatedAt } from "@/lib/format-date";
-import { MEDIKONG_PLACEHOLDER, isValidProductImage } from "@/lib/image-utils";
+import { MEDIKONG_PLACEHOLDER, isValidProductImage, pickProductImageUrl } from "@/lib/image-utils";
 
 export default function MyPriceAlertsPage() {
   const { user, loading } = useAuth();

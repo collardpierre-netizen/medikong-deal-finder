@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Search, X, Package, Tag, FolderOpen, Loader2, Sparkles } from "lucide-react";
-import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder, isValidProductImage } from "@/lib/image-utils";
+import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder, isValidProductImage, pickProductImageSrc } from "@/lib/image-utils";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { federatedSearch } from "@/lib/supabase-search";

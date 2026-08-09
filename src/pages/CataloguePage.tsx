@@ -17,6 +17,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { HreflangTags } from "@/components/seo/HreflangTags";
 import { useCategoryLabelStatus } from "@/hooks/useCategory";
 import { Skeleton } from "@/components/ui/skeleton";
+import { pickProductImageUrl } from "@/lib/image-utils";
 
 export default function CataloguePage() {
   const { slug } = useParams();

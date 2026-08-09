@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalizedName } from "@/lib/localization";
 import type { PriceDelta } from "./useTopPriceDeltas";
+import { pickProductImageUrl } from "@/lib/image-utils";
 
 export type FeaturedPriceDeltaResult =
   | { status: "ok"; delta: PriceDelta }

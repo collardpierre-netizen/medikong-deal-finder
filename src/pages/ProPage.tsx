@@ -9,7 +9,7 @@ import { useCountry } from "@/contexts/CountryContext";
 import { useIsResellerPro } from "@/hooks/useCurrentBuyerProfile";
 import { ResellerPriceBadge } from "@/components/pro/ResellerPriceBadge";
 import { formatEur } from "@/lib/price-format";
-import { getProductImageSrc } from "@/lib/image-utils";
+import { getProductImageSrc, pickProductImageSrc } from "@/lib/image-utils";
 import { Layout } from "@/components/layout/Layout";
 
 type ResellerOfferRow = {

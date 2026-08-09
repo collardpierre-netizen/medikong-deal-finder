@@ -233,6 +233,7 @@ const AdminContractAudit = lazyWithRetry(() => import("./pages/admin/AdminContra
 const AdminContractTemplate = lazyWithRetry(() => import("./pages/admin/AdminContractTemplate"), "AdminContractTemplate");
 const AdminEmailTemplates = lazyWithRetry(() => import("./pages/admin/AdminEmailTemplates"), "AdminEmailTemplates");
 const AdminDbBackups = lazyWithRetry(() => import("./pages/admin/AdminDbBackups"), "AdminDbBackups");
+const AdminNetworkDiagnostics = lazyWithRetry(() => import("./pages/admin/AdminNetworkDiagnostics"), "AdminNetworkDiagnostics");
 const AdminBackupRlsAudit = lazyWithRetry(() => import("./pages/admin/AdminBackupRlsAudit"), "AdminBackupRlsAudit");
 const AdminCagnotte = lazyWithRetry(() => import("./pages/admin/AdminCagnotte"), "AdminCagnotte");
 const AdminTableGrantsAudit = lazyWithRetry(() => import("./pages/admin/AdminTableGrantsAudit"), "AdminTableGrantsAudit");
@@ -548,6 +549,7 @@ const App = () => (
               <Route path="marques/:slug/edit" element={<LP><AdminBrandTransparenceEdit /></LP>} />
               <Route path="brands/:slug/edit" element={<LP><AdminBrandTransparenceEdit /></LP>} />
               <Route path="db-backups" element={<LP><AdminDbBackups /></LP>} />
+              <Route path="diagnostic-reseau" element={<LP><AdminNetworkDiagnostics /></LP>} />
               <Route path="backup-rls-audit" element={<LP><AdminBackupRlsAudit /></LP>} />
               <Route path="cagnotte" element={<LP><AdminCagnotte /></LP>} />
               <Route path="table-grants-audit" element={<LP><AdminTableGrantsAudit /></LP>} />

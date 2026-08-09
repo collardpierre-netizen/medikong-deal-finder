@@ -11,6 +11,7 @@ import { checkAdminBuildIdOnBoot } from "@/lib/admin-cache-bust";
 import { runContractEnvValidationOnBoot } from "@/lib/contract/env-validation";
 import { installGlobalErrorReporting } from "@/lib/errorReporter";
 import { installBackendRetry } from "@/lib/network-retry";
+import { installNetworkDiagnostics } from "@/lib/network-diagnostics";
 
 import {
   checkSupabaseEnv,
@@ -21,6 +22,7 @@ import {
 installViteChunkReloadGuard();
 installGlobalErrorReporting();
 installBackendRetry();
+installNetworkDiagnostics();
 
 
 async function bootstrap() {

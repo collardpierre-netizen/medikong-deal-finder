@@ -163,7 +163,7 @@ export default function ProPage() {
                 <Link to={row.product?.slug ? `/produit/${row.product.slug}` : "#"} className="block">
                   <div className="aspect-square bg-muted rounded-lg overflow-hidden mb-3 flex items-center justify-center">
                     <img
-                      src={getProductImageSrc(row.product?.image_urls?.[0] ?? null)}
+                      src={pickProductImageSrc(row.product)}
                       alt={row.product?.name ?? "Produit"}
                       className="max-w-full max-h-full object-contain"
                       loading="lazy"

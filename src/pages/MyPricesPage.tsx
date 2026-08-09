@@ -384,7 +384,7 @@ export default function MyPricesPage() {
                                       brand: row.product?.brand_name || "",
                                       slug: row.product?.slug || "",
                                       price: offer.price_excl_vat,
-                                      imageUrl: row.product?.image_urls?.[0],
+                                      imageUrl: pickProductImageUrl(row.product) || undefined,
                                     },
                                   });
                                 }}

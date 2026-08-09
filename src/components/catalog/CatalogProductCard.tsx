@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder } from "@/lib/image-utils";
+import { getProductImageSrc, MEDIKONG_PLACEHOLDER, isQogitaPlaceholder, pickProductImageSrc, pickProductImageUrl } from "@/lib/image-utils";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Plus, Minus, Package, Loader2, Lock } from "lucide-react";
 import { motion } from "framer-motion";
@@ -42,7 +42,7 @@ function HighlightText({ text, query }: { text: string; query?: string }) {
 }
 
 function ProductImg({ product, className = "" }: { product: CatalogProduct; className?: string }) {
-  const src = getProductImageSrc(product.image_urls?.[0] || product.image_url);
+  const src = pickProductImageSrc(product);
   if (src !== MEDIKONG_PLACEHOLDER) {
     return (
       <div className={`bg-muted rounded-lg overflow-hidden ${className}`}>
@@ -145,7 +145,7 @@ export function CatalogProductCard({ product, index = 0, view = "grid", searchQu
           brand: product.brand_name || "",
           slug: product.slug,
           price: Number(offer.price_excl_vat),
-          imageUrl: product.image_urls?.[0] || product.image_url || undefined,
+          imageUrl: pickProductImageUrl(product) || undefined,
         },
       });
       

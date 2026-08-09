@@ -556,7 +556,7 @@ export default function HomePage() {
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     {g.items.slice(0, 10).map((p) => {
-                      const img = p.image_url || (Array.isArray(p.image_urls) ? p.image_urls[0] : null);
+                      const img = pickProductImageUrl(p);
                       return (
                         <Link
                           key={p.id}

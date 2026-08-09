@@ -58,7 +58,7 @@ interface Props {
 }
 
 function ProductImg({ product, className = "" }: { product: BrandProductCardItem; className?: string }) {
-  const src = getProductImageSrc(product.image_urls?.[0] || product.image_url);
+  const src = pickProductImageSrc(product);
   if (src !== MEDIKONG_PLACEHOLDER) {
     return (
       <div className={`bg-muted rounded-lg overflow-hidden ${className}`}>
@@ -173,7 +173,7 @@ export function BrandProductCard({ product, index = 0, showBrand = false }: Prop
           brand: product.brand_name || "",
           slug: product.slug,
           price: Number(offer.price_excl_vat),
-          imageUrl: product.image_urls?.[0] || product.image_url || undefined,
+          imageUrl: pickProductImageUrl(product) || undefined,
         },
       });
     } finally {

@@ -264,7 +264,7 @@ export function InstantSearchBar({ className = "", placeholder, variant = "navba
                   className={`w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-accent/50 transition-colors ${selectedIndex === i ? "bg-accent/50" : ""}`}
                 >
                   <img
-                    src={getProductImageSrc(p.image_urls?.[0] || p.image_url)}
+                    src={pickProductImageSrc(p)}
                     alt=""
                     className="w-8 h-8 rounded object-contain bg-muted/20 shrink-0"
                     referrerPolicy="no-referrer"

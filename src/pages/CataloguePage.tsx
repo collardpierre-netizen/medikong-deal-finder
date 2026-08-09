@@ -219,7 +219,7 @@ export default function CataloguePage() {
                 price: p.best_price_excl_vat || 0, pub: p.best_price_incl_vat || 0,
                 pct: 0, sellers: p.offer_count || 0, rating: 0, reviews: 0,
                 best: "", unit: "", stock: p.is_in_stock, mk: p.offer_count > 0,
-                imageUrl: p.image_urls?.[0] || undefined,
+                imageUrl: pickProductImageUrl(p) || undefined,
                 category: p.category_name || undefined,
               }))} />
             ) : (

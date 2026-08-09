@@ -12,6 +12,7 @@ import { runContractEnvValidationOnBoot } from "@/lib/contract/env-validation";
 import { installGlobalErrorReporting } from "@/lib/errorReporter";
 import { installBackendRetry } from "@/lib/network-retry";
 import { installNetworkDiagnostics } from "@/lib/network-diagnostics";
+import { installIncidentCacheRecovery } from "@/lib/cache-bust";
 
 import {
   checkSupabaseEnv,
@@ -23,6 +24,7 @@ installViteChunkReloadGuard();
 installGlobalErrorReporting();
 installBackendRetry();
 installNetworkDiagnostics();
+installIncidentCacheRecovery();
 
 
 async function bootstrap() {

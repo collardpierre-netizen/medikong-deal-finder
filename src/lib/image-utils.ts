@@ -1,3 +1,5 @@
+import { withAssetCacheVersion } from "@/lib/cache-bust";
+
 export const MEDIKONG_PLACEHOLDER = "/medikong-placeholder.png";
 
 const KNOWN_PLACEHOLDER_HASHES = [
@@ -67,7 +69,12 @@ function buildProxyUrl(url: string): string {
 export function getProductImageSrc(url: string | undefined | null): string {
   if (!isValidProductImage(url)) return MEDIKONG_PLACEHOLDER;
   const normalizedUrl = url!.trim();
-  return shouldProxyImage(normalizedUrl) ? buildProxyUrl(normalizedUrl) : normalizedUrl;
+  const src = shouldProxyImage(normalizedUrl)
+    ? buildProxyUrl(normalizedUrl)
+    : normalizedUrl;
+  // Après un incident réseau, la version d'assets change et casse le cache
+  // HTTP des images qui avaient répondu par une erreur.
+  return withAssetCacheVersion(src);
 }
 
 /** Call in onLoad to detect Qogita "No Image Available" placeholder (618×602 or 620×620 with Q logo) */

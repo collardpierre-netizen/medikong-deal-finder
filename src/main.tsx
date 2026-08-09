@@ -18,6 +18,8 @@ import {
 
 installViteChunkReloadGuard();
 installGlobalErrorReporting();
+installBackendRetry();
+
 
 async function bootstrap() {
   const canRender = await preflightBuildVersionBeforeRender();

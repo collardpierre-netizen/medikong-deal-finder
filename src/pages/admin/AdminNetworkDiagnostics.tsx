@@ -13,7 +13,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Activity, RefreshCw, Trash2, Wifi } from "lucide-react";
+import { Activity, RefreshCw, Trash2, Wifi, DatabaseZap } from "lucide-react";
+import {
+  bustAllQueryCache,
+  bumpAssetCacheVersion,
+  getAssetCacheVersion,
+  getIncidentRecoveryState,
+} from "@/lib/cache-bust";
 import {
   clearNetworkEvents,
   getBackendOrigin,
@@ -75,6 +81,16 @@ const AdminNetworkDiagnostics = () => {
   }, []);
 
   const backend = getBackendOrigin();
+  const [assetVersion, setAssetVersion] = useState(getAssetCacheVersion());
+  const [recovery, setRecovery] = useState(getIncidentRecoveryState());
+
+  useEffect(() => {
+    const id = window.setInterval(
+      () => setRecovery(getIncidentRecoveryState()),
+      2000,
+    );
+    return () => window.clearInterval(id);
+  }, []);
 
   const runProbes = useCallback(async () => {
     setProbing(true);
@@ -220,6 +236,62 @@ const AdminNetworkDiagnostics = () => {
               <p className="text-sm text-muted-foreground">Test en cours…</p>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <DatabaseZap className="h-4 w-4" />
+            Caches & reprise après incident
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid gap-2 text-sm sm:grid-cols-2">
+            <div>
+              Incident en cours :{" "}
+              <Badge
+                variant={recovery.incidentActive ? "destructive" : "secondary"}
+              >
+                {recovery.incidentActive ? "oui" : "non"}
+              </Badge>
+            </div>
+            <div className="text-muted-foreground">
+              Reprises automatiques : {recovery.recoveries}
+              {recovery.lastRecoveryAt
+                ? ` (dernière à ${new Date(recovery.lastRecoveryAt).toLocaleTimeString("fr-BE")})`
+                : ""}
+            </div>
+            <div className="text-muted-foreground">
+              Version de cache des images :{" "}
+              <span className="font-mono text-xs">{assetVersion}</span>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                bustAllQueryCache();
+                setAssetVersion(bumpAssetCacheVersion());
+              }}
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Purger données + images
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setAssetVersion(bumpAssetCacheVersion())}
+            >
+              Recharger les images
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Après 3 échecs backend rapprochés (réseau, DNS, CORS ou 5xx), la
+            reprise du premier appel réussi purge automatiquement les données en
+            erreur et casse le cache HTTP des images.
+          </p>
         </CardContent>
       </Card>
 

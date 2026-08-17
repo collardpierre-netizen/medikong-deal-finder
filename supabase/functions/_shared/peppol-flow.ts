@@ -140,36 +140,145 @@ export function buildOrderInvoicePayloadParts(orderLines: any[]): OrderInvoicePa
   return { lines, tax_subtotals, base_amount: base, total_amount: total };
 }
 
+/** Cents, en entier — jamais d'arithmétique flottante sur les montants. */
+export const toCents = (v: any): number => Math.round(Number(v || 0) * 100);
+
 /**
- * Blocking consistency check: the payload MUST reconcile with the invoice already
- * issued as PDF. Tolerance = 1 cent (rounding of per-line values).
+ * Contrôle BLOQUANT de cohérence : le payload doit réconcilier exactement
+ * (tolérance 0 cent, comparaison en entiers) avec la facture déjà émise en PDF.
+ * Aucun appel réseau ne doit avoir lieu si ce contrôle échoue.
  */
 export function assertPayloadMatchesInvoice(
   parts: OrderInvoicePayloadParts,
   invoice: { amount_excl_vat: any; vat_amount: any; amount_incl_vat: any },
 ): { ok: true } | { ok: false; error: string } {
-  const linesSum = parts.lines.reduce((a, l) => a + Number(l.base_amount), 0);
-  const taxBase = parts.tax_subtotals.reduce((a, t) => a + Number(t.base_amount), 0);
-  const taxSum = parts.tax_subtotals.reduce((a, t) => a + Number(t.tax_amount), 0);
-  const invBase = Number(invoice.amount_excl_vat || 0);
-  const invVat = Number(invoice.vat_amount || 0);
-  const invTotal = Number(invoice.amount_incl_vat || 0);
-  const near = (a: number, b: number) => Math.abs(a - b) <= 0.01;
+  const linesSum = parts.lines.reduce((a, l) => a + toCents(l.base_amount), 0);
+  const taxBase = parts.tax_subtotals.reduce((a, t) => a + toCents(t.base_amount), 0);
+  const taxSum = parts.tax_subtotals.reduce((a, t) => a + toCents(t.tax_amount), 0);
+  const invBase = toCents(invoice.amount_excl_vat);
+  const invVat = toCents(invoice.vat_amount);
+  const invTotal = toCents(invoice.amount_incl_vat);
 
-  if (!near(linesSum, invBase)) {
-    return { ok: false, error: `lines_base_mismatch: lignes=${round2(linesSum)} facture=${round2(invBase)}` };
-  }
-  if (!near(taxBase, invBase)) {
-    return { ok: false, error: `tax_base_mismatch: tva_base=${round2(taxBase)} facture=${round2(invBase)}` };
-  }
-  if (!near(taxSum, invVat)) {
-    return { ok: false, error: `vat_mismatch: tva=${round2(taxSum)} facture=${round2(invVat)}` };
-  }
-  if (!near(invBase + invVat, invTotal)) {
-    return { ok: false, error: `total_mismatch: HT+TVA=${round2(invBase + invVat)} TTC=${round2(invTotal)}` };
-  }
+  const fail = (label: string, got: number, expected: number) => ({
+    ok: false as const,
+    error:
+      `TOTALS_MISMATCH (${label}): lines=${linesSum} + vat=${taxSum} != invoice_total=${invTotal} ` +
+      `(got=${got} expected=${expected} delta=${got - expected} cents)`,
+  });
+
+  if (linesSum !== invBase) return fail("lines_base", linesSum, invBase);
+  if (taxBase !== invBase) return fail("tax_base", taxBase, invBase);
+  if (taxSum !== invVat) return fail("vat", taxSum, invVat);
+  if (invBase + invVat !== invTotal) return fail("total", invBase + invVat, invTotal);
   return { ok: true };
 }
+
+// ───────────────────────── archivage de ce qui est transmis ─────────────────────────
+/**
+ * Archive la sérialisation canonique du payload effectivement transmis (succès
+ * OU échec) dans le bucket privé `invoices`, préfixe `peppol/`.
+ * Rétention 10 ans (TVA belge) : aucune politique de suppression automatique.
+ * ubl_storage_path / ubl_sha256 restent NULL — on n'archive jamais un UBL deviné.
+ */
+export async function archivePeppolPayload(
+  supabase: any,
+  params: { flow: "buyer_invoice" | "vendor_copy" | "commission"; orderId?: string | null; invoiceId: string; metadata: unknown },
+): Promise<{ payload_storage_path: string | null; payload_sha256: string }> {
+  const payloadJson = canonicalJson(params.metadata);
+  const payloadSha = await sha256Hex(payloadJson);
+  const prefix = params.orderId ? `${params.orderId}/peppol` : "peppol";
+  const path = `${prefix}/${params.flow}-${params.invoiceId}-${payloadSha.slice(0, 12)}.json`;
+  try {
+    const { error } = await supabase.storage
+      .from("invoices")
+      .upload(path, new TextEncoder().encode(payloadJson), {
+        contentType: "application/json",
+        upsert: true,
+      });
+    if (error) {
+      logFalco("warn", "payload_archive_failed", { invoice_id: params.invoiceId, error: error.message });
+      return { payload_storage_path: null, payload_sha256: payloadSha };
+    }
+  } catch (e) {
+    logFalco("warn", "payload_archive_failed", { invoice_id: params.invoiceId, error: String((e as any)?.message || e) });
+    return { payload_storage_path: null, payload_sha256: payloadSha };
+  }
+  return { payload_storage_path: path, payload_sha256: payloadSha };
+}
+
+// ───────────────────────── Flux A : émetteur MediKong ─────────────────────────
+/** MediKong SRL = émetteur légal de toute facture d'autofacturation. */
+export const MEDIKONG_SELLER = {
+  name: "MediKong SRL",
+  vat_number: "BE1005771323",
+  address: {
+    line1: "23 rue de la Procession",
+    zip: "7822",
+    city: "Ath",
+    country: "BE",
+  },
+} as const;
+
+export function medikongFalcoParty() {
+  return {
+    name: MEDIKONG_SELLER.name,
+    vat_number: MEDIKONG_SELLER.vat_number,
+    address: { ...MEDIKONG_SELLER.address },
+  };
+}
+
+/**
+ * Constructeur unique du payload Flux A (double vendeur). Comportement
+ * strictement identique aux constructions inline précédentes : les seules
+ * variables sont documentDate / dueDate / note, fournies par l'appelant.
+ */
+export function buildVendorCopyFalcoMetadata(params: {
+  invoiceNumber: string;
+  documentDate: string;
+  dueDate: string;
+  buyerReference: string;
+  note: string;
+  vendor: any;
+  baseAmount: any;
+  totalAmount: any;
+  parts: OrderInvoicePayloadParts;
+}) {
+  return {
+    document_type: "sale_invoice" as const,
+    document_date: params.documentDate,
+    due_date: params.dueDate,
+    number: params.invoiceNumber,
+    buyer_reference: params.buyerReference,
+    note: params.note,
+    sender: medikongFalcoParty(),
+    receiver: vendorFalcoParty(params.vendor),
+    currency: "EUR",
+    base_amount: round2(Number(params.baseAmount || 0)),
+    total_amount: round2(Number(params.totalAmount || 0)),
+    tax_subtotals: params.parts.tax_subtotals,
+    lines: params.parts.lines,
+    send_peppol: true,
+  };
+}
+
+// ───────────────────────── mapping des statuts Falco ─────────────────────────
+/** Vocabulaire peppol_transmissions.status. `null` = statut Falco inconnu (ne rien deviner). */
+export function mapFalcoStatusToTransmission(status: string | null | undefined): string | null {
+  const s = String(status || "").trim().toLowerCase();
+  const MAP: Record<string, string> = {
+    submitted: "sent",
+    not_sent: "sent",
+    sent: "sent",
+    success: "delivered",
+    delivered: "delivered",
+    accepted: "delivered",
+    failed: "failed",
+    failure: "failed",
+    rejected: "failed",
+  };
+  return MAP[s] ?? null;
+}
+
 
 // ───────────────────────── party helpers ─────────────────────────
 /** Legal identity of the vendor (never the anonymised marketplace label). */
@@ -216,6 +325,8 @@ export type PeppolAuditAction =
   | "buyer_email_fallback"
   | "buyer_peppol_delivered"
   | "vendor_copy_downgraded_to_email"
+  | "vendor_copy_totals_mismatch"
+  | "peppol_unknown_falco_status"
   | "peppol_directory_checked";
 
 export async function logPeppolEvent(

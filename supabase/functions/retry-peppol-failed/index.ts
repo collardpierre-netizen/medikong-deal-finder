@@ -18,6 +18,12 @@ import {
   type FalcoTaxSubtotal,
 } from "../_shared/falco-peppol.ts";
 import { buildSelfBillingMandateMention } from "../_shared/invoice-pdf.ts";
+import {
+  buildOrderInvoicePayloadParts,
+  buildVendorCopyFalcoMetadata,
+  assertPayloadMatchesInvoice,
+} from "../_shared/peppol-flow.ts";
+
 
 const MAX_RETRIES = 3;
 const RETRY_AFTER_MINUTES = 60;
@@ -57,58 +63,27 @@ async function buildSelfBillingMetadata(supabase: any, invoice: any): Promise<{ 
   if (pdfErr || !pdf) return { error: `pdf_download_failed: ${pdfErr?.message || "empty"}` };
   const pdfBytes = new Uint8Array(await pdf.arrayBuffer());
 
-  const cust: any = order.customers || {};
-  const bucket = new Map<number, { base: number; tax: number }>();
-  for (const l of lines as any[]) {
-    const rate = Number(l.vat_rate || 0);
-    const base = Number(l.line_total_excl_vat || 0);
-    const tax = Number(l.line_total_incl_vat || 0) - base;
-    const b = bucket.get(rate) || { base: 0, tax: 0 };
-    b.base += base; b.tax += tax;
-    bucket.set(rate, b);
-  }
-  const tax_subtotals: FalcoTaxSubtotal[] = Array.from(bucket.entries()).map(([rate, v]) => ({
-    tax_rate: rate.toFixed(1), base_amount: round2(v.base), tax_amount: round2(v.tax), tax_regime: { type: "standard" },
-  }));
-  const falcoLines: FalcoLine[] = (lines as any[]).map((l: any) => ({
-    name: (l.manual_label || l.products?.name || "—").slice(0, 200),
-    description: (l.manual_label || l.products?.name || "—").slice(0, 500),
-    quantity: String(Number(l.quantity || 0)),
-    unit_price: round2(Number(l.unit_price_excl_vat || 0)),
-    tax_rate: Number(l.vat_rate || 0).toFixed(1),
-    base_amount: round2(Number(l.line_total_excl_vat || 0)),
-    tax_regime_type: "standard",
-  }));
+  const parts = buildOrderInvoicePayloadParts(lines as any[]);
 
-  const metadata: FalcoInvoiceMetadata = {
-    document_type: "sale_invoice",
-    document_date: (invoice.issued_at || new Date().toISOString()).slice(0, 10),
-    due_date: (invoice.issued_at || new Date().toISOString()).slice(0, 10),
-    number: invoice.invoice_number,
-    buyer_reference: order.order_number || invoice.invoice_number,
+  // Contrôle de cohérence bloquant (entiers, tolérance 0) — même règle que l'émission.
+  const coherence = assertPayloadMatchesInvoice(parts, invoice);
+  if (!coherence.ok) return { error: coherence.error };
+
+  const issuedAt = (invoice.issued_at || new Date().toISOString()).slice(0, 10);
+  const metadata: FalcoInvoiceMetadata = buildVendorCopyFalcoMetadata({
+    invoiceNumber: invoice.invoice_number,
+    documentDate: issuedAt,
+    dueDate: issuedAt,
+    buyerReference: order.order_number || invoice.invoice_number,
     note: buildSelfBillingMandateMention(vendor, vendor.mandate_signed_at),
-    sender: { name: MEDIKONG_SELLER.name, vat_number: MEDIKONG_SELLER.vat_number, address: { ...MEDIKONG_SELLER.address } },
-    receiver: {
-      name: vendor.company_name || vendor.name,
-      vat_number: normalizeFalcoVatNumber(vendor.vat_number),
-      peppol_identifier: normalizeFalcoPeppolIdentifier(vendor.peppol_id),
-      contact: vendor.email ? { email: vendor.email } : undefined,
-      address: {
-        line1: vendor.address_line1 || "—",
-        zip: resolveFalcoPostalCode(vendor),
-        city: vendor.city || undefined,
-        country: vendor.country_code || "BE",
-      },
-    },
-    currency: "EUR",
-    base_amount: round2(Number(invoice.amount_excl_vat || 0)),
-    total_amount: round2(Number(invoice.amount_incl_vat || 0)),
-    tax_subtotals,
-    lines: falcoLines,
-    send_peppol: true,
-  };
+    vendor,
+    baseAmount: invoice.amount_excl_vat,
+    totalAmount: invoice.amount_incl_vat,
+    parts,
+  });
   return { pdfBytes, metadata };
 }
+
 
 async function buildCommissionMetadata(supabase: any, invoice: any): Promise<{ pdfBytes: Uint8Array; metadata: FalcoInvoiceMetadata } | { error: string }> {
   const [{ data: order }, { data: vendor }] = await Promise.all([

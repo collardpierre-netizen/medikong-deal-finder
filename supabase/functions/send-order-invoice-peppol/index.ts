@@ -196,7 +196,8 @@ Deno.serve(async (req) => {
         .in("id", existing.map((r: any) => r.id));
     }
 
-    const primaryFlow = await getPeppolPrimaryFlow(supabase);
+    // force_flow n'écrit jamais le réglage persisté : override en mémoire uniquement.
+    const primaryFlow = forceFlow ? forceFlow : await getPeppolPrimaryFlow(supabase);
 
     // ── résolution du canal
     let channel: "peppol" | "email" = "email";

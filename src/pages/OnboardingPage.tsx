@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { isValidAnyPeppolId, normalizeAnyPeppolId } from "@/lib/peppol";
 import { toast } from "sonner";
 import i18n from "@/i18n";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -199,6 +200,7 @@ export default function OnboardingPage() {
   const [phone, setPhone] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [vatNumber, setVatNumber] = useState("");
+  const [peppolIdInput, setPeppolIdInput] = useState("");
   const [country, setCountry] = useState("Belgique");
   const [preferredLang, setPreferredLang] = useState("fr");
   const [city, setCity] = useState("");
@@ -906,6 +908,8 @@ export default function OnboardingPage() {
             email,
             phone: phone || null,
             vat_number: vatNumber || null,
+            peppol_id: isValidAnyPeppolId(peppolIdInput) ? normalizeAnyPeppolId(peppolIdInput) : null,
+            einvoicing_channel: isValidAnyPeppolId(peppolIdInput) ? "both" : "email",
             country_code: cc,
             address_line1: city || "—",
             city: city || "—",
@@ -1252,6 +1256,18 @@ export default function OnboardingPage() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <TfSelect value={country} onChange={setCountry} options={countries} placeholder="Pays" />
               <TfInput value={city} onChange={setCity} placeholder="Ville" />
+            </div>
+            <div>
+              <TfInput value={peppolIdInput} onChange={setPeppolIdInput} placeholder="Identifiant Peppol (optionnel) — 0208:0123456789" />
+              <p style={{ fontSize: 11, color: S.sec, marginTop: 6 }}>
+                Optionnel. Si votre comptabilité reçoit ses factures via le réseau Peppol, indiquez votre identifiant :
+                vos factures y arriveront au format structuré. Sinon, elles vous seront envoyées par email.
+              </p>
+              {peppolIdInput && !isValidAnyPeppolId(peppolIdInput) && (
+                <p style={{ fontSize: 11, color: "#B91C1C", marginTop: 4 }}>
+                  Format invalide — attendu scheme:identifiant, ex. 0208:0123456789.
+                </p>
+              )}
             </div>
             {(buyerProfile === "health_pro" || buyerProfile === "pharmacist" || buyerProfile === "care_facility") && (
               <TfInput value={professionalId} onChange={setProfessionalId} placeholder={proIdPlaceholder} />

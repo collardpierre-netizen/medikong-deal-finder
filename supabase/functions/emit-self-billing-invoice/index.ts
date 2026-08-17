@@ -15,6 +15,12 @@ import {
   type FalcoLine,
   type FalcoTaxSubtotal,
 } from "../_shared/falco-peppol.ts";
+import {
+  getPeppolPrimaryFlow,
+  vendorCopyGoesToPeppol,
+  buildOrderInvoicePayloadParts,
+  logPeppolEvent,
+} from "../_shared/peppol-flow.ts";
 
 // MediKong SRL = legal issuer of every self-billing invoice on the marketplace.
 // Point 1 (Sprint 3): unified Peppol sender for all self-billing dispatches.
@@ -148,50 +154,54 @@ Deno.serve(async (req) => {
       .single();
     if (dbErr) return json(500, { error: "invoice_insert_failed", details: dbErr.message });
 
-    // Best-effort Peppol dispatch via Falco.
-    let peppol: any = { attempted: false };
+    // ── Orchestration Peppol (cf. PEPPOL_PRIMARY_FLOW).
+    const primaryFlow = await getPeppolPrimaryFlow(supabase);
+    const parts = buildOrderInvoicePayloadParts(lines as any[]);
+
+    // FLUX A — double vendeur.
+    let peppol: any = { attempted: false, primary_flow: primaryFlow };
     const falcoApiKey = (Deno.env.get("FALCO_API_KEY") || "").trim();
     const falcoAppSecret = (Deno.env.get("FALCO_APP_SECRET") || "").trim();
-    if (!falcoApiKey || !falcoAppSecret) {
+
+    if (!vendorCopyGoesToPeppol(primaryFlow)) {
+      // Flux A rétrogradé en email + portail vendeur : tracé, jamais silencieux.
+      await supabase.from("peppol_transmissions").insert({
+        document_type: "order_invoice",
+        order_invoice_id: upserted.id,
+        flow: "vendor_copy",
+        sender_kind: "medikong",
+        sender_name_snapshot: MEDIKONG_SELLER.name,
+        sender_vat_snapshot: MEDIKONG_SELLER.vat_number,
+        receiver_kind: "vendor",
+        receiver_id: vendor.id,
+        receiver_peppol_id: vendor.peppol_id ?? null,
+        receiver_name_snapshot: vendor.company_name || vendor.name,
+        receiver_vat_snapshot: vendor.vat_number ?? null,
+        channel: "email",
+        status: "sent",
+        submitted_at: new Date().toISOString(),
+        last_attempt_at: new Date().toISOString(),
+        pdf_storage_path: pdfPath,
+      });
+      await logPeppolEvent(supabase, "vendor_copy_downgraded_to_email", {
+        targetId: upserted.id,
+        detail: `PEPPOL_PRIMARY_FLOW=${primaryFlow}`,
+        metadata: { vendor_id: vendor.id },
+      });
+      peppol = { attempted: false, downgraded_to_email: true, primary_flow: primaryFlow };
+    } else if (!falcoApiKey || !falcoAppSecret) {
       const missing = [!falcoApiKey && "FALCO_API_KEY", !falcoAppSecret && "FALCO_APP_SECRET"].filter(Boolean).join(", ");
       const msg = `Peppol non envoyé : secret(s) manquant(s) — ${missing}. Ajoutez-le(s) dans Cloud → Secrets.`;
       console.error("[emit-self-billing-invoice][falco]", msg);
       await persistFalcoResult(supabase, upserted.id, {
         ok: false, http_status: 0, peppol_status: "failed", peppol_error: msg,
       });
-      peppol = { attempted: false, ok: false, error: msg, missing_secrets: missing.split(", ") };
+      peppol = { attempted: false, ok: false, error: msg, missing_secrets: missing.split(", "), primary_flow: primaryFlow };
     } else if (isFalcoConfigured()) {
       try {
-        const cust: any = order.customers || {};
         const round2 = (n: number) => (Math.round(n * 100) / 100).toFixed(2);
-
-        // Aggregate tax subtotals by rate (mix of 6% meds / 21% OTC possible).
-        const bucket = new Map<number, { base: number; tax: number }>();
-        for (const l of lines as any[]) {
-          const rate = Number(l.vat_rate || 0);
-          const base = Number(l.line_total_excl_vat || 0);
-          const tax = Number(l.line_total_incl_vat || 0) - base;
-          const b = bucket.get(rate) || { base: 0, tax: 0 };
-          b.base += base;
-          b.tax += tax;
-          bucket.set(rate, b);
-        }
-        const taxSubtotals: FalcoTaxSubtotal[] = Array.from(bucket.entries()).map(([rate, v]) => ({
-          tax_rate: rate.toFixed(1),
-          base_amount: round2(v.base),
-          tax_amount: round2(v.tax),
-          tax_regime: { type: "standard" },
-        }));
-
-        const falcoLines: FalcoLine[] = (lines as any[]).map((l: any) => ({
-          name: (l.manual_label || l.products?.name || "—").slice(0, 200),
-          description: (l.manual_label || l.products?.name || "—").slice(0, 500),
-          quantity: String(Number(l.quantity || 0)),
-          unit_price: round2(Number(l.unit_price_excl_vat || 0)),
-          tax_rate: Number(l.vat_rate || 0).toFixed(1),
-          base_amount: round2(Number(l.line_total_excl_vat || 0)),
-          tax_regime_type: "standard",
-        }));
+        const taxSubtotals: FalcoTaxSubtotal[] = parts.tax_subtotals;
+        const falcoLines: FalcoLine[] = parts.lines;
 
         const mandateMention = buildSelfBillingMandateMention(vendor, vendor.mandate_signed_at);
         const falcoRes = await submitInvoiceToFalco(pdfBytes, {
@@ -234,6 +244,7 @@ Deno.serve(async (req) => {
           status: falcoRes.peppol_status,
           document_id: falcoRes.document_id,
           error: falcoRes.peppol_error,
+          primary_flow: primaryFlow,
         };
       } catch (e) {
         console.error("[emit-self-billing-invoice][falco]", e);
@@ -242,8 +253,19 @@ Deno.serve(async (req) => {
           peppol_status: "failed",
           peppol_error: String((e as any)?.message || e),
         });
-        peppol = { attempted: true, ok: false, error: String((e as any)?.message || e) };
+        peppol = { attempted: true, ok: false, error: String((e as any)?.message || e), primary_flow: primaryFlow };
       }
+    }
+
+    // FLUX B — facture acheteur (best-effort : n'échoue jamais l'émission).
+    let buyerPeppol: any = { attempted: true };
+    try {
+      const { data: bRes, error: bErr } = await supabase.functions.invoke("send-order-invoice-peppol", {
+        body: { order_invoice_id: upserted.id },
+      });
+      buyerPeppol = bErr ? { attempted: true, ok: false, error: bErr.message ?? String(bErr) } : bRes;
+    } catch (e) {
+      buyerPeppol = { attempted: true, ok: false, error: String((e as any)?.message || e) };
     }
 
     return json(200, {
@@ -251,8 +273,11 @@ Deno.serve(async (req) => {
       invoice_id: upserted.id,
       invoice_number: upserted.invoice_number,
       pdf_path: pdfPath,
+      primary_flow: primaryFlow,
       peppol,
+      buyer_peppol: buyerPeppol,
     });
+
   } catch (e) {
     console.error("[emit-self-billing-invoice]", e);
     return json(500, { error: "internal_error", details: String(e?.message || e) });

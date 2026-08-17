@@ -136,6 +136,27 @@ export default function AdminSavingsOcr() {
     setSendingId(null);
   }
 
+  /** Génère le PDF sans envoyer d'email et l'ouvre dans un nouvel onglet. */
+  async function previewReport(r: Sim) {
+    if (!r.email) {
+      toast.error("Aucun email sur cette analyse");
+      return;
+    }
+    setPreviewId(r.id);
+    const { data, error } = await supabase.functions.invoke("generate-savings-report", {
+      body: { simulation_id: r.id, email: r.email, preview: true },
+    });
+    setPreviewId(null);
+    const url = (data as any)?.signed_url;
+    if (error || !url) {
+      toast.error("Aperçu impossible");
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+
+
 
   return (
     <div className="container mx-auto py-8 space-y-6 max-w-7xl">

@@ -170,34 +170,45 @@ Deno.serve(async (req) => {
     }
 
     // ── Flux B / journal peppol_transmissions (sans toucher aux colonnes historiques).
-    const TX_STATUS_MAP: Record<string, string> = {
-      submitted: "sent",
-      sent: "sent",
-      delivered: "delivered",
-      accepted: "delivered",
-      failed: "failed",
-      rejected: "failed",
-    };
     let txChecked = 0;
     let txUpdated = 0;
+    let txUnknownStatus = 0;
     for (const raw of documents) {
       const { id, status, error } = extractDoc(raw);
       if (!id || !status) continue;
-      const mapped = TX_STATUS_MAP[status.toLowerCase()];
-      if (!mapped) continue;
 
       const { data: tx } = await supabase
         .from("peppol_transmissions")
-        .select("id, status, order_invoice_id, flow")
+        .select("id, status, order_invoice_id, flow, delivered_at")
         .eq("peppol_document_id", id)
         .maybeSingle();
       if (!tx) continue;
       txChecked++;
-      if (String(tx.status).toLowerCase() === mapped) continue;
+
+      const mapped = mapFalcoStatusToTransmission(status);
+      if (!mapped) {
+        // Statut Falco inconnu : on ne devine pas, on laisse la transmission en l'état et on trace.
+        txUnknownStatus++;
+        logFalco("warn", "poll_tx_unknown_falco_status", { document_id: id, falco_status: status, transmission_id: tx.id });
+        await supabase.from("audit_logs").insert({
+          action: "peppol_unknown_falco_status",
+          module: "peppol",
+          detail: `document ${id} → statut Falco inconnu: ${status}`,
+          target_type: "order_invoice",
+          target_id: tx.order_invoice_id,
+          entity_type: "peppol_transmission",
+          entity_id: tx.id,
+          metadata: { document_id: id, falco_status: status },
+        }).then(() => {}, () => {});
+        continue;
+      }
+
+      if (String(tx.status).toLowerCase() === mapped) continue;      // idempotent
       if (["cancelled", "skipped"].includes(String(tx.status))) continue;
 
-      const patch: Record<string, unknown> = { status: mapped, last_error: error };
-      if (mapped === "delivered") patch.delivered_at = new Date().toISOString();
+      const patch: Record<string, unknown> = { status: mapped, last_error: error, last_attempt_at: new Date().toISOString() };
+      // delivered_at n'est jamais réécrit s'il existe déjà (idempotence).
+      if (mapped === "delivered" && !tx.delivered_at) patch.delivered_at = new Date().toISOString();
       const { error: txErr } = await supabase.from("peppol_transmissions").update(patch).eq("id", tx.id);
       if (txErr) {
         logFalco("error", "poll_tx_update_failed", { transmission_id: tx.id, error: txErr.message });
@@ -217,6 +228,7 @@ Deno.serve(async (req) => {
         }).then(() => {}, () => {});
       }
     }
+
 
 
     logFalco("info", "poll_done", {

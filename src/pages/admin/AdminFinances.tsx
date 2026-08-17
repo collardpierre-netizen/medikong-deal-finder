@@ -515,6 +515,12 @@ const AdminFinances = () => {
         invoiceId={historyInvoice?.id ?? null}
         invoiceNumber={historyInvoice?.number ?? null}
       />
+      <PeppolTransmissionTimelineDialog
+        orderInvoiceId={timelineInvoice?.id ?? null}
+        invoiceNumber={timelineInvoice?.number ?? null}
+        onClose={() => setTimelineInvoice(null)}
+      />
+
     </div>
   );
 };

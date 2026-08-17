@@ -199,9 +199,10 @@ Deno.serve(async (req) => {
   // 5. Update simulation
   await supabase.from("savings_simulations").update({ report_path: path }).eq("id", sim.id);
 
-  // 6. Send email (best-effort)
+  // 6. Send email (best-effort) — sauté en mode aperçu
   let emailSent = false;
-  if (sim.email) {
+  if (!preview && sim.email) {
+
     try {
       const { error: mailErr } = await supabase.functions.invoke("send-transactional-email", {
         body: {

@@ -57,6 +57,8 @@ export default function AdminSavingsOcr() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [previewId, setPreviewId] = useState<string | null>(null);
+
   const [form, setForm] = useState({ email: "", pharmacy_name: "", city: "", supplier: "febelco" });
   const [file, setFile] = useState<File | null>(null);
 

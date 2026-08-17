@@ -247,7 +247,7 @@ Deno.serve(async (req) => {
 
         await persistFalcoResult(supabase, upserted.id, falcoRes);
         const nowIso = new Date().toISOString();
-        await supabase.from("peppol_transmissions").upsert({
+        const txRow = {
           document_type: "order_invoice",
           order_invoice_id: upserted.id,
           flow: "vendor_copy",
@@ -270,7 +270,23 @@ Deno.serve(async (req) => {
           submitted_at: falcoRes.ok ? nowIso : null,
           last_attempt_at: nowIso,
           last_error: falcoRes.ok ? null : (falcoRes.peppol_error || `http_${falcoRes.http_status}`),
-        }, { onConflict: "order_invoice_id,flow,channel", ignoreDuplicates: false });
+        };
+        // Index unique partiel (order_invoice_id, flow, channel) → pas d'upsert PostgREST :
+        // on met à jour la ligne existante, sinon on insère.
+        const { data: existingTx } = await supabase
+          .from("peppol_transmissions")
+          .select("id")
+          .eq("order_invoice_id", upserted.id)
+          .eq("flow", "vendor_copy")
+          .eq("channel", "peppol")
+          .neq("status", "cancelled")
+          .maybeSingle();
+        if (existingTx?.id) {
+          await supabase.from("peppol_transmissions").update(txRow).eq("id", existingTx.id);
+        } else {
+          await supabase.from("peppol_transmissions").insert(txRow);
+        }
+
 
         peppol = {
           attempted: true,

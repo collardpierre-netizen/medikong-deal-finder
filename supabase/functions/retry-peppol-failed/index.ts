@@ -18,6 +18,12 @@ import {
   type FalcoTaxSubtotal,
 } from "../_shared/falco-peppol.ts";
 import { buildSelfBillingMandateMention } from "../_shared/invoice-pdf.ts";
+import {
+  buildOrderInvoicePayloadParts,
+  buildVendorCopyFalcoMetadata,
+  assertPayloadMatchesInvoice,
+} from "../_shared/peppol-flow.ts";
+
 
 const MAX_RETRIES = 3;
 const RETRY_AFTER_MINUTES = 60;

@@ -4193,6 +4193,7 @@ export type Database = {
           email: string
           id: string
           is_professional: boolean
+          is_test: boolean
           is_verified: boolean
           payment_terms_days: number
           peppol_directory_status: string | null
@@ -4222,6 +4223,7 @@ export type Database = {
           email: string
           id?: string
           is_professional?: boolean
+          is_test?: boolean
           is_verified?: boolean
           payment_terms_days?: number
           peppol_directory_status?: string | null
@@ -4251,6 +4253,7 @@ export type Database = {
           email?: string
           id?: string
           is_professional?: boolean
+          is_test?: boolean
           is_verified?: boolean
           payment_terms_days?: number
           peppol_directory_status?: string | null
@@ -9414,6 +9417,7 @@ export type Database = {
           id: string
           internal_notes: string | null
           invoice_number: string | null
+          is_test: boolean
           issued_at: string | null
           last_reminder_at: string | null
           order_id: string
@@ -9458,6 +9462,7 @@ export type Database = {
           id?: string
           internal_notes?: string | null
           invoice_number?: string | null
+          is_test?: boolean
           issued_at?: string | null
           last_reminder_at?: string | null
           order_id: string
@@ -9502,6 +9507,7 @@ export type Database = {
           id?: string
           internal_notes?: string | null
           invoice_number?: string | null
+          is_test?: boolean
           issued_at?: string | null
           last_reminder_at?: string | null
           order_id?: string
@@ -24490,6 +24496,7 @@ export type Database = {
           is_active: boolean
           is_authorized_distributor: boolean
           is_manufacturer: boolean
+          is_test: boolean
           is_top_seller: boolean | null
           is_verified: boolean
           last_sync_run_id: string | null
@@ -24582,6 +24589,7 @@ export type Database = {
           is_active?: boolean
           is_authorized_distributor?: boolean
           is_manufacturer?: boolean
+          is_test?: boolean
           is_top_seller?: boolean | null
           is_verified?: boolean
           last_sync_run_id?: string | null
@@ -24674,6 +24682,7 @@ export type Database = {
           is_active?: boolean
           is_authorized_distributor?: boolean
           is_manufacturer?: boolean
+          is_test?: boolean
           is_top_seller?: boolean | null
           is_verified?: boolean
           last_sync_run_id?: string | null

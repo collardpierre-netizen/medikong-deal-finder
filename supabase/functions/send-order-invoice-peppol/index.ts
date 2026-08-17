@@ -98,6 +98,7 @@ Deno.serve(async (req) => {
     const bearer = authHeader.replace(/^Bearer\s+/i, "").trim();
     const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+    let actorUserId: string | null = null;
     if (bearer !== serviceRole) {
       if (!bearer || bearer === anonKey) return json(401, { error: "unauthorized" });
       const user = createClient(Deno.env.get("SUPABASE_URL")!, anonKey, {
@@ -108,11 +109,19 @@ Deno.serve(async (req) => {
       if (!uid) return json(401, { error: "unauthorized" });
       const { data: adm } = await supabase.rpc("is_admin", { _user_id: uid });
       if (!adm) return json(403, { error: "forbidden" });
+      actorUserId = String(uid);
     }
 
     const body = await req.json().catch(() => ({}));
     const invoiceId = String(body?.order_invoice_id || "").trim();
     const force = body?.force === true;
+    // Campagne de tests sandbox (LOT 3) : permet de jouer le Flux B sans jamais
+    // toucher à la valeur persistée de peppol_primary_flow. Réservé aux
+    // enregistrements de test (garde en dur sur customers.is_test).
+    const forceFlow = String(body?.force_flow || "").trim();
+    if (forceFlow && forceFlow !== "buyer_invoice") {
+      return json(400, { error: "force_flow_invalid", details: "only 'buyer_invoice' is supported" });
+    }
     if (!invoiceId) return json(400, { error: "order_invoice_id_required" });
 
     // ── load invoice + order + vendor + customer
@@ -135,7 +144,7 @@ Deno.serve(async (req) => {
 
     const [{ data: customer }, { data: vendor }] = await Promise.all([
       supabase.from("customers")
-        .select("id, company_name, email, vat_number, address_line1, city, postal_code, country_code, payment_terms_days, peppol_id, peppol_directory_status, einvoicing_channel, einvoicing_email")
+        .select("id, company_name, email, vat_number, address_line1, city, postal_code, country_code, payment_terms_days, peppol_id, peppol_directory_status, einvoicing_channel, einvoicing_email, is_test")
         .eq("id", order.customer_id).maybeSingle(),
       supabase.from("vendors")
         .select("id, name, company_name, email, vat_number, address_line1, city, postal_code, country_code, mandate_signed_at")
@@ -146,6 +155,24 @@ Deno.serve(async (req) => {
 
     invoice.__customer = customer;
     invoice.__customer_id = customer.id;
+
+    // ── garde force_flow : uniquement sur un client marqué de test, et journalisée.
+    if (forceFlow) {
+      if (customer.is_test !== true) {
+        return json(403, { error: "force_flow_requires_test_customer" });
+      }
+      await logPeppolEvent(supabase, "buyer_peppol_force_flow_used", {
+        targetId: invoice.id,
+        detail: `force_flow=${forceFlow} (client de test)`,
+        metadata: {
+          actor_user_id: actorUserId,
+          via: actorUserId ? "admin" : "service_role",
+          customer_id: customer.id,
+          invoice_number: invoice.invoice_number,
+        },
+      });
+    }
+
 
     // ── idempotence (garde la plus importante du lot)
     const { data: existing } = await supabase
@@ -169,7 +196,8 @@ Deno.serve(async (req) => {
         .in("id", existing.map((r: any) => r.id));
     }
 
-    const primaryFlow = await getPeppolPrimaryFlow(supabase);
+    // force_flow n'écrit jamais le réglage persisté : override en mémoire uniquement.
+    const primaryFlow = forceFlow ? forceFlow : await getPeppolPrimaryFlow(supabase);
 
     // ── résolution du canal
     let channel: "peppol" | "email" = "email";

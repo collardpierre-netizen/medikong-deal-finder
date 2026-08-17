@@ -548,6 +548,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "affiliate_commissions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orders_v"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "affiliate_commissions_payout_invoice_id_fkey"
             columns: ["payout_invoice_id"]
             isOneToOne: false
@@ -2123,6 +2130,13 @@ export type Database = {
             referencedRelation: "orders_visible_v"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "buyer_order_tokens_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "vendor_orders_v"
+            referencedColumns: ["id"]
+          },
         ]
       }
       buyer_p2p_listings: {
@@ -2596,6 +2610,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders_visible_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cagnotte_ledger_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orders_v"
             referencedColumns: ["id"]
           },
         ]
@@ -3760,6 +3781,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "commission_invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orders_v"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "commission_invoices_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
@@ -4626,6 +4654,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders_visible_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_notes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orders_v"
             referencedColumns: ["id"]
           },
           {
@@ -9508,6 +9543,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "order_invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orders_v"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "order_invoices_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
@@ -9714,6 +9756,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders_visible_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orders_v"
             referencedColumns: ["id"]
           },
           {
@@ -10030,6 +10079,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orders_v"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "order_lines_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
@@ -10199,6 +10255,13 @@ export type Database = {
             referencedRelation: "orders_visible_v"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "order_status_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orders_v"
+            referencedColumns: ["id"]
+          },
         ]
       }
       order_transfers: {
@@ -10268,6 +10331,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders_visible_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_transfers_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orders_v"
             referencedColumns: ["id"]
           },
           {
@@ -10407,6 +10477,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders_visible_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_vendor_sla_alerts_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orders_v"
             referencedColumns: ["id"]
           },
           {
@@ -14019,6 +14096,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders_visible_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orders_v"
             referencedColumns: ["id"]
           },
           {
@@ -17894,6 +17978,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sub_order_generation_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orders_v"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "sub_order_generation_logs_sub_order_id_fkey"
             columns: ["sub_order_id"]
             isOneToOne: false
@@ -18119,6 +18210,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders_visible_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sub_orders_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orders_v"
             referencedColumns: ["id"]
           },
           {
@@ -22624,6 +22722,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "vendor_order_tokens_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orders_v"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "vendor_order_tokens_sub_order_id_fkey"
             columns: ["sub_order_id"]
             isOneToOne: true
@@ -24628,6 +24733,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orders_v"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "order_lines_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
@@ -25281,6 +25393,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders_visible_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orders_v"
             referencedColumns: ["id"]
           },
           {
@@ -28575,6 +28694,199 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "vendor_intelligence_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_orders_v: {
+        Row: {
+          api_key_id: string | null
+          billing_address: Json | null
+          cagnotte_earned: number | null
+          cagnotte_eligible_ht: number | null
+          cagnotte_restituted_at: string | null
+          cagnotte_used: number | null
+          created_at: string | null
+          created_by_admin: string | null
+          customer_id: string | null
+          customer_validated_at: string | null
+          customer_validation_email: string | null
+          deleted_at: string | null
+          deleted_by: string | null
+          deleted_reason: string | null
+          delivery_confirmation_completed_at: string | null
+          delivery_confirmation_requested_at: string | null
+          draft_fingerprint: string | null
+          draft_payload: Json | null
+          email_cagnotte_earned_sent_at: string | null
+          estimated_delivery_date: string | null
+          forecast_converted_at: string | null
+          forecast_created_at: string | null
+          forecast_snapshot: Json | null
+          fulfillment_mode: string | null
+          hidden_from_list: boolean | null
+          id: string | null
+          is_forecast: boolean | null
+          is_test: boolean | null
+          notes: string | null
+          order_number: string | null
+          payment_due_date: string | null
+          payment_method:
+            | Database["public"]["Enums"]["payment_method_enum"]
+            | null
+          payment_status:
+            | Database["public"]["Enums"]["payment_status_enum"]
+            | null
+          public_token: string | null
+          shipped_at: string | null
+          shipping_address: Json | null
+          shipping_address_id: string | null
+          show_payment_info: boolean | null
+          source: Database["public"]["Enums"]["order_source"] | null
+          status: Database["public"]["Enums"]["order_status"] | null
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string | null
+          subtotal_excl_vat: number | null
+          total_incl_vat: number | null
+          tracking_carrier: string | null
+          tracking_number: string | null
+          tracking_url: string | null
+          updated_at: string | null
+          vat_amount: number | null
+          was_forecast: boolean | null
+        }
+        Insert: {
+          api_key_id?: string | null
+          billing_address?: Json | null
+          cagnotte_earned?: number | null
+          cagnotte_eligible_ht?: number | null
+          cagnotte_restituted_at?: string | null
+          cagnotte_used?: number | null
+          created_at?: string | null
+          created_by_admin?: string | null
+          customer_id?: string | null
+          customer_validated_at?: string | null
+          customer_validation_email?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          deleted_reason?: string | null
+          delivery_confirmation_completed_at?: string | null
+          delivery_confirmation_requested_at?: string | null
+          draft_fingerprint?: string | null
+          draft_payload?: Json | null
+          email_cagnotte_earned_sent_at?: string | null
+          estimated_delivery_date?: string | null
+          forecast_converted_at?: string | null
+          forecast_created_at?: string | null
+          forecast_snapshot?: Json | null
+          fulfillment_mode?: string | null
+          hidden_from_list?: boolean | null
+          id?: string | null
+          is_forecast?: boolean | null
+          is_test?: boolean | null
+          notes?: string | null
+          order_number?: string | null
+          payment_due_date?: string | null
+          payment_method?:
+            | Database["public"]["Enums"]["payment_method_enum"]
+            | null
+          payment_status?:
+            | Database["public"]["Enums"]["payment_status_enum"]
+            | null
+          public_token?: string | null
+          shipped_at?: string | null
+          shipping_address?: Json | null
+          shipping_address_id?: string | null
+          show_payment_info?: boolean | null
+          source?: Database["public"]["Enums"]["order_source"] | null
+          status?: Database["public"]["Enums"]["order_status"] | null
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          subtotal_excl_vat?: number | null
+          total_incl_vat?: number | null
+          tracking_carrier?: string | null
+          tracking_number?: string | null
+          tracking_url?: string | null
+          updated_at?: string | null
+          vat_amount?: number | null
+          was_forecast?: boolean | null
+        }
+        Update: {
+          api_key_id?: string | null
+          billing_address?: Json | null
+          cagnotte_earned?: number | null
+          cagnotte_eligible_ht?: number | null
+          cagnotte_restituted_at?: string | null
+          cagnotte_used?: number | null
+          created_at?: string | null
+          created_by_admin?: string | null
+          customer_id?: string | null
+          customer_validated_at?: string | null
+          customer_validation_email?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          deleted_reason?: string | null
+          delivery_confirmation_completed_at?: string | null
+          delivery_confirmation_requested_at?: string | null
+          draft_fingerprint?: string | null
+          draft_payload?: Json | null
+          email_cagnotte_earned_sent_at?: string | null
+          estimated_delivery_date?: string | null
+          forecast_converted_at?: string | null
+          forecast_created_at?: string | null
+          forecast_snapshot?: Json | null
+          fulfillment_mode?: string | null
+          hidden_from_list?: boolean | null
+          id?: string | null
+          is_forecast?: boolean | null
+          is_test?: boolean | null
+          notes?: string | null
+          order_number?: string | null
+          payment_due_date?: string | null
+          payment_method?:
+            | Database["public"]["Enums"]["payment_method_enum"]
+            | null
+          payment_status?:
+            | Database["public"]["Enums"]["payment_status_enum"]
+            | null
+          public_token?: string | null
+          shipped_at?: string | null
+          shipping_address?: Json | null
+          shipping_address_id?: string | null
+          show_payment_info?: boolean | null
+          source?: Database["public"]["Enums"]["order_source"] | null
+          status?: Database["public"]["Enums"]["order_status"] | null
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          subtotal_excl_vat?: number | null
+          total_incl_vat?: number | null
+          tracking_carrier?: string | null
+          tracking_number?: string | null
+          tracking_url?: string | null
+          updated_at?: string | null
+          vat_amount?: number | null
+          was_forecast?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_shipping_address_id_fkey"
+            columns: ["shipping_address_id"]
+            isOneToOne: false
+            referencedRelation: "customer_shipping_addresses"
             referencedColumns: ["id"]
           },
         ]

@@ -413,6 +413,71 @@ const AdminFinances = () => {
                       </div>
                     </td>
                     <td className="px-4 py-3">
+                      {inv.type === "self_billing" ? (() => {
+                        const tx = buyerTransmissions[inv.id];
+                        const status = tx?.status as string | undefined;
+                        const label = !tx
+                          ? "Non transmise"
+                          : status === "delivered" ? "Reçue"
+                          : status === "sent" || status === "submitted" ? "Transmise"
+                          : status === "failed" ? "Échec"
+                          : status === "blocked_missing_id" ? "Identifiant manquant"
+                          : status === "blocked_not_registered" ? "Non inscrit"
+                          : status === "skipped" ? "Email uniquement"
+                          : "En attente";
+                        const color = !tx ? "#8B95A5"
+                          : status === "delivered" ? "#059669"
+                          : status === "sent" || status === "submitted" ? "#1B5BDA"
+                          : status === "failed" ? "#B91C1C"
+                          : status?.startsWith("blocked") ? "#B45309"
+                          : "#8B95A5";
+                        return (
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="px-2 py-0.5 rounded text-[10px] font-bold"
+                              style={{ backgroundColor: color + "1A", color }}
+                              title={tx?.last_error || (tx?.channel === "email" ? "Repli email" : undefined)}
+                            >
+                              {label}
+                            </span>
+                            {(!tx || status === "failed" || String(status || "").startsWith("blocked")) && (
+                              <button
+                                onClick={async () => {
+                                  const t = toast.loading("Transmission acheteur en cours…");
+                                  const { data, error } = await supabase.functions.invoke("send-order-invoice-peppol", {
+                                    body: { order_invoice_id: inv.id, force: true },
+                                  });
+                                  toast.dismiss(t);
+                                  if (error || data?.ok === false) {
+                                    toast.error(`Échec transmission acheteur : ${data?.error || error?.message || "erreur inconnue"}`, { duration: 8000 });
+                                  } else {
+                                    toast.success("Facture transmise à l'acheteur");
+                                  }
+                                  queryClient.invalidateQueries({ queryKey: ["admin-buyer-peppol-transmissions"] });
+                                }}
+                                className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded hover:bg-slate-100"
+                                style={{ color: "#1B5BDA" }}
+                                title="Transmettre la facture de vente à l'acheteur (Peppol, repli email)"
+                              >
+                                <Send size={11} /> Transmettre
+                              </button>
+                            )}
+                            <button
+                              onClick={() => setTimelineInvoice({ id: inv.id, number: inv.invoice_number })}
+                              className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded hover:bg-slate-100"
+                              style={{ color: "#616B7C" }}
+                              title="Voir la chronologie des transmissions"
+                            >
+                              <History size={11} /> Détail
+                            </button>
+                          </div>
+                        );
+                      })() : (
+                        <span className="text-[11px]" style={{ color: "#8B95A5" }}>—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+
                       {inv.pdf_path && (
                         <button
                           onClick={async () => {

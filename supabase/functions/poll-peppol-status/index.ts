@@ -169,6 +169,56 @@ Deno.serve(async (req) => {
       changes.push({ document_id: id, from: inv.peppol_status || null, to: status });
     }
 
+    // ── Flux B / journal peppol_transmissions (sans toucher aux colonnes historiques).
+    const TX_STATUS_MAP: Record<string, string> = {
+      submitted: "sent",
+      sent: "sent",
+      delivered: "delivered",
+      accepted: "delivered",
+      failed: "failed",
+      rejected: "failed",
+    };
+    let txChecked = 0;
+    let txUpdated = 0;
+    for (const raw of documents) {
+      const { id, status, error } = extractDoc(raw);
+      if (!id || !status) continue;
+      const mapped = TX_STATUS_MAP[status.toLowerCase()];
+      if (!mapped) continue;
+
+      const { data: tx } = await supabase
+        .from("peppol_transmissions")
+        .select("id, status, order_invoice_id, flow")
+        .eq("peppol_document_id", id)
+        .maybeSingle();
+      if (!tx) continue;
+      txChecked++;
+      if (String(tx.status).toLowerCase() === mapped) continue;
+      if (["cancelled", "skipped"].includes(String(tx.status))) continue;
+
+      const patch: Record<string, unknown> = { status: mapped, last_error: error };
+      if (mapped === "delivered") patch.delivered_at = new Date().toISOString();
+      const { error: txErr } = await supabase.from("peppol_transmissions").update(patch).eq("id", tx.id);
+      if (txErr) {
+        logFalco("error", "poll_tx_update_failed", { transmission_id: tx.id, error: txErr.message });
+        continue;
+      }
+      txUpdated++;
+      if (mapped === "delivered" && tx.flow === "buyer_invoice") {
+        await supabase.from("audit_logs").insert({
+          action: "buyer_peppol_delivered",
+          module: "peppol",
+          detail: `document ${id}`,
+          target_type: "order_invoice",
+          target_id: tx.order_invoice_id,
+          entity_type: "peppol_transmission",
+          entity_id: tx.id,
+          metadata: { document_id: id },
+        }).then(() => {}, () => {});
+      }
+    }
+
+
     logFalco("info", "poll_done", {
       latency_ms: Date.now() - started,
       documents_returned: documents.length,

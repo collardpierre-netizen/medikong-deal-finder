@@ -199,53 +199,89 @@ Deno.serve(async (req) => {
       peppol = { attempted: false, ok: false, error: msg, missing_secrets: missing.split(", "), primary_flow: primaryFlow };
     } else if (isFalcoConfigured()) {
       try {
-        const round2 = (n: number) => (Math.round(n * 100) / 100).toFixed(2);
-        const taxSubtotals: FalcoTaxSubtotal[] = parts.tax_subtotals;
-        const falcoLines: FalcoLine[] = parts.lines;
-
+        // ── Contrôle de cohérence BLOQUANT (entiers, tolérance 0) avant tout appel réseau.
+        const coherence = assertPayloadMatchesInvoice(parts, {
+          amount_excl_vat: subtotal,
+          vat_amount: vatAmt,
+          amount_incl_vat: totalTtc,
+        });
+        if (!coherence.ok) {
+          await persistFalcoResult(supabase, upserted.id, {
+            ok: false, http_status: 0, peppol_status: "failed", peppol_error: coherence.error,
+          });
+          await logPeppolEvent(supabase, "vendor_copy_totals_mismatch", {
+            targetId: upserted.id,
+            detail: coherence.error,
+            metadata: { vendor_id: vendor.id, stage: "pre_network_coherence" },
+          });
+          peppol = { attempted: false, ok: false, error: coherence.error, primary_flow: primaryFlow };
+        } else {
         const mandateMention = buildSelfBillingMandateMention(vendor, vendor.mandate_signed_at);
-        const falcoRes = await submitInvoiceToFalco(pdfBytes, {
-          document_type: "sale_invoice",
-          document_date: new Date().toISOString().slice(0, 10),
-          due_date: new Date().toISOString().slice(0, 10),
-          number: invoiceNumber,
-          buyer_reference: order.order_number || invoiceNumber,
+        const metadata = buildVendorCopyFalcoMetadata({
+          invoiceNumber,
+          documentDate: new Date().toISOString().slice(0, 10),
+          dueDate: new Date().toISOString().slice(0, 10),
+          buyerReference: order.order_number || invoiceNumber,
           // Point 1: mandate mention required by BE self-billing regulation, embedded in UBL note.
           note: mandateMention,
-          sender: {
-            name: MEDIKONG_SELLER.name,
-            vat_number: MEDIKONG_SELLER.vat_number,
-            address: { ...MEDIKONG_SELLER.address },
-          },
-          receiver: {
-            name: vendor.company_name || vendor.name,
-            vat_number: normalizeFalcoVatNumber(vendor.vat_number),
-            peppol_identifier: normalizeFalcoPeppolIdentifier(vendor.peppol_id),
-            contact: vendor.email ? { email: vendor.email } : undefined,
-            address: {
-              line1: vendor.address_line1 || "—",
-              zip: resolveFalcoPostalCode(vendor),
-              city: vendor.city || undefined,
-              country: vendor.country_code || "BE",
-            },
-          },
-          currency: "EUR",
-          base_amount: round2(subtotal),
-          total_amount: round2(totalTtc),
-          tax_subtotals: taxSubtotals,
-          lines: falcoLines,
-          send_peppol: true,
-        }, { pdfFilename: `${invoiceNumber}.pdf`, caller: "emit-self-billing-invoice", invoiceId: upserted.id });
+          vendor,
+          baseAmount: subtotal,
+          totalAmount: totalTtc,
+          parts,
+        });
+
+        // ── Archivage de ce qui est transmis (succès comme échec).
+        const archive = await archivePeppolPayload(supabase, {
+          flow: "vendor_copy",
+          orderId: orderId,
+          invoiceId: upserted.id,
+          metadata,
+        });
+        const pdfSha = await sha256Hex(pdfBytes);
+
+        const falcoRes = await submitInvoiceToFalco(pdfBytes, metadata, {
+          pdfFilename: `${invoiceNumber}.pdf`,
+          caller: "emit-self-billing-invoice",
+          invoiceId: upserted.id,
+        });
 
         await persistFalcoResult(supabase, upserted.id, falcoRes);
+        const nowIso = new Date().toISOString();
+        await supabase.from("peppol_transmissions").upsert({
+          document_type: "order_invoice",
+          order_invoice_id: upserted.id,
+          flow: "vendor_copy",
+          sender_kind: "medikong",
+          sender_name_snapshot: MEDIKONG_SELLER.name,
+          sender_vat_snapshot: MEDIKONG_SELLER.vat_number,
+          receiver_kind: "vendor",
+          receiver_id: vendor.id,
+          receiver_peppol_id: vendor.peppol_id ?? null,
+          receiver_name_snapshot: vendor.company_name || vendor.name,
+          receiver_vat_snapshot: vendor.vat_number ?? null,
+          channel: "peppol",
+          status: falcoRes.ok ? "sent" : "failed",
+          peppol_document_id: falcoRes.document_id ?? null,
+          falco_import_id: falcoRes.document_id ?? null,
+          payload_storage_path: archive.payload_storage_path,
+          payload_sha256: archive.payload_sha256,
+          pdf_storage_path: pdfPath,
+          pdf_sha256: pdfSha,
+          submitted_at: falcoRes.ok ? nowIso : null,
+          last_attempt_at: nowIso,
+          last_error: falcoRes.ok ? null : (falcoRes.peppol_error || `http_${falcoRes.http_status}`),
+        }, { onConflict: "order_invoice_id,flow,channel", ignoreDuplicates: false });
+
         peppol = {
           attempted: true,
           ok: falcoRes.ok,
           status: falcoRes.peppol_status,
           document_id: falcoRes.document_id,
           error: falcoRes.peppol_error,
+          payload_sha256: archive.payload_sha256,
           primary_flow: primaryFlow,
         };
+        }
       } catch (e) {
         console.error("[emit-self-billing-invoice][falco]", e);
         await persistFalcoResult(supabase, upserted.id, {
@@ -256,6 +292,7 @@ Deno.serve(async (req) => {
         peppol = { attempted: true, ok: false, error: String((e as any)?.message || e), primary_flow: primaryFlow };
       }
     }
+
 
     // FLUX B — facture acheteur (best-effort : n'échoue jamais l'émission).
     let buyerPeppol: any = { attempted: true };

@@ -98,6 +98,7 @@ Deno.serve(async (req) => {
     const bearer = authHeader.replace(/^Bearer\s+/i, "").trim();
     const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+    let actorUserId: string | null = null;
     if (bearer !== serviceRole) {
       if (!bearer || bearer === anonKey) return json(401, { error: "unauthorized" });
       const user = createClient(Deno.env.get("SUPABASE_URL")!, anonKey, {
@@ -108,11 +109,19 @@ Deno.serve(async (req) => {
       if (!uid) return json(401, { error: "unauthorized" });
       const { data: adm } = await supabase.rpc("is_admin", { _user_id: uid });
       if (!adm) return json(403, { error: "forbidden" });
+      actorUserId = String(uid);
     }
 
     const body = await req.json().catch(() => ({}));
     const invoiceId = String(body?.order_invoice_id || "").trim();
     const force = body?.force === true;
+    // Campagne de tests sandbox (LOT 3) : permet de jouer le Flux B sans jamais
+    // toucher à la valeur persistée de peppol_primary_flow. Réservé aux
+    // enregistrements de test (garde en dur sur customers.is_test).
+    const forceFlow = String(body?.force_flow || "").trim();
+    if (forceFlow && forceFlow !== "buyer_invoice") {
+      return json(400, { error: "force_flow_invalid", details: "only 'buyer_invoice' is supported" });
+    }
     if (!invoiceId) return json(400, { error: "order_invoice_id_required" });
 
     // ── load invoice + order + vendor + customer

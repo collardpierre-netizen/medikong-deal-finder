@@ -232,9 +232,32 @@ Deno.serve(async (req) => {
     if (!orderLines || orderLines.length === 0) return json(400, { error: "no_lines_for_vendor" });
 
     const parts = buildOrderInvoicePayloadParts(orderLines as any[]);
+
+    // ── PDF (téléchargé avant le contrôle : on archive aussi les échecs)
+    const { data: pdf, error: pdfErr } = await supabase.storage.from(BUCKET).download(invoice.pdf_path);
+    if (pdfErr || !pdf) return json(500, { error: "pdf_download_failed", details: pdfErr?.message });
+    const pdfBytes = new Uint8Array(await pdf.arrayBuffer());
+    const pdfSha = await sha256Hex(pdfBytes);
+
     const coherence = assertPayloadMatchesInvoice(parts, invoice);
     if (!coherence.ok) {
       // Échec AVANT tout appel réseau : on ne transmet jamais un document incohérent.
+      const failedArchive = await archivePeppolPayload(supabase, {
+        flow: "buyer_invoice",
+        orderId: invoice.order_id,
+        invoiceId: invoice.id,
+        metadata: {
+          stage: "pre_network_coherence",
+          error: coherence.error,
+          lines: parts.lines,
+          tax_subtotals: parts.tax_subtotals,
+          invoice_totals: {
+            amount_excl_vat: invoice.amount_excl_vat,
+            vat_amount: invoice.vat_amount,
+            amount_incl_vat: invoice.amount_incl_vat,
+          },
+        },
+      });
       const { data: row } = await supabase.from("peppol_transmissions").insert({
         document_type: "order_invoice",
         order_invoice_id: invoice.id,
@@ -249,23 +272,29 @@ Deno.serve(async (req) => {
         receiver_vat_snapshot: customer.vat_number ?? null,
         channel: "peppol",
         status: "failed",
-        last_error: `totals_mismatch: ${coherence.error}`,
+        last_error: coherence.error,
         last_attempt_at: new Date().toISOString(),
         retry_count: 1,
+        payload_storage_path: failedArchive.payload_storage_path,
+        payload_sha256: failedArchive.payload_sha256,
+        pdf_storage_path: invoice.pdf_path,
+        pdf_sha256: pdfSha,
       }).select("id").maybeSingle();
       await logPeppolEvent(supabase, "buyer_peppol_failed", {
         targetId: invoice.id,
         detail: coherence.error,
-        metadata: { transmission_id: row?.id ?? null, stage: "pre_network_coherence" },
+        metadata: { transmission_id: row?.id ?? null, stage: "pre_network_coherence", admin_alert: true },
       });
-      return json(422, { ok: false, error: "totals_mismatch", details: coherence.error, transmission_id: row?.id ?? null });
+      // Fallback email : l'acheteur reçoit sa facture malgré l'échec de construction.
+      const fallback = await emailFallback(supabase, invoice, coherence.error);
+      return json(422, {
+        ok: false,
+        error: "totals_mismatch",
+        details: coherence.error,
+        transmission_id: row?.id ?? null,
+        fallback,
+      });
     }
-
-    // ── PDF
-    const { data: pdf, error: pdfErr } = await supabase.storage.from(BUCKET).download(invoice.pdf_path);
-    if (pdfErr || !pdf) return json(500, { error: "pdf_download_failed", details: pdfErr?.message });
-    const pdfBytes = new Uint8Array(await pdf.arrayBuffer());
-    const pdfSha = await sha256Hex(pdfBytes);
 
     const issuedAt = (invoice.issued_at || new Date().toISOString()).slice(0, 10);
     const terms = Number(customer.payment_terms_days || 0);
@@ -289,13 +318,11 @@ Deno.serve(async (req) => {
     };
 
     // ── archivage de ce que nous transmettons (décision 3)
-    const payloadJson = canonicalJson(metadata);
-    const payloadSha = await sha256Hex(payloadJson);
-    const payloadPath = `${invoice.order_id}/peppol/buyer-${invoice.id}-${payloadSha.slice(0, 12)}.json`;
-    await supabase.storage.from(BUCKET).upload(payloadPath, new TextEncoder().encode(payloadJson), {
-      contentType: "application/json",
-      upsert: true,
-    });
+    const { payload_storage_path: payloadPath, payload_sha256: payloadSha } = await archivePeppolPayload(
+      supabase,
+      { flow: "buyer_invoice", orderId: invoice.order_id, invoiceId: invoice.id, metadata },
+    );
+
 
     const { data: tx, error: txErr } = await supabase.from("peppol_transmissions").insert({
       document_type: "order_invoice",

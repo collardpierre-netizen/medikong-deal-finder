@@ -1,4 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
+import EinvoicingSettingsCard from "@/components/shared/EinvoicingSettingsCard";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getOrderStatusMeta, formatOrderDateTime } from "@/lib/order-status";
 import { ProductImage } from "@/components/shared/ProductCard";
@@ -447,6 +448,7 @@ export default function AccountPage() {
   }
 
   const [addresses, setAddresses] = useState<Address[]>([]);
+  const [customerId, setCustomerId] = useState<string | null>(null);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const emptyAddress: Address = { id: "", label: "", type: "Livraison", line1: "", line2: "", postalCode: "", city: "", country: "Belgique" };
@@ -461,6 +463,7 @@ export default function AccountPage() {
       .maybeSingle()
       .then(({ data }) => {
         if (data) {
+          setCustomerId(data.id);
           setAddresses([
             {
               id: data.id,
@@ -774,6 +777,12 @@ export default function AccountPage() {
                           </motion.div>
                         ))}
                       </div>
+
+                      {customerId && (
+                        <div className="mt-6">
+                          <EinvoicingSettingsCard customerId={customerId} variant="buyer" />
+                        </div>
+                      )}
                     </div>
                   )}
 

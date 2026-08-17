@@ -225,6 +225,8 @@ Deno.serve(async (req) => {
       checked,
       updated,
       unmatched,
+      tx_checked: txChecked,
+      tx_updated: txUpdated,
     });
 
     return json(200, {
@@ -233,8 +235,11 @@ Deno.serve(async (req) => {
       checked,
       updated,
       unmatched,
+      transmissions_checked: txChecked,
+      transmissions_updated: txUpdated,
       changes,
     });
+
   } catch (error: any) {
     console.error("poll-peppol-status error:", error);
     return json(200, { ok: false, error: error?.message, stack: error?.stack });

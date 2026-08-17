@@ -9,6 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, ScanLine, ExternalLink, ChevronDown, ChevronRight } from "lucide-react";
 import SavingsCategoryPie, { type SavingsCategoryRow } from "@/components/savings/SavingsCategoryPie";
 import SavingsTopProducts, { type SavingsTopProduct } from "@/components/savings/SavingsTopProducts";
+import SavingsMonthlyChart, { type SavingsMonthlyRow } from "@/components/savings/SavingsMonthlyChart";
+import SavingsSupplierBreakdown, { type SavingsSupplierRow } from "@/components/savings/SavingsSupplierBreakdown";
+
 
 type Sim = {
   id: string;
@@ -39,9 +42,25 @@ export default function MesAnalysesEconomiesPage() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [breakdowns, setBreakdowns] = useState<Record<string, SavingsCategoryRow[]>>({});
   const [topProducts, setTopProducts] = useState<SavingsTopProduct[] | null>(null);
+  const [months, setMonths] = useState(12);
+  const [monthly, setMonthly] = useState<SavingsMonthlyRow[] | null>(null);
+  const [suppliers, setSuppliers] = useState<SavingsSupplierRow[] | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const [{ data: m }, { data: s }] = await Promise.all([
+        (supabase as any).rpc("savings_monthly_breakdown", { _group_key: null, _months: months }),
+        (supabase as any).rpc("savings_supplier_breakdown", { _group_key: null }),
+      ]);
+      setMonthly((m as SavingsMonthlyRow[]) ?? []);
+      setSuppliers((s as SavingsSupplierRow[]) ?? []);
+    })();
+  }, [user, months]);
 
   useEffect(() => {
     if (!user) {
+
       setLoading(false);
       return;
     }

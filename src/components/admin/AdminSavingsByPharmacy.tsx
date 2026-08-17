@@ -6,6 +6,10 @@ import { Loader2, RefreshCw, Building2, ChevronDown, ChevronRight } from "lucide
 import { toast } from "sonner";
 import SavingsCategoryPie, { type SavingsCategoryRow } from "@/components/savings/SavingsCategoryPie";
 import SavingsTopProducts, { type SavingsTopProduct } from "@/components/savings/SavingsTopProducts";
+import SavingsMonthlyChart, { type SavingsMonthlyRow } from "@/components/savings/SavingsMonthlyChart";
+import SavingsSupplierBreakdown, { type SavingsSupplierRow } from "@/components/savings/SavingsSupplierBreakdown";
+
+
 
 
 type Row = {
@@ -34,8 +38,18 @@ export default function AdminSavingsByPharmacy() {
   const [saving, setSaving] = useState<string | null>(null);
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [details, setDetails] = useState<
-    Record<string, { cats: SavingsCategoryRow[]; top: SavingsTopProduct[] }>
+    Record<
+      string,
+      {
+        cats: SavingsCategoryRow[];
+        top: SavingsTopProduct[];
+        monthly: SavingsMonthlyRow[];
+        suppliers: SavingsSupplierRow[];
+      }
+    >
   >({});
+  const [globalMonthly, setGlobalMonthly] = useState<SavingsMonthlyRow[] | null>(null);
+  const [globalSuppliers, setGlobalSuppliers] = useState<SavingsSupplierRow[] | null>(null);
 
   async function toggle(groupKey: string) {
     if (openKey === groupKey) {
@@ -44,28 +58,43 @@ export default function AdminSavingsByPharmacy() {
     }
     setOpenKey(groupKey);
     if (details[groupKey]) return;
-    const [{ data: cats }, { data: top }] = await Promise.all([
+    const [{ data: cats }, { data: top }, { data: monthly }, { data: suppliers }] = await Promise.all([
       (supabase as any).rpc("savings_pharmacy_category_breakdown", { _group_key: groupKey }),
       (supabase as any).rpc("savings_top_products", { _group_key: groupKey, _limit: 30 }),
+      (supabase as any).rpc("savings_monthly_breakdown", { _group_key: groupKey, _months: 12 }),
+      (supabase as any).rpc("savings_supplier_breakdown", { _group_key: groupKey }),
     ]);
     setDetails((prev) => ({
       ...prev,
-      [groupKey]: { cats: (cats as SavingsCategoryRow[]) ?? [], top: (top as SavingsTopProduct[]) ?? [] },
+      [groupKey]: {
+        cats: (cats as SavingsCategoryRow[]) ?? [],
+        top: (top as SavingsTopProduct[]) ?? [],
+        monthly: (monthly as SavingsMonthlyRow[]) ?? [],
+        suppliers: (suppliers as SavingsSupplierRow[]) ?? [],
+      },
     }));
   }
 
 
+
   async function load() {
     setLoading(true);
-    const { data, error } = await (supabase as any).rpc("admin_savings_by_pharmacy");
+    const [{ data, error }, { data: monthly }, { data: suppliers }] = await Promise.all([
+      (supabase as any).rpc("admin_savings_by_pharmacy"),
+      (supabase as any).rpc("savings_monthly_breakdown", { _group_key: null, _months: 12 }),
+      (supabase as any).rpc("savings_supplier_breakdown", { _group_key: null }),
+    ]);
     if (error) toast.error("Chargement impossible");
     setRows((data as Row[]) ?? []);
+    setGlobalMonthly((monthly as SavingsMonthlyRow[]) ?? []);
+    setGlobalSuppliers((suppliers as SavingsSupplierRow[]) ?? []);
     setLoading(false);
   }
 
   useEffect(() => {
     void load();
   }, []);
+
 
   async function setStatus(groupKey: string, status: string) {
     setSaving(groupKey);
@@ -83,8 +112,31 @@ export default function AdminSavingsByPharmacy() {
   }
 
   return (
-    <Card>
+    <div className="space-y-6">
+      {!loading && (globalMonthly?.length || globalSuppliers?.length) ? (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Ventilation temporelle (toutes pharmacies)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SavingsMonthlyChart rows={globalMonthly ?? []} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Grossistes (toutes pharmacies)</CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <SavingsSupplierBreakdown rows={globalSuppliers ?? []} />
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
+
+      <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-3">
+
         <CardTitle className="text-base flex items-center gap-2">
           <Building2 className="h-4 w-4" />
           Par pharmacie ({rows.length})
@@ -132,7 +184,16 @@ export default function AdminSavingsByPharmacy() {
                         )}
                       </button>
                     </td>
-                    <td className="py-2 pr-3 font-medium">{r.pharmacy_name || <span className="text-muted-foreground">— (email)</span>}</td>
+                    <td className="py-2 pr-3 font-medium">
+                      {r.pharmacy_name ? (
+                        <span className="block max-w-[220px] truncate" title={r.pharmacy_name}>
+                          {r.pharmacy_name}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">— (email)</span>
+                      )}
+                    </td>
+
                     <td className="py-2 pr-3 text-xs">{(r.emails ?? []).join(", ") || "—"}</td>
                     <td className="py-2 pr-3 text-right">{r.analyses_count}</td>
                     <td className="py-2 pr-3 text-right">
@@ -163,6 +224,11 @@ export default function AdminSavingsByPharmacy() {
                       <td colSpan={7} className="p-4 space-y-6">
                         {details[r.group_key] ? (
                           <>
+                            <SavingsMonthlyChart
+                              rows={details[r.group_key].monthly}
+                              title="Montant commandé par mois (12 derniers mois)"
+                            />
+                            <SavingsSupplierBreakdown rows={details[r.group_key].suppliers} />
                             <SavingsCategoryPie
                               rows={details[r.group_key].cats}
                               title="Ventilation cumulée par type de produit"
@@ -170,6 +236,7 @@ export default function AdminSavingsByPharmacy() {
                             <SavingsTopProducts rows={details[r.group_key].top} />
                           </>
                         ) : (
+
                           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                         )}
                       </td>
@@ -182,6 +249,8 @@ export default function AdminSavingsByPharmacy() {
           </table>
         )}
       </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
+
 }

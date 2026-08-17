@@ -32562,6 +32562,17 @@ export type Database = {
         Args: { _email: string; _pharmacy_name: string }
         Returns: string
       }
+      savings_monthly_breakdown: {
+        Args: { _group_key?: string; _months?: number }
+        Returns: {
+          analyses_count: number
+          days: Json
+          month_start: string
+          total_medikong: number
+          total_savings: number
+          total_source: number
+        }[]
+      }
       savings_pharmacy_category_breakdown: {
         Args: { _group_key?: string }
         Returns: {
@@ -32572,6 +32583,16 @@ export type Database = {
           pct_of_basket: number
           total_amount: number
           total_savings: number
+        }[]
+      }
+      savings_supplier_breakdown: {
+        Args: { _group_key?: string }
+        Returns: {
+          analyses_count: number
+          pct_of_total: number
+          supplier: string
+          total_savings: number
+          total_source: number
         }[]
       }
       savings_top_products: {

@@ -9,18 +9,18 @@ import {
   submitInvoiceToFalco,
   persistFalcoResult,
   isFalcoConfigured,
-  normalizeFalcoPeppolIdentifier,
-  normalizeFalcoVatNumber,
-  resolveFalcoPostalCode,
-  type FalcoLine,
-  type FalcoTaxSubtotal,
 } from "../_shared/falco-peppol.ts";
 import {
   getPeppolPrimaryFlow,
   vendorCopyGoesToPeppol,
   buildOrderInvoicePayloadParts,
+  buildVendorCopyFalcoMetadata,
+  assertPayloadMatchesInvoice,
+  archivePeppolPayload,
+  sha256Hex,
   logPeppolEvent,
 } from "../_shared/peppol-flow.ts";
+
 
 // MediKong SRL = legal issuer of every self-billing invoice on the marketplace.
 // Point 1 (Sprint 3): unified Peppol sender for all self-billing dispatches.

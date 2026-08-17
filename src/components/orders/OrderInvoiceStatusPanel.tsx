@@ -135,10 +135,11 @@ export default function OrderInvoiceStatusPanel({ orderId, vendorId, defaultAmou
 
   // Fetch parent order to detect a Stripe-confirmed card payment.
   const orderQuery = useQuery({
-    queryKey: ["order-invoices-panel-order", orderId],
+    queryKey: ["order-invoices-panel-order", orderId, vendorId ?? null],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orders")
+      // Vendors read through vendor_orders_v (no total_cost / total_margin / admin_notes).
+      const { data, error } = await (supabase as any)
+        .from(vendorId ? "vendor_orders_v" : "orders")
         .select("id, payment_method, payment_status, stripe_payment_intent_id, total_incl_vat, updated_at, created_at")
         .eq("id", orderId)
         .maybeSingle();

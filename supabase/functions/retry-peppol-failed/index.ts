@@ -252,6 +252,33 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ── Flux B : reprise des transmissions acheteur en échec (backoff exponentiel).
+    const BUYER_MAX_RETRIES = 5;
+    const buyerResults: any[] = [];
+    const { data: txCandidates } = await supabase
+      .from("peppol_transmissions")
+      .select("id, order_invoice_id, retry_count, last_attempt_at")
+      .eq("flow", "buyer_invoice")
+      .eq("channel", "peppol")
+      .eq("status", "failed")
+      .lt("retry_count", BUYER_MAX_RETRIES)
+      .order("last_attempt_at", { ascending: true, nullsFirst: true })
+      .limit(BATCH_LIMIT);
+
+    for (const tx of txCandidates || []) {
+      const backoffMs = Math.pow(2, tx.retry_count || 0) * RETRY_AFTER_MINUTES * 60 * 1000;
+      const last = tx.last_attempt_at ? new Date(tx.last_attempt_at).getTime() : 0;
+      if (Date.now() - last < backoffMs) continue;
+      try {
+        const { data, error } = await supabase.functions.invoke("send-order-invoice-peppol", {
+          body: { order_invoice_id: tx.order_invoice_id, force: true },
+        });
+        buyerResults.push({ transmission_id: tx.id, ok: !error && data?.ok !== false, error: error?.message ?? data?.error });
+      } catch (e) {
+        buyerResults.push({ transmission_id: tx.id, ok: false, error: String((e as any)?.message || e) });
+      }
+    }
+
     logFalco("info", "retry_batch_done", {
       scanned: (candidates || []).length,
       succeeded: results.filter((r) => r.ok && r.peppol_status !== "failed").length,
@@ -262,6 +289,8 @@ Deno.serve(async (req) => {
       ok: true,
       scanned: (candidates || []).length,
       results,
+      buyer_transmissions_retried: buyerResults.length,
+      buyer_results: buyerResults,
       cutoff,
       max_retries: MAX_RETRIES,
     });

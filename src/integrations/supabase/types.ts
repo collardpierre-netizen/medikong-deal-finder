@@ -4188,11 +4188,18 @@ export type Database = {
           created_at: string
           credit_limit: number | null
           customer_type: Database["public"]["Enums"]["customer_type"]
+          einvoicing_channel: string | null
+          einvoicing_email: string | null
           email: string
           id: string
           is_professional: boolean
           is_verified: boolean
           payment_terms_days: number
+          peppol_directory_status: string | null
+          peppol_id: string | null
+          peppol_last_checked_at: string | null
+          peppol_scheme: string | null
+          peppol_verified_at: string | null
           phone: string | null
           postal_code: string
           stripe_customer_id: string | null
@@ -4210,11 +4217,18 @@ export type Database = {
           created_at?: string
           credit_limit?: number | null
           customer_type?: Database["public"]["Enums"]["customer_type"]
+          einvoicing_channel?: string | null
+          einvoicing_email?: string | null
           email: string
           id?: string
           is_professional?: boolean
           is_verified?: boolean
           payment_terms_days?: number
+          peppol_directory_status?: string | null
+          peppol_id?: string | null
+          peppol_last_checked_at?: string | null
+          peppol_scheme?: string | null
+          peppol_verified_at?: string | null
           phone?: string | null
           postal_code: string
           stripe_customer_id?: string | null
@@ -4232,11 +4246,18 @@ export type Database = {
           created_at?: string
           credit_limit?: number | null
           customer_type?: Database["public"]["Enums"]["customer_type"]
+          einvoicing_channel?: string | null
+          einvoicing_email?: string | null
           email?: string
           id?: string
           is_professional?: boolean
           is_verified?: boolean
           payment_terms_days?: number
+          peppol_directory_status?: string | null
+          peppol_id?: string | null
+          peppol_last_checked_at?: string | null
+          peppol_scheme?: string | null
+          peppol_verified_at?: string | null
           phone?: string | null
           postal_code?: string
           stripe_customer_id?: string | null
@@ -10809,6 +10830,130 @@ export type Database = {
             columns: ["commission_invoice_id"]
             isOneToOne: false
             referencedRelation: "commission_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      peppol_transmissions: {
+        Row: {
+          channel: string
+          commission_invoice_id: string | null
+          created_at: string
+          credit_note_id: string | null
+          delivered_at: string | null
+          document_type: string
+          falco_import_id: string | null
+          flow: string
+          id: string
+          last_attempt_at: string | null
+          last_error: string | null
+          order_invoice_id: string | null
+          payload_sha256: string | null
+          payload_storage_path: string | null
+          pdf_sha256: string | null
+          pdf_storage_path: string | null
+          peppol_document_id: string | null
+          receiver_id: string
+          receiver_kind: string
+          receiver_name_snapshot: string | null
+          receiver_peppol_id: string | null
+          receiver_vat_snapshot: string | null
+          retry_count: number
+          sender_kind: string | null
+          sender_name_snapshot: string | null
+          sender_vat_snapshot: string | null
+          status: string
+          submitted_at: string | null
+          ubl_sha256: string | null
+          ubl_storage_path: string | null
+          updated_at: string
+        }
+        Insert: {
+          channel: string
+          commission_invoice_id?: string | null
+          created_at?: string
+          credit_note_id?: string | null
+          delivered_at?: string | null
+          document_type: string
+          falco_import_id?: string | null
+          flow: string
+          id?: string
+          last_attempt_at?: string | null
+          last_error?: string | null
+          order_invoice_id?: string | null
+          payload_sha256?: string | null
+          payload_storage_path?: string | null
+          pdf_sha256?: string | null
+          pdf_storage_path?: string | null
+          peppol_document_id?: string | null
+          receiver_id: string
+          receiver_kind: string
+          receiver_name_snapshot?: string | null
+          receiver_peppol_id?: string | null
+          receiver_vat_snapshot?: string | null
+          retry_count?: number
+          sender_kind?: string | null
+          sender_name_snapshot?: string | null
+          sender_vat_snapshot?: string | null
+          status?: string
+          submitted_at?: string | null
+          ubl_sha256?: string | null
+          ubl_storage_path?: string | null
+          updated_at?: string
+        }
+        Update: {
+          channel?: string
+          commission_invoice_id?: string | null
+          created_at?: string
+          credit_note_id?: string | null
+          delivered_at?: string | null
+          document_type?: string
+          falco_import_id?: string | null
+          flow?: string
+          id?: string
+          last_attempt_at?: string | null
+          last_error?: string | null
+          order_invoice_id?: string | null
+          payload_sha256?: string | null
+          payload_storage_path?: string | null
+          pdf_sha256?: string | null
+          pdf_storage_path?: string | null
+          peppol_document_id?: string | null
+          receiver_id?: string
+          receiver_kind?: string
+          receiver_name_snapshot?: string | null
+          receiver_peppol_id?: string | null
+          receiver_vat_snapshot?: string | null
+          retry_count?: number
+          sender_kind?: string | null
+          sender_name_snapshot?: string | null
+          sender_vat_snapshot?: string | null
+          status?: string
+          submitted_at?: string | null
+          ubl_sha256?: string | null
+          ubl_storage_path?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "peppol_transmissions_commission_invoice_id_fkey"
+            columns: ["commission_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "commission_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "peppol_transmissions_credit_note_id_fkey"
+            columns: ["credit_note_id"]
+            isOneToOne: false
+            referencedRelation: "peppol_credit_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "peppol_transmissions_order_invoice_id_fkey"
+            columns: ["order_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "order_invoices"
             referencedColumns: ["id"]
           },
         ]

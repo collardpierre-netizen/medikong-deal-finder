@@ -325,6 +325,8 @@ export type PeppolAuditAction =
   | "buyer_email_fallback"
   | "buyer_peppol_delivered"
   | "vendor_copy_downgraded_to_email"
+  | "vendor_copy_totals_mismatch"
+  | "peppol_unknown_falco_status"
   | "peppol_directory_checked";
 
 export async function logPeppolEvent(

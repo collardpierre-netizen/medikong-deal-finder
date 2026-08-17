@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import EinvoicingSettingsCard from "@/components/shared/EinvoicingSettingsCard";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -342,6 +343,8 @@ export default function AdminCustomers() {
               </div>
             )}
           </div>
+
+          {selected && !isCreating && <EinvoicingSettingsCard customerId={selected.id} variant="admin" />}
 
           {selected && <ShippingAddressesBlock customerId={selected.id} defaultCountry={selected.country_code || "BE"} />}
         </div>

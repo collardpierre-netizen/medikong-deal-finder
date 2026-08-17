@@ -51,7 +51,15 @@ export default function SavingsTopProducts({ rows }: { rows: SavingsTopProduct[]
     () => Array.from(new Set(rows.map((r) => r.group_label).filter(Boolean) as string[])),
     [rows],
   );
-  const filtered = category === "all" ? rows : rows.filter((r) => r.group_label === category);
+  const filtered = useMemo(() => {
+    const base = category === "all" ? rows : rows.filter((r) => r.group_label === category);
+    // Tri par défaut : plus grosse économie potentielle en premier.
+    return [...base].sort((a, b) => Number(b.total_savings ?? 0) - Number(a.total_savings ?? 0));
+  }, [rows, category]);
+  const topOpportunities = new Set(
+    filtered.filter((r) => Number(r.total_savings ?? 0) > 0).slice(0, 3).map((r, i) => `${r.cnk ?? "na"}-${i}`),
+  );
+
 
   if (rows.length === 0) {
     return <p className="text-sm text-muted-foreground">Aucun produit agrégé.</p>;
@@ -94,7 +102,11 @@ export default function SavingsTopProducts({ rows }: { rows: SavingsTopProduct[]
               <tr key={`${r.cnk ?? "na"}-${i}`} className="border-b last:border-0 hover:bg-muted/40">
                 <td className="py-2 pr-3 font-medium max-w-xs truncate" title={r.product_name ?? ""}>
                   {r.product_name ?? "—"}
+                  {topOpportunities.has(`${r.cnk ?? "na"}-${i}`) && (
+                    <Badge variant="default" className="ml-2 align-middle">Opportunité</Badge>
+                  )}
                 </td>
+
                 <td className="py-2 pr-3 text-xs">{r.cnk ?? "—"}</td>
                 <td className="py-2 pr-3 text-xs">{r.group_label ?? "—"}</td>
                 <td className="py-2 pr-3 text-right">{Number(r.total_quantity ?? 0)}</td>

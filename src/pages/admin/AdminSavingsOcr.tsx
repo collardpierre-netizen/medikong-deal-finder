@@ -57,6 +57,8 @@ export default function AdminSavingsOcr() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [previewId, setPreviewId] = useState<string | null>(null);
+
   const [form, setForm] = useState({ email: "", pharmacy_name: "", city: "", supplier: "febelco" });
   const [file, setFile] = useState<File | null>(null);
 
@@ -135,6 +137,27 @@ export default function AdminSavingsOcr() {
     }
     setSendingId(null);
   }
+
+  /** Génère le PDF sans envoyer d'email et l'ouvre dans un nouvel onglet. */
+  async function previewReport(r: Sim) {
+    if (!r.email) {
+      toast.error("Aucun email sur cette analyse");
+      return;
+    }
+    setPreviewId(r.id);
+    const { data, error } = await supabase.functions.invoke("generate-savings-report", {
+      body: { simulation_id: r.id, email: r.email, preview: true },
+    });
+    setPreviewId(null);
+    const url = (data as any)?.signed_url;
+    if (error || !url) {
+      toast.error("Aperçu impossible");
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+
 
 
   return (
@@ -328,20 +351,34 @@ export default function AdminSavingsOcr() {
                     </td>
                     <td className="py-2 pr-3">
                       {["ready_to_send", "done", "completed", "sent"].includes(String(r.status)) && r.email ? (
-                        <Button
-                          size="sm"
-                          variant={r.status === "sent" ? "outline" : "default"}
-                          disabled={sendingId === r.id}
-                          onClick={() => void sendToClient(r)}
-                        >
-                          {sendingId === r.id ? (
-                            <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                          ) : (
-                            <Send className="h-3.5 w-3.5 mr-1.5" />
-                          )}
-                          {r.status === "sent" ? "Renvoyer" : "Envoyer"}
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={previewId === r.id}
+                            onClick={() => void previewReport(r)}
+                          >
+                            {previewId === r.id ? (
+                              <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                            ) : null}
+                            Aperçu
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={r.status === "sent" ? "outline" : "default"}
+                            disabled={sendingId === r.id}
+                            onClick={() => void sendToClient(r)}
+                          >
+                            {sendingId === r.id ? (
+                              <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                            ) : (
+                              <Send className="h-3.5 w-3.5 mr-1.5" />
+                            )}
+                            {r.status === "sent" ? "Renvoyer" : "Envoyer"}
+                          </Button>
+                        </div>
                       ) : (
+
                         <span className="text-xs text-muted-foreground">—</span>
                       )}
                       {r.sent_at && (

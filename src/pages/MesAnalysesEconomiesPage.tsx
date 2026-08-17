@@ -9,6 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, ScanLine, ExternalLink, ChevronDown, ChevronRight } from "lucide-react";
 import SavingsCategoryPie, { type SavingsCategoryRow } from "@/components/savings/SavingsCategoryPie";
 import SavingsTopProducts, { type SavingsTopProduct } from "@/components/savings/SavingsTopProducts";
+import SavingsMonthlyChart, { type SavingsMonthlyRow } from "@/components/savings/SavingsMonthlyChart";
+import SavingsSupplierBreakdown, { type SavingsSupplierRow } from "@/components/savings/SavingsSupplierBreakdown";
+
 
 type Sim = {
   id: string;
@@ -39,9 +42,25 @@ export default function MesAnalysesEconomiesPage() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [breakdowns, setBreakdowns] = useState<Record<string, SavingsCategoryRow[]>>({});
   const [topProducts, setTopProducts] = useState<SavingsTopProduct[] | null>(null);
+  const [months, setMonths] = useState(12);
+  const [monthly, setMonthly] = useState<SavingsMonthlyRow[] | null>(null);
+  const [suppliers, setSuppliers] = useState<SavingsSupplierRow[] | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const [{ data: m }, { data: s }] = await Promise.all([
+        (supabase as any).rpc("savings_monthly_breakdown", { _group_key: null, _months: months }),
+        (supabase as any).rpc("savings_supplier_breakdown", { _group_key: null }),
+      ]);
+      setMonthly((m as SavingsMonthlyRow[]) ?? []);
+      setSuppliers((s as SavingsSupplierRow[]) ?? []);
+    })();
+  }, [user, months]);
 
   useEffect(() => {
     if (!user) {
+
       setLoading(false);
       return;
     }
@@ -200,6 +219,47 @@ export default function MesAnalysesEconomiesPage() {
           )}
         </CardContent>
       </Card>
+
+      {user && rows.length > 0 && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-3">
+              <CardTitle className="text-base">Vos achats par mois</CardTitle>
+              <select
+                value={months}
+                onChange={(e) => setMonths(Number(e.target.value))}
+                aria-label="Période"
+                className="h-8 px-2 rounded-md border border-input bg-background text-xs"
+              >
+                <option value={3}>3 mois</option>
+                <option value={6}>6 mois</option>
+                <option value={12}>12 mois</option>
+                <option value={24}>24 mois</option>
+              </select>
+            </CardHeader>
+            <CardContent>
+              {monthly === null ? (
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              ) : (
+                <SavingsMonthlyChart rows={monthly} />
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Vos grossistes</CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              {suppliers === null ? (
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              ) : (
+                <SavingsSupplierBreakdown rows={suppliers} />
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
 
       {rows.length >= 2 && (
         <Card>

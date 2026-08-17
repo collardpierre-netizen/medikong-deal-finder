@@ -80,7 +80,11 @@ export default function EconomiesPage() {
   const [file, setFile] = useState<File | null>(null);
   const [identity, setIdentity] = useState({ email: "", pharmacy_name: "", city: "", vat_number: "" });
   const [identityPrefilled, setIdentityPrefilled] = useState(false);
+  // Récap identité affiché uniquement si le préremplissage compte a fourni un nom :
+  // évite que le formulaire se replie pendant la saisie manuelle.
+  const [identityRecap, setIdentityRecap] = useState(false);
   const [editIdentity, setEditIdentity] = useState(false);
+
   const [consent, setConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [simId, setSimId] = useState<string | null>(null);
@@ -98,15 +102,20 @@ export default function EconomiesPage() {
         .select("company_name, vat_number")
         .eq("user_id", user.id)
         .maybeSingle();
-      setIdentity((prev) => ({
-        email: prev.email || user.email || "",
-        pharmacy_name: prev.pharmacy_name || profile?.company_name || "",
-        city: prev.city,
-        vat_number: prev.vat_number || profile?.vat_number || "",
-      }));
+      setIdentity((prev) => {
+        const next = {
+          email: prev.email || user.email || "",
+          pharmacy_name: prev.pharmacy_name || profile?.company_name || "",
+          city: prev.city,
+          vat_number: prev.vat_number || profile?.vat_number || "",
+        };
+        setIdentityRecap(next.pharmacy_name.trim().length >= 2);
+        return next;
+      });
       setIdentityPrefilled(true);
     })();
   }, [user, identityPrefilled]);
+
 
   // Polling
   useEffect(() => {
@@ -291,7 +300,13 @@ export default function EconomiesPage() {
 
               {step === 2 && (
                 <motion.div key="s2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  <h2 className="font-semibold text-mk-navy mb-3">Déposez votre bon de commande</h2>
+                  <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                    <h2 className="font-semibold text-mk-navy">Déposez votre bon de commande</h2>
+                    <span className="text-xs bg-mk-blue/10 text-mk-blue rounded-full px-3 py-1 font-medium">
+                      Grossiste : {SUPPLIERS.find((s) => s.value === supplier)?.label ?? supplier}
+                    </span>
+                  </div>
+
                   <label
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={(e) => { e.preventDefault(); handleFile(e.dataTransfer.files?.[0] ?? null); }}
@@ -316,7 +331,7 @@ export default function EconomiesPage() {
                       <button type="button" onClick={() => { setFile(null); setStep(2); }} className="text-xs text-mk-blue hover:underline">changer</button>
                     </div>
                   )}
-                  {user && !editIdentity && identity.pharmacy_name.trim().length >= 2 ? (
+                  {user && !editIdentity && identityRecap ? (
                     <div className="flex items-start gap-3 bg-mk-alt/30 border border-mk-border rounded-lg p-3">
                       <UserCircle2 size={18} className="text-mk-blue mt-0.5 shrink-0" />
                       <div className="flex-1 min-w-0 text-sm">

@@ -144,7 +144,7 @@ Deno.serve(async (req) => {
 
     const [{ data: customer }, { data: vendor }] = await Promise.all([
       supabase.from("customers")
-        .select("id, company_name, email, vat_number, address_line1, city, postal_code, country_code, payment_terms_days, peppol_id, peppol_directory_status, einvoicing_channel, einvoicing_email")
+        .select("id, company_name, email, vat_number, address_line1, city, postal_code, country_code, payment_terms_days, peppol_id, peppol_directory_status, einvoicing_channel, einvoicing_email, is_test")
         .eq("id", order.customer_id).maybeSingle(),
       supabase.from("vendors")
         .select("id, name, company_name, email, vat_number, address_line1, city, postal_code, country_code, mandate_signed_at")
@@ -155,6 +155,24 @@ Deno.serve(async (req) => {
 
     invoice.__customer = customer;
     invoice.__customer_id = customer.id;
+
+    // ── garde force_flow : uniquement sur un client marqué de test, et journalisée.
+    if (forceFlow) {
+      if (customer.is_test !== true) {
+        return json(403, { error: "force_flow_requires_test_customer" });
+      }
+      await logPeppolEvent(supabase, "buyer_peppol_force_flow_used", {
+        targetId: invoice.id,
+        detail: `force_flow=${forceFlow} (client de test)`,
+        metadata: {
+          actor_user_id: actorUserId,
+          via: actorUserId ? "admin" : "service_role",
+          customer_id: customer.id,
+          invoice_number: invoice.invoice_number,
+        },
+      });
+    }
+
 
     // ── idempotence (garde la plus importante du lot)
     const { data: existing } = await supabase

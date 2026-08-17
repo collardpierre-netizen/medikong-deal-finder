@@ -21,7 +21,7 @@ import {
   assertPayloadMatchesInvoice,
   customerFalcoParty,
   vendorFalcoParty,
-  canonicalJson,
+  archivePeppolPayload,
   sha256Hex,
   round2,
   mapDirectoryStatus,

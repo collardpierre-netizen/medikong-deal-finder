@@ -8,6 +8,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { getFalcoConfig, logFalco } from "../_shared/falco-peppol.ts";
+import { mapFalcoStatusToTransmission } from "../_shared/peppol-flow.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

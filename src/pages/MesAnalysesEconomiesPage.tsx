@@ -220,6 +220,47 @@ export default function MesAnalysesEconomiesPage() {
         </CardContent>
       </Card>
 
+      {user && rows.length > 0 && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-3">
+              <CardTitle className="text-base">Vos achats par mois</CardTitle>
+              <select
+                value={months}
+                onChange={(e) => setMonths(Number(e.target.value))}
+                aria-label="Période"
+                className="h-8 px-2 rounded-md border border-input bg-background text-xs"
+              >
+                <option value={3}>3 mois</option>
+                <option value={6}>6 mois</option>
+                <option value={12}>12 mois</option>
+                <option value={24}>24 mois</option>
+              </select>
+            </CardHeader>
+            <CardContent>
+              {monthly === null ? (
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              ) : (
+                <SavingsMonthlyChart rows={monthly} />
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Vos grossistes</CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              {suppliers === null ? (
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              ) : (
+                <SavingsSupplierBreakdown rows={suppliers} />
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+
       {rows.length >= 2 && (
         <Card>
           <CardHeader>

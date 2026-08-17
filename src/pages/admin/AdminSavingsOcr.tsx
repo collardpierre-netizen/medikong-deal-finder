@@ -351,20 +351,34 @@ export default function AdminSavingsOcr() {
                     </td>
                     <td className="py-2 pr-3">
                       {["ready_to_send", "done", "completed", "sent"].includes(String(r.status)) && r.email ? (
-                        <Button
-                          size="sm"
-                          variant={r.status === "sent" ? "outline" : "default"}
-                          disabled={sendingId === r.id}
-                          onClick={() => void sendToClient(r)}
-                        >
-                          {sendingId === r.id ? (
-                            <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                          ) : (
-                            <Send className="h-3.5 w-3.5 mr-1.5" />
-                          )}
-                          {r.status === "sent" ? "Renvoyer" : "Envoyer"}
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={previewId === r.id}
+                            onClick={() => void previewReport(r)}
+                          >
+                            {previewId === r.id ? (
+                              <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                            ) : null}
+                            Aperçu
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={r.status === "sent" ? "outline" : "default"}
+                            disabled={sendingId === r.id}
+                            onClick={() => void sendToClient(r)}
+                          >
+                            {sendingId === r.id ? (
+                              <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                            ) : (
+                              <Send className="h-3.5 w-3.5 mr-1.5" />
+                            )}
+                            {r.status === "sent" ? "Renvoyer" : "Envoyer"}
+                          </Button>
+                        </div>
                       ) : (
+
                         <span className="text-xs text-muted-foreground">—</span>
                       )}
                       {r.sent_at && (

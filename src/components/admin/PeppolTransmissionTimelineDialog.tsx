@@ -99,7 +99,7 @@ export function PeppolTransmissionTimelineDialog({ orderInvoiceId, invoiceNumber
                 </div>
                 {r.peppol_document_id && <div className="font-mono">Document Falco : {r.peppol_document_id}</div>}
                 {(r.retry_count ?? 0) > 0 && <div>Tentatives : {r.retry_count}</div>}
-                {r.payload_hash && <div className="font-mono truncate">Empreinte payload : {r.payload_hash}</div>}
+                {r.payload_sha256 && <div className="font-mono truncate">Empreinte payload : {r.payload_sha256}</div>}
                 {r.last_error && <div className="text-red-600">Dernière erreur : {r.last_error}</div>}
               </div>
             </div>

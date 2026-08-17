@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Send, FileText, Loader2, RefreshCw, Undo2, History } from "lucide-react";
 import PeppolCreditNotesDialog from "@/components/admin/PeppolCreditNotesDialog";
+import PeppolTransmissionTimelineDialog from "@/components/admin/PeppolTransmissionTimelineDialog";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AdminTopBar from "@/components/admin/AdminTopBar";
@@ -27,6 +28,7 @@ const AdminFinances = () => {
   const [creditingId, setCreditingId] = useState<string | null>(null);
   const [creditFailures, setCreditFailures] = useState<Record<string, { message: string; reason: string; attempts: number }>>({});
   const [historyInvoice, setHistoryInvoice] = useState<{ id: string; number: string | null } | null>(null);
+  const [timelineInvoice, setTimelineInvoice] = useState<{ id: string; number: string | null } | null>(null);
   const queryClient = useQueryClient();
 
   // Aggregate credit-note counts per invoice for a "history" indicator.
@@ -42,6 +44,22 @@ const AdminFinances = () => {
       for (const r of (data as any[]) || []) {
         map[r.invoice_id] = (map[r.invoice_id] || 0) + 1;
       }
+      return map;
+    },
+  });
+
+  // Flux B — dernière transmission acheteur par facture de vente.
+  const { data: buyerTransmissions = {} } = useQuery<Record<string, any>>({
+    queryKey: ["admin-buyer-peppol-transmissions"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("peppol_transmissions")
+        .select("order_invoice_id, flow, channel, status, last_error, retry_count, created_at")
+        .eq("flow", "buyer_invoice")
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      const map: Record<string, any> = {};
+      for (const r of (data as any[]) || []) if (r.order_invoice_id) map[r.order_invoice_id] = r;
       return map;
     },
   });
@@ -164,7 +182,7 @@ const AdminFinances = () => {
             <table className="w-full text-left">
               <thead>
                 <tr style={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
-                  {["N° Facture", "Commande", "Vendeur", "Type", "HT", "TVA", "TTC", "Émise le", "Statut", "Peppol", ""].map((h) => (
+                  {["N° Facture", "Commande", "Vendeur", "Type", "HT", "TVA", "TTC", "Émise le", "Statut", "Double vendeur", "Transmission acheteur", ""].map((h) => (
                     <th key={h} className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8B95A5" }}>{h}</th>
                   ))}
                 </tr>

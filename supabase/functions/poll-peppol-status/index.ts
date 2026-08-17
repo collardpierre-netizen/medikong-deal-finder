@@ -240,6 +240,8 @@ Deno.serve(async (req) => {
       unmatched,
       tx_checked: txChecked,
       tx_updated: txUpdated,
+      tx_unknown_status: txUnknownStatus,
+
     });
 
     return json(200, {

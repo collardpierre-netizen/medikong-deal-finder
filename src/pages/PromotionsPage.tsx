@@ -17,6 +17,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { formatCount } from "@/lib/formatCount";
 import { toast } from "sonner";
 import { useVendorLabels } from "@/hooks/useVendorLabels";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 /** Mention légale affichée sur les promotions et ventes flash. */
 const PROMO_DISCLAIMER =

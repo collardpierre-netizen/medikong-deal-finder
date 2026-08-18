@@ -39,6 +39,8 @@ interface Membership {
   accepted_at: string | null;
   created_at: string;
   profile?: { full_name: string | null } | null;
+  display_name?: string | null;
+  email?: string | null;
 }
 
 interface Invitation {

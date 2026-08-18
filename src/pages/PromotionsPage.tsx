@@ -108,7 +108,7 @@ function FlashCountdown({ endsAt, muted = false }: { endsAt: string; muted?: boo
 }
 
 
-function PromoProductCard({ product, index, flashDeal, vendorLabel }: { product: any; index: number; flashDeal?: any; vendorLabel?: string | null }) {
+function PromoProductCard({ product, index, flashDeal, vendorLabel, highlighted }: { product: any; index: number; flashDeal?: any; vendorLabel?: string | null; highlighted?: boolean }) {
   const flashBase = flashDeal
     ? (flashDeal.public_price_incl_vat || flashDeal.original_price_incl_vat)
     : null;

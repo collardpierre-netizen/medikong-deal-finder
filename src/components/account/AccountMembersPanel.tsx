@@ -846,6 +846,13 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
         accountKind={accountKind}
         accountId={accountId}
         member={detailTarget}
+        canManage={canManage}
+        onRevoke={async (membershipId) => {
+          await revokeMember.mutateAsync(membershipId);
+        }}
+        onUpdateRole={async (membershipId, role) => {
+          await updateRole.mutateAsync({ id: membershipId, role });
+        }}
       />
     </div>
   );

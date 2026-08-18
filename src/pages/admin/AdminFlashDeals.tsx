@@ -290,6 +290,7 @@ export default function AdminFlashDeals() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Produit</TableHead>
+                  <TableHead>Fournisseur</TableHead>
                   <TableHead>Prix original</TableHead>
                   <TableHead>Prix promo</TableHead>
                   <TableHead>Prix public</TableHead>
@@ -314,6 +315,12 @@ export default function AdminFlashDeals() {
                   return (
                     <TableRow key={fd.id}>
                       <TableCell className="font-medium max-w-[200px] truncate">{fd.product?.name || "—"}</TableCell>
+                      <TableCell className="text-xs max-w-[140px] truncate">
+                        {fd.vendor
+                          ? (fd.vendor.company_name || fd.vendor.name || fd.vendor.display_code)
+                          : <span className="text-muted-foreground">Tous</span>}
+                        {fd.offer_id && <Badge variant="outline" className="ml-1 text-[10px]">offre ciblée</Badge>}
+                      </TableCell>
                       <TableCell>{fd.original_price_incl_vat?.toFixed(2)} €</TableCell>
                       <TableCell className="font-bold text-destructive">{fd.discount_price_incl_vat?.toFixed(2)} €</TableCell>
                       <TableCell>{fd.public_price_incl_vat ? `${fd.public_price_incl_vat.toFixed(2)} €` : "—"}</TableCell>

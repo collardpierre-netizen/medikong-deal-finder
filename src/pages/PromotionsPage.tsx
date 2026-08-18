@@ -1,7 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { usePromoProducts, usePromoCount, usePromotionCampaigns, usePromoCategories, usePromoBrands } from "@/hooks/usePromotions";
 import { computeDisplayDiscount, displayReferencePrice } from "@/lib/discount-display";
-import { Tag, TrendingDown, Truck, Calendar, Zap, Timer, Filter, X, SlidersHorizontal, ArrowUpDown, Search, Package, Info, Share2, Check } from "lucide-react";
+import { Tag, TrendingDown, Truck, Calendar, Zap, Timer, Filter, X, SlidersHorizontal, ArrowUpDown, Search, Package, Info, Share2, Check, Mail } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ProductImage } from "@/components/shared/ProductCard";
@@ -17,6 +17,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { formatCount } from "@/lib/formatCount";
 import { toast } from "sonner";
 import { useVendorLabels } from "@/hooks/useVendorLabels";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 /** Mention légale affichée sur les promotions et ventes flash. */
 const PROMO_DISCLAIMER =
@@ -65,6 +77,122 @@ function ShareOfferButton({ product, label, flashDeal }: { product: any; label?:
     </button>
   );
 }
+
+/** Envoi de l'offre par email avec objet + message préremplis, éditables avant envoi. */
+function EmailOfferButton({ product, flashDeal }: { product: any; flashDeal?: any }) {
+  const [open, setOpen] = useState(false);
+  if (!product?.slug && !flashDeal?.id) return null;
+
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://medikong.pro";
+  const url = flashDeal?.id
+    ? `${origin}/promotions?filter=flash&deal=${encodeURIComponent(flashDeal.id)}${product?.slug ? `&produit=${encodeURIComponent(product.slug)}` : ""}#deal-${flashDeal.id}`
+    : `${origin}/produit/${product.slug}`;
+
+  const priceLine = flashDeal?.discount_price_incl_vat
+    ? `Prix vente flash : ${formatPrice(flashDeal.discount_price_incl_vat)} TVAC`
+    : null;
+  const endLine = flashDeal?.ends_at
+    ? `Valable jusqu'au ${new Date(flashDeal.ends_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}`
+    : null;
+
+  const defaultSubject = `${flashDeal ? "Vente flash MediKong" : "Offre MediKong"} — ${product.name}`;
+  const defaultBody = [
+    "Bonjour,",
+    "",
+    `Je te partage cette ${flashDeal ? "vente flash" : "offre"} sur MediKong :`,
+    `${product.name}${product.brand_name ? ` — ${product.brand_name}` : ""}`,
+    priceLine,
+    endLine,
+    "",
+    `Voir l'offre : ${url}`,
+    "",
+    "Offre valable dans la limite des stocks disponibles et jusqu'à la date de fin indiquée.",
+    "",
+    "Bien à toi,",
+  ]
+    .filter((l) => l !== null)
+    .join("\n");
+
+  const [to, setTo] = useState("");
+  const [subject, setSubject] = useState(defaultSubject);
+  const [body, setBody] = useState(defaultBody);
+
+  const onSend = () => {
+    const mailto = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailto;
+    setOpen(false);
+  };
+
+  const onCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(`${subject}\n\n${body}`);
+      toast.success("Message copié");
+    } catch {
+      toast.error("Copie impossible");
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <button
+          type="button"
+          onClick={(e) => e.stopPropagation()}
+          aria-label={`Envoyer l'offre ${product.name} par email`}
+          title="Envoyer cette offre par email à un confrère"
+          className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors"
+        >
+          <Mail size={12} />
+          Envoyer par email
+        </button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Envoyer cette offre par email</DialogTitle>
+          <DialogDescription>
+            Le texte est prérempli — modifiez-le avant l'envoi. Le lien pointe directement sur cette offre.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label htmlFor="share-email-to">Destinataire (optionnel)</Label>
+            <Input
+              id="share-email-to"
+              type="email"
+              placeholder="confrere@pharmacie.be"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="share-email-subject">Objet</Label>
+            <Input id="share-email-subject" value={subject} onChange={(e) => setSubject(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="share-email-body">Message</Label>
+            <Textarea
+              id="share-email-body"
+              rows={10}
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              className="text-sm"
+            />
+          </div>
+        </div>
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button type="button" variant="outline" onClick={onCopy}>
+            Copier le texte
+          </Button>
+          <Button type="button" onClick={onSend}>
+            <Mail size={14} className="mr-1" />
+            Ouvrir dans ma messagerie
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 
 function FlashCountdown({ endsAt, muted = false }: { endsAt: string; muted?: boolean }) {
@@ -242,9 +370,9 @@ function PromoProductCard({ product, index, flashDeal, vendorLabel, highlighted 
         </p>
       )}
 
-      <div className="mt-2 pt-2 border-t border-border/60 flex items-center justify-between">
+      <div className="mt-2 pt-2 border-t border-border/60 flex items-center justify-between gap-2 flex-wrap">
         <ShareOfferButton product={product} flashDeal={flashDeal} />
-        <span className="text-[10px] text-muted-foreground">Offre partageable</span>
+        <EmailOfferButton product={product} flashDeal={flashDeal} />
       </div>
 
     </motion.div>

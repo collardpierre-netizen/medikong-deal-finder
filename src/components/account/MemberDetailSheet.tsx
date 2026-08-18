@@ -135,6 +135,106 @@ export function MemberDetailSheet({
     enabled: open && !!member && !!accountId,
   });
 
+  const invitesKey = ["account-invitations", accountKind, accountId];
+  const membersKey = ["account-memberships", accountKind, accountId];
+  const detailKey = ["member-detail-invitations", accountKind, accountId, email, member?.userId];
+
+  // Invitation "en échec" = créée, jamais acceptée, non révoquée (expirée ou non).
+  const failedInvitation = useMemo(
+    () => invitations.find((inv: any) => !inv.accepted_at && !inv.revoked_at && inv.email) ?? null,
+    [invitations],
+  );
+  const needsInvitationResend = !member?.acceptedAt || !!failedInvitation;
+
+  const resendInvitation = useMutation({
+    mutationFn: async () => {
+      if (!email) throw new Error("Aucune adresse email connue pour cet utilisateur.");
+      if (failedInvitation) {
+        const { error: revokeError } = await supabase.rpc("account_revoke_invitation", {
+          _invitation_id: failedInvitation.id,
+        });
+        if (revokeError) throw revokeError;
+      }
+      const role: Role = member?.role === "admin" ? "admin" : "member";
+      const { data, error } = await supabase.rpc("account_invite_by_email", {
+        _kind: accountKind,
+        _account_id: accountId,
+        _email: email,
+        _role: role,
+      });
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      const token = row?.token as string | undefined;
+      const invitationId = row?.invitation_id as string | undefined;
+      if (!token) throw new Error("Invitation créée mais lien indisponible.");
+      const invitationUrl = `${window.location.origin}/account/invitation/${token}`;
+      const { error: mailError } = await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "account-invitation",
+          recipientEmail: email,
+          idempotencyKey: `account-invite-${invitationId}`,
+          templateData: { invitationUrl, role, accountKind, expiresAt: null },
+        },
+      });
+      if (mailError) throw new Error("Invitation recréée mais l'email n'a pas pu être envoyé.");
+    },
+    onSuccess: () => {
+      toast.success(`Invitation renvoyée à ${email}`);
+      qc.invalidateQueries({ queryKey: invitesKey });
+      qc.invalidateQueries({ queryKey: detailKey });
+    },
+    onError: (e: any) => toast.error(e?.message || "Erreur lors du renvoi de l'invitation"),
+  });
+
+  const applyRole = useMutation({
+    mutationFn: async (role: Role) => {
+      if (onUpdateRole && member) {
+        await onUpdateRole(member.membershipId, role);
+        return;
+      }
+      const { error } = await supabase.rpc("account_update_member_role", {
+        _membership_id: member!.membershipId,
+        _new_role: role,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Rôle mis à jour");
+      qc.invalidateQueries({ queryKey: membersKey });
+      setPendingRole(null);
+      onOpenChange(false);
+    },
+    onError: (e: any) => {
+      toast.error(e?.message || "Erreur lors de la mise à jour du rôle");
+      setPendingRole(null);
+    },
+  });
+
+  const revokeAccess = useMutation({
+    mutationFn: async () => {
+      if (onRevoke && member) {
+        await onRevoke(member.membershipId);
+        return;
+      }
+      const { error } = await supabase.rpc("account_revoke_member", {
+        _membership_id: member!.membershipId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Accès révoqué");
+      qc.invalidateQueries({ queryKey: membersKey });
+      setConfirmRevoke(false);
+      onOpenChange(false);
+    },
+    onError: (e: any) => {
+      toast.error(e?.message || "Erreur lors de la révocation");
+      setConfirmRevoke(false);
+    },
+  });
+
+
+
   const events = useMemo<TimelineEvent[]>(() => {
     if (!member) return [];
     const list: TimelineEvent[] = [];

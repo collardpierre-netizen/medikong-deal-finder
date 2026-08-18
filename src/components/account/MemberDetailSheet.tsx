@@ -370,6 +370,102 @@ export function MemberDetailSheet({
               </div>
             </div>
 
+            {/* Actions */}
+            {canManage && (
+              <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
+                <div className="px-4 py-3 border-b border-[#E2E8F0] bg-[#F8FAFC]">
+                  <h4 className="text-[12px] font-bold uppercase tracking-wide text-[#616B7C]">Actions</h4>
+                </div>
+                <div className="p-4 space-y-4">
+                  {/* Rôle */}
+                  <div>
+                    <p className="text-[11px] font-semibold text-[#1D2530] mb-1.5">Modifier le rôle</p>
+                    {member.isOwner ? (
+                      <p className="text-[11px] text-[#8B95A5]">
+                        Le rôle du propriétaire du compte ne peut pas être modifié.
+                      </p>
+                    ) : (
+                      <Select
+                        value={member.role === "admin" ? "admin" : "member"}
+                        onValueChange={(v) => {
+                          const next = v as Role;
+                          if (next !== (member.role === "admin" ? "admin" : "member")) setPendingRole(next);
+                        }}
+                        disabled={applyRole.isPending}
+                      >
+                        <SelectTrigger className="h-8 text-[12px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin — gère les accès et les paramètres</SelectItem>
+                          <SelectItem value="member">Membre — accès opérationnel uniquement</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+
+                  {/* Renvoyer l'invitation */}
+                  <div className="pt-1 border-t border-[#F1F5F9]">
+                    <p className="text-[11px] font-semibold text-[#1D2530] mt-3 mb-1.5">Invitation</p>
+                    {!member.email ? (
+                      <p className="text-[11px] text-[#8B95A5] flex items-start gap-1.5">
+                        <AlertCircle size={12} className="mt-0.5 shrink-0" />
+                        Aucune adresse email connue — impossible de renvoyer une invitation.
+                      </p>
+                    ) : (
+                      <>
+                        <p className="text-[11px] text-[#8B95A5] mb-2">
+                          {needsInvitationResend
+                            ? "L'invitation n'a pas été acceptée. Un nouveau lien remplacera le précédent."
+                            : "Cet accès est déjà actif — un renvoi n'est normalement pas nécessaire."}
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-[12px]"
+                          disabled={resendInvitation.isPending}
+                          onClick={() => resendInvitation.mutate()}
+                        >
+                          {resendInvitation.isPending ? (
+                            <Loader2 size={13} className="mr-1.5 animate-spin" />
+                          ) : (
+                            <Send size={13} className="mr-1.5" />
+                          )}
+                          Renvoyer l'invitation
+                        </Button>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Révoquer */}
+                  {!member.isOwner && (
+                    <div className="pt-1 border-t border-[#F1F5F9]">
+                      <p className="text-[11px] font-semibold text-[#1D2530] mt-3 mb-1.5">Révoquer l'accès</p>
+                      <p className="text-[11px] text-[#8B95A5] mb-2">
+                        L'utilisateur perdra immédiatement l'accès à ce compte.
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-[12px] text-destructive border-destructive/30 hover:bg-red-50 hover:text-destructive"
+                        disabled={revokeAccess.isPending}
+                        onClick={() => setConfirmRevoke(true)}
+                      >
+                        {revokeAccess.isPending ? (
+                          <Loader2 size={13} className="mr-1.5 animate-spin" />
+                        ) : (
+                          <Trash2 size={13} className="mr-1.5" />
+                        )}
+                        Révoquer l'accès
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+
+
             {/* Timeline */}
             <div className="rounded-lg border border-[#E2E8F0] bg-white overflow-hidden">
               <div className="px-4 py-3 border-b border-[#E2E8F0] bg-[#F8FAFC] flex items-center gap-2">

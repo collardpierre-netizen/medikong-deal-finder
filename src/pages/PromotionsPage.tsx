@@ -22,12 +22,18 @@ import { useVendorLabels } from "@/hooks/useVendorLabels";
 const PROMO_DISCLAIMER =
   "Offres valables dans la limite des stocks disponibles et jusqu'à la date de fin indiquée sur chaque offre. Les délais de livraison affichés sont indicatifs et propres à chaque vendeur.";
 
-function ShareOfferButton({ product, label }: { product: any; label?: string }) {
+function ShareOfferButton({ product, label, flashDeal }: { product: any; label?: string; flashDeal?: any }) {
   const [copied, setCopied] = useState(false);
-  if (!product?.slug) return null;
+  if (!product?.slug && !flashDeal?.id) return null;
 
-  const url = `${typeof window !== "undefined" ? window.location.origin : "https://medikong.pro"}/produit/${product.slug}`;
-  const text = `${product.name}${product.brand_name ? ` — ${product.brand_name}` : ""} · Offre MediKong`;
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://medikong.pro";
+  // Lien profond : si c'est une vente flash, on renvoie sur /promotions avec l'id de l'offre
+  // (filtre "flash" pré-appliqué + ancrage/surbrillance sur la bonne carte).
+  const url = flashDeal?.id
+    ? `${origin}/promotions?filter=flash&deal=${encodeURIComponent(flashDeal.id)}${product?.slug ? `&produit=${encodeURIComponent(product.slug)}` : ""}#deal-${flashDeal.id}`
+    : `${origin}/produit/${product.slug}`;
+  const text = `${product.name}${product.brand_name ? ` — ${product.brand_name}` : ""} · ${flashDeal ? "Vente flash" : "Offre"} MediKong`;
+
 
   const onShare = async (e: React.MouseEvent) => {
     e.preventDefault();

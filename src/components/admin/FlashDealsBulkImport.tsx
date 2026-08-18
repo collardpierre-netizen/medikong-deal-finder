@@ -97,8 +97,8 @@ export function FlashDealsBulkImport({ onDone }: { onDone?: () => void }) {
 
   const downloadTemplate = () => {
     const ws = XLSX.utils.aoa_to_sheet([
-      ["gtin", "prix_promo_ttc", "prix_public_ttc", "quantite", "debut", "fin", "label"],
-      ["5400000000001", "12,90", "19,90", "50", "18/08/2026 09:00", "20/08/2026 23:59", "Flash -35%"],
+      ["gtin", "vendeur", "prix_promo_ttc", "prix_public_ttc", "quantite", "debut", "fin", "label"],
+      ["5400000000001", "", "12,90", "19,90", "50", "18/08/2026 09:00", "20/08/2026 23:59", "Flash -35%"],
     ]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "flash_deals");
@@ -263,6 +263,8 @@ export function FlashDealsBulkImport({ onDone }: { onDone?: () => void }) {
     setImporting(true);
     const payload = valid.map((r) => ({
       product_id: r.productId!,
+      vendor_id: r.vendorId ?? null,
+      offer_id: r.offerId ?? null,
       discount_price_incl_vat: r.discountPrice!,
       original_price_incl_vat: r.currentPrice ?? r.publicPrice ?? r.discountPrice!,
       public_price_incl_vat: r.publicPrice,

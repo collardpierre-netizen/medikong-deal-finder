@@ -262,7 +262,16 @@ export default function AdminFlashDeals() {
         </TabsList>
 
         <TabsContent value="flash" className="space-y-4">
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <Dialog open={showImport} onOpenChange={setShowImport}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline"><Upload size={14} className="mr-1" /> Import en lot</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl">
+                <DialogHeader><DialogTitle>Importer des ventes flash (XLSX / CSV)</DialogTitle></DialogHeader>
+                <FlashDealsBulkImport onDone={() => setShowImport(false)} />
+              </DialogContent>
+            </Dialog>
             <Dialog open={showFlashForm} onOpenChange={setShowFlashForm}>
               <DialogTrigger asChild>
                 <Button size="sm"><Plus size={14} className="mr-1" /> Nouveau flash deal</Button>
@@ -281,7 +290,9 @@ export default function AdminFlashDeals() {
                   <TableHead>Produit</TableHead>
                   <TableHead>Prix original</TableHead>
                   <TableHead>Prix promo</TableHead>
+                  <TableHead>Prix public</TableHead>
                   <TableHead>Réduction</TableHead>
+                  <TableHead>Quantité</TableHead>
                   <TableHead>Période</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead>Actions</TableHead>
@@ -289,19 +300,32 @@ export default function AdminFlashDeals() {
               </TableHeader>
               <TableBody>
                 {flashDeals.map((fd: any) => {
-                  const discount = Math.round((1 - fd.discount_price_incl_vat / fd.original_price_incl_vat) * 100);
+                  const base = fd.public_price_incl_vat || fd.original_price_incl_vat;
+                  const discount = base ? Math.round((1 - fd.discount_price_incl_vat / base) * 100) : 0;
+                  const deltaAbs = base ? base - fd.discount_price_incl_vat : 0;
                   const isLive = fd.is_active && new Date(fd.starts_at) <= now && new Date(fd.ends_at) >= now;
                   const isExpired = new Date(fd.ends_at) < now;
+                  const remaining = fd.quantity_total === null || fd.quantity_total === undefined
+                    ? null
+                    : Math.max(0, fd.quantity_total - (fd.quantity_sold ?? 0));
 
                   return (
                     <TableRow key={fd.id}>
                       <TableCell className="font-medium max-w-[200px] truncate">{fd.product?.name || "—"}</TableCell>
                       <TableCell>{fd.original_price_incl_vat?.toFixed(2)} €</TableCell>
                       <TableCell className="font-bold text-destructive">{fd.discount_price_incl_vat?.toFixed(2)} €</TableCell>
-                      <TableCell><Badge variant="destructive">-{discount}%</Badge></TableCell>
+                      <TableCell>{fd.public_price_incl_vat ? `${fd.public_price_incl_vat.toFixed(2)} €` : "—"}</TableCell>
+                      <TableCell>
+                        <Badge variant="destructive">-{discount}%</Badge>
+                        {deltaAbs > 0 && <span className="ml-1 text-xs text-muted-foreground">−{deltaAbs.toFixed(2)} €</span>}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {remaining === null ? "Illimitée" : `${remaining} / ${fd.quantity_total}`}
+                      </TableCell>
                       <TableCell className="text-xs">
                         {new Date(fd.starts_at).toLocaleDateString("fr-FR")} → {new Date(fd.ends_at).toLocaleDateString("fr-FR")}
                       </TableCell>
+
                       <TableCell>
                         {isExpired ? (
                           <Badge variant="secondary">Expiré</Badge>

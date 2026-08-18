@@ -154,6 +154,13 @@ function PromoProductCard({ product, index, flashDeal, vendorLabel }: { product:
         </div>
       )}
 
+      {flashRemaining === 0 && (
+        <span className="absolute top-2 right-2 z-10 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-muted text-muted-foreground border border-border">
+          Indisponible
+        </span>
+      )}
+
+
       <Link to={`/produit/${product.slug}`}>
         <div className="aspect-square rounded-lg overflow-hidden bg-muted mb-2">
           <img src={imgSrc} alt={product.name} loading="lazy" className="w-full h-full object-contain p-2" onError={(e) => { e.currentTarget.src = MEDIKONG_PLACEHOLDER; }} />
@@ -188,10 +195,25 @@ function PromoProductCard({ product, index, flashDeal, vendorLabel }: { product:
       {flashDeal && <FlashCountdown endsAt={flashDeal.ends_at} muted={flashRemaining === 0} />}
 
       {flashRemaining !== null && (
-        <p className={`text-[11px] mt-1 font-medium ${flashRemaining === 0 ? "text-muted-foreground" : "text-amber-600"}`}>
-          {flashRemaining === 0 ? "Épuisé" : `Quantité limitée : plus que ${flashRemaining} sur ${flashDeal.quantity_total}`}
-        </p>
+        flashRemaining === 0 ? (
+          <p className="text-[11px] mt-1 font-semibold text-muted-foreground">
+            Indisponible — limite de l'offre atteinte
+          </p>
+        ) : (
+          <div className="mt-1">
+            <p className="text-[11px] font-medium text-amber-600">
+              Stock restant estimé : {flashRemaining} / {flashDeal.quantity_total}
+            </p>
+            <div className="mt-1 h-1 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full bg-amber-500"
+                style={{ width: `${Math.max(4, Math.round((flashRemaining / flashDeal.quantity_total) * 100))}%` }}
+              />
+            </div>
+          </div>
+        )
       )}
+
 
       {flashDeal && vendorLabel && (
         <p className="text-[11px] text-muted-foreground mt-1 truncate" title={vendorLabel}>

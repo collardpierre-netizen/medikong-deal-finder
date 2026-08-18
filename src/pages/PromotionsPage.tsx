@@ -378,6 +378,12 @@ export default function PromotionsPage() {
   ];
 
   const { data, isLoading } = usePromoProducts(activeFilter, { categoryId, brandId, inStockOnly, sortBy });
+  const flashVendorIds = useMemo(
+    () => (data?.flashDeals || []).map((fd: any) => fd.vendor_id).filter(Boolean),
+    [data?.flashDeals],
+  );
+  const { getLabelWithMode } = useVendorLabels(flashVendorIds);
+
   const { data: promoCount = 0 } = usePromoCount();
   const { data: campaigns = [] } = usePromotionCampaigns();
 

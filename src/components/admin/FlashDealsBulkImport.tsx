@@ -383,7 +383,7 @@ export function FlashDealsBulkImport({ onDone }: { onDone?: () => void }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((r) => {
+                {displayedRows.map((r) => {
                   const delta = r.publicPrice && r.discountPrice ? r.publicPrice - r.discountPrice : null;
                   const pct = delta && r.publicPrice ? Math.round((delta / r.publicPrice) * 100) : null;
                   return (

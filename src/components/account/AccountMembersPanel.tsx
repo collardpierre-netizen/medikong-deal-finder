@@ -64,6 +64,8 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
   const [showJoinCode, setShowJoinCode] = useState(false);
   const [memberSearch, setMemberSearch] = useState("");
   const [memberPage, setMemberPage] = useState(1);
+  const [inviteEmail, setInviteEmail] = useState("");
+
 
   const [inviteRole, setInviteRole] = useState<Role>("member");
   const [inviteSending, setInviteSending] = useState(false);

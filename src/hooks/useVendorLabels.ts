@@ -6,8 +6,11 @@ import { useCurrentBuyerProfile } from "@/hooks/useCurrentBuyerProfile";
 import {
   getVendorPublicName,
   resolveVendorLabel,
+  resolveVendorLabelWithMode,
+  type VendorDisplayMode,
   type VendorVisibilityRule,
 } from "@/lib/vendor-display";
+
 
 /**
  * 🟢 Résolution unifiée du libellé vendeur pour les surfaces acheteur

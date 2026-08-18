@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatCount } from "@/lib/formatCount";
 import { toast } from "sonner";
+import { useVendorLabels } from "@/hooks/useVendorLabels";
 
 /** Mention légale affichée sur les promotions et ventes flash. */
 const PROMO_DISCLAIMER =
@@ -88,7 +89,7 @@ function FlashCountdown({ endsAt }: { endsAt: string }) {
   );
 }
 
-function PromoProductCard({ product, index, flashDeal }: { product: any; index: number; flashDeal?: any }) {
+function PromoProductCard({ product, index, flashDeal, vendorLabel }: { product: any; index: number; flashDeal?: any; vendorLabel?: string | null }) {
   const flashBase = flashDeal
     ? (flashDeal.public_price_incl_vat || flashDeal.original_price_incl_vat)
     : null;
@@ -176,6 +177,12 @@ function PromoProductCard({ product, index, flashDeal }: { product: any; index: 
       {flashRemaining !== null && (
         <p className={`text-[11px] mt-1 font-medium ${flashRemaining === 0 ? "text-muted-foreground" : "text-amber-600"}`}>
           {flashRemaining === 0 ? "Épuisé" : `Quantité limitée : plus que ${flashRemaining} sur ${flashDeal.quantity_total}`}
+        </p>
+      )}
+
+      {flashDeal && vendorLabel && (
+        <p className="text-[11px] text-muted-foreground mt-1 truncate" title={vendorLabel}>
+          Vendu par <span className="font-medium text-foreground">{vendorLabel}</span>
         </p>
       )}
 
@@ -524,7 +531,17 @@ export default function PromotionsPage() {
                   </div>
                 )}
                 {(data?.flashDeals || []).map((fd: any, i: number) => (
-                  <PromoProductCard key={fd.id} product={fd.product} index={i} flashDeal={fd} />
+                  <PromoProductCard
+                    key={fd.id}
+                    product={fd.product}
+                    index={i}
+                    flashDeal={fd}
+                    vendorLabel={
+                      fd.vendor_id
+                        ? getLabelWithMode(fd.vendor_id, fd.vendor_display_mode || "inherit")
+                        : null
+                    }
+                  />
                 ))}
               </div>
             ) : (

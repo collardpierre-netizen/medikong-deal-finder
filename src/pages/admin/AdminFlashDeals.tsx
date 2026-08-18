@@ -116,10 +116,35 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
           <Input type="number" step="0.01" value={discountPrice} onChange={e => setDiscountPrice(e.target.value)} />
         </div>
         <div>
+          <Label>Prix public TTC (€)</Label>
+          <Input type="number" step="0.01" value={publicPrice} onChange={e => setPublicPrice(e.target.value)} placeholder="Prix public conseillé" />
+        </div>
+      </div>
+
+      {deltaPct !== null && (
+        <p className="text-xs text-emerald-700">
+          Économie affichée : <strong>-{deltaPct}%</strong> · <strong>{deltaAbs!.toFixed(2)} €</strong> vs prix public
+        </p>
+      )}
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>Quantité limitée</Label>
+          <Input
+            type="number"
+            min="1"
+            step="1"
+            value={quantityTotal}
+            onChange={e => setQuantityTotal(e.target.value)}
+            placeholder="Vide = illimitée"
+          />
+        </div>
+        <div>
           <Label>Label</Label>
           <Input value={label} onChange={e => setLabel(e.target.value)} placeholder="Flash -50%" />
         </div>
       </div>
+
 
       <div className="grid grid-cols-2 gap-4">
         <div>

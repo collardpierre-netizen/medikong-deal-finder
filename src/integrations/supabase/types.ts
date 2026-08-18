@@ -5569,6 +5569,7 @@ export type Database = {
           quantity_total: number | null
           starts_at: string
           updated_at: string
+          vendor_display_mode: string
           vendor_id: string | null
         }
         Insert: {
@@ -5588,6 +5589,7 @@ export type Database = {
           quantity_total?: number | null
           starts_at: string
           updated_at?: string
+          vendor_display_mode?: string
           vendor_id?: string | null
         }
         Update: {
@@ -5607,6 +5609,7 @@ export type Database = {
           quantity_total?: number | null
           starts_at?: string
           updated_at?: string
+          vendor_display_mode?: string
           vendor_id?: string | null
         }
         Relationships: [

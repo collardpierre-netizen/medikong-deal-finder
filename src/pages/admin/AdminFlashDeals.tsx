@@ -9,10 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Zap, Calendar, Megaphone } from "lucide-react";
+import { Plus, Trash2, Zap, Calendar, Megaphone, Upload } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { FlashDealsBulkImport } from "@/components/admin/FlashDealsBulkImport";
 
 function FlashDealForm({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient();
@@ -20,6 +21,8 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [discountPrice, setDiscountPrice] = useState("");
+  const [publicPrice, setPublicPrice] = useState("");
+  const [quantityTotal, setQuantityTotal] = useState("");
   const [label, setLabel] = useState("Flash");
   const [startsAt, setStartsAt] = useState(new Date().toISOString().slice(0, 16));
   const [endsAt, setEndsAt] = useState("");
@@ -29,23 +32,35 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
     if (q.length < 2) { setSearchResults([]); return; }
     const { data } = await supabase
       .from("products")
-      .select("id, name, brand_name, best_price_incl_vat, reference_price, image_url")
+      .select("id, name, brand_name, best_price_incl_vat, reference_price, image_url, pvp_ttc_cents")
       .eq("is_active", true)
       .ilike("name", `%${q}%`)
       .limit(10);
     setSearchResults(data || []);
   };
 
+  const promo = parseFloat(discountPrice);
+  const pub = parseFloat(publicPrice);
+  const deltaAbs = Number.isFinite(promo) && Number.isFinite(pub) && pub > promo ? pub - promo : null;
+  const deltaPct = deltaAbs !== null ? Math.round((deltaAbs / pub) * 100) : null;
+
   const handleSave = async () => {
     if (!selectedProduct || !discountPrice || !endsAt) {
       toast.error("Remplissez tous les champs obligatoires");
       return;
     }
+    const qty = quantityTotal.trim() === "" ? null : parseInt(quantityTotal, 10);
+    if (qty !== null && (!Number.isInteger(qty) || qty <= 0)) {
+      toast.error("Quantité limitée invalide");
+      return;
+    }
     setSaving(true);
     const { error } = await supabase.from("flash_deals").insert({
       product_id: selectedProduct.id,
-      discount_price_incl_vat: parseFloat(discountPrice),
+      discount_price_incl_vat: promo,
       original_price_incl_vat: selectedProduct.best_price_incl_vat || selectedProduct.reference_price || 0,
+      public_price_incl_vat: Number.isFinite(pub) ? pub : null,
+      quantity_total: qty,
       starts_at: new Date(startsAt).toISOString(),
       ends_at: new Date(endsAt).toISOString(),
       label,
@@ -57,6 +72,7 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
     qc.invalidateQueries({ queryKey: ["flash-deals-admin"] });
     onClose();
   };
+
 
   return (
     <div className="space-y-4">
@@ -73,7 +89,13 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
               <button
                 key={p.id}
                 className="w-full text-left px-3 py-2 hover:bg-muted text-sm flex justify-between"
-                onClick={() => { setSelectedProduct(p); setSearchResults([]); setProductSearch(p.name); }}
+                onClick={() => {
+                  setSelectedProduct(p);
+                  setSearchResults([]);
+                  setProductSearch(p.name);
+                  if (!publicPrice && p.pvp_ttc_cents) setPublicPrice((p.pvp_ttc_cents / 100).toFixed(2));
+                }}
+
               >
                 <span className="truncate">{p.name}</span>
                 <span className="text-muted-foreground ml-2">{p.best_price_incl_vat?.toFixed(2)} €</span>
@@ -95,10 +117,35 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
           <Input type="number" step="0.01" value={discountPrice} onChange={e => setDiscountPrice(e.target.value)} />
         </div>
         <div>
+          <Label>Prix public TTC (€)</Label>
+          <Input type="number" step="0.01" value={publicPrice} onChange={e => setPublicPrice(e.target.value)} placeholder="Prix public conseillé" />
+        </div>
+      </div>
+
+      {deltaPct !== null && (
+        <p className="text-xs text-emerald-700">
+          Économie affichée : <strong>-{deltaPct}%</strong> · <strong>{deltaAbs!.toFixed(2)} €</strong> vs prix public
+        </p>
+      )}
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>Quantité limitée</Label>
+          <Input
+            type="number"
+            min="1"
+            step="1"
+            value={quantityTotal}
+            onChange={e => setQuantityTotal(e.target.value)}
+            placeholder="Vide = illimitée"
+          />
+        </div>
+        <div>
           <Label>Label</Label>
           <Input value={label} onChange={e => setLabel(e.target.value)} placeholder="Flash -50%" />
         </div>
       </div>
+
 
       <div className="grid grid-cols-2 gap-4">
         <div>
@@ -180,6 +227,7 @@ export default function AdminFlashDeals() {
   const qc = useQueryClient();
   const [showFlashForm, setShowFlashForm] = useState(false);
   const [showCampaignForm, setShowCampaignForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   const now = new Date();
 
@@ -216,7 +264,16 @@ export default function AdminFlashDeals() {
         </TabsList>
 
         <TabsContent value="flash" className="space-y-4">
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <Dialog open={showImport} onOpenChange={setShowImport}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline"><Upload size={14} className="mr-1" /> Import en lot</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl">
+                <DialogHeader><DialogTitle>Importer des ventes flash (XLSX / CSV)</DialogTitle></DialogHeader>
+                <FlashDealsBulkImport onDone={() => setShowImport(false)} />
+              </DialogContent>
+            </Dialog>
             <Dialog open={showFlashForm} onOpenChange={setShowFlashForm}>
               <DialogTrigger asChild>
                 <Button size="sm"><Plus size={14} className="mr-1" /> Nouveau flash deal</Button>
@@ -235,7 +292,9 @@ export default function AdminFlashDeals() {
                   <TableHead>Produit</TableHead>
                   <TableHead>Prix original</TableHead>
                   <TableHead>Prix promo</TableHead>
+                  <TableHead>Prix public</TableHead>
                   <TableHead>Réduction</TableHead>
+                  <TableHead>Quantité</TableHead>
                   <TableHead>Période</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead>Actions</TableHead>
@@ -243,19 +302,32 @@ export default function AdminFlashDeals() {
               </TableHeader>
               <TableBody>
                 {flashDeals.map((fd: any) => {
-                  const discount = Math.round((1 - fd.discount_price_incl_vat / fd.original_price_incl_vat) * 100);
+                  const base = fd.public_price_incl_vat || fd.original_price_incl_vat;
+                  const discount = base ? Math.round((1 - fd.discount_price_incl_vat / base) * 100) : 0;
+                  const deltaAbs = base ? base - fd.discount_price_incl_vat : 0;
                   const isLive = fd.is_active && new Date(fd.starts_at) <= now && new Date(fd.ends_at) >= now;
                   const isExpired = new Date(fd.ends_at) < now;
+                  const remaining = fd.quantity_total === null || fd.quantity_total === undefined
+                    ? null
+                    : Math.max(0, fd.quantity_total - (fd.quantity_sold ?? 0));
 
                   return (
                     <TableRow key={fd.id}>
                       <TableCell className="font-medium max-w-[200px] truncate">{fd.product?.name || "—"}</TableCell>
                       <TableCell>{fd.original_price_incl_vat?.toFixed(2)} €</TableCell>
                       <TableCell className="font-bold text-destructive">{fd.discount_price_incl_vat?.toFixed(2)} €</TableCell>
-                      <TableCell><Badge variant="destructive">-{discount}%</Badge></TableCell>
+                      <TableCell>{fd.public_price_incl_vat ? `${fd.public_price_incl_vat.toFixed(2)} €` : "—"}</TableCell>
+                      <TableCell>
+                        <Badge variant="destructive">-{discount}%</Badge>
+                        {deltaAbs > 0 && <span className="ml-1 text-xs text-muted-foreground">−{deltaAbs.toFixed(2)} €</span>}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {remaining === null ? "Illimitée" : `${remaining} / ${fd.quantity_total}`}
+                      </TableCell>
                       <TableCell className="text-xs">
                         {new Date(fd.starts_at).toLocaleDateString("fr-FR")} → {new Date(fd.ends_at).toLocaleDateString("fr-FR")}
                       </TableCell>
+
                       <TableCell>
                         {isExpired ? (
                           <Badge variant="secondary">Expiré</Badge>
@@ -278,7 +350,7 @@ export default function AdminFlashDeals() {
                 })}
                 {flashDeals.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       Aucun flash deal. Créez-en un !
                     </TableCell>
                   </TableRow>

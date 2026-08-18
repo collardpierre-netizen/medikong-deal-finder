@@ -289,8 +289,12 @@ export function FlashDealsBulkImport({ onDone }: { onDone?: () => void }) {
       <div className="rounded-lg border border-dashed border-border p-4 text-sm">
         <p className="font-medium mb-1">Colonnes attendues</p>
         <p className="text-muted-foreground text-xs leading-relaxed">
-          <strong>gtin</strong> (ou slug / product_id), <strong>prix_promo_ttc</strong>, <strong>prix_public_ttc</strong> (facultatif — repris du PVP si vide),{" "}
+          <strong>gtin</strong> (ou slug / product_id), <strong>vendeur</strong> (facultatif — code, nom ou id ; vide = tous les fournisseurs),{" "}
+          <strong>prix_promo_ttc</strong>, <strong>prix_public_ttc</strong> (facultatif — repris du PVP si vide),{" "}
           <strong>quantite</strong> (facultatif — vide = illimitée), <strong>debut</strong> (facultatif — maintenant si vide), <strong>fin</strong>, <strong>label</strong>.
+        </p>
+        <p className="text-muted-foreground text-xs mt-1">
+          L'import ne crée aucune offre catalogue : il faut une offre active existante (celle du fournisseur si la colonne <strong>vendeur</strong> est remplie).
         </p>
         <div className="flex flex-wrap items-center gap-2 mt-3">
           <Button variant="outline" size="sm" onClick={downloadTemplate}>
@@ -328,6 +332,7 @@ export function FlashDealsBulkImport({ onDone }: { onDone?: () => void }) {
                   <TableHead>Produit</TableHead>
                   <TableHead>Promo</TableHead>
                   <TableHead>Public</TableHead>
+                  <TableHead>Fournisseur</TableHead>
                   <TableHead>Écart</TableHead>
                   <TableHead>Qté</TableHead>
                   <TableHead>Fin</TableHead>

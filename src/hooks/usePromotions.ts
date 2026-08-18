@@ -186,7 +186,7 @@ export function useFlashDeals() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("flash_deals")
-        .select("*, product:products(id, slug, name, brand_name, image_url, best_price_incl_vat, reference_price)")
+        .select("*, product:products(id, slug, name, brand_name, image_url, best_price_incl_vat, reference_price), vendor:vendors(id, name, company_name, display_code)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []) as any[];

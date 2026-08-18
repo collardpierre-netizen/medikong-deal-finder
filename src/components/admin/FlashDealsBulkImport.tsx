@@ -11,6 +11,7 @@ import { Upload, FileDown, Loader2, CheckCircle2, AlertTriangle } from "lucide-r
 type ParsedRow = {
   line: number;
   identifier: string;
+  vendorKey: string;
   discountPrice: number | null;
   publicPrice: number | null;
   quantity: number | null;
@@ -19,6 +20,9 @@ type ParsedRow = {
   label: string | null;
   productId?: string;
   productName?: string;
+  vendorId?: string | null;
+  vendorLabel?: string | null;
+  offerId?: string | null;
   currentPrice?: number | null;
   error?: string;
 };
@@ -31,6 +35,12 @@ const HEADER_ALIASES: Record<string, string> = {
   product_id: "identifier",
   produit: "identifier",
   identifiant: "identifier",
+  vendeur: "vendor",
+  fournisseur: "vendor",
+  vendor: "vendor",
+  vendor_id: "vendor",
+  vendor_code: "vendor",
+  code_vendeur: "vendor",
   prix_promo: "discount",
   prix_promo_ttc: "discount",
   discount_price: "discount",
@@ -87,8 +97,8 @@ export function FlashDealsBulkImport({ onDone }: { onDone?: () => void }) {
 
   const downloadTemplate = () => {
     const ws = XLSX.utils.aoa_to_sheet([
-      ["gtin", "prix_promo_ttc", "prix_public_ttc", "quantite", "debut", "fin", "label"],
-      ["5400000000001", "12,90", "19,90", "50", "18/08/2026 09:00", "20/08/2026 23:59", "Flash -35%"],
+      ["gtin", "vendeur", "prix_promo_ttc", "prix_public_ttc", "quantite", "debut", "fin", "label"],
+      ["5400000000001", "", "12,90", "19,90", "50", "18/08/2026 09:00", "20/08/2026 23:59", "Flash -35%"],
     ]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "flash_deals");
@@ -113,6 +123,7 @@ export function FlashDealsBulkImport({ onDone }: { onDone?: () => void }) {
         return {
           line: i + 2,
           identifier: String(mapped.identifier ?? "").trim(),
+          vendorKey: String(mapped.vendor ?? "").trim(),
           discountPrice: toNumber(mapped.discount),
           publicPrice: toNumber(mapped.public),
           quantity: mapped.quantity === "" || mapped.quantity === undefined ? null : toNumber(mapped.quantity),
@@ -140,6 +151,59 @@ export function FlashDealsBulkImport({ onDone }: { onDone?: () => void }) {
         index.set(String(p.id), p);
       }
 
+      // Résolution vendeurs (id / display_code / nom / raison sociale)
+      const vendorKeys = [...new Set(parsed.map((p) => p.vendorKey).filter(Boolean))];
+      const vendorIndex = new Map<string, any>();
+      if (vendorKeys.length > 0) {
+        const { data: vendors } = await supabase
+          .from("vendors")
+          .select("id, name, company_name, display_code")
+          .or(
+            [
+              `display_code.in.(${vendorKeys.map((k) => `"${k}"`).join(",")})`,
+              `name.in.(${vendorKeys.map((k) => `"${k}"`).join(",")})`,
+              `company_name.in.(${vendorKeys.map((k) => `"${k}"`).join(",")})`,
+            ].join(",")
+          );
+        for (const v of vendors ?? []) {
+          if (v.display_code) vendorIndex.set(String(v.display_code).toLowerCase(), v);
+          if (v.name) vendorIndex.set(String(v.name).toLowerCase(), v);
+          if ((v as any).company_name) vendorIndex.set(String((v as any).company_name).toLowerCase(), v);
+          vendorIndex.set(String(v.id).toLowerCase(), v);
+        }
+        // clés qui ressemblent à un uuid : lookup direct
+        const uuidKeys = vendorKeys.filter((k) => /^[0-9a-f-]{36}$/i.test(k) && !vendorIndex.has(k.toLowerCase()));
+        if (uuidKeys.length > 0) {
+          const { data: byId } = await supabase
+            .from("vendors")
+            .select("id, name, company_name, display_code")
+            .in("id", uuidKeys);
+          for (const v of byId ?? []) vendorIndex.set(String(v.id).toLowerCase(), v);
+        }
+      }
+
+      // Résolution offres actives pour les couples produit × vendeur demandés
+      const productIdsForOffers = [
+        ...new Set(
+          parsed
+            .filter((p) => p.vendorKey && index.get(p.identifier))
+            .map((p) => index.get(p.identifier).id as string)
+        ),
+      ];
+      const offerIndex = new Map<string, any>();
+      if (productIdsForOffers.length > 0) {
+        const { data: offers } = await supabase
+          .from("offers")
+          .select("id, product_id, vendor_id, price_excl_vat")
+          .in("product_id", productIdsForOffers)
+          .eq("is_active", true)
+          .order("price_excl_vat", { ascending: true });
+        for (const o of offers ?? []) {
+          const key = `${o.product_id}|${o.vendor_id}`;
+          if (!offerIndex.has(key)) offerIndex.set(key, o);
+        }
+      }
+
       const resolved = parsed.map((r) => {
         if (!r.identifier) return { ...r, error: "Identifiant produit manquant" };
         const p = index.get(r.identifier);
@@ -148,10 +212,35 @@ export function FlashDealsBulkImport({ onDone }: { onDone?: () => void }) {
         if (!r.endsAt) return { ...r, productId: p.id, productName: p.name, error: "Date de fin manquante" };
         if (r.quantity !== null && (!Number.isInteger(r.quantity) || r.quantity <= 0))
           return { ...r, productId: p.id, productName: p.name, error: "Quantité invalide" };
+
+        let vendorId: string | null = null;
+        let vendorLabel: string | null = null;
+        let offerId: string | null = null;
+        if (r.vendorKey) {
+          const v = vendorIndex.get(r.vendorKey.toLowerCase());
+          if (!v) return { ...r, productId: p.id, productName: p.name, error: "Fournisseur introuvable (code / nom / id)" };
+          vendorId = v.id;
+          vendorLabel = v.company_name || v.name || v.display_code;
+          const offer = offerIndex.get(`${p.id}|${v.id}`);
+          if (!offer)
+            return {
+              ...r,
+              productId: p.id,
+              productName: p.name,
+              vendorId,
+              vendorLabel,
+              error: "Aucune offre active de ce fournisseur sur ce produit",
+            };
+          offerId = offer.id;
+        }
+
         return {
           ...r,
           productId: p.id,
           productName: p.name,
+          vendorId,
+          vendorLabel,
+          offerId,
           currentPrice: p.best_price_incl_vat ?? p.reference_price ?? null,
           publicPrice: r.publicPrice ?? (p.pvp_ttc_cents ? p.pvp_ttc_cents / 100 : null),
         };
@@ -174,6 +263,8 @@ export function FlashDealsBulkImport({ onDone }: { onDone?: () => void }) {
     setImporting(true);
     const payload = valid.map((r) => ({
       product_id: r.productId!,
+      vendor_id: r.vendorId ?? null,
+      offer_id: r.offerId ?? null,
       discount_price_incl_vat: r.discountPrice!,
       original_price_incl_vat: r.currentPrice ?? r.publicPrice ?? r.discountPrice!,
       public_price_incl_vat: r.publicPrice,
@@ -198,8 +289,12 @@ export function FlashDealsBulkImport({ onDone }: { onDone?: () => void }) {
       <div className="rounded-lg border border-dashed border-border p-4 text-sm">
         <p className="font-medium mb-1">Colonnes attendues</p>
         <p className="text-muted-foreground text-xs leading-relaxed">
-          <strong>gtin</strong> (ou slug / product_id), <strong>prix_promo_ttc</strong>, <strong>prix_public_ttc</strong> (facultatif — repris du PVP si vide),{" "}
+          <strong>gtin</strong> (ou slug / product_id), <strong>vendeur</strong> (facultatif — code, nom ou id ; vide = tous les fournisseurs),{" "}
+          <strong>prix_promo_ttc</strong>, <strong>prix_public_ttc</strong> (facultatif — repris du PVP si vide),{" "}
           <strong>quantite</strong> (facultatif — vide = illimitée), <strong>debut</strong> (facultatif — maintenant si vide), <strong>fin</strong>, <strong>label</strong>.
+        </p>
+        <p className="text-muted-foreground text-xs mt-1">
+          L'import ne crée aucune offre catalogue : il faut une offre active existante (celle du fournisseur si la colonne <strong>vendeur</strong> est remplie).
         </p>
         <div className="flex flex-wrap items-center gap-2 mt-3">
           <Button variant="outline" size="sm" onClick={downloadTemplate}>
@@ -237,6 +332,7 @@ export function FlashDealsBulkImport({ onDone }: { onDone?: () => void }) {
                   <TableHead>Produit</TableHead>
                   <TableHead>Promo</TableHead>
                   <TableHead>Public</TableHead>
+                  <TableHead>Fournisseur</TableHead>
                   <TableHead>Écart</TableHead>
                   <TableHead>Qté</TableHead>
                   <TableHead>Fin</TableHead>
@@ -253,6 +349,9 @@ export function FlashDealsBulkImport({ onDone }: { onDone?: () => void }) {
                       <TableCell className="text-xs max-w-[180px] truncate">{r.productName || r.identifier}</TableCell>
                       <TableCell className="text-xs">{r.discountPrice?.toFixed(2) ?? "—"} €</TableCell>
                       <TableCell className="text-xs">{r.publicPrice?.toFixed(2) ?? "—"} €</TableCell>
+                      <TableCell className="text-xs max-w-[120px] truncate">
+                        {r.vendorLabel || (r.vendorKey ? r.vendorKey : <span className="text-muted-foreground">Tous</span>)}
+                      </TableCell>
                       <TableCell className="text-xs">
                         {pct !== null ? `-${pct}% · ${delta!.toFixed(2)} €` : "—"}
                       </TableCell>

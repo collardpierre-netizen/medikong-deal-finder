@@ -27,6 +27,8 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
   const [startsAt, setStartsAt] = useState(new Date().toISOString().slice(0, 16));
   const [endsAt, setEndsAt] = useState("");
   const [saving, setSaving] = useState(false);
+  const [productOffers, setProductOffers] = useState<any[]>([]);
+  const [selectedOfferId, setSelectedOfferId] = useState<string>("");
 
   const searchProducts = async (q: string) => {
     if (q.length < 2) { setSearchResults([]); return; }
@@ -37,6 +39,18 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
       .ilike("name", `%${q}%`)
       .limit(10);
     setSearchResults(data || []);
+  };
+
+  const loadOffers = async (productId: string) => {
+    const { data } = await supabase
+      .from("offers")
+      .select("id, price_excl_vat, stock_quantity, moq, vendor:vendors(id, name, company_name, display_code)")
+      .eq("product_id", productId)
+      .eq("is_active", true)
+      .order("price_excl_vat", { ascending: true })
+      .limit(50);
+    setProductOffers(data || []);
+    setSelectedOfferId("");
   };
 
   const promo = parseFloat(discountPrice);
@@ -54,9 +68,12 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
       toast.error("Quantité limitée invalide");
       return;
     }
+    const offer = productOffers.find((o) => o.id === selectedOfferId);
     setSaving(true);
     const { error } = await supabase.from("flash_deals").insert({
       product_id: selectedProduct.id,
+      offer_id: offer ? offer.id : null,
+      vendor_id: offer ? offer.vendor?.id ?? null : null,
       discount_price_incl_vat: promo,
       original_price_incl_vat: selectedProduct.best_price_incl_vat || selectedProduct.reference_price || 0,
       public_price_incl_vat: Number.isFinite(pub) ? pub : null,
@@ -65,13 +82,14 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
       ends_at: new Date(endsAt).toISOString(),
       label,
       is_active: true,
-    });
+    } as any);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Flash deal créé !");
     qc.invalidateQueries({ queryKey: ["flash-deals-admin"] });
     onClose();
   };
+
 
 
   return (
@@ -94,6 +112,7 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
                   setSearchResults([]);
                   setProductSearch(p.name);
                   if (!publicPrice && p.pvp_ttc_cents) setPublicPrice((p.pvp_ttc_cents / 100).toFixed(2));
+                  loadOffers(p.id);
                 }}
 
               >
@@ -110,6 +129,31 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
           </p>
         )}
       </div>
+
+      {selectedProduct && (
+        <div>
+          <Label>Fournisseur ciblé (facultatif)</Label>
+          <select
+            className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+            value={selectedOfferId}
+            onChange={(e) => setSelectedOfferId(e.target.value)}
+          >
+            <option value="">Tous les fournisseurs (meilleure offre du produit)</option>
+            {productOffers.map((o) => (
+              <option key={o.id} value={o.id}>
+                {(o.vendor?.company_name || o.vendor?.name || o.vendor?.display_code || "Fournisseur")} — {Number(o.price_excl_vat).toFixed(2)} € HT
+                {o.moq ? ` · MOQ ${o.moq}` : ""}
+                {o.stock_quantity != null ? ` · stock ${o.stock_quantity}` : ""}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-muted-foreground mt-1">
+            {productOffers.length === 0
+              ? "Aucune offre active sur ce produit — la vente flash sera visible mais non commandable."
+              : "Vide = la promo s'applique à l'offre retenue automatiquement. Le MOQ/MOV du fournisseur reste appliqué au panier."}
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         <div>
@@ -290,6 +334,7 @@ export default function AdminFlashDeals() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Produit</TableHead>
+                  <TableHead>Fournisseur</TableHead>
                   <TableHead>Prix original</TableHead>
                   <TableHead>Prix promo</TableHead>
                   <TableHead>Prix public</TableHead>
@@ -314,6 +359,12 @@ export default function AdminFlashDeals() {
                   return (
                     <TableRow key={fd.id}>
                       <TableCell className="font-medium max-w-[200px] truncate">{fd.product?.name || "—"}</TableCell>
+                      <TableCell className="text-xs max-w-[140px] truncate">
+                        {fd.vendor
+                          ? (fd.vendor.company_name || fd.vendor.name || fd.vendor.display_code)
+                          : <span className="text-muted-foreground">Tous</span>}
+                        {fd.offer_id && <Badge variant="outline" className="ml-1 text-[10px]">offre ciblée</Badge>}
+                      </TableCell>
                       <TableCell>{fd.original_price_incl_vat?.toFixed(2)} €</TableCell>
                       <TableCell className="font-bold text-destructive">{fd.discount_price_incl_vat?.toFixed(2)} €</TableCell>
                       <TableCell>{fd.public_price_incl_vat ? `${fd.public_price_incl_vat.toFixed(2)} €` : "—"}</TableCell>
@@ -350,7 +401,7 @@ export default function AdminFlashDeals() {
                 })}
                 {flashDeals.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                       Aucun flash deal. Créez-en un !
                     </TableCell>
                   </TableRow>

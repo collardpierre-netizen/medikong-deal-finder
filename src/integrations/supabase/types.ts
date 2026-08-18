@@ -5561,6 +5561,7 @@ export type Database = {
           id: string
           is_active: boolean
           label: string | null
+          offer_id: string | null
           original_price_incl_vat: number
           product_id: string
           public_price_incl_vat: number | null
@@ -5568,6 +5569,7 @@ export type Database = {
           quantity_total: number | null
           starts_at: string
           updated_at: string
+          vendor_id: string | null
         }
         Insert: {
           campaign_id?: string | null
@@ -5578,6 +5580,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           label?: string | null
+          offer_id?: string | null
           original_price_incl_vat: number
           product_id: string
           public_price_incl_vat?: number | null
@@ -5585,6 +5588,7 @@ export type Database = {
           quantity_total?: number | null
           starts_at: string
           updated_at?: string
+          vendor_id?: string | null
         }
         Update: {
           campaign_id?: string | null
@@ -5595,6 +5599,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           label?: string | null
+          offer_id?: string | null
           original_price_incl_vat?: number
           product_id?: string
           public_price_incl_vat?: number | null
@@ -5602,6 +5607,7 @@ export type Database = {
           quantity_total?: number | null
           starts_at?: string
           updated_at?: string
+          vendor_id?: string | null
         }
         Relationships: [
           {
@@ -5609,6 +5615,55 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "promotion_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flash_deals_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["mk_best_offer_id"]
+          },
+          {
+            foreignKeyName: "flash_deals_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_offer_prices_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "flash_deals_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flash_deals_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_private"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flash_deals_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_public_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flash_deals_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_with_exclusivity_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "flash_deals_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "public_offers"
             referencedColumns: ["id"]
           },
           {
@@ -5659,6 +5714,62 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "public_top_price_deltas"
             referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "flash_deals_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "flash_deals_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "flash_deals_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flash_deals_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_intelligence_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "flash_deals_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "flash_deals_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "flash_deals_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flash_deals_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
           },
         ]
       }

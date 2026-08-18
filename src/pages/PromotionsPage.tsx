@@ -182,6 +182,19 @@ function PromoProductCard({ product, index, flashDeal }: { product: any; index: 
       {product.offer_count > 0 && (
         <p className="text-[11px] text-emerald-600 mt-1">{product.offer_count} vendeur{product.offer_count > 1 ? "s" : ""}</p>
       )}
+
+      {flashDeal && (
+        <p className="text-[10px] text-muted-foreground mt-1 leading-snug">
+          Dans la limite des stocks disponibles · valable jusqu'au{" "}
+          {new Date(flashDeal.ends_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}
+        </p>
+      )}
+
+      <div className="mt-2 pt-2 border-t border-border/60 flex items-center justify-between">
+        <ShareOfferButton product={product} />
+        <span className="text-[10px] text-muted-foreground">Offre partageable</span>
+      </div>
+
     </motion.div>
   );
 }

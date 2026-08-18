@@ -503,6 +503,56 @@ export function MemberDetailSheet({
           </div>
         )}
       </SheetContent>
+
+      <AlertDialog open={!!pendingRole} onOpenChange={(o) => !o && setPendingRole(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Modifier le rôle ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingRole === "admin"
+                ? `${member?.label} pourra gérer les utilisateurs, les invitations et les paramètres du compte.`
+                : `${member?.label} perdra la gestion des utilisateurs et des paramètres du compte.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                if (pendingRole) applyRole.mutate(pendingRole);
+              }}
+            >
+              {applyRole.isPending && <Loader2 size={13} className="mr-1.5 animate-spin" />}
+              Confirmer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmRevoke} onOpenChange={setConfirmRevoke}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Révoquer l'accès ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {member?.label} n'aura plus accès à ce compte. Une nouvelle invitation sera nécessaire pour le
+              rétablir.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => {
+                e.preventDefault();
+                revokeAccess.mutate();
+              }}
+            >
+              {revokeAccess.isPending && <Loader2 size={13} className="mr-1.5 animate-spin" />}
+              Révoquer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   );
 }

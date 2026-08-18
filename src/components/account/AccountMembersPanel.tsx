@@ -432,7 +432,36 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
             })}
           </div>
         )}
+        {!loadingMembers && filteredMembers.length > PAGE_SIZE && (
+          <div className="px-4 py-2.5 border-t border-[#E2E8F0] bg-[#F8FAFC] flex items-center justify-between">
+            <span className="text-[11px] text-[#8B95A5]">
+              {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredMembers.length)} sur {filteredMembers.length}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 px-2"
+                disabled={currentPage <= 1}
+                onClick={() => setMemberPage((p) => Math.max(1, p - 1))}
+              >
+                <ChevronLeft size={14} />
+              </Button>
+              <span className="text-[11px] text-[#616B7C]">Page {currentPage} / {totalPages}</span>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 px-2"
+                disabled={currentPage >= totalPages}
+                onClick={() => setMemberPage((p) => Math.min(totalPages, p + 1))}
+              >
+                <ChevronRight size={14} />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
+
 
       {/* Pending invitations */}
       {canManage && (

@@ -32,6 +32,22 @@ export default function VendorSettings() {
   const shippingMode = (vendor as any)?.vendor_shipping_mode ?? "no_shipping";
   const { data: activeMarginRule } = useVendorActiveMarginRule(vendorId);
 
+  // Droits de gestion des utilisateurs : propriétaire, membre "admin" du compte,
+  // ou administrateur plateforme (y compris en mode admin/impersonation).
+  const { data: canManageMembers = false } = useQuery({
+    queryKey: ["vendor-can-manage-members", vendorId, user?.id],
+    enabled: !!vendorId,
+    queryFn: async () => {
+      const [accountAdmin, platformAdmin] = await Promise.all([
+        supabase.rpc("is_account_admin", { _kind: "vendor", _account_id: vendorId! }),
+        user?.id
+          ? supabase.rpc("is_admin", { _user_id: user.id })
+          : Promise.resolve({ data: false } as any),
+      ]);
+      return accountAdmin.data === true || platformAdmin.data === true;
+    },
+  });
+
   // Profile form
   const [form, setForm] = useState({
     company_name: "", name: "", email: "", phone: "",
@@ -217,7 +233,7 @@ export default function VendorSettings() {
           <AccountMembersPanel
             accountKind="vendor"
             accountId={vendor.id}
-            canManage={!!user && user.id === vendor.auth_user_id}
+            canManage={(!!user && user.id === vendor.auth_user_id) || canManageMembers}
             ownerUserId={vendor.auth_user_id ?? null}
           />
         </VCard>

@@ -55,7 +55,10 @@ interface Invitation {
   created_at: string;
 }
 
+const PAGE_SIZE = 10;
+
 export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUserId }: Props) {
+
   const qc = useQueryClient();
   const [showInvite, setShowInvite] = useState(false);
   const [showJoinCode, setShowJoinCode] = useState(false);

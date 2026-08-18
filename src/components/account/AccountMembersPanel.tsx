@@ -276,6 +276,36 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
     }
   };
 
+  const memberLabel = (m: Membership) =>
+    m.profile?.full_name ||
+    m.display_name ||
+    m.email ||
+    m.invited_email ||
+    `Utilisateur ${m.user_id.slice(0, 8)}`;
+
+  const filteredMembers = useMemo(() => {
+    const q = memberSearch.trim().toLowerCase();
+    if (!q) return members;
+    return members.filter((m) => {
+      const haystack = [
+        memberLabel(m),
+        m.email,
+        m.invited_email,
+        m.display_name,
+        m.profile?.full_name,
+        m.role,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [members, memberSearch]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredMembers.length / PAGE_SIZE));
+  const currentPage = Math.min(memberPage, totalPages);
+  const pagedMembers = filteredMembers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
   const roleBadge = (role: Role) =>
     role === "admin" ? (
       <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] font-bold uppercase">
@@ -286,6 +316,7 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
         <UserIcon size={10} className="mr-1" /> Membre
       </Badge>
     );
+
 
   return (
     <div className="space-y-4">

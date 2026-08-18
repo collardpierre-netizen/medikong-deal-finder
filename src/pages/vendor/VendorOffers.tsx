@@ -714,17 +714,37 @@ function useOfferImport(vendorId: string | undefined) {
         for (let i = 0; i < uniqueOffers.length; i += 100) {
           const batchSource = uniqueOffers.slice(i, i + 100);
           const batch = batchSource.map(({ _ean, _cnk, _packForProduct, ...rest }) => rest);
-          const { data: inserted, error } = await supabase.from("offers").upsert(batch, { onConflict: "product_id,vendor_id,country_code", ignoreDuplicates: false }).select("id, product_id");
-          if (error) throw error;
-          if (inserted) {
-            inserted.forEach((ins: any, idx: number) => {
-              const src = batchSource[idx];
+          const vendorIdForBatch = batch[0]?.vendor_id;
+          if (!vendorIdForBatch) continue;
+
+          const { data: existing, error: existingError } = await supabase
+            .from("offers")
+            .select("id, product_id, country_code")
+            .eq("vendor_id", vendorIdForBatch)
+            .in("product_id", batch.map((offer) => offer.product_id));
+          if (existingError) throw existingError;
+
+          const existingByKey = new Map(
+            (existing ?? []).map((offer: any) => [`${offer.product_id}|${offer.country_code}`, offer]),
+          );
+
+          for (let batchIndex = 0; batchIndex < batch.length; batchIndex++) {
+            const offer = batch[batchIndex];
+            const src = batchSource[batchIndex];
+            const current = existingByKey.get(`${offer.product_id}|${offer.country_code}`) as any;
+            const mutation = current?.id
+              ? supabase.from("offers").update(offer).eq("id", current.id).select("id, product_id").single()
+              : supabase.from("offers").insert(offer).select("id, product_id").single();
+            const { data: saved, error } = await mutation;
+            if (error) throw error;
+            if (saved) {
+              const ins = saved as any;
               if (src._ean) offerIdsByKey[src._ean] = ins.id;
               if (src._cnk) offerIdsByKey[src._cnk] = ins.id;
               if (src._packForProduct && ins.product_id && !productPackFallbacks.has(ins.product_id)) {
                 productPackFallbacks.set(ins.product_id, src._packForProduct);
               }
-            });
+            }
           }
         }
       }

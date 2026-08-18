@@ -349,6 +349,9 @@ export function FlashDealsBulkImport({ onDone }: { onDone?: () => void }) {
                       <TableCell className="text-xs max-w-[180px] truncate">{r.productName || r.identifier}</TableCell>
                       <TableCell className="text-xs">{r.discountPrice?.toFixed(2) ?? "—"} €</TableCell>
                       <TableCell className="text-xs">{r.publicPrice?.toFixed(2) ?? "—"} €</TableCell>
+                      <TableCell className="text-xs max-w-[120px] truncate">
+                        {r.vendorLabel || (r.vendorKey ? r.vendorKey : <span className="text-muted-foreground">Tous</span>)}
+                      </TableCell>
                       <TableCell className="text-xs">
                         {pct !== null ? `-${pct}% · ${delta!.toFixed(2)} €` : "—"}
                       </TableCell>

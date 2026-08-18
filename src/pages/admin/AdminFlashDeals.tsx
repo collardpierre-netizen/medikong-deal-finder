@@ -112,6 +112,7 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
                   setSearchResults([]);
                   setProductSearch(p.name);
                   if (!publicPrice && p.pvp_ttc_cents) setPublicPrice((p.pvp_ttc_cents / 100).toFixed(2));
+                  loadOffers(p.id);
                 }}
 
               >
@@ -128,6 +129,31 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
           </p>
         )}
       </div>
+
+      {selectedProduct && (
+        <div>
+          <Label>Fournisseur ciblé (facultatif)</Label>
+          <select
+            className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+            value={selectedOfferId}
+            onChange={(e) => setSelectedOfferId(e.target.value)}
+          >
+            <option value="">Tous les fournisseurs (meilleure offre du produit)</option>
+            {productOffers.map((o) => (
+              <option key={o.id} value={o.id}>
+                {(o.vendor?.company_name || o.vendor?.name || o.vendor?.display_code || "Fournisseur")} — {Number(o.price_excl_vat).toFixed(2)} € HT
+                {o.moq ? ` · MOQ ${o.moq}` : ""}
+                {o.stock_quantity != null ? ` · stock ${o.stock_quantity}` : ""}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-muted-foreground mt-1">
+            {productOffers.length === 0
+              ? "Aucune offre active sur ce produit — la vente flash sera visible mais non commandable."
+              : "Vide = la promo s'applique à l'offre retenue automatiquement. Le MOQ/MOV du fournisseur reste appliqué au panier."}
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         <div>

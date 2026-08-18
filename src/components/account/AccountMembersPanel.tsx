@@ -568,8 +568,13 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
                   id="invite-email"
                   type="email"
                   value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
+                  onChange={(e) => {
+                    setInviteEmail(e.target.value);
+                    if (inviteError) setInviteError(null);
+                  }}
                   placeholder="utilisateur@exemple.com"
+                  aria-invalid={!!inviteError}
+                  className={inviteError ? "border-destructive" : undefined}
                   autoFocus
                 />
               </div>
@@ -585,6 +590,48 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Récapitulatif des permissions accordées */}
+              <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Shield size={13} className="text-[#1B5BDA]" />
+                  <span className="text-[12px] font-bold text-[#1D2530]">
+                    Ce que pourra faire cet utilisateur ({inviteRole === "admin" ? "Admin" : "Membre"})
+                  </span>
+                </div>
+                <ul className="space-y-1 text-[11px] text-[#616B7C]">
+                  {(inviteRole === "admin"
+                    ? [
+                        "Accès complet au portail de ce compte",
+                        accountKind === "vendor"
+                          ? "Gérer le catalogue, les offres, les commandes et les demandes de prix"
+                          : "Commander, gérer les demandes de prix et les documents",
+                        "Modifier les paramètres du compte",
+                        "Inviter, retirer et changer le rôle des autres utilisateurs",
+                      ]
+                    : [
+                        "Accès au portail de ce compte",
+                        accountKind === "vendor"
+                          ? "Gérer le catalogue, les offres, les commandes et les demandes de prix"
+                          : "Commander et suivre les demandes de prix",
+                        "Ne peut pas gérer les utilisateurs ni les accès",
+                      ]
+                  ).map((line) => (
+                    <li key={line} className="flex items-start gap-1.5">
+                      <Check size={11} className="mt-0.5 shrink-0 text-[#1B5BDA]" />
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {inviteError && (
+                <div role="alert" className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                  <AlertCircle size={14} className="mt-0.5 shrink-0 text-destructive" />
+                  <p className="text-[12px] text-destructive">{inviteError}</p>
+                </div>
+              )}
+
               <p className="text-[11px] text-[#8B95A5]">
                 Un email d'invitation sera envoyé. L'invité doit cliquer sur le lien et se connecter avec cet email exact.
               </p>
@@ -592,15 +639,28 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
                 <Button variant="outline" onClick={closeInviteDialog}>Annuler</Button>
                 <Button onClick={() => inviteByEmail.mutate()} disabled={inviteSending}>
                   {inviteSending ? <Loader2 className="animate-spin mr-2" size={14} /> : <Mail className="mr-2" size={14} />}
-                  Envoyer l'invitation
+                  {inviteSending ? "Envoi en cours…" : "Envoyer l'invitation"}
                 </Button>
               </DialogFooter>
             </div>
           ) : (
             <div className="space-y-4">
-              <p className="text-[13px] text-[#1D2530]">
-                Invitation envoyée à <strong>{inviteEmail}</strong>. Tu peux aussi partager le lien direct :
-              </p>
+              {emailStatus === "sent" ? (
+                <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+                  <Check size={14} className="mt-0.5 shrink-0 text-emerald-700" />
+                  <p className="text-[12px] text-emerald-800">
+                    Email d'invitation envoyé à <strong>{inviteEmail}</strong> (rôle {inviteRole === "admin" ? "Admin" : "Membre"}).
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                  <AlertCircle size={14} className="mt-0.5 shrink-0 text-amber-700" />
+                  <p className="text-[12px] text-amber-800">
+                    Invitation créée, mais l'email n'a pas pu être envoyé à <strong>{inviteEmail}</strong>. Partage le lien ci-dessous manuellement.
+                  </p>
+                </div>
+              )}
+              <p className="text-[12px] text-[#616B7C]">Lien direct d'invitation :</p>
               <div className="flex gap-2">
                 <Input
                   readOnly
@@ -620,6 +680,7 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
               </DialogFooter>
             </div>
           )}
+
         </DialogContent>
       </Dialog>
 

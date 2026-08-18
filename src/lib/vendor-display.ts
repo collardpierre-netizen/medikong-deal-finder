@@ -111,3 +111,26 @@ export function getVendorBoutiqueDisplayName(
   const code = vendor.display_code || "XXXXXX";
   return `Fournisseur ${code}`;
 }
+
+/**
+ * 🟢 Mode d'affichage vendeur piloté par la surface (ex. ventes flash).
+ *
+ * - `inherit`   : suit la fiche vendeur + `vendor_visibility_rules` (comportement standard)
+ * - `anonymous` : force "Fournisseur <display_code>" quelles que soient les règles
+ * - `real`      : force le nom réel (choix éditorial admin, ex. promo co-brandée)
+ */
+export type VendorDisplayMode = "inherit" | "anonymous" | "real";
+
+export function resolveVendorLabelWithMode(
+  vendor: VendorDisplayInput & { id?: string },
+  rules: VendorVisibilityRule[],
+  context: { country?: string; customerType?: string } | undefined,
+  mode: VendorDisplayMode | null | undefined,
+): string {
+  if (mode === "anonymous") return getVendorPublicNameInternal(vendor);
+  if (mode === "real") {
+    const real = (vendor.company_name || vendor.name || "").trim();
+    if (real) return real;
+  }
+  return resolveVendorLabel(vendor, rules, context);
+}

@@ -1,7 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { usePromoProducts, usePromoCount, usePromotionCampaigns, usePromoCategories, usePromoBrands } from "@/hooks/usePromotions";
 import { computeDisplayDiscount, displayReferencePrice } from "@/lib/discount-display";
-import { Tag, TrendingDown, Truck, Calendar, Zap, Timer, Filter, X, SlidersHorizontal, ArrowUpDown, Search, Package, Info, Share2, Check } from "lucide-react";
+import { Tag, TrendingDown, Truck, Calendar, Zap, Timer, Filter, X, SlidersHorizontal, ArrowUpDown, Search, Package, Info, Share2, Check, Mail } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ProductImage } from "@/components/shared/ProductCard";

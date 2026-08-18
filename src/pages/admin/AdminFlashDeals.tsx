@@ -9,10 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Zap, Calendar, Megaphone } from "lucide-react";
+import { Plus, Trash2, Zap, Calendar, Megaphone, Upload } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { FlashDealsBulkImport } from "@/components/admin/FlashDealsBulkImport";
 
 function FlashDealForm({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient();
@@ -226,6 +227,7 @@ export default function AdminFlashDeals() {
   const qc = useQueryClient();
   const [showFlashForm, setShowFlashForm] = useState(false);
   const [showCampaignForm, setShowCampaignForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   const now = new Date();
 
@@ -348,7 +350,7 @@ export default function AdminFlashDeals() {
                 })}
                 {flashDeals.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       Aucun flash deal. Créez-en un !
                     </TableCell>
                   </TableRow>

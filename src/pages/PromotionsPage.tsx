@@ -434,6 +434,14 @@ export default function PromotionsPage() {
   );
   const { getLabelWithMode } = useVendorLabels(flashVendorIds);
 
+  // Lien partagé : scroll automatique sur la vente flash ciblée dès qu'elle est chargée.
+  useEffect(() => {
+    if (!sharedDealId || isLoading) return;
+    const el = document.getElementById(`deal-${sharedDealId}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [sharedDealId, isLoading, data?.flashDeals]);
+
+
   const { data: promoCount = 0 } = usePromoCount();
   const { data: campaigns = [] } = usePromotionCampaigns();
 

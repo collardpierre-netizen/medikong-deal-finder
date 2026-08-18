@@ -11,6 +11,7 @@ import { Upload, FileDown, Loader2, CheckCircle2, AlertTriangle } from "lucide-r
 type ParsedRow = {
   line: number;
   identifier: string;
+  vendorKey: string;
   discountPrice: number | null;
   publicPrice: number | null;
   quantity: number | null;
@@ -19,6 +20,9 @@ type ParsedRow = {
   label: string | null;
   productId?: string;
   productName?: string;
+  vendorId?: string | null;
+  vendorLabel?: string | null;
+  offerId?: string | null;
   currentPrice?: number | null;
   error?: string;
 };
@@ -31,6 +35,12 @@ const HEADER_ALIASES: Record<string, string> = {
   product_id: "identifier",
   produit: "identifier",
   identifiant: "identifier",
+  vendeur: "vendor",
+  fournisseur: "vendor",
+  vendor: "vendor",
+  vendor_id: "vendor",
+  vendor_code: "vendor",
+  code_vendeur: "vendor",
   prix_promo: "discount",
   prix_promo_ttc: "discount",
   discount_price: "discount",

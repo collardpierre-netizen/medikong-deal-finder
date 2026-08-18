@@ -337,7 +337,32 @@ export function FlashDealsBulkImport({ onDone }: { onDone?: () => void }) {
             {invalid.length > 0 && (
               <Badge variant="destructive" className="gap-1"><AlertTriangle size={12} /> {invalid.length} en erreur</Badge>
             )}
+            {invalid.length > 0 && (
+              <Button variant="outline" size="sm" onClick={() => setOnlyErrors((v) => !v)}>
+                {onlyErrors ? "Voir toutes les lignes" : "Voir seulement les erreurs"}
+              </Button>
+            )}
           </div>
+
+          {invalid.length > 0 && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs space-y-1">
+              <p className="font-medium text-destructive">Causes des erreurs</p>
+              {Object.entries(
+                invalid.reduce<Record<string, number>>((acc, r) => {
+                  acc[r.error!] = (acc[r.error!] ?? 0) + 1;
+                  return acc;
+                }, {}),
+              )
+                .sort((a, b) => b[1] - a[1])
+                .map(([msg, count]) => (
+                  <div key={msg} className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">{msg}</span>
+                    <span className="font-medium">{count} ligne(s)</span>
+                  </div>
+                ))}
+            </div>
+          )}
+
 
           <div className="max-h-72 overflow-y-auto border border-border rounded-lg">
             <Table>

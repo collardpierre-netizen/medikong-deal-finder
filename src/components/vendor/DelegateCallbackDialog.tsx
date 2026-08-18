@@ -144,7 +144,8 @@ export default function DelegateCallbackDialog({
       return;
     }
 
-    // Persister les coordonnées sur le compte (best-effort) pour pré-remplir les prochaines demandes
+    // Persister les coordonnées sur le compte pour pré-remplir les prochaines demandes.
+    // L'échec ne bloque pas la demande de rappel, mais il est remonté à l'utilisateur.
     try {
       if (customer?.id) {
         const patch: Record<string, any> = {};
@@ -152,7 +153,17 @@ export default function DelegateCallbackDialog({
         if (parsed.data.postal_code && parsed.data.postal_code !== (customer as any).postal_code) patch.postal_code = parsed.data.postal_code;
         if (parsed.data.company && parsed.data.company !== (customer as any).company_name) patch.company_name = parsed.data.company;
         if (Object.keys(patch).length > 0) {
-          await supabase.from("customers").update(patch as any).eq("id", customer.id);
+          const { error: patchError } = await supabase
+            .from("customers")
+            .update(patch as any)
+            .eq("id", customer.id);
+          if (patchError) {
+            toast({
+              title: "Coordonnées non enregistrées sur votre compte",
+              description: patchError.message,
+              variant: "destructive",
+            });
+          }
         }
       }
       const meta = (user.user_metadata || {}) as any;

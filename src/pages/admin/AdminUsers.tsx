@@ -638,7 +638,18 @@ export default function AdminUsers() {
                             value={buyerDetail.payment_terms_days}
                             onChange={async (e) => {
                               const val = parseInt(e.target.value) || 0;
-                              await supabase.from("customers").update({ payment_terms_days: val }).eq("id", buyerDetail.id);
+                              const { error } = await supabase
+                                .from("customers")
+                                .update({ payment_terms_days: val })
+                                .eq("id", buyerDetail.id);
+                              if (error) {
+                                // Ne jamais afficher une valeur non écrite : on remonte l'erreur
+                                // et on laisse l'état local sur la valeur réellement en base.
+                                toast.error(`Délai de paiement non enregistré : ${error.message}`);
+                                setBuyerDetail((prev: any) => prev ? { ...prev } : prev);
+                                return;
+                              }
+                              toast.success(`Délai de paiement enregistré (${val} jours)`);
                               setBuyerDetail((prev: any) => prev ? { ...prev, payment_terms_days: val } : prev);
                             }}
                           />

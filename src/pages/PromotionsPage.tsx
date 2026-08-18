@@ -61,15 +61,16 @@ function ShareOfferButton({ product, label }: { product: any; label?: string }) 
 }
 
 
-function FlashCountdown({ endsAt }: { endsAt: string }) {
+function FlashCountdown({ endsAt, muted = false }: { endsAt: string; muted?: boolean }) {
   const [remaining, setRemaining] = useState(() => calcRemaining(endsAt));
 
   function calcRemaining(end: string) {
     const diff = Math.max(0, new Date(end).getTime() - Date.now());
-    const h = Math.floor(diff / 3600000);
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
     const m = Math.floor((diff % 3600000) / 60000);
     const s = Math.floor((diff % 60000) / 1000);
-    return { h, m, s, expired: diff <= 0 };
+    return { d, h, m, s, totalHours: Math.floor(diff / 3600000), expired: diff <= 0 };
   }
 
   useEffect(() => {
@@ -77,17 +78,29 @@ function FlashCountdown({ endsAt }: { endsAt: string }) {
     return () => clearInterval(t);
   }, [endsAt]);
 
-  if (remaining.expired) return <span className="text-xs text-destructive font-medium">Expiré</span>;
+  if (remaining.expired) {
+    return <span className={`text-xs font-medium ${muted ? "text-muted-foreground" : "text-destructive"}`}>Expiré</span>;
+  }
+
+  const two = (n: number) => String(n).padStart(2, "0");
+  const label =
+    remaining.d > 0
+      ? `${remaining.d} j ${two(remaining.h)}:${two(remaining.m)}:${two(remaining.s)}`
+      : `${two(remaining.h)}:${two(remaining.m)}:${two(remaining.s)}`;
+
+  // Discret quand le stock est épuisé, ou quand il reste plus de 48 h
+  const discreet = muted || remaining.totalHours >= 48;
 
   return (
-    <div className="flex items-center gap-1 text-xs font-mono">
-      <Timer size={12} className="text-destructive" />
-      <span className="text-destructive font-semibold">
-        {String(remaining.h).padStart(2, "0")}:{String(remaining.m).padStart(2, "0")}:{String(remaining.s).padStart(2, "0")}
+    <div className={`flex items-center gap-1 text-xs font-mono ${discreet ? "text-muted-foreground" : ""}`}>
+      <Timer size={12} className={discreet ? "text-muted-foreground" : "text-destructive"} />
+      <span className={discreet ? "font-medium" : "text-destructive font-semibold"}>
+        {remaining.d > 0 ? `Se termine dans ${label}` : label}
       </span>
     </div>
   );
 }
+
 
 function PromoProductCard({ product, index, flashDeal, vendorLabel }: { product: any; index: number; flashDeal?: any; vendorLabel?: string | null }) {
   const flashBase = flashDeal

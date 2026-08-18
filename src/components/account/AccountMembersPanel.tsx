@@ -349,24 +349,34 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
 
       {/* Members list */}
       <div className="bg-white rounded-lg border border-[#E2E8F0] overflow-hidden">
-        <div className="px-4 py-3 border-b border-[#E2E8F0] bg-[#F8FAFC] flex items-center gap-2">
+        <div className="px-4 py-3 border-b border-[#E2E8F0] bg-[#F8FAFC] flex flex-wrap items-center gap-2">
           <h4 className="text-[12px] font-bold uppercase tracking-wide text-[#616B7C]">Membres actifs</h4>
           <Badge variant="secondary" className="text-[10px]">{members.length}</Badge>
+          <div className="relative ml-auto w-full sm:w-64">
+            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8B95A5]" />
+            <Input
+              value={memberSearch}
+              onChange={(e) => {
+                setMemberSearch(e.target.value);
+                setMemberPage(1);
+              }}
+              placeholder="Rechercher un membre…"
+              className="h-8 pl-8 text-[12px] bg-white"
+            />
+          </div>
         </div>
         {loadingMembers ? (
           <div className="py-8 flex justify-center"><Loader2 className="animate-spin text-[#8B95A5]" size={20} /></div>
         ) : members.length === 0 ? (
           <div className="py-8 text-center text-[12px] text-[#8B95A5]">Aucun membre — invite quelqu'un pour commencer.</div>
+        ) : filteredMembers.length === 0 ? (
+          <div className="py-8 text-center text-[12px] text-[#8B95A5]">Aucun membre ne correspond à « {memberSearch} ».</div>
         ) : (
           <div className="divide-y divide-[#F1F5F9]">
-            {members.map((m) => {
+            {pagedMembers.map((m) => {
               const isOwner = ownerUserId && m.user_id === ownerUserId;
-              const label =
-                m.profile?.full_name ||
-                m.display_name ||
-                m.email ||
-                m.invited_email ||
-                `Utilisateur ${m.user_id.slice(0, 8)}`;
+              const label = memberLabel(m);
+
               return (
                 <div key={m.id} className="px-4 py-3 flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full bg-[#EFF6FF] flex items-center justify-center text-[#1B5BDA] text-[12px] font-bold uppercase">

@@ -69,6 +69,9 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
 
   const [inviteRole, setInviteRole] = useState<Role>("member");
   const [inviteSending, setInviteSending] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [emailStatus, setEmailStatus] = useState<"sent" | "failed" | null>(null);
+
   const [generatedToken, setGeneratedToken] = useState<string | null>(null);
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);

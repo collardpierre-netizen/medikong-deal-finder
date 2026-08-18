@@ -26,7 +26,7 @@ function loadTriggerFunctions(): Row[] {
   const sql = `
     SELECT DISTINCT p.proname,
            c.relname,
-           replace(pg_get_functiondef(p.oid), E'\\n', ' ')
+           replace(pg_get_functiondef(p.oid), E'\\n', E'\\u0002')
     FROM pg_trigger t
     JOIN pg_class c ON c.oid = t.tgrelid
     JOIN pg_namespace cn ON cn.oid = c.relnamespace
@@ -60,7 +60,17 @@ function loadColumns(): Map<string, Set<string>> {
   return map;
 }
 
+/** Retire les commentaires SQL : ils peuvent citer une colonne sans la lire. */
+function stripComments(body: string): string {
+  return body
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .split("\u0002")
+    .map((line) => line.replace(/--.*$/, " "))
+    .join("\n");
+}
+
 function referencedColumns(body: string): string[] {
+  body = stripComments(body);
   const refs = new Set<string>();
   for (const m of body.matchAll(/\b(?:NEW|OLD)\.([a-zA-Z_][a-zA-Z0-9_]*)/gi)) {
     refs.add(m[1].toLowerCase());

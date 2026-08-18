@@ -1,7 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { usePromoProducts, usePromoCount, usePromotionCampaigns, usePromoCategories, usePromoBrands } from "@/hooks/usePromotions";
 import { computeDisplayDiscount, displayReferencePrice } from "@/lib/discount-display";
-import { Tag, TrendingDown, Truck, Calendar, Zap, Timer, Filter, X, SlidersHorizontal, ArrowUpDown, Search, Package } from "lucide-react";
+import { Tag, TrendingDown, Truck, Calendar, Zap, Timer, Filter, X, SlidersHorizontal, ArrowUpDown, Search, Package, Info, Share2, Check } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { ProductImage } from "@/components/shared/ProductCard";
@@ -15,6 +15,50 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatCount } from "@/lib/formatCount";
+import { toast } from "sonner";
+
+/** Mention légale affichée sur les promotions et ventes flash. */
+const PROMO_DISCLAIMER =
+  "Offres valables dans la limite des stocks disponibles et jusqu'à la date de fin indiquée sur chaque offre. Les délais de livraison affichés sont indicatifs et propres à chaque vendeur.";
+
+function ShareOfferButton({ product, label }: { product: any; label?: string }) {
+  const [copied, setCopied] = useState(false);
+  if (!product?.slug) return null;
+
+  const url = `${typeof window !== "undefined" ? window.location.origin : "https://medikong.pro"}/produit/${product.slug}`;
+  const text = `${product.name}${product.brand_name ? ` — ${product.brand_name}` : ""} · Offre MediKong`;
+
+  const onShare = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({ title: product.name, text, url });
+        return;
+      }
+      await navigator.clipboard.writeText(`${text}\n${url}`);
+      setCopied(true);
+      toast.success("Lien copié — partagez-le par email ou message");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* partage annulé */
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={onShare}
+      aria-label={`Partager l'offre ${product.name}`}
+      title="Partager cette offre à un confrère"
+      className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors"
+    >
+      {copied ? <Check size={12} /> : <Share2 size={12} />}
+      {label ?? (copied ? "Lien copié" : "Partager")}
+    </button>
+  );
+}
+
 
 function FlashCountdown({ endsAt }: { endsAt: string }) {
   const [remaining, setRemaining] = useState(() => calcRemaining(endsAt));

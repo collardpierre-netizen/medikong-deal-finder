@@ -141,7 +141,11 @@ function PromoProductCard({ product, index, flashDeal, vendorLabel }: { product:
 
   return (
     <motion.div
-      className="border border-border rounded-lg p-3 relative"
+      id={flashDeal?.id ? `deal-${flashDeal.id}` : undefined}
+      className={`border rounded-lg p-3 relative scroll-mt-28 ${
+        highlighted ? "border-primary ring-2 ring-primary/40 shadow-lg" : "border-border"
+      }`}
+
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.03 }}

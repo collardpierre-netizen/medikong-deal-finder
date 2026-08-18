@@ -1,6 +1,7 @@
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   Sheet,
   SheetContent,
@@ -9,6 +10,18 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Loader2,
   Shield,
@@ -20,9 +33,13 @@ import {
   Ban,
   CheckCircle2,
   Clock,
+  Send,
+  Trash2,
+  AlertCircle,
 } from "lucide-react";
 
 type AccountKind = "vendor" | "buyer";
+type Role = "admin" | "member";
 
 export interface MemberDetailTarget {
   membershipId: string;
@@ -42,7 +59,11 @@ interface Props {
   accountKind: AccountKind;
   accountId: string;
   member: MemberDetailTarget | null;
+  canManage?: boolean;
+  onRevoke?: (membershipId: string) => Promise<void> | void;
+  onUpdateRole?: (membershipId: string, role: Role) => Promise<void> | void;
 }
+
 
 interface TimelineEvent {
   id: string;

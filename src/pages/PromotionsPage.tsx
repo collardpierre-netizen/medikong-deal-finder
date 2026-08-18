@@ -3,7 +3,7 @@ import { usePromoProducts, usePromoCount, usePromotionCampaigns, usePromoCategor
 import { computeDisplayDiscount, displayReferencePrice } from "@/lib/discount-display";
 import { Tag, TrendingDown, Truck, Calendar, Zap, Timer, Filter, X, SlidersHorizontal, ArrowUpDown, Search, Package, Info, Share2, Check } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ProductImage } from "@/components/shared/ProductCard";
 import { formatPrice } from "@/data/mock";
 import { motion } from "framer-motion";

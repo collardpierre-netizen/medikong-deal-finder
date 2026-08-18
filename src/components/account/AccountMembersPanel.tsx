@@ -322,7 +322,12 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
           <div className="divide-y divide-[#F1F5F9]">
             {members.map((m) => {
               const isOwner = ownerUserId && m.user_id === ownerUserId;
-              const label = m.profile?.full_name || m.invited_email || m.user_id.slice(0, 8);
+              const label =
+                m.profile?.full_name ||
+                m.display_name ||
+                m.email ||
+                m.invited_email ||
+                `Utilisateur ${m.user_id.slice(0, 8)}`;
               return (
                 <div key={m.id} className="px-4 py-3 flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full bg-[#EFF6FF] flex items-center justify-center text-[#1B5BDA] text-[12px] font-bold uppercase">

@@ -370,9 +370,9 @@ function PromoProductCard({ product, index, flashDeal, vendorLabel, highlighted 
         </p>
       )}
 
-      <div className="mt-2 pt-2 border-t border-border/60 flex items-center justify-between">
+      <div className="mt-2 pt-2 border-t border-border/60 flex items-center justify-between gap-2 flex-wrap">
         <ShareOfferButton product={product} flashDeal={flashDeal} />
-        <span className="text-[10px] text-muted-foreground">Offre partageable</span>
+        <EmailOfferButton product={product} flashDeal={flashDeal} />
       </div>
 
     </motion.div>

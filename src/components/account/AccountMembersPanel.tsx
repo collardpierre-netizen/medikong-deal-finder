@@ -20,6 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { MemberDetailSheet, type MemberDetailTarget } from "./MemberDetailSheet";
 
 type AccountKind = "vendor" | "buyer";
 type Role = "admin" | "member";
@@ -77,6 +78,7 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
   const [copied, setCopied] = useState<string | null>(null);
   const [resetConfirmTarget, setResetConfirmTarget] = useState<{ userId: string; label: string } | null>(null);
   const [resetResult, setResetResult] = useState<{ success: boolean; email?: string; error?: string } | null>(null);
+  const [detailTarget, setDetailTarget] = useState<MemberDetailTarget | null>(null);
 
   const membersKey = ["account-memberships", accountKind, accountId];
   const invitesKey = ["account-invitations", accountKind, accountId];
@@ -421,16 +423,33 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
                   <div className="w-9 h-9 rounded-full bg-[#EFF6FF] flex items-center justify-center text-[#1B5BDA] text-[12px] font-bold uppercase">
                     {label.slice(0, 2)}
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <button
+                    type="button"
+                    className="flex-1 min-w-0 text-left group"
+                    onClick={() =>
+                      setDetailTarget({
+                        membershipId: m.id,
+                        userId: m.user_id,
+                        label,
+                        email: m.email || m.invited_email || null,
+                        role: m.role,
+                        status: m.status,
+                        createdAt: m.created_at,
+                        acceptedAt: m.accepted_at,
+                        isOwner: !!isOwner,
+                      })
+                    }
+                  >
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[13px] font-semibold text-[#1D2530] truncate">{label}</span>
+                      <span className="text-[13px] font-semibold text-[#1D2530] truncate group-hover:text-[#1B5BDA] group-hover:underline">{label}</span>
                       {roleBadge(m.role)}
                       {isOwner && <Badge className="text-[9px] bg-amber-100 text-amber-800 hover:bg-amber-100">Propriétaire</Badge>}
                     </div>
                     {(m.email || m.invited_email) && (
                       <p className="text-[11px] text-[#8B95A5] truncate">{m.email || m.invited_email}</p>
                     )}
-                  </div>
+                  </button>
+
 
                   {canManage && !isOwner ? (
                     <Select value={m.role} onValueChange={(v) => updateRole.mutate({ id: m.id, role: v as Role })}>
@@ -821,6 +840,13 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <MemberDetailSheet
+        open={!!detailTarget}
+        onOpenChange={(o) => !o && setDetailTarget(null)}
+        accountKind={accountKind}
+        accountId={accountId}
+        member={detailTarget}
+      />
     </div>
   );
 }

@@ -313,16 +313,28 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
   const currentPage = Math.min(memberPage, totalPages);
   const pagedMembers = filteredMembers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  const roleBadge = (role: Role) =>
-    role === "admin" ? (
-      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] font-bold uppercase">
-        <Shield size={10} className="mr-1" /> Admin
-      </Badge>
-    ) : (
-      <Badge variant="outline" className="text-[10px] font-bold uppercase">
-        <UserIcon size={10} className="mr-1" /> Membre
+  const roleBadge = (role?: string | null) => {
+    if (role === "admin") {
+      return (
+        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] font-bold uppercase">
+          <Shield size={10} className="mr-1" /> Admin
+        </Badge>
+      );
+    }
+    if (role === "member") {
+      return (
+        <Badge variant="outline" className="text-[10px] font-bold uppercase">
+          <UserIcon size={10} className="mr-1" /> Membre
+        </Badge>
+      );
+    }
+    return (
+      <Badge variant="outline" className="text-[10px] font-bold uppercase text-[#8B95A5]">
+        <UserIcon size={10} className="mr-1" /> {role || "Rôle inconnu"}
       </Badge>
     );
+  };
+
 
 
   return (

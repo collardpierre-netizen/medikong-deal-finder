@@ -270,6 +270,9 @@ export function FlashDealsBulkImport({ onDone }: { onDone?: () => void }) {
 
   const valid = rows.filter((r) => !r.error);
   const invalid = rows.filter((r) => r.error);
+  const [onlyErrors, setOnlyErrors] = useState(false);
+  const displayedRows = onlyErrors ? invalid : rows;
+
 
   const handleImport = async () => {
     if (valid.length === 0) return;

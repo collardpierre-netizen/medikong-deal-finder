@@ -289,7 +289,10 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
     setInviteEmail("");
     setInviteRole("member");
     setGeneratedToken(null);
+    setInviteError(null);
+    setEmailStatus(null);
   };
+
 
   const closeJoinDialog = () => {
     setShowJoinCode(false);

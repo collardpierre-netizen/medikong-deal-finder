@@ -185,7 +185,7 @@ function PromoProductCard({ product, index, flashDeal, vendorLabel }: { product:
         </p>
       )}
 
-      {flashDeal && <FlashCountdown endsAt={flashDeal.ends_at} />}
+      {flashDeal && <FlashCountdown endsAt={flashDeal.ends_at} muted={flashRemaining === 0} />}
 
       {flashRemaining !== null && (
         <p className={`text-[11px] mt-1 font-medium ${flashRemaining === 0 ? "text-muted-foreground" : "text-amber-600"}`}>

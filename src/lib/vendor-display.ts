@@ -15,7 +15,11 @@ export {
   type VendorDisplayInput,
 } from "../../supabase/functions/_shared/vendor-display";
 
-import type { VendorDisplayInput } from "../../supabase/functions/_shared/vendor-display";
+import {
+  getVendorPublicName as getVendorPublicNameInternal,
+  type VendorDisplayInput,
+} from "../../supabase/functions/_shared/vendor-display";
+
 
 export interface VendorVisibilityRule {
   vendor_id: string;

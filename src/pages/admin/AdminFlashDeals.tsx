@@ -88,7 +88,13 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
               <button
                 key={p.id}
                 className="w-full text-left px-3 py-2 hover:bg-muted text-sm flex justify-between"
-                onClick={() => { setSelectedProduct(p); setSearchResults([]); setProductSearch(p.name); }}
+                onClick={() => {
+                  setSelectedProduct(p);
+                  setSearchResults([]);
+                  setProductSearch(p.name);
+                  if (!publicPrice && p.pvp_ttc_cents) setPublicPrice((p.pvp_ttc_cents / 100).toFixed(2));
+                }}
+
               >
                 <span className="truncate">{p.name}</span>
                 <span className="text-muted-foreground ml-2">{p.best_price_incl_vat?.toFixed(2)} €</span>

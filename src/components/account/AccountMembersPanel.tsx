@@ -840,6 +840,13 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <MemberDetailSheet
+        open={!!detailTarget}
+        onOpenChange={(o) => !o && setDetailTarget(null)}
+        accountKind={accountKind}
+        accountId={accountId}
+        member={detailTarget}
+      />
     </div>
   );
 }

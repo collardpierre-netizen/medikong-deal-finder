@@ -27,6 +27,8 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
   const [startsAt, setStartsAt] = useState(new Date().toISOString().slice(0, 16));
   const [endsAt, setEndsAt] = useState("");
   const [saving, setSaving] = useState(false);
+  const [productOffers, setProductOffers] = useState<any[]>([]);
+  const [selectedOfferId, setSelectedOfferId] = useState<string>("");
 
   const searchProducts = async (q: string) => {
     if (q.length < 2) { setSearchResults([]); return; }
@@ -37,6 +39,18 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
       .ilike("name", `%${q}%`)
       .limit(10);
     setSearchResults(data || []);
+  };
+
+  const loadOffers = async (productId: string) => {
+    const { data } = await supabase
+      .from("offers")
+      .select("id, price_excl_vat, stock_quantity, moq, vendor:vendors(id, name, company_name, display_code)")
+      .eq("product_id", productId)
+      .eq("is_active", true)
+      .order("price_excl_vat", { ascending: true })
+      .limit(50);
+    setProductOffers(data || []);
+    setSelectedOfferId("");
   };
 
   const promo = parseFloat(discountPrice);
@@ -54,9 +68,12 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
       toast.error("Quantité limitée invalide");
       return;
     }
+    const offer = productOffers.find((o) => o.id === selectedOfferId);
     setSaving(true);
     const { error } = await supabase.from("flash_deals").insert({
       product_id: selectedProduct.id,
+      offer_id: offer ? offer.id : null,
+      vendor_id: offer ? offer.vendor?.id ?? null : null,
       discount_price_incl_vat: promo,
       original_price_incl_vat: selectedProduct.best_price_incl_vat || selectedProduct.reference_price || 0,
       public_price_incl_vat: Number.isFinite(pub) ? pub : null,
@@ -65,13 +82,14 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
       ends_at: new Date(endsAt).toISOString(),
       label,
       is_active: true,
-    });
+    } as any);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Flash deal créé !");
     qc.invalidateQueries({ queryKey: ["flash-deals-admin"] });
     onClose();
   };
+
 
 
   return (
@@ -357,7 +375,7 @@ export default function AdminFlashDeals() {
                 })}
                 {flashDeals.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                       Aucun flash deal. Créez-en un !
                     </TableCell>
                   </TableRow>

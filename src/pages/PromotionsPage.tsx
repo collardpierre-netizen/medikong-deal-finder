@@ -154,6 +154,13 @@ function PromoProductCard({ product, index, flashDeal, vendorLabel }: { product:
         </div>
       )}
 
+      {flashRemaining === 0 && (
+        <span className="absolute top-2 right-2 z-10 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-muted text-muted-foreground border border-border">
+          Indisponible
+        </span>
+      )}
+
+
       <Link to={`/produit/${product.slug}`}>
         <div className="aspect-square rounded-lg overflow-hidden bg-muted mb-2">
           <img src={imgSrc} alt={product.name} loading="lazy" className="w-full h-full object-contain p-2" onError={(e) => { e.currentTarget.src = MEDIKONG_PLACEHOLDER; }} />

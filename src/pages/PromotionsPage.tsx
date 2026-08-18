@@ -597,7 +597,9 @@ export default function PromotionsPage() {
                         ? getLabelWithMode(fd.vendor_id, fd.vendor_display_mode || "inherit")
                         : null
                     }
+                    highlighted={sharedDealId === fd.id}
                   />
+
                 ))}
               </div>
             ) : (

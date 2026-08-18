@@ -396,6 +396,13 @@ export default function PromotionsPage() {
       </div>
 
       <div className="mk-container py-6 md:py-8">
+        {/* Mention stocks & validité */}
+        <div className="mb-6 flex items-start gap-2 rounded-lg border border-border bg-muted/40 p-3">
+          <Info size={14} className="mt-0.5 shrink-0 text-muted-foreground" />
+          <p className="text-xs text-muted-foreground leading-relaxed">{PROMO_DISCLAIMER}</p>
+        </div>
+
+
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           {[

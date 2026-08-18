@@ -239,7 +239,7 @@ function PromoProductCard({ product, index, flashDeal, vendorLabel }: { product:
       )}
 
       <div className="mt-2 pt-2 border-t border-border/60 flex items-center justify-between">
-        <ShareOfferButton product={product} />
+        <ShareOfferButton product={product} flashDeal={flashDeal} />
         <span className="text-[10px] text-muted-foreground">Offre partageable</span>
       </div>
 

@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, UserPlus, Trash2, Copy, Check, Shield, User as UserIcon, Mail, Clock, KeyRound, RotateCcw, AlertCircle } from "lucide-react";
+import { Loader2, UserPlus, Trash2, Copy, Check, Shield, User as UserIcon, Mail, Clock, KeyRound, RotateCcw, AlertCircle, Search, ChevronLeft, ChevronRight } from "lucide-react";
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,11 +55,18 @@ interface Invitation {
   created_at: string;
 }
 
+const PAGE_SIZE = 10;
+
 export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUserId }: Props) {
+
   const qc = useQueryClient();
   const [showInvite, setShowInvite] = useState(false);
   const [showJoinCode, setShowJoinCode] = useState(false);
+  const [memberSearch, setMemberSearch] = useState("");
+  const [memberPage, setMemberPage] = useState(1);
   const [inviteEmail, setInviteEmail] = useState("");
+
+
   const [inviteRole, setInviteRole] = useState<Role>("member");
   const [inviteSending, setInviteSending] = useState(false);
   const [generatedToken, setGeneratedToken] = useState<string | null>(null);
@@ -275,6 +283,36 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
     }
   };
 
+  const memberLabel = (m: Membership) =>
+    m.profile?.full_name ||
+    m.display_name ||
+    m.email ||
+    m.invited_email ||
+    `Utilisateur ${m.user_id.slice(0, 8)}`;
+
+  const filteredMembers = useMemo(() => {
+    const q = memberSearch.trim().toLowerCase();
+    if (!q) return members;
+    return members.filter((m) => {
+      const haystack = [
+        memberLabel(m),
+        m.email,
+        m.invited_email,
+        m.display_name,
+        m.profile?.full_name,
+        m.role,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [members, memberSearch]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredMembers.length / PAGE_SIZE));
+  const currentPage = Math.min(memberPage, totalPages);
+  const pagedMembers = filteredMembers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
   const roleBadge = (role: Role) =>
     role === "admin" ? (
       <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] font-bold uppercase">
@@ -285,6 +323,7 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
         <UserIcon size={10} className="mr-1" /> Membre
       </Badge>
     );
+
 
   return (
     <div className="space-y-4">
@@ -310,24 +349,34 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
 
       {/* Members list */}
       <div className="bg-white rounded-lg border border-[#E2E8F0] overflow-hidden">
-        <div className="px-4 py-3 border-b border-[#E2E8F0] bg-[#F8FAFC] flex items-center gap-2">
+        <div className="px-4 py-3 border-b border-[#E2E8F0] bg-[#F8FAFC] flex flex-wrap items-center gap-2">
           <h4 className="text-[12px] font-bold uppercase tracking-wide text-[#616B7C]">Membres actifs</h4>
           <Badge variant="secondary" className="text-[10px]">{members.length}</Badge>
+          <div className="relative ml-auto w-full sm:w-64">
+            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8B95A5]" />
+            <Input
+              value={memberSearch}
+              onChange={(e) => {
+                setMemberSearch(e.target.value);
+                setMemberPage(1);
+              }}
+              placeholder="Rechercher un membre…"
+              className="h-8 pl-8 text-[12px] bg-white"
+            />
+          </div>
         </div>
         {loadingMembers ? (
           <div className="py-8 flex justify-center"><Loader2 className="animate-spin text-[#8B95A5]" size={20} /></div>
         ) : members.length === 0 ? (
           <div className="py-8 text-center text-[12px] text-[#8B95A5]">Aucun membre — invite quelqu'un pour commencer.</div>
+        ) : filteredMembers.length === 0 ? (
+          <div className="py-8 text-center text-[12px] text-[#8B95A5]">Aucun membre ne correspond à « {memberSearch} ».</div>
         ) : (
           <div className="divide-y divide-[#F1F5F9]">
-            {members.map((m) => {
+            {pagedMembers.map((m) => {
               const isOwner = ownerUserId && m.user_id === ownerUserId;
-              const label =
-                m.profile?.full_name ||
-                m.display_name ||
-                m.email ||
-                m.invited_email ||
-                `Utilisateur ${m.user_id.slice(0, 8)}`;
+              const label = memberLabel(m);
+
               return (
                 <div key={m.id} className="px-4 py-3 flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full bg-[#EFF6FF] flex items-center justify-center text-[#1B5BDA] text-[12px] font-bold uppercase">
@@ -383,7 +432,36 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
             })}
           </div>
         )}
+        {!loadingMembers && filteredMembers.length > PAGE_SIZE && (
+          <div className="px-4 py-2.5 border-t border-[#E2E8F0] bg-[#F8FAFC] flex items-center justify-between">
+            <span className="text-[11px] text-[#8B95A5]">
+              {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredMembers.length)} sur {filteredMembers.length}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 px-2"
+                disabled={currentPage <= 1}
+                onClick={() => setMemberPage((p) => Math.max(1, p - 1))}
+              >
+                <ChevronLeft size={14} />
+              </Button>
+              <span className="text-[11px] text-[#616B7C]">Page {currentPage} / {totalPages}</span>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 px-2"
+                disabled={currentPage >= totalPages}
+                onClick={() => setMemberPage((p) => Math.min(totalPages, p + 1))}
+              >
+                <ChevronRight size={14} />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
+
 
       {/* Pending invitations */}
       {canManage && (

@@ -20,6 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { MemberDetailSheet, type MemberDetailTarget } from "./MemberDetailSheet";
 
 type AccountKind = "vendor" | "buyer";
 type Role = "admin" | "member";

@@ -408,7 +408,12 @@ function PromoSidebar({
 }
 
 export default function PromotionsPage() {
-  const [activeFilter, setActiveFilter] = useState<"all" | "20" | "40" | "flash">("all");
+  const [searchParams] = useSearchParams();
+  const sharedDealId = searchParams.get("deal");
+  const [activeFilter, setActiveFilter] = useState<"all" | "20" | "40" | "flash">(
+    searchParams.get("filter") === "flash" || sharedDealId ? "flash" : "all",
+  );
+
   const [categoryId, setCategoryId] = useState<string | undefined>();
   const [brandId, setBrandId] = useState<string | undefined>();
   const [inStockOnly, setInStockOnly] = useState(false);

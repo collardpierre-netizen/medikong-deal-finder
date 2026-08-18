@@ -136,25 +136,45 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
   const inviteByEmail = useMutation({
     mutationFn: async () => {
       setInviteSending(true);
+      setInviteError(null);
+      setEmailStatus(null);
       const email = inviteEmail.trim().toLowerCase();
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        throw new Error("Email invalide");
+        throw new Error("Adresse email invalide — vérifie le format (nom@domaine.com).");
       }
+      // Doublons côté client : membre déjà actif ou invitation déjà en attente.
+      const alreadyMember = members.some(
+        (m) => (m.email || m.invited_email || "").toLowerCase() === email,
+      );
+      if (alreadyMember) {
+        throw new Error(`${email} est déjà membre de ce compte — modifie son rôle dans la liste plutôt que de l'inviter à nouveau.`);
+      }
+      const alreadyInvited = invitations.some((inv) => (inv.email || "").toLowerCase() === email);
+      if (alreadyInvited) {
+        throw new Error(`Une invitation est déjà en attente pour ${email} — révoque-la avant d'en envoyer une nouvelle.`);
+      }
+
       const { data, error } = await supabase.rpc("account_invite_by_email", {
         _kind: accountKind,
         _account_id: accountId,
         _email: email,
         _role: inviteRole,
       });
-      if (error) throw error;
+      if (error) {
+        const raw = (error.message || "").toLowerCase();
+        if (raw.includes("already") || raw.includes("duplicate") || raw.includes("exists") || raw.includes("unique")) {
+          throw new Error(`${email} a déjà un accès ou une invitation en cours sur ce compte.`);
+        }
+        throw new Error(error.message || "Erreur lors de la création de l'invitation.");
+      }
       const row = Array.isArray(data) ? data[0] : data;
       const token = row?.token as string | undefined;
       const invitationId = row?.invitation_id as string | undefined;
-      if (!token) throw new Error("Token manquant");
-      // Best-effort email send
+      if (!token) throw new Error("Invitation créée mais lien indisponible — réessaie.");
+      // Envoi email best-effort, statut remonté à l'utilisateur.
       try {
         const invitationUrl = `${window.location.origin}/account/invitation/${token}`;
-        await supabase.functions.invoke("send-transactional-email", {
+        const { error: mailError } = await supabase.functions.invoke("send-transactional-email", {
           body: {
             templateName: "account-invitation",
             recipientEmail: email,
@@ -167,22 +187,23 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
             },
           },
         });
+        setEmailStatus(mailError ? "failed" : "sent");
       } catch (e) {
-        // best-effort
         console.warn("send-transactional-email failed", e);
+        setEmailStatus("failed");
       }
       setGeneratedToken(token);
       return { token };
     },
     onSuccess: () => {
-      toast.success("Invitation envoyée");
       qc.invalidateQueries({ queryKey: invitesKey });
     },
     onError: (err: any) => {
-      toast.error(err?.message || "Erreur lors de l'invitation");
+      setInviteError(err?.message || "Erreur lors de l'invitation");
     },
     onSettled: () => setInviteSending(false),
   });
+
 
   const createJoinCode = useMutation({
     mutationFn: async () => {

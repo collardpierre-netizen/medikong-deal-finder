@@ -3,7 +3,7 @@ import { usePromoProducts, usePromoCount, usePromotionCampaigns, usePromoCategor
 import { computeDisplayDiscount, displayReferencePrice } from "@/lib/discount-display";
 import { Tag, TrendingDown, Truck, Calendar, Zap, Timer, Filter, X, SlidersHorizontal, ArrowUpDown, Search, Package, Info, Share2, Check } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ProductImage } from "@/components/shared/ProductCard";
 import { formatPrice } from "@/data/mock";
 import { motion } from "framer-motion";
@@ -22,12 +22,18 @@ import { useVendorLabels } from "@/hooks/useVendorLabels";
 const PROMO_DISCLAIMER =
   "Offres valables dans la limite des stocks disponibles et jusqu'à la date de fin indiquée sur chaque offre. Les délais de livraison affichés sont indicatifs et propres à chaque vendeur.";
 
-function ShareOfferButton({ product, label }: { product: any; label?: string }) {
+function ShareOfferButton({ product, label, flashDeal }: { product: any; label?: string; flashDeal?: any }) {
   const [copied, setCopied] = useState(false);
-  if (!product?.slug) return null;
+  if (!product?.slug && !flashDeal?.id) return null;
 
-  const url = `${typeof window !== "undefined" ? window.location.origin : "https://medikong.pro"}/produit/${product.slug}`;
-  const text = `${product.name}${product.brand_name ? ` — ${product.brand_name}` : ""} · Offre MediKong`;
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://medikong.pro";
+  // Lien profond : si c'est une vente flash, on renvoie sur /promotions avec l'id de l'offre
+  // (filtre "flash" pré-appliqué + ancrage/surbrillance sur la bonne carte).
+  const url = flashDeal?.id
+    ? `${origin}/promotions?filter=flash&deal=${encodeURIComponent(flashDeal.id)}${product?.slug ? `&produit=${encodeURIComponent(product.slug)}` : ""}#deal-${flashDeal.id}`
+    : `${origin}/produit/${product.slug}`;
+  const text = `${product.name}${product.brand_name ? ` — ${product.brand_name}` : ""} · ${flashDeal ? "Vente flash" : "Offre"} MediKong`;
+
 
   const onShare = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -102,7 +108,7 @@ function FlashCountdown({ endsAt, muted = false }: { endsAt: string; muted?: boo
 }
 
 
-function PromoProductCard({ product, index, flashDeal, vendorLabel }: { product: any; index: number; flashDeal?: any; vendorLabel?: string | null }) {
+function PromoProductCard({ product, index, flashDeal, vendorLabel, highlighted }: { product: any; index: number; flashDeal?: any; vendorLabel?: string | null; highlighted?: boolean }) {
   const flashBase = flashDeal
     ? (flashDeal.public_price_incl_vat || flashDeal.original_price_incl_vat)
     : null;
@@ -135,7 +141,11 @@ function PromoProductCard({ product, index, flashDeal, vendorLabel }: { product:
 
   return (
     <motion.div
-      className="border border-border rounded-lg p-3 relative"
+      id={flashDeal?.id ? `deal-${flashDeal.id}` : undefined}
+      className={`border rounded-lg p-3 relative scroll-mt-28 ${
+        highlighted ? "border-primary ring-2 ring-primary/40 shadow-lg" : "border-border"
+      }`}
+
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.03 }}
@@ -233,7 +243,7 @@ function PromoProductCard({ product, index, flashDeal, vendorLabel }: { product:
       )}
 
       <div className="mt-2 pt-2 border-t border-border/60 flex items-center justify-between">
-        <ShareOfferButton product={product} />
+        <ShareOfferButton product={product} flashDeal={flashDeal} />
         <span className="text-[10px] text-muted-foreground">Offre partageable</span>
       </div>
 
@@ -398,7 +408,12 @@ function PromoSidebar({
 }
 
 export default function PromotionsPage() {
-  const [activeFilter, setActiveFilter] = useState<"all" | "20" | "40" | "flash">("all");
+  const [searchParams] = useSearchParams();
+  const sharedDealId = searchParams.get("deal");
+  const [activeFilter, setActiveFilter] = useState<"all" | "20" | "40" | "flash">(
+    searchParams.get("filter") === "flash" || sharedDealId ? "flash" : "all",
+  );
+
   const [categoryId, setCategoryId] = useState<string | undefined>();
   const [brandId, setBrandId] = useState<string | undefined>();
   const [inStockOnly, setInStockOnly] = useState(false);
@@ -418,6 +433,14 @@ export default function PromotionsPage() {
     [data?.flashDeals],
   );
   const { getLabelWithMode } = useVendorLabels(flashVendorIds);
+
+  // Lien partagé : scroll automatique sur la vente flash ciblée dès qu'elle est chargée.
+  useEffect(() => {
+    if (!sharedDealId || isLoading) return;
+    const el = document.getElementById(`deal-${sharedDealId}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [sharedDealId, isLoading, data?.flashDeals]);
+
 
   const { data: promoCount = 0 } = usePromoCount();
   const { data: campaigns = [] } = usePromotionCampaigns();
@@ -582,7 +605,9 @@ export default function PromotionsPage() {
                         ? getLabelWithMode(fd.vendor_id, fd.vendor_display_mode || "inherit")
                         : null
                     }
+                    highlighted={sharedDealId === fd.id}
                   />
+
                 ))}
               </div>
             ) : (

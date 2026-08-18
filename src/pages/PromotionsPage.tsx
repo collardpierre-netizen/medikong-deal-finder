@@ -45,8 +45,16 @@ function FlashCountdown({ endsAt }: { endsAt: string }) {
 }
 
 function PromoProductCard({ product, index, flashDeal }: { product: any; index: number; flashDeal?: any }) {
+  const flashBase = flashDeal
+    ? (flashDeal.public_price_incl_vat || flashDeal.original_price_incl_vat)
+    : null;
+
+  const flashRemaining = flashDeal && flashDeal.quantity_total != null
+    ? Math.max(0, flashDeal.quantity_total - (flashDeal.quantity_sold ?? 0))
+    : null;
+
   const discount = flashDeal
-    ? Math.round((1 - flashDeal.discount_price_incl_vat / flashDeal.original_price_incl_vat) * 100)
+    ? Math.round((1 - flashDeal.discount_price_incl_vat / (flashBase || flashDeal.original_price_incl_vat)) * 100)
     : (computeDisplayDiscount({
         bestPriceInclVat: product.best_price_incl_vat,
         pvpTtcCents: product.pvp_ttc_cents,
@@ -57,7 +65,7 @@ function PromoProductCard({ product, index, flashDeal }: { product: any; index: 
     : product.best_price_excl_vat || 0;
 
   const originalPrice = flashDeal
-    ? flashDeal.original_price_incl_vat
+    ? (flashBase || flashDeal.original_price_incl_vat)
     : displayReferencePrice({
         bestPriceInclVat: product.best_price_incl_vat,
         pvpTtcCents: product.pvp_ttc_cents,
@@ -113,7 +121,19 @@ function PromoProductCard({ product, index, flashDeal }: { product: any; index: 
         )}
       </div>
 
+      {flashDeal && originalPrice > currentPrice && (
+        <p className="text-[11px] font-medium text-emerald-600 mb-1">
+          Économie : {formatPrice(originalPrice - currentPrice)} € (-{discount}%) vs prix public
+        </p>
+      )}
+
       {flashDeal && <FlashCountdown endsAt={flashDeal.ends_at} />}
+
+      {flashRemaining !== null && (
+        <p className={`text-[11px] mt-1 font-medium ${flashRemaining === 0 ? "text-muted-foreground" : "text-amber-600"}`}>
+          {flashRemaining === 0 ? "Épuisé" : `Quantité limitée : plus que ${flashRemaining} sur ${flashDeal.quantity_total}`}
+        </p>
+      )}
 
       {product.offer_count > 0 && (
         <p className="text-[11px] text-emerald-600 mt-1">{product.offer_count} vendeur{product.offer_count > 1 ? "s" : ""}</p>

@@ -299,6 +299,17 @@ export default function AdminFlashDeals() {
     toast.success(isActive ? "Flash deal désactivé" : "Flash deal activé");
   };
 
+  const updateVendorDisplayMode = async (id: string, mode: string) => {
+    const { error } = await supabase
+      .from("flash_deals")
+      .update({ vendor_display_mode: mode } as any)
+      .eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    qc.invalidateQueries({ queryKey: ["flash-deals-admin"] });
+    toast.success("Affichage fournisseur mis à jour");
+  };
+
+
   const deleteFlashDeal = async (id: string) => {
     await supabase.from("flash_deals").delete().eq("id", id);
     qc.invalidateQueries({ queryKey: ["flash-deals-admin"] });

@@ -29656,6 +29656,20 @@ export type Database = {
           token: string
         }[]
       }
+      account_list_members: {
+        Args: { _account_id: string; _kind: string }
+        Returns: {
+          accepted_at: string
+          created_at: string
+          display_name: string
+          email: string
+          id: string
+          invited_email: string
+          role: string
+          status: string
+          user_id: string
+        }[]
+      }
       account_revoke_invitation: {
         Args: { _invitation_id: string }
         Returns: undefined

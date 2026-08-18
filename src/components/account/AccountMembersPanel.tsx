@@ -39,6 +39,8 @@ interface Membership {
   accepted_at: string | null;
   created_at: string;
   profile?: { full_name: string | null } | null;
+  display_name?: string | null;
+  email?: string | null;
 }
 
 interface Invitation {
@@ -71,6 +73,20 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
   const { data: members = [], isLoading: loadingMembers } = useQuery({
     queryKey: membersKey,
     queryFn: async (): Promise<Membership[]> => {
+      // RPC serveur : renvoie nom (profiles) + email (compte auth) même quand
+      // la lecture directe de `profiles` est bloquée par les policies.
+      const { data: rpcData, error: rpcError } = await supabase.rpc("account_list_members", {
+        _kind: accountKind,
+        _account_id: accountId,
+      });
+      if (!rpcError && rpcData) {
+        return (rpcData as any[]).map((m) => ({
+          ...m,
+          profile: m.display_name ? { full_name: m.display_name } : null,
+        })) as Membership[];
+      }
+
+      // Fallback : lecture directe si la RPC n'est pas disponible.
       const { data, error } = await supabase
         .from("account_memberships")
         .select("id, user_id, role, status, invited_email, accepted_at, created_at")
@@ -306,7 +322,12 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
           <div className="divide-y divide-[#F1F5F9]">
             {members.map((m) => {
               const isOwner = ownerUserId && m.user_id === ownerUserId;
-              const label = m.profile?.full_name || m.invited_email || m.user_id.slice(0, 8);
+              const label =
+                m.profile?.full_name ||
+                m.display_name ||
+                m.email ||
+                m.invited_email ||
+                `Utilisateur ${m.user_id.slice(0, 8)}`;
               return (
                 <div key={m.id} className="px-4 py-3 flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full bg-[#EFF6FF] flex items-center justify-center text-[#1B5BDA] text-[12px] font-bold uppercase">

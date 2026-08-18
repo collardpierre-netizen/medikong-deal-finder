@@ -217,7 +217,7 @@ export default function VendorSettings() {
           <AccountMembersPanel
             accountKind="vendor"
             accountId={vendor.id}
-            canManage={!!user && user.id === vendor.auth_user_id}
+            canManage={(!!user && user.id === vendor.auth_user_id) || canManageMembers}
             ownerUserId={vendor.auth_user_id ?? null}
           />
         </VCard>

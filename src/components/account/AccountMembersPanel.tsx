@@ -62,7 +62,9 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
   const qc = useQueryClient();
   const [showInvite, setShowInvite] = useState(false);
   const [showJoinCode, setShowJoinCode] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState("");
+  const [memberSearch, setMemberSearch] = useState("");
+  const [memberPage, setMemberPage] = useState(1);
+
   const [inviteRole, setInviteRole] = useState<Role>("member");
   const [inviteSending, setInviteSending] = useState(false);
   const [generatedToken, setGeneratedToken] = useState<string | null>(null);

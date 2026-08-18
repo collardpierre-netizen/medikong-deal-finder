@@ -73,6 +73,20 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
   const { data: members = [], isLoading: loadingMembers } = useQuery({
     queryKey: membersKey,
     queryFn: async (): Promise<Membership[]> => {
+      // RPC serveur : renvoie nom (profiles) + email (compte auth) même quand
+      // la lecture directe de `profiles` est bloquée par les policies.
+      const { data: rpcData, error: rpcError } = await supabase.rpc("account_list_members", {
+        _kind: accountKind,
+        _account_id: accountId,
+      });
+      if (!rpcError && rpcData) {
+        return (rpcData as any[]).map((m) => ({
+          ...m,
+          profile: m.display_name ? { full_name: m.display_name } : null,
+        })) as Membership[];
+      }
+
+      // Fallback : lecture directe si la RPC n'est pas disponible.
       const { data, error } = await supabase
         .from("account_memberships")
         .select("id, user_id, role, status, invited_email, accepted_at, created_at")

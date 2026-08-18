@@ -123,6 +123,7 @@ export function FlashDealsBulkImport({ onDone }: { onDone?: () => void }) {
         return {
           line: i + 2,
           identifier: String(mapped.identifier ?? "").trim(),
+          vendorKey: String(mapped.vendor ?? "").trim(),
           discountPrice: toNumber(mapped.discount),
           publicPrice: toNumber(mapped.public),
           quantity: mapped.quantity === "" || mapped.quantity === undefined ? null : toNumber(mapped.quantity),
@@ -150,6 +151,59 @@ export function FlashDealsBulkImport({ onDone }: { onDone?: () => void }) {
         index.set(String(p.id), p);
       }
 
+      // Résolution vendeurs (id / display_code / nom / raison sociale)
+      const vendorKeys = [...new Set(parsed.map((p) => p.vendorKey).filter(Boolean))];
+      const vendorIndex = new Map<string, any>();
+      if (vendorKeys.length > 0) {
+        const { data: vendors } = await supabase
+          .from("vendors")
+          .select("id, name, company_name, display_code")
+          .or(
+            [
+              `display_code.in.(${vendorKeys.map((k) => `"${k}"`).join(",")})`,
+              `name.in.(${vendorKeys.map((k) => `"${k}"`).join(",")})`,
+              `company_name.in.(${vendorKeys.map((k) => `"${k}"`).join(",")})`,
+            ].join(",")
+          );
+        for (const v of vendors ?? []) {
+          if (v.display_code) vendorIndex.set(String(v.display_code).toLowerCase(), v);
+          if (v.name) vendorIndex.set(String(v.name).toLowerCase(), v);
+          if ((v as any).company_name) vendorIndex.set(String((v as any).company_name).toLowerCase(), v);
+          vendorIndex.set(String(v.id).toLowerCase(), v);
+        }
+        // clés qui ressemblent à un uuid : lookup direct
+        const uuidKeys = vendorKeys.filter((k) => /^[0-9a-f-]{36}$/i.test(k) && !vendorIndex.has(k.toLowerCase()));
+        if (uuidKeys.length > 0) {
+          const { data: byId } = await supabase
+            .from("vendors")
+            .select("id, name, company_name, display_code")
+            .in("id", uuidKeys);
+          for (const v of byId ?? []) vendorIndex.set(String(v.id).toLowerCase(), v);
+        }
+      }
+
+      // Résolution offres actives pour les couples produit × vendeur demandés
+      const productIdsForOffers = [
+        ...new Set(
+          parsed
+            .filter((p) => p.vendorKey && index.get(p.identifier))
+            .map((p) => index.get(p.identifier).id as string)
+        ),
+      ];
+      const offerIndex = new Map<string, any>();
+      if (productIdsForOffers.length > 0) {
+        const { data: offers } = await supabase
+          .from("offers")
+          .select("id, product_id, vendor_id, price_excl_vat")
+          .in("product_id", productIdsForOffers)
+          .eq("is_active", true)
+          .order("price_excl_vat", { ascending: true });
+        for (const o of offers ?? []) {
+          const key = `${o.product_id}|${o.vendor_id}`;
+          if (!offerIndex.has(key)) offerIndex.set(key, o);
+        }
+      }
+
       const resolved = parsed.map((r) => {
         if (!r.identifier) return { ...r, error: "Identifiant produit manquant" };
         const p = index.get(r.identifier);
@@ -158,10 +212,35 @@ export function FlashDealsBulkImport({ onDone }: { onDone?: () => void }) {
         if (!r.endsAt) return { ...r, productId: p.id, productName: p.name, error: "Date de fin manquante" };
         if (r.quantity !== null && (!Number.isInteger(r.quantity) || r.quantity <= 0))
           return { ...r, productId: p.id, productName: p.name, error: "Quantité invalide" };
+
+        let vendorId: string | null = null;
+        let vendorLabel: string | null = null;
+        let offerId: string | null = null;
+        if (r.vendorKey) {
+          const v = vendorIndex.get(r.vendorKey.toLowerCase());
+          if (!v) return { ...r, productId: p.id, productName: p.name, error: "Fournisseur introuvable (code / nom / id)" };
+          vendorId = v.id;
+          vendorLabel = v.company_name || v.name || v.display_code;
+          const offer = offerIndex.get(`${p.id}|${v.id}`);
+          if (!offer)
+            return {
+              ...r,
+              productId: p.id,
+              productName: p.name,
+              vendorId,
+              vendorLabel,
+              error: "Aucune offre active de ce fournisseur sur ce produit",
+            };
+          offerId = offer.id;
+        }
+
         return {
           ...r,
           productId: p.id,
           productName: p.name,
+          vendorId,
+          vendorLabel,
+          offerId,
           currentPrice: p.best_price_incl_vat ?? p.reference_price ?? null,
           publicPrice: r.publicPrice ?? (p.pvp_ttc_cents ? p.pvp_ttc_cents / 100 : null),
         };

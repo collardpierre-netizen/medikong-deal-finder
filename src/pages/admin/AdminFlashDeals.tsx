@@ -20,6 +20,8 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [discountPrice, setDiscountPrice] = useState("");
+  const [publicPrice, setPublicPrice] = useState("");
+  const [quantityTotal, setQuantityTotal] = useState("");
   const [label, setLabel] = useState("Flash");
   const [startsAt, setStartsAt] = useState(new Date().toISOString().slice(0, 16));
   const [endsAt, setEndsAt] = useState("");
@@ -29,23 +31,35 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
     if (q.length < 2) { setSearchResults([]); return; }
     const { data } = await supabase
       .from("products")
-      .select("id, name, brand_name, best_price_incl_vat, reference_price, image_url")
+      .select("id, name, brand_name, best_price_incl_vat, reference_price, image_url, pvp_ttc_cents")
       .eq("is_active", true)
       .ilike("name", `%${q}%`)
       .limit(10);
     setSearchResults(data || []);
   };
 
+  const promo = parseFloat(discountPrice);
+  const pub = parseFloat(publicPrice);
+  const deltaAbs = Number.isFinite(promo) && Number.isFinite(pub) && pub > promo ? pub - promo : null;
+  const deltaPct = deltaAbs !== null ? Math.round((deltaAbs / pub) * 100) : null;
+
   const handleSave = async () => {
     if (!selectedProduct || !discountPrice || !endsAt) {
       toast.error("Remplissez tous les champs obligatoires");
       return;
     }
+    const qty = quantityTotal.trim() === "" ? null : parseInt(quantityTotal, 10);
+    if (qty !== null && (!Number.isInteger(qty) || qty <= 0)) {
+      toast.error("Quantité limitée invalide");
+      return;
+    }
     setSaving(true);
     const { error } = await supabase.from("flash_deals").insert({
       product_id: selectedProduct.id,
-      discount_price_incl_vat: parseFloat(discountPrice),
+      discount_price_incl_vat: promo,
       original_price_incl_vat: selectedProduct.best_price_incl_vat || selectedProduct.reference_price || 0,
+      public_price_incl_vat: Number.isFinite(pub) ? pub : null,
+      quantity_total: qty,
       starts_at: new Date(startsAt).toISOString(),
       ends_at: new Date(endsAt).toISOString(),
       label,
@@ -57,6 +71,7 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
     qc.invalidateQueries({ queryKey: ["flash-deals-admin"] });
     onClose();
   };
+
 
   return (
     <div className="space-y-4">

@@ -100,8 +100,20 @@ function fmt(value?: string | null) {
   });
 }
 
-export function MemberDetailSheet({ open, onOpenChange, accountKind, accountId, member }: Props) {
+export function MemberDetailSheet({
+  open,
+  onOpenChange,
+  accountKind,
+  accountId,
+  member,
+  canManage = false,
+  onRevoke,
+  onUpdateRole,
+}: Props) {
   const email = member?.email?.toLowerCase() ?? null;
+  const qc = useQueryClient();
+  const [pendingRole, setPendingRole] = useState<Role | null>(null);
+  const [confirmRevoke, setConfirmRevoke] = useState(false);
 
   const { data: invitations = [], isLoading } = useQuery({
     queryKey: ["member-detail-invitations", accountKind, accountId, email, member?.userId],

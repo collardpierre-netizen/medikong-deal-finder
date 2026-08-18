@@ -5563,6 +5563,9 @@ export type Database = {
           label: string | null
           original_price_incl_vat: number
           product_id: string
+          public_price_incl_vat: number | null
+          quantity_sold: number
+          quantity_total: number | null
           starts_at: string
           updated_at: string
         }
@@ -5577,6 +5580,9 @@ export type Database = {
           label?: string | null
           original_price_incl_vat: number
           product_id: string
+          public_price_incl_vat?: number | null
+          quantity_sold?: number
+          quantity_total?: number | null
           starts_at: string
           updated_at?: string
         }
@@ -5591,6 +5597,9 @@ export type Database = {
           label?: string | null
           original_price_incl_vat?: number
           product_id?: string
+          public_price_incl_vat?: number | null
+          quantity_sold?: number
+          quantity_total?: number | null
           starts_at?: string
           updated_at?: string
         }

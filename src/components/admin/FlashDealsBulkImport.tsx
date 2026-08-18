@@ -18,6 +18,7 @@ type ParsedRow = {
   startsAt: string | null;
   endsAt: string | null;
   label: string | null;
+  vendorDisplayMode: "inherit" | "anonymous" | "real";
   productId?: string;
   productName?: string;
   vendorId?: string | null;
@@ -61,6 +62,10 @@ const HEADER_ALIASES: Record<string, string> = {
   ends_at: "ends",
   label: "label",
   libelle: "label",
+  affichage_vendeur: "vendorDisplay",
+  affichage_fournisseur: "vendorDisplay",
+  vendor_display_mode: "vendorDisplay",
+  anonymisation: "vendorDisplay",
   libellé: "label",
 };
 
@@ -72,6 +77,13 @@ function toNumber(v: any): number | null {
   if (v === null || v === undefined || v === "") return null;
   const n = parseFloat(String(v).replace(/\s/g, "").replace(",", "."));
   return Number.isFinite(n) ? n : null;
+}
+
+function parseVendorDisplayMode(v: any): "inherit" | "anonymous" | "real" {
+  const s = String(v ?? "").trim().toLowerCase();
+  if (["anonyme", "anonymous", "anonymise", "anonymisé", "oui", "1", "true"].includes(s)) return "anonymous";
+  if (["reel", "réel", "real", "nom_reel", "nom réel", "non", "0", "false"].includes(s)) return "real";
+  return "inherit";
 }
 
 function toIso(v: any): string | null {
@@ -97,8 +109,8 @@ export function FlashDealsBulkImport({ onDone }: { onDone?: () => void }) {
 
   const downloadTemplate = () => {
     const ws = XLSX.utils.aoa_to_sheet([
-      ["gtin", "vendeur", "prix_promo_ttc", "prix_public_ttc", "quantite", "debut", "fin", "label"],
-      ["5400000000001", "", "12,90", "19,90", "50", "18/08/2026 09:00", "20/08/2026 23:59", "Flash -35%"],
+      ["gtin", "vendeur", "prix_promo_ttc", "prix_public_ttc", "quantite", "debut", "fin", "label", "affichage_vendeur"],
+      ["5400000000001", "", "12,90", "19,90", "50", "18/08/2026 09:00", "20/08/2026 23:59", "Flash -35%", "heriter"],
     ]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "flash_deals");
@@ -130,6 +142,7 @@ export function FlashDealsBulkImport({ onDone }: { onDone?: () => void }) {
           startsAt: toIso(mapped.starts) ?? new Date().toISOString(),
           endsAt: toIso(mapped.ends),
           label: mapped.label ? String(mapped.label).trim() : "Flash",
+          vendorDisplayMode: parseVendorDisplayMode(mapped.vendorDisplay),
         };
       });
 
@@ -272,6 +285,7 @@ export function FlashDealsBulkImport({ onDone }: { onDone?: () => void }) {
       starts_at: r.startsAt,
       ends_at: r.endsAt,
       label: r.label,
+      vendor_display_mode: r.vendorDisplayMode,
       is_active: true,
     }));
     const { error } = await supabase.from("flash_deals").insert(payload as any);
@@ -291,7 +305,8 @@ export function FlashDealsBulkImport({ onDone }: { onDone?: () => void }) {
         <p className="text-muted-foreground text-xs leading-relaxed">
           <strong>gtin</strong> (ou slug / product_id), <strong>vendeur</strong> (facultatif — code, nom ou id ; vide = tous les fournisseurs),{" "}
           <strong>prix_promo_ttc</strong>, <strong>prix_public_ttc</strong> (facultatif — repris du PVP si vide),{" "}
-          <strong>quantite</strong> (facultatif — vide = illimitée), <strong>debut</strong> (facultatif — maintenant si vide), <strong>fin</strong>, <strong>label</strong>.
+          <strong>quantite</strong> (facultatif — vide = illimitée), <strong>debut</strong> (facultatif — maintenant si vide), <strong>fin</strong>, <strong>label</strong>,{" "}
+          <strong>affichage_vendeur</strong> (facultatif — <em>heriter</em> par défaut, ou <em>anonyme</em> / <em>reel</em>).
         </p>
         <p className="text-muted-foreground text-xs mt-1">
           L'import ne crée aucune offre catalogue : il faut une offre active existante (celle du fournisseur si la colonne <strong>vendeur</strong> est remplie).

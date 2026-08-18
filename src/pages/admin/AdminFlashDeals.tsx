@@ -29,6 +29,7 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
   const [saving, setSaving] = useState(false);
   const [productOffers, setProductOffers] = useState<any[]>([]);
   const [selectedOfferId, setSelectedOfferId] = useState<string>("");
+  const [vendorDisplayMode, setVendorDisplayMode] = useState<"inherit" | "anonymous" | "real">("inherit");
 
   const searchProducts = async (q: string) => {
     if (q.length < 2) { setSearchResults([]); return; }
@@ -78,6 +79,7 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
       original_price_incl_vat: selectedProduct.best_price_incl_vat || selectedProduct.reference_price || 0,
       public_price_incl_vat: Number.isFinite(pub) ? pub : null,
       quantity_total: qty,
+      vendor_display_mode: vendorDisplayMode,
       starts_at: new Date(startsAt).toISOString(),
       ends_at: new Date(endsAt).toISOString(),
       label,
@@ -152,6 +154,22 @@ function FlashDealForm({ onClose }: { onClose: () => void }) {
               ? "Aucune offre active sur ce produit — la vente flash sera visible mais non commandable."
               : "Vide = la promo s'applique à l'offre retenue automatiquement. Le MOQ/MOV du fournisseur reste appliqué au panier."}
           </p>
+
+          <div className="mt-3">
+            <Label>Affichage du fournisseur côté acheteur</Label>
+            <select
+              className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+              value={vendorDisplayMode}
+              onChange={(e) => setVendorDisplayMode(e.target.value as any)}
+            >
+              <option value="inherit">Hériter de la fiche fournisseur (règles de visibilité)</option>
+              <option value="anonymous">Toujours anonymisé (« Fournisseur XXXXXX »)</option>
+              <option value="real">Nom réel affiché</option>
+            </select>
+            <p className="text-xs text-muted-foreground mt-1">
+              « Hériter » respecte le réglage du fournisseur et les règles pays / profil acheteur du CMS.
+            </p>
+          </div>
         </div>
       )}
 
@@ -281,6 +299,17 @@ export default function AdminFlashDeals() {
     toast.success(isActive ? "Flash deal désactivé" : "Flash deal activé");
   };
 
+  const updateVendorDisplayMode = async (id: string, mode: string) => {
+    const { error } = await supabase
+      .from("flash_deals")
+      .update({ vendor_display_mode: mode } as any)
+      .eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    qc.invalidateQueries({ queryKey: ["flash-deals-admin"] });
+    toast.success("Affichage fournisseur mis à jour");
+  };
+
+
   const deleteFlashDeal = async (id: string) => {
     await supabase.from("flash_deals").delete().eq("id", id);
     qc.invalidateQueries({ queryKey: ["flash-deals-admin"] });
@@ -335,6 +364,7 @@ export default function AdminFlashDeals() {
                 <TableRow>
                   <TableHead>Produit</TableHead>
                   <TableHead>Fournisseur</TableHead>
+                  <TableHead>Affichage</TableHead>
                   <TableHead>Prix original</TableHead>
                   <TableHead>Prix promo</TableHead>
                   <TableHead>Prix public</TableHead>
@@ -364,6 +394,17 @@ export default function AdminFlashDeals() {
                           ? (fd.vendor.company_name || fd.vendor.name || fd.vendor.display_code)
                           : <span className="text-muted-foreground">Tous</span>}
                         {fd.offer_id && <Badge variant="outline" className="ml-1 text-[10px]">offre ciblée</Badge>}
+                      </TableCell>
+                      <TableCell>
+                        <select
+                          className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                          value={fd.vendor_display_mode || "inherit"}
+                          onChange={(e) => updateVendorDisplayMode(fd.id, e.target.value)}
+                        >
+                          <option value="inherit">Hériter</option>
+                          <option value="anonymous">Anonymisé</option>
+                          <option value="real">Nom réel</option>
+                        </select>
                       </TableCell>
                       <TableCell>{fd.original_price_incl_vat?.toFixed(2)} €</TableCell>
                       <TableCell className="font-bold text-destructive">{fd.discount_price_incl_vat?.toFixed(2)} €</TableCell>
@@ -401,7 +442,7 @@ export default function AdminFlashDeals() {
                 })}
                 {flashDeals.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                       Aucun flash deal. Créez-en un !
                     </TableCell>
                   </TableRow>

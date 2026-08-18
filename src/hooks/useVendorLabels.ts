@@ -6,8 +6,11 @@ import { useCurrentBuyerProfile } from "@/hooks/useCurrentBuyerProfile";
 import {
   getVendorPublicName,
   resolveVendorLabel,
+  resolveVendorLabelWithMode,
+  type VendorDisplayMode,
   type VendorVisibilityRule,
 } from "@/lib/vendor-display";
+
 
 /**
  * 🟢 Résolution unifiée du libellé vendeur pour les surfaces acheteur
@@ -86,5 +89,32 @@ export function useVendorLabels(vendorIds: Array<string | null | undefined>) {
     return "Vendeur";
   };
 
-  return { labelsById, getLabel };
+  /**
+   * Variante pilotée par un mode d'affichage porté par la surface
+   * (ex. `flash_deals.vendor_display_mode`) : `inherit` retombe sur la
+   * résolution CMS standard, `anonymous`/`real` forcent le rendu.
+   */
+  const getLabelWithMode = (
+    vendorId: string | null | undefined,
+    mode: VendorDisplayMode | null | undefined,
+    fallbackName?: string | null,
+  ): string => {
+    const v = (data?.vendors || []).find((x: any) => x.id === vendorId);
+    if (!v) return getLabel(vendorId, fallbackName);
+    return resolveVendorLabelWithMode(
+      {
+        id: v.id,
+        display_code: v.display_code,
+        name: v.name,
+        company_name: v.company_name,
+        show_real_name: v.show_real_name,
+      },
+      data?.rules || [],
+      { country: country || undefined, customerType: buyerProfileId || undefined },
+      mode,
+    );
+  };
+
+  return { labelsById, getLabel, getLabelWithMode };
+
 }

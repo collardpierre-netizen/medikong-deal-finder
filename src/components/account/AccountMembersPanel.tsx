@@ -313,16 +313,28 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
   const currentPage = Math.min(memberPage, totalPages);
   const pagedMembers = filteredMembers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  const roleBadge = (role: Role) =>
-    role === "admin" ? (
-      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] font-bold uppercase">
-        <Shield size={10} className="mr-1" /> Admin
-      </Badge>
-    ) : (
-      <Badge variant="outline" className="text-[10px] font-bold uppercase">
-        <UserIcon size={10} className="mr-1" /> Membre
+  const roleBadge = (role?: string | null) => {
+    if (role === "admin") {
+      return (
+        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] font-bold uppercase">
+          <Shield size={10} className="mr-1" /> Admin
+        </Badge>
+      );
+    }
+    if (role === "member") {
+      return (
+        <Badge variant="outline" className="text-[10px] font-bold uppercase">
+          <UserIcon size={10} className="mr-1" /> Membre
+        </Badge>
+      );
+    }
+    return (
+      <Badge variant="outline" className="text-[10px] font-bold uppercase text-[#8B95A5]">
+        <UserIcon size={10} className="mr-1" /> {role || "Rôle inconnu"}
       </Badge>
     );
+  };
+
 
 
   return (
@@ -383,14 +395,16 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
                     {label.slice(0, 2)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-[13px] font-semibold text-[#1D2530] truncate">{label}</span>
+                      {roleBadge(m.role)}
                       {isOwner && <Badge className="text-[9px] bg-amber-100 text-amber-800 hover:bg-amber-100">Propriétaire</Badge>}
                     </div>
-                    {m.invited_email && (
-                      <p className="text-[11px] text-[#8B95A5] truncate">{m.invited_email}</p>
+                    {(m.email || m.invited_email) && (
+                      <p className="text-[11px] text-[#8B95A5] truncate">{m.email || m.invited_email}</p>
                     )}
                   </div>
+
                   {canManage && !isOwner ? (
                     <Select value={m.role} onValueChange={(v) => updateRole.mutate({ id: m.id, role: v as Role })}>
                       <SelectTrigger className="w-[110px] h-8 text-[11px]">

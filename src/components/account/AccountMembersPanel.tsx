@@ -69,6 +69,9 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
 
   const [inviteRole, setInviteRole] = useState<Role>("member");
   const [inviteSending, setInviteSending] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [emailStatus, setEmailStatus] = useState<"sent" | "failed" | null>(null);
+
   const [generatedToken, setGeneratedToken] = useState<string | null>(null);
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
@@ -136,25 +139,45 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
   const inviteByEmail = useMutation({
     mutationFn: async () => {
       setInviteSending(true);
+      setInviteError(null);
+      setEmailStatus(null);
       const email = inviteEmail.trim().toLowerCase();
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        throw new Error("Email invalide");
+        throw new Error("Adresse email invalide — vérifie le format (nom@domaine.com).");
       }
+      // Doublons côté client : membre déjà actif ou invitation déjà en attente.
+      const alreadyMember = members.some(
+        (m) => (m.email || m.invited_email || "").toLowerCase() === email,
+      );
+      if (alreadyMember) {
+        throw new Error(`${email} est déjà membre de ce compte — modifie son rôle dans la liste plutôt que de l'inviter à nouveau.`);
+      }
+      const alreadyInvited = invitations.some((inv) => (inv.email || "").toLowerCase() === email);
+      if (alreadyInvited) {
+        throw new Error(`Une invitation est déjà en attente pour ${email} — révoque-la avant d'en envoyer une nouvelle.`);
+      }
+
       const { data, error } = await supabase.rpc("account_invite_by_email", {
         _kind: accountKind,
         _account_id: accountId,
         _email: email,
         _role: inviteRole,
       });
-      if (error) throw error;
+      if (error) {
+        const raw = (error.message || "").toLowerCase();
+        if (raw.includes("already") || raw.includes("duplicate") || raw.includes("exists") || raw.includes("unique")) {
+          throw new Error(`${email} a déjà un accès ou une invitation en cours sur ce compte.`);
+        }
+        throw new Error(error.message || "Erreur lors de la création de l'invitation.");
+      }
       const row = Array.isArray(data) ? data[0] : data;
       const token = row?.token as string | undefined;
       const invitationId = row?.invitation_id as string | undefined;
-      if (!token) throw new Error("Token manquant");
-      // Best-effort email send
+      if (!token) throw new Error("Invitation créée mais lien indisponible — réessaie.");
+      // Envoi email best-effort, statut remonté à l'utilisateur.
       try {
         const invitationUrl = `${window.location.origin}/account/invitation/${token}`;
-        await supabase.functions.invoke("send-transactional-email", {
+        const { error: mailError } = await supabase.functions.invoke("send-transactional-email", {
           body: {
             templateName: "account-invitation",
             recipientEmail: email,
@@ -167,22 +190,23 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
             },
           },
         });
+        setEmailStatus(mailError ? "failed" : "sent");
       } catch (e) {
-        // best-effort
         console.warn("send-transactional-email failed", e);
+        setEmailStatus("failed");
       }
       setGeneratedToken(token);
       return { token };
     },
     onSuccess: () => {
-      toast.success("Invitation envoyée");
       qc.invalidateQueries({ queryKey: invitesKey });
     },
     onError: (err: any) => {
-      toast.error(err?.message || "Erreur lors de l'invitation");
+      setInviteError(err?.message || "Erreur lors de l'invitation");
     },
     onSettled: () => setInviteSending(false),
   });
+
 
   const createJoinCode = useMutation({
     mutationFn: async () => {
@@ -265,7 +289,10 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
     setInviteEmail("");
     setInviteRole("member");
     setGeneratedToken(null);
+    setInviteError(null);
+    setEmailStatus(null);
   };
+
 
   const closeJoinDialog = () => {
     setShowJoinCode(false);
@@ -541,8 +568,13 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
                   id="invite-email"
                   type="email"
                   value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
+                  onChange={(e) => {
+                    setInviteEmail(e.target.value);
+                    if (inviteError) setInviteError(null);
+                  }}
                   placeholder="utilisateur@exemple.com"
+                  aria-invalid={!!inviteError}
+                  className={inviteError ? "border-destructive" : undefined}
                   autoFocus
                 />
               </div>
@@ -558,6 +590,48 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Récapitulatif des permissions accordées */}
+              <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Shield size={13} className="text-[#1B5BDA]" />
+                  <span className="text-[12px] font-bold text-[#1D2530]">
+                    Ce que pourra faire cet utilisateur ({inviteRole === "admin" ? "Admin" : "Membre"})
+                  </span>
+                </div>
+                <ul className="space-y-1 text-[11px] text-[#616B7C]">
+                  {(inviteRole === "admin"
+                    ? [
+                        "Accès complet au portail de ce compte",
+                        accountKind === "vendor"
+                          ? "Gérer le catalogue, les offres, les commandes et les demandes de prix"
+                          : "Commander, gérer les demandes de prix et les documents",
+                        "Modifier les paramètres du compte",
+                        "Inviter, retirer et changer le rôle des autres utilisateurs",
+                      ]
+                    : [
+                        "Accès au portail de ce compte",
+                        accountKind === "vendor"
+                          ? "Gérer le catalogue, les offres, les commandes et les demandes de prix"
+                          : "Commander et suivre les demandes de prix",
+                        "Ne peut pas gérer les utilisateurs ni les accès",
+                      ]
+                  ).map((line) => (
+                    <li key={line} className="flex items-start gap-1.5">
+                      <Check size={11} className="mt-0.5 shrink-0 text-[#1B5BDA]" />
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {inviteError && (
+                <div role="alert" className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                  <AlertCircle size={14} className="mt-0.5 shrink-0 text-destructive" />
+                  <p className="text-[12px] text-destructive">{inviteError}</p>
+                </div>
+              )}
+
               <p className="text-[11px] text-[#8B95A5]">
                 Un email d'invitation sera envoyé. L'invité doit cliquer sur le lien et se connecter avec cet email exact.
               </p>
@@ -565,15 +639,28 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
                 <Button variant="outline" onClick={closeInviteDialog}>Annuler</Button>
                 <Button onClick={() => inviteByEmail.mutate()} disabled={inviteSending}>
                   {inviteSending ? <Loader2 className="animate-spin mr-2" size={14} /> : <Mail className="mr-2" size={14} />}
-                  Envoyer l'invitation
+                  {inviteSending ? "Envoi en cours…" : "Envoyer l'invitation"}
                 </Button>
               </DialogFooter>
             </div>
           ) : (
             <div className="space-y-4">
-              <p className="text-[13px] text-[#1D2530]">
-                Invitation envoyée à <strong>{inviteEmail}</strong>. Tu peux aussi partager le lien direct :
-              </p>
+              {emailStatus === "sent" ? (
+                <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+                  <Check size={14} className="mt-0.5 shrink-0 text-emerald-700" />
+                  <p className="text-[12px] text-emerald-800">
+                    Email d'invitation envoyé à <strong>{inviteEmail}</strong> (rôle {inviteRole === "admin" ? "Admin" : "Membre"}).
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                  <AlertCircle size={14} className="mt-0.5 shrink-0 text-amber-700" />
+                  <p className="text-[12px] text-amber-800">
+                    Invitation créée, mais l'email n'a pas pu être envoyé à <strong>{inviteEmail}</strong>. Partage le lien ci-dessous manuellement.
+                  </p>
+                </div>
+              )}
+              <p className="text-[12px] text-[#616B7C]">Lien direct d'invitation :</p>
               <div className="flex gap-2">
                 <Input
                   readOnly
@@ -593,6 +680,7 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
               </DialogFooter>
             </div>
           )}
+
         </DialogContent>
       </Dialog>
 

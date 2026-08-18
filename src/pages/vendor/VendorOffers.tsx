@@ -683,7 +683,7 @@ function useOfferImport(vendorId: string | undefined) {
           product_id: productId,
           price_excl_vat: priceExcl,
           price_incl_vat: priceIncl,
-          purchase_price: purchasePrice,
+          ...(purchasePrice !== null ? { purchase_price: purchasePrice } : {}),
           vat_rate: vatRate,
           stock_quantity: stock,
           moq: parseInt(row["MOQ"] || row["moq"] || "1") || 1,

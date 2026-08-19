@@ -70,6 +70,15 @@ export default function AdminNotificationDetail() {
     enabled: !!id,
   });
 
+  const { data: target } = useQuery({
+    queryKey: ["admin-notification-target", id],
+    queryFn: () => resolveNotificationTarget(data!),
+    enabled: !!data,
+    staleTime: 60_000,
+  });
+
+
+
   const markRead = useMutation({
     mutationFn: async () => {
       const { error } = await (supabase.rpc as any)("admin_notifications_mark_read", { _id: id });

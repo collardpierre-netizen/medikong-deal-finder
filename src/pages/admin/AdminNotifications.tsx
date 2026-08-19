@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { resolveNotificationTargets, type NotifTarget } from "@/lib/admin-notification-target";
+
 
 interface AdminNotif {
   id: string;
@@ -44,9 +46,18 @@ function severityColor(sev: string) {
   return "bg-blue-100 text-blue-700 border-blue-200";
 }
 
-function NotificationItem({ n, onMarkRead }: { n: AdminNotif; onMarkRead: (id: string) => void }) {
+function NotificationItem({
+  n,
+  target,
+  onMarkRead,
+}: {
+  n: AdminNotif;
+  target?: NotifTarget;
+  onMarkRead: (id: string) => void;
+}) {
   const Icon = typeIcon(n.type);
   const unread = !n.read_at;
+  const href = target?.url ?? n.cta_url;
   return (
     <div className={cn(
       "p-4 border rounded-lg transition flex items-start gap-3",
@@ -63,6 +74,11 @@ function NotificationItem({ n, onMarkRead }: { n: AdminNotif; onMarkRead: (id: s
           <div className="min-w-0">
             <p className="text-sm font-semibold">{n.title}</p>
             {n.body && <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{n.body}</p>}
+            {target?.label && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Commande <span className="font-mono">{target.label}</span>
+              </p>
+            )}
           </div>
           <Badge variant="outline" className="shrink-0 text-[10px] capitalize">{n.type.replace(/_/g, " ")}</Badge>
         </div>
@@ -74,9 +90,11 @@ function NotificationItem({ n, onMarkRead }: { n: AdminNotif; onMarkRead: (id: s
             <Button variant="link" size="sm" className="h-auto p-0 text-xs" asChild>
               <Link to={`/admin/notifications/${n.id}`} onClick={() => unread && onMarkRead(n.id)}>Détails</Link>
             </Button>
-            {n.cta_url && (
+            {href && (
               <Button variant="link" size="sm" className="h-auto p-0 text-xs" asChild>
-                <Link to={n.cta_url} onClick={() => unread && onMarkRead(n.id)}>Voir →</Link>
+                <Link to={href} onClick={() => unread && onMarkRead(n.id)}>
+                  {target?.deep ? "Ouvrir la commande →" : "Voir →"}
+                </Link>
               </Button>
             )}
             {unread && (
@@ -90,6 +108,7 @@ function NotificationItem({ n, onMarkRead }: { n: AdminNotif; onMarkRead: (id: s
     </div>
   );
 }
+
 
 export default function AdminNotifications() {
   const qc = useQueryClient();
@@ -108,7 +127,15 @@ export default function AdminNotifications() {
     refetchInterval: 30_000,
   });
 
+  const { data: targets = {} } = useQuery({
+    queryKey: ["admin-notification-targets", notifs.map((n) => n.id).join(",")],
+    queryFn: () => resolveNotificationTargets(notifs),
+    enabled: notifs.length > 0,
+    staleTime: 60_000,
+  });
+
   const unreadCount = useMemo(() => notifs.filter((n) => !n.read_at).length, [notifs]);
+
 
   const markRead = useMutation({
     mutationFn: async (id: string) => {
@@ -195,7 +222,7 @@ export default function AdminNotifications() {
             </Card>
           ) : (
             notifs.map((n) => (
-              <NotificationItem key={n.id} n={n} onMarkRead={(id) => markRead.mutate(id)} />
+              <NotificationItem key={n.id} n={n} target={targets[n.id]} onMarkRead={(id) => markRead.mutate(id)} />
             ))
           )}
         </TabsContent>

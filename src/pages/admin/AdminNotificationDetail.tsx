@@ -15,6 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { resolveNotificationTarget } from "@/lib/admin-notification-target";
+
 
 interface AdminNotif {
   id: string;
@@ -68,6 +70,15 @@ export default function AdminNotificationDetail() {
     enabled: !!id,
   });
 
+  const { data: target } = useQuery({
+    queryKey: ["admin-notification-target", id],
+    queryFn: () => resolveNotificationTarget(data!),
+    enabled: !!data,
+    staleTime: 60_000,
+  });
+
+
+
   const markRead = useMutation({
     mutationFn: async () => {
       const { error } = await (supabase.rpc as any)("admin_notifications_mark_read", { _id: id });
@@ -120,13 +131,17 @@ export default function AdminNotificationDetail() {
           <ArrowLeft size={14} /> Retour aux notifications
         </Button>
         <div className="flex items-center gap-2">
-          {n.cta_url && (
+          {(target?.url ?? n.cta_url) && (
             <Button size="sm" className="gap-2" asChild>
-              <Link to={n.cta_url}>
-                Ouvrir l'élément lié <ExternalLink size={14} />
+              <Link to={(target?.url ?? n.cta_url) as string}>
+                {target?.deep
+                  ? `Ouvrir la commande${target.label ? ` ${target.label}` : ""}`
+                  : "Ouvrir l'élément lié"}{" "}
+                <ExternalLink size={14} />
               </Link>
             </Button>
           )}
+
           {unread && (
             <Button variant="outline" size="sm" className="gap-2" onClick={() => markRead.mutate()} disabled={markRead.isPending}>
               {markRead.isPending ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
@@ -202,7 +217,12 @@ export default function AdminNotificationDetail() {
               <div className="sm:col-span-2">
                 <dt className="text-xs text-muted-foreground">Lien d'action</dt>
                 <dd>
-                  {n.cta_url ? (
+                  {target?.deep ? (
+                    <Link to={target.url} className="text-primary hover:underline break-all">
+                      {target.url}
+                      {target.label && <span className="text-muted-foreground ml-2">({target.label})</span>}
+                    </Link>
+                  ) : n.cta_url ? (
                     isHttpUrl(n.cta_url) ? (
                       <a href={n.cta_url} target="_blank" rel="noreferrer" className="text-primary hover:underline break-all">
                         {n.cta_url}
@@ -215,6 +235,7 @@ export default function AdminNotificationDetail() {
                   )}
                 </dd>
               </div>
+
             </dl>
           </section>
 

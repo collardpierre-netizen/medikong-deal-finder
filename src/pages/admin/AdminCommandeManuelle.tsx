@@ -471,8 +471,9 @@ const AdminCommandeManuelle = () => {
         unit_price_excl_vat: l.unit_price_excl_vat,
         vat_rate: l.vat_rate,
         unit_cost_excl_vat: l.unit_cost_excl_vat || "",
+        // Exclusivité stricte : soit un %, soit un montant fixe €/unité, jamais les deux.
         commission_rate: l.commission_rate || "",
-        commission_amount: l.commission_amount || "",
+        commission_amount: String(l.commission_rate ?? "").trim() !== "" ? "" : (l.commission_amount || ""),
         commission_basis: l.commission_basis ?? "ca",
         gtin: l.gtin ?? null,
         cnk_code: l.cnk_code ?? null,

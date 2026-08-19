@@ -131,13 +131,17 @@ export default function AdminNotificationDetail() {
           <ArrowLeft size={14} /> Retour aux notifications
         </Button>
         <div className="flex items-center gap-2">
-          {n.cta_url && (
+          {(target?.url ?? n.cta_url) && (
             <Button size="sm" className="gap-2" asChild>
-              <Link to={n.cta_url}>
-                Ouvrir l'élément lié <ExternalLink size={14} />
+              <Link to={(target?.url ?? n.cta_url) as string}>
+                {target?.deep
+                  ? `Ouvrir la commande${target.label ? ` ${target.label}` : ""}`
+                  : "Ouvrir l'élément lié"}{" "}
+                <ExternalLink size={14} />
               </Link>
             </Button>
           )}
+
           {unread && (
             <Button variant="outline" size="sm" className="gap-2" onClick={() => markRead.mutate()} disabled={markRead.isPending}>
               {markRead.isPending ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}

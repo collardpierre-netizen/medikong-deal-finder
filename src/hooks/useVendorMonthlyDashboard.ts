@@ -126,7 +126,7 @@ export function useVendorMonthlyDashboard(
       const { data, error } = await supabase
         .from("order_lines")
         .select(
-          `product_id, quantity, line_total_incl_vat, line_total_excl_vat, line_margin, commission_amount, commission_basis,
+          `product_id, quantity, line_total_incl_vat, line_total_excl_vat, line_margin, commission_amount, commission_computed, commission_basis,
            products:product_id ( name ),
            orders!inner ( ${VENDOR_GMV_ORDER_COLUMNS}, source, created_by_admin,
                           customers:customer_id ( customer_type ) )`,
@@ -186,7 +186,9 @@ export function useVendorMonthlyDashboard(
         const incl = Number(l.line_total_incl_vat ?? 0);
         const excl = Number(l.line_total_excl_vat ?? 0);
         const margin = Number(l.line_margin ?? 0);
-        const commission = Number(l.commission_amount ?? 0);
+        // `commission_computed` = commission calculée de la ligne (nouvelle colonne dédiée).
+        // `commission_amount` ne contient plus que le €/unité saisi manuellement (lignes historiques incluses).
+        const commission = Number(l.commission_computed ?? l.commission_amount ?? 0);
         const qty = Number(l.quantity ?? 0);
         const inclC = toCents(incl);
         const exclC = toCents(excl);

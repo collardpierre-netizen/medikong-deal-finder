@@ -186,7 +186,9 @@ export function useVendorMonthlyDashboard(
         const incl = Number(l.line_total_incl_vat ?? 0);
         const excl = Number(l.line_total_excl_vat ?? 0);
         const margin = Number(l.line_margin ?? 0);
-        const commission = Number(l.commission_amount ?? 0);
+        // `commission_computed` = commission calculée de la ligne (nouvelle colonne dédiée).
+        // `commission_amount` ne contient plus que le €/unité saisi manuellement (lignes historiques incluses).
+        const commission = Number(l.commission_computed ?? l.commission_amount ?? 0);
         const qty = Number(l.quantity ?? 0);
         const inclC = toCents(incl);
         const exclC = toCents(excl);

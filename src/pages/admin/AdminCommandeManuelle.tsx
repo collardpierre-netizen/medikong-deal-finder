@@ -665,7 +665,7 @@ const AdminCommandeManuelle = () => {
         vat_rate: Number(l.vat_rate ?? 21),
         unit_cost_excl_vat: l.unit_cost_excl_vat ?? "",
         commission_rate: l.commission_rate ?? "",
-        commission_amount: l.commission_amount ?? "",
+        commission_amount: String(l.commission_rate ?? "").trim() !== "" ? "" : (l.commission_amount ?? ""),
         commission_basis: l.commission_basis === "margin" ? "margin" : "ca",
         gtin: l.gtin ?? undefined,
         cnk_code: l.cnk_code ?? undefined,
@@ -748,7 +748,7 @@ const AdminCommandeManuelle = () => {
           vat_rate: Number(l.vat_rate ?? 21),
           unit_cost_excl_vat: l.unit_cost_excl_vat ?? "",
           commission_rate: l.commission_rate ?? "",
-          commission_amount: l.commission_amount ?? "",
+          commission_amount: String(l.commission_rate ?? "").trim() !== "" ? "" : (l.commission_amount ?? ""),
           commission_basis: l.commission_basis === "margin" ? "margin" : "ca",
           gtin: l.gtin ?? undefined,
           cnk_code: l.cnk_code ?? undefined,
@@ -809,7 +809,7 @@ const AdminCommandeManuelle = () => {
           vat_rate: Number(l.vat_rate ?? 21),
           unit_cost_excl_vat: l.unit_cost_excl_vat ?? "",
           commission_rate: l.commission_rate ?? "",
-          commission_amount: l.commission_amount ?? "",
+          commission_amount: String(l.commission_rate ?? "").trim() !== "" ? "" : (l.commission_amount ?? ""),
           commission_basis: l.commission_basis === "margin" ? "margin" : "ca",
           gtin: l.gtin ?? undefined,
           cnk_code: l.cnk_code ?? undefined,
@@ -1608,8 +1608,14 @@ function LineRow({
             type="number" step="0.01" min="0" max="100"
             placeholder="ex. 12"
             value={line.commission_rate}
-            disabled={Number(line.commission_amount) > 0 && String(line.commission_rate ?? "").trim() === ""}
-            onChange={(e) => onPatch({ commission_rate: e.target.value })}
+            disabled={String(line.commission_amount ?? "").trim() !== "" && String(line.commission_rate ?? "").trim() === ""}
+            onChange={(e) =>
+              // Exclusif : encoder un % efface la commission €/u. (fixe)
+              onPatch({
+                commission_rate: e.target.value,
+                ...(e.target.value.trim() !== "" ? { commission_amount: "" } : {}),
+              })
+            }
           />
           <div className="flex items-center gap-1 mt-1 text-[11px]">
             <span className="text-muted-foreground">Base :</span>
@@ -1637,8 +1643,14 @@ function LineRow({
             type="number" step="0.01" min="0"
             placeholder="ex. 1.50"
             value={line.commission_amount}
-            disabled={Number(line.commission_rate) > 0 && String(line.commission_amount ?? "").trim() === ""}
-            onChange={(e) => onPatch({ commission_amount: e.target.value })}
+            disabled={String(line.commission_rate ?? "").trim() !== "" && String(line.commission_amount ?? "").trim() === ""}
+            onChange={(e) =>
+              // Exclusif : encoder un €/u. fixe efface la commission %
+              onPatch({
+                commission_amount: e.target.value,
+                ...(e.target.value.trim() !== "" ? { commission_rate: "" } : {}),
+              })
+            }
           />
         </div>
       </div>

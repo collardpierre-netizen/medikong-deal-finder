@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { resolveNotificationTargets, type NotifTarget } from "@/lib/admin-notification-target";
+
 
 interface AdminNotif {
   id: string;

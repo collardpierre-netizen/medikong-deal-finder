@@ -217,7 +217,12 @@ export default function AdminNotificationDetail() {
               <div className="sm:col-span-2">
                 <dt className="text-xs text-muted-foreground">Lien d'action</dt>
                 <dd>
-                  {n.cta_url ? (
+                  {target?.deep ? (
+                    <Link to={target.url} className="text-primary hover:underline break-all">
+                      {target.url}
+                      {target.label && <span className="text-muted-foreground ml-2">({target.label})</span>}
+                    </Link>
+                  ) : n.cta_url ? (
                     isHttpUrl(n.cta_url) ? (
                       <a href={n.cta_url} target="_blank" rel="noreferrer" className="text-primary hover:underline break-all">
                         {n.cta_url}
@@ -230,6 +235,7 @@ export default function AdminNotificationDetail() {
                   )}
                 </dd>
               </div>
+
             </dl>
           </section>
 

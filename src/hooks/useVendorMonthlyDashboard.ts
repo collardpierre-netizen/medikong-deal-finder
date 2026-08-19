@@ -126,7 +126,7 @@ export function useVendorMonthlyDashboard(
       const { data, error } = await supabase
         .from("order_lines")
         .select(
-          `product_id, quantity, line_total_incl_vat, line_total_excl_vat, line_margin, commission_amount, commission_basis,
+          `product_id, quantity, line_total_incl_vat, line_total_excl_vat, line_margin, commission_amount, commission_computed, commission_basis,
            products:product_id ( name ),
            orders!inner ( ${VENDOR_GMV_ORDER_COLUMNS}, source, created_by_admin,
                           customers:customer_id ( customer_type ) )`,

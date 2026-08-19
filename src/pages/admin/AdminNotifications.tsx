@@ -222,7 +222,7 @@ export default function AdminNotifications() {
             </Card>
           ) : (
             notifs.map((n) => (
-              <NotificationItem key={n.id} n={n} onMarkRead={(id) => markRead.mutate(id)} />
+              <NotificationItem key={n.id} n={n} target={targets[n.id]} onMarkRead={(id) => markRead.mutate(id)} />
             ))
           )}
         </TabsContent>

@@ -10033,6 +10033,7 @@ export type Database = {
           cancelled_at: string | null
           commission_amount: number | null
           commission_basis: string | null
+          commission_computed: number | null
           commission_rate: number | null
           cost_price: number | null
           fulfillment_status: Database["public"]["Enums"]["fulfillment_status"]
@@ -10077,6 +10078,7 @@ export type Database = {
           cancelled_at?: string | null
           commission_amount?: number | null
           commission_basis?: string | null
+          commission_computed?: number | null
           commission_rate?: number | null
           cost_price?: number | null
           fulfillment_status?: Database["public"]["Enums"]["fulfillment_status"]
@@ -10121,6 +10123,7 @@ export type Database = {
           cancelled_at?: string | null
           commission_amount?: number | null
           commission_basis?: string | null
+          commission_computed?: number | null
           commission_rate?: number | null
           cost_price?: number | null
           fulfillment_status?: Database["public"]["Enums"]["fulfillment_status"]
@@ -33816,6 +33819,7 @@ export type Database = {
           cancelled_at: string | null
           commission_amount: number | null
           commission_basis: string | null
+          commission_computed: number | null
           commission_rate: number | null
           cost_price: number | null
           fulfillment_status: Database["public"]["Enums"]["fulfillment_status"]

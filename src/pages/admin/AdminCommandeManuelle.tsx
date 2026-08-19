@@ -1643,8 +1643,14 @@ function LineRow({
             type="number" step="0.01" min="0"
             placeholder="ex. 1.50"
             value={line.commission_amount}
-            disabled={Number(line.commission_rate) > 0 && String(line.commission_amount ?? "").trim() === ""}
-            onChange={(e) => onPatch({ commission_amount: e.target.value })}
+            disabled={String(line.commission_rate ?? "").trim() !== "" && String(line.commission_amount ?? "").trim() === ""}
+            onChange={(e) =>
+              // Exclusif : encoder un €/u. fixe efface la commission %
+              onPatch({
+                commission_amount: e.target.value,
+                ...(e.target.value.trim() !== "" ? { commission_rate: "" } : {}),
+              })
+            }
           />
         </div>
       </div>

@@ -127,7 +127,15 @@ export default function AdminNotifications() {
     refetchInterval: 30_000,
   });
 
+  const { data: targets = {} } = useQuery({
+    queryKey: ["admin-notification-targets", notifs.map((n) => n.id).join(",")],
+    queryFn: () => resolveNotificationTargets(notifs),
+    enabled: notifs.length > 0,
+    staleTime: 60_000,
+  });
+
   const unreadCount = useMemo(() => notifs.filter((n) => !n.read_at).length, [notifs]);
+
 
   const markRead = useMutation({
     mutationFn: async (id: string) => {

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { useRestockMoqMin, isBelowRestockMoq, RESTOCK_MOQ_ERROR_CODE } from "@/hooks/useRestockMoq";
 import * as XLSX from "xlsx";
 import { deriveBeProvince } from "@/lib/be-postal";
 
@@ -200,6 +201,8 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
   const [manualName, setManualName] = useState("");
   const [allowPartial, setAllowPartial] = useState(false);
   const [moq, setMoq] = useState("1");
+  const { data: moqCfg } = useRestockMoqMin(null);
+  const moqMin = moqCfg?.moqMin ?? 0;
   const [lotSize, setLotSize] = useState("1");
   const [photos, setPhotos] = useState<string[]>([]);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
@@ -325,6 +328,10 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
   const handleAdd = () => {
     const designation = found?.name || manualName;
     if (!designation) { toast.error("Désignation requise"); return; }
+    if (allowPartial && isBelowRestockMoq(Number(moq) || 1, moqMin)) {
+      toast.error(`Quantité minimum (MOQ) imposée : ${moqMin} unités`);
+      return;
+    }
     const row = revalidateRow({
       ean: found?.ean || (!found && code.length > 7 ? code.trim() : ""),
       cnk: found?.cnk || (!found && code.length <= 7 ? code.trim() : ""),
@@ -511,7 +518,12 @@ function ManualAddForm({ onAdd }: { onAdd: (row: OfferRow) => void }) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[11px] text-[#8B929C] font-medium">Quantité minimum (MOQ)</label>
-                  <Input type="number" min={1} value={moq} onChange={(e) => setMoq(e.target.value)} className="border-[#D0D5DC]" />
+                  <Input type="number" min={Math.max(1, moqMin)} value={moq} onChange={(e) => setMoq(e.target.value)} aria-invalid={isBelowRestockMoq(Number(moq) || 1, moqMin)} className={isBelowRestockMoq(Number(moq) || 1, moqMin) ? "border-destructive" : "border-[#D0D5DC]"} />
+                  {moqMin > 0 && (
+                    <p className={`text-[10px] mt-1 ${isBelowRestockMoq(Number(moq) || 1, moqMin) ? "text-destructive" : "text-[#8B929C]"}`}>
+                      MOQ minimum imposé : {moqMin} unités
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="text-[11px] text-[#8B929C] font-medium">Par multiple de (lot)</label>

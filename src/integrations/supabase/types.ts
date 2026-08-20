@@ -5776,6 +5776,99 @@ export type Database = {
           },
         ]
       }
+      flash_sale_vendor_settings: {
+        Row: {
+          allow_real_name: boolean
+          created_at: string
+          id: string
+          internal_note: string | null
+          is_enabled: boolean
+          max_discount_pct: number | null
+          updated_at: string
+          updated_by: string | null
+          vendor_id: string
+        }
+        Insert: {
+          allow_real_name?: boolean
+          created_at?: string
+          id?: string
+          internal_note?: string | null
+          is_enabled?: boolean
+          max_discount_pct?: number | null
+          updated_at?: string
+          updated_by?: string | null
+          vendor_id: string
+        }
+        Update: {
+          allow_real_name?: boolean
+          created_at?: string
+          id?: string
+          internal_note?: string | null
+          is_enabled?: boolean
+          max_discount_pct?: number | null
+          updated_at?: string
+          updated_by?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flash_sale_vendor_settings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "flash_sale_vendor_settings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "flash_sale_vendor_settings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flash_sale_vendor_settings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendor_intelligence_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "flash_sale_vendor_settings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "flash_sale_vendor_settings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "flash_sale_vendor_settings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flash_sale_vendor_settings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gamme_demand_signals: {
         Row: {
           brand_slug: string
@@ -30102,6 +30195,55 @@ export type Database = {
           product_name: string
           product_slug: string
           similarity: number
+        }[]
+      }
+      admin_flash_deal_candidates: {
+        Args: {
+          _limit?: number
+          _min_margin_pct?: number
+          _min_stock?: number
+          _only_enabled_vendors?: boolean
+          _search?: string
+          _vendor_ids?: string[]
+        }
+        Returns: {
+          already_in_flash: boolean
+          brand_name: string
+          gtin: string
+          margin_amount: number
+          margin_pct: number
+          market_gap_pct: number
+          market_pharmacist_price: number
+          moq: number
+          offer_id: string
+          potential_score: number
+          price_excl_vat: number
+          product_best_price_incl_vat: number
+          product_id: string
+          product_name: string
+          purchase_price_excl_vat: number
+          pvp_ttc_cents: number
+          stock_quantity: number
+          vendor_enabled: boolean
+          vendor_id: string
+          vendor_label: string
+          vendor_max_discount_pct: number
+        }[]
+      }
+      admin_flash_sale_vendors: {
+        Args: never
+        Returns: {
+          active_offers_count: number
+          allow_real_name: boolean
+          company_name: string
+          display_code: string
+          internal_note: string
+          is_enabled: boolean
+          max_discount_pct: number
+          validation_status: string
+          vendor_id: string
+          vendor_name: string
+          vendor_type: string
         }[]
       }
       admin_get_order_customer_notes: {

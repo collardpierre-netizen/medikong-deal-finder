@@ -121,7 +121,7 @@ describe("resolveRestockOfferImage — cascade", () => {
 describe("attachRestockCatalogImages — résolution EAN puis CNK", () => {
   it("résout par EAN (products.gtin)", async () => {
     state.byColumn.gtin = [{ gtin: "5400000000001", image_url: "https://cdn.test/ean.jpg" }];
-    const [offer] = await attachRestockCatalogImages([{ ean: "5400000000001", cnk: null }]);
+    const [offer] = await attachRestockCatalogImages<Record<string, any>>([{ ean: "5400000000001", cnk: null }]);
     expect(offer.catalog_image_url).toBe("https://cdn.test/ean.jpg");
     expect(resolveRestockOfferImage(offer)).toBe("https://cdn.test/ean.jpg");
   });
@@ -129,14 +129,14 @@ describe("attachRestockCatalogImages — résolution EAN puis CNK", () => {
   it("résout par CNK quand l'EAN ne matche pas", async () => {
     state.byColumn.gtin = [];
     state.byColumn.cnk_code = [{ cnk_code: "1234567", image_url: "https://cdn.test/cnk.jpg" }];
-    const [offer] = await attachRestockCatalogImages([{ ean: "0000000000000", cnk: "1234567" }]);
+    const [offer] = await attachRestockCatalogImages<Record<string, any>>([{ ean: "0000000000000", cnk: "1234567" }]);
     expect(offer.catalog_image_url).toBe("https://cdn.test/cnk.jpg");
   });
 
   it("privilégie l'EAN sur le CNK quand les deux matchent", async () => {
     state.byColumn.gtin = [{ gtin: "5400000000001", image_url: "https://cdn.test/ean.jpg" }];
     state.byColumn.cnk_code = [{ cnk_code: "1234567", image_url: "https://cdn.test/cnk.jpg" }];
-    const [offer] = await attachRestockCatalogImages([{ ean: "5400000000001", cnk: "1234567" }]);
+    const [offer] = await attachRestockCatalogImages<Record<string, any>>([{ ean: "5400000000001", cnk: "1234567" }]);
     expect(offer.catalog_image_url).toBe("https://cdn.test/ean.jpg");
   });
 
@@ -148,7 +148,7 @@ describe("attachRestockCatalogImages — résolution EAN puis CNK", () => {
   });
 
   it("laisse l'offre inchangée si aucun produit catalogue ne matche", async () => {
-    const [offer] = await attachRestockCatalogImages([{ ean: "9999999999999", cnk: "0000000" }]);
+    const [offer] = await attachRestockCatalogImages<Record<string, any>>([{ ean: "9999999999999", cnk: "0000000" }]);
     expect(offer.catalog_image_url).toBeUndefined();
     expect(resolveRestockOfferImage(offer)).toBeNull();
   });

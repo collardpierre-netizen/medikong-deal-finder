@@ -30,6 +30,29 @@ export default function RestockAdminBuyers() {
   const demoOn = isRestockDemoActive();
   const [movDrafts, setMovDrafts] = useState<Record<string, string>>({});
 
+  const [moqDrafts, setMoqDrafts] = useState<Record<string, string>>({});
+
+  const moqMutation = useMutation({
+    mutationFn: async ({ id, value }: { id: string; value: string }) => {
+      const trimmed = value.trim();
+      const moq = trimmed === "" ? null : Math.round(Number(trimmed.replace(",", ".")));
+      if (moq !== null && (!Number.isFinite(moq) || moq < 0)) {
+        throw new Error("Quantité invalide");
+      }
+      const { error } = await supabase
+        .from("restock_buyers")
+        .update({ restock_moq_min: moq })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["restock-buyers"] });
+      queryClient.invalidateQueries({ queryKey: ["restock-moq-min"] });
+      toast.success("MOQ vendeur enregistré");
+    },
+    onError: (e: any) => toast.error(e?.message || "Erreur lors de l'enregistrement du MOQ"),
+  });
+
   const movMutation = useMutation({
     mutationFn: async ({ id, value }: { id: string; value: string }) => {
       const trimmed = value.trim();
@@ -173,13 +196,14 @@ export default function RestockAdminBuyers() {
                 <th className="text-left px-4 py-3 font-medium text-[#5C6470]">Intérêts</th>
                 <th className="text-left px-4 py-3 font-medium text-[#5C6470]">Mode</th>
                 <th className="text-left px-4 py-3 font-medium text-[#5C6470]">MOV vendeur (€ HT)</th>
+                <th className="text-left px-4 py-3 font-medium text-[#5C6470]">MOQ vendeur (unités)</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={7} className="text-center py-12 text-[#8B929C]">Chargement…</td></tr>
+                <tr><td colSpan={8} className="text-center py-12 text-[#8B929C]">Chargement…</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-12 text-[#8B929C]">Aucun acheteur</td></tr>
+                <tr><td colSpan={8} className="text-center py-12 text-[#8B929C]">Aucun acheteur</td></tr>
               ) : (
                 filtered.map((b: any) => (
                   <tr key={b.id} className="border-b border-[#D0D5DC] last:border-0 hover:bg-[#F7F8FA]">
@@ -214,6 +238,24 @@ export default function RestockAdminBuyers() {
                           if (next.trim() !== current) movMutation.mutate({ id: b.id, value: next });
                         }}
                         className="h-8 w-28 rounded-lg border-[#D0D5DC] text-xs"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <Input
+                        type="number"
+                        min={0}
+                        step="1"
+                        placeholder="Global"
+                        disabled={demoOn}
+                        aria-label={`MOQ minimum pour ${b.pharmacy_name}`}
+                        value={moqDrafts[b.id] ?? (b.restock_moq_min != null ? String(b.restock_moq_min) : "")}
+                        onChange={(e) => setMoqDrafts((d) => ({ ...d, [b.id]: e.target.value }))}
+                        onBlur={(e) => {
+                          const next = e.target.value;
+                          const current = b.restock_moq_min != null ? String(b.restock_moq_min) : "";
+                          if (next.trim() !== current) moqMutation.mutate({ id: b.id, value: next });
+                        }}
+                        className="h-8 w-24 rounded-lg border-[#D0D5DC] text-xs"
                       />
                     </td>
                   </tr>

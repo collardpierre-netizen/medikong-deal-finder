@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Loader2, Trash2, Plus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useRestockMoqMin, isBelowRestockMoq, RESTOCK_MOQ_ERROR_CODE } from "@/hooks/useRestockMoq";
 
 interface EditRestockOfferDialogProps {
   offer: any | null;
@@ -44,6 +45,8 @@ export function EditRestockOfferDialog({ offer, open, onOpenChange, onSaved }: E
   const [form, setForm] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const { data: moqCfg } = useRestockMoqMin(offer?.seller_id ?? null);
+  const moqMin = moqCfg?.moqMin ?? 0;
 
   useEffect(() => {
     if (!offer) {
@@ -107,6 +110,10 @@ export function EditRestockOfferDialog({ offer, open, onOpenChange, onSaved }: E
   };
 
   const handleSave = async () => {
+    if (form.allow_partial && isBelowRestockMoq(Number(form.moq) || 1, moqMin)) {
+      toast.error(`Quantité minimum (MOQ) imposée : ${moqMin} unités`);
+      return;
+    }
     setSaving(true);
     const payload: Record<string, any> = {
       quantity: Number(form.quantity),
@@ -126,7 +133,11 @@ export function EditRestockOfferDialog({ offer, open, onOpenChange, onSaved }: E
     setSaving(false);
     if (error) {
       console.error(error);
-      toast.error("Erreur lors de la sauvegarde");
+      if (String((error as any)?.message || "").includes(RESTOCK_MOQ_ERROR_CODE)) {
+        toast.error(`MOQ minimum imposé non respecté (${moqMin} unités)`);
+      } else {
+        toast.error("Erreur lors de la sauvegarde");
+      }
       return;
     }
     toast.success("Offre mise à jour");
@@ -188,7 +199,12 @@ export function EditRestockOfferDialog({ offer, open, onOpenChange, onSaved }: E
             <>
               <div>
                 <Label className="text-xs">MOQ (min)</Label>
-                <Input type="number" min={1} value={form.moq} onChange={(e) => update({ moq: e.target.value })} />
+                <Input type="number" min={Math.max(1, moqMin)} value={form.moq} aria-invalid={isBelowRestockMoq(Number(form.moq) || 1, moqMin)} onChange={(e) => update({ moq: e.target.value })} className={isBelowRestockMoq(Number(form.moq) || 1, moqMin) ? "border-destructive" : undefined} />
+                {moqMin > 0 && (
+                  <p className={`text-[10px] mt-1 ${isBelowRestockMoq(Number(form.moq) || 1, moqMin) ? "text-destructive" : "text-[#8B929C]"}`}>
+                    MOQ minimum imposé : {moqMin} unités
+                  </p>
+                )}
               </div>
               <div>
                 <Label className="text-xs">Par multiple de</Label>

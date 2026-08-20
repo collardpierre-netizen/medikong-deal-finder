@@ -120,9 +120,17 @@ export async function attachRestockCatalogImages<T extends Record<string, any>>(
     return offers;
   }
 
+  // Mémorise résultats et misses pour les codes réellement interrogés
+  eans.forEach((e) => cacheSet(eanImageCache, e, byEan[e] ?? null));
+  cnks.forEach((c) => cacheSet(cnkImageCache, c, byCnk[c] ?? null));
+
   return offers.map((o) => {
     if (resolveRestockOfferImage(o)) return o;
-    const hit = byEan[norm(o.ean)] || byCnk[norm(o.cnk)];
+    const ean = norm(o.ean);
+    const cnk = norm(o.cnk);
+    const hit =
+      (ean ? cacheGet(eanImageCache, ean)?.url : null) || (cnk ? cacheGet(cnkImageCache, cnk)?.url : null);
     return hit ? ({ ...o, catalog_image_url: hit } as T) : o;
+
   });
 }

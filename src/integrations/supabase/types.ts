@@ -32976,6 +32976,10 @@ export type Database = {
           buyer_vat_number: string
         }[]
       }
+      restock_match_products: {
+        Args: { _only_missing?: boolean }
+        Returns: Json
+      }
       restock_pickup_watchdog_targets: {
         Args: never
         Returns: {

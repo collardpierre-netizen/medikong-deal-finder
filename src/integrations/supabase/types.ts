@@ -14627,6 +14627,7 @@ export type Database = {
           phone: string | null
           reception_mode: string
           referral_code: string | null
+          restock_moq_min: number | null
           restock_mov_min_cents: number | null
           suspended_until: string | null
           updated_at: string
@@ -14649,6 +14650,7 @@ export type Database = {
           phone?: string | null
           reception_mode?: string
           referral_code?: string | null
+          restock_moq_min?: number | null
           restock_mov_min_cents?: number | null
           suspended_until?: string | null
           updated_at?: string
@@ -14671,6 +14673,7 @@ export type Database = {
           phone?: string | null
           reception_mode?: string
           referral_code?: string | null
+          restock_moq_min?: number | null
           restock_mov_min_cents?: number | null
           suspended_until?: string | null
           updated_at?: string
@@ -32979,6 +32982,7 @@ export type Database = {
           buyer_vat_number: string
         }[]
       }
+      restock_global_moq_min: { Args: never; Returns: number }
       restock_global_mov_cents: { Args: never; Returns: number }
       restock_match_products: {
         Args: { _only_missing?: boolean }
@@ -32992,6 +32996,7 @@ export type Database = {
           transaction_id: string
         }[]
       }
+      restock_resolve_moq_min: { Args: { _seller_id: string }; Returns: Json }
       restock_resolve_mov_cents: { Args: { _offer_id: string }; Returns: Json }
       restore_brands_from_backup: {
         Args: { _backup_table_name?: string }

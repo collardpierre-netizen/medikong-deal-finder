@@ -9,11 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Zap, Calendar, Megaphone, Upload } from "lucide-react";
+import { Plus, Trash2, Zap, Calendar, Megaphone, Upload, Store, Sparkles } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { FlashDealsBulkImport } from "@/components/admin/FlashDealsBulkImport";
+import { FlashSaleVendorSettings } from "@/components/admin/FlashSaleVendorSettings";
+import { FlashDealCandidates } from "@/components/admin/FlashDealCandidates";
 
 function FlashDealForm({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient();

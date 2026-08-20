@@ -61,7 +61,7 @@ export default function RestockSettings() {
     },
     {
       title: "Règles métier",
-      keys: ["dlu_minimum_months", "exclusivity_days", "cancellation_penalty_eur", "escrow_release_days"],
+      keys: ["dlu_minimum_months", "exclusivity_days", "cancellation_penalty_eur", "escrow_release_days", "mov_min_eur"],
     },
     {
       title: "Textes",

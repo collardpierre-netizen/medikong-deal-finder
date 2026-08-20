@@ -42,7 +42,7 @@ function SwipeCard({
     ? Math.round((1 - (offer.price_ht || 0) / medikongPrice) * 100)
     : Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
   const grade = gradeConfig[offer.grade] || gradeConfig.A;
-  const imgSrc = offer.product_image_url || null;
+  const imgSrc = resolveRestockOfferImage(offer);
   const dluDate = offer.dlu ? new Date(offer.dlu) : null;
   const dluMonths = dluDate ? Math.max(0, Math.round((dluDate.getTime() - Date.now()) / (30.44 * 86400000))) : null;
 
@@ -220,8 +220,8 @@ function DetailSheet({ offer, onClose, onAddToCart, onCounterOffer }: {
           {/* Header */}
           <div className="flex items-start gap-3">
             <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center overflow-hidden shrink-0">
-              {offer.product_image_url ? (
-                <img src={offer.product_image_url} alt="" className="w-full h-full object-contain" />
+              {imgSrc ? (
+                <img src={imgSrc} alt={offer.designation || ""} className="w-full h-full object-contain" />
               ) : (
                 <Package size={28} className="text-muted-foreground" />
               )}
@@ -358,10 +358,12 @@ export default function RestockMobileSwipe() {
           .in("id", [...new Set(matchedIds)]);
         if (products) productsMap = Object.fromEntries(products.map(p => [p.id, p]));
       }
-      return offersData.map((o: any) => ({
-        ...o,
-        medikong_product: o.matched_product_id ? productsMap[o.matched_product_id] || null : null,
-      }));
+      return attachRestockCatalogImages(
+        offersData.map((o: any) => ({
+          ...o,
+          medikong_product: o.matched_product_id ? productsMap[o.matched_product_id] || null : null,
+        })),
+      );
     },
   });
 

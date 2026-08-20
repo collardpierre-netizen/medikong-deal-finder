@@ -48,7 +48,7 @@ export async function attachRestockCatalogImages<T extends Record<string, any>>(
   const byEan: Record<string, string> = {};
   const byCnk: Record<string, string> = {};
 
-  const queries: Promise<void>[] = [];
+  const queries: PromiseLike<void>[] = [];
   if (eans.length) {
     queries.push(
       supabase

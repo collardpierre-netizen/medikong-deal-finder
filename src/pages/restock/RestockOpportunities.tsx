@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MEDIKONG_PLACEHOLDER, isValidProductImage } from "@/lib/image-utils";
 import { resolveRestockOfferImage, attachRestockCatalogImages } from "@/lib/restock-image";
+import { useRestockMov, isBelowRestockMov, formatMovEur, RESTOCK_MOV_ERROR_CODE } from "@/hooks/useRestockMov";
 import { formatSellerLocation } from "@/lib/be-postal";
 
 const gradeConfig: Record<string, { label: string; desc: string; color: string; bg: string }> = {
@@ -549,6 +550,10 @@ export default function RestockOpportunities() {
   const [confirmTarget, setConfirmTarget] = useState<any>(null);
   const [buyQuantity, setBuyQuantity] = useState<number>(0);
   const [deliveryChoice, setDeliveryChoice] = useState<"pickup" | "shipping">("shipping");
+  const { data: mov } = useRestockMov(confirmTarget?.id);
+  const movCents = mov?.movCents ?? 0;
+  const movQty = confirmTarget?.allow_partial ? buyQuantity : (confirmTarget?.quantity || 0);
+  const movBlocked = !!confirmTarget && isBelowRestockMov((confirmTarget.price_ht || 0) * movQty, movCents);
 
   // Tinder mode state
   const [tinderIdx, setTinderIdx] = useState(0);
@@ -756,7 +761,14 @@ export default function RestockOpportunities() {
       // Redirect to checkout with transaction ID
       navigate(`/restock/checkout?tx=${data.id}`);
     },
-    onError: () => toast.error("Erreur lors de la confirmation"),
+    onError: (e: any) => {
+      const msg = String(e?.message || "");
+      if (msg.includes(RESTOCK_MOV_ERROR_CODE)) {
+        toast.error(`Montant minimum de commande non atteint (${formatMovEur(movCents)} HT)`);
+        return;
+      }
+      toast.error("Erreur lors de la confirmation");
+    },
   });
 
   const counterMutation = useMutation({
@@ -1259,9 +1271,14 @@ export default function RestockOpportunities() {
               </div>
             );
           })()}
+          {movBlocked && (
+            <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              Montant minimum de commande de ce vendeur : <b>{formatMovEur(movCents)} HT</b>. Augmentez la quantité pour valider.
+            </div>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => { setConfirmTarget(null); setBuyQuantity(0); }}>Annuler</Button>
-            <Button onClick={() => { const cond = confirmTarget?.delivery_condition || "both"; const mode: "pickup" | "shipping" = cond === "pickup" ? "pickup" : cond === "shipping" ? "shipping" : deliveryChoice; takeMutation.mutate({ offer: confirmTarget, qty: buyQuantity, mode }); }} disabled={takeMutation.isPending || !confirmTarget || buyQuantity < (confirmTarget?.moq || 1) || (confirmTarget?.lot_size > 1 && buyQuantity % confirmTarget.lot_size !== 0)} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+            <Button onClick={() => { const cond = confirmTarget?.delivery_condition || "both"; const mode: "pickup" | "shipping" = cond === "pickup" ? "pickup" : cond === "shipping" ? "shipping" : deliveryChoice; takeMutation.mutate({ offer: confirmTarget, qty: buyQuantity, mode }); }} disabled={takeMutation.isPending || !confirmTarget || buyQuantity < (confirmTarget?.moq || 1) || (confirmTarget?.lot_size > 1 && buyQuantity % confirmTarget.lot_size !== 0) || movBlocked} className="bg-emerald-600 hover:bg-emerald-700 text-white">
               Confirmer
             </Button>
           </DialogFooter>

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import logoHorizontal from "@/assets/logo-medikong.png";
+import { useRestockMov, isBelowRestockMov, formatMovEur, RESTOCK_MOV_ERROR_CODE } from "@/hooks/useRestockMov";
 
 export default function RestockCheckout() {
   const [params] = useSearchParams();
@@ -82,7 +83,11 @@ export default function RestockCheckout() {
   const commission = tx?.commission_amount || 0;
   const grandTotal = total + shipping;
 
-  const isValid = name.trim() && street.trim() && city.trim() && postal.trim() && phone.trim();
+  const { data: mov } = useRestockMov(tx?.offer_id);
+  const movCents = mov?.movCents ?? 0;
+  const movBlocked = isBelowRestockMov(total, movCents);
+
+  const isValid = name.trim() && street.trim() && city.trim() && postal.trim() && phone.trim() && !movBlocked;
 
   const payMutation = useMutation({
     mutationFn: async () => {
@@ -109,7 +114,14 @@ export default function RestockCheckout() {
       queryClient.invalidateQueries({ queryKey: ["restock-checkout"] });
       setConfirmed(true);
     },
-    onError: () => toast.error("Erreur lors du paiement"),
+    onError: (e: any) => {
+      const msg = String(e?.message || "");
+      if (msg.includes(RESTOCK_MOV_ERROR_CODE)) {
+        toast.error(`Montant minimum de commande non atteint (${formatMovEur(movCents)} HT)`);
+        return;
+      }
+      toast.error("Erreur lors du paiement");
+    },
   });
 
   if (isLoading) {
@@ -347,6 +359,12 @@ export default function RestockCheckout() {
               <span>Total HT</span>
               <span>{grandTotal.toFixed(2)} €</span>
             </div>
+
+            {movBlocked && (
+              <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                Montant minimum de commande de ce vendeur : <b>{formatMovEur(movCents)} HT</b>. Cette commande ({total.toFixed(2)} €) ne peut pas être validée.
+              </div>
+            )}
 
             <Button
               className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 text-white gap-2"

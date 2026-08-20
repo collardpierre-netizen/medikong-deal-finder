@@ -9,11 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Zap, Calendar, Megaphone, Upload } from "lucide-react";
+import { Plus, Trash2, Zap, Calendar, Megaphone, Upload, Store, Sparkles } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { FlashDealsBulkImport } from "@/components/admin/FlashDealsBulkImport";
+import { FlashSaleVendorSettings } from "@/components/admin/FlashSaleVendorSettings";
+import { FlashDealCandidates } from "@/components/admin/FlashDealCandidates";
 
 function FlashDealForm({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient();
@@ -333,8 +335,19 @@ export default function AdminFlashDeals() {
       <Tabs defaultValue="flash">
         <TabsList>
           <TabsTrigger value="flash" className="gap-1"><Zap size={14} /> Flash Deals</TabsTrigger>
+          <TabsTrigger value="candidates" className="gap-1"><Sparkles size={14} /> Suggestions</TabsTrigger>
+          <TabsTrigger value="vendors" className="gap-1"><Store size={14} /> Fournisseurs</TabsTrigger>
           <TabsTrigger value="campaigns" className="gap-1"><Megaphone size={14} /> Campagnes</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="candidates" className="space-y-4">
+          <FlashDealCandidates />
+        </TabsContent>
+
+        <TabsContent value="vendors" className="space-y-4">
+          <FlashSaleVendorSettings />
+        </TabsContent>
+
 
         <TabsContent value="flash" className="space-y-4">
           <div className="flex justify-end gap-2">

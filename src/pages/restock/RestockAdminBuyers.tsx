@@ -28,6 +28,28 @@ export default function RestockAdminBuyers() {
   });
 
   const demoOn = isRestockDemoActive();
+  const [movDrafts, setMovDrafts] = useState<Record<string, string>>({});
+
+  const movMutation = useMutation({
+    mutationFn: async ({ id, value }: { id: string; value: string }) => {
+      const trimmed = value.trim();
+      const cents = trimmed === "" ? null : Math.round(Number(trimmed.replace(",", ".")) * 100);
+      if (cents !== null && (!Number.isFinite(cents) || cents < 0)) {
+        throw new Error("Montant invalide");
+      }
+      const { error } = await supabase
+        .from("restock_buyers")
+        .update({ restock_mov_min_cents: cents })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["restock-buyers"] });
+      queryClient.invalidateQueries({ queryKey: ["restock-mov"] });
+      toast.success("MOV vendeur enregistré");
+    },
+    onError: (e: any) => toast.error(e?.message || "Erreur lors de l'enregistrement du MOV"),
+  });
 
   const { data: buyersRaw = [], isLoading } = useQuery({
     queryKey: ["restock-buyers"],
@@ -150,13 +172,14 @@ export default function RestockAdminBuyers() {
                 <th className="text-left px-4 py-3 font-medium text-[#5C6470]">Ville</th>
                 <th className="text-left px-4 py-3 font-medium text-[#5C6470]">Intérêts</th>
                 <th className="text-left px-4 py-3 font-medium text-[#5C6470]">Mode</th>
+                <th className="text-left px-4 py-3 font-medium text-[#5C6470]">MOV vendeur (€ HT)</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={6} className="text-center py-12 text-[#8B929C]">Chargement…</td></tr>
+                <tr><td colSpan={7} className="text-center py-12 text-[#8B929C]">Chargement…</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-12 text-[#8B929C]">Aucun acheteur</td></tr>
+                <tr><td colSpan={7} className="text-center py-12 text-[#8B929C]">Aucun acheteur</td></tr>
               ) : (
                 filtered.map((b: any) => (
                   <tr key={b.id} className="border-b border-[#D0D5DC] last:border-0 hover:bg-[#F7F8FA]">
@@ -172,6 +195,27 @@ export default function RestockAdminBuyers() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-xs text-[#5C6470]">{modeLabels[b.reception_mode] || b.reception_mode}</td>
+                    <td className="px-4 py-3">
+                      <Input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        placeholder="Global"
+                        disabled={demoOn}
+                        aria-label={`MOV minimum pour ${b.pharmacy_name}`}
+                        value={
+                          movDrafts[b.id] ??
+                          (b.restock_mov_min_cents != null ? String(b.restock_mov_min_cents / 100) : "")
+                        }
+                        onChange={(e) => setMovDrafts((d) => ({ ...d, [b.id]: e.target.value }))}
+                        onBlur={(e) => {
+                          const next = e.target.value;
+                          const current = b.restock_mov_min_cents != null ? String(b.restock_mov_min_cents / 100) : "";
+                          if (next.trim() !== current) movMutation.mutate({ id: b.id, value: next });
+                        }}
+                        className="h-8 w-28 rounded-lg border-[#D0D5DC] text-xs"
+                      />
+                    </td>
                   </tr>
                 ))
               )}

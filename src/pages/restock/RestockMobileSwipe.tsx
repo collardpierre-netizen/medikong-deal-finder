@@ -183,6 +183,7 @@ function DetailSheet({ offer, onClose, onAddToCart, onCounterOffer }: {
     ? Math.round((1 - (offer.price_ht || 0) / medikongPrice) * 100)
     : Math.round(((cataloguePrice - (offer.price_ht || 0)) / cataloguePrice) * 100);
   const grade = gradeConfig[offer.grade] || gradeConfig.A;
+  const imgSrc = resolveRestockOfferImage(offer);
   const moq = offer.moq || 1;
   const lotSize = offer.lot_size || 1;
   const maxQty = offer.quantity || 1;

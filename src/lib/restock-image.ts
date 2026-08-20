@@ -32,9 +32,38 @@ export function resolveRestockOfferImage(offer: any): string | null {
 const norm = (v: unknown) => (typeof v === "string" ? v.trim() : v ? String(v).trim() : "");
 
 /**
+ * Cache mémoire des résolutions d'images catalogue par EAN/CNK.
+ * `null` = code déjà interrogé sans résultat (évite de re-requêter en boucle).
+ */
+const CATALOG_IMAGE_TTL_MS = 10 * 60 * 1000;
+type CacheEntry = { url: string | null; at: number };
+const eanImageCache = new Map<string, CacheEntry>();
+const cnkImageCache = new Map<string, CacheEntry>();
+
+function cacheGet(cache: Map<string, CacheEntry>, key: string): CacheEntry | undefined {
+  const hit = cache.get(key);
+  if (!hit) return undefined;
+  if (Date.now() - hit.at > CATALOG_IMAGE_TTL_MS) {
+    cache.delete(key);
+    return undefined;
+  }
+  return hit;
+}
+
+const cacheSet = (cache: Map<string, CacheEntry>, key: string, url: string | null) =>
+  cache.set(key, { url, at: Date.now() });
+
+/** Vide le cache mémoire (tests / invalidation manuelle). */
+export function clearRestockCatalogImageCache() {
+  eanImageCache.clear();
+  cnkImageCache.clear();
+}
+
+/**
  * Enrichit une liste d'offres ReStock avec `catalog_image_url` en résolvant
  * l'image du catalogue MediKong via EAN (products.gtin) puis CNK (products.cnk_code).
- * Ne requête que pour les offres qui n'ont aucune image propre.
+ * Ne requête que pour les offres qui n'ont aucune image propre et dont le code
+ * n'est pas déjà mémorisé.
  */
 export async function attachRestockCatalogImages<T extends Record<string, any>>(offers: T[]): Promise<T[]> {
   if (!offers.length) return offers;
@@ -42,13 +71,18 @@ export async function attachRestockCatalogImages<T extends Record<string, any>>(
   const needs = offers.filter((o) => !resolveRestockOfferImage(o));
   if (!needs.length) return offers;
 
-  const eans = [...new Set(needs.map((o) => norm(o.ean)).filter(Boolean))];
-  const cnks = [...new Set(needs.map((o) => norm(o.cnk)).filter(Boolean))];
+  const eans = [...new Set(needs.map((o) => norm(o.ean)).filter(Boolean))].filter(
+    (e) => !cacheGet(eanImageCache, e),
+  );
+  const cnks = [...new Set(needs.map((o) => norm(o.cnk)).filter(Boolean))].filter(
+    (c) => !cacheGet(cnkImageCache, c),
+  );
 
   const byEan: Record<string, string> = {};
   const byCnk: Record<string, string> = {};
 
   const queries: PromiseLike<void>[] = [];
+
   if (eans.length) {
     queries.push(
       supabase

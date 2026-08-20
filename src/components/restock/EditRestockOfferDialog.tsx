@@ -133,7 +133,11 @@ export function EditRestockOfferDialog({ offer, open, onOpenChange, onSaved }: E
     setSaving(false);
     if (error) {
       console.error(error);
-      toast.error("Erreur lors de la sauvegarde");
+      if (String((error as any)?.message || "").includes(RESTOCK_MOQ_ERROR_CODE)) {
+        toast.error(`MOQ minimum imposé non respecté (${moqMin} unités)`);
+      } else {
+        toast.error("Erreur lors de la sauvegarde");
+      }
       return;
     }
     toast.success("Offre mise à jour");

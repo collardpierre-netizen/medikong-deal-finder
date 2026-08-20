@@ -39,12 +39,15 @@ vi.mock("@/integrations/supabase/client", () => ({
   },
 }));
 
-const { resolveRestockOfferImage, attachRestockCatalogImages } = await import("@/lib/restock-image");
+const { resolveRestockOfferImage, attachRestockCatalogImages, clearRestockCatalogImageCache } = await import(
+  "@/lib/restock-image",
+);
 
 beforeEach(() => {
   state.byColumn = {};
   state.shouldThrow = false;
   state.calls = [];
+  clearRestockCatalogImageCache();
 });
 
 describe("resolveRestockOfferImage — cascade", () => {
@@ -162,5 +165,29 @@ describe("attachRestockCatalogImages — résolution EAN puis CNK", () => {
   it("gère une liste vide", async () => {
     const offers: any[] = [];
     expect(await attachRestockCatalogImages(offers)).toBe(offers);
+  });
+});
+
+describe("attachRestockCatalogImages — cache mémoire", () => {
+  it("ne requête qu'une fois le même EAN sur deux appels", async () => {
+    state.byColumn.gtin = [{ gtin: "5400000000001", image_url: "https://cdn.test/ean.jpg" }];
+    await attachRestockCatalogImages<Record<string, any>>([{ ean: "5400000000001" }]);
+    const [second] = await attachRestockCatalogImages<Record<string, any>>([{ ean: "5400000000001" }]);
+    expect(second.catalog_image_url).toBe("https://cdn.test/ean.jpg");
+    expect(state.calls.filter((c) => c === "gtin")).toHaveLength(1);
+  });
+
+  it("mémorise aussi les misses (pas de re-requête)", async () => {
+    await attachRestockCatalogImages<Record<string, any>>([{ ean: "9999999999999" }]);
+    await attachRestockCatalogImages<Record<string, any>>([{ ean: "9999999999999" }]);
+    expect(state.calls.filter((c) => c === "gtin")).toHaveLength(1);
+  });
+
+  it("clearRestockCatalogImageCache force une nouvelle requête", async () => {
+    state.byColumn.cnk_code = [{ cnk_code: "1234567", image_url: "https://cdn.test/cnk.jpg" }];
+    await attachRestockCatalogImages<Record<string, any>>([{ cnk: "1234567" }]);
+    clearRestockCatalogImageCache();
+    await attachRestockCatalogImages<Record<string, any>>([{ cnk: "1234567" }]);
+    expect(state.calls.filter((c) => c === "cnk_code")).toHaveLength(2);
   });
 });

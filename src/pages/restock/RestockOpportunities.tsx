@@ -550,6 +550,8 @@ export default function RestockOpportunities() {
   const [confirmTarget, setConfirmTarget] = useState<any>(null);
   const { data: mov } = useRestockMov(confirmTarget?.id);
   const movCents = mov?.movCents ?? 0;
+  const movQty = confirmTarget?.allow_partial ? buyQuantity : (confirmTarget?.quantity || 0);
+  const movBlocked = !!confirmTarget && isBelowRestockMov((confirmTarget.price_ht || 0) * movQty, movCents);
   const [buyQuantity, setBuyQuantity] = useState<number>(0);
   const [deliveryChoice, setDeliveryChoice] = useState<"pickup" | "shipping">("shipping");
 

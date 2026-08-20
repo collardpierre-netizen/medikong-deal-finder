@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Send, Package, Users, MessageSquare, CheckCircle, ExternalLink, FileSpreadsheet } from "lucide-react";
+import { Search, Send, Package, Users, MessageSquare, CheckCircle, ExternalLink, FileSpreadsheet, Link2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { RestockOffersBulkImport } from "@/components/restock/RestockOffersBulkImport";
@@ -24,6 +24,29 @@ interface AggregatedOffer {
 
 export default function RestockAdminOffers() {
   const [search, setSearch] = useState("");
+  const [matching, setMatching] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleMatchProducts = async () => {
+    setMatching(true);
+    try {
+      const { data, error } = await supabase.rpc("restock_match_products", { _only_missing: true });
+      if (error) throw error;
+      const r = (data || {}) as {
+        scanned?: number; matched_by_ean?: number; matched_by_cnk?: number;
+        images_filled?: number; unmatched?: number;
+      };
+      const matched = (r.matched_by_ean ?? 0) + (r.matched_by_cnk ?? 0);
+      toast.success(
+        `${matched} offre(s) rattachée(s) (EAN ${r.matched_by_ean ?? 0} · CNK ${r.matched_by_cnk ?? 0}) · ${r.images_filled ?? 0} image(s) ajoutée(s) · ${r.unmatched ?? 0} sans correspondance`
+      );
+      queryClient.invalidateQueries({ queryKey: ["restock-admin-offers"] });
+    } catch (e: any) {
+      toast.error(e?.message || "Échec du rattachement produit");
+    } finally {
+      setMatching(false);
+    }
+  };
 
   const { data: offers = [], isLoading } = useQuery({
     queryKey: ["restock-admin-offers"],
@@ -138,6 +161,15 @@ export default function RestockAdminOffers() {
           Offres agrégées
         </h1>
         <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={handleMatchProducts}
+            disabled={matching}
+            className="gap-2 rounded-lg border-[#D0D5DC] text-[#5C6470] hover:text-[#1E252F]"
+          >
+            {matching ? <Loader2 size={16} className="animate-spin" /> : <Link2 size={16} />}
+            Rattacher produits (EAN/CNK)
+          </Button>
           <RestockOffersBulkImport>
             <Button variant="outline" className="gap-2 rounded-lg border-[#D0D5DC] text-[#5C6470] hover:text-[#1E252F]">
               <FileSpreadsheet size={16} /> Import en lots

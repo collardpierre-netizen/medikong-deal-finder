@@ -783,7 +783,11 @@ export default function RestockSellerNewOffer() {
 
       const { data, error } = await supabase.from("restock_offers").insert(insert as any).select("id").single();
       if (error) {
-        toast.error(`Erreur pour ${r.designation}`);
+        if (String(error.message || "").includes(RESTOCK_MOQ_ERROR_CODE)) {
+          toast.error(`${r.designation} : MOQ minimum imposé non respecté`);
+        } else {
+          toast.error(`Erreur pour ${r.designation}`);
+        }
         continue;
       }
       // Upload photos puis enregistre les URLs publiques sur l'offre

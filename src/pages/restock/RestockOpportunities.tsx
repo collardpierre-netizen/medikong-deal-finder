@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MEDIKONG_PLACEHOLDER, isValidProductImage } from "@/lib/image-utils";
+import { resolveRestockOfferImage, attachRestockCatalogImages } from "@/lib/restock-image";
 import { formatSellerLocation } from "@/lib/be-postal";
 
 const gradeConfig: Record<string, { label: string; desc: string; color: string; bg: string }> = {
@@ -141,7 +142,7 @@ function SwipeCard({
     ? Math.round((1 - finalPrice / cataloguePrice) * 100)
     : 0;
   const grade = gradeConfig[offer.grade] || gradeConfig.A;
-  const imgSrc = offer.product_image_url && isValidProductImage(offer.product_image_url) ? offer.product_image_url : null;
+  const imgSrc = resolveRestockOfferImage(offer);
   const canShip = offer.delivery_condition !== "pickup";
   const canPickup = offer.delivery_condition !== "shipping";
 
@@ -238,7 +239,7 @@ function TinderDetailSheet({ offer, onClose, onAddToCart, onCounterOffer, commis
         <div className="px-5 pb-6 space-y-4">
           <div className="flex items-start gap-3">
             <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center overflow-hidden shrink-0">
-              {offer.product_image_url ? <img src={offer.product_image_url} alt="" className="w-full h-full object-contain" /> : <Package size={28} className="text-muted-foreground" />}
+              {imgSrc ? <img src={imgSrc} alt={offer.designation || ""} className="w-full h-full object-contain" /> : <Package size={28} className="text-muted-foreground" />}
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="font-bold text-foreground text-lg leading-tight">{offer.designation}</h2>
@@ -601,10 +602,12 @@ export default function RestockOpportunities() {
           productsMap = Object.fromEntries(products.map(p => [p.id, p]));
         }
       }
-      return offersData.map((o: any) => ({
-        ...o,
-        medikong_product: o.matched_product_id ? productsMap[o.matched_product_id] || null : null,
-      }));
+      return attachRestockCatalogImages(
+        offersData.map((o: any) => ({
+          ...o,
+          medikong_product: o.matched_product_id ? productsMap[o.matched_product_id] || null : null,
+        })),
+      );
     },
     enabled: !demoOn,
   });
@@ -798,7 +801,7 @@ export default function RestockOpportunities() {
     const gc = gradeConfig[grade] || gradeConfig.A;
     const delivery = deliveryLabels[offer.delivery_condition] || deliveryLabels.both;
     const DeliveryIcon = delivery.icon;
-    const imgSrc = offer.product_image_url && isValidProductImage(offer.product_image_url) ? offer.product_image_url : null;
+    const imgSrc = resolveRestockOfferImage(offer);
     const canShip = offer.delivery_condition !== "pickup";
     const canPickup = offer.delivery_condition !== "shipping";
 

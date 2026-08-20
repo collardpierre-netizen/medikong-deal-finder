@@ -601,10 +601,12 @@ export default function RestockOpportunities() {
           productsMap = Object.fromEntries(products.map(p => [p.id, p]));
         }
       }
-      return offersData.map((o: any) => ({
-        ...o,
-        medikong_product: o.matched_product_id ? productsMap[o.matched_product_id] || null : null,
-      }));
+      return attachRestockCatalogImages(
+        offersData.map((o: any) => ({
+          ...o,
+          medikong_product: o.matched_product_id ? productsMap[o.matched_product_id] || null : null,
+        })),
+      );
     },
     enabled: !demoOn,
   });

@@ -31746,10 +31746,6 @@ export type Database = {
         Args: { p_offer_id: string; p_quantity: number }
         Returns: Json
       }
-      delete_email: {
-        Args: { message_id: number; queue_name: string }
-        Returns: boolean
-      }
       delete_user_account: { Args: { _user_id: string }; Returns: undefined }
       detect_market_delta_anomalies: {
         Args: { _threshold_pct?: number; _triggered_by?: string }
@@ -31792,14 +31788,9 @@ export type Database = {
         Args: { _product_id: string }
         Returns: number
       }
-      email_queue_dispatch: { Args: never; Returns: undefined }
       end_buyer_impersonation: {
         Args: { _ended_reason?: string; _session_id: string }
         Returns: undefined
-      }
-      enqueue_email: {
-        Args: { payload: Json; queue_name: string }
-        Returns: number
       }
       enqueue_qogita_fast_refresh_batch: {
         Args: { _batch_size?: number; _max_age_hours?: number; _tier?: string }
@@ -32561,15 +32552,6 @@ export type Database = {
       }
       merge_brands: { Args: { _drop: string; _keep: string }; Returns: Json }
       merge_products: { Args: { _drop: string; _keep: string }; Returns: Json }
-      move_to_dlq: {
-        Args: {
-          dlq_name: string
-          message_id: number
-          payload: Json
-          source_queue: string
-        }
-        Returns: number
-      }
       next_commission_invoice_number: { Args: never; Returns: string }
       normalize_brand_name: { Args: { _name: string }; Returns: string }
       normalize_gtin: { Args: { _gtin: string }; Returns: string }
@@ -32780,14 +32762,6 @@ export type Database = {
       quote_public_action: {
         Args: { _action: string; _ip?: string; _token: string }
         Returns: Json
-      }
-      read_email_batch: {
-        Args: { batch_size: number; queue_name: string; vt: number }
-        Returns: {
-          message: Json
-          msg_id: number
-          read_ct: number
-        }[]
       }
       recalc_qogita_offers_batch: {
         Args: { _last_id?: string; _limit?: number }

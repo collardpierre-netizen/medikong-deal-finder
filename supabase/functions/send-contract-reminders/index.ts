@@ -125,7 +125,7 @@ Deno.serve(async (req: Request) => {
       const idempotencyKey = `contract-reminder-${v.id}-L${plan.level}-${today}`
 
       const { error: invokeError } = await supabase.functions.invoke(
-        'send-transactional-email',
+        'send-app-email',
         {
           body: {
             templateName: 'vendor-contract-reminder',

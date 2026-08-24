@@ -1,6 +1,6 @@
 // Sends a transactional email to a pharmacist after their subscription extension
 // request was decided (approved/rejected). Resolves the buyer's auth email server-side
-// and invokes send-transactional-email. Admin-only (verified via auth + is_admin RPC).
+// and invokes send-app-email. Admin-only (verified via auth + is_admin RPC).
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -124,7 +124,7 @@ Deno.serve(async (req) => {
     }
 
     const { data: sendRes, error: sendErr } = await admin.functions.invoke(
-      'send-transactional-email',
+      'send-app-email',
       {
         body: {
           templateName,
@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
       },
     )
     if (sendErr) {
-      console.error('send-transactional-email failed', sendErr)
+      console.error('send-app-email failed', sendErr)
       return new Response(JSON.stringify({ error: 'email_send_failed', detail: String(sendErr.message ?? sendErr) }), {
         status: 502,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

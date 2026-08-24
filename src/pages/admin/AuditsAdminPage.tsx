@@ -167,7 +167,7 @@ export default function AuditsAdminPage() {
         },
       });
 
-      await supabase.functions.invoke("send-transactional-email", {
+      await supabase.functions.invoke("send-app-email", {
         body: {
           templateName: "audit-report-ready",
           recipientEmail: selected.contact_email,
@@ -220,7 +220,7 @@ export default function AuditsAdminPage() {
     setTestingEmail(true);
     try {
       const stamp = new Date().toISOString();
-      const { error } = await supabase.functions.invoke("send-transactional-email", {
+      const { error } = await supabase.functions.invoke("send-app-email", {
         body: {
           templateName: "audit-new-lead",
           recipientEmail: AUDIT_NOTIFICATION_EMAIL,

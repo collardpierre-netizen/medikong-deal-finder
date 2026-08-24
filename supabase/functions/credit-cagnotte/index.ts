@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
           });
           const firstName = String(cust.company_name || "").split(" ")[0] || null;
 
-          await admin.functions.invoke("send-transactional-email", {
+          await admin.functions.invoke("send-app-email", {
             body: {
               templateName: "cagnotte-earned",
               recipientEmail: cust.email,

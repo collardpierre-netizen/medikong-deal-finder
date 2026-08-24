@@ -204,7 +204,7 @@ Deno.serve(async (req) => {
   if (!preview && sim.email) {
 
     try {
-      const { error: mailErr } = await supabase.functions.invoke("send-transactional-email", {
+      const { error: mailErr } = await supabase.functions.invoke("send-app-email", {
         body: {
           templateName: "wholesale-savings-report",
           recipientEmail: sim.email,

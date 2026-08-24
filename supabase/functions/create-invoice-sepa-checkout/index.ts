@@ -208,7 +208,7 @@ Deno.serve(async (req) => {
           : "";
         const ref = invoice.invoice_number || orderNumber || invoice.id;
         const { error: sendErr } = await supabase.functions.invoke(
-          "send-transactional-email",
+          "send-app-email",
           {
             body: {
               templateName: "invoice-payment-link",

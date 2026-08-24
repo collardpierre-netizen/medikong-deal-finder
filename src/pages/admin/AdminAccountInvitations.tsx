@@ -64,7 +64,7 @@ export default function AdminAccountInvitations() {
       if (!token || !email) throw new Error("Token manquant");
       const invitationUrl = `${window.location.origin}/account/invitation/${token}`;
       try {
-        await supabase.functions.invoke("send-transactional-email", {
+        await supabase.functions.invoke("send-app-email", {
           body: {
             templateName: "account-invitation",
             recipientEmail: email,
@@ -73,7 +73,7 @@ export default function AdminAccountInvitations() {
           },
         });
       } catch (e) {
-        console.warn("send-transactional-email failed", e);
+        console.warn("send-app-email failed", e);
       }
       return { token, invitationUrl };
     },

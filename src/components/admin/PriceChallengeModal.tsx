@@ -148,7 +148,7 @@ export default function PriceChallengeModal({ open, onOpenChange, ctx, quickSend
             .maybeSingle();
 
           const { error: eerr } = await supabase.functions.invoke(
-            "send-transactional-email",
+            "send-app-email",
             {
               body: {
                 templateName: "vendor-price-challenge",

@@ -77,7 +77,7 @@ Deno.serve(async (req: Request) => {
       }
 
       const idempotencyKey = `peppol-id-reminder-${v.id}-${today}`
-      const { error: invokeError } = await supabase.functions.invoke('send-transactional-email', {
+      const { error: invokeError } = await supabase.functions.invoke('send-app-email', {
         body: {
           templateName: 'vendor-peppol-id-reminder',
           recipientEmail: v.email,

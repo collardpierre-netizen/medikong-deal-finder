@@ -410,7 +410,7 @@ Deno.serve(async (req) => {
     // Email best-effort (relevé disponible)
     if (sendEmail && vendor.email) {
       try {
-        await admin.functions.invoke("send-transactional-email", {
+        await admin.functions.invoke("send-app-email", {
           body: {
             templateName: "vendor-statement-ready",
             recipientEmail: vendor.email,

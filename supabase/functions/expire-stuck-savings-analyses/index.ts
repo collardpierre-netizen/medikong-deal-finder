@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
 
       if (sim.email && sim.created_via !== "admin_manual") {
         try {
-          const { error: mailErr } = await supabase.functions.invoke("send-transactional-email", {
+          const { error: mailErr } = await supabase.functions.invoke("send-app-email", {
             body: {
               templateName: "savings-analysis-failed",
               recipientEmail: sim.email,

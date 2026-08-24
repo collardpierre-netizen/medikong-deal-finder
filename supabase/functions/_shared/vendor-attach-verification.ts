@@ -100,7 +100,7 @@ export async function issueAttachVerification(
   let emailStatus: "enqueued" | "failed" = "enqueued";
   let emailError: string | null = null;
   try {
-    const { error: invokeErr } = await supabaseAdmin.functions.invoke("send-transactional-email", {
+    const { error: invokeErr } = await supabaseAdmin.functions.invoke("send-app-email", {
       body: {
         templateName: "vendor-attach-verification",
         recipientEmail: email,

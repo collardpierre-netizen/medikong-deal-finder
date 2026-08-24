@@ -170,13 +170,13 @@ Deno.serve(async (req) => {
   const idemSuffix = event === 'shipped' ? `-${line.quantity_shipped ?? 0}` : ''
   const idempotencyKey = `order-line-${event}-${line.id}${idemSuffix}-${updatedAtStamp}`
 
-  console.log('[notify-order-status] invoking send-transactional-email', {
+  console.log('[notify-order-status] invoking send-app-email', {
     templateName: TEMPLATE_MAP[event],
     recipientEmail,
     idempotencyKey,
   })
 
-  const { data: sendData, error: sendErr } = await admin.functions.invoke('send-transactional-email', {
+  const { data: sendData, error: sendErr } = await admin.functions.invoke('send-app-email', {
     body: {
       templateName: TEMPLATE_MAP[event],
       recipientEmail,
@@ -193,10 +193,10 @@ Deno.serve(async (req) => {
         detail = `${detail} | body=${txt.slice(0, 600)}`
       }
     } catch {}
-    console.error('[notify-order-status] send-transactional-email error', detail, sendData)
+    console.error('[notify-order-status] send-app-email error', detail, sendData)
     return json({ error: 'email_invoke_failed', detail }, 502)
   }
-  console.log('[notify-order-status] send-transactional-email ok', sendData)
+  console.log('[notify-order-status] send-app-email ok', sendData)
 
   return json({ success: true, queued: true, recipient: recipientEmail })
 })

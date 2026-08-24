@@ -179,7 +179,7 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
       // Envoi email best-effort, statut remonté à l'utilisateur.
       try {
         const invitationUrl = `${window.location.origin}/account/invitation/${token}`;
-        const { error: mailError } = await supabase.functions.invoke("send-transactional-email", {
+        const { error: mailError } = await supabase.functions.invoke("send-app-email", {
           body: {
             templateName: "account-invitation",
             recipientEmail: email,
@@ -194,7 +194,7 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
         });
         setEmailStatus(mailError ? "failed" : "sent");
       } catch (e) {
-        console.warn("send-transactional-email failed", e);
+        console.warn("send-app-email failed", e);
         setEmailStatus("failed");
       }
       setGeneratedToken(token);

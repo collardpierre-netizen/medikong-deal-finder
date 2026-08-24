@@ -168,7 +168,7 @@ export function MemberDetailSheet({
       const invitationId = row?.invitation_id as string | undefined;
       if (!token) throw new Error("Invitation créée mais lien indisponible.");
       const invitationUrl = `${window.location.origin}/account/invitation/${token}`;
-      const { error: mailError } = await supabase.functions.invoke("send-transactional-email", {
+      const { error: mailError } = await supabase.functions.invoke("send-app-email", {
         body: {
           templateName: "account-invitation",
           recipientEmail: email,

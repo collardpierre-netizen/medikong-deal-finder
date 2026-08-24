@@ -257,11 +257,11 @@ const AdminCommandeDetail = () => {
     try {
       const { data, error } = await supabase.functions.invoke("generate-vendor-payout-pdf", { body: { order_id: id } });
       if (error) throw error;
-      const url = (data as any)?.pdf_url;
-      if (url) {
-        window.open(url, "_blank");
-        toast.success(`Décompte fournisseur généré (${(data as any)?.vendors || 1} vendeur·s)`);
-      }
+      const pdfs = ((data as any)?.pdfs ?? []) as Array<{ vendor_id: string; vendor_name?: string | null; pdf_url?: string }>;
+      const count = (data as any)?.vendors ?? (pdfs.length || 1);
+      pdfs.forEach((p) => { if (p.pdf_url) window.open(p.pdf_url, "_blank"); });
+      if (pdfs.length === 0 && (data as any)?.pdf_url) window.open((data as any).pdf_url, "_blank");
+      toast.success(`Décompte fournisseur généré (${count} vendeur·s)${count > 1 ? " — un onglet par vendeur" : ""}`);
     } catch (e: any) {
       toast.error(e?.message || "Échec génération décompte");
     } finally {

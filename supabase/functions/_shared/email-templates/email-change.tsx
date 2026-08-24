@@ -21,6 +21,11 @@ const LOGO_URL = 'https://iokwqxhhpblcbkrxgcje.supabase.co/storage/v1/object/pub
 
 interface EmailChangeEmailProps {
   siteName: string
+  // oldEmail is the user's current address (HookData.OldEmail). For the
+  // NEW-recipient half of a secure email_change fanout, `email` equals the
+  // recipient (NEW), so the "from" line must render oldEmail to read
+  // "from OLD to NEW" instead of "from NEW to NEW".
+  oldEmail: string
   email: string
   newEmail: string
   confirmationUrl: string
@@ -28,24 +33,25 @@ interface EmailChangeEmailProps {
 
 export const EmailChangeEmail = ({
   siteName,
-  email,
+  oldEmail,
   newEmail,
   confirmationUrl,
 }: EmailChangeEmailProps) => (
   <Html lang="fr" dir="ltr">
     <Head />
-    <Preview>Confirmez votre changement d'adresse e-mail Medikong</Preview>
+    <Preview>Confirmez votre changement d'adresse e-mail</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={logoSection}>
           <Img src={LOGO_URL} alt="Medikong" width="180" style={logo} />
         </Section>
         <Hr style={divider} />
-        <Heading style={h1}>Changement d'adresse e-mail</Heading>
+        <Heading style={h1}>Confirmez votre changement d'adresse e-mail</Heading>
         <Text style={text}>
-          Vous avez demandé à changer votre adresse e-mail pour Medikong de{' '}
-          <Link href={`mailto:${email}`} style={link}>
-            {email}
+          Vous avez demandé à changer l'adresse e-mail de votre compte{' '}
+          <strong>Medikong</strong> de{' '}
+          <Link href={`mailto:${oldEmail}`} style={link}>
+            {oldEmail}
           </Link>{' '}
           vers{' '}
           <Link href={`mailto:${newEmail}`} style={link}>
@@ -63,7 +69,8 @@ export const EmailChangeEmail = ({
         </Section>
         <Hr style={divider} />
         <Text style={footer}>
-          Si vous n'avez pas demandé ce changement, sécurisez votre compte immédiatement.
+          Si vous n'êtes pas à l'origine de cette demande, sécurisez votre
+          compte immédiatement.
         </Text>
         <Text style={footerBrand}>© MediKong SRL</Text>
       </Container>

@@ -19,7 +19,6 @@ const LOGO_URL = 'https://iokwqxhhpblcbkrxgcje.supabase.co/storage/v1/object/pub
 
 interface ReauthenticationEmailProps {
   token: string
-  confirmationUrl?: string
 }
 
 export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => (
@@ -32,12 +31,17 @@ export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => 
           <Img src={LOGO_URL} alt="Medikong" width="180" style={logo} />
         </Section>
         <Hr style={divider} />
-        <Heading style={h1}>Confirmation d'identité</Heading>
-        <Text style={text}>Utilisez le code ci-dessous pour confirmer votre identité :</Text>
-        <Text style={codeStyle}>{token}</Text>
+        <Heading style={h1}>Votre code de vérification</Heading>
+        <Text style={text}>
+          Utilisez le code ci-dessous pour confirmer votre identité :
+        </Text>
+        <Section style={codeSection}>
+          <Text style={codeStyle}>{token}</Text>
+        </Section>
         <Hr style={divider} />
         <Text style={footer}>
-          Ce code expirera sous peu. Si vous n'avez pas fait cette demande, vous pouvez ignorer cet e-mail.
+          Ce code expire dans quelques instants. Si vous n'êtes pas à
+          l'origine de cette demande, vous pouvez ignorer cet e-mail.
         </Text>
         <Text style={footerBrand}>© MediKong SRL</Text>
       </Container>
@@ -65,14 +69,14 @@ const text = {
   lineHeight: '1.6',
   margin: '0 0 20px',
 }
+const codeSection = { textAlign: 'center' as const, margin: '24px 0' }
 const codeStyle = {
   fontFamily: 'Courier, monospace',
-  fontSize: '28px',
+  fontSize: '26px',
   fontWeight: 'bold' as const,
-  color: '#1e3a5f',
-  textAlign: 'center' as const,
-  margin: '0 0 24px',
   letterSpacing: '6px',
+  color: '#1e3a5f',
+  margin: '0',
 }
 const footer = { fontSize: '12px', color: '#9ca3af', margin: '20px 0 4px' }
 const footerBrand = { fontSize: '11px', color: '#9ca3af', margin: '0' }

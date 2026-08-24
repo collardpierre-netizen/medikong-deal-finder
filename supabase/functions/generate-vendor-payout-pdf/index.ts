@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
     async function generateForVendor(vendorRow: any) {
       let linesQuery = admin
         .from("order_lines")
-        .select("id, offer_id, quantity, quantity_shipped, unit_price_excl_vat, vat_rate, line_total_excl_vat, manual_label, tracking_number, tracking_url, fulfillment_status, cost_price, products(name, gtin, cnk_code)")
+        .select("id, offer_id, quantity, quantity_shipped, unit_price_excl_vat, vat_rate, line_total_excl_vat, manual_label, tracking_number, tracking_url, fulfillment_status, cost_price, commission_amount, commission_computed, commission_basis, commission_rate, products(name, gtin, cnk_code)")
         .eq("order_id", orderId)
         .eq("vendor_id", vendorRow.id);
 

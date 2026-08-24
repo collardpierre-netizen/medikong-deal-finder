@@ -236,7 +236,7 @@ Deno.serve(async (req) => {
     idemSuffix: string,
   ) => {
     try {
-      await supabase.functions.invoke('send-transactional-email', {
+      await supabase.functions.invoke('send-app-email', {
         body: {
           templateName,
           recipientEmail,

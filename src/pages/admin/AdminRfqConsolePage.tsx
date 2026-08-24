@@ -691,7 +691,7 @@ function AddVendorModal({ rfqId, open, onClose }: { rfqId: string; open: boolean
               rfq.product_id ? supabase.from("products").select("name").eq("id", rfq.product_id).maybeSingle() : Promise.resolve({ data: null }),
               rfq.brand_id ? supabase.from("brands").select("name").eq("id", rfq.brand_id).maybeSingle() : Promise.resolve({ data: null }),
             ]);
-            await supabase.functions.invoke("send-transactional-email", {
+            await supabase.functions.invoke("send-app-email", {
               body: {
                 templateName: "rfq-vendor-invitation",
                 recipientEmail: vendor.contact_email,
@@ -793,7 +793,7 @@ function AddVendorModal({ rfqId, open, onClose }: { rfqId: string; open: boolean
             rfq.product_id ? supabase.from("products").select("name").eq("id", rfq.product_id).maybeSingle() : Promise.resolve({ data: null }),
             rfq.brand_id ? supabase.from("brands").select("name").eq("id", rfq.brand_id).maybeSingle() : Promise.resolve({ data: null }),
           ]);
-          await supabase.functions.invoke("send-transactional-email", {
+          await supabase.functions.invoke("send-app-email", {
             body: {
               templateName: "rfq-vendor-invitation",
               recipientEmail: extEmail.trim(),

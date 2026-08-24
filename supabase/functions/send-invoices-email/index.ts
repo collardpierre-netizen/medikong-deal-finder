@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
     hostedUrl: inv.hosted_url ?? "",
   }));
 
-  const { error: sendErr } = await supabase.functions.invoke("send-transactional-email", {
+  const { error: sendErr } = await supabase.functions.invoke("send-app-email", {
     body: {
       templateName: "vendor-invoices",
       recipientEmail: customer.email,
@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
     },
   });
   if (sendErr) {
-    console.error("[send-invoices-email] send-transactional-email failed", sendErr);
+    console.error("[send-invoices-email] send-app-email failed", sendErr);
     return json({ error: String(sendErr.message || sendErr) }, 500);
   }
 

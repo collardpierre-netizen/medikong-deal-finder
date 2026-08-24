@@ -24,7 +24,6 @@ interface SignupEmailProps {
   siteUrl: string
   recipient: string
   confirmationUrl: string
-  token?: string
 }
 
 export const SignupEmail = ({
@@ -32,11 +31,10 @@ export const SignupEmail = ({
   siteUrl,
   recipient,
   confirmationUrl,
-  token,
 }: SignupEmailProps) => (
   <Html lang="fr" dir="ltr">
     <Head />
-    <Preview>Confirmez votre adresse e-mail pour Medikong</Preview>
+    <Preview>Confirmez votre adresse e-mail — Medikong</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={logoSection}>
@@ -45,31 +43,22 @@ export const SignupEmail = ({
         <Hr style={divider} />
         <Heading style={h1}>Confirmez votre adresse e-mail</Heading>
         <Text style={text}>
-          Merci de vous être inscrit sur{' '}
+          Merci de votre inscription sur{' '}
           <Link href={siteUrl} style={link}>
             <strong>Medikong</strong>
           </Link>
-          , votre marketplace B2B pharmaceutique.
+          , la marketplace B2B pharmaceutique.
         </Text>
         <Text style={text}>
-          Veuillez confirmer votre adresse e-mail (
+          Confirmez votre adresse e-mail (
           <Link href={`mailto:${recipient}`} style={link}>
             {recipient}
           </Link>
           ) en cliquant sur le bouton ci-dessous :
         </Text>
-        {token ? (
-          <>
-            <Text style={text}>Votre code de vérification à 6 chiffres :</Text>
-            <Text style={otpCode}>{token}</Text>
-            <Text style={textSmall}>
-              Saisissez ce code dans l'application pour continuer votre inscription.
-            </Text>
-          </>
-        ) : null}
         <Section style={buttonSection}>
           <Button style={button} href={confirmationUrl}>
-            Vérifier mon e-mail
+            Vérifier mon adresse e-mail
           </Button>
         </Section>
         <Hr style={divider} />
@@ -112,20 +101,6 @@ const button = {
   borderRadius: '8px',
   padding: '12px 28px',
   textDecoration: 'none',
-}
-const otpCode = {
-  fontSize: '28px',
-  fontWeight: 'bold' as const,
-  letterSpacing: '8px',
-  color: '#1e3a5f',
-  textAlign: 'center' as const,
-  margin: '0 0 12px',
-}
-const textSmall = {
-  fontSize: '12px',
-  color: '#6b7280',
-  lineHeight: '1.5',
-  margin: '0 0 20px',
 }
 const footer = { fontSize: '12px', color: '#9ca3af', margin: '20px 0 4px' }
 const footerBrand = { fontSize: '11px', color: '#9ca3af', margin: '0' }

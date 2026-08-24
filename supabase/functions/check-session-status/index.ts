@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
               netToPay: formatEUR(b.net_to_pay),
             };
           }
-          await supabase.functions.invoke("send-transactional-email", {
+          await supabase.functions.invoke("send-app-email", {
             body: {
               templateName: "order-confirmation",
               recipientEmail,

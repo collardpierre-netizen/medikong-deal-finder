@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
         : PORTAL_URL;
 
       try {
-        const res = await supabase.functions.invoke("send-transactional-email", {
+        const res = await supabase.functions.invoke("send-app-email", {
           body: {
             templateName: "vendor-new-order",
             recipientEmail: v.vendor_email,

@@ -419,7 +419,7 @@ async function notifyFailure(
       .eq("id", simulationId)
       .maybeSingle();
     if (!sim?.email || sim.created_via === "admin_manual") return;
-    const { error } = await supabase.functions.invoke("send-transactional-email", {
+    const { error } = await supabase.functions.invoke("send-app-email", {
       body: {
         templateName: "savings-analysis-failed",
         recipientEmail: sim.email,

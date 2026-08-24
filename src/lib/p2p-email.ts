@@ -15,7 +15,7 @@ async function getContact(listingId: string, role: Role) {
 
 async function send(templateName: string, recipientEmail: string, templateData: Record<string, any>, idempotencyKey: string) {
   try {
-    await supabase.functions.invoke("send-transactional-email", {
+    await supabase.functions.invoke("send-app-email", {
       body: { templateName, recipientEmail, templateData, idempotencyKey },
     });
   } catch (e) {

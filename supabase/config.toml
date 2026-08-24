@@ -21,10 +21,7 @@ verify_jwt = false
 [functions.dynamic-sitemap]
 verify_jwt = false
 
-[functions.handle-email-unsubscribe]
-verify_jwt = false
-
-[functions.handle-email-suppression]
+[functions.send-app-email]
 verify_jwt = false
 
 [functions.sendcloud-webhook]

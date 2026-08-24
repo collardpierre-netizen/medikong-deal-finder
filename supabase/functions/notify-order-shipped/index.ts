@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
     })
   }
 
-  const { data: sendData, error: sendErr } = await admin.functions.invoke('send-transactional-email', {
+  const { data: sendData, error: sendErr } = await admin.functions.invoke('send-app-email', {
     body: {
       templateName: 'order-shipped',
       recipientEmail,

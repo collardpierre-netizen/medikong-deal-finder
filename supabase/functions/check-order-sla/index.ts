@@ -173,7 +173,7 @@ Deno.serve(async (req) => {
     // 3b) Admin email (only critical)
     if (severity === "critical" && settings.notify_admin_email && !ins.notified_admin_at) {
       try {
-        await supabase.functions.invoke("send-transactional-email", {
+        await supabase.functions.invoke("send-app-email", {
           body: {
             templateName: "order-sla-critical-admin",
             recipientEmail: settings.notify_admin_email,

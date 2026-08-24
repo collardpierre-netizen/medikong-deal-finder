@@ -29,16 +29,18 @@ export const RecoveryEmail = ({
 }: RecoveryEmailProps) => (
   <Html lang="fr" dir="ltr">
     <Head />
-    <Preview>Réinitialisez votre mot de passe Medikong</Preview>
+    <Preview>Réinitialisez votre mot de passe — Medikong</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={logoSection}>
           <Img src={LOGO_URL} alt="Medikong" width="180" style={logo} />
         </Section>
         <Hr style={divider} />
-        <Heading style={h1}>Réinitialisation du mot de passe</Heading>
+        <Heading style={h1}>Réinitialisez votre mot de passe</Heading>
         <Text style={text}>
-          Nous avons reçu une demande de réinitialisation de votre mot de passe pour Medikong. Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe.
+          Nous avons reçu une demande de réinitialisation du mot de passe de
+          votre compte <strong>Medikong</strong>. Cliquez sur le bouton
+          ci-dessous pour choisir un nouveau mot de passe.
         </Text>
         <Section style={buttonSection}>
           <Button style={button} href={confirmationUrl}>
@@ -47,7 +49,8 @@ export const RecoveryEmail = ({
         </Section>
         <Hr style={divider} />
         <Text style={footer}>
-          Si vous n'avez pas demandé de réinitialisation, vous pouvez ignorer cet e-mail. Votre mot de passe ne sera pas modifié.
+          Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer
+          cet e-mail. Votre mot de passe ne sera pas modifié.
         </Text>
         <Text style={footerBrand}>© MediKong SRL</Text>
       </Container>

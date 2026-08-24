@@ -136,7 +136,7 @@ export function MandatFacturationFlow({
     if (existingSignedAt && existingSignedVersion === CONTRACT_VERSION) return;
     submittedNotifSent.current = true;
     supabase.functions
-      .invoke("send-transactional-email", {
+      .invoke("send-app-email", {
         body: {
           templateName: "vendor-contract-submitted",
           recipientEmail: vendorEmail,
@@ -197,7 +197,7 @@ export function MandatFacturationFlow({
             "notify_email",
             "send vendor-contract-signed + admin-contract-notification",
             async () => {
-              await supabase.functions.invoke("send-transactional-email", {
+              await supabase.functions.invoke("send-app-email", {
                 body: {
                   templateName: "vendor-contract-signed",
                   recipientEmail: vendorEmail,
@@ -211,7 +211,7 @@ export function MandatFacturationFlow({
                   },
                 },
               });
-              await supabase.functions.invoke("send-transactional-email", {
+              await supabase.functions.invoke("send-app-email", {
                 body: {
                   templateName: "admin-contract-notification",
                   recipientEmail: "admin@medikong.pro",

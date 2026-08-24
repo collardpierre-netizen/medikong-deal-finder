@@ -316,7 +316,7 @@ Deno.serve(async (req) => {
       };
 
       if (customer?.email) {
-        await supabase.functions.invoke("send-transactional-email", {
+        await supabase.functions.invoke("send-app-email", {
           body: {
             templateName: "order-line-refunded-customer",
             recipientEmail: customer.email,
@@ -328,7 +328,7 @@ Deno.serve(async (req) => {
         console.warn(`[refund_order_line] no customer email for order ${order.id}, skip customer notif`);
       }
 
-      await supabase.functions.invoke("send-transactional-email", {
+      await supabase.functions.invoke("send-app-email", {
         body: {
           templateName: "order-line-refunded-admin",
           recipientEmail: "pcoll@medikong.pro",

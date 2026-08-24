@@ -49,7 +49,7 @@ function wrapSupabaseForWebhookTest(real: ReturnType<typeof admin>) {
               return { data: { ok: true, viaTestProxy: true }, error: null };
             }
             // Toutes les autres edge functions (generate-vendor-invoices,
-            // send-transactional-email, decrement_offer_stock rpc, etc.)
+            // send-app-email, decrement_offer_stock rpc, etc.)
             // → no-op silencieux pour garder le test hermétique.
             return { data: { skipped: true }, error: null };
           },

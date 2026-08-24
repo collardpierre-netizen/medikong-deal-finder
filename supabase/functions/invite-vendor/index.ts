@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
     if (mode === "email") {
       // Send invitation email via transactional email system
       try {
-        await supabaseAdmin.functions.invoke("send-transactional-email", {
+        await supabaseAdmin.functions.invoke("send-app-email", {
           body: {
             templateName: "vendor-application",
             recipientEmail: vendor.email,

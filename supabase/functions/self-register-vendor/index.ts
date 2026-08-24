@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
       let logStatus: "enqueued" | "failed" = "enqueued";
       let logError: string | null = null;
       try {
-        const { error: invokeErr } = await supabaseAdmin.functions.invoke("send-transactional-email", {
+        const { error: invokeErr } = await supabaseAdmin.functions.invoke("send-app-email", {
           body: {
             templateName: "vendor-self-registered",
             recipientEmail: safeEmail,

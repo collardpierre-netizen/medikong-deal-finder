@@ -21,39 +21,34 @@ const LOGO_URL = 'https://iokwqxhhpblcbkrxgcje.supabase.co/storage/v1/object/pub
 interface MagicLinkEmailProps {
   siteName: string
   confirmationUrl: string
-  token?: string
 }
 
 export const MagicLinkEmail = ({
   siteName,
   confirmationUrl,
-  token,
 }: MagicLinkEmailProps) => (
   <Html lang="fr" dir="ltr">
     <Head />
-    <Preview>Votre code de connexion Medikong</Preview>
+    <Preview>Votre lien de connexion Medikong</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={logoSection}>
           <Img src={LOGO_URL} alt="Medikong" width="180" style={logo} />
         </Section>
         <Hr style={divider} />
-        <Heading style={h1}>Votre code de connexion</Heading>
+        <Heading style={h1}>Votre lien de connexion</Heading>
         <Text style={text}>
-          Utilisez le code ci-dessous pour poursuivre votre connexion à {siteName}. Il expirera sous peu.
-        </Text>
-        {token ? <Text style={codeStyle}>{token}</Text> : null}
-        <Text style={helperText}>
-          Saisissez ce code dans l'écran de vérification affiché sur MediKong.
+          Cliquez sur le bouton ci-dessous pour vous connecter à{' '}
+          <strong>Medikong</strong>. Ce lien expire dans quelques instants.
         </Text>
         <Section style={buttonSection}>
-          <Button style={secondaryButton} href={confirmationUrl}>
-            Ouvrir sur cet appareil
+          <Button style={button} href={confirmationUrl}>
+            Se connecter
           </Button>
         </Section>
         <Hr style={divider} />
         <Text style={footer}>
-          Si vous n'avez pas demandé ce code, vous pouvez ignorer cet e-mail.
+          Si vous n'avez pas demandé ce lien, vous pouvez ignorer cet e-mail.
         </Text>
         <Text style={footerBrand}>© MediKong SRL</Text>
       </Container>
@@ -81,32 +76,15 @@ const text = {
   lineHeight: '1.6',
   margin: '0 0 20px',
 }
-const codeStyle = {
-  fontFamily: 'Courier, monospace',
-  fontSize: '28px',
-  fontWeight: 'bold' as const,
-  color: '#1e3a5f',
-  textAlign: 'center' as const,
-  margin: '0 0 12px',
-  letterSpacing: '6px',
-}
-const helperText = {
-  fontSize: '13px',
-  color: '#3b4a5a',
-  lineHeight: '1.6',
-  textAlign: 'center' as const,
-  margin: '0 0 20px',
-}
 const buttonSection = { textAlign: 'center' as const, margin: '24px 0' }
-const secondaryButton = {
-  backgroundColor: '#eff6ff',
-  color: '#2563eb',
+const button = {
+  backgroundColor: '#2563eb',
+  color: '#ffffff',
   fontSize: '14px',
   fontWeight: '600' as const,
   borderRadius: '8px',
   padding: '12px 28px',
   textDecoration: 'none',
-  border: '1px solid #bfdbfe',
 }
 const footer = { fontSize: '12px', color: '#9ca3af', margin: '20px 0 4px' }
 const footerBrand = { fontSize: '11px', color: '#9ca3af', margin: '0' }

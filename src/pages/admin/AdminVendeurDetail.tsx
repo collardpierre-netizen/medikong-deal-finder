@@ -1028,7 +1028,7 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
 
       try {
         if (action === "accepted") {
-          await supabase.functions.invoke("send-transactional-email", {
+          await supabase.functions.invoke("send-app-email", {
             body: {
               templateName: "vendor-approved",
               recipientEmail: vendor.email,
@@ -1037,7 +1037,7 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
             },
           });
         } else if (action === "approved") {
-          await supabase.functions.invoke("send-transactional-email", {
+          await supabase.functions.invoke("send-app-email", {
             body: {
               templateName: "vendor-approved",
               recipientEmail: vendor.email,
@@ -1046,7 +1046,7 @@ function VendorValidationTab({ vendor, onUpdate }: { vendor: any; onUpdate: () =
             },
           });
         } else if (action === "rejected") {
-          await supabase.functions.invoke("send-transactional-email", {
+          await supabase.functions.invoke("send-app-email", {
             body: {
               templateName: "vendor-rejected",
               recipientEmail: vendor.email,

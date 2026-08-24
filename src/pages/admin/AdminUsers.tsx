@@ -226,7 +226,7 @@ export default function AdminUsers() {
 
     // Notify buyer that their account is now verified (transactional)
     if (updated?.email) {
-      supabase.functions.invoke("send-transactional-email", {
+      supabase.functions.invoke("send-app-email", {
         body: {
           templateName: "buyer-verified",
           recipientEmail: updated.email,

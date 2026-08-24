@@ -1181,7 +1181,7 @@ const AdminCommandeDetail = () => {
                           if (tokErr || !rawToken) throw new Error(tokErr?.message || "token_generation_failed");
                           confirmUrl = `${window.location.origin}/commande/confirmer/${encodeURIComponent(String(rawToken))}`;
                         }
-                        const { data, error } = await supabase.functions.invoke("send-transactional-email", {
+                        const { data, error } = await supabase.functions.invoke("send-app-email", {
                           body: {
                             templateName: "order-delivery-confirmation",
                             recipientEmail: email,

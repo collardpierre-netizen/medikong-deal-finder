@@ -31,7 +31,7 @@ export async function generateContractPdf({
   signerRole,
 }: GeneratePdfArgs): Promise<Blob> {
   // Garde-fou : refuser de générer un PDF si les coordonnées sont invalides
-  // (mêmes règles que la validation côté serveur dans send-transactional-email).
+  // (mêmes règles que la validation côté serveur dans send-app-email).
   const validation = validateContractData({ medikong, vendor });
   if (!validation.valid) {
     throw new ContractValidationError(validation.issues);

@@ -210,7 +210,7 @@ export default function DelegateCallbackDialog({
       };
       await Promise.all(
         recipients.map((to) =>
-          supabase.functions.invoke("send-transactional-email", {
+          supabase.functions.invoke("send-app-email", {
             body: {
               templateName: "vendor-delegate-callback",
               recipientEmail: to,

@@ -214,7 +214,7 @@ export default function BuyerActivationPage() {
 
       // Notify admins (best-effort)
       supabase.functions
-        .invoke("send-transactional-email", {
+        .invoke("send-app-email", {
           body: {
             templateName: "buyer-registration",
             recipientEmail: "admin@medikong.pro",

@@ -927,7 +927,7 @@ export default function OnboardingPage() {
           }
 
           // Notify admins of new buyer registration
-          supabase.functions.invoke("send-transactional-email", {
+          supabase.functions.invoke("send-app-email", {
             body: {
               templateName: "buyer-registration",
               recipientEmail: "admin@medikong.pro",

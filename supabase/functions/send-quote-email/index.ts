@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
       ? new Date(quote.token_expires_at).toLocaleDateString("fr-BE")
       : undefined;
 
-    const sendResp = await adminClient.functions.invoke("send-transactional-email", {
+    const sendResp = await adminClient.functions.invoke("send-app-email", {
       body: {
         templateName: "quote-sent",
         recipientEmail: recipient,

@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
       const idemKey = `invoice-reminder-${s.id}-${today.toISOString().slice(0, 10)}`;
 
       try {
-        await supabase.functions.invoke("send-transactional-email", {
+        await supabase.functions.invoke("send-app-email", {
           body: {
             templateName: "invoice-payment-reminder",
             recipientEmail: customerEmail,

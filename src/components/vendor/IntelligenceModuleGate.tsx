@@ -123,7 +123,7 @@ export function IntelligenceModuleGate({
 
   const notifyAdmin = async (payload: Record<string, any>) => {
     try {
-      await supabase.functions.invoke("send-transactional-email", {
+      await supabase.functions.invoke("send-app-email", {
         body: {
           templateName: "admin-vendor-market-intel-notification",
           recipientEmail: "admin@medikong.pro",

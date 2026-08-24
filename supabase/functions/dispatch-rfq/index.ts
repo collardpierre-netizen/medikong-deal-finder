@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
       const token = tokenByVendor.get(v.id);
       const reason = reasonByVendor.get(v.id) ?? null;
       try {
-        await adminClient.functions.invoke("send-transactional-email", {
+        await adminClient.functions.invoke("send-app-email", {
           body: {
             templateName: "rfq-vendor-invitation",
             recipientEmail: email,

@@ -44,13 +44,29 @@ export default function VendorLoginPage() {
         }
       }
 
+      let vendorId: string | null = null;
+
       const { data: vendor } = await supabase
         .from("vendors")
         .select("id")
         .eq("auth_user_id", user.id)
         .maybeSingle();
+      vendorId = vendor?.id ?? null;
 
-      if (!vendor) {
+      // Membre (non-propriétaire) d'un compte vendeur : fallback sur account_memberships
+      if (!vendorId) {
+        const { data: membership } = await supabase
+          .from("account_memberships")
+          .select("account_id")
+          .eq("user_id", user.id)
+          .eq("account_kind", "vendor")
+          .eq("status", "active")
+          .limit(1)
+          .maybeSingle();
+        vendorId = membership?.account_id ?? null;
+      }
+
+      if (!vendorId) {
         await supabase.auth.signOut();
         toast.error("Ce compte n'est pas associé à un vendeur");
         return;

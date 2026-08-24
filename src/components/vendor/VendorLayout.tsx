@@ -58,8 +58,20 @@ export default function VendorLayout() {
         .maybeSingle();
 
       if (!vendor) {
-        navigate("/vendor/login", { replace: true });
-        return;
+        // Membre (non-propriétaire) d'un compte vendeur : fallback sur account_memberships
+        const { data: membership } = await supabase
+          .from("account_memberships")
+          .select("account_id")
+          .eq("user_id", user.id)
+          .eq("account_kind", "vendor")
+          .eq("status", "active")
+          .limit(1)
+          .maybeSingle();
+
+        if (!membership) {
+          navigate("/vendor/login", { replace: true });
+          return;
+        }
       }
 
       setChecking(false);

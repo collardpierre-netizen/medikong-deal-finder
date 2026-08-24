@@ -135,13 +135,22 @@ Deno.serve(async (req) => {
         const qty = Number(l.quantity) || 0;
         const puHt = Number(l.unit_price_excl_vat) || 0;
         const lineHt = Number(l.line_total_excl_vat) || puHt * qty;
-        const commissionPerUnit = computeCommission(puHt, l.cost_price, cfg);
-        const lineCommission = commissionPerUnit * qty;
+        // Priorité aux montants RÉELS stockés sur la ligne (commandes manuelles
+        // notamment) : commission_amount / commission_computed sont des TOTAUX
+        // de ligne. Fallback sur la config de l'offre si rien n'est stocké.
+        const storedRaw = l.commission_amount ?? l.commission_computed;
+        const storedN = storedRaw === null || storedRaw === undefined ? NaN : Number(storedRaw);
+        const hasStored = Number.isFinite(storedN);
+        const commissionPerUnit = hasStored ? (qty > 0 ? storedN / qty : 0) : computeCommission(puHt, l.cost_price, cfg);
+        const lineCommission = hasStored ? storedN : commissionPerUnit * qty;
+        const commissionMeta = hasStored && Number(l.commission_rate) > 0
+          ? `Com. ${Number(l.commission_rate)} % ${l.commission_basis === "margin" ? "marge" : "CA"}`
+          : null;
         const lineVat = (lineHt * (Number(l.vat_rate) || 0)) / 100;
         totalGrossHt += lineHt;
         totalCommission += lineCommission;
         totalVat += lineVat;
-        return { l, cfg, lineHt, lineCommission, lineVat, commissionPerUnit };
+        return { l, cfg, lineHt, lineCommission, lineVat, commissionPerUnit, commissionMeta };
       });
       const totalNetHt = totalGrossHt - totalCommission;
       const totalTtc = totalGrossHt + totalVat;

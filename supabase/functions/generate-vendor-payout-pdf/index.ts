@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
     async function generateForVendor(vendorRow: any) {
       let linesQuery = admin
         .from("order_lines")
-        .select("id, offer_id, quantity, quantity_shipped, unit_price_excl_vat, vat_rate, line_total_excl_vat, manual_label, tracking_number, tracking_url, fulfillment_status, cost_price, products(name, gtin, cnk_code)")
+        .select("id, offer_id, quantity, quantity_shipped, unit_price_excl_vat, vat_rate, line_total_excl_vat, manual_label, tracking_number, tracking_url, fulfillment_status, cost_price, commission_amount, commission_computed, commission_basis, commission_rate, products(name, gtin, cnk_code)")
         .eq("order_id", orderId)
         .eq("vendor_id", vendorRow.id);
 
@@ -135,13 +135,22 @@ Deno.serve(async (req) => {
         const qty = Number(l.quantity) || 0;
         const puHt = Number(l.unit_price_excl_vat) || 0;
         const lineHt = Number(l.line_total_excl_vat) || puHt * qty;
-        const commissionPerUnit = computeCommission(puHt, l.cost_price, cfg);
-        const lineCommission = commissionPerUnit * qty;
+        // Priorité aux montants RÉELS stockés sur la ligne (commandes manuelles
+        // notamment) : commission_amount / commission_computed sont des TOTAUX
+        // de ligne. Fallback sur la config de l'offre si rien n'est stocké.
+        const storedRaw = l.commission_amount ?? l.commission_computed;
+        const storedN = storedRaw === null || storedRaw === undefined ? NaN : Number(storedRaw);
+        const hasStored = Number.isFinite(storedN);
+        const commissionPerUnit = hasStored ? (qty > 0 ? storedN / qty : 0) : computeCommission(puHt, l.cost_price, cfg);
+        const lineCommission = hasStored ? storedN : commissionPerUnit * qty;
+        const commissionMeta = hasStored && Number(l.commission_rate) > 0
+          ? `Com. ${Number(l.commission_rate)} % ${l.commission_basis === "margin" ? "marge" : "CA"}`
+          : null;
         const lineVat = (lineHt * (Number(l.vat_rate) || 0)) / 100;
         totalGrossHt += lineHt;
         totalCommission += lineCommission;
         totalVat += lineVat;
-        return { l, cfg, lineHt, lineCommission, lineVat, commissionPerUnit };
+        return { l, cfg, lineHt, lineCommission, lineVat, commissionPerUnit, commissionMeta };
       });
       const totalNetHt = totalGrossHt - totalCommission;
       const totalTtc = totalGrossHt + totalVat;
@@ -268,13 +277,14 @@ Deno.serve(async (req) => {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(7.5);
       let rowIdx = 0;
-      for (const { l, lineHt, lineCommission } of computedLines) {
+      for (const { l, lineHt, lineCommission, commissionMeta } of computedLines) {
         const label = doc.splitTextToSize(String(l.manual_label || l.products?.name || "—"), COLS.articleWidth);
         const cnk = l.cnk_code || l.products?.cnk_code || null;
         const gtin = l.products?.gtin || null;
         const meta: string[] = [];
         if (cnk) meta.push(`CNK ${cnk}`);
         if (gtin) meta.push(`EAN ${gtin}`);
+        if (commissionMeta) meta.push(commissionMeta);
         if (l.tracking_number) meta.push(`Tracking ${l.tracking_number}`);
         const metaLine = meta.length ? meta.join(" · ") : null;
         const extra = metaLine ? 1 : 0;

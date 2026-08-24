@@ -277,13 +277,14 @@ Deno.serve(async (req) => {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(7.5);
       let rowIdx = 0;
-      for (const { l, lineHt, lineCommission } of computedLines) {
+      for (const { l, lineHt, lineCommission, commissionMeta } of computedLines) {
         const label = doc.splitTextToSize(String(l.manual_label || l.products?.name || "—"), COLS.articleWidth);
         const cnk = l.cnk_code || l.products?.cnk_code || null;
         const gtin = l.products?.gtin || null;
         const meta: string[] = [];
         if (cnk) meta.push(`CNK ${cnk}`);
         if (gtin) meta.push(`EAN ${gtin}`);
+        if (commissionMeta) meta.push(commissionMeta);
         if (l.tracking_number) meta.push(`Tracking ${l.tracking_number}`);
         const metaLine = meta.length ? meta.join(" · ") : null;
         const extra = metaLine ? 1 : 0;

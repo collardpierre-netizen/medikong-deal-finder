@@ -13,6 +13,15 @@ type PayloadLine = {
   products?: { name?: string | null; cnk_code?: string | null; gtin?: string | null } | null;
 };
 
+type ShippingAddress = {
+  label?: string | null;
+  address_line1?: string | null;
+  address_line2?: string | null;
+  postal_code?: string | null;
+  city?: string | null;
+  country?: string | null;
+};
+
 type Payload = {
   order: {
     id: string;
@@ -21,6 +30,8 @@ type Payload = {
     currency: string;
     created_at: string | null;
     notes?: string | null;
+    fulfillment_mode?: string | null;
+    shipping_address?: ShippingAddress | null;
     customer: { company_name?: string | null; email?: string | null } | null;
   };
   lines: PayloadLine[];
@@ -143,6 +154,27 @@ export async function generateExpressOrderPdf(orderId: string) {
     doc.setFontSize(10);
     doc.text(order.customer.company_name || order.customer.email || "Client", M, cursorY + 4);
     cursorY += 4;
+  }
+
+  // Mode logistique + adresse de livraison spécifique (si renseignée)
+  const sa = order.shipping_address;
+  if (order.fulfillment_mode === "pickup") {
+    doc.setTextColor(...MUTED);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text("Retrait sur place (picking) — pas d'adresse de livraison.", M, cursorY + 4);
+    cursorY += 5;
+  } else if (sa && (sa.address_line1 || sa.label)) {
+    const addrLine = [sa.address_line1, sa.address_line2, [sa.postal_code, sa.city].filter(Boolean).join(" "), sa.country]
+      .filter((s) => s && String(s).trim())
+      .join(", ");
+    doc.setTextColor(...MUTED);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    const shipText = sa.label ? `Livraison — ${sa.label} : ${addrLine}` : `Livraison : ${addrLine}`;
+    const shipLines = doc.splitTextToSize(shipText, pageW - 2 * M);
+    doc.text(shipLines, M, cursorY + 4);
+    cursorY += shipLines.length * 4 + 1;
   }
 
   cursorY += 6;

@@ -15,11 +15,11 @@ type PayloadLine = {
 
 type ShippingAddress = {
   label?: string | null;
-  address_line1?: string | null;
-  address_line2?: string | null;
+  address_l1?: string | null;
+  address_l2?: string | null;
   postal_code?: string | null;
   city?: string | null;
-  country?: string | null;
+  country_code?: string | null;
 };
 
 type Payload = {
@@ -164,8 +164,8 @@ export async function generateExpressOrderPdf(orderId: string) {
     doc.setFontSize(9);
     doc.text("Retrait sur place (picking) — pas d'adresse de livraison.", M, cursorY + 4);
     cursorY += 5;
-  } else if (sa && (sa.address_line1 || sa.label)) {
-    const addrLine = [sa.address_line1, sa.address_line2, [sa.postal_code, sa.city].filter(Boolean).join(" "), sa.country]
+  } else if (sa && (sa.address_l1 || sa.label)) {
+    const addrLine = [sa.address_l1, sa.address_l2, [sa.postal_code, sa.city].filter(Boolean).join(" "), sa.country_code]
       .filter((s) => s && String(s).trim())
       .join(", ");
     doc.setTextColor(...MUTED);

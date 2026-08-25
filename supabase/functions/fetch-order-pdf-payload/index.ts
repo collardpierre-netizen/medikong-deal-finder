@@ -71,7 +71,10 @@ Deno.serve(async (req) => {
       .select("id, order_number, status, currency, subtotal_excl_vat, vat_amount, total_incl_vat, created_at, notes, draft_payload, fulfillment_mode, shipping_address, customer:customers(company_name, email)")
       .eq("id", orderId)
       .maybeSingle();
-    if (oErr || !order) return json({ error: "order_not_found" }, 404);
+    if (oErr || !order) {
+      console.error("fetch-order-pdf-payload order fetch failed", oErr);
+      return json({ error: "order_not_found", detail: oErr?.message ?? null }, 404);
+    }
 
     let { data: lines } = await admin
       .from("order_lines")

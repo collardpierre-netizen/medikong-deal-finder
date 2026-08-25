@@ -107,6 +107,7 @@ const AdminCommandeManuelle = () => {
   const [isForecast, setIsForecast] = useState<boolean>(false);
   const [duplicatedFrom, setDuplicatedFrom] = useState<string | null>(null);
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+  const [editingOrderNumber, setEditingOrderNumber] = useState<string | null>(null);
   const [shippingAddressId, setShippingAddressId] = useState<string>("");
   const [fulfillmentMode, setFulfillmentMode] = useState<"pickup" | "delivery">("delivery");
 
@@ -788,9 +789,10 @@ const AdminCommandeManuelle = () => {
         try {
           const { data: ord } = await (supabase as any)
             .from("orders")
-            .select("shipping_address_id, fulfillment_mode")
+            .select("order_number, shipping_address_id, fulfillment_mode")
             .eq("id", editFromUrl)
             .maybeSingle();
+          setEditingOrderNumber(ord?.order_number ?? null);
           if (ord?.shipping_address_id) setShippingAddressId(ord.shipping_address_id);
           if (ord?.fulfillment_mode === "pickup" || ord?.fulfillment_mode === "delivery") {
             setFulfillmentMode(ord.fulfillment_mode);
@@ -830,7 +832,7 @@ const AdminCommandeManuelle = () => {
   return (
     <div>
       <AdminTopBar
-        title={editingOrderId ? "Édition de commande" : docMode === "quote" ? "Nouveau devis" : "Nouvelle commande manuelle"}
+        title={editingOrderId ? `Édition de commande${editingOrderNumber ? ` ${editingOrderNumber}` : ""}` : docMode === "quote" ? "Nouveau devis" : "Nouvelle commande manuelle"}
         subtitle={editingOrderId ? "Modification en place — les lignes et totaux seront recalculés" : docMode === "quote" ? "Saisie admin — génère un devis avec lien public 7 j" : "Saisie admin — alimente la GMV"}
       />
 

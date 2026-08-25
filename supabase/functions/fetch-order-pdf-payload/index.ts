@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
 
     const { data: order, error: oErr } = await admin
       .from("orders")
-      .select("id, order_number, status, currency, subtotal_excl_vat, vat_amount, total_incl_vat, created_at, notes, draft_payload, customer:customers(company_name, email)")
+      .select("id, order_number, status, currency, subtotal_excl_vat, vat_amount, total_incl_vat, created_at, notes, draft_payload, fulfillment_mode, shipping_address, customer:customers(company_name, email)")
       .eq("id", orderId)
       .maybeSingle();
     if (oErr || !order) return json({ error: "order_not_found" }, 404);
@@ -137,6 +137,8 @@ Deno.serve(async (req) => {
         currency: order.currency || "EUR",
         created_at: order.created_at,
         notes: (order as any).notes ?? (order as any).draft_payload?.customer_notes ?? null,
+        fulfillment_mode: (order as any).fulfillment_mode ?? null,
+        shipping_address: (order as any).shipping_address ?? null,
         customer: order.customer || null,
       },
       lines: filteredLines,

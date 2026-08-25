@@ -409,9 +409,11 @@ Deno.serve(async (req) => {
         doc.setFontSize(7);
         rows.forEach((r, i) => {
           const nameLines = doc.splitTextToSize(r.name, SCOL.nameW);
+          // Codes nus (pas de préfixe) : la colonne fait 22mm, « EAN + 13 chiffres »
+          // dépassait et chevauchait le nom produit. CNK (7 chiffres) ligne 1, EAN (13) ligne 2.
           const codeLines: string[] = [];
-          if (r.cnk) codeLines.push(`CNK ${r.cnk}`);
-          if (r.gtin) codeLines.push(`EAN ${r.gtin}`);
+          if (r.cnk) codeLines.push(String(r.cnk));
+          if (r.gtin) codeLines.push(String(r.gtin));
           const rowH = Math.max(5, Math.max(nameLines.length, codeLines.length) * 3.2 + 1.8);
           if (y + rowH > pageH - 50) { doc.addPage(); y = 20; }
           if (i % 2 === 0) {
@@ -420,8 +422,13 @@ Deno.serve(async (req) => {
           }
           doc.setTextColor(148, 163, 184);
           doc.text(String(i + 1), SCOL.rank, y + 3.4);
+          doc.setFont("courier", "normal");
+          doc.setFontSize(6.5);
           doc.setTextColor(80, 80, 80);
-          doc.text(codeLines.length ? codeLines : ["—"], SCOL.cnk, y + 3.4);
+          // maxWidth = garde-fou anti-débordement vers la colonne PRODUIT
+          doc.text(codeLines.length ? codeLines : ["—"], SCOL.cnk, y + 3.4, { maxWidth: 21 });
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(7);
           doc.setTextColor(...NAVY);
           doc.text(nameLines, SCOL.name, y + 3.4);
           doc.setFont("helvetica", "bold");

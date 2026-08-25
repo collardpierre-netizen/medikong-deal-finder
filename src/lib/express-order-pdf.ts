@@ -13,6 +13,15 @@ type PayloadLine = {
   products?: { name?: string | null; cnk_code?: string | null; gtin?: string | null } | null;
 };
 
+type ShippingAddress = {
+  label?: string | null;
+  address_line1?: string | null;
+  address_line2?: string | null;
+  postal_code?: string | null;
+  city?: string | null;
+  country?: string | null;
+};
+
 type Payload = {
   order: {
     id: string;
@@ -21,6 +30,8 @@ type Payload = {
     currency: string;
     created_at: string | null;
     notes?: string | null;
+    fulfillment_mode?: string | null;
+    shipping_address?: ShippingAddress | null;
     customer: { company_name?: string | null; email?: string | null } | null;
   };
   lines: PayloadLine[];

@@ -165,7 +165,8 @@ export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
     columnStyles: {
       0: { cellWidth: 8, textColor: MUTED },
       1: { cellWidth: 18, font: "courier" },
-      2: { cellWidth: 25, font: "courier" },
+      // EAN 13 chiffres en 6.5pt pour tenir dans 25mm sans retour à la ligne
+      2: { cellWidth: 25, font: "courier", fontSize: 6.5, cellPadding: 1.5 },
       4: { halign: "right", cellWidth: 20 },
       5: { halign: "right", cellWidth: 16 },
       6: { halign: "right", cellWidth: 18 },

@@ -89,6 +89,7 @@ export default function DeliveryNotesPanel({ orderId, orderNumber, customerName,
       .map((r) => ({
         name: r.product_name || "Produit",
         cnk: r.cnk_code,
+        gtin: r.gtin,
         ordered: r.quantity,
         delivered: byLine.get(r.order_line_id) || 0,
         remaining: Math.max(r.quantity - (byLine.get(r.order_line_id) || 0), 0),

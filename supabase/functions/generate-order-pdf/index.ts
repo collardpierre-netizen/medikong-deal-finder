@@ -319,7 +319,7 @@ Deno.serve(async (req) => {
 
     // ─── Synthèse produits (agrégé) ────────────────────────────────────
     {
-      const agg = new Map<string, { name: string; cnk: string | null; qty: number; ht: number }>();
+      const agg = new Map<string, { name: string; cnk: string | null; gtin: string | null; qty: number; ht: number }>();
       let sumHt = 0;
       let sumTtc = 0;
       let sumQty = 0;
@@ -331,10 +331,11 @@ Deno.serve(async (req) => {
           (Number((l as any).unit_price_incl_vat) || 0) * qty ||
           ht * (1 + (Number((l as any).vat_rate) || 0) / 100);
         const cnk = (l as any).cnk_code || l.products?.cnk_code || null;
+        const gtin = l.products?.gtin || null;
         const name = l.manual_label || l.products?.name || "—";
-        const key = l.product_id || cnk || `${name}::${l.products?.gtin || ""}`;
+        const key = l.product_id || cnk || `${name}::${gtin || ""}`;
         const cur = agg.get(key);
-        if (cur) { cur.qty += qty; cur.ht += ht; } else { agg.set(key, { name, cnk, qty, ht }); }
+        if (cur) { cur.qty += qty; cur.ht += ht; } else { agg.set(key, { name, cnk, gtin, qty, ht }); }
         sumHt += ht;
         sumTtc += ttcLine;
         sumQty += qty;
@@ -397,7 +398,7 @@ Deno.serve(async (req) => {
         doc.setFontSize(6.5);
         doc.setTextColor(100, 116, 139);
         doc.text("#", SCOL.rank, y + 4);
-        doc.text("CNK", SCOL.cnk, y + 4);
+        doc.text("CNK / EAN", SCOL.cnk, y + 4);
         doc.text("PRODUIT", SCOL.name, y + 4);
         doc.text("QTÉ TOTALE", SCOL.qty, y + 4, { align: "right" });
         doc.text("TOTAL HTVA", SCOL.ht, y + 4, { align: "right" });
@@ -408,7 +409,10 @@ Deno.serve(async (req) => {
         doc.setFontSize(7);
         rows.forEach((r, i) => {
           const nameLines = doc.splitTextToSize(r.name, SCOL.nameW);
-          const rowH = Math.max(5, nameLines.length * 3.2 + 1.8);
+          const codeLines: string[] = [];
+          if (r.cnk) codeLines.push(`CNK ${r.cnk}`);
+          if (r.gtin) codeLines.push(`EAN ${r.gtin}`);
+          const rowH = Math.max(5, Math.max(nameLines.length, codeLines.length) * 3.2 + 1.8);
           if (y + rowH > pageH - 50) { doc.addPage(); y = 20; }
           if (i % 2 === 0) {
             doc.setFillColor(...SOFT);
@@ -417,7 +421,7 @@ Deno.serve(async (req) => {
           doc.setTextColor(148, 163, 184);
           doc.text(String(i + 1), SCOL.rank, y + 3.4);
           doc.setTextColor(80, 80, 80);
-          doc.text(r.cnk || "—", SCOL.cnk, y + 3.4);
+          doc.text(codeLines.length ? codeLines : ["—"], SCOL.cnk, y + 3.4);
           doc.setTextColor(...NAVY);
           doc.text(nameLines, SCOL.name, y + 3.4);
           doc.setFont("helvetica", "bold");
@@ -469,7 +473,11 @@ Deno.serve(async (req) => {
       const label = doc.splitTextToSize(String(l.manual_label || l.products?.name || "—"), COLS.articleWidth);
       const vendor = doc.splitTextToSize(String(l.vendors?.company_name || l.vendors?.name || l.qogita_seller_fid || "—"), COLS.vendorWidth);
       const cnk = (l as any).cnk_code || l.products?.cnk_code || null;
-      const codeLine = cnk ? `CNK ${cnk}` : null;
+      const gtin = l.products?.gtin || null;
+      const codeParts: string[] = [];
+      if (cnk) codeParts.push(`CNK ${cnk}`);
+      if (gtin) codeParts.push(`EAN ${gtin}`);
+      const codeLine = codeParts.length ? codeParts.join(" · ") : null;
       const extraLines = codeLine ? 1 : 0;
       const rowH = Math.max(6, (Math.max(label.length, vendor.length) + extraLines) * 3.4 + 2.5);
 

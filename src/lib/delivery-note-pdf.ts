@@ -16,6 +16,7 @@ export type DeliveryNotePdfInput = {
   rows: {
     name: string;
     cnk: string | null;
+    gtin?: string | null;
     ordered: number;
     delivered: number;
     remaining: number;
@@ -147,25 +148,27 @@ export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
 
   autoTable(doc, {
     startY: y,
-    head: [["#", "CNK", "Produit", "Commandé", "Livré", "Reliquat"]],
+    head: [["#", "CNK", "EAN", "Produit", "Commandé", "Livré", "Reliquat"]],
     body: input.rows.map((r, i) => [
       String(i + 1),
       r.cnk || "—",
+      r.gtin || "—",
       r.name,
       String(r.ordered),
       String(r.delivered),
       String(r.remaining),
     ]),
-    foot: [["", "", "Total", "", String(totalDelivered), String(totalRemaining)]],
+    foot: [["", "", "", "Total", "", String(totalDelivered), String(totalRemaining)]],
     styles: { fontSize: 8, cellPadding: 2 },
     headStyles: { fillColor: BLUE, textColor: 255, fontStyle: "bold" },
     footStyles: { fillColor: [241, 245, 249], textColor: NAVY, fontStyle: "bold" },
     columnStyles: {
       0: { cellWidth: 8, textColor: MUTED },
-      1: { cellWidth: 20, font: "courier" },
-      3: { halign: "right", cellWidth: 22 },
-      4: { halign: "right", cellWidth: 18 },
-      5: { halign: "right", cellWidth: 20 },
+      1: { cellWidth: 18, font: "courier" },
+      2: { cellWidth: 25, font: "courier" },
+      4: { halign: "right", cellWidth: 20 },
+      5: { halign: "right", cellWidth: 16 },
+      6: { halign: "right", cellWidth: 18 },
     },
     margin: { left: M, right: M },
     didDrawPage: () => {

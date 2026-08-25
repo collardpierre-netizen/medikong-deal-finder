@@ -39,7 +39,7 @@ type Payload = {
   scope: "admin" | "vendor";
 };
 
-type AggRow = { cnk: string | null; name: string; qty: number; ht: number; ttc: number };
+type AggRow = { cnk: string | null; gtin: string | null; name: string; qty: number; ht: number; ttc: number };
 
 function aggregate(lines: PayloadLine[]): { rows: AggRow[]; uniq: number; qty: number; ht: number; tva: number; ttc: number } {
   const map = new Map<string, AggRow>();
@@ -51,15 +51,16 @@ function aggregate(lines: PayloadLine[]): { rows: AggRow[]; uniq: number; qty: n
     const lineHt = Number(l.line_total_excl_vat) || (Number(l.unit_price_excl_vat) || 0) * q;
     const lineTtc = lineHt * (1 + (Number(l.vat_rate) || 0) / 100);
     const cnk = l.products?.cnk_code || l.cnk_code || null;
+    const gtin = l.products?.gtin || null;
     const name = l.manual_label || l.products?.name || "—";
-    const key = cnk || `${name}::${l.products?.gtin || ""}`;
+    const key = cnk || `${name}::${gtin || ""}`;
     const existing = map.get(key);
     if (existing) {
       existing.qty += q;
       existing.ht += lineHt;
       existing.ttc += lineTtc;
     } else {
-      map.set(key, { cnk, name, qty: q, ht: lineHt, ttc: lineTtc });
+      map.set(key, { cnk, gtin, name, qty: q, ht: lineHt, ttc: lineTtc });
     }
     ht += lineHt;
     ttc += lineTtc;
@@ -222,10 +223,11 @@ export async function generateExpressOrderPdf(orderId: string) {
   // Tableau produits agrégés
   autoTable(doc, {
     startY: cursorY,
-    head: [["#", "CNK", "Produit", "Qté", "HTVA", "TTC"]],
+    head: [["#", "CNK", "EAN", "Produit", "Qté", "HTVA", "TTC"]],
     body: agg.rows.map((r, i) => [
       String(i + 1),
       r.cnk || "—",
+      r.gtin || "—",
       r.name,
       String(r.qty),
       fmtEur(r.ht) + " €",
@@ -235,10 +237,11 @@ export async function generateExpressOrderPdf(orderId: string) {
     headStyles: { fillColor: BLUE, textColor: 255, fontStyle: "bold" },
     columnStyles: {
       0: { cellWidth: 8, textColor: MUTED },
-      1: { cellWidth: 20, font: "courier" },
-      3: { halign: "right", cellWidth: 14 },
-      4: { halign: "right", cellWidth: 24 },
-      5: { halign: "right", cellWidth: 26 },
+      1: { cellWidth: 18, font: "courier" },
+      2: { cellWidth: 25, font: "courier" },
+      4: { halign: "right", cellWidth: 14 },
+      5: { halign: "right", cellWidth: 24 },
+      6: { halign: "right", cellWidth: 26 },
     },
     margin: { left: M, right: M },
     didDrawPage: () => {

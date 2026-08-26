@@ -216,7 +216,7 @@ const PublicOrderPage = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6">
           <div>
             <div className="text-[11px] uppercase text-slate-400 font-semibold mb-1">Destinataire</div>
             <div className="font-medium">{order.customer?.company_name ?? "—"}</div>

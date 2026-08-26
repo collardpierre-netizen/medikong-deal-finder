@@ -349,7 +349,7 @@ const PublicOrderPage = () => {
         {order.vendor_bank && (
           <div className="bg-slate-50 border border-slate-200 rounded p-4 text-sm">
             <div className="text-[11px] uppercase text-slate-400 font-semibold mb-2">Informations de paiement — {order.vendor_bank.company_name || order.vendor_bank.name}</div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {order.vendor_bank.bank_name && <div><div className="text-xs text-slate-500">Banque</div><div className="font-medium">{order.vendor_bank.bank_name}</div></div>}
               {order.vendor_bank.iban && <div className="col-span-2"><div className="text-xs text-slate-500">IBAN</div><div className="font-medium tracking-wide">{order.vendor_bank.iban}</div></div>}
               {order.vendor_bank.bic && <div><div className="text-xs text-slate-500">BIC</div><div className="font-medium">{order.vendor_bank.bic}</div></div>}

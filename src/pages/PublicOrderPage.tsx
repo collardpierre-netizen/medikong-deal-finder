@@ -189,7 +189,7 @@ const PublicOrderPage = () => {
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
 
-      <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-sm border border-slate-200 p-8">
+      <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-sm border border-slate-200 p-4 sm:p-8 overflow-x-hidden">
         <div className="flex items-start justify-between mb-6">
           <img src={medikongLogo} alt="MediKong" className="h-12 sm:h-14 w-auto" />
           <div className="text-right text-xs text-slate-500">

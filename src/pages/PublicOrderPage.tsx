@@ -287,26 +287,50 @@ const PublicOrderPage = () => {
           <div className="bg-blue-50/60 border-l-2 border-blue-400 px-3 py-2 rounded text-sm italic text-slate-700 mb-6">{order.notes}</div>
         )}
 
-        <table className="w-full text-sm border border-slate-200 rounded overflow-hidden mb-4">
+        {/* Mobile : cartes empilées (aucun scroll latéral) */}
+        <div className="sm:hidden space-y-2 mb-4">
+          {(order.lines || []).map((l) => (
+            <div key={l.id} className="border border-slate-200 rounded-lg p-3">
+              <div className="text-sm font-medium text-slate-900 break-words">{l.manual_label || l.product_name || "—"}</div>
+              {l.vendor_name && <div className="text-xs text-slate-500 mt-0.5 break-words">{l.vendor_name}</div>}
+              <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                <dt className="text-slate-500">Qté</dt>
+                <dd className="text-right text-slate-900">{l.quantity}</dd>
+                <dt className="text-slate-500">PU HT</dt>
+                <dd className="text-right text-slate-900">{fmtEur(Number(l.unit_price_excl_vat) || 0)} €</dd>
+                <dt className="text-slate-500">TVA</dt>
+                <dd className="text-right text-slate-900">{Number(l.vat_rate ?? 0).toFixed(0)}%</dd>
+                <dt className="text-slate-500">Total HT</dt>
+                <dd className="text-right font-semibold text-slate-900">{fmtEur(Number(l.line_total_excl_vat) || 0)} €</dd>
+              </dl>
+            </div>
+          ))}
+          {(order.lines || []).length === 0 && (
+            <div className="border border-slate-200 rounded-lg px-3 py-6 text-center text-slate-400 text-sm">Aucune ligne</div>
+          )}
+        </div>
+
+        {/* Desktop : tableau */}
+        <table className="hidden sm:table w-full table-fixed text-sm border border-slate-200 rounded overflow-hidden mb-4">
           <thead className="bg-slate-50">
             <tr>
-              <th className="text-left px-3 py-2 text-[11px] uppercase text-slate-500">Article</th>
-              <th className="text-left px-3 py-2 text-[11px] uppercase text-slate-500">Fournisseur</th>
-              <th className="text-right px-3 py-2 text-[11px] uppercase text-slate-500">Qté</th>
-              <th className="text-right px-3 py-2 text-[11px] uppercase text-slate-500">PU HT</th>
-              <th className="text-right px-3 py-2 text-[11px] uppercase text-slate-500">TVA</th>
-              <th className="text-right px-3 py-2 text-[11px] uppercase text-slate-500">Total HT</th>
+              <th className="text-left px-3 py-2 text-[11px] uppercase text-slate-500 w-[34%]">Article</th>
+              <th className="text-left px-3 py-2 text-[11px] uppercase text-slate-500 w-[22%]">Fournisseur</th>
+              <th className="text-right px-3 py-2 text-[11px] uppercase text-slate-500 w-[8%]">Qté</th>
+              <th className="text-right px-3 py-2 text-[11px] uppercase text-slate-500 w-[12%]">PU HT</th>
+              <th className="text-right px-3 py-2 text-[11px] uppercase text-slate-500 w-[8%]">TVA</th>
+              <th className="text-right px-3 py-2 text-[11px] uppercase text-slate-500 w-[16%]">Total HT</th>
             </tr>
           </thead>
           <tbody>
             {(order.lines || []).map((l) => (
               <tr key={l.id} className="border-t border-slate-100">
-                <td className="px-3 py-2">{l.manual_label || l.product_name || "—"}</td>
-                <td className="px-3 py-2 text-slate-600">{l.vendor_name ?? "—"}</td>
+                <td className="px-3 py-2 break-words">{l.manual_label || l.product_name || "—"}</td>
+                <td className="px-3 py-2 text-slate-600 break-words">{l.vendor_name ?? "—"}</td>
                 <td className="px-3 py-2 text-right">{l.quantity}</td>
-                <td className="px-3 py-2 text-right">{fmtEur(Number(l.unit_price_excl_vat) || 0)} €</td>
+                <td className="px-3 py-2 text-right whitespace-nowrap">{fmtEur(Number(l.unit_price_excl_vat) || 0)} €</td>
                 <td className="px-3 py-2 text-right">{Number(l.vat_rate ?? 0).toFixed(0)}%</td>
-                <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(l.line_total_excl_vat) || 0)} €</td>
+                <td className="px-3 py-2 text-right font-medium whitespace-nowrap">{fmtEur(Number(l.line_total_excl_vat) || 0)} €</td>
               </tr>
             ))}
             {(order.lines || []).length === 0 && (
@@ -315,11 +339,12 @@ const PublicOrderPage = () => {
           </tbody>
         </table>
 
-        <div className="flex flex-col items-end gap-1 text-sm mb-6">
-          <div className="flex gap-8"><span className="text-slate-500">Total HT</span><span className="font-medium">{fmtEur(Number(order.subtotal_excl_vat) || 0)} €</span></div>
-          <div className="flex gap-8"><span className="text-slate-500">TVA</span><span className="font-medium">{fmtEur(Number(order.vat_amount) || 0)} €</span></div>
-          <div className="flex gap-8 bg-mk-blue text-white px-4 py-2 rounded mt-1"><span>Total TTC</span><span className="font-bold">{fmtEur(Number(order.total_incl_vat) || 0)} €</span></div>
+        <div className="flex flex-col sm:items-end gap-1 text-sm mb-6">
+          <div className="flex justify-between sm:justify-end gap-4 sm:gap-8"><span className="text-slate-500">Total HT</span><span className="font-medium">{fmtEur(Number(order.subtotal_excl_vat) || 0)} €</span></div>
+          <div className="flex justify-between sm:justify-end gap-4 sm:gap-8"><span className="text-slate-500">TVA</span><span className="font-medium">{fmtEur(Number(order.vat_amount) || 0)} €</span></div>
+          <div className="flex justify-between sm:justify-end gap-4 sm:gap-8 bg-mk-blue text-white px-4 py-2 rounded mt-1"><span>Total TTC</span><span className="font-bold">{fmtEur(Number(order.total_incl_vat) || 0)} €</span></div>
         </div>
+
 
         {order.vendor_bank && (
           <div className="bg-slate-50 border border-slate-200 rounded p-4 text-sm">

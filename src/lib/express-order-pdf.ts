@@ -2,6 +2,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtEur } from "@/lib/format-currency";
+import { buildEpcQrDataUrl, MEDIKONG_BENEFICIARY, MEDIKONG_IBAN } from "@/lib/epc-qr";
 
 type PayloadLine = {
   quantity: number | null;
@@ -297,6 +298,45 @@ export async function generateExpressOrderPdf(orderId: string) {
       );
     },
   });
+
+  // Bloc paiement + QR EPC (virement SEPA pré-rempli)
+  try {
+    const qrRef = order.order_number || "";
+    const qrDataUrl = await buildEpcQrDataUrl({ amountEur: agg.ttc, reference: qrRef }, 320);
+    let y = (doc as any).lastAutoTable?.finalY ? (doc as any).lastAutoTable.finalY + 10 : cursorY + 10;
+    const blockH = 34;
+    if (y + blockH > pageH - 20) {
+      doc.addPage();
+      y = 20;
+    }
+    doc.setDrawColor(226, 232, 240);
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(M, y, pageW - 2 * M, blockH, 1.5, 1.5, "FD");
+    doc.addImage(qrDataUrl, "PNG", M + 3, y + 3, 28, 28);
+    doc.setTextColor(...NAVY);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text("Payer par QR — virement SEPA", M + 36, y + 8);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...MUTED);
+    doc.text(
+      "Scannez avec votre application bancaire : bénéficiaire, IBAN, montant et communication sont pré-remplis.",
+      M + 36,
+      y + 13.5,
+      { maxWidth: pageW - 2 * M - 40 },
+    );
+    doc.setTextColor(...NAVY);
+    doc.text(`Bénéficiaire : ${MEDIKONG_BENEFICIARY}`, M + 36, y + 20);
+    doc.text(`IBAN : ${MEDIKONG_IBAN}`, M + 36, y + 24.5);
+    doc.text(
+      `Montant : ${fmtEur(agg.ttc)} ${currency}   ·   Communication : ${qrRef || "—"}`,
+      M + 36,
+      y + 29,
+    );
+  } catch (e) {
+    console.warn("[express-order-pdf] QR EPC non généré", e);
+  }
 
   const suffix = isDraft ? "_BROUILLON" : "_FINAL";
   doc.save(`recap_${order.order_number || "commande-sans-numero"}${suffix}.pdf`);

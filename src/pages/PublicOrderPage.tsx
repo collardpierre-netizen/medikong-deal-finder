@@ -7,6 +7,7 @@ import medikongLogo from "@/assets/medikong-logo-cropped.png";
 import { CheckCircle2, Loader2, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import EpcPaymentQr from "@/components/payments/EpcPaymentQr";
 
 type OrderData = {
   id: string;
@@ -358,6 +359,13 @@ const PublicOrderPage = () => {
             <div className="mt-3 text-xs text-slate-500">Communication : <span className="font-mono">{order.order_number}</span></div>
           </div>
         )}
+
+        <EpcPaymentQr
+          className="mt-4"
+          amountEur={Number(order.total_incl_vat) || 0}
+          reference={order.order_number}
+        />
+
 
         <div className="mt-6 bg-blue-50 border border-blue-100 rounded-lg p-4">
           {order.customer_validated_at ? (

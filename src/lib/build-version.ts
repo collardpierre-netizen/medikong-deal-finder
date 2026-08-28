@@ -63,6 +63,8 @@ const AT_RISK_PATH_PREFIXES = ["/admin"];
  *    apparaissent souvent en fin ou milieu de path.
  */
 const SENSITIVE_PATH_PREFIXES = [
+  // Encodage / édition de commandes manuelles : saisie longue, jamais de reload auto
+  "/admin/commandes",
   "/panier",
   "/checkout",
   "/onboarding",

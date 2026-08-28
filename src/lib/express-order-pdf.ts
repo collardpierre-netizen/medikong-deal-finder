@@ -2,6 +2,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtEur } from "@/lib/format-currency";
+import { buildEpcQrDataUrl, MEDIKONG_BENEFICIARY, MEDIKONG_IBAN } from "@/lib/epc-qr";
 
 type PayloadLine = {
   quantity: number | null;

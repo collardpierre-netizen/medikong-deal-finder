@@ -360,6 +360,13 @@ const PublicOrderPage = () => {
           </div>
         )}
 
+        <EpcPaymentQr
+          className="mt-4"
+          amountEur={Number(order.total_incl_vat) || 0}
+          reference={order.order_number}
+        />
+
+
         <div className="mt-6 bg-blue-50 border border-blue-100 rounded-lg p-4">
           {order.customer_validated_at ? (
             <div className="flex items-start gap-2 text-sm text-emerald-700">

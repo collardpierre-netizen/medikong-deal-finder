@@ -7,6 +7,7 @@ import medikongLogo from "@/assets/medikong-logo-cropped.png";
 import { CheckCircle2, Loader2, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import EpcPaymentQr from "@/components/payments/EpcPaymentQr";
 
 type OrderData = {
   id: string;

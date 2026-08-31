@@ -741,20 +741,11 @@ const AdminCommandeDetail = () => {
 
           {vendorWithBank && (
             <div className="bg-white border rounded-lg p-4" style={{ borderColor: "#E2E8F0" }}>
-              <div className="text-[11px] uppercase text-slate-400 font-semibold mb-2">Informations de paiement — {vendorWithBank.company_name || vendorWithBank.name}</div>
+              <div className="text-[11px] uppercase text-slate-400 font-semibold mb-2">Informations de paiement — MediKong SRL</div>
               <div className="grid grid-cols-3 gap-3 text-sm">
-                {vendorWithBank.bank_name && (
-                  <div><div className="text-xs text-slate-500">Banque</div><div className="font-medium">{vendorWithBank.bank_name}</div></div>
-                )}
-                {vendorWithBank.iban && (
-                  <div className="col-span-2"><div className="text-xs text-slate-500">IBAN</div><div className="font-medium tracking-wide">{vendorWithBank.iban}</div></div>
-                )}
-                {vendorWithBank.bic && (
-                  <div><div className="text-xs text-slate-500">BIC</div><div className="font-medium">{vendorWithBank.bic}</div></div>
-                )}
-                {vendorWithBank.vat_number && (
-                  <div className="col-span-2"><div className="text-xs text-slate-500">TVA fournisseur</div><div className="font-medium">{vendorWithBank.vat_number}</div></div>
-                )}
+                <div className="col-span-2"><div className="text-xs text-slate-500">Bénéficiaire</div><div className="font-medium">MediKong SRL</div></div>
+                <div className="col-span-2"><div className="text-xs text-slate-500">IBAN</div><div className="font-medium tracking-wide">{MEDIKONG_IBAN}</div></div>
+                <div className="col-span-2"><div className="text-xs text-slate-500">TVA</div><div className="font-medium">BE 1005.771.323</div></div>
               </div>
               <div className="mt-3 text-xs text-slate-500">Communication : <span className="font-mono">{order.order_number}</span></div>
             </div>

@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
     doc.setTextColor(...MUTED);
     doc.text("MediKong SRL", pageW - M, y + 7.5, { align: "right" });
     doc.text("23 rue de la Procession", pageW - M, y + 11.5, { align: "right" });
-    doc.text("7822 Ath, Belgique", pageW - M, y + 15.5, { align: "right" });
+    doc.text("B-7822 Meslin-l'Évêque, Belgique", pageW - M, y + 15.5, { align: "right" });
     doc.text("TVA : BE 1005.771.323", pageW - M, y + 19.5, { align: "right" });
     doc.text("contact@medikong.pro", pageW - M, y + 23.5, { align: "right" });
 
@@ -566,14 +566,10 @@ Deno.serve(async (req) => {
     doc.text(fmtEur(Math.round(totalTtc * 100), currency), totValueX, y + 3, { align: "right" });
     y += 14;
 
-    // ─── Infos paiement ────────────────────────────────────────────────
-    const vendorWithBank = (lines || [])
-      .map((l: any) => l.vendors)
-      .find((v: any) => v && (v.iban || v.bank_name));
-
+    // ─── Infos paiement (toujours MediKong) ────────────────────────────
     // Single source of truth (shared with public_get_order_by_token + vendor payout PDF)
     const { data: showPaymentInfo } = await adminClient.rpc("order_should_show_payment_info", { _order_id: order.id });
-    if (vendorWithBank && showPaymentInfo !== false) {
+    if (showPaymentInfo !== false) {
       if (y > pageH - 50) { doc.addPage(); y = 20; }
       const bkH = 30;
       doc.setFillColor(...SOFT);
@@ -591,15 +587,14 @@ Deno.serve(async (req) => {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.setTextColor(...NAVY);
-      doc.text(String(vendorWithBank.company_name || vendorWithBank.name || "Fournisseur"), M + 5, y + 11);
+      doc.text("MediKong SRL", M + 5, y + 11);
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       doc.setTextColor(80, 80, 80);
       let by = y + 17;
-      if (vendorWithBank.bank_name) { doc.text(`Banque : ${vendorWithBank.bank_name}`, M + 5, by); by += 4.5; }
-      if (vendorWithBank.iban) { doc.text(`IBAN : ${vendorWithBank.iban}`, M + 5, by); by += 4.5; }
-      if (vendorWithBank.bic) { doc.text(`BIC : ${vendorWithBank.bic}`, M + 5, by); by += 4.5; }
+      doc.text("IBAN : BE86 7320 7305 0650", M + 5, by); by += 4.5;
+      doc.text("23 rue de la Procession, B-7822 Meslin-l'Évêque", M + 5, by); by += 4.5;
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
@@ -608,12 +603,11 @@ Deno.serve(async (req) => {
       doc.setFont("helvetica", "normal");
       doc.setTextColor(80, 80, 80);
       doc.text(String(order.order_number), pageW - M - 5, y + 16, { align: "right" });
-      if (vendorWithBank.vat_number) {
-        doc.text(`TVA fournisseur : ${vendorWithBank.vat_number}`, pageW - M - 5, y + 21, { align: "right" });
-      }
+      doc.text("TVA : BE 1005.771.323", pageW - M - 5, y + 21, { align: "right" });
 
       y += bkH + 4;
     }
+
 
     // ─── Footer + filigrane BROUILLON (toutes pages) ───────────────────
     const pageCount = (doc as any).internal.getNumberOfPages();

@@ -124,7 +124,7 @@ const PublicQuotePage = () => {
               <div className="font-semibold text-slate-900">MediKong</div>
               <div>MediKong SRL</div>
               <div>23 rue de la Procession</div>
-              <div>7822 Ath, Belgique</div>
+              <div>7822 Meslin-l'Évêque, Belgique</div>
               <div>TVA : BE 1005.771.323</div>
             </div>
           </div>

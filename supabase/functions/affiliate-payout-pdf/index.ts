@@ -18,7 +18,7 @@ const SIGNED_URL_TTL = 60 * 60 * 24 * 7;
 // Coordonnées légales MediKong (Balooh SRL renommée MediKong).
 const ISSUER = {
   name: "MediKong SRL",
-  address: "23 rue de la Procession, 7822 Ath, Belgique",
+  address: "23 rue de la Procession, 7822 Meslin-l'Évêque, Belgique",
   vat: "BE 1005.771.323",
 };
 

@@ -59,7 +59,7 @@ export interface Tier {
 }
 
 export const aboutTimeline: TimelineNode[] = [
-  { year: "2026", title: "Création de MediKong", desc: "Fondation de la société en Belgique (Ath).", status: "past" },
+  { year: "2026", title: "Création de MediKong", desc: "Fondation de la société en Belgique (Meslin-l'Évêque).", status: "past" },
   { year: "Mai 2026", title: "Lancement de la plateforme", desc: "41 000 produits en ligne dès l'ouverture.", status: "past" },
   { year: "Juin 2026", title: "Croissance du catalogue", desc: "Élargissement de l'offre et des fournisseurs référencés.", status: "active" },
   { year: "Fin 2026", title: "Levée de fonds", desc: "Financement de la croissance et de l'expansion.", status: "future" },
@@ -180,7 +180,7 @@ export const investTimeline: VTimelineNode[] = [
 export const companyInfo = {
   name: "MediKong SRL",
   tva: "BE 1005.771.323",
-  address: "23 rue de la Procession, B-7822 Ath, Belgique",
+  address: "23 rue de la Procession, B-7822 Meslin-l'Évêque, Belgique",
   email: "contact@medikong.pro",
   phone: "+32 2 XXX XX XX",
 };

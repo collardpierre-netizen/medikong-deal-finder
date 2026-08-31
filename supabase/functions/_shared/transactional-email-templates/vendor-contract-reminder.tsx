@@ -167,7 +167,7 @@ const VendorContractReminderEmail = ({
           <Text style={footer}>L'équipe {SITE_NAME}</Text>
           <Text style={legalFooter}>
             MediKong SRL · TVA : BE 1005.771.323<br />
-            23 rue de la Procession, B-7822 Ath, Belgique
+            23 rue de la Procession, B-7822 Meslin-l'Évêque, Belgique
           </Text>
         </Container>
       </Body>

@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { lineMetrics, type ManualLineInput } from "@/lib/manual-order-metrics";
 import { VendorsEmbedError } from "@/lib/vendors-embed-error";
 import GeneratePaymentLinkButton from "@/components/admin/GeneratePaymentLinkButton";
+import { MEDIKONG_IBAN } from "@/lib/epc-qr";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Brouillon",
@@ -518,7 +519,7 @@ const AdminCommandeDetail = () => {
             <div className="mb-3 p-3 rounded border bg-white flex items-center justify-between gap-3" style={{ borderColor: "#E2E8F0" }}>
               <div>
                 <div className="text-[11px] uppercase text-slate-400 font-semibold mb-0.5">Bloc « Informations de paiement »</div>
-                <div className="text-xs text-slate-500">Coordonnées bancaires du fournisseur sur le PDF & page publique.</div>
+                <div className="text-xs text-slate-500">Coordonnées bancaires MediKong sur le PDF & page publique.</div>
               </div>
               <label className="inline-flex items-center gap-2 text-sm font-medium cursor-pointer select-none">
                 <input
@@ -741,20 +742,11 @@ const AdminCommandeDetail = () => {
 
           {vendorWithBank && (
             <div className="bg-white border rounded-lg p-4" style={{ borderColor: "#E2E8F0" }}>
-              <div className="text-[11px] uppercase text-slate-400 font-semibold mb-2">Informations de paiement — {vendorWithBank.company_name || vendorWithBank.name}</div>
+              <div className="text-[11px] uppercase text-slate-400 font-semibold mb-2">Informations de paiement — MediKong SRL</div>
               <div className="grid grid-cols-3 gap-3 text-sm">
-                {vendorWithBank.bank_name && (
-                  <div><div className="text-xs text-slate-500">Banque</div><div className="font-medium">{vendorWithBank.bank_name}</div></div>
-                )}
-                {vendorWithBank.iban && (
-                  <div className="col-span-2"><div className="text-xs text-slate-500">IBAN</div><div className="font-medium tracking-wide">{vendorWithBank.iban}</div></div>
-                )}
-                {vendorWithBank.bic && (
-                  <div><div className="text-xs text-slate-500">BIC</div><div className="font-medium">{vendorWithBank.bic}</div></div>
-                )}
-                {vendorWithBank.vat_number && (
-                  <div className="col-span-2"><div className="text-xs text-slate-500">TVA fournisseur</div><div className="font-medium">{vendorWithBank.vat_number}</div></div>
-                )}
+                <div className="col-span-2"><div className="text-xs text-slate-500">Bénéficiaire</div><div className="font-medium">MediKong SRL</div></div>
+                <div className="col-span-2"><div className="text-xs text-slate-500">IBAN</div><div className="font-medium tracking-wide">{MEDIKONG_IBAN}</div></div>
+                <div className="col-span-2"><div className="text-xs text-slate-500">TVA</div><div className="font-medium">BE 1005.771.323</div></div>
               </div>
               <div className="mt-3 text-xs text-slate-500">Communication : <span className="font-mono">{order.order_number}</span></div>
             </div>

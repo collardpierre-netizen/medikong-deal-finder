@@ -6,7 +6,7 @@ import { MEDIKONG_LOGO_PNG_BASE64 } from "./medikong-logo.ts";
 export const MEDIKONG = {
   name: "MediKong SRL",
   address: "23 rue de la Procession",
-  postal: "7822 Ath",
+  postal: "7822 Meslin-l'Évêque",
   country: "Belgique",
   vat: "BE 1005.771.323",
   email: "billing@medikong.pro",

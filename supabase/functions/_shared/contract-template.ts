@@ -33,7 +33,7 @@ export interface ContractMediKongData {
 
 export const MEDIKONG_DEFAULTS: ContractMediKongData = {
   legal_form: "SRL",
-  address: "MediKong SRL — 23 rue de la Procession, B-7822 Ath, Belgique",
+  address: "MediKong SRL — 23 rue de la Procession, B-7822 Meslin-l'Évêque, Belgique",
   bce: "BE 1005.771.323",
   vat: "BE 1005.771.323",
   representative_name: "Représentant légal MediKong",

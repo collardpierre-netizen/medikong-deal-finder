@@ -63,7 +63,7 @@ export default function ConfiancePage() {
           <TrustBlock
             icon={Building2}
             title="Émetteur légal"
-            body="MediKong est édité par MediKong SRL, 23 rue de la Procession, 7822 Ath (Belgique) — TVA BE 1005.771.323. Les mentions légales, CGU, CGV et politique de confidentialité sont accessibles en pied de page."
+            body="MediKong est édité par MediKong SRL, 23 rue de la Procession, 7822 Meslin-l'Évêque (Belgique) — TVA BE 1005.771.323. Les mentions légales, CGU, CGV et politique de confidentialité sont accessibles en pied de page."
           />
         </section>
       </div>

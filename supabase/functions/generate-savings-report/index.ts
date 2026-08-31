@@ -163,7 +163,7 @@ Deno.serve(async (req) => {
       const pageH = doc.internal.pageSize.getHeight();
       doc.setFontSize(8); doc.setTextColor(150, 155, 165);
       doc.text(
-        "MediKong SRL · 23 rue de la Procession · 7822 Ath · Belgique · Document confidentiel",
+        "MediKong SRL · 23 rue de la Procession · 7822 Meslin-l'Évêque · Belgique · Document confidentiel",
         margin, pageH - 20,
       );
     },

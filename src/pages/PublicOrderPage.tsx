@@ -8,6 +8,7 @@ import { CheckCircle2, Loader2, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import EpcPaymentQr from "@/components/payments/EpcPaymentQr";
+import { MEDIKONG_IBAN } from "@/lib/epc-qr";
 
 type OrderData = {
   id: string;
@@ -197,7 +198,7 @@ const PublicOrderPage = () => {
             <div className="font-semibold text-slate-900">MediKong</div>
             <div>MediKong SRL</div>
             <div>23 rue de la Procession</div>
-            <div>7822 Ath, Belgique</div>
+            <div>7822 Meslin-l'Évêque, Belgique</div>
             <div>TVA : BE 1005.771.323</div>
           </div>
         </div>
@@ -349,12 +350,11 @@ const PublicOrderPage = () => {
 
         {order.vendor_bank && (
           <div className="bg-slate-50 border border-slate-200 rounded p-4 text-sm">
-            <div className="text-[11px] uppercase text-slate-400 font-semibold mb-2">Informations de paiement — {order.vendor_bank.company_name || order.vendor_bank.name}</div>
+            <div className="text-[11px] uppercase text-slate-400 font-semibold mb-2">Informations de paiement — MediKong SRL</div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {order.vendor_bank.bank_name && <div><div className="text-xs text-slate-500">Banque</div><div className="font-medium">{order.vendor_bank.bank_name}</div></div>}
-              {order.vendor_bank.iban && <div className="col-span-2"><div className="text-xs text-slate-500">IBAN</div><div className="font-medium tracking-wide">{order.vendor_bank.iban}</div></div>}
-              {order.vendor_bank.bic && <div><div className="text-xs text-slate-500">BIC</div><div className="font-medium">{order.vendor_bank.bic}</div></div>}
-              {order.vendor_bank.vat_number && <div className="col-span-2"><div className="text-xs text-slate-500">TVA fournisseur</div><div className="font-medium">{order.vendor_bank.vat_number}</div></div>}
+              <div className="col-span-2"><div className="text-xs text-slate-500">Bénéficiaire</div><div className="font-medium">MediKong SRL</div></div>
+              <div className="col-span-2"><div className="text-xs text-slate-500">IBAN</div><div className="font-medium tracking-wide">{MEDIKONG_IBAN}</div></div>
+              <div className="col-span-2"><div className="text-xs text-slate-500">TVA</div><div className="font-medium">BE 1005.771.323</div></div>
             </div>
             <div className="mt-3 text-xs text-slate-500">Communication : <span className="font-mono">{order.order_number}</span></div>
           </div>

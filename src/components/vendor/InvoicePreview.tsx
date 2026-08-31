@@ -48,7 +48,7 @@ export default function InvoicePreview({ order, docType }: Props) {
           <p className="text-[10px] font-medium text-[#8B95A5] uppercase tracking-wide mb-1">Emetteur</p>
           <p className="font-semibold">MediKong SRL</p>
           <p>23 rue de la Procession</p>
-          <p>B-7822 Ath, Belgique</p>
+          <p>B-7822 Meslin-l'Évêque, Belgique</p>
           <p>TVA: BE 1005.771.323</p>
           <p className="text-[#1B5BDA]">www.medikong.pro</p>
         </div>
@@ -179,7 +179,7 @@ export default function InvoicePreview({ order, docType }: Props) {
 
       {/* Footer */}
       <div className="border-t border-[#E2E8F0] mt-6 pt-3 text-center text-[10px] text-[#8B95A5]">
-        MediKong SRL | TVA BE 1005.771.323 | 23 rue de la Procession, B-7822 Ath | www.medikong.pro
+        MediKong SRL | TVA BE 1005.771.323 | 23 rue de la Procession, B-7822 Meslin-l'Évêque | www.medikong.pro
       </div>
     </div>
   );

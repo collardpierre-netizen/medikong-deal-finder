@@ -15,7 +15,7 @@ const BUCKET = "invoices";
 const MEDIKONG_SELLER = {
   name: "MediKong SRL",
   vat_number: "BE1005771323",
-  address: { line1: "23 rue de la Procession", zip: "7822", city: "Ath", country: "BE" },
+  address: { line1: "23 rue de la Procession", zip: "7822", city: "Meslin-l'Évêque", country: "BE" },
 } as const;
 
 const TERMINAL_OK = new Set(["accepted", "delivered", "sent"]);

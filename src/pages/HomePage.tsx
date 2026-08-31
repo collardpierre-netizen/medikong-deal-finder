@@ -243,7 +243,7 @@ export default function HomePage() {
     "url": "https://medikong-deal-finder.lovable.app",
     "logo": "https://medikong-deal-finder.lovable.app/logo-pwa-512.png",
     "description": "Marketplace B2B de fournitures médicales en Belgique",
-    "address": { "@type": "PostalAddress", "streetAddress": "23 rue de la Procession", "addressLocality": "Ath", "postalCode": "7822", "addressCountry": "BE" },
+    "address": { "@type": "PostalAddress", "streetAddress": "23 rue de la Procession", "addressLocality": "Meslin-l'Évêque", "postalCode": "7822", "addressCountry": "BE" },
     "taxID": "BE 1005.771.323"
   };
 

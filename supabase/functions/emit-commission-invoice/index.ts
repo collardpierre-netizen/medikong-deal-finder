@@ -20,7 +20,7 @@ const MK_SELLER = {
   address: {
     line1: "23 rue de la Procession",
     zip: "7822",
-    city: "Ath",
+    city: "Meslin-l'Évêque",
     country: "BE",
   },
 } as const;

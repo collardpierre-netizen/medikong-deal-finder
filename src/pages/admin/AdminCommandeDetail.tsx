@@ -519,7 +519,7 @@ const AdminCommandeDetail = () => {
             <div className="mb-3 p-3 rounded border bg-white flex items-center justify-between gap-3" style={{ borderColor: "#E2E8F0" }}>
               <div>
                 <div className="text-[11px] uppercase text-slate-400 font-semibold mb-0.5">Bloc « Informations de paiement »</div>
-                <div className="text-xs text-slate-500">Coordonnées bancaires du fournisseur sur le PDF & page publique.</div>
+                <div className="text-xs text-slate-500">Coordonnées bancaires MediKong sur le PDF & page publique.</div>
               </div>
               <label className="inline-flex items-center gap-2 text-sm font-medium cursor-pointer select-none">
                 <input

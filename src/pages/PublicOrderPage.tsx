@@ -8,6 +8,7 @@ import { CheckCircle2, Loader2, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import EpcPaymentQr from "@/components/payments/EpcPaymentQr";
+import { MEDIKONG_IBAN } from "@/lib/epc-qr";
 
 type OrderData = {
   id: string;

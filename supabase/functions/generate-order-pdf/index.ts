@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
     doc.setTextColor(...MUTED);
     doc.text("MediKong SRL", pageW - M, y + 7.5, { align: "right" });
     doc.text("23 rue de la Procession", pageW - M, y + 11.5, { align: "right" });
-    doc.text("7822 Ath, Belgique", pageW - M, y + 15.5, { align: "right" });
+    doc.text("B-7822 Meslin-l'Évêque, Belgique", pageW - M, y + 15.5, { align: "right" });
     doc.text("TVA : BE 1005.771.323", pageW - M, y + 19.5, { align: "right" });
     doc.text("contact@medikong.pro", pageW - M, y + 23.5, { align: "right" });
 

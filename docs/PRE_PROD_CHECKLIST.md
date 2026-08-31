@@ -36,7 +36,7 @@
 
 ## 4. Légal / conformité
 
-- [ ] Mentions légales à jour : MediKong SRL, BCE 1005.771.323, 23 rue de la Procession 7822 Ath
+- [ ] Mentions légales à jour : MediKong SRL, BCE 1005.771.323, 23 rue de la Procession 7822 Meslin-l'Évêque
 - [ ] CGV publiées et acceptées par tous les fournisseurs actifs (table `vendor_contracts`)
 - [ ] Politique de confidentialité conforme RGPD (export + suppression compte testés)
 - [ ] Cookie banner fonctionnel + GTM consent mode opérationnel

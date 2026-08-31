@@ -175,7 +175,7 @@ export const template = {
     customerName: 'Dr. Martin',
     total: '1 245,00 EUR',
     itemCount: 3,
-    shippingAddress: '23 rue de la Procession, B-7822 Ath',
+    shippingAddress: '23 rue de la Procession, B-7822 Meslin-l'Évêque',
     paymentMethod: 'Virement SEPA',
     cagnotteUsed: '45,00 EUR',
     subtotalHt: '1 029,00 EUR',

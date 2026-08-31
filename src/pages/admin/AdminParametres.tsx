@@ -110,7 +110,7 @@ const AdminParametres = () => {
       platform_name: getConfig("platform_name", "MediKong.pro"),
       legal_entity: getConfig("legal_entity", "MediKong SRL"),
       vat_number: getConfig("vat_number", "BE 1005.771.323"),
-      address: getConfig("address", "23 rue de la Procession, B-7822 Ath"),
+      address: getConfig("address", "23 rue de la Procession, B-7822 Meslin-l'Évêque"),
       support_email: getConfig("support_email", "support@medikong.pro"),
       currency: getConfig("currency", "EUR (€)"),
       main_country: getConfig("main_country", "Belgique"),

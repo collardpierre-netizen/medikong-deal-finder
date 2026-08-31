@@ -144,7 +144,7 @@ describe("BuyerActivationPage — pré-remplissage depuis vendors", () => {
     expect(screen.getByText("tv@destockpharma.com")).toBeInTheDocument();
     expect(screen.getByText("+32 471 00 00 00")).toBeInTheDocument();
     expect(
-      screen.getByText(/Rue de la Procession 23, 7822 Ath \(BE\)/i),
+      screen.getByText(/Rue de la Procession 23, 7822 Meslin-l'Évêque \(BE\)/i),
     ).toBeInTheDocument();
 
     // Les inputs adresse sont aussi pré-remplis depuis la ligne vendor.

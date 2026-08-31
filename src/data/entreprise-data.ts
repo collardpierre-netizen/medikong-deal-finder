@@ -180,7 +180,7 @@ export const investTimeline: VTimelineNode[] = [
 export const companyInfo = {
   name: "MediKong SRL",
   tva: "BE 1005.771.323",
-  address: "23 rue de la Procession, B-7822 Ath, Belgique",
+  address: "23 rue de la Procession, B-7822 Meslin-l'Évêque, Belgique",
   email: "contact@medikong.pro",
   phone: "+32 2 XXX XX XX",
 };

@@ -48,7 +48,7 @@ export default function ContactPage() {
               <div className="flex items-start gap-3">
                 <MapPin size={16} className="text-mk-blue shrink-0 mt-1" />
                 <div className="text-sm text-muted-foreground leading-relaxed">
-                  MediKong SRL<br />23 rue de la Procession<br />B-7822 Ath, Belgique
+                  MediKong SRL<br />23 rue de la Procession<br />B-7822 Meslin-l'Évêque, Belgique
                 </div>
               </div>
             </div>

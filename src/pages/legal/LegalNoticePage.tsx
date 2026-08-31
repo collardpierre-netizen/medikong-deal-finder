@@ -9,7 +9,7 @@ export default function LegalNoticePage() {
         Le site MediKong.pro est édité par <strong>MediKong SRL</strong>, société de droit belge inscrite à la Banque-Carrefour des Entreprises sous le numéro BCE 1005.771.323.
       </p>
       <ul className="ml-6 mt-3 mb-5 space-y-1.5">
-        <li className="text-sm text-muted-foreground leading-[1.8]">Siège social : 23 rue de la Procession, B-7822 Ath, Belgique</li>
+        <li className="text-sm text-muted-foreground leading-[1.8]">Siège social : 23 rue de la Procession, B-7822 Meslin-l'Évêque, Belgique</li>
         <li className="text-sm text-muted-foreground leading-[1.8]">TVA : BE 1005.771.323</li>
         <li className="text-sm text-muted-foreground leading-[1.8]">Email : contact@medikong.pro</li>
       </ul>

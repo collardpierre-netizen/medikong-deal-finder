@@ -18,7 +18,7 @@ export function Footer() {
             </div>
             <p className="text-sm text-mk-sec mb-3">{t("footer.description")}</p>
             <p className="text-xs text-mk-ter">MediKong SRL · TVA: BE 1005.771.323</p>
-            <p className="text-xs text-mk-ter">23 rue de la Procession, B-7822 Ath</p>
+            <p className="text-xs text-mk-ter">23 rue de la Procession, B-7822 Meslin-l'Évêque</p>
           </div>
           <div>
             <h4 className="font-semibold text-sm text-mk-navy mb-3">{t("footer.solutions")}</h4>

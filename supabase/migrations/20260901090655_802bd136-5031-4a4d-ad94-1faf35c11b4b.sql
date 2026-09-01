@@ -1,0 +1,1 @@
+ALTER TABLE public.customers ALTER COLUMN postal_code DROP NOT NULL;

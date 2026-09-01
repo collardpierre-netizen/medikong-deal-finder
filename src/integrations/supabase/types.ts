@@ -4202,7 +4202,7 @@ export type Database = {
           peppol_scheme: string | null
           peppol_verified_at: string | null
           phone: string | null
-          postal_code: string
+          postal_code: string | null
           stripe_customer_id: string | null
           updated_at: string
           vat_number: string | null
@@ -4232,7 +4232,7 @@ export type Database = {
           peppol_scheme?: string | null
           peppol_verified_at?: string | null
           phone?: string | null
-          postal_code: string
+          postal_code?: string | null
           stripe_customer_id?: string | null
           updated_at?: string
           vat_number?: string | null
@@ -4262,7 +4262,7 @@ export type Database = {
           peppol_scheme?: string | null
           peppol_verified_at?: string | null
           phone?: string | null
-          postal_code?: string
+          postal_code?: string | null
           stripe_customer_id?: string | null
           updated_at?: string
           vat_number?: string | null

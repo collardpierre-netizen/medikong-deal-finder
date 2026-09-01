@@ -92,6 +92,43 @@ export default function AdminAffiliateDetailPage() {
     },
   });
 
+  const { data: attachable = [], isFetching: attachLoading } = useQuery<any[]>({
+    queryKey: ["admin-affiliate-attachable", attachSearch],
+    enabled: attachOpen,
+    queryFn: async () => {
+      const { data, error } = await sb.rpc("affiliate_admin_attachable_customers", { _q: attachSearch || null });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const attachCustomerMut = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await sb.rpc("affiliate_admin_attach_customer", {
+        _affiliate_id: id,
+        _customer_id: attachCustomer,
+        _recompute_past_orders: true,
+      });
+      if (error) throw error;
+      if (data && data.ok === false) throw new Error(
+        data.reason === "customer_without_account" ? "Ce client n'a pas de compte utilisateur : rattachement impossible."
+          : data.reason === "already_attributed_to_other_affiliate" ? "Ce client est déjà attribué à un autre apporteur."
+          : String(data.reason),
+      );
+      return data;
+    },
+    onSuccess: (data: any) => {
+      toast.success(`Client rattaché — ${data?.commissions_created ?? 0} commission(s) calculée(s) sur ses commandes payées`);
+      setAttachOpen(false);
+      setAttachCustomer(null);
+      setAttachSearch("");
+      qc.invalidateQueries({ queryKey: ["admin-affiliate-attachable"] });
+      invalidate();
+    },
+    onError: (e: any) => toast.error(e.message ?? "Erreur"),
+  });
+
+
   const { data: payouts = [] } = useQuery<any[]>({
     queryKey: ["admin-affiliate-payouts", id],
     queryFn: async () => {

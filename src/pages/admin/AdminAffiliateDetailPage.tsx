@@ -483,10 +483,13 @@ export default function AdminAffiliateDetailPage() {
                   <Calculator className="h-4 w-4" /> Simulateur de commission
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Règle en clair : commission = {fmtBp(eff.base_rate_bp)} du CA HTVA, sauf si ce montant dépasse{" "}
-                  {fmtBp(eff.margin_guard_threshold_bp)} de la marge nette MediKong — dans ce cas la commission devient{" "}
-                  {fmtBp(eff.margin_rate_bp)} de cette marge.
+                  Règle en clair, appliquée <strong>vente par vente</strong> sur la marge nette MediKong réelle de la
+                  commande (prix de vente − prix d'achat fournisseur) : commission = {fmtBp(eff.base_rate_bp)} du CA HTVA,
+                  sauf si ce montant dépasse {fmtBp(eff.margin_guard_threshold_bp)} de la marge nette de cette vente —
+                  dans ce cas la commission devient {fmtBp(eff.margin_rate_bp)} de cette marge nette.
+                  Mettez le plafond à 100 % pour basculer dès que le taux de base dépasse la marge.
                 </p>
+
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <Label>Commande HTVA (€)</Label>

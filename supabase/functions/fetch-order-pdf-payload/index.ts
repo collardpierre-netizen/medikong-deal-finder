@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
 
     const { data: order, error: oErr } = await admin
       .from("orders")
-      .select("id, order_number, status, subtotal_excl_vat, vat_amount, total_incl_vat, created_at, notes, draft_payload, fulfillment_mode, shipping_address, customer:customers(company_name, email)")
+      .select("id, order_number, status, subtotal_excl_vat, vat_amount, total_incl_vat, created_at, notes, draft_payload, fulfillment_mode, shipping_address, customer:customers(company_name, email, country_code, vat_number)")
       .eq("id", orderId)
       .maybeSingle();
     if (oErr || !order) {

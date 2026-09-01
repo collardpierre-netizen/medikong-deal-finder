@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf";
+import { resolveVatExemption } from "@/lib/vat-exemption";
 import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtEur } from "@/lib/format-currency";
@@ -33,7 +34,12 @@ type Payload = {
     notes?: string | null;
     fulfillment_mode?: string | null;
     shipping_address?: ShippingAddress | null;
-    customer: { company_name?: string | null; email?: string | null } | null;
+    customer: {
+      company_name?: string | null;
+      email?: string | null;
+      country_code?: string | null;
+      vat_number?: string | null;
+    } | null;
   };
   lines: PayloadLine[];
   totals: { ht: number; tva: number; ttc: number };
@@ -220,6 +226,25 @@ export async function generateExpressOrderPdf(orderId: string) {
     doc.text(k.label.toUpperCase(), x + kpiW / 2, cursorY + 15, { align: "center" });
   });
   cursorY += kpiH + 8;
+
+  // Mention légale TVA non due (export hors UE / autoliquidation intracommunautaire)
+  const vatEx = resolveVatExemption({
+    countryCode: order.customer?.country_code,
+    vatNumber: order.customer?.vat_number,
+  });
+  if (vatEx.exempt && vatEx.mention) {
+    const mLines = doc.splitTextToSize(`${vatEx.label} — ${vatEx.mention}`, pageW - 2 * M - 6);
+    const mH = mLines.length * 4 + 5;
+    doc.setFillColor(255, 247, 237);
+    doc.rect(M, cursorY, pageW - 2 * M, mH, "F");
+    doc.setTextColor(146, 64, 14);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.text(mLines, M + 3, cursorY + 4.5);
+    doc.setTextColor(...NAVY);
+    cursorY += mH + 5;
+  }
+
 
   // Tableau produits agrégés
   autoTable(doc, {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { resolveVatExemption } from "@/lib/vat-exemption";
 import { useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
@@ -346,6 +347,20 @@ const PublicOrderPage = () => {
           <div className="flex justify-between sm:justify-end gap-4 sm:gap-8"><span className="text-slate-500">TVA</span><span className="font-medium">{fmtEur(Number(order.vat_amount) || 0)} €</span></div>
           <div className="flex justify-between sm:justify-end gap-4 sm:gap-8 bg-mk-blue text-white px-4 py-2 rounded mt-1"><span>Total TTC</span><span className="font-bold">{fmtEur(Number(order.total_incl_vat) || 0)} €</span></div>
         </div>
+
+        {(() => {
+          const ex = resolveVatExemption({
+            countryCode: order.customer?.country_code,
+            vatNumber: order.customer?.vat_number,
+          });
+          if (!ex.exempt) return null;
+          return (
+            <div className="mb-6 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+              <div className="font-semibold">{ex.label}</div>
+              <div className="mt-0.5">{ex.mention}</div>
+            </div>
+          );
+        })()}
 
 
         {order.vendor_bank && (

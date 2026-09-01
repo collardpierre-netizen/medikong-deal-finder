@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { resolveVatExemption } from "@/lib/vat-exemption";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -206,7 +207,7 @@ const AdminCommandeManuelle = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("customers")
-        .select("id, company_name, email, country_code")
+        .select("id, company_name, email, country_code, vat_number")
         .eq("id", customerId)
         .maybeSingle();
       if (error) throw error;
@@ -219,6 +220,27 @@ const AdminCommandeManuelle = () => {
     if (customersRaw.some((c: any) => c.id === selectedCustomer.id)) return customersRaw;
     return [selectedCustomer, ...customersRaw];
   }, [customersRaw, selectedCustomer]);
+
+  // TVA non due : export hors UE, ou client UE (≠ BE) avec n° TVA intracommunautaire.
+  const vatExemption = useMemo(
+    () =>
+      resolveVatExemption({
+        countryCode: (selectedCustomer as any)?.country_code,
+        vatNumber: (selectedCustomer as any)?.vat_number,
+      }),
+    [selectedCustomer]
+  );
+
+  // Force les lignes à 0 % dès que la TVA n'est pas due (et rétablit 21 % sinon
+  // uniquement si la ligne était à 0 % suite à une exonération).
+  useEffect(() => {
+    if (!vatExemption.exempt) return;
+    setLines((prev) =>
+      prev.some((l) => Number(l.vat_rate) !== 0)
+        ? prev.map((l) => (Number(l.vat_rate) !== 0 ? { ...l, vat_rate: 0 } : l))
+        : prev
+    );
+  }, [vatExemption.exempt]);
 
   // Adresses de livraison du customer sélectionné
   const { data: shippingAddresses = [], refetch: refetchShippingAddresses, isFetching: isFetchingShippingAddresses } = useQuery({
@@ -344,7 +366,7 @@ const AdminCommandeManuelle = () => {
         vendor_id: "",
         quantity: 1,
         unit_price_excl_vat: 0,
-        vat_rate: 21,
+        vat_rate: vatExemption.exempt ? 0 : 21,
         unit_cost_excl_vat: "",
         commission_rate: "",
         commission_amount: "",
@@ -1333,9 +1355,15 @@ const AdminCommandeManuelle = () => {
               <span className="font-semibold">{fmtEur(totals.excl)} €</span>
             </div>
             <div className="flex justify-between text-sm text-muted-foreground">
-              <span>TVA</span>
+              <span>TVA{vatExemption.exempt ? " (non due)" : ""}</span>
               <span>{fmtEur(totals.vat)} €</span>
             </div>
+            {vatExemption.exempt && (
+              <div className="rounded-md bg-amber-50 border border-amber-200 text-amber-900 text-xs p-2 !mt-2">
+                <div className="font-semibold">{vatExemption.label}</div>
+                <div className="mt-0.5">{vatExemption.mention}</div>
+              </div>
+            )}
             <div className="flex justify-between text-sm">
               <span>Coût achat total</span>
               <span>{totals.hasAnyCost ? `${fmtEur(totals.cost)} €` : "—"}</span>

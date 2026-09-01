@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import { toast } from "sonner";
 import { Search, Save, X, Plus, Trash2, Star } from "lucide-react";
+import { COUNTRY_OPTIONS } from "@/lib/countries-iso";
 
 type Customer = {
   id: string;

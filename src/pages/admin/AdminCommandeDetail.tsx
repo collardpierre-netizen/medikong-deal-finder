@@ -563,6 +563,8 @@ const AdminCommandeDetail = () => {
             orderNumber={order.order_number}
             orderStatus={(order as any).status ?? null}
             customerName={(order as any).customer?.company_name ?? (order as any).customer?.email ?? null}
+            customerCountryCode={(order as any).customer?.country_code ?? null}
+            customerVatNumber={(order as any).customer?.vat_number ?? null}
             shippingAddress={(order as any).shipping_address ?? null}
           />
 

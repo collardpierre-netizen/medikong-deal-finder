@@ -16,6 +16,7 @@ import {
   type VendorAccountErrorAction,
 } from "@/lib/vendor-account-errors";
 import { VendorAccountErrorAlert } from "@/components/admin/VendorAccountErrorAlert";
+import { COUNTRY_OPTIONS } from "@/lib/countries-iso";
 
 interface Props {
   open: boolean;
@@ -66,7 +67,7 @@ export default function UserCreateDialog({ open, onOpenChange, onCreated }: Prop
     s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
   const handleCreateBuyer = async () => {
-    if (!buyer.company_name || !buyer.email || !buyer.address_line1 || !buyer.city || !buyer.postal_code) {
+    if (!buyer.company_name || !buyer.email || !buyer.address_line1 || !buyer.city) {
       toast.error("Veuillez remplir tous les champs obligatoires");
       return;
     }
@@ -80,7 +81,7 @@ export default function UserCreateDialog({ open, onOpenChange, onCreated }: Prop
           vat_number: buyer.vat_number || null,
           address_line1: buyer.address_line1.trim(),
           city: buyer.city.trim(),
-          postal_code: buyer.postal_code.trim(),
+          postal_code: buyer.postal_code.trim() || null,
           country_code: buyer.country_code,
           customer_type: buyer.customer_type,
         },
@@ -231,12 +232,10 @@ export default function UserCreateDialog({ open, onOpenChange, onCreated }: Prop
                 <Label className="text-xs">Pays</Label>
                 <Select value={buyer.country_code} onValueChange={v => setBuyer({ ...buyer, country_code: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="BE">Belgique</SelectItem>
-                    <SelectItem value="FR">France</SelectItem>
-                    <SelectItem value="NL">Pays-Bas</SelectItem>
-                    <SelectItem value="DE">Allemagne</SelectItem>
-                    <SelectItem value="LU">Luxembourg</SelectItem>
+                  <SelectContent className="max-h-72">
+                    {COUNTRY_OPTIONS.map(c => (
+                      <SelectItem key={c.code} value={c.code}>{c.name} ({c.code})</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -249,8 +248,8 @@ export default function UserCreateDialog({ open, onOpenChange, onCreated }: Prop
                 <Input value={buyer.city} onChange={e => setBuyer({ ...buyer, city: e.target.value })} />
               </div>
               <div>
-                <Label className="text-xs">Code postal *</Label>
-                <Input value={buyer.postal_code} onChange={e => setBuyer({ ...buyer, postal_code: e.target.value })} />
+                <Label className="text-xs">Code postal</Label>
+                <Input value={buyer.postal_code} onChange={e => setBuyer({ ...buyer, postal_code: e.target.value })} placeholder="Optionnel" />
               </div>
             </div>
             <Button onClick={handleCreateBuyer} disabled={saving} className="w-full mt-2">

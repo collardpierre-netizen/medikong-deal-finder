@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import { toast } from "sonner";
 import { Search, Save, X, Plus, Trash2, Star } from "lucide-react";
+import { COUNTRY_OPTIONS } from "@/lib/countries-iso";
 
 type Customer = {
   id: string;
@@ -40,7 +41,7 @@ type ShippingAddress = {
   notes: string | null;
 };
 
-const COUNTRIES = ["BE", "FR", "LU", "NL", "DE"];
+const COUNTRIES = COUNTRY_OPTIONS;
 
 // Typologie complète des clients (alignée sur l'enum DB customer_type).
 // Pour ajouter un nouveau type : étendre l'enum DB + cette liste.
@@ -169,8 +170,8 @@ export default function AdminCustomers() {
     if (!form) return;
     if (!form.company_name?.trim()) return toast.error("Raison sociale requise");
     if (!form.email?.trim()) return toast.error("Email requis");
-    if (!form.address_line1?.trim() || !form.city?.trim() || !form.postal_code?.trim()) {
-      return toast.error("Adresse, ville et code postal requis");
+    if (!form.address_line1?.trim() || !form.city?.trim()) {
+      return toast.error("Adresse et ville requises");
     }
     const payload = {
       company_name: form.company_name?.trim(),
@@ -181,7 +182,7 @@ export default function AdminCustomers() {
       address_line1: form.address_line1?.trim(),
       address_line2: form.address_line2?.trim() || null,
       city: form.city?.trim(),
-      postal_code: form.postal_code?.trim(),
+      postal_code: form.postal_code?.trim() || null,
       country_code: form.country_code || "BE",
       is_verified: !!form.is_verified,
       is_professional: !!form.is_professional,
@@ -312,7 +313,7 @@ export default function AdminCustomers() {
                   </Field>
                   <Field label="Pays">
                     <select value={form.country_code || "BE"} onChange={(e) => setForm({ ...form, country_code: e.target.value })} className="input">
-                      {COUNTRIES.map((c) => (<option key={c} value={c}>{c}</option>))}
+                      {COUNTRIES.map((c) => (<option key={c.code} value={c.code}>{c.name} ({c.code})</option>))}
                     </select>
                   </Field>
                   <Field label="Adresse facturation ligne 1 *" full>
@@ -321,8 +322,8 @@ export default function AdminCustomers() {
                   <Field label="Adresse facturation ligne 2" full>
                     <input value={form.address_line2 || ""} onChange={(e) => setForm({ ...form, address_line2: e.target.value })} maxLength={200} className="input" />
                   </Field>
-                  <Field label="Code postal *">
-                    <input value={form.postal_code || ""} onChange={(e) => setForm({ ...form, postal_code: e.target.value })} maxLength={16} className="input" />
+                  <Field label="Code postal">
+                    <input value={form.postal_code || ""} onChange={(e) => setForm({ ...form, postal_code: e.target.value })} maxLength={16} className="input" placeholder="Optionnel (certains pays n'en ont pas)" />
                   </Field>
                   <Field label="Ville *">
                     <input value={form.city || ""} onChange={(e) => setForm({ ...form, city: e.target.value })} maxLength={120} className="input" />
@@ -570,7 +571,7 @@ function ShippingAddressesBlock({ customerId, defaultCountry }: { customerId: st
             </Field>
             <Field label="Pays">
               <select value={editing.country_code || defaultCountry} onChange={(e) => setEditing({ ...editing, country_code: e.target.value })} className="input">
-                {COUNTRIES.map((c) => (<option key={c} value={c}>{c}</option>))}
+                {COUNTRIES.map((c) => (<option key={c.code} value={c.code}>{c.name} ({c.code})</option>))}
               </select>
             </Field>
             <Field label="Par défaut">

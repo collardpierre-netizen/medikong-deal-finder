@@ -151,8 +151,8 @@ Deno.serve(async (req) => {
     }
 
     // ─── MODE 2 : CREATE FROM SCRATCH ──────────────────────────────────────
-    if (!company_name || !address_line1 || !city || !postal_code) {
-      return new Response(JSON.stringify({ error: "Nom, adresse, ville et code postal requis" }), {
+    if (!company_name || !address_line1 || !city) {
+      return new Response(JSON.stringify({ error: "Nom, adresse et ville requis" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -198,7 +198,7 @@ Deno.serve(async (req) => {
           vat_number: vat_number || null,
           address_line1: address_line1.trim(),
           city: city.trim(),
-          postal_code: postal_code.trim(),
+          postal_code: postal_code ? String(postal_code).trim() : null,
           country_code: country_code || "BE",
           customer_type: customer_type || "pharmacy",
           is_professional: true,
@@ -222,7 +222,7 @@ Deno.serve(async (req) => {
         vat_number: vat_number || null,
         address_line1: address_line1.trim(),
         city: city.trim(),
-        postal_code: postal_code.trim(),
+        postal_code: postal_code ? String(postal_code).trim() : null,
         country_code: country_code || "BE",
         customer_type: customer_type || "pharmacy",
         is_professional: true,

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { fmtEur } from "@/lib/format-currency";
+import { resolveVatExemption } from "@/lib/vat-exemption";
 import { ArrowLeft, FileDown, Pencil, Copy, Link2, ExternalLink, Lock, Wallet, ShieldCheck, AlertTriangle, CheckCircle2, Truck, Send } from "lucide-react";
 import OrderInvoiceStatusPanel from "@/components/orders/OrderInvoiceStatusPanel";
 import OrderProductsSummary from "@/components/orders/OrderProductsSummary";
@@ -422,6 +423,14 @@ const AdminCommandeDetail = () => {
       setBusy(null);
     }
   };
+
+  // TVA non due (export hors UE / autoliquidation intracommunautaire)
+  const orderVatExemption = resolveVatExemption({
+    countryCode: (order as any)?.customer?.country_code,
+    vatNumber: (order as any)?.customer?.vat_number,
+  });
+
+
 
 
 

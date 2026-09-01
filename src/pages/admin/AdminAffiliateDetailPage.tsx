@@ -544,7 +544,53 @@ export default function AdminAffiliateDetailPage() {
         </TabsContent>
       </Tabs>
 
+      <Dialog open={attachOpen} onOpenChange={(o) => { setAttachOpen(o); if (!o) setAttachCustomer(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Rattacher un client existant</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Le client sera attribué à cet apporteur et ses commandes déjà payées seront repassées dans le calcul
+              de commission selon la règle active. Les clients déjà rattachés à un apporteur ne sont pas listés.
+            </p>
+            <Input
+              placeholder="Rechercher par société, contact ou email…"
+              value={attachSearch}
+              onChange={(e) => setAttachSearch(e.target.value)}
+            />
+            <div className="max-h-64 overflow-y-auto rounded-md border divide-y">
+              {attachLoading && <p className="p-3 text-sm text-muted-foreground">Recherche…</p>}
+              {!attachLoading && attachable.length === 0 && (
+                <p className="p-3 text-sm text-muted-foreground">Aucun client rattachable trouvé.</p>
+              )}
+              {attachable.map((c: any) => (
+                <button
+                  key={c.customer_id}
+                  type="button"
+                  onClick={() => setAttachCustomer(c.customer_id)}
+                  className={`w-full text-left p-3 text-sm hover:bg-muted/50 ${attachCustomer === c.customer_id ? "bg-muted" : ""}`}
+                >
+                  <span className="font-medium">{c.label}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {c.email} · {c.orders_count} commande(s)
+                  </span>
+                </button>
+              ))}
+            </div>
+            <Button
+              className="w-full"
+              disabled={!attachCustomer || attachCustomerMut.isPending}
+              onClick={() => attachCustomerMut.mutate()}
+            >
+              Rattacher et calculer les commissions
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={Boolean(holdDialog)} onOpenChange={(o) => !o && setHoldDialog(null)}>
+
         <DialogContent>
           <DialogHeader><DialogTitle>Résoudre une commission en vérification</DialogTitle></DialogHeader>
           <div className="space-y-3">

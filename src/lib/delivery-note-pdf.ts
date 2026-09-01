@@ -13,6 +13,10 @@ export type DeliveryNotePdfInput = {
   carrier?: string | null;
   trackingNumber?: string | null;
   note?: string | null;
+  /** Pays du client (ISO-2) — sert à la mention TVA 0 %. */
+  customerCountryCode?: string | null;
+  /** N° TVA intracommunautaire du client. */
+  customerVatNumber?: string | null;
   rows: {
     name: string;
     cnk: string | null;

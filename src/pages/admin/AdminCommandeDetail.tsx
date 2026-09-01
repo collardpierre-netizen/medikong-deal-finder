@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { fmtEur } from "@/lib/format-currency";
 import { resolveVatExemption } from "@/lib/vat-exemption";
-import { ArrowLeft, FileDown, Pencil, Copy, Link2, ExternalLink, Lock, Wallet, ShieldCheck, AlertTriangle, CheckCircle2, Truck, Send } from "lucide-react";
+import { ArrowLeft, FileDown, FileSpreadsheet, Pencil, Copy, Link2, ExternalLink, Lock, Wallet, ShieldCheck, AlertTriangle, CheckCircle2, Truck, Send } from "lucide-react";
+import { downloadVendorOrderXlsx } from "@/lib/order-vendor-xlsx";
 import OrderInvoiceStatusPanel from "@/components/orders/OrderInvoiceStatusPanel";
 import OrderProductsSummary from "@/components/orders/OrderProductsSummary";
 import DeliveryNotesPanel from "@/components/orders/DeliveryNotesPanel";
@@ -868,6 +869,21 @@ const AdminCommandeDetail = () => {
             </Button>
             <Button onClick={generatePayoutPdf} disabled={busy !== null} className="w-full justify-start" style={{ backgroundColor: "#10B981", color: "#fff" }}>
               <Wallet size={14} className="mr-2" /> {busy === "PAYOUT" ? "Génération…" : "Décompte fournisseur PDF"}
+            </Button>
+            <Button
+              onClick={() => {
+                try {
+                  downloadVendorOrderXlsx(order as any, lines as any);
+                  toast.success("Export XLSX fournisseurs téléchargé");
+                } catch (e: any) {
+                  toast.error(e?.message || "Échec de l'export XLSX");
+                }
+              }}
+              disabled={lines.length === 0}
+              className="w-full justify-start"
+              variant="outline"
+            >
+              <FileSpreadsheet size={14} className="mr-2" /> Export XLSX fournisseurs
             </Button>
             <Button onClick={checkCoherence} disabled={busy !== null} className="w-full justify-start" variant="outline">
               <ShieldCheck size={14} className="mr-2" /> {busy === "COHERENCE" ? "Contrôle…" : "Vérifier cohérence décompte"}

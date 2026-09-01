@@ -9,7 +9,10 @@ export interface VendorXlsxLine {
   quantity?: number | null;
   unit_price_excl_vat?: number | null;
   vat_rate?: number | null;
+  manual_label?: string | null;
   product_name?: string | null;
+  manual_cnk_code?: string | null;
+  manual_gtin?: string | null;
   products?: { name?: string | null; gtin?: string | null; cnk_code?: string | null } | null;
   vendors?: { company_name?: string | null; name?: string | null } | null;
   vendor_id?: string | null;
@@ -84,9 +87,9 @@ export function buildVendorOrderWorkbook(order: VendorXlsxOrder, lines: VendorXl
       totalHt += ht;
       totalQty += qty;
       rows.push([
-        l.products?.name || l.product_name || "",
-        l.products?.cnk_code || "",
-        l.products?.gtin || "",
+        l.manual_label || l.products?.name || l.product_name || "",
+        l.products?.cnk_code || l.manual_cnk_code || "",
+        l.products?.gtin || l.manual_gtin || "",
         qty,
         Number(pu.toFixed(2)),
         Number(ht.toFixed(2)),

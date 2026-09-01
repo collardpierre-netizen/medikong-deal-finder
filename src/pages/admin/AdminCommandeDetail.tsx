@@ -664,9 +664,19 @@ const AdminCommandeDetail = () => {
                   <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(order.subtotal_excl_vat) || 0)} €</td>
                 </tr>
                 <tr className="bg-slate-50/40">
-                  <td colSpan={6} className="px-3 py-2 text-right text-slate-500">TVA</td>
+                  <td colSpan={6} className="px-3 py-2 text-right text-slate-500">
+                    TVA{orderVatExemption.exempt ? " (0 % — non due)" : ""}
+                  </td>
                   <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(order.vat_amount) || 0)} €</td>
                 </tr>
+                {orderVatExemption.exempt && orderVatExemption.mention && (
+                  <tr className="bg-amber-50">
+                    <td colSpan={7} className="px-3 py-2 text-[11px] text-amber-800">
+                      <div className="font-semibold">{orderVatExemption.label}</div>
+                      <div className="mt-0.5">{orderVatExemption.mention}</div>
+                    </td>
+                  </tr>
+                )}
                 <tr className="border-t" style={{ backgroundColor: "#1C58D9" }}>
                   <td colSpan={6} className="px-3 py-3 text-right text-white font-semibold">Total TTC</td>
                   <td className="px-3 py-3 text-right text-white font-bold text-base">{fmtEur(Number(order.total_incl_vat) || 0)} €</td>
@@ -674,6 +684,7 @@ const AdminCommandeDetail = () => {
               </tfoot>
             </table>
           </div>
+
 
           {/* Détail Net Vendeur — ce que chaque fournisseur va toucher */}
           {(() => {

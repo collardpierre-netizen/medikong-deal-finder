@@ -18,7 +18,15 @@ import {
   fmtCents, fmtBp, fmtDate, AFFILIATE_STATUS_LABELS, COMMISSION_STATUS_LABELS,
   VAT_MODE_LABELS, type AffiliateRule, type CalcDetails,
 } from "@/lib/affiliate-format";
-import { ArrowLeft, Eye, Mail, Ban, Play, FileText, Check } from "lucide-react";
+import { ArrowLeft, Eye, Mail, Ban, Play, FileText, Check, Calculator, UserPlus } from "lucide-react";
+
+/** Points de base <-> pourcentage (les règles sont stockées en bp côté serveur). */
+const pctOf = (bp: number | null | undefined): string => {
+  const v = Number(bp);
+  return Number.isFinite(v) ? String(v / 100) : "";
+};
+const bpOf = (pct: string): number => Math.round((parseFloat(pct.replace(",", ".")) || 0) * 100);
+
 
 /** TVA 21 % seulement en mode vat_21 ; total_cents est le montant HTVA. */
 function vatCentsOf(p: { total_cents: number; vat_mode: string }): number {

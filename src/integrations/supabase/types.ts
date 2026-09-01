@@ -31169,6 +31169,25 @@ export type Database = {
         Args: { _affiliate_id: string }
         Returns: Json
       }
+      affiliate_admin_attach_customer: {
+        Args: {
+          _affiliate_id: string
+          _customer_id: string
+          _recompute_past_orders?: boolean
+        }
+        Returns: Json
+      }
+      affiliate_admin_attachable_customers: {
+        Args: { _q?: string }
+        Returns: {
+          auth_user_id: string
+          company_name: string
+          customer_id: string
+          email: string
+          label: string
+          orders_count: number
+        }[]
+      }
       affiliate_admin_commissions: {
         Args: { _affiliate_id?: string; _status?: string }
         Returns: {

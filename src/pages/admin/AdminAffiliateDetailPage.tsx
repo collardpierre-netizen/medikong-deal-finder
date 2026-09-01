@@ -322,11 +322,18 @@ export default function AdminAffiliateDetailPage() {
         </TabsContent>
 
         <TabsContent value="clients" className="mt-4 space-y-3">
-          <div className="flex justify-end">
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button size="sm" variant="outline" onClick={() => backfillMut.mutate()} disabled={backfillMut.isPending}>
+              {backfillMut.isPending ? "Calcul en cours…" : "Recalculer l'historique des ventes"}
+            </Button>
             <Button size="sm" onClick={() => setAttachOpen(true)}>
               <UserPlus className="h-4 w-4 mr-2" /> Rattacher un client existant
             </Button>
           </div>
+          <p className="text-xs text-muted-foreground text-right">
+            Reprend toutes les commandes existantes des clients rattachés (hors brouillons/annulées). Les commandes pas encore payées créent une commission « en attente ».
+          </p>
+
           <Card><CardContent className="p-0 overflow-x-auto">
 
             <table className="w-full text-sm">

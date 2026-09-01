@@ -225,7 +225,9 @@ const PublicOrderPage = () => {
             <div className="font-medium">{order.customer?.company_name ?? "—"}</div>
             {order.customer?.address_line1 && <div className="text-xs text-slate-500">{order.customer.address_line1}</div>}
             {(order.customer?.postal_code || order.customer?.city) && <div className="text-xs text-slate-500">{order.customer?.postal_code} {order.customer?.city}</div>}
-            {order.customer?.vat_number && <div className="text-xs text-slate-500">TVA : {order.customer.vat_number}</div>}
+            {order.customer?.vat_number && (
+              <div className="text-xs text-slate-500">N° TVA intracommunautaire : {order.customer.vat_number}</div>
+            )}
             {order.customer?.email && <div className="text-xs text-slate-500">{order.customer.email}</div>}
 
             {(order as any).fulfillment_mode && (

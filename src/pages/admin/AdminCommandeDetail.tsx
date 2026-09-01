@@ -467,7 +467,9 @@ const AdminCommandeDetail = () => {
                 <div className="text-[11px] uppercase text-slate-400 font-semibold mb-1">Acheteur</div>
                 <div className="font-medium">{order.customer?.company_name || "—"}</div>
                 <div className="text-xs text-slate-500">{order.customer?.email}</div>
-                {order.customer?.vat_number && <div className="text-xs text-slate-500">TVA : {order.customer.vat_number}</div>}
+                {order.customer?.vat_number && (
+                  <div className="text-xs text-slate-500">N° TVA intracommunautaire : {order.customer.vat_number}</div>
+                )}
               </div>
               <div>
                 <div className="text-[11px] uppercase text-slate-400 font-semibold mb-1">Paiement</div>

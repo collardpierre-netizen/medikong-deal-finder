@@ -300,7 +300,7 @@ export default function AdminCustomers() {
                   <Field label="Email *">
                     <input type="email" value={form.email || ""} onChange={(e) => setForm({ ...form, email: e.target.value })} maxLength={255} className="input" />
                   </Field>
-                  <Field label="N° TVA">
+                  <Field label="N° TVA intracommunautaire">
                     <input value={form.vat_number || ""} onChange={(e) => setForm({ ...form, vat_number: e.target.value })} placeholder="BE0123456789" maxLength={32} className="input" />
                   </Field>
                   <Field label="Téléphone">

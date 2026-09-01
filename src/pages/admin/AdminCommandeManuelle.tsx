@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { resolveVatExemption } from "@/lib/vat-exemption";
+import { COUNTRY_OPTIONS } from "@/lib/countries-iso";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";

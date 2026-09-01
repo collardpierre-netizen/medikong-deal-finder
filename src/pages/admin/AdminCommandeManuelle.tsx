@@ -1018,12 +1018,12 @@ const AdminCommandeManuelle = () => {
                       <Label className="text-xs">Pays (ISO 2)</Label>
                       <Select value={qcCountry} onValueChange={setQcCountry}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="BE">BE — Belgique</SelectItem>
-                          <SelectItem value="FR">FR — France</SelectItem>
-                          <SelectItem value="LU">LU — Luxembourg</SelectItem>
-                          <SelectItem value="NL">NL — Pays-Bas</SelectItem>
-                          <SelectItem value="DE">DE — Allemagne</SelectItem>
+                        <SelectContent className="max-h-72">
+                          {COUNTRY_OPTIONS.map((c) => (
+                            <SelectItem key={c.code} value={c.code}>
+                              {c.code} — {c.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>

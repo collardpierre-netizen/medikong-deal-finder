@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { fmtEur } from "@/lib/format-currency";
+import { resolveVatExemption } from "@/lib/vat-exemption";
 import { ArrowLeft, FileDown, Pencil, Copy, Link2, ExternalLink, Lock, Wallet, ShieldCheck, AlertTriangle, CheckCircle2, Truck, Send } from "lucide-react";
 import OrderInvoiceStatusPanel from "@/components/orders/OrderInvoiceStatusPanel";
 import OrderProductsSummary from "@/components/orders/OrderProductsSummary";
@@ -423,6 +424,14 @@ const AdminCommandeDetail = () => {
     }
   };
 
+  // TVA non due (export hors UE / autoliquidation intracommunautaire)
+  const orderVatExemption = resolveVatExemption({
+    countryCode: (order as any)?.customer?.country_code,
+    vatNumber: (order as any)?.customer?.vat_number,
+  });
+
+
+
 
 
 
@@ -467,7 +476,9 @@ const AdminCommandeDetail = () => {
                 <div className="text-[11px] uppercase text-slate-400 font-semibold mb-1">Acheteur</div>
                 <div className="font-medium">{order.customer?.company_name || "—"}</div>
                 <div className="text-xs text-slate-500">{order.customer?.email}</div>
-                {order.customer?.vat_number && <div className="text-xs text-slate-500">TVA : {order.customer.vat_number}</div>}
+                {order.customer?.vat_number && (
+                  <div className="text-xs text-slate-500">N° TVA intracommunautaire : {order.customer.vat_number}</div>
+                )}
               </div>
               <div>
                 <div className="text-[11px] uppercase text-slate-400 font-semibold mb-1">Paiement</div>
@@ -561,6 +572,8 @@ const AdminCommandeDetail = () => {
             orderNumber={order.order_number}
             orderStatus={(order as any).status ?? null}
             customerName={(order as any).customer?.company_name ?? (order as any).customer?.email ?? null}
+            customerCountryCode={(order as any).customer?.country_code ?? null}
+            customerVatNumber={(order as any).customer?.vat_number ?? null}
             shippingAddress={(order as any).shipping_address ?? null}
           />
 
@@ -660,9 +673,19 @@ const AdminCommandeDetail = () => {
                   <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(order.subtotal_excl_vat) || 0)} €</td>
                 </tr>
                 <tr className="bg-slate-50/40">
-                  <td colSpan={6} className="px-3 py-2 text-right text-slate-500">TVA</td>
+                  <td colSpan={6} className="px-3 py-2 text-right text-slate-500">
+                    TVA{orderVatExemption.exempt ? " (0 % — non due)" : ""}
+                  </td>
                   <td className="px-3 py-2 text-right font-medium">{fmtEur(Number(order.vat_amount) || 0)} €</td>
                 </tr>
+                {orderVatExemption.exempt && orderVatExemption.mention && (
+                  <tr className="bg-amber-50">
+                    <td colSpan={7} className="px-3 py-2 text-[11px] text-amber-800">
+                      <div className="font-semibold">{orderVatExemption.label}</div>
+                      <div className="mt-0.5">{orderVatExemption.mention}</div>
+                    </td>
+                  </tr>
+                )}
                 <tr className="border-t" style={{ backgroundColor: "#1C58D9" }}>
                   <td colSpan={6} className="px-3 py-3 text-right text-white font-semibold">Total TTC</td>
                   <td className="px-3 py-3 text-right text-white font-bold text-base">{fmtEur(Number(order.total_incl_vat) || 0)} €</td>
@@ -670,6 +693,7 @@ const AdminCommandeDetail = () => {
               </tfoot>
             </table>
           </div>
+
 
           {/* Détail Net Vendeur — ce que chaque fournisseur va toucher */}
           {(() => {

@@ -225,7 +225,7 @@ export default function UserCreateDialog({ open, onOpenChange, onCreated }: Prop
                 </Select>
               </div>
               <div>
-                <Label className="text-xs">N° TVA</Label>
+                <Label className="text-xs">N° TVA intracommunautaire</Label>
                 <Input value={buyer.vat_number} onChange={e => setBuyer({ ...buyer, vat_number: e.target.value })} placeholder="BE0123456789" />
               </div>
               <div>

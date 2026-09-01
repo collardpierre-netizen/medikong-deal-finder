@@ -162,6 +162,13 @@ export async function generateExpressOrderPdf(orderId: string) {
     doc.setFontSize(10);
     doc.text(order.customer.company_name || order.customer.email || "Client", M, cursorY + 4);
     cursorY += 4;
+    if (order.customer.vat_number) {
+      doc.setTextColor(...MUTED);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.text(`N° TVA intracommunautaire : ${order.customer.vat_number}`, M, cursorY + 4);
+      cursorY += 4;
+    }
   }
 
   // Mode logistique + adresse de livraison spécifique (si renseignée)

@@ -1,5 +1,6 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { resolveVatExemption } from "@/lib/vat-exemption";
 
 export type DeliveryNotePdfInput = {
   documentNumber: string | null;
@@ -13,6 +14,10 @@ export type DeliveryNotePdfInput = {
   carrier?: string | null;
   trackingNumber?: string | null;
   note?: string | null;
+  /** Pays du client (ISO-2) — sert à la mention TVA 0 %. */
+  customerCountryCode?: string | null;
+  /** N° TVA intracommunautaire du client. */
+  customerVatNumber?: string | null;
   rows: {
     name: string;
     cnk: string | null;
@@ -105,6 +110,36 @@ export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
     doc.text(line, M, y);
     y += 4.5;
   }
+
+  if (input.customerVatNumber) {
+    doc.setTextColor(...MUTED);
+    doc.setFontSize(8.5);
+    doc.text(`N° TVA intracommunautaire : ${input.customerVatNumber}`, M, y);
+    y += 4.5;
+    doc.setFontSize(9);
+  }
+
+  // Mention TVA 0 % (export hors UE / autoliquidation intracommunautaire)
+  const vatEx = resolveVatExemption({
+    countryCode: input.customerCountryCode,
+    vatNumber: input.customerVatNumber,
+  });
+  if (vatEx.exempt && vatEx.mention) {
+    y += 2;
+    const mLines = doc.splitTextToSize(`TVA 0 % — ${vatEx.label} — ${vatEx.mention}`, pageW - 2 * M - 6);
+    const mH = mLines.length * 4 + 5;
+    doc.setFillColor(255, 247, 237);
+    doc.rect(M, y, pageW - 2 * M, mH, "F");
+    doc.setTextColor(146, 64, 14);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.text(mLines, M + 3, y + 4.5);
+    y += mH + 3;
+    doc.setTextColor(...MUTED);
+    doc.setFontSize(9);
+  }
+
+
 
   const meta: string[] = [];
   if (input.carrier) meta.push(`Transporteur : ${input.carrier}`);

@@ -28,12 +28,16 @@ interface Props {
   orderId: string;
   orderNumber?: string | null;
   customerName?: string | null;
+  /** Pays client (ISO-2) — mention TVA 0 % sur le BL. */
+  customerCountryCode?: string | null;
+  /** N° TVA intracommunautaire client — affiché sur le BL. */
+  customerVatNumber?: string | null;
   shippingAddress?: Record<string, any> | null;
   /** Statut de la commande : si "draft", les BL sont marqués BROUILLON. */
   orderStatus?: string | null;
 }
 
-export default function DeliveryNotesPanel({ orderId, orderNumber, customerName, shippingAddress, orderStatus }: Props) {
+export default function DeliveryNotesPanel({ orderId, orderNumber, customerName, customerCountryCode, customerVatNumber, shippingAddress, orderStatus }: Props) {
   const isDraftOrder = String(orderStatus || "").toLowerCase() === "draft";
   const statusQuery = useOrderDeliveryStatus(orderId);
   const notesQuery = useOrderDeliveryNotes(orderId);
@@ -101,6 +105,8 @@ export default function DeliveryNotesPanel({ orderId, orderNumber, customerName,
       isDraft: isDraftOrder,
       orderNumber: orderNumber ?? null,
       customerName,
+      customerCountryCode: customerCountryCode ?? null,
+      customerVatNumber: customerVatNumber ?? null,
       shippingAddress,
       carrier: dn.carrier,
       trackingNumber: dn.tracking_number,

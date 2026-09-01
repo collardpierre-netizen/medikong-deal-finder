@@ -31188,6 +31188,14 @@ export type Database = {
           orders_count: number
         }[]
       }
+      affiliate_admin_backfill_orders: {
+        Args: {
+          _affiliate_id: string
+          _customer_id?: string
+          _include_unpaid?: boolean
+        }
+        Returns: Json
+      }
       affiliate_admin_commissions: {
         Args: { _affiliate_id?: string; _status?: string }
         Returns: {
@@ -31402,7 +31410,7 @@ export type Database = {
         Returns: Json
       }
       affiliate_process_order_commission: {
-        Args: { _order_id: string }
+        Args: { _allow_unpaid?: boolean; _order_id: string }
         Returns: Json
       }
       affiliate_publish_cost_params: {

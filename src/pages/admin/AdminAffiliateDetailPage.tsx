@@ -126,7 +126,7 @@ export default function AdminAffiliateDetailPage() {
       return data;
     },
     onSuccess: (data: any) => {
-      toast.success(`Client rattaché — ${data?.commissions_created ?? 0} commission(s) calculée(s) sur ses commandes payées`);
+      toast.success(`Client rattaché — ${data?.commissions_created ?? 0} commission(s) calculée(s) sur son historique de commandes`);
       setAttachOpen(false);
       setAttachCustomer(null);
       setAttachSearch("");
@@ -135,6 +135,29 @@ export default function AdminAffiliateDetailPage() {
     },
     onError: (e: any) => toast.error(e.message ?? "Erreur"),
   });
+
+  const backfillMut = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await sb.rpc("affiliate_admin_backfill_orders", {
+        _affiliate_id: id,
+        _customer_id: null,
+        _include_unpaid: true,
+      });
+      if (error) throw error;
+      return data as any;
+    },
+    onSuccess: (data: any) => {
+      const created = data?.commissions_created ?? 0;
+      toast.success(
+        created > 0
+          ? `${created} commission(s) créée(s) sur l'historique (dont ${data?.on_hold ?? 0} en attente de paiement) — ${fmtCents(data?.commission_total_cents)}`
+          : "Aucune nouvelle commission : historique déjà à jour",
+      );
+      invalidate();
+    },
+    onError: (e: any) => toast.error(e.message ?? "Erreur"),
+  });
+
 
 
   const { data: payouts = [] } = useQuery<any[]>({
@@ -299,11 +322,18 @@ export default function AdminAffiliateDetailPage() {
         </TabsContent>
 
         <TabsContent value="clients" className="mt-4 space-y-3">
-          <div className="flex justify-end">
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button size="sm" variant="outline" onClick={() => backfillMut.mutate()} disabled={backfillMut.isPending}>
+              {backfillMut.isPending ? "Calcul en cours…" : "Recalculer l'historique des ventes"}
+            </Button>
             <Button size="sm" onClick={() => setAttachOpen(true)}>
               <UserPlus className="h-4 w-4 mr-2" /> Rattacher un client existant
             </Button>
           </div>
+          <p className="text-xs text-muted-foreground text-right">
+            Reprend toutes les commandes existantes des clients rattachés (hors brouillons/annulées). Les commandes pas encore payées créent une commission « en attente ».
+          </p>
+
           <Card><CardContent className="p-0 overflow-x-auto">
 
             <table className="w-full text-sm">

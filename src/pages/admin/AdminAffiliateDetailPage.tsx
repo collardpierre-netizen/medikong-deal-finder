@@ -390,12 +390,29 @@ export default function AdminAffiliateDetailPage() {
               </p>
               <div className="grid gap-3 sm:grid-cols-2">
                 {([
-                  ["base_rate_bp", "Taux de base sur le HTVA (points de base)"],
-                  ["margin_guard_threshold_bp", "Plafond en % de la marge MediKong (bp)"],
-                  ["margin_rate_bp", "Taux appliqué à la marge si plafond atteint (bp)"],
+                  ["base_rate_bp", "Taux de base sur le CA HTVA", "%", "Ex. 3 % du montant HTVA de la commande."],
+                  ["margin_guard_threshold_bp", "Plafond : part max. de la marge MediKong", "%", "Si la commission dépasse ce % de notre marge, on bascule sur le taux ci-dessous."],
+                  ["margin_rate_bp", "Taux appliqué à la marge si plafond atteint", "%", "Commission = ce % de la marge nette MediKong."],
+                ] as const).map(([key, label, unit, help]) => (
+                  <div key={key}>
+                    <Label>{label}</Label>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={pctOf((eff as any)[key])}
+                        onChange={(e) => setOverride({ ...(override ?? {}), [key]: bpOf(e.target.value) })}
+                        className="pr-8"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{unit}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1">{help}</p>
+                  </div>
+                ))}
+                {([
                   ["attribution_months", "Durée d'attribution (mois)"],
                   ["validation_delay_days", "Délai de validation (jours)"],
-                  ["payout_threshold_cents", "Seuil de paiement (cents)"],
                 ] as const).map(([key, label]) => (
                   <div key={key}>
                     <Label>{label}</Label>
@@ -406,6 +423,22 @@ export default function AdminAffiliateDetailPage() {
                     />
                   </div>
                 ))}
+                <div>
+                  <Label>Seuil de paiement (€ HTVA)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={String((Number(eff.payout_threshold_cents) || 0) / 100)}
+                    onChange={(e) => setOverride({
+                      ...(override ?? {}),
+                      payout_threshold_cents: Math.round((parseFloat(e.target.value.replace(",", ".")) || 0) * 100),
+                    })}
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Aucun paiement n'est déclenché sous ce solde validé.
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <Switch
@@ -414,9 +447,53 @@ export default function AdminAffiliateDetailPage() {
                 />
                 <Label>Autoriser les commissions sur ses propres achats</Label>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Exemple : sur 1 000 € HTVA, base = {fmtBp(eff.base_rate_bp)} soit {fmtCents(100000 * (eff.base_rate_bp ?? 0) / 10000)}.
-              </p>
+
+              <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Calculator className="h-4 w-4" /> Simulateur de commission
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Règle en clair : commission = {fmtBp(eff.base_rate_bp)} du CA HTVA, sauf si ce montant dépasse{" "}
+                  {fmtBp(eff.margin_guard_threshold_bp)} de la marge nette MediKong — dans ce cas la commission devient{" "}
+                  {fmtBp(eff.margin_rate_bp)} de cette marge.
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <Label>Commande HTVA (€)</Label>
+                    <Input type="number" step="0.01" value={simHt} onChange={(e) => setSimHt(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>Marge nette MediKong (€)</Label>
+                    <Input type="number" step="0.01" value={simMargin} onChange={(e) => setSimMargin(e.target.value)} />
+                  </div>
+                </div>
+                <ul className="text-sm space-y-1">
+                  <li>
+                    Base : {fmtBp(eff.base_rate_bp)} × {fmtCents(sim.htCents)} ={" "}
+                    <span className="font-medium">{fmtCents(sim.baseCents)}</span>
+                  </li>
+                  <li>
+                    Plafond : {fmtBp(eff.margin_guard_threshold_bp)} × {fmtCents(sim.marginCents)} ={" "}
+                    <span className="font-medium">{fmtCents(sim.guardCents)}</span>
+                  </li>
+                  <li className="text-muted-foreground">
+                    {sim.capped
+                      ? `Plafond atteint : on applique ${fmtBp(eff.margin_rate_bp)} de la marge.`
+                      : "Sous le plafond : c'est la base qui s'applique."}
+                  </li>
+                  <li className="pt-1 border-t">
+                    Commission apporteur :{" "}
+                    <span className="font-semibold text-base">{fmtCents(sim.commissionCents)}</span>
+                    {sim.htCents > 0 && (
+                      <span className="text-muted-foreground text-xs">
+                        {" "}· soit {((sim.commissionCents / sim.htCents) * 100).toFixed(2)} % du CA HTVA
+                        {sim.marginCents > 0 && ` et ${((sim.commissionCents / sim.marginCents) * 100).toFixed(2)} % de notre marge`}
+                      </span>
+                    )}
+                  </li>
+                </ul>
+              </div>
+
               <Button disabled={!override || saveOverride.isPending} onClick={() => saveOverride.mutate()}>
                 Publier une nouvelle version pour cet apporteur
               </Button>

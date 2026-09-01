@@ -566,6 +566,35 @@ Deno.serve(async (req) => {
     doc.text(fmtEur(Math.round(totalTtc * 100), currency), totValueX, y + 3, { align: "right" });
     y += 14;
 
+    // ─── Mention légale TVA non due (export hors UE / autoliquidation intracom) ───
+    {
+      const cc = String(order.customer?.country_code || "").toUpperCase();
+      const vatNo = String(order.customer?.vat_number || "").replace(/\s+/g, "").toUpperCase();
+      const EU = ["AT","BE","BG","HR","CY","CZ","DK","EE","FI","FR","DE","GR","HU","IE","IT","LV","LT","LU","MT","NL","PL","PT","RO","SK","SI","ES","SE"];
+      let mention: string | null = null;
+      if (cc && cc !== "BE") {
+        if (!EU.includes(cc)) {
+          mention = "TVA non due — exportation hors Union européenne (art. 146 de la Directive 2006/112/CE).";
+        } else if (/^[A-Z]{2}[A-Z0-9]{2,15}$/.test(vatNo)) {
+          mention = "TVA non due — livraison intracommunautaire exonérée, autoliquidation par le preneur (art. 138 de la Directive 2006/112/CE).";
+        }
+      }
+      if (mention) {
+        if (y > pageH - 30) { doc.addPage(); y = 20; }
+        const mLines = doc.splitTextToSize(mention, pageW - 2 * M - 6);
+        const mH = mLines.length * 4 + 5;
+        doc.setFillColor(255, 247, 237);
+        doc.rect(M, y, pageW - 2 * M, mH, "F");
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(146, 64, 14);
+        doc.text(mLines, M + 3, y + 4.5);
+        doc.setTextColor(...NAVY);
+        y += mH + 5;
+      }
+    }
+
+
     // ─── Infos paiement (toujours MediKong) ────────────────────────────
     // Single source of truth (shared with public_get_order_by_token + vendor payout PDF)
     const { data: showPaymentInfo } = await adminClient.rpc("order_should_show_payment_info", { _order_id: order.id });

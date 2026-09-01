@@ -298,8 +298,14 @@ export default function AdminAffiliateDetailPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="clients" className="mt-4">
+        <TabsContent value="clients" className="mt-4 space-y-3">
+          <div className="flex justify-end">
+            <Button size="sm" onClick={() => setAttachOpen(true)}>
+              <UserPlus className="h-4 w-4 mr-2" /> Rattacher un client existant
+            </Button>
+          </div>
           <Card><CardContent className="p-0 overflow-x-auto">
+
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-left"><tr>
                 <th className="p-3">Client</th><th className="p-3">Email</th><th className="p-3">1ʳᵉ commande</th>

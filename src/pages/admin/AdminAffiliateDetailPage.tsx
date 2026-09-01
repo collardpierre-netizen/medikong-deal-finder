@@ -31,13 +31,21 @@ export default function AdminAffiliateDetailPage() {
   const [holdDialog, setHoldDialog] = useState<{ id: string; margin: string; justification: string } | null>(null);
   const [payDialog, setPayDialog] = useState<{ id: string; date: string } | null>(null);
   const [override, setOverride] = useState<Partial<AffiliateRule> | null>(null);
+  const [attachOpen, setAttachOpen] = useState(false);
+  const [attachSearch, setAttachSearch] = useState("");
+  const [attachCustomer, setAttachCustomer] = useState<string | null>(null);
+  const [simHt, setSimHt] = useState("1000");
+  const [simMargin, setSimMargin] = useState("150");
 
   const sb = supabase as any;
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["admin-affiliate", id] });
     qc.invalidateQueries({ queryKey: ["admin-affiliate-commissions", id] });
     qc.invalidateQueries({ queryKey: ["admin-affiliate-payouts", id] });
+    qc.invalidateQueries({ queryKey: ["admin-affiliate-referrals", id] });
+    qc.invalidateQueries({ queryKey: ["admin-affiliate-stats", id] });
   };
+
 
   const { data: account } = useQuery({
     queryKey: ["admin-affiliate", id],

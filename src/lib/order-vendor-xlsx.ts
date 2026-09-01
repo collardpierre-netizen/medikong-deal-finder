@@ -87,9 +87,9 @@ export function buildVendorOrderWorkbook(order: VendorXlsxOrder, lines: VendorXl
       totalHt += ht;
       totalQty += qty;
       rows.push([
-        l.products?.name || l.product_name || "",
-        l.products?.cnk_code || "",
-        l.products?.gtin || "",
+        l.manual_label || l.products?.name || l.product_name || "",
+        l.products?.cnk_code || l.manual_cnk_code || "",
+        l.products?.gtin || l.manual_gtin || "",
         qty,
         Number(pu.toFixed(2)),
         Number(ht.toFixed(2)),

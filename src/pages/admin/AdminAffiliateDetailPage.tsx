@@ -219,6 +219,22 @@ export default function AdminAffiliateDetailPage() {
   const st = AFFILIATE_STATUS_LABELS[account?.status] ?? { label: account?.status ?? "", className: "" };
   const eff = { ...(rule ?? {}), ...(override ?? {}) } as AffiliateRule;
 
+  // Simulateur : base = base_rate_bp × CA HTVA, plafonné à margin_guard_threshold_bp de la marge,
+  // auquel cas on retombe sur margin_rate_bp de la marge (même logique que affiliate_resolve_rule côté serveur).
+  const sim = (() => {
+    const htCents = Math.round((parseFloat(String(simHt).replace(",", ".")) || 0) * 100);
+    const marginCents = Math.round((parseFloat(String(simMargin).replace(",", ".")) || 0) * 100);
+    const baseCents = Math.round((htCents * (Number(eff.base_rate_bp) || 0)) / 10000);
+    const guardCents = Math.round((marginCents * (Number(eff.margin_guard_threshold_bp) || 0)) / 10000);
+    const capped = baseCents > guardCents;
+    const commissionCents = capped
+      ? Math.round((marginCents * (Number(eff.margin_rate_bp) || 0)) / 10000)
+      : baseCents;
+    return { htCents, marginCents, baseCents, guardCents, capped, commissionCents };
+  })();
+
+
+
   return (
     <div className="space-y-6">
       <Button variant="ghost" size="sm" asChild>

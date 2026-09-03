@@ -4,7 +4,7 @@
 // Access rules:
 //  - admin: any invoice
 //  - vendor (auth_user_id matches vendor): own invoices (both types)
-//  - customer (owner of the order): only type='self_billing'
+//  - customer (owner of the order): type='self_billing' or type='manual'
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 
@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
         .from("vendors").select("id").eq("id", inv.vendor_id).eq("auth_user_id", uid).maybeSingle();
       if (vendorRow) allowed = true;
     }
-    if (!allowed && inv.type === "self_billing") {
+    if (!allowed && (inv.type === "self_billing" || inv.type === "manual")) {
       const { data: ord } = await supabase
         .from("orders").select("customer_id, customers!orders_customer_id_fkey(auth_user_id)").eq("id", inv.order_id).maybeSingle();
       if (ord?.customers?.auth_user_id === uid) allowed = true;

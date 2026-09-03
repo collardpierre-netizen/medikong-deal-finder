@@ -109,10 +109,47 @@ Deno.serve(async (req) => {
       }
     }
 
+    // 4) Notification interne (équipe MediKong) — 1 email par commande, idempotent
+    let adminEmailSent = false;
+    try {
+      const { data: order } = await supabase
+        .from("orders")
+        .select("order_number, total_incl_vat, subtotal_excl_vat, payment_method, customer_id, customers(company_name, email)")
+        .eq("id", orderId)
+        .maybeSingle();
+      const { count: lineCount } = await supabase
+        .from("order_lines")
+        .select("id", { count: "exact", head: true })
+        .eq("order_id", orderId);
+      const cust: any = (order as any)?.customers ?? null;
+      const res = await supabase.functions.invoke("send-app-email", {
+        body: {
+          templateName: "admin-new-order",
+          idempotencyKey: `admin-new-order-${orderId}`,
+          templateData: {
+            orderNumber: order?.order_number ?? orderId,
+            customerName: cust?.company_name ?? "—",
+            customerEmail: cust?.email ?? "",
+            totalIncVat: fmtEur(order?.total_incl_vat),
+            totalExclVat: fmtEur(order?.subtotal_excl_vat),
+            lineCount: lineCount ?? 0,
+            vendorCount: vendors?.length ?? 0,
+            paymentMethod: order?.payment_method ?? "—",
+            ctaUrl: `https://medikong.pro/admin/commandes/${orderId}`,
+          },
+        },
+      });
+      if (res.error) throw res.error;
+      adminEmailSent = true;
+    } catch (e) {
+      console.error("[notify-vendors-new-order] admin email failed", (e as Error)?.message ?? e);
+    }
+
     return new Response(
       JSON.stringify({
         ok: true,
         order_id: orderId,
+        admin_email_sent: adminEmailSent,
         vendors: vendors?.length ?? 0,
         emails_sent: emailsSent,
         emails_skipped: emailsSkipped,

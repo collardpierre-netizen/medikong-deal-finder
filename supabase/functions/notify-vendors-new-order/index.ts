@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
     try {
       const { data: order } = await supabase
         .from("orders")
-        .select("order_number, total_incl_vat, total_excl_vat, payment_method, customer_id, customers(company_name, email)")
+        .select("order_number, total_incl_vat, subtotal_excl_vat, payment_method, customer_id, customers(company_name, email)")
         .eq("id", orderId)
         .maybeSingle();
       const { count: lineCount } = await supabase
@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
             customerName: cust?.company_name ?? "—",
             customerEmail: cust?.email ?? "",
             totalIncVat: fmtEur(order?.total_incl_vat),
-            totalExclVat: fmtEur(order?.total_excl_vat),
+            totalExclVat: fmtEur(order?.subtotal_excl_vat),
             lineCount: lineCount ?? 0,
             vendorCount: vendors?.length ?? 0,
             paymentMethod: order?.payment_method ?? "—",

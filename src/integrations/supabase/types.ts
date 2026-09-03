@@ -10438,6 +10438,81 @@ export type Database = {
           },
         ]
       }
+      order_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          order_id: string
+          read_by_admin_at: string | null
+          read_by_customer_at: string | null
+          sender_name: string | null
+          sender_role: string
+          sender_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          order_id: string
+          read_by_admin_at?: string | null
+          read_by_customer_at?: string | null
+          sender_name?: string | null
+          sender_role: string
+          sender_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          order_id?: string
+          read_by_admin_at?: string | null
+          read_by_customer_at?: string | null
+          sender_name?: string | null
+          sender_role?: string
+          sender_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_messages_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_messages_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_with_forecast_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_messages_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_messages_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders_visible_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_messages_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orders_v"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_status_history: {
         Row: {
           changed_at: string
@@ -32650,6 +32725,10 @@ export type Database = {
       offers_low_outlier_ratio: {
         Args: { _base: number; _offer_id: string; _product_id: string }
         Returns: number
+      }
+      order_belongs_to_current_user: {
+        Args: { _order_id: string }
+        Returns: boolean
       }
       order_should_show_payment_info: {
         Args: { _order_id: string }

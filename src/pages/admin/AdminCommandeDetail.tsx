@@ -11,6 +11,7 @@ import { resolveVatExemption } from "@/lib/vat-exemption";
 import { ArrowLeft, FileDown, FileSpreadsheet, Pencil, Copy, Link2, ExternalLink, Lock, Wallet, ShieldCheck, AlertTriangle, CheckCircle2, Truck, Send } from "lucide-react";
 import { downloadVendorOrderXlsx } from "@/lib/order-vendor-xlsx";
 import { OrderManualInvoices } from "@/components/admin/OrderManualInvoices";
+import { OrderMessages } from "@/components/orders/OrderMessages";
 import OrderInvoiceStatusPanel from "@/components/orders/OrderInvoiceStatusPanel";
 import OrderProductsSummary from "@/components/orders/OrderProductsSummary";
 import DeliveryNotesPanel from "@/components/orders/DeliveryNotesPanel";
@@ -775,6 +776,8 @@ const AdminCommandeDetail = () => {
           })()}
 
 
+
+          <OrderMessages orderId={(order as any).id} viewer="admin" />
 
           <OrderManualInvoices
             orderId={(order as any).id}

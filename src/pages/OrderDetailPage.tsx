@@ -5,6 +5,7 @@ import { formatPrice } from "@/data/mock";
 import { useOrderDetail } from "@/hooks/useOrders";
 import { ORDER_WORKFLOW_STEPS, getOrderStatusMeta, formatOrderDateTime } from "@/lib/order-status";
 import { useVendorLabels } from "@/hooks/useVendorLabels";
+import { OrderMessages } from "@/components/orders/OrderMessages";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -336,6 +337,8 @@ export default function OrderDetailPage() {
             <p className="text-sm font-bold text-mk-navy mt-1">{formatPrice(total)} EUR</p>
           </div>
         </div>
+
+        {id && <OrderMessages orderId={id} viewer="customer" className="mb-8" />}
 
         <button className="border border-mk-red text-mk-red text-sm px-4 py-2 rounded-md">Signaler un problème</button>
       </div>

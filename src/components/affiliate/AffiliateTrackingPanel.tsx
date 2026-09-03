@@ -157,7 +157,12 @@ export function AffiliateTrackingPanel({ affiliateId }: { affiliateId: string })
                     <td className="text-right tabular-nums">{fmtCents(o.order_total_ht_cents)} €</td>
                     <td className="text-right tabular-nums">{o.net_margin_cents == null ? "—" : `${fmtCents(o.net_margin_cents)} €`}</td>
                     <td className="text-right tabular-nums font-semibold">{fmtCents(o.commission_cents)} €</td>
-                    <td className="pl-3"><Badge variant="outline">{COMMISSION_STATUS_LABELS[o.commission_status] ?? o.commission_status}</Badge></td>
+                    <td className="pl-3">
+                      <Badge variant="outline" className={COMMISSION_STATUS_LABELS[o.commission_status]?.className}>
+                        {COMMISSION_STATUS_LABELS[o.commission_status]?.label ?? o.commission_status}
+                      </Badge>
+                    </td>
+
                   </tr>
                 ))}
               </tbody>

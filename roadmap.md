@@ -5,3 +5,4 @@
 - [ ] Commandes : upload de factures manuelles (admin) visibles par le client dans son portail
 - [ ] Investiguer : pas d'email de notification admin (pcoll@medikong.pro) à la réception de la commande MK-2026-20064
 - [ ] Fiche apporteur : onglet Suivi complet (visites, scans, inscriptions, commandes rattachées, commissions)
+- [ ] Détail net vendeur (AdminCommandeDetail) : commission MK affichée x100 (cents traités comme euros)

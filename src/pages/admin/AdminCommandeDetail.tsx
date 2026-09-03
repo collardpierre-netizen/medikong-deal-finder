@@ -702,15 +702,25 @@ const AdminCommandeDetail = () => {
             const groups = new Map<string, { vendor: any; lines: any[]; ca: number; commission: number; net: number; cost: number; hasCost: boolean; margin: number }>();
             for (const l of lines) {
               const vid = l.vendors?.id || l.vendor_id || "__unknown__";
+              // order_lines.commission_amount est stockée en TOTAL LIGNE, alors que
+              // lineMetrics attend un montant €/unité. On le ramène donc par unité,
+              // et on l'ignore quand un taux % est défini (le % est la source de vérité).
+              const qty = Math.max(0, Math.trunc(Number(l.quantity) || 0));
+              const hasRate = Number(l.commission_rate) > 0;
+              const amtTotal = Number(l.commission_amount);
+              const amtPerUnit = !hasRate && Number.isFinite(amtTotal) && amtTotal > 0 && qty > 0
+                ? amtTotal / qty
+                : null;
               const m = lineMetrics({
                 quantity: l.quantity,
                 unit_price_excl_vat: l.unit_price_excl_vat,
                 vat_rate: l.vat_rate,
                 unit_cost_excl_vat: l.unit_cost_excl_vat ?? l.cost_price,
                 commission_rate: l.commission_rate,
-                commission_amount: l.commission_amount,
+                commission_amount: amtPerUnit,
                 commission_basis: l.commission_basis,
               } as ManualLineInput);
+
               const g = groups.get(vid) || { vendor: l.vendors, lines: [], ca: 0, commission: 0, net: 0, cost: 0, hasCost: false, margin: 0 };
               g.lines.push({ ...l, _m: m });
               g.ca += m.ca;

@@ -31188,6 +31188,20 @@ export type Database = {
           orders_count: number
         }[]
       }
+      affiliate_admin_attached_orders: {
+        Args: { _affiliate_id: string; _limit?: number }
+        Returns: {
+          commission_cents: number
+          commission_status: string
+          customer_name: string
+          net_margin_cents: number
+          order_date: string
+          order_id: string
+          order_number: string
+          order_status: string
+          order_total_ht_cents: number
+        }[]
+      }
       affiliate_admin_backfill_orders: {
         Args: {
           _affiliate_id: string
@@ -31297,6 +31311,37 @@ export type Database = {
             }
             Returns: Json
           }
+      affiliate_admin_tracking_by_campaign: {
+        Args: { _affiliate_id: string }
+        Returns: {
+          campaign_id: string
+          first_purchases: number
+          last_event_at: string
+          name: string
+          scans: number
+          signups_completed: number
+          signups_started: number
+          slug: string
+          status: string
+          unique_visitors: number
+          visits: number
+        }[]
+      }
+      affiliate_admin_tracking_events: {
+        Args: { _affiliate_id: string; _limit?: number }
+        Returns: {
+          campaign_slug: string
+          code: string
+          created_at: string
+          event_type: string
+          id: string
+          referrer_host: string
+          ua_family: string
+          user_email: string
+          user_id: string
+          visitor_id: string
+        }[]
+      }
       affiliate_calc_commission: {
         Args: {
           _base_rate_bp: number

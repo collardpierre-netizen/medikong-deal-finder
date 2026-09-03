@@ -14,6 +14,8 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { CommissionCalcDetails } from "@/components/affiliate/CommissionCalcDetails";
+import { AffiliateTrackingPanel } from "@/components/affiliate/AffiliateTrackingPanel";
+
 import {
   fmtCents, fmtBp, fmtDate, AFFILIATE_STATUS_LABELS, COMMISSION_STATUS_LABELS,
   VAT_MODE_LABELS, type AffiliateRule, type CalcDetails,
@@ -294,6 +296,7 @@ export default function AdminAffiliateDetailPage() {
       <Tabs defaultValue="synthese">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="synthese">Synthèse</TabsTrigger>
+          <TabsTrigger value="suivi">Suivi</TabsTrigger>
           <TabsTrigger value="clients">Clients</TabsTrigger>
           <TabsTrigger value="commissions">Commissions</TabsTrigger>
           <TabsTrigger value="payouts">Payouts</TabsTrigger>
@@ -301,7 +304,12 @@ export default function AdminAffiliateDetailPage() {
           <TabsTrigger value="facturation">Facturation</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="suivi" className="mt-4">
+          <AffiliateTrackingPanel affiliateId={id} />
+        </TabsContent>
+
         <TabsContent value="synthese" className="mt-4">
+
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
               ["Clients attribués", String(stats?.referrals_active ?? 0)],

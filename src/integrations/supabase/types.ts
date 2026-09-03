@@ -9664,7 +9664,7 @@ export type Database = {
           type: string
           updated_at: string
           vat_amount: number
-          vendor_id: string
+          vendor_id: string | null
         }
         Insert: {
           amount_excl_vat?: number
@@ -9709,7 +9709,7 @@ export type Database = {
           type?: string
           updated_at?: string
           vat_amount?: number
-          vendor_id: string
+          vendor_id?: string | null
         }
         Update: {
           amount_excl_vat?: number
@@ -9754,7 +9754,7 @@ export type Database = {
           type?: string
           updated_at?: string
           vat_amount?: number
-          vendor_id?: string
+          vendor_id?: string | null
         }
         Relationships: [
           {

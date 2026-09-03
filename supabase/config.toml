@@ -107,3 +107,6 @@ verify_jwt = false
 
 
 
+
+[functions.send-order-message]
+verify_jwt = true

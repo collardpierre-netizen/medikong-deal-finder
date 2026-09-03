@@ -30,7 +30,7 @@ export default function OrderDetailPage() {
         .from("order_invoices")
         .select("id, invoice_number, type, pdf_path")
         .eq("order_id", id!)
-        .eq("type", "self_billing");
+        .in("type", ["self_billing", "manual"]);
       if (error) throw error;
       return data || [];
     },

@@ -10,6 +10,7 @@ import { fmtEur } from "@/lib/format-currency";
 import { resolveVatExemption } from "@/lib/vat-exemption";
 import { ArrowLeft, FileDown, FileSpreadsheet, Pencil, Copy, Link2, ExternalLink, Lock, Wallet, ShieldCheck, AlertTriangle, CheckCircle2, Truck, Send } from "lucide-react";
 import { downloadVendorOrderXlsx } from "@/lib/order-vendor-xlsx";
+import { OrderManualInvoices } from "@/components/admin/OrderManualInvoices";
 import OrderInvoiceStatusPanel from "@/components/orders/OrderInvoiceStatusPanel";
 import OrderProductsSummary from "@/components/orders/OrderProductsSummary";
 import DeliveryNotesPanel from "@/components/orders/DeliveryNotesPanel";
@@ -705,7 +706,7 @@ const AdminCommandeDetail = () => {
                 quantity: l.quantity,
                 unit_price_excl_vat: l.unit_price_excl_vat,
                 vat_rate: l.vat_rate,
-                unit_cost_excl_vat: l.unit_cost_excl_vat,
+                unit_cost_excl_vat: l.unit_cost_excl_vat ?? l.cost_price,
                 commission_rate: l.commission_rate,
                 commission_amount: l.commission_amount,
                 commission_basis: l.commission_basis,
@@ -764,6 +765,14 @@ const AdminCommandeDetail = () => {
           })()}
 
 
+
+          <OrderManualInvoices
+            orderId={(order as any).id}
+            orderNumber={(order as any).order_number}
+            defaultExclVat={Number((order as any).subtotal_excl_vat) || 0}
+            defaultVat={Number((order as any).vat_amount) || 0}
+            defaultInclVat={Number((order as any).total_incl_vat) || 0}
+          />
 
           {vendorWithBank && (
             <div className="bg-white border rounded-lg p-4" style={{ borderColor: "#E2E8F0" }}>

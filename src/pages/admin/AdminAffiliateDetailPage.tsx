@@ -14,6 +14,8 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { CommissionCalcDetails } from "@/components/affiliate/CommissionCalcDetails";
+import { AffiliateTrackingPanel } from "@/components/affiliate/AffiliateTrackingPanel";
+
 import {
   fmtCents, fmtBp, fmtDate, AFFILIATE_STATUS_LABELS, COMMISSION_STATUS_LABELS,
   VAT_MODE_LABELS, type AffiliateRule, type CalcDetails,

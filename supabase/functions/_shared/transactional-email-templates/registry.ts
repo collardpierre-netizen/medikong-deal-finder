@@ -32,6 +32,7 @@ import { template as orderLineRefundedCustomer } from './order-line-refunded-cus
 import { template as orderLineRefundedAdmin } from './order-line-refunded-admin.tsx'
 import { template as auditConfirmation } from './audit-confirmation.tsx'
 import { template as auditNewLead } from './audit-new-lead.tsx'
+import { template as adminNewOrder } from './admin-new-order.tsx'
 import { template as auditReportReady } from './audit-report-ready.tsx'
 import { template as accountInvitation } from './account-invitation.tsx'
 import { template as vendorAccountCreated } from './vendor-account-created.tsx'
@@ -80,6 +81,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'order-line-refunded-admin': orderLineRefundedAdmin,
   'audit-confirmation': auditConfirmation,
   'audit-new-lead': auditNewLead,
+  'admin-new-order': adminNewOrder,
   'audit-report-ready': auditReportReady,
   'account-invitation': accountInvitation,
   'vendor-account-created': vendorAccountCreated,

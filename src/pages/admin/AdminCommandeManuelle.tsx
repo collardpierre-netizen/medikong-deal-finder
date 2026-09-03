@@ -773,7 +773,8 @@ const AdminCommandeManuelle = () => {
           vat_rate: Number(l.vat_rate ?? 21),
           unit_cost_excl_vat: l.unit_cost_excl_vat ?? "",
           commission_rate: l.commission_rate ?? "",
-          commission_amount: String(l.commission_rate ?? "").trim() !== "" ? "" : (l.commission_amount ?? ""),
+          // order_lines.commission_amount est un TOTAL de ligne → on repasse en €/unité pour l'éditeur
+          commission_amount: perUnitCommissionAmount(l),
           commission_basis: l.commission_basis === "margin" ? "margin" : "ca",
           gtin: l.gtin ?? undefined,
           cnk_code: l.cnk_code ?? undefined,

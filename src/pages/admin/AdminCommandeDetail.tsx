@@ -765,6 +765,14 @@ const AdminCommandeDetail = () => {
 
 
 
+          <OrderManualInvoices
+            orderId={(order as any).id}
+            orderNumber={(order as any).order_number}
+            defaultExclVat={Number((order as any).subtotal_excl_vat) || 0}
+            defaultVat={Number((order as any).vat_amount) || 0}
+            defaultInclVat={Number((order as any).total_incl_vat) || 0}
+          />
+
           {vendorWithBank && (
             <div className="bg-white border rounded-lg p-4" style={{ borderColor: "#E2E8F0" }}>
               <div className="text-[11px] uppercase text-slate-400 font-semibold mb-2">Informations de paiement — MediKong SRL</div>

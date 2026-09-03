@@ -60,6 +60,19 @@ interface ManualLine {
 // Wrapper local pour préserver l'API d'origine (ManualLine UI → ManualLineInput).
 const lineMetrics = (l: ManualLine) => computeLineMetrics(l as ManualLineInput);
 
+/**
+ * order_lines.commission_amount est stocké comme TOTAL de la ligne, alors que
+ * l'éditeur manuel manipule un montant €/unité. On divise donc par la quantité
+ * au chargement. Si un taux % est présent, il reste la source de vérité.
+ */
+const perUnitCommissionAmount = (l: any): string => {
+  if (String(l?.commission_rate ?? "").trim() !== "") return "";
+  const total = Number(l?.commission_amount);
+  if (!Number.isFinite(total) || total === 0) return "";
+  const qty = Math.max(1, Math.trunc(Number(l?.quantity) || 1));
+  return String(Math.round((total / qty) * 10000) / 10000);
+};
+
 
 const ORDER_STATUSES = [
   { value: "pending", label: "En attente" },

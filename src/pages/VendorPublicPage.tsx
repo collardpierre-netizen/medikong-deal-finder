@@ -427,6 +427,29 @@ export default function VendorPublicPage() {
     });
   }, [offers]);
 
+  // Liste complète des marques du vendeur (indépendante de la pagination),
+  // servie par la MV vendor_top_brands_mv.
+  const { data: vendorBrands = [] } = useQuery({
+    queryKey: ["vendor-brands-all", vendor?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendor_top_brands_mv" as any)
+        .select("brand_name, brand_slug, offer_count")
+        .eq("vendor_id", vendor!.id);
+      if (error) throw error;
+      return ((data as any[]) || [])
+        .filter((r) => r.brand_name)
+        .map((r) => ({
+          name: r.brand_name as string,
+          slug: (r.brand_slug as string) || slugify(r.brand_name as string),
+          count: Number(r.offer_count) || 0,
+        }))
+        .sort((a, b) => b.count - a.count);
+    },
+    enabled: !!vendor?.id,
+    staleTime: 10 * 60 * 1000,
+  });
+
   // Extract unique brands & categories with counts
   const { brands, categories } = useMemo(() => {
     const bMap = new Map<string, { name: string; slug: string; count: number }>();

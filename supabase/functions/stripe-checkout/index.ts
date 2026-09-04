@@ -196,6 +196,14 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
         reason: "no_stripe_account" | "charges_disabled";
         amount: number;
       }> = [];
+      // Flux virement : vendeurs encaissés par MediKong mais à reverser à la main
+      // (pas de compte Stripe actif). N'empêche PAS le paiement du client.
+      const manualPayoutVendors: Array<{
+        vendor_id: string;
+        vendor_name: string;
+        reason: "no_stripe_account" | "charges_disabled";
+        amount: number;
+      }> = [];
 
       // ============================================================
       // Flux B — SEPA Bank Transfer : UN SEUL PI pour le total panier.

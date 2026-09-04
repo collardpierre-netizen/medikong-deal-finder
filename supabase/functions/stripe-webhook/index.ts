@@ -506,13 +506,37 @@ async function handleBankTransferSucceeded(pi: Stripe.PaymentIntent) {
 
     for (const [vendorId, agg] of byVendor.entries()) {
       const vendor = vendorMap.get(vendorId);
-      if (!vendor?.stripe_account_id || !vendor?.stripe_charges_enabled) {
-        console.warn(`[bank_transfer] Vendor ${vendorId} sans Stripe Connect actif, skip transfer`);
-        continue;
-      }
       const commRate = Number(vendor?.commission_rate ?? defaultCommission);
       const commissionCents = Math.round(agg.ht * commRate);
       const transferAmount = agg.ttc - commissionCents;
+
+      // Vendeur sans Stripe Connect actif : l'argent est bien encaissé par
+      // MediKong, on enregistre un reversement à faire à la main (statut
+      // manual_pending) au lieu de perdre la trace.
+      if (!vendor?.stripe_account_id || !vendor?.stripe_charges_enabled) {
+        console.warn(`[bank_transfer] Vendor ${vendorId} sans Stripe Connect actif → reversement manuel`);
+        if (transferAmount > 0) {
+          const { error: manualErr } = await supabase
+            .from("order_transfers")
+            .upsert(
+              {
+                order_id: orderId,
+                vendor_id: vendorId,
+                amount: transferAmount,
+                commission_amount: commissionCents,
+                commission_rate: commRate,
+                status: "manual_pending",
+                error_message: !vendor?.stripe_account_id
+                  ? "Vendeur sans compte de paiement : reversement à effectuer manuellement"
+                  : "Compte de paiement vendeur non activé : reversement à effectuer manuellement",
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: "order_id,vendor_id", ignoreDuplicates: false },
+            );
+          if (manualErr) console.error(`[bank_transfer] upsert manual_pending KO vendor=${vendorId}`, manualErr);
+        }
+        continue;
+      }
       if (transferAmount <= 0) {
         console.warn(`[bank_transfer] transfer_amount<=0 pour vendor ${vendorId}, skip`);
         continue;

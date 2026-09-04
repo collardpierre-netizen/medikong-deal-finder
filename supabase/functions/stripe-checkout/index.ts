@@ -196,6 +196,14 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
         reason: "no_stripe_account" | "charges_disabled";
         amount: number;
       }> = [];
+      // Flux virement : vendeurs encaissés par MediKong mais à reverser à la main
+      // (pas de compte Stripe actif). N'empêche PAS le paiement du client.
+      const manualPayoutVendors: Array<{
+        vendor_id: string;
+        vendor_name: string;
+        reason: "no_stripe_account" | "charges_disabled";
+        amount: number;
+      }> = [];
 
       // ============================================================
       // Flux B — SEPA Bank Transfer : UN SEUL PI pour le total panier.
@@ -226,15 +234,16 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
           );
           if (totalTtcCents <= 0) continue;
 
-          // Vendeur pas prêt Stripe → bascule manuelle (hors PI virement)
+          // Vendeur pas prêt Stripe : le virement arrive quand même sur le compte
+          // MediKong (aucun transfer_data ici), le reversement sera fait à la main
+          // par l'équipe. On le trace pour le back-office sans bloquer l'encaissement.
           if (!vendor?.stripe_account_id || !vendor?.stripe_charges_enabled) {
-            manualPaymentVendors.push({
+            manualPayoutVendors.push({
               vendor_id: vendorId,
               vendor_name: vendorName,
               reason: !vendor?.stripe_account_id ? "no_stripe_account" : "charges_disabled",
               amount: totalTtcCents,
             });
-            continue;
           }
 
           const commRate = Number(vendor?.commission_rate ?? defaultCommission);
@@ -303,21 +312,14 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
             },
           });
 
-          // Persist PI id sur toutes les lignes des vendeurs éligibles
-          const eligibleVendorIds = Array.from(linesByVendor.entries())
-            .filter(([vid]) => {
-              const v = vendorMap.get(vid);
-              return v?.stripe_account_id && v?.stripe_charges_enabled;
-            })
-            .map(([vid]) => vid);
-          const eligibleLineIds = (lines as any[])
-            .filter((l) => eligibleVendorIds.includes(l.vendor_id))
-            .map((l) => l.id);
-          if (eligibleLineIds.length > 0) {
+          // Persist PI id sur toutes les lignes du virement (y compris les vendeurs
+          // à reverser manuellement : l'encaissement les couvre aussi).
+          const allLineIds = (lines as any[]).map((l) => l.id);
+          if (allLineIds.length > 0) {
             await supabase
               .from("order_lines")
               .update({ stripe_payment_intent_id: paymentIntent.id })
-              .in("id", eligibleLineIds);
+              .in("id", allLineIds);
           }
         }
 
@@ -419,6 +421,7 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
         JSON.stringify({
           payment_intents: results,
           manual_payment_vendors: manualPaymentVendors,
+          manual_payout_vendors: manualPayoutVendors,
           client_secret: results[0]?.client_secret ?? null,
           payment_intent_id: results[0]?.payment_intent_id ?? null,
         }),

@@ -226,15 +226,16 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
           );
           if (totalTtcCents <= 0) continue;
 
-          // Vendeur pas prêt Stripe → bascule manuelle (hors PI virement)
+          // Vendeur pas prêt Stripe : le virement arrive quand même sur le compte
+          // MediKong (aucun transfer_data ici), le reversement sera fait à la main
+          // par l'équipe. On le trace pour le back-office sans bloquer l'encaissement.
           if (!vendor?.stripe_account_id || !vendor?.stripe_charges_enabled) {
-            manualPaymentVendors.push({
+            manualPayoutVendors.push({
               vendor_id: vendorId,
               vendor_name: vendorName,
               reason: !vendor?.stripe_account_id ? "no_stripe_account" : "charges_disabled",
               amount: totalTtcCents,
             });
-            continue;
           }
 
           const commRate = Number(vendor?.commission_rate ?? defaultCommission);

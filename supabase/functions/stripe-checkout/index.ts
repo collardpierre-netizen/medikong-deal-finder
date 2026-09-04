@@ -312,21 +312,14 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
             },
           });
 
-          // Persist PI id sur toutes les lignes des vendeurs éligibles
-          const eligibleVendorIds = Array.from(linesByVendor.entries())
-            .filter(([vid]) => {
-              const v = vendorMap.get(vid);
-              return v?.stripe_account_id && v?.stripe_charges_enabled;
-            })
-            .map(([vid]) => vid);
-          const eligibleLineIds = (lines as any[])
-            .filter((l) => eligibleVendorIds.includes(l.vendor_id))
-            .map((l) => l.id);
-          if (eligibleLineIds.length > 0) {
+          // Persist PI id sur toutes les lignes du virement (y compris les vendeurs
+          // à reverser manuellement : l'encaissement les couvre aussi).
+          const allLineIds = (lines as any[]).map((l) => l.id);
+          if (allLineIds.length > 0) {
             await supabase
               .from("order_lines")
               .update({ stripe_payment_intent_id: paymentIntent.id })
-              .in("id", eligibleLineIds);
+              .in("id", allLineIds);
           }
         }
 

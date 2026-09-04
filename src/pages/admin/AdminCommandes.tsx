@@ -933,7 +933,7 @@ const AdminCommandes = () => {
         </span>
       </div>
 
-      <div className="grid grid-cols-7 gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 mb-5">
         <KpiCard icon={TrendingUp} label={`GMV total (${PERIODS.find(p => p.key === period)?.label})`} value={`${fmt(gmvDay)} EUR`} />
         <KpiCard icon={ShoppingCart} label="Commandes" value={String(totalCount)} iconColor="#7C3AED" iconBg="#F5F3FF" />
         <KpiCard icon={CreditCard} label="Panier moyen" value={`${fmt(avgBasket)} EUR`} iconColor="#059669" iconBg="#F0FDF4" />
@@ -950,7 +950,7 @@ const AdminCommandes = () => {
         <KpiCard icon={Truck} label="En livraison" value={String(countByStatus("shipped"))} iconColor="#E70866" iconBg="#FDF2F8" />
       </div>
 
-      <div className="flex items-center gap-1 mb-4 p-1 rounded-lg" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0", display: "inline-flex" }}>
+      <div className="flex flex-wrap items-center gap-1 mb-4 p-1 rounded-lg max-w-full" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
         {tabs.map((tab) => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
             className="px-4 py-2 rounded-md text-[13px] font-semibold transition-colors"
@@ -962,7 +962,7 @@ const AdminCommandes = () => {
 
       {activeTab === "list" && (
         <div>
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
             {statusFilters.map((sf) => (
               <button key={sf.key} onClick={() => setStatusFilter(sf.key)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-colors"
@@ -975,8 +975,8 @@ const AdminCommandes = () => {
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-md flex-1 max-w-md" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-md flex-1 min-w-[220px] max-w-md" style={{ backgroundColor: "#fff", border: "1px solid #E2E8F0" }}>
               <Search size={14} style={{ color: "#8B95A5" }} />
               <input type="text" placeholder="Rechercher par ID, acheteur..." value={search} onChange={(e) => setSearch(e.target.value)}
                 className="flex-1 text-[13px] outline-none bg-transparent" style={{ color: "#1D2530" }} />

@@ -466,11 +466,14 @@ export default function VendorPublicPage() {
         cMap.set(s, { name: p.categoryName, slug: s, count: (existing?.count || 0) + 1 });
       }
     }
+    const derivedBrands = Array.from(bMap.values()).sort((a, b) => b.count - a.count);
     return {
-      brands: Array.from(bMap.values()).sort((a, b) => b.count - a.count),
+      // Priorité à la liste complète vendeur ; fallback sur les marques des
+      // produits déjà chargés si la MV est vide.
+      brands: vendorBrands.length > 0 ? vendorBrands : derivedBrands,
       categories: Array.from(cMap.values()).sort((a, b) => b.count - a.count),
     };
-  }, [vendorProducts]);
+  }, [vendorProducts, vendorBrands]);
 
   // Apply filters
   const filteredProducts = useMemo(() => {

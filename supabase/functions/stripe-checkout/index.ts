@@ -421,6 +421,7 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
         JSON.stringify({
           payment_intents: results,
           manual_payment_vendors: manualPaymentVendors,
+          manual_payout_vendors: manualPayoutVendors,
           client_secret: results[0]?.client_secret ?? null,
           payment_intent_id: results[0]?.payment_intent_id ?? null,
         }),

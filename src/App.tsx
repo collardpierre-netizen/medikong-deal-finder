@@ -82,6 +82,7 @@ const DelegateDesignDemoPage = lazyWithRetry(() => import("./pages/DelegateDesig
 const InvestPage = lazyWithRetry(() => import("./pages/InvestPage"), "InvestPage");
 const ForgotPasswordPage = lazyWithRetry(() => import("./pages/ForgotPasswordPage"), "ForgotPasswordPage");
 const ResetPasswordPage = lazyWithRetry(() => import("./pages/ResetPasswordPage"), "ResetPasswordPage");
+const ForcePasswordChangePage = lazyWithRetry(() => import("./pages/ForcePasswordChangePage"), "ForcePasswordChangePage");
 const AccountInvitationPage = lazyWithRetry(() => import("./pages/AccountInvitationPage"), "AccountInvitationPage");
 const VendorPublicPage = lazyWithRetry(() => import("./pages/VendorPublicPage"), "VendorPublicPage");
 const VendorLegacySlugGone = lazyWithRetry(() => import("./pages/VendorLegacySlugGone"), "VendorLegacySlugGone");

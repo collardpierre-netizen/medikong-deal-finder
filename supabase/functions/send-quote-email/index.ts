@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
 
     const { data: quote, error: qErr } = await adminClient
       .from("quotes")
-      .select("*, customer:customers(company_name, email), vendor:vendors(name, company_name)")
+      .select("*, customer:customers(company_name, email), vendor:vendors(name, company_name, display_code)")
       .eq("id", quoteId)
       .maybeSingle();
     if (qErr || !quote) {
@@ -90,7 +90,9 @@ Deno.serve(async (req) => {
         idempotencyKey: `quote-sent-${quote.id}-${quote.sent_at ?? "first"}`,
         templateData: {
           quoteNumber: quote.quote_number,
-          vendorName: quote.vendor?.company_name || quote.vendor?.name,
+          vendorName: quote.anonymize_vendor
+            ? `Fournisseur ${quote.vendor?.display_code || "MediKong"}`
+            : (quote.vendor?.company_name || quote.vendor?.name),
           customerName: quote.customer?.company_name,
           totalTtcEur: fmtEur(Number(quote.total_ttc_cents) || 0, quote.currency_code),
           validUntil,

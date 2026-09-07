@@ -10882,6 +10882,7 @@ export type Database = {
       orders: {
         Row: {
           admin_notes: string | null
+          anonymize_vendors: boolean
           api_key_id: string | null
           billing_address: Json
           cagnotte_earned: number | null
@@ -10940,6 +10941,7 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          anonymize_vendors?: boolean
           api_key_id?: string | null
           billing_address?: Json
           cagnotte_earned?: number | null
@@ -10998,6 +11000,7 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          anonymize_vendors?: boolean
           api_key_id?: string | null
           billing_address?: Json
           cagnotte_earned?: number | null
@@ -14420,6 +14423,7 @@ export type Database = {
         Row: {
           accepted_at: string | null
           accepted_ip: string | null
+          anonymize_vendor: boolean
           converted_at: string | null
           created_at: string
           created_by_user_id: string | null
@@ -14450,6 +14454,7 @@ export type Database = {
         Insert: {
           accepted_at?: string | null
           accepted_ip?: string | null
+          anonymize_vendor?: boolean
           converted_at?: string | null
           created_at?: string
           created_by_user_id?: string | null
@@ -14480,6 +14485,7 @@ export type Database = {
         Update: {
           accepted_at?: string | null
           accepted_ip?: string | null
+          anonymize_vendor?: boolean
           converted_at?: string | null
           created_at?: string
           created_by_user_id?: string | null
@@ -30086,6 +30092,7 @@ export type Database = {
         Args: { _notes?: string; _order_id: string }
         Returns: {
           admin_notes: string | null
+          anonymize_vendors: boolean
           api_key_id: string | null
           billing_address: Json
           cagnotte_earned: number | null

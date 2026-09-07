@@ -61,9 +61,11 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "order not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    const anonymizeVendors = Boolean((order as any).anonymize_vendors);
+
     let { data: lines } = await adminClient
       .from("order_lines")
-      .select("*, products(name, gtin, cnk_code), vendors(company_name, name, vat_number, address_line1, bank_name, iban, bic)")
+      .select("*, products(name, gtin, cnk_code), vendors(company_name, name, display_code, vat_number, address_line1, bank_name, iban, bic)")
       .eq("order_id", orderId);
 
     // Fallback : commande draft / prévisionnelle → lignes dans draft_payload
@@ -77,7 +79,7 @@ Deno.serve(async (req) => {
       const vendorIds = Array.from(new Set(draftLines.map((l) => l.vendor_id).filter(Boolean)));
       const [{ data: prods }, { data: vends }] = await Promise.all([
         productIds.length ? adminClient.from("products").select("id, name, gtin, cnk_code").in("id", productIds) : Promise.resolve({ data: [] as any[] }),
-        vendorIds.length ? adminClient.from("vendors").select("id, name, company_name, vat_number, address_line1, bank_name, iban, bic").in("id", vendorIds) : Promise.resolve({ data: [] as any[] }),
+        vendorIds.length ? adminClient.from("vendors").select("id, name, company_name, display_code, vat_number, address_line1, bank_name, iban, bic").in("id", vendorIds) : Promise.resolve({ data: [] as any[] }),
       ]);
       const prodMap = new Map((prods || []).map((p: any) => [p.id, p]));
       const vendMap = new Map((vends || []).map((v: any) => [v.id, v]));
@@ -478,7 +480,11 @@ Deno.serve(async (req) => {
     let rowIdx = 0;
     for (const l of (lines || [])) {
       const label = doc.splitTextToSize(String(l.manual_label || l.products?.name || "—"), COLS.articleWidth);
-      const vendor = doc.splitTextToSize(String(l.vendors?.company_name || l.vendors?.name || l.qogita_seller_fid || "—"), COLS.vendorWidth);
+      // Anonymisation manuelle (option commande) : on n'imprime que l'ID public MediKong.
+      const vendorLabel = anonymizeVendors
+        ? `Fournisseur ${l.vendors?.display_code || "MediKong"}`
+        : String(l.vendors?.company_name || l.vendors?.name || l.qogita_seller_fid || "—");
+      const vendor = doc.splitTextToSize(vendorLabel, COLS.vendorWidth);
       const cnk = (l as any).cnk_code || l.products?.cnk_code || null;
       const gtin = l.products?.gtin || null;
       const codeParts: string[] = [];

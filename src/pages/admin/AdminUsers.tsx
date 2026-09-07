@@ -78,6 +78,8 @@ export default function AdminUsers() {
   const [deleteReason, setDeleteReason] = useState("");
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [resettingId, setResettingId] = useState<string | null>(null);
+  const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
+  const [tempPasswordInfo, setTempPasswordInfo] = useState<{ email: string; password: string } | null>(null);
   const { startImpersonation } = useImpersonation();
   const navigate = useNavigate();
 

@@ -311,6 +311,32 @@ export default function AdminUsers() {
     }
   }
 
+  async function handleRegenerateTempPassword(user: UserRow) {
+    if (!user.email) {
+      toast.error("Impossible : aucune adresse email pour ce compte.");
+      return;
+    }
+    setRegeneratingId(user.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-regenerate-temp-password", {
+        body: { user_id: user.userId ?? undefined, email: user.email },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Échec de la régénération");
+      setTempPasswordInfo({ email: data.email || user.email, password: data.temp_password });
+      logAdminAudit("customer.temp_password_regenerated", {
+        targetId: user.userId ?? user.id,
+        targetType: "auth_user",
+        metadata: { email: user.email },
+      });
+    } catch (e) {
+      toast.error("Erreur : " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setRegeneratingId(null);
+    }
+  }
+
+
 
 
   const filtered = users.filter(u => {

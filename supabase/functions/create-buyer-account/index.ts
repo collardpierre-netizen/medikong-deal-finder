@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
           email: normalizedEmail,
           password: tempPassword,
           email_confirm: true,
-          user_metadata: { role: "buyer", company_name: existing.company_name },
+          user_metadata: { role: "buyer", company_name: existing.company_name, must_change_password: true },
         });
         if (authError || !authData.user) {
           return new Response(JSON.stringify({ error: `Erreur auth: ${authError?.message || "inconnue"}` }), {
@@ -168,7 +168,7 @@ Deno.serve(async (req) => {
         email: normalizedEmail,
         password: tempPassword,
         email_confirm: true,
-        user_metadata: { role: "buyer", company_name },
+        user_metadata: { role: "buyer", company_name, must_change_password: true },
       });
       if (authError || !authData.user) {
         return new Response(JSON.stringify({ error: `Erreur auth: ${authError?.message || "inconnue"}` }), {

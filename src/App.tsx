@@ -471,6 +471,7 @@ const App = () => (
             <Route path="/invest" element={<LP><InvestPage /></LP>} />
             <Route path="/mot-de-passe-oublie" element={<LP><ForgotPasswordPage /></LP>} />
             <Route path="/reset-password" element={<LP><ResetPasswordPage /></LP>} />
+            <Route path="/definir-mot-de-passe" element={<ForcePasswordChangePage />} />
             <Route path="/entreprise/a-propos" element={<LP><AboutPage /></LP>} />
             <Route path="/entreprise/pourquoi-medikong" element={<LP><WhyMedikongPage /></LP>} />
             <Route path="/entreprise/comment-ca-marche" element={<LP><HowItWorksPage /></LP>} />

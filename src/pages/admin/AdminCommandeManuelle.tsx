@@ -660,6 +660,9 @@ const AdminCommandeManuelle = () => {
       });
       if (error) throw error;
       const id = data as string;
+      // L'option d'anonymisation doit vivre sur la colonne orders (PDF + lien public),
+      // pas seulement dans le draft_payload.
+      await supabase.from("orders").update({ anonymize_vendors: anonymizeVendors } as any).eq("id", id);
       setDraftId(id);
       // Met à jour l'URL avec ?draft=<id> de façon robuste (nouvelle URLSearchParams)
       const next = new URLSearchParams(searchParams);

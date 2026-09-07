@@ -749,6 +749,43 @@ export default function AdminUsers() {
         </div>
       )}
 
+      {/* Temporary password modal */}
+      {tempPasswordInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setTempPasswordInfo(null)}>
+          <div className="bg-card rounded-xl w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-border">
+              <h2 className="text-lg font-bold text-foreground">Mot de passe temporaire</h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                À communiquer à <strong>{tempPasswordInfo.email}</strong>. Il sera demandé de choisir son propre mot de passe dès la première connexion.
+              </p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 rounded-lg border border-border bg-muted px-3 py-2 text-sm font-mono break-all">
+                  {tempPasswordInfo.password}
+                </code>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(tempPasswordInfo.password);
+                    toast.success("Copié");
+                  }}
+                >
+                  Copier
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Ce mot de passe ne sera plus consultable après fermeture de cette fenêtre.
+              </p>
+            </div>
+            <div className="p-4 border-t border-border flex justify-end">
+              <Button size="sm" onClick={() => setTempPasswordInfo(null)}>Fermer</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delete / Refuse modal */}
       {deleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setDeleteModal(null)}>

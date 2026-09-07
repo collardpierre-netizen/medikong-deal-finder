@@ -543,6 +543,17 @@ export default function AdminUsers() {
                             <KeyRound size={12} />
                             {resettingId === u.id ? "Envoi…" : "Reset mot de passe"}
                           </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1 text-[11px] h-7"
+                            disabled={regeneratingId === u.id}
+                            title="Générer un nouveau mot de passe temporaire à communiquer au client (changement obligatoire à la connexion)"
+                            onClick={(e) => { e.stopPropagation(); handleRegenerateTempPassword(u); }}
+                          >
+                            <KeyRound size={12} />
+                            {regeneratingId === u.id ? "Génération…" : "Mot de passe temporaire"}
+                          </Button>
                           <ChevronRight size={16} className="inline text-muted-foreground" />
                         </>
                       )}

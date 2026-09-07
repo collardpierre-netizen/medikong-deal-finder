@@ -135,6 +135,27 @@ const AdminDevisDetail = () => {
             {quote.notes_customer && (
               <div className="bg-blue-50/60 border-l-2 border-blue-400 px-3 py-2 rounded text-sm italic text-slate-700">{quote.notes_customer}</div>
             )}
+            <div className="mt-3 p-3 rounded border flex items-center justify-between gap-3" style={{ borderColor: "#E2E8F0" }}>
+              <div>
+                <div className="text-[11px] uppercase text-slate-400 font-semibold mb-0.5">Anonymisation fournisseur</div>
+                <div className="text-xs text-slate-500">Masque le nom du fournisseur sur le devis en ligne et l'email client.</div>
+              </div>
+              <label className="inline-flex items-center gap-2 text-sm font-medium cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4"
+                  checked={(quote as any).anonymize_vendor === true}
+                  onChange={async (e) => {
+                    const next = e.target.checked;
+                    const { error } = await supabase.from("quotes").update({ anonymize_vendor: next } as any).eq("id", quote.id);
+                    if (error) { toast.error("Échec : " + error.message); return; }
+                    toast.success(next ? "Fournisseur anonymisé" : "Nom du fournisseur affiché");
+                    await refetch();
+                  }}
+                />
+                {(quote as any).anonymize_vendor === true ? "Anonymisé" : "Nom réel"}
+              </label>
+            </div>
           </div>
 
           <div className="bg-white border rounded-lg overflow-hidden" style={{ borderColor: "#E2E8F0" }}>

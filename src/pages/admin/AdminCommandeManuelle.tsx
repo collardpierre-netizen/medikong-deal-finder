@@ -778,7 +778,6 @@ const AdminCommandeManuelle = () => {
         );
         setCustomerNotes(p.customer_notes ?? "");
         setAnonymizeVendors(p.anonymize_vendors === true);
-      setAnonymizeVendors(p.anonymize_vendors === true);
         setEncodingAt("");
         setIsForecast(false);
         setFulfillmentMode(p.fulfillment_mode === "pickup" ? "pickup" : "delivery");

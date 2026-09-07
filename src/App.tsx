@@ -413,6 +413,7 @@ const App = () => (
 
           <ImpersonationPageTracker />
           <AccountSelectionGuard />
+          <ForcePasswordChangeGuard />
           <LazyRouteBoundary>
           <Suspense fallback={<PageLoader />}>
           <Routes>

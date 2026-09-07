@@ -78,6 +78,8 @@ export default function AdminUsers() {
   const [deleteReason, setDeleteReason] = useState("");
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [resettingId, setResettingId] = useState<string | null>(null);
+  const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
+  const [tempPasswordInfo, setTempPasswordInfo] = useState<{ email: string; password: string } | null>(null);
   const { startImpersonation } = useImpersonation();
   const navigate = useNavigate();
 
@@ -309,6 +311,32 @@ export default function AdminUsers() {
     }
   }
 
+  async function handleRegenerateTempPassword(user: UserRow) {
+    if (!user.email) {
+      toast.error("Impossible : aucune adresse email pour ce compte.");
+      return;
+    }
+    setRegeneratingId(user.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-regenerate-temp-password", {
+        body: { user_id: user.userId ?? undefined, email: user.email },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Échec de la régénération");
+      setTempPasswordInfo({ email: data.email || user.email, password: data.temp_password });
+      logAdminAudit("customer.temp_password_regenerated", {
+        targetId: user.userId ?? user.id,
+        targetType: "auth_user",
+        metadata: { email: user.email },
+      });
+    } catch (e) {
+      toast.error("Erreur : " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setRegeneratingId(null);
+    }
+  }
+
+
 
 
   const filtered = users.filter(u => {
@@ -515,6 +543,17 @@ export default function AdminUsers() {
                             <KeyRound size={12} />
                             {resettingId === u.id ? "Envoi…" : "Reset mot de passe"}
                           </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1 text-[11px] h-7"
+                            disabled={regeneratingId === u.id}
+                            title="Générer un nouveau mot de passe temporaire à communiquer au client (changement obligatoire à la connexion)"
+                            onClick={(e) => { e.stopPropagation(); handleRegenerateTempPassword(u); }}
+                          >
+                            <KeyRound size={12} />
+                            {regeneratingId === u.id ? "Génération…" : "Mot de passe temporaire"}
+                          </Button>
                           <ChevronRight size={16} className="inline text-muted-foreground" />
                         </>
                       )}
@@ -705,6 +744,43 @@ export default function AdminUsers() {
               <Button disabled={!confirmed} onClick={() => handleImpersonate(confirmModal)}>
                 Accéder au compte
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Temporary password modal */}
+      {tempPasswordInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setTempPasswordInfo(null)}>
+          <div className="bg-card rounded-xl w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-border">
+              <h2 className="text-lg font-bold text-foreground">Mot de passe temporaire</h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                À communiquer à <strong>{tempPasswordInfo.email}</strong>. Il sera demandé de choisir son propre mot de passe dès la première connexion.
+              </p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 rounded-lg border border-border bg-muted px-3 py-2 text-sm font-mono break-all">
+                  {tempPasswordInfo.password}
+                </code>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(tempPasswordInfo.password);
+                    toast.success("Copié");
+                  }}
+                >
+                  Copier
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Ce mot de passe ne sera plus consultable après fermeture de cette fenêtre.
+              </p>
+            </div>
+            <div className="p-4 border-t border-border flex justify-end">
+              <Button size="sm" onClick={() => setTempPasswordInfo(null)}>Fermer</Button>
             </div>
           </div>
         </div>

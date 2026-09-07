@@ -111,6 +111,7 @@ const AdminCommandeManuelle = () => {
   const [paymentStatus, setPaymentStatus] = useState("paid");
   const [adminNotes, setAdminNotes] = useState("");
   const [customerNotes, setCustomerNotes] = useState("");
+  const [anonymizeVendors, setAnonymizeVendors] = useState(false);
   const [lines, setLines] = useState<ManualLine[]>([]);
   const [draftId, _setDraftId] = useState<string | null>(null);
   const draftIdRef = useRef<string | null>(null);
@@ -551,6 +552,9 @@ const AdminCommandeManuelle = () => {
         });
         if (error) throw error;
         const result = data as any;
+        if (result?.quote_id && anonymizeVendors) {
+          await supabase.from("quotes").update({ anonymize_vendor: true } as any).eq("id", result.quote_id);
+        }
         if (draftId) await supabase.rpc("admin_delete_manual_order_draft", { _id: draftId });
         toast.success("Devis créé");
         await queryClient.invalidateQueries({ queryKey: ["admin-quotes"] });
@@ -570,6 +574,8 @@ const AdminCommandeManuelle = () => {
           _order_id: orderIdForNotes,
           _notes: customerNotes || "",
         });
+        // Option d'anonymisation du fournisseur (PDF + page client).
+        await supabase.from("orders").update({ anonymize_vendors: anonymizeVendors } as any).eq("id", orderIdForNotes);
       }
       if (draftId) {
         await supabase.rpc("admin_delete_manual_order_draft", { _id: draftId });
@@ -611,6 +617,7 @@ const AdminCommandeManuelle = () => {
       payment_status: paymentStatus,
       admin_notes: adminNotes || null,
       customer_notes: customerNotes || null,
+      anonymize_vendors: anonymizeVendors,
       encoding_at: encodingAt || null,
       created_at: encodingIso,
       is_forecast: isForecast || futureEncoding,
@@ -686,6 +693,7 @@ const AdminCommandeManuelle = () => {
       setPaymentStatus(p.payment_status ?? "paid");
       setAdminNotes(p.admin_notes ?? "");
       setCustomerNotes(p.customer_notes ?? "");
+      setAnonymizeVendors(p.anonymize_vendors === true);
       setEncodingAt(p.encoding_at ?? "");
       setIsForecast(Boolean(p.is_forecast));
       setFulfillmentMode(p.fulfillment_mode === "pickup" ? "pickup" : "delivery");
@@ -769,6 +777,8 @@ const AdminCommandeManuelle = () => {
           `[Dupliquée depuis ${p.source_order_number ?? duplicateFromUrl}]`
         );
         setCustomerNotes(p.customer_notes ?? "");
+        setAnonymizeVendors(p.anonymize_vendors === true);
+      setAnonymizeVendors(p.anonymize_vendors === true);
         setEncodingAt("");
         setIsForecast(false);
         setFulfillmentMode(p.fulfillment_mode === "pickup" ? "pickup" : "delivery");
@@ -1239,6 +1249,20 @@ const AdminCommandeManuelle = () => {
                 onChange={(e) => setIsForecast(e.target.checked)}
               />
               <span className="font-medium">Marquer comme commande prévisionnelle</span>
+            </label>
+            <label className="flex items-start gap-2 text-xs cursor-pointer select-none pt-2 border-t" style={{ borderColor: "#E2E8F0" }}>
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={anonymizeVendors}
+                onChange={(e) => setAnonymizeVendors(e.target.checked)}
+              />
+              <span>
+                <span className="font-medium">Anonymiser le fournisseur pour le client</span>
+                <span className="block text-[11px] text-muted-foreground">
+                  Le PDF et la page client affichent « Fournisseur XXXXXX » au lieu du nom réel.
+                </span>
+              </span>
             </label>
           </div>
 

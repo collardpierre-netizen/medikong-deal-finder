@@ -22,6 +22,7 @@ import ImpersonationPageTracker from "@/components/admin/ImpersonationPageTracke
 import { EnvNoIndex } from "@/components/layout/EnvNoIndex";
 import { BackendHealthBanner } from "@/components/layout/BackendHealthBanner";
 import { AccountSelectionGuard } from "@/components/account/AccountSelectionGuard";
+import { ForcePasswordChangeGuard } from "@/components/auth/ForcePasswordChangeGuard";
 import { CookieConsent } from "@/components/layout/CookieConsent";
 import { HelmetProvider } from "react-helmet-async";
 import { Loader2 } from "lucide-react";
@@ -81,6 +82,7 @@ const DelegateDesignDemoPage = lazyWithRetry(() => import("./pages/DelegateDesig
 const InvestPage = lazyWithRetry(() => import("./pages/InvestPage"), "InvestPage");
 const ForgotPasswordPage = lazyWithRetry(() => import("./pages/ForgotPasswordPage"), "ForgotPasswordPage");
 const ResetPasswordPage = lazyWithRetry(() => import("./pages/ResetPasswordPage"), "ResetPasswordPage");
+const ForcePasswordChangePage = lazyWithRetry(() => import("./pages/ForcePasswordChangePage"), "ForcePasswordChangePage");
 const AccountInvitationPage = lazyWithRetry(() => import("./pages/AccountInvitationPage"), "AccountInvitationPage");
 const VendorPublicPage = lazyWithRetry(() => import("./pages/VendorPublicPage"), "VendorPublicPage");
 const VendorLegacySlugGone = lazyWithRetry(() => import("./pages/VendorLegacySlugGone"), "VendorLegacySlugGone");
@@ -412,6 +414,7 @@ const App = () => (
 
           <ImpersonationPageTracker />
           <AccountSelectionGuard />
+          <ForcePasswordChangeGuard />
           <LazyRouteBoundary>
           <Suspense fallback={<PageLoader />}>
           <Routes>
@@ -468,6 +471,7 @@ const App = () => (
             <Route path="/invest" element={<LP><InvestPage /></LP>} />
             <Route path="/mot-de-passe-oublie" element={<LP><ForgotPasswordPage /></LP>} />
             <Route path="/reset-password" element={<LP><ResetPasswordPage /></LP>} />
+            <Route path="/definir-mot-de-passe" element={<ForcePasswordChangePage />} />
             <Route path="/entreprise/a-propos" element={<LP><AboutPage /></LP>} />
             <Route path="/entreprise/pourquoi-medikong" element={<LP><WhyMedikongPage /></LP>} />
             <Route path="/entreprise/comment-ca-marche" element={<LP><HowItWorksPage /></LP>} />

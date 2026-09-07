@@ -829,6 +829,10 @@ const AdminCommandeManuelle = () => {
           const { data: cn } = await supabase.rpc("admin_get_order_customer_notes" as any, { _order_id: editFromUrl });
           setCustomerNotes((cn as any) ?? "");
         } catch { setCustomerNotes(""); }
+        try {
+          const { data: ord } = await supabase.from("orders").select("anonymize_vendors").eq("id", editFromUrl).maybeSingle();
+          setAnonymizeVendors((ord as any)?.anonymize_vendors === true);
+        } catch { /* option non critique */ }
         setEncodingAt(p.encoding_at ?? "");
         setIsForecast(Boolean(p.is_forecast));
         // Charge l'adresse de livraison rattachée (si présente)

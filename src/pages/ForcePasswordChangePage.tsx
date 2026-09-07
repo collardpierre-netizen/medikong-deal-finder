@@ -33,9 +33,8 @@ export default function ForcePasswordChangePage() {
     setLoading(true);
     let { error } = await supabase.auth.updateUser({
       password,
-      // @ts-expect-error current_password is supported by Lovable Cloud auth
       current_password: currentPassword,
-    });
+    } as Parameters<typeof supabase.auth.updateUser>[0]);
     if (error && /current[_ ]password/i.test(error.message)) {
       const retry = await supabase.auth.updateUser({ password });
       error = retry.error;

@@ -22,6 +22,7 @@ import ImpersonationPageTracker from "@/components/admin/ImpersonationPageTracke
 import { EnvNoIndex } from "@/components/layout/EnvNoIndex";
 import { BackendHealthBanner } from "@/components/layout/BackendHealthBanner";
 import { AccountSelectionGuard } from "@/components/account/AccountSelectionGuard";
+import { ForcePasswordChangeGuard } from "@/components/auth/ForcePasswordChangeGuard";
 import { CookieConsent } from "@/components/layout/CookieConsent";
 import { HelmetProvider } from "react-helmet-async";
 import { Loader2 } from "lucide-react";

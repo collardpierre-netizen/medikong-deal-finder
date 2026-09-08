@@ -23,56 +23,48 @@ interface StepConfig {
   waitsForSyncLog?: boolean;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 2026-09-08 — SOURCE UNIQUE D'ÉCRITURE DES PRIX : `sync-qogita-offers-api`.
+//
+// `sync-qogita-offers-detail` tapait l'ancien chemin `/variants/{fid}/{slug}/offers/`
+// (mort → 404 systématiques), d'où la stagnation de fraîcheur. Le bon endpoint est
+// `GET /buyers/variants/{variant_fid}/offers/`, déjà implémenté (mapping tieredPrices
+// + garde-fous plancher/plausibilité/constante) dans `sync-qogita-offers-api`.
+// Le pipeline ne fait donc plus rafraîchir les prix que par cette fonction ;
+// `offers-detail` est conservé UNIQUEMENT pour l'enrichissement produit (images,
+// dimensions, fid/qid) et n'écrit plus aucun prix ni offre.
+// ─────────────────────────────────────────────────────────────────────────────
+const OFFERS_API_FN = "sync-qogita-offers-api";
+// Débit anti-429 déjà calé côté fonction (rps 2, concurrence 4) : un run tient
+// ~55 s de walltime, soit ~110 produits. On borne le lot enfilé en conséquence.
+export const OFFERS_API_MAX_BATCH = 120;
+
+function offersApiStep(name: string, label: string, required: boolean): StepConfig {
+  return {
+    name,
+    label,
+    functionName: OFFERS_API_FN,
+    params: { limit: OFFERS_API_MAX_BATCH },
+    required,
+  };
+}
+
 function getPipelineSteps(country: string, mode: string): StepConfig[] {
   if (mode === "fast_tier_refresh") {
     return [
-      {
-        name: "offers_fast_refresh",
-        label: "Refresh rapide offres (prix/stock/paliers)",
-        functionName: "sync-qogita-offers-detail",
-        params: { country, mode: "fast" },
-        required: true,
-        loopBatch: true,
-        batchSize: 100,
-      },
+      offersApiStep("offers_fast_refresh", "Refresh rapide offres (prix/stock/paliers)", true),
     ];
   }
 
   if (mode === "daily_stale_refresh") {
     return [
-      {
-        name: "offers_detail",
-        label: "Mise à jour offres stale",
-        functionName: "sync-qogita-offers-detail",
-        params: { country },
-        required: true,
-        loopBatch: true,
-        batchSize: 100,
-      },
+      offersApiStep("offers_detail", "Mise à jour offres stale", true),
     ];
   }
 
   if (mode === "incremental") {
-    // Daily incremental: best-price offer recovery + multi-vendor refresh so ALL
-    // offers (incl. secondary sellers) keep a synced_at < 24h. Runs 3x/day via cron.
-    //
-    // NOTE 2026-07-24 — Étape doublon `offers_multi_vendor` retirée.
-    // `sync-qogita-offers-detail` a `fetchMultiVendor = true` hardcodé, donc
-    // `offers_detail` fait déjà tout le travail multi-vendeur. Passer `multi_vendor: true`
-    // au 2ᵉ appel ne change rien côté fonction (paramètre ignoré) et double
-    // simplement le coût + risque de 429. Le code de l'étape reste disponible via
-    // la même fonction — retrait purement pipeline, réversible en ré-ajoutant
-    // l'entrée si un jour on dissocie best-price et multi-vendor.
     return [
-      {
-        name: "offers_detail",
-        label: "Mise à jour offres (incrémental)",
-        functionName: "sync-qogita-offers-detail",
-        params: { country },
-        required: true,
-        loopBatch: true,
-        batchSize: 100,
-      },
+      offersApiStep("offers_detail", "Mise à jour offres (incrémental)", true),
       {
         name: "recalculate_prices",
         label: "Recalculer Prix (marge)",
@@ -108,6 +100,7 @@ function getPipelineSteps(country: string, mode: string): StepConfig[] {
       required: false,
     },
     {
+      // Enrichissement produit uniquement (aucune écriture de prix/offre).
       name: "offers_detail",
       label: "Enrichissement Détails",
       functionName: "sync-qogita-offers-detail",
@@ -116,9 +109,7 @@ function getPipelineSteps(country: string, mode: string): StepConfig[] {
       loopBatch: true,
       batchSize: 100,
     },
-    // NOTE 2026-07-24 — Étape doublon `offers_multi_vendor` retirée du full aussi
-    // (fetchMultiVendor hardcodé true dans sync-qogita-offers-detail). Réversible :
-    // ré-ajouter l'entrée { name: "offers_multi_vendor", … multi_vendor: true } ici.
+    offersApiStep("offers_api", "Offres & prix (API buyer Qogita)", false),
     {
       name: "recalculate_prices",
       label: "Recalculer Prix (marge)",
@@ -475,7 +466,12 @@ serve(async (req) => {
     const triggeredBy = body.triggeredBy || "manual";
     const mode = body.mode || "incremental"; // "incremental" (default), "full" or "daily_stale_refresh"
     const stepOnly = body.stepOnly;
-    const batchSize = Math.min(Math.max(Number(body.batchSize ?? 500), 1), 1000);
+    // Lot enfilé borné au débit réellement absorbable par `sync-qogita-offers-api`
+    // (anti-429). Le reste est repris au tick cron suivant.
+    const requestedBatchSize = Math.min(Math.max(Number(body.batchSize ?? 500), 1), 1000);
+    const batchSize = (mode === "daily_stale_refresh" || mode === "fast_tier_refresh")
+      ? Math.min(requestedBatchSize, OFFERS_API_MAX_BATCH)
+      : requestedBatchSize;
     let resyncLogId: string | null = null;
 
     const STEPS = getPipelineSteps(country, mode);
@@ -502,11 +498,9 @@ serve(async (req) => {
 
       resyncLogId = String(queued.log_id);
       for (const step of STEPS) {
-        if (step.functionName === "sync-qogita-offers-detail") {
-          step.params = {
-            ...step.params,
-            product_ids: Array.isArray(queued.product_ids) ? queued.product_ids : [],
-          };
+        if (step.functionName === OFFERS_API_FN) {
+          const ids = Array.isArray(queued.product_ids) ? queued.product_ids : [];
+          step.params = { ...step.params, productIds: ids, limit: Math.max(ids.length, 1) };
         }
       }
     }
@@ -536,11 +530,9 @@ serve(async (req) => {
 
       resyncLogId = String(queued.log_id);
       for (const step of STEPS) {
-        if (step.functionName === "sync-qogita-offers-detail") {
-          step.params = {
-            ...step.params,
-            product_ids: Array.isArray(queued.product_ids) ? queued.product_ids : [],
-          };
+        if (step.functionName === OFFERS_API_FN) {
+          const ids = Array.isArray(queued.product_ids) ? queued.product_ids : [];
+          step.params = { ...step.params, productIds: ids, limit: Math.max(ids.length, 1) };
         }
       }
     }

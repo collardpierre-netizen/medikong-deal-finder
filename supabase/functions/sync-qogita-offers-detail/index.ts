@@ -8,6 +8,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 2026-09-08 — ÉCRITURES DE PRIX / OFFRES DÉSACTIVÉES DANS CETTE FONCTION.
+// Elle appelait l'ancien chemin `/variants/{fid}/{slug}/offers/` (mort → 404),
+// ce qui gelait la fraîcheur des offres. Le seul écrivain de prix est désormais
+// `sync-qogita-offers-api` (endpoint officiel `/buyers/variants/{fid}/offers/`,
+// mapping tieredPrices + garde-fous). Ici on ne garde que l'enrichissement
+// produit (fid/qid, images, dimensions, description).
+// ─────────────────────────────────────────────────────────────────────────────
+const OFFER_PRICE_WRITES_DISABLED = true;
+
 const MAX_EXECUTION_TIME = 120000; // stay well below edge runtime limit so partial resumes can persist
 const BATCH_SIZE = 100;
 const PARALLEL_CONCURRENCY = 25;
@@ -1292,6 +1302,13 @@ async function refreshOffersOnly(
   recordEndpointError: ((endpoint: string, status: number | null, message: string) => Promise<void>) | undefined,
   syncRunId: string | null,
 ): Promise<void> {
+  // Désactivé : ce chemin visait l'endpoint offres mort. Le refresh prix/paliers
+  // passe exclusivement par `sync-qogita-offers-api`.
+  if (OFFER_PRICE_WRITES_DISABLED) {
+    await stampProbed(sb, product.id);
+    localStats.mv_probed++;
+    return;
+  }
   try {
     const offersUrl = `${baseUrl}/variants/${product.qogita_fid}/${product.slug}/offers/`;
     const offersRes = await fetchWithRetry(offersUrl, token);
@@ -1518,7 +1535,9 @@ async function processSingleProduct(
       const bpMov = parseFloat(String(variant?.mov ?? variant?.minimumOrderValue ?? "0")) || 0;
       const bpRawTiers = extractRawTiers(variant);
 
-      if (priceExclVat > 0) {
+      if (OFFER_PRICE_WRITES_DISABLED) {
+        // Aucune écriture d'offre "best price" ici : source unique = sync-qogita-offers-api.
+      } else if (priceExclVat > 0) {
         const { data: bpUpserted, error: offerErr } = await sb.from("offers").upsert(
           {
             product_id: product.id,
@@ -1584,7 +1603,7 @@ async function processSingleProduct(
 
 
       // --- Multi-vendor offers ---
-      if (fetchMultiVendor && variant?.fid && variant?.slug) {
+      if (!OFFER_PRICE_WRITES_DISABLED && fetchMultiVendor && variant?.fid && variant?.slug) {
         try {
           const offersUrl = `${baseUrl}/variants/${variant.fid}/${variant.slug}/offers/`;
           const offersRes = await fetchWithRetry(offersUrl, token);

@@ -31896,6 +31896,10 @@ export type Database = {
       current_user_buyer_account_ids: { Args: never; Returns: string[] }
       current_user_vendor_account_ids: { Args: never; Returns: string[] }
       current_vendor_id: { Args: never; Returns: string }
+      deactivate_redundant_legacy_qogita_offers: {
+        Args: { _limit?: number }
+        Returns: number
+      }
       decrement_offer_stock: {
         Args: { p_offer_id: string; p_quantity: number }
         Returns: Json

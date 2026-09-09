@@ -12902,6 +12902,7 @@ export type Database = {
           pvp_source: Database["public"]["Enums"]["pvp_source_enum"] | null
           pvp_ttc_cents: number | null
           pvp_updated_at: string | null
+          qogita_auto_deactivated_at: string | null
           qogita_fid: string | null
           qogita_qid: string | null
           qogita_slug: string | null
@@ -13000,6 +13001,7 @@ export type Database = {
           pvp_source?: Database["public"]["Enums"]["pvp_source_enum"] | null
           pvp_ttc_cents?: number | null
           pvp_updated_at?: string | null
+          qogita_auto_deactivated_at?: string | null
           qogita_fid?: string | null
           qogita_qid?: string | null
           qogita_slug?: string | null
@@ -13098,6 +13100,7 @@ export type Database = {
           pvp_source?: Database["public"]["Enums"]["pvp_source_enum"] | null
           pvp_ttc_cents?: number | null
           pvp_updated_at?: string | null
+          qogita_auto_deactivated_at?: string | null
           qogita_fid?: string | null
           qogita_qid?: string | null
           qogita_slug?: string | null
@@ -31896,6 +31899,10 @@ export type Database = {
       current_user_buyer_account_ids: { Args: never; Returns: string[] }
       current_user_vendor_account_ids: { Args: never; Returns: string[] }
       current_vendor_id: { Args: never; Returns: string }
+      deactivate_dead_legacy_qogita_products: {
+        Args: { _limit?: number }
+        Returns: Json
+      }
       deactivate_redundant_legacy_qogita_offers: {
         Args: { _limit?: number }
         Returns: number

@@ -585,6 +585,7 @@ async function processProduct(
   // Multi-vendeurs : une offre par (produit, vendeur fournisseur), chacune
   // rattachée à son vendeur virtuel anonymisé. Paliers/MOV/stock par offre.
   const seen = new Set<string>();
+  let wrote = false;
   for (const o of offers) {
     const fid = (o.seller || "").trim();
     if (!fid || seen.has(fid)) continue; // 1 offre max par vendeur (contrainte produit+vendeur)

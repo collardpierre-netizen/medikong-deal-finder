@@ -622,15 +622,29 @@ async function processProduct(
       stats.offers_failed += 1;
     } else {
       stats.offers_upserted += 1;
+      wrote = true;
       if (stats.written_bases.length < 5_000) stats.written_bases.push(o.basePrice);
       stats.tiers_written += await syncTiers(sb, offerId, o, vatRate, marginMul);
     }
   }
 
-
-
+  // Repêchage : une offre valide est revenue → le produit désactivé
+  // automatiquement redevient actif (faux positif ou réappro fournisseur).
+  if (wrote) await reviveProduct(sb, product.id);
 
   await stampProbed(sb, product.id);
+}
+
+// deno-lint-ignore no-explicit-any
+async function reviveProduct(sb: any, productId: string) {
+  try {
+    await sb.from("products")
+      .update({ is_active: true, qogita_auto_deactivated_at: null })
+      .eq("id", productId)
+      .not("qogita_auto_deactivated_at", "is", null);
+  } catch (e) {
+    console.warn("[qogita-api] revive_failed", productId, (e as Error).message);
+  }
 }
 
 // deno-lint-ignore no-explicit-any

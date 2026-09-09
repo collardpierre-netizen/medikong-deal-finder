@@ -760,18 +760,29 @@ Deno.serve(async (req) => {
 
 
     // ── Sélection des cibles : priorité marques puis fraîcheur ──
+    // Repêchage automatique : on inclut aussi les produits désactivés
+    // automatiquement (qogita_auto_deactivated_at non NULL) faute d'offre
+    // acheteur. Ils sont re-testés à chaque passe et réactivés dès qu'une
+    // offre valide revient (cf. reviveProduct).
     let query = sb
       .from("products")
       .select("id, qogita_fid, qogita_slug, gtin, brand_priority")
-      .not("qogita_fid", "is", null)
-      .eq("is_active", true);
+      .not("qogita_fid", "is", null);
 
     if (productIds?.length) {
-      query = query.in("id", productIds).limit(limit);
+      query = query
+        .in("id", productIds)
+        .or("is_active.eq.true,qogita_auto_deactivated_at.not.is.null")
+        .limit(limit);
     } else {
       const cutoff = new Date(Date.now() - freshHours * 3600_000).toISOString();
       query = query
-        .or(`mv_last_probed_at.is.null,mv_last_probed_at.lt.${cutoff}`)
+        .or(
+          `and(is_active.eq.true,mv_last_probed_at.is.null),` +
+          `and(is_active.eq.true,mv_last_probed_at.lt.${cutoff}),` +
+          `and(qogita_auto_deactivated_at.not.is.null,mv_last_probed_at.is.null),` +
+          `and(qogita_auto_deactivated_at.not.is.null,mv_last_probed_at.lt.${cutoff})`,
+        )
         .order("brand_priority", { ascending: false, nullsFirst: false })
         .order("mv_last_probed_at", { ascending: true, nullsFirst: true })
         .limit(limit);

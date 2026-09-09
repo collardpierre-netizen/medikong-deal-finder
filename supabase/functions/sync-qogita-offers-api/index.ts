@@ -585,6 +585,7 @@ async function processProduct(
   // Multi-vendeurs : une offre par (produit, vendeur fournisseur), chacune
   // rattachée à son vendeur virtuel anonymisé. Paliers/MOV/stock par offre.
   const seen = new Set<string>();
+  let wrote = false;
   for (const o of offers) {
     const fid = (o.seller || "").trim();
     if (!fid || seen.has(fid)) continue; // 1 offre max par vendeur (contrainte produit+vendeur)
@@ -622,15 +623,29 @@ async function processProduct(
       stats.offers_failed += 1;
     } else {
       stats.offers_upserted += 1;
+      wrote = true;
       if (stats.written_bases.length < 5_000) stats.written_bases.push(o.basePrice);
       stats.tiers_written += await syncTiers(sb, offerId, o, vatRate, marginMul);
     }
   }
 
-
-
+  // Repêchage : une offre valide est revenue → le produit désactivé
+  // automatiquement redevient actif (faux positif ou réappro fournisseur).
+  if (wrote) await reviveProduct(sb, product.id);
 
   await stampProbed(sb, product.id);
+}
+
+// deno-lint-ignore no-explicit-any
+async function reviveProduct(sb: any, productId: string) {
+  try {
+    await sb.from("products")
+      .update({ is_active: true, qogita_auto_deactivated_at: null })
+      .eq("id", productId)
+      .not("qogita_auto_deactivated_at", "is", null);
+  } catch (e) {
+    console.warn("[qogita-api] revive_failed", productId, (e as Error).message);
+  }
 }
 
 // deno-lint-ignore no-explicit-any
@@ -760,18 +775,29 @@ Deno.serve(async (req) => {
 
 
     // ── Sélection des cibles : priorité marques puis fraîcheur ──
+    // Repêchage automatique : on inclut aussi les produits désactivés
+    // automatiquement (qogita_auto_deactivated_at non NULL) faute d'offre
+    // acheteur. Ils sont re-testés à chaque passe et réactivés dès qu'une
+    // offre valide revient (cf. reviveProduct).
     let query = sb
       .from("products")
       .select("id, qogita_fid, qogita_slug, gtin, brand_priority")
-      .not("qogita_fid", "is", null)
-      .eq("is_active", true);
+      .not("qogita_fid", "is", null);
 
     if (productIds?.length) {
-      query = query.in("id", productIds).limit(limit);
+      query = query
+        .in("id", productIds)
+        .or("is_active.eq.true,qogita_auto_deactivated_at.not.is.null")
+        .limit(limit);
     } else {
       const cutoff = new Date(Date.now() - freshHours * 3600_000).toISOString();
       query = query
-        .or(`mv_last_probed_at.is.null,mv_last_probed_at.lt.${cutoff}`)
+        .or(
+          `and(is_active.eq.true,mv_last_probed_at.is.null),` +
+          `and(is_active.eq.true,mv_last_probed_at.lt.${cutoff}),` +
+          `and(qogita_auto_deactivated_at.not.is.null,mv_last_probed_at.is.null),` +
+          `and(qogita_auto_deactivated_at.not.is.null,mv_last_probed_at.lt.${cutoff})`,
+        )
         .order("brand_priority", { ascending: false, nullsFirst: false })
         .order("mv_last_probed_at", { ascending: true, nullsFirst: true })
         .limit(limit);

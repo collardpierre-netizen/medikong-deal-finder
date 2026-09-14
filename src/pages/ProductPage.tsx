@@ -616,8 +616,8 @@ function OfferRow({
             </div>
           ) : (
             <div className="flex flex-col gap-1">
-              <div className="flex items-baseline justify-between gap-3 min-w-0">
-                <span className="text-sm font-bold text-green-700 whitespace-nowrap">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 min-w-0">
+                <span className="text-sm font-bold text-green-700 whitespace-nowrap min-w-0">
                   {formatEur(displayPrice)}&nbsp;€
                   <span className="text-[10px] font-normal text-muted-foreground">{basisSuffix} · {priceLabel}</span>
                 </span>

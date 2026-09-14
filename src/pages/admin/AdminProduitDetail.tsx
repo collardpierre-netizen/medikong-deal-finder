@@ -47,7 +47,7 @@ const AdminProduitDetail = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("*, brands(name, slug), categories(name, slug)")
+        .select("*, brands(name, slug), categories!products_category_id_fkey(name, slug)")
         .eq("id", id!)
         .maybeSingle();
       if (error) throw error;

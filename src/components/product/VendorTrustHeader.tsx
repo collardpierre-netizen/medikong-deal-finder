@@ -140,7 +140,7 @@ export function VendorTrustHeader({ trust, variant = "full", realNameOverride = 
   return (
     <div className={`space-y-1.5 ${className}`}>
       {/* Identité — une seule ligne : avatar · nom · note · drapeau */}
-      <div className="flex items-center gap-2 min-w-0">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
         <span
           aria-hidden="true"
           className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${tone}`}

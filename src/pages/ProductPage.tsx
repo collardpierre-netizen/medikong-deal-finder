@@ -1458,7 +1458,7 @@ function ProductPageInner() {
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
-        .select("*, brands(name, slug), categories(name, slug), manufacturers:manufacturer_id(name, slug)")
+        .select("*, brands(name, slug), categories!products_category_id_fkey(name, slug), manufacturers:manufacturer_id(name, slug)")
         .eq("id", product!.id)
         .single();
       return data;

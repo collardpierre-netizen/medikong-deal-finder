@@ -453,7 +453,7 @@ function OfferRow({
       })()}
 
       {/* Desktop grid */}
-      <div className="hidden lg:grid grid-cols-[minmax(150px,1fr)_minmax(180px,1fr)_minmax(96px,auto)_176px] gap-x-3 items-start">
+      <div className="hidden lg:grid grid-cols-[minmax(200px,1.3fr)_minmax(150px,1fr)_minmax(64px,auto)_176px] gap-x-3 items-start">
         <div className="flex flex-col gap-1.5">
           <OfferCagnotteBadge
             eligible={(offer as any).cagnotteEligible}
@@ -2219,7 +2219,7 @@ function ProductPageInner() {
                           <span className="text-sm text-emerald-700 font-medium">{formatCount(totalStock)} disponibles{uniqueVendorCount > 1 ? ` auprès de ${uniqueVendorCount} fournisseurs` : ""}</span>
                         </div>
 
-                        <div className="hidden lg:grid grid-cols-[minmax(150px,1fr)_minmax(180px,1fr)_minmax(96px,auto)_176px] gap-x-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
+                        <div className="hidden lg:grid grid-cols-[minmax(200px,1.3fr)_minmax(150px,1fr)_minmax(64px,auto)_176px] gap-x-3 px-1 pb-3 text-xs font-semibold text-muted-foreground border-b border-border">
                           <span>Fournisseur</span>
                           <span>
                             Prix {offerCompareBasis === 'pack' ? '/ pack' : offerCompareBasis === 'unit' ? '/ unité' : '/ 100 u.'} · MOV
@@ -2360,7 +2360,7 @@ function ProductPageInner() {
                         </div>
 
                         {!offersLoading && (
-                          <div className="hidden lg:grid grid-cols-[minmax(150px,1fr)_minmax(180px,1fr)_minmax(96px,auto)_176px] gap-x-3 px-1 py-3 text-xs font-semibold text-muted-foreground border-b border-border sticky top-16 z-20 bg-background">
+                          <div className="hidden lg:grid grid-cols-[minmax(200px,1.3fr)_minmax(150px,1fr)_minmax(64px,auto)_176px] gap-x-3 px-1 py-3 text-xs font-semibold text-muted-foreground border-b border-border sticky top-16 z-20 bg-background">
                             <span>Fournisseur</span>
                             <span>Prix {offerCompareBasis === 'pack' ? '/ pack' : offerCompareBasis === 'unit' ? '/ unité' : '/ 100 u.'} · MOV</span>
                             <span className="text-right">Stock</span>

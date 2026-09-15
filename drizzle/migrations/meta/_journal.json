@@ -8,6 +8,34 @@
       "when": 1789369901497,
       "tag": "0000_add_with_check_account_admin_update_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789449178814,
+      "tag": "0001_care_nh_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789449309055,
+      "tag": "0002_care_nh_catalog_and_transactional",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789449436374,
+      "tag": "0003_care_additions_pwa_and_invoice_numbering",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789449460441,
+      "tag": "0004_care_nh_invoices_storage_policies",
+      "breakpoints": true
     }
   ]
 }

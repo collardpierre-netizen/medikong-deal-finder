@@ -2621,6 +2621,375 @@ export type Database = {
           },
         ]
       }
+      care_category_shortcuts: {
+        Row: {
+          category_id: string
+          created_at: string
+          display_order: number
+          id: string
+          nursing_home_id: string
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          nursing_home_id: string
+          user_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          nursing_home_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_category_shortcuts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_category_shortcuts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
+          },
+          {
+            foreignKeyName: "care_category_shortcuts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_category_shortcuts_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_draft_cart_items: {
+        Row: {
+          billing_type: string
+          cart_id: string
+          created_at: string
+          id: string
+          image_url: string | null
+          product_code: string
+          product_id: string
+          product_name: string
+          product_subtitle: string | null
+          quantity: number
+          resident_id: string | null
+          resident_name: string | null
+          unit_price: number
+          vat_rate: number | null
+        }
+        Insert: {
+          billing_type?: string
+          cart_id: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          product_code?: string
+          product_id: string
+          product_name?: string
+          product_subtitle?: string | null
+          quantity?: number
+          resident_id?: string | null
+          resident_name?: string | null
+          unit_price?: number
+          vat_rate?: number | null
+        }
+        Update: {
+          billing_type?: string
+          cart_id?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          product_code?: string
+          product_id?: string
+          product_name?: string
+          product_subtitle?: string | null
+          quantity?: number
+          resident_id?: string | null
+          resident_name?: string | null
+          unit_price?: number
+          vat_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_draft_cart_items_cart_id_fkey"
+            columns: ["cart_id"]
+            isOneToOne: false
+            referencedRelation: "care_draft_carts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_draft_cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "care_draft_cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_draft_cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "care_draft_cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "care_draft_cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_draft_cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_draft_cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "care_draft_cart_items_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "nh_residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_draft_carts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          nursing_home_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nursing_home_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nursing_home_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_draft_carts_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_pin_reset_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          nursing_home_id: string
+          requested_ip: string | null
+          token_hash: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          nursing_home_id: string
+          requested_ip?: string | null
+          token_hash: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          nursing_home_id?: string
+          requested_ip?: string | null
+          token_hash?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_pin_reset_tokens_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_search_analytics: {
+        Row: {
+          clicked_product_id: string | null
+          created_at: string
+          id: string
+          nursing_home_id: string | null
+          results_count: number | null
+          search_query: string
+          user_id: string | null
+        }
+        Insert: {
+          clicked_product_id?: string | null
+          created_at?: string
+          id?: string
+          nursing_home_id?: string | null
+          results_count?: number | null
+          search_query: string
+          user_id?: string | null
+        }
+        Update: {
+          clicked_product_id?: string | null
+          created_at?: string
+          id?: string
+          nursing_home_id?: string | null
+          results_count?: number | null
+          search_query?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_search_analytics_clicked_product_id_fkey"
+            columns: ["clicked_product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "care_search_analytics_clicked_product_id_fkey"
+            columns: ["clicked_product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_search_analytics_clicked_product_id_fkey"
+            columns: ["clicked_product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "care_search_analytics_clicked_product_id_fkey"
+            columns: ["clicked_product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "care_search_analytics_clicked_product_id_fkey"
+            columns: ["clicked_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_search_analytics_clicked_product_id_fkey"
+            columns: ["clicked_product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_search_analytics_clicked_product_id_fkey"
+            columns: ["clicked_product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "care_search_analytics_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_staff_pins: {
+        Row: {
+          created_at: string | null
+          display_name: string
+          id: string
+          nursing_home_id: string
+          pin_hash: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_name: string
+          id?: string
+          nursing_home_id: string
+          pin_hash: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string
+          id?: string
+          nursing_home_id?: string
+          pin_hash?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_staff_pins_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cart_items: {
         Row: {
           created_at: string
@@ -8508,6 +8877,1845 @@ export type Database = {
             columns: ["media_id"]
             isOneToOne: false
             referencedRelation: "media_library"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          nursing_home_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          nursing_home_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          nursing_home_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_audit_logs_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_device_enrollments: {
+        Row: {
+          consumed_at: string | null
+          consumed_by: string | null
+          created_at: string
+          created_by: string | null
+          device_hint: string | null
+          expires_at: string
+          id: string
+          label: string | null
+          nursing_home_id: string
+          token: string
+        }
+        Insert: {
+          consumed_at?: string | null
+          consumed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          device_hint?: string | null
+          expires_at?: string
+          id?: string
+          label?: string | null
+          nursing_home_id: string
+          token: string
+        }
+        Update: {
+          consumed_at?: string | null
+          consumed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          device_hint?: string | null
+          expires_at?: string
+          id?: string
+          label?: string | null
+          nursing_home_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_device_enrollments_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_group_category_settings: {
+        Row: {
+          billing_type: string | null
+          category_id: string | null
+          created_at: string | null
+          group_id: string
+          id: string
+          is_active: boolean
+          level: string
+          margin_split_pct: number | null
+          universe_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          billing_type?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          group_id: string
+          id?: string
+          is_active?: boolean
+          level?: string
+          margin_split_pct?: number | null
+          universe_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          billing_type?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          group_id?: string
+          id?: string
+          is_active?: boolean
+          level?: string
+          margin_split_pct?: number | null
+          universe_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_group_category_settings_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_group_category_settings_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
+          },
+          {
+            foreignKeyName: "nh_group_category_settings_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_group_category_settings_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "nh_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_group_product_settings: {
+        Row: {
+          billing_type: string
+          created_at: string | null
+          current_purchase_price: number | null
+          fixed_price: number | null
+          group_id: string
+          id: string
+          is_active: boolean
+          margin_rule_pct: number | null
+          min_order_qty: number | null
+          notes: string | null
+          product_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          billing_type?: string
+          created_at?: string | null
+          current_purchase_price?: number | null
+          fixed_price?: number | null
+          group_id: string
+          id?: string
+          is_active?: boolean
+          margin_rule_pct?: number | null
+          min_order_qty?: number | null
+          notes?: string | null
+          product_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          billing_type?: string
+          created_at?: string | null
+          current_purchase_price?: number | null
+          fixed_price?: number | null
+          group_id?: string
+          id?: string
+          is_active?: boolean
+          margin_rule_pct?: number | null
+          min_order_qty?: number | null
+          notes?: string | null
+          product_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_group_product_settings_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "nh_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_group_product_settings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_group_product_settings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_group_product_settings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_group_product_settings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_group_product_settings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_group_product_settings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_group_product_settings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
+      nh_group_user_roles: {
+        Row: {
+          created_at: string | null
+          group_id: string
+          id: string
+          is_active: boolean | null
+          role: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          group_id: string
+          id?: string
+          is_active?: boolean | null
+          role?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          group_id?: string
+          id?: string
+          is_active?: boolean | null
+          role?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_group_user_roles_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "nh_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_groups: {
+        Row: {
+          address: string | null
+          care_pharmacy_vendor_id: string | null
+          city: string | null
+          commission_rate: number | null
+          contact_email: string | null
+          contact_phone: string | null
+          country: string | null
+          created_at: string
+          cutoff_days_before: number | null
+          cutoff_hour: number | null
+          description: string | null
+          filter_shop_by_billing_type: boolean | null
+          fixed_delivery_day_of_week: number | null
+          franco_threshold: number | null
+          hide_offers_above_ref_price: boolean | null
+          id: string
+          is_active: boolean
+          legal_name: string | null
+          logo_url: string | null
+          margin_split_pct: number | null
+          name: string
+          payment_terms: string | null
+          postal_code: string | null
+          price_rule_type: string | null
+          price_rule_value: number | null
+          primary_color: string | null
+          referrer_id: string | null
+          secondary_color: string | null
+          shipping_cost_below_franco: number | null
+          show_pharmacy_price: boolean | null
+          show_public_price: boolean | null
+          show_savings_badge: boolean | null
+          slug: string
+          trade_name: string | null
+          updated_at: string
+          urgent_delivery_cost: number | null
+          user_profile_id: string | null
+          vat_number: string | null
+          website_url: string | null
+        }
+        Insert: {
+          address?: string | null
+          care_pharmacy_vendor_id?: string | null
+          city?: string | null
+          commission_rate?: number | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string
+          cutoff_days_before?: number | null
+          cutoff_hour?: number | null
+          description?: string | null
+          filter_shop_by_billing_type?: boolean | null
+          fixed_delivery_day_of_week?: number | null
+          franco_threshold?: number | null
+          hide_offers_above_ref_price?: boolean | null
+          id?: string
+          is_active?: boolean
+          legal_name?: string | null
+          logo_url?: string | null
+          margin_split_pct?: number | null
+          name: string
+          payment_terms?: string | null
+          postal_code?: string | null
+          price_rule_type?: string | null
+          price_rule_value?: number | null
+          primary_color?: string | null
+          referrer_id?: string | null
+          secondary_color?: string | null
+          shipping_cost_below_franco?: number | null
+          show_pharmacy_price?: boolean | null
+          show_public_price?: boolean | null
+          show_savings_badge?: boolean | null
+          slug: string
+          trade_name?: string | null
+          updated_at?: string
+          urgent_delivery_cost?: number | null
+          user_profile_id?: string | null
+          vat_number?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          address?: string | null
+          care_pharmacy_vendor_id?: string | null
+          city?: string | null
+          commission_rate?: number | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string
+          cutoff_days_before?: number | null
+          cutoff_hour?: number | null
+          description?: string | null
+          filter_shop_by_billing_type?: boolean | null
+          fixed_delivery_day_of_week?: number | null
+          franco_threshold?: number | null
+          hide_offers_above_ref_price?: boolean | null
+          id?: string
+          is_active?: boolean
+          legal_name?: string | null
+          logo_url?: string | null
+          margin_split_pct?: number | null
+          name?: string
+          payment_terms?: string | null
+          postal_code?: string | null
+          price_rule_type?: string | null
+          price_rule_value?: number | null
+          primary_color?: string | null
+          referrer_id?: string | null
+          secondary_color?: string | null
+          shipping_cost_below_franco?: number | null
+          show_pharmacy_price?: boolean | null
+          show_public_price?: boolean | null
+          show_savings_badge?: boolean | null
+          slug?: string
+          trade_name?: string | null
+          updated_at?: string
+          urgent_delivery_cost?: number | null
+          user_profile_id?: string | null
+          vat_number?: string | null
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_groups_care_pharmacy_vendor_id_fkey"
+            columns: ["care_pharmacy_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "nh_groups_care_pharmacy_vendor_id_fkey"
+            columns: ["care_pharmacy_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "nh_groups_care_pharmacy_vendor_id_fkey"
+            columns: ["care_pharmacy_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_groups_care_pharmacy_vendor_id_fkey"
+            columns: ["care_pharmacy_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_intelligence_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "nh_groups_care_pharmacy_vendor_id_fkey"
+            columns: ["care_pharmacy_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "nh_groups_care_pharmacy_vendor_id_fkey"
+            columns: ["care_pharmacy_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "nh_groups_care_pharmacy_vendor_id_fkey"
+            columns: ["care_pharmacy_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_groups_care_pharmacy_vendor_id_fkey"
+            columns: ["care_pharmacy_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_groups_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string | null
+          email: string
+          expires_at: string | null
+          id: string
+          invited_by: string | null
+          nursing_home_id: string
+          role: Database["public"]["Enums"]["nh_role"]
+          status: string | null
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email: string
+          expires_at?: string | null
+          id?: string
+          invited_by?: string | null
+          nursing_home_id: string
+          role: Database["public"]["Enums"]["nh_role"]
+          status?: string | null
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email?: string
+          expires_at?: string | null
+          id?: string
+          invited_by?: string | null
+          nursing_home_id?: string
+          role?: Database["public"]["Enums"]["nh_role"]
+          status?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_invitations_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_invoice_lines: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string
+          order_id: string | null
+          order_item_id: string | null
+          product_code: string | null
+          quantity: number
+          total_ht: number
+          total_ttc: number
+          total_tva: number
+          unit_price_ht: number
+          vat_rate: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          invoice_id: string
+          order_id?: string | null
+          order_item_id?: string | null
+          product_code?: string | null
+          quantity?: number
+          total_ht: number
+          total_ttc: number
+          total_tva: number
+          unit_price_ht: number
+          vat_rate?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id?: string
+          order_id?: string | null
+          order_item_id?: string | null
+          product_code?: string | null
+          quantity?: number
+          total_ht?: number
+          total_ttc?: number
+          total_tva?: number
+          unit_price_ht?: number
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_invoice_lines_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "nh_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_invoice_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "nh_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_invoice_lines_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "nh_order_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_invoices: {
+        Row: {
+          billing_address: string | null
+          billing_city: string | null
+          billing_country: string | null
+          billing_email: string | null
+          billing_name: string
+          billing_postal_code: string | null
+          billing_vat_number: string | null
+          created_at: string
+          created_by: string | null
+          due_date: string | null
+          file_url: string | null
+          id: string
+          invoice_number: string | null
+          invoice_type: string
+          issue_date: string
+          notes: string | null
+          nursing_home_id: string
+          paid_at: string | null
+          resident_id: string | null
+          status: string
+          total_ht: number
+          total_ttc: number
+          total_tva: number
+          updated_at: string
+        }
+        Insert: {
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_country?: string | null
+          billing_email?: string | null
+          billing_name: string
+          billing_postal_code?: string | null
+          billing_vat_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          file_url?: string | null
+          id?: string
+          invoice_number?: string | null
+          invoice_type?: string
+          issue_date?: string
+          notes?: string | null
+          nursing_home_id: string
+          paid_at?: string | null
+          resident_id?: string | null
+          status?: string
+          total_ht?: number
+          total_ttc?: number
+          total_tva?: number
+          updated_at?: string
+        }
+        Update: {
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_country?: string | null
+          billing_email?: string | null
+          billing_name?: string
+          billing_postal_code?: string | null
+          billing_vat_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          file_url?: string | null
+          id?: string
+          invoice_number?: string | null
+          invoice_type?: string
+          issue_date?: string
+          notes?: string | null
+          nursing_home_id?: string
+          paid_at?: string | null
+          resident_id?: string | null
+          status?: string
+          total_ht?: number
+          total_ttc?: number
+          total_tva?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_invoices_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_invoices_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "nh_residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_order_analytics: {
+        Row: {
+          category_breakdown: Json | null
+          created_at: string
+          date: string
+          facility_revenue_ht: number | null
+          group_id: string | null
+          id: string
+          nursing_home_id: string
+          resident_revenue_ht: number | null
+          savings_vs_public: number | null
+          total_items: number | null
+          total_orders: number | null
+          total_revenue_ht: number | null
+          unique_residents: number | null
+          updated_at: string
+        }
+        Insert: {
+          category_breakdown?: Json | null
+          created_at?: string
+          date: string
+          facility_revenue_ht?: number | null
+          group_id?: string | null
+          id?: string
+          nursing_home_id: string
+          resident_revenue_ht?: number | null
+          savings_vs_public?: number | null
+          total_items?: number | null
+          total_orders?: number | null
+          total_revenue_ht?: number | null
+          unique_residents?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category_breakdown?: Json | null
+          created_at?: string
+          date?: string
+          facility_revenue_ht?: number | null
+          group_id?: string | null
+          id?: string
+          nursing_home_id?: string
+          resident_revenue_ht?: number | null
+          savings_vs_public?: number | null
+          total_items?: number | null
+          total_orders?: number | null
+          total_revenue_ht?: number | null
+          unique_residents?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_order_analytics_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "nh_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_order_analytics_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_order_items: {
+        Row: {
+          billing_type: Database["public"]["Enums"]["nh_billing_type"]
+          created_at: string | null
+          custom_description: string | null
+          id: string
+          invoice_id: string | null
+          order_id: string
+          product_id: string | null
+          product_name: string
+          quantity: number
+          resident_id: string | null
+          total_ht: number
+          total_ttc: number
+          total_tva: number
+          unit_price_ht: number
+          vat_rate: number | null
+        }
+        Insert: {
+          billing_type: Database["public"]["Enums"]["nh_billing_type"]
+          created_at?: string | null
+          custom_description?: string | null
+          id?: string
+          invoice_id?: string | null
+          order_id: string
+          product_id?: string | null
+          product_name: string
+          quantity?: number
+          resident_id?: string | null
+          total_ht: number
+          total_ttc: number
+          total_tva: number
+          unit_price_ht: number
+          vat_rate?: number | null
+        }
+        Update: {
+          billing_type?: Database["public"]["Enums"]["nh_billing_type"]
+          created_at?: string | null
+          custom_description?: string | null
+          id?: string
+          invoice_id?: string | null
+          order_id?: string
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          resident_id?: string | null
+          total_ht?: number
+          total_ttc?: number
+          total_tva?: number
+          unit_price_ht?: number
+          vat_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_order_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "nh_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "nh_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_order_items_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "nh_residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_order_template_items: {
+        Row: {
+          default_qty: number
+          id: string
+          position: number
+          product_id: string
+          template_id: string
+        }
+        Insert: {
+          default_qty?: number
+          id?: string
+          position?: number
+          product_id: string
+          template_id: string
+        }
+        Update: {
+          default_qty?: number
+          id?: string
+          position?: number
+          product_id?: string
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_order_template_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_order_template_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_order_template_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_order_template_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_order_template_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_order_template_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_order_template_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_order_template_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "nh_order_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_order_templates: {
+        Row: {
+          billing_target: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_default: boolean
+          name: string
+          nursing_home_id: string
+          unit_label: string | null
+          updated_at: string
+        }
+        Insert: {
+          billing_target?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_default?: boolean
+          name: string
+          nursing_home_id: string
+          unit_label?: string | null
+          updated_at?: string
+        }
+        Update: {
+          billing_target?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_default?: boolean
+          name?: string
+          nursing_home_id?: string
+          unit_label?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_order_templates_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_orders: {
+        Row: {
+          admin_notes: string | null
+          client_request_id: string | null
+          created_at: string | null
+          facility_total_ht: number | null
+          facility_total_ttc: number | null
+          id: string
+          is_urgent: boolean | null
+          notes: string | null
+          nursing_home_id: string
+          order_id: string | null
+          order_number: string
+          ordered_by: string
+          ordered_by_name: string | null
+          resident_id: string | null
+          resident_total_ht: number | null
+          resident_total_ttc: number | null
+          room_id: string | null
+          shipping_cost: number | null
+          status: string | null
+          total_ht: number | null
+          total_ttc: number | null
+          total_tva: number | null
+          updated_at: string | null
+          urgent_cost: number | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          client_request_id?: string | null
+          created_at?: string | null
+          facility_total_ht?: number | null
+          facility_total_ttc?: number | null
+          id?: string
+          is_urgent?: boolean | null
+          notes?: string | null
+          nursing_home_id: string
+          order_id?: string | null
+          order_number?: string
+          ordered_by: string
+          ordered_by_name?: string | null
+          resident_id?: string | null
+          resident_total_ht?: number | null
+          resident_total_ttc?: number | null
+          room_id?: string | null
+          shipping_cost?: number | null
+          status?: string | null
+          total_ht?: number | null
+          total_ttc?: number | null
+          total_tva?: number | null
+          updated_at?: string | null
+          urgent_cost?: number | null
+        }
+        Update: {
+          admin_notes?: string | null
+          client_request_id?: string | null
+          created_at?: string | null
+          facility_total_ht?: number | null
+          facility_total_ttc?: number | null
+          id?: string
+          is_urgent?: boolean | null
+          notes?: string | null
+          nursing_home_id?: string
+          order_id?: string | null
+          order_number?: string
+          ordered_by?: string
+          ordered_by_name?: string | null
+          resident_id?: string | null
+          resident_total_ht?: number | null
+          resident_total_ttc?: number | null
+          room_id?: string | null
+          shipping_cost?: number | null
+          status?: string | null
+          total_ht?: number | null
+          total_ttc?: number | null
+          total_tva?: number | null
+          updated_at?: string | null
+          urgent_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_orders_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_orders_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "nh_orders_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_with_forecast_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_orders_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_orders_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders_visible_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_orders_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orders_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_orders_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "nh_residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_orders_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "nh_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_product_activation: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          nursing_home_id: string
+          product_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          nursing_home_id: string
+          product_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          nursing_home_id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_product_activation_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_product_activation_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_product_activation_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_product_activation_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_product_activation_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_product_activation_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_product_activation_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_product_activation_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
+      nh_product_pricing: {
+        Row: {
+          billing_type: string | null
+          created_at: string | null
+          current_purchase_price: number | null
+          fixed_price: number | null
+          id: string
+          is_active: boolean | null
+          margin_rule_pct: number | null
+          min_order_qty: number | null
+          notes: string | null
+          nursing_home_id: string | null
+          product_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          billing_type?: string | null
+          created_at?: string | null
+          current_purchase_price?: number | null
+          fixed_price?: number | null
+          id?: string
+          is_active?: boolean | null
+          margin_rule_pct?: number | null
+          min_order_qty?: number | null
+          notes?: string | null
+          nursing_home_id?: string | null
+          product_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          billing_type?: string | null
+          created_at?: string | null
+          current_purchase_price?: number | null
+          fixed_price?: number | null
+          id?: string
+          is_active?: boolean | null
+          margin_rule_pct?: number | null
+          min_order_qty?: number | null
+          notes?: string | null
+          nursing_home_id?: string | null
+          product_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_product_pricing_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_product_pricing_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_product_pricing_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_product_pricing_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_product_pricing_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_product_pricing_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_product_pricing_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_product_pricing_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
+      nh_product_settings: {
+        Row: {
+          available_for_nursing_homes: boolean | null
+          billing_type: Database["public"]["Enums"]["nh_billing_type"] | null
+          created_at: string | null
+          id: string
+          mr_min_qty: number | null
+          notes: string | null
+          product_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          available_for_nursing_homes?: boolean | null
+          billing_type?: Database["public"]["Enums"]["nh_billing_type"] | null
+          created_at?: string | null
+          id?: string
+          mr_min_qty?: number | null
+          notes?: string | null
+          product_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          available_for_nursing_homes?: boolean | null
+          billing_type?: Database["public"]["Enums"]["nh_billing_type"] | null
+          created_at?: string | null
+          id?: string
+          mr_min_qty?: number | null
+          notes?: string | null
+          product_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_product_settings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_product_settings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_product_settings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_product_settings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_product_settings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_product_settings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_product_settings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
+      nh_push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          failure_count: number
+          id: string
+          last_success_at: string | null
+          nursing_home_id: string
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          failure_count?: number
+          id?: string
+          last_success_at?: string | null
+          nursing_home_id: string
+          p256dh: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          failure_count?: number
+          id?: string
+          last_success_at?: string | null
+          nursing_home_id?: string
+          p256dh?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_push_subscriptions_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_resident_room_history: {
+        Row: {
+          created_at: string | null
+          id: string
+          moved_in_at: string | null
+          moved_out_at: string | null
+          resident_id: string
+          room_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          moved_in_at?: string | null
+          moved_out_at?: string | null
+          resident_id: string
+          room_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          moved_in_at?: string | null
+          moved_out_at?: string | null
+          resident_id?: string
+          room_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_resident_room_history_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "nh_residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_resident_room_history_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "nh_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_residents: {
+        Row: {
+          billing_address: string | null
+          billing_city: string | null
+          billing_contact_email: string | null
+          billing_contact_name: string | null
+          billing_contact_phone: string | null
+          billing_country: string | null
+          billing_name: string | null
+          billing_postal_code: string | null
+          created_at: string | null
+          date_of_birth: string | null
+          family_contact_email: string | null
+          family_contact_name: string | null
+          family_contact_phone: string | null
+          first_name: string
+          id: string
+          internal_number: string | null
+          last_name: string
+          notes: string | null
+          nursing_home_id: string
+          room_id: string | null
+          status: Database["public"]["Enums"]["nh_resident_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_contact_email?: string | null
+          billing_contact_name?: string | null
+          billing_contact_phone?: string | null
+          billing_country?: string | null
+          billing_name?: string | null
+          billing_postal_code?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          family_contact_email?: string | null
+          family_contact_name?: string | null
+          family_contact_phone?: string | null
+          first_name: string
+          id?: string
+          internal_number?: string | null
+          last_name: string
+          notes?: string | null
+          nursing_home_id: string
+          room_id?: string | null
+          status?: Database["public"]["Enums"]["nh_resident_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_contact_email?: string | null
+          billing_contact_name?: string | null
+          billing_contact_phone?: string | null
+          billing_country?: string | null
+          billing_name?: string | null
+          billing_postal_code?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          family_contact_email?: string | null
+          family_contact_name?: string | null
+          family_contact_phone?: string | null
+          first_name?: string
+          id?: string
+          internal_number?: string | null
+          last_name?: string
+          notes?: string | null
+          nursing_home_id?: string
+          room_id?: string | null
+          status?: Database["public"]["Enums"]["nh_resident_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_residents_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_residents_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "nh_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_rooms: {
+        Row: {
+          created_at: string | null
+          floor: string | null
+          id: string
+          is_occupied: boolean | null
+          notes: string | null
+          nursing_home_id: string
+          room_number: string
+          unit: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          floor?: string | null
+          id?: string
+          is_occupied?: boolean | null
+          notes?: string | null
+          nursing_home_id: string
+          room_number: string
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          floor?: string | null
+          id?: string
+          is_occupied?: boolean | null
+          notes?: string | null
+          nursing_home_id?: string
+          room_number?: string
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_rooms_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          nursing_home_id: string
+          role: Database["public"]["Enums"]["nh_role"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          nursing_home_id: string
+          role: Database["public"]["Enums"]["nh_role"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          nursing_home_id?: string
+          role?: Database["public"]["Enums"]["nh_role"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_user_roles_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nursing_homes: {
+        Row: {
+          address: string | null
+          admin_contact_email: string | null
+          admin_contact_name: string | null
+          admin_contact_phone: string | null
+          bed_count: number | null
+          billing_address: string | null
+          billing_city: string | null
+          billing_country: string | null
+          billing_postal_code: string | null
+          city: string | null
+          commission_rate: number | null
+          country: string | null
+          created_at: string | null
+          cutoff_days_before: number | null
+          cutoff_hour: number | null
+          fixed_delivery_day_of_week: number | null
+          franco_threshold: number | null
+          group_id: string | null
+          id: string
+          inherits_group_display: boolean | null
+          inherits_group_payment_terms: boolean | null
+          inherits_group_pricing: boolean | null
+          is_active: boolean | null
+          language: string | null
+          languages: string[] | null
+          legal_name: string | null
+          logo_url: string | null
+          margin_split_pct: number | null
+          name: string
+          payment_terms: string | null
+          postal_code: string | null
+          price_rule_type: string | null
+          price_rule_value: number | null
+          referrer_id: string | null
+          settings: Json | null
+          shipping_cost_below_franco: number | null
+          show_pharmacy_price: boolean | null
+          show_public_price: boolean | null
+          show_savings_badge: boolean | null
+          slug: string
+          trade_name: string | null
+          updated_at: string | null
+          urgent_delivery_cost: number | null
+          user_profile_id: string | null
+          vat_number: string | null
+          website_url: string | null
+        }
+        Insert: {
+          address?: string | null
+          admin_contact_email?: string | null
+          admin_contact_name?: string | null
+          admin_contact_phone?: string | null
+          bed_count?: number | null
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_country?: string | null
+          billing_postal_code?: string | null
+          city?: string | null
+          commission_rate?: number | null
+          country?: string | null
+          created_at?: string | null
+          cutoff_days_before?: number | null
+          cutoff_hour?: number | null
+          fixed_delivery_day_of_week?: number | null
+          franco_threshold?: number | null
+          group_id?: string | null
+          id?: string
+          inherits_group_display?: boolean | null
+          inherits_group_payment_terms?: boolean | null
+          inherits_group_pricing?: boolean | null
+          is_active?: boolean | null
+          language?: string | null
+          languages?: string[] | null
+          legal_name?: string | null
+          logo_url?: string | null
+          margin_split_pct?: number | null
+          name: string
+          payment_terms?: string | null
+          postal_code?: string | null
+          price_rule_type?: string | null
+          price_rule_value?: number | null
+          referrer_id?: string | null
+          settings?: Json | null
+          shipping_cost_below_franco?: number | null
+          show_pharmacy_price?: boolean | null
+          show_public_price?: boolean | null
+          show_savings_badge?: boolean | null
+          slug: string
+          trade_name?: string | null
+          updated_at?: string | null
+          urgent_delivery_cost?: number | null
+          user_profile_id?: string | null
+          vat_number?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          address?: string | null
+          admin_contact_email?: string | null
+          admin_contact_name?: string | null
+          admin_contact_phone?: string | null
+          bed_count?: number | null
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_country?: string | null
+          billing_postal_code?: string | null
+          city?: string | null
+          commission_rate?: number | null
+          country?: string | null
+          created_at?: string | null
+          cutoff_days_before?: number | null
+          cutoff_hour?: number | null
+          fixed_delivery_day_of_week?: number | null
+          franco_threshold?: number | null
+          group_id?: string | null
+          id?: string
+          inherits_group_display?: boolean | null
+          inherits_group_payment_terms?: boolean | null
+          inherits_group_pricing?: boolean | null
+          is_active?: boolean | null
+          language?: string | null
+          languages?: string[] | null
+          legal_name?: string | null
+          logo_url?: string | null
+          margin_split_pct?: number | null
+          name?: string
+          payment_terms?: string | null
+          postal_code?: string | null
+          price_rule_type?: string | null
+          price_rule_value?: number | null
+          referrer_id?: string | null
+          settings?: Json | null
+          shipping_cost_below_franco?: number | null
+          show_pharmacy_price?: boolean | null
+          show_public_price?: boolean | null
+          show_savings_badge?: boolean | null
+          slug?: string
+          trade_name?: string | null
+          updated_at?: string | null
+          urgent_delivery_cost?: number | null
+          user_profile_id?: string | null
+          vat_number?: string | null
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nursing_homes_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "nh_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nursing_homes_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
             referencedColumns: ["id"]
           },
         ]
@@ -32443,6 +34651,18 @@ export type Database = {
         Args: { _months?: number; _notes?: string; _req_id: string }
         Returns: undefined
       }
+      has_any_nh_role: {
+        Args: { _nursing_home_id: string; _user_id: string }
+        Returns: boolean
+      }
+      has_nh_role: {
+        Args: {
+          _nursing_home_id: string
+          _role: Database["public"]["Enums"]["nh_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role:
         | {
             Args: {
@@ -32576,6 +34796,7 @@ export type Database = {
         | { Args: never; Returns: boolean }
         | { Args: { _user_id: string }; Returns: boolean }
       is_customer_order: { Args: { _order_id: string }; Returns: boolean }
+      is_nh_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_order_vendor: { Args: { _order_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_verified_buyer_or_admin: { Args: { _uid?: string }; Returns: boolean }
@@ -32718,6 +34939,14 @@ export type Database = {
       merge_brands: { Args: { _drop: string; _keep: string }; Returns: Json }
       merge_products: { Args: { _drop: string; _keep: string }; Returns: Json }
       next_commission_invoice_number: { Args: never; Returns: string }
+      nh_issue_invoice: {
+        Args: { _invoice_id: string }
+        Returns: {
+          invoice_id: string
+          invoice_number: string
+          status: string
+        }[]
+      }
       normalize_brand_name: { Args: { _name: string }; Returns: string }
       normalize_gtin: { Args: { _gtin: string }; Returns: string }
       normalize_product_gtin: { Args: { _gtin: string }; Returns: string }
@@ -34252,6 +36481,9 @@ export type Database = {
       media_asset_type: "catalogue" | "affiche" | "video" | "fiche" | "brochure"
       media_link_entity: "product" | "brand" | "offer" | "cms"
       media_visibility: "public" | "authenticated" | "premium"
+      nh_billing_type: "RESIDENT" | "FACILITY"
+      nh_resident_status: "active" | "discharged" | "deceased"
+      nh_role: "admin_mr" | "soignant" | "comptabilite" | "super_admin"
       notification_channel: "in_app" | "email" | "push"
       notification_sender: "system" | "superadmin"
       order_source: "web" | "api" | "manual_admin"
@@ -34654,6 +36886,9 @@ export const Constants = {
       media_asset_type: ["catalogue", "affiche", "video", "fiche", "brochure"],
       media_link_entity: ["product", "brand", "offer", "cms"],
       media_visibility: ["public", "authenticated", "premium"],
+      nh_billing_type: ["RESIDENT", "FACILITY"],
+      nh_resident_status: ["active", "discharged", "deceased"],
+      nh_role: ["admin_mr", "soignant", "comptabilite", "super_admin"],
       notification_channel: ["in_app", "email", "push"],
       notification_sender: ["system", "superadmin"],
       order_source: ["web", "api", "manual_admin"],

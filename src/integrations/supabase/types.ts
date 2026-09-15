@@ -2621,6 +2621,375 @@ export type Database = {
           },
         ]
       }
+      care_category_shortcuts: {
+        Row: {
+          category_id: string
+          created_at: string
+          display_order: number
+          id: string
+          nursing_home_id: string
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          nursing_home_id: string
+          user_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          nursing_home_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_category_shortcuts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_category_vat_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_category_shortcuts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "admin_unmapped_qogita_categories"
+            referencedColumns: ["qogita_category_id"]
+          },
+          {
+            foreignKeyName: "care_category_shortcuts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_category_shortcuts_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_draft_cart_items: {
+        Row: {
+          billing_type: string
+          cart_id: string
+          created_at: string
+          id: string
+          image_url: string | null
+          product_code: string
+          product_id: string
+          product_name: string
+          product_subtitle: string | null
+          quantity: number
+          resident_id: string | null
+          resident_name: string | null
+          unit_price: number
+          vat_rate: number | null
+        }
+        Insert: {
+          billing_type?: string
+          cart_id: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          product_code?: string
+          product_id: string
+          product_name?: string
+          product_subtitle?: string | null
+          quantity?: number
+          resident_id?: string | null
+          resident_name?: string | null
+          unit_price?: number
+          vat_rate?: number | null
+        }
+        Update: {
+          billing_type?: string
+          cart_id?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          product_code?: string
+          product_id?: string
+          product_name?: string
+          product_subtitle?: string | null
+          quantity?: number
+          resident_id?: string | null
+          resident_name?: string | null
+          unit_price?: number
+          vat_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_draft_cart_items_cart_id_fkey"
+            columns: ["cart_id"]
+            isOneToOne: false
+            referencedRelation: "care_draft_carts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_draft_cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "care_draft_cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_draft_cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "care_draft_cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "care_draft_cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_draft_cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_draft_cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "care_draft_cart_items_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "nh_residents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_draft_carts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          nursing_home_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nursing_home_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nursing_home_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_draft_carts_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_pin_reset_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          nursing_home_id: string
+          requested_ip: string | null
+          token_hash: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          nursing_home_id: string
+          requested_ip?: string | null
+          token_hash: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          nursing_home_id?: string
+          requested_ip?: string | null
+          token_hash?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_pin_reset_tokens_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_search_analytics: {
+        Row: {
+          clicked_product_id: string | null
+          created_at: string
+          id: string
+          nursing_home_id: string | null
+          results_count: number | null
+          search_query: string
+          user_id: string | null
+        }
+        Insert: {
+          clicked_product_id?: string | null
+          created_at?: string
+          id?: string
+          nursing_home_id?: string | null
+          results_count?: number | null
+          search_query: string
+          user_id?: string | null
+        }
+        Update: {
+          clicked_product_id?: string | null
+          created_at?: string
+          id?: string
+          nursing_home_id?: string | null
+          results_count?: number | null
+          search_query?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_search_analytics_clicked_product_id_fkey"
+            columns: ["clicked_product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "care_search_analytics_clicked_product_id_fkey"
+            columns: ["clicked_product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_search_analytics_clicked_product_id_fkey"
+            columns: ["clicked_product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "care_search_analytics_clicked_product_id_fkey"
+            columns: ["clicked_product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "care_search_analytics_clicked_product_id_fkey"
+            columns: ["clicked_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_search_analytics_clicked_product_id_fkey"
+            columns: ["clicked_product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_search_analytics_clicked_product_id_fkey"
+            columns: ["clicked_product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "care_search_analytics_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_staff_pins: {
+        Row: {
+          created_at: string | null
+          display_name: string
+          id: string
+          nursing_home_id: string
+          pin_hash: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_name: string
+          id?: string
+          nursing_home_id: string
+          pin_hash: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string
+          id?: string
+          nursing_home_id?: string
+          pin_hash?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_staff_pins_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cart_items: {
         Row: {
           created_at: string
@@ -8553,6 +8922,53 @@ export type Database = {
           },
         ]
       }
+      nh_device_enrollments: {
+        Row: {
+          consumed_at: string | null
+          consumed_by: string | null
+          created_at: string
+          created_by: string | null
+          device_hint: string | null
+          expires_at: string
+          id: string
+          label: string | null
+          nursing_home_id: string
+          token: string
+        }
+        Insert: {
+          consumed_at?: string | null
+          consumed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          device_hint?: string | null
+          expires_at?: string
+          id?: string
+          label?: string | null
+          nursing_home_id: string
+          token: string
+        }
+        Update: {
+          consumed_at?: string | null
+          consumed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          device_hint?: string | null
+          expires_at?: string
+          id?: string
+          label?: string | null
+          nursing_home_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_device_enrollments_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nh_group_category_settings: {
         Row: {
           billing_type: string | null
@@ -9355,9 +9771,135 @@ export type Database = {
           },
         ]
       }
+      nh_order_template_items: {
+        Row: {
+          default_qty: number
+          id: string
+          position: number
+          product_id: string
+          template_id: string
+        }
+        Insert: {
+          default_qty?: number
+          id?: string
+          position?: number
+          product_id: string
+          template_id: string
+        }
+        Update: {
+          default_qty?: number
+          id?: string
+          position?: number
+          product_id?: string
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_order_template_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_order_template_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_order_template_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_order_template_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_order_template_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_order_template_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_order_template_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "nh_order_template_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "nh_order_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_order_templates: {
+        Row: {
+          billing_target: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_default: boolean
+          name: string
+          nursing_home_id: string
+          unit_label: string | null
+          updated_at: string
+        }
+        Insert: {
+          billing_target?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_default?: boolean
+          name: string
+          nursing_home_id: string
+          unit_label?: string | null
+          updated_at?: string
+        }
+        Update: {
+          billing_target?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_default?: boolean
+          name?: string
+          nursing_home_id?: string
+          unit_label?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_order_templates_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nh_orders: {
         Row: {
           admin_notes: string | null
+          client_request_id: string | null
           created_at: string | null
           facility_total_ht: number | null
           facility_total_ttc: number | null
@@ -9383,6 +9925,7 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          client_request_id?: string | null
           created_at?: string | null
           facility_total_ht?: number | null
           facility_total_ttc?: number | null
@@ -9408,6 +9951,7 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          client_request_id?: string | null
           created_at?: string | null
           facility_total_ht?: number | null
           facility_total_ttc?: number | null
@@ -9753,6 +10297,50 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "public_top_price_deltas"
             referencedColumns: ["product_id"]
+          },
+        ]
+      }
+      nh_push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          failure_count: number
+          id: string
+          last_success_at: string | null
+          nursing_home_id: string
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          failure_count?: number
+          id?: string
+          last_success_at?: string | null
+          nursing_home_id: string
+          p256dh: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          failure_count?: number
+          id?: string
+          last_success_at?: string | null
+          nursing_home_id?: string
+          p256dh?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_push_subscriptions_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -34351,6 +34939,14 @@ export type Database = {
       merge_brands: { Args: { _drop: string; _keep: string }; Returns: Json }
       merge_products: { Args: { _drop: string; _keep: string }; Returns: Json }
       next_commission_invoice_number: { Args: never; Returns: string }
+      nh_issue_invoice: {
+        Args: { _invoice_id: string }
+        Returns: {
+          invoice_id: string
+          invoice_number: string
+          status: string
+        }[]
+      }
       normalize_brand_name: { Args: { _name: string }; Returns: string }
       normalize_gtin: { Args: { _gtin: string }; Returns: string }
       normalize_product_gtin: { Args: { _gtin: string }; Returns: string }

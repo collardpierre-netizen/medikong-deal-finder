@@ -22,6 +22,13 @@
       "when": 1789449309055,
       "tag": "0002_care_nh_catalog_and_transactional",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789449436374,
+      "tag": "0003_care_additions_pwa_and_invoice_numbering",
+      "breakpoints": true
     }
   ]
 }

@@ -605,8 +605,8 @@ Deno.serve(async (req) => {
     // Single source of truth (shared with public_get_order_by_token + vendor payout PDF)
     const { data: showPaymentInfo } = await adminClient.rpc("order_should_show_payment_info", { _order_id: order.id });
     if (showPaymentInfo !== false) {
-      if (y > pageH - 50) { doc.addPage(); y = 20; }
-      const bkH = 30;
+      if (y > pageH - 56) { doc.addPage(); y = 20; }
+      const bkH = 36;
       doc.setFillColor(...SOFT);
       doc.setDrawColor(...LINE);
       doc.roundedRect(M, y, pageW - 2 * M, bkH, 1.5, 1.5, "FD");
@@ -631,14 +631,35 @@ Deno.serve(async (req) => {
       doc.text("IBAN : BE86 7320 7305 0650", M + 5, by); by += 4.5;
       doc.text("23 rue de la Procession, B-7822 Meslin-l'Évêque", M + 5, by); by += 4.5;
 
+      // QR EPC (virement SEPA pré-rempli) à droite du bloc
+      const qrSize = 26;
+      const qrX = pageW - M - 5 - qrSize;
+      let textRightX = pageW - M - 5;
+      try {
+        drawEpcQr(
+          doc,
+          { amountEur: Number(totalTtc) || 0, reference: String(order.order_number || "") },
+          qrX,
+          y + 5,
+          qrSize,
+        );
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(6.5);
+        doc.setTextColor(...MUTED);
+        doc.text("Payer par QR", qrX + qrSize / 2, y + 5 + qrSize + 3, { align: "center" });
+        textRightX = qrX - 5;
+      } catch (e) {
+        console.warn("[generate-order-pdf] QR EPC non généré", e);
+      }
+
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
       doc.setTextColor(...NAVY);
-      doc.text("Communication", pageW - M - 5, y + 11, { align: "right" });
+      doc.text("Communication", textRightX, y + 11, { align: "right" });
       doc.setFont("helvetica", "normal");
       doc.setTextColor(80, 80, 80);
-      doc.text(String(order.order_number), pageW - M - 5, y + 16, { align: "right" });
-      doc.text("TVA : BE 1005.771.323", pageW - M - 5, y + 21, { align: "right" });
+      doc.text(String(order.order_number), textRightX, y + 16, { align: "right" });
+      doc.text("TVA : BE 1005.771.323", textRightX, y + 21, { align: "right" });
 
       y += bkH + 4;
     }

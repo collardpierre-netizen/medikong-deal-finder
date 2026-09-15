@@ -29,6 +29,13 @@
       "when": 1789449436374,
       "tag": "0003_care_additions_pwa_and_invoice_numbering",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789449460441,
+      "tag": "0004_care_nh_invoices_storage_policies",
+      "breakpoints": true
     }
   ]
 }

@@ -8512,6 +8512,657 @@ export type Database = {
           },
         ]
       }
+      nh_group_user_roles: {
+        Row: {
+          created_at: string | null
+          group_id: string
+          id: string
+          is_active: boolean | null
+          role: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          group_id: string
+          id?: string
+          is_active?: boolean | null
+          role?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          group_id?: string
+          id?: string
+          is_active?: boolean | null
+          role?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_group_user_roles_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "nh_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_groups: {
+        Row: {
+          address: string | null
+          care_pharmacy_vendor_id: string | null
+          city: string | null
+          commission_rate: number | null
+          contact_email: string | null
+          contact_phone: string | null
+          country: string | null
+          created_at: string
+          cutoff_days_before: number | null
+          cutoff_hour: number | null
+          description: string | null
+          filter_shop_by_billing_type: boolean | null
+          fixed_delivery_day_of_week: number | null
+          franco_threshold: number | null
+          hide_offers_above_ref_price: boolean | null
+          id: string
+          is_active: boolean
+          legal_name: string | null
+          logo_url: string | null
+          margin_split_pct: number | null
+          name: string
+          payment_terms: string | null
+          postal_code: string | null
+          price_rule_type: string | null
+          price_rule_value: number | null
+          primary_color: string | null
+          referrer_id: string | null
+          secondary_color: string | null
+          shipping_cost_below_franco: number | null
+          show_pharmacy_price: boolean | null
+          show_public_price: boolean | null
+          show_savings_badge: boolean | null
+          slug: string
+          trade_name: string | null
+          updated_at: string
+          urgent_delivery_cost: number | null
+          user_profile_id: string | null
+          vat_number: string | null
+          website_url: string | null
+        }
+        Insert: {
+          address?: string | null
+          care_pharmacy_vendor_id?: string | null
+          city?: string | null
+          commission_rate?: number | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string
+          cutoff_days_before?: number | null
+          cutoff_hour?: number | null
+          description?: string | null
+          filter_shop_by_billing_type?: boolean | null
+          fixed_delivery_day_of_week?: number | null
+          franco_threshold?: number | null
+          hide_offers_above_ref_price?: boolean | null
+          id?: string
+          is_active?: boolean
+          legal_name?: string | null
+          logo_url?: string | null
+          margin_split_pct?: number | null
+          name: string
+          payment_terms?: string | null
+          postal_code?: string | null
+          price_rule_type?: string | null
+          price_rule_value?: number | null
+          primary_color?: string | null
+          referrer_id?: string | null
+          secondary_color?: string | null
+          shipping_cost_below_franco?: number | null
+          show_pharmacy_price?: boolean | null
+          show_public_price?: boolean | null
+          show_savings_badge?: boolean | null
+          slug: string
+          trade_name?: string | null
+          updated_at?: string
+          urgent_delivery_cost?: number | null
+          user_profile_id?: string | null
+          vat_number?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          address?: string | null
+          care_pharmacy_vendor_id?: string | null
+          city?: string | null
+          commission_rate?: number | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string
+          cutoff_days_before?: number | null
+          cutoff_hour?: number | null
+          description?: string | null
+          filter_shop_by_billing_type?: boolean | null
+          fixed_delivery_day_of_week?: number | null
+          franco_threshold?: number | null
+          hide_offers_above_ref_price?: boolean | null
+          id?: string
+          is_active?: boolean
+          legal_name?: string | null
+          logo_url?: string | null
+          margin_split_pct?: number | null
+          name?: string
+          payment_terms?: string | null
+          postal_code?: string | null
+          price_rule_type?: string | null
+          price_rule_value?: number | null
+          primary_color?: string | null
+          referrer_id?: string | null
+          secondary_color?: string | null
+          shipping_cost_below_franco?: number | null
+          show_pharmacy_price?: boolean | null
+          show_public_price?: boolean | null
+          show_savings_badge?: boolean | null
+          slug?: string
+          trade_name?: string | null
+          updated_at?: string
+          urgent_delivery_cost?: number | null
+          user_profile_id?: string | null
+          vat_number?: string | null
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_groups_care_pharmacy_vendor_id_fkey"
+            columns: ["care_pharmacy_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "nh_groups_care_pharmacy_vendor_id_fkey"
+            columns: ["care_pharmacy_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "nh_groups_care_pharmacy_vendor_id_fkey"
+            columns: ["care_pharmacy_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_groups_care_pharmacy_vendor_id_fkey"
+            columns: ["care_pharmacy_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_intelligence_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "nh_groups_care_pharmacy_vendor_id_fkey"
+            columns: ["care_pharmacy_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "nh_groups_care_pharmacy_vendor_id_fkey"
+            columns: ["care_pharmacy_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "nh_groups_care_pharmacy_vendor_id_fkey"
+            columns: ["care_pharmacy_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_groups_care_pharmacy_vendor_id_fkey"
+            columns: ["care_pharmacy_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_groups_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string | null
+          email: string
+          expires_at: string | null
+          id: string
+          invited_by: string | null
+          nursing_home_id: string
+          role: Database["public"]["Enums"]["nh_role"]
+          status: string | null
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email: string
+          expires_at?: string | null
+          id?: string
+          invited_by?: string | null
+          nursing_home_id: string
+          role: Database["public"]["Enums"]["nh_role"]
+          status?: string | null
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email?: string
+          expires_at?: string | null
+          id?: string
+          invited_by?: string | null
+          nursing_home_id?: string
+          role?: Database["public"]["Enums"]["nh_role"]
+          status?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_invitations_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_resident_room_history: {
+        Row: {
+          created_at: string | null
+          id: string
+          moved_in_at: string | null
+          moved_out_at: string | null
+          resident_id: string
+          room_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          moved_in_at?: string | null
+          moved_out_at?: string | null
+          resident_id: string
+          room_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          moved_in_at?: string | null
+          moved_out_at?: string | null
+          resident_id?: string
+          room_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_resident_room_history_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "nh_residents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_resident_room_history_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "nh_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_residents: {
+        Row: {
+          billing_address: string | null
+          billing_city: string | null
+          billing_contact_email: string | null
+          billing_contact_name: string | null
+          billing_contact_phone: string | null
+          billing_country: string | null
+          billing_name: string | null
+          billing_postal_code: string | null
+          created_at: string | null
+          date_of_birth: string | null
+          family_contact_email: string | null
+          family_contact_name: string | null
+          family_contact_phone: string | null
+          first_name: string
+          id: string
+          internal_number: string | null
+          last_name: string
+          notes: string | null
+          nursing_home_id: string
+          room_id: string | null
+          status: Database["public"]["Enums"]["nh_resident_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_contact_email?: string | null
+          billing_contact_name?: string | null
+          billing_contact_phone?: string | null
+          billing_country?: string | null
+          billing_name?: string | null
+          billing_postal_code?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          family_contact_email?: string | null
+          family_contact_name?: string | null
+          family_contact_phone?: string | null
+          first_name: string
+          id?: string
+          internal_number?: string | null
+          last_name: string
+          notes?: string | null
+          nursing_home_id: string
+          room_id?: string | null
+          status?: Database["public"]["Enums"]["nh_resident_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_contact_email?: string | null
+          billing_contact_name?: string | null
+          billing_contact_phone?: string | null
+          billing_country?: string | null
+          billing_name?: string | null
+          billing_postal_code?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          family_contact_email?: string | null
+          family_contact_name?: string | null
+          family_contact_phone?: string | null
+          first_name?: string
+          id?: string
+          internal_number?: string | null
+          last_name?: string
+          notes?: string | null
+          nursing_home_id?: string
+          room_id?: string | null
+          status?: Database["public"]["Enums"]["nh_resident_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_residents_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nh_residents_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "nh_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_rooms: {
+        Row: {
+          created_at: string | null
+          floor: string | null
+          id: string
+          is_occupied: boolean | null
+          notes: string | null
+          nursing_home_id: string
+          room_number: string
+          unit: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          floor?: string | null
+          id?: string
+          is_occupied?: boolean | null
+          notes?: string | null
+          nursing_home_id: string
+          room_number: string
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          floor?: string | null
+          id?: string
+          is_occupied?: boolean | null
+          notes?: string | null
+          nursing_home_id?: string
+          room_number?: string
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_rooms_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nh_user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          nursing_home_id: string
+          role: Database["public"]["Enums"]["nh_role"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          nursing_home_id: string
+          role: Database["public"]["Enums"]["nh_role"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          nursing_home_id?: string
+          role?: Database["public"]["Enums"]["nh_role"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nh_user_roles_nursing_home_id_fkey"
+            columns: ["nursing_home_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_homes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nursing_homes: {
+        Row: {
+          address: string | null
+          admin_contact_email: string | null
+          admin_contact_name: string | null
+          admin_contact_phone: string | null
+          bed_count: number | null
+          billing_address: string | null
+          billing_city: string | null
+          billing_country: string | null
+          billing_postal_code: string | null
+          city: string | null
+          commission_rate: number | null
+          country: string | null
+          created_at: string | null
+          cutoff_days_before: number | null
+          cutoff_hour: number | null
+          fixed_delivery_day_of_week: number | null
+          franco_threshold: number | null
+          group_id: string | null
+          id: string
+          inherits_group_display: boolean | null
+          inherits_group_payment_terms: boolean | null
+          inherits_group_pricing: boolean | null
+          is_active: boolean | null
+          language: string | null
+          languages: string[] | null
+          legal_name: string | null
+          logo_url: string | null
+          margin_split_pct: number | null
+          name: string
+          payment_terms: string | null
+          postal_code: string | null
+          price_rule_type: string | null
+          price_rule_value: number | null
+          referrer_id: string | null
+          settings: Json | null
+          shipping_cost_below_franco: number | null
+          show_pharmacy_price: boolean | null
+          show_public_price: boolean | null
+          show_savings_badge: boolean | null
+          slug: string
+          trade_name: string | null
+          updated_at: string | null
+          urgent_delivery_cost: number | null
+          user_profile_id: string | null
+          vat_number: string | null
+          website_url: string | null
+        }
+        Insert: {
+          address?: string | null
+          admin_contact_email?: string | null
+          admin_contact_name?: string | null
+          admin_contact_phone?: string | null
+          bed_count?: number | null
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_country?: string | null
+          billing_postal_code?: string | null
+          city?: string | null
+          commission_rate?: number | null
+          country?: string | null
+          created_at?: string | null
+          cutoff_days_before?: number | null
+          cutoff_hour?: number | null
+          fixed_delivery_day_of_week?: number | null
+          franco_threshold?: number | null
+          group_id?: string | null
+          id?: string
+          inherits_group_display?: boolean | null
+          inherits_group_payment_terms?: boolean | null
+          inherits_group_pricing?: boolean | null
+          is_active?: boolean | null
+          language?: string | null
+          languages?: string[] | null
+          legal_name?: string | null
+          logo_url?: string | null
+          margin_split_pct?: number | null
+          name: string
+          payment_terms?: string | null
+          postal_code?: string | null
+          price_rule_type?: string | null
+          price_rule_value?: number | null
+          referrer_id?: string | null
+          settings?: Json | null
+          shipping_cost_below_franco?: number | null
+          show_pharmacy_price?: boolean | null
+          show_public_price?: boolean | null
+          show_savings_badge?: boolean | null
+          slug: string
+          trade_name?: string | null
+          updated_at?: string | null
+          urgent_delivery_cost?: number | null
+          user_profile_id?: string | null
+          vat_number?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          address?: string | null
+          admin_contact_email?: string | null
+          admin_contact_name?: string | null
+          admin_contact_phone?: string | null
+          bed_count?: number | null
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_country?: string | null
+          billing_postal_code?: string | null
+          city?: string | null
+          commission_rate?: number | null
+          country?: string | null
+          created_at?: string | null
+          cutoff_days_before?: number | null
+          cutoff_hour?: number | null
+          fixed_delivery_day_of_week?: number | null
+          franco_threshold?: number | null
+          group_id?: string | null
+          id?: string
+          inherits_group_display?: boolean | null
+          inherits_group_payment_terms?: boolean | null
+          inherits_group_pricing?: boolean | null
+          is_active?: boolean | null
+          language?: string | null
+          languages?: string[] | null
+          legal_name?: string | null
+          logo_url?: string | null
+          margin_split_pct?: number | null
+          name?: string
+          payment_terms?: string | null
+          postal_code?: string | null
+          price_rule_type?: string | null
+          price_rule_value?: number | null
+          referrer_id?: string | null
+          settings?: Json | null
+          shipping_cost_below_franco?: number | null
+          show_pharmacy_price?: boolean | null
+          show_public_price?: boolean | null
+          show_savings_badge?: boolean | null
+          slug?: string
+          trade_name?: string | null
+          updated_at?: string | null
+          urgent_delivery_cost?: number | null
+          user_profile_id?: string | null
+          vat_number?: string | null
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nursing_homes_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "nh_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nursing_homes_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       offer_buyer_profile_prices: {
         Row: {
           buyer_profile_id: string
@@ -32443,6 +33094,18 @@ export type Database = {
         Args: { _months?: number; _notes?: string; _req_id: string }
         Returns: undefined
       }
+      has_any_nh_role: {
+        Args: { _nursing_home_id: string; _user_id: string }
+        Returns: boolean
+      }
+      has_nh_role: {
+        Args: {
+          _nursing_home_id: string
+          _role: Database["public"]["Enums"]["nh_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role:
         | {
             Args: {
@@ -32576,6 +33239,7 @@ export type Database = {
         | { Args: never; Returns: boolean }
         | { Args: { _user_id: string }; Returns: boolean }
       is_customer_order: { Args: { _order_id: string }; Returns: boolean }
+      is_nh_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_order_vendor: { Args: { _order_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_verified_buyer_or_admin: { Args: { _uid?: string }; Returns: boolean }
@@ -34252,6 +34916,9 @@ export type Database = {
       media_asset_type: "catalogue" | "affiche" | "video" | "fiche" | "brochure"
       media_link_entity: "product" | "brand" | "offer" | "cms"
       media_visibility: "public" | "authenticated" | "premium"
+      nh_billing_type: "RESIDENT" | "FACILITY"
+      nh_resident_status: "active" | "discharged" | "deceased"
+      nh_role: "admin_mr" | "soignant" | "comptabilite" | "super_admin"
       notification_channel: "in_app" | "email" | "push"
       notification_sender: "system" | "superadmin"
       order_source: "web" | "api" | "manual_admin"
@@ -34654,6 +35321,9 @@ export const Constants = {
       media_asset_type: ["catalogue", "affiche", "video", "fiche", "brochure"],
       media_link_entity: ["product", "brand", "offer", "cms"],
       media_visibility: ["public", "authenticated", "premium"],
+      nh_billing_type: ["RESIDENT", "FACILITY"],
+      nh_resident_status: ["active", "discharged", "deceased"],
+      nh_role: ["admin_mr", "soignant", "comptabilite", "super_admin"],
       notification_channel: ["in_app", "email", "push"],
       notification_sender: ["system", "superadmin"],
       order_source: ["web", "api", "manual_admin"],

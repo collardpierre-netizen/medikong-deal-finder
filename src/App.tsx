@@ -378,6 +378,7 @@ const RestockSellerReferral = lazyWithRetry(() => import("./pages/restock/Restoc
 const RestockSellerPickupLocation = lazyWithRetry(() => import("./pages/restock/RestockSellerPickupLocation"), "RestockSellerPickupLocation");
 const RestockCheckout = lazyWithRetry(() => import("./pages/restock/RestockCheckout"), "RestockCheckout");
 const PitchdeckRedirect = lazyWithRetry(() => import("./pages/PitchdeckRedirect"), "PitchdeckRedirect");
+const LegacyCareRedirect = lazyWithRetry(() => import("./components/care/LegacyCareRedirect"), "LegacyCareRedirect");
 
 // queryClient est désormais exposé depuis @/lib/query-client afin d'être
 // accessible aux utilitaires hors composants (ex. bustAdminQueryCache).
@@ -419,6 +420,9 @@ const App = () => (
           <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<LP><HomePage /></LP>} />
+            {/* Anciennes URLs Care → care.medikong.pro (chemin + query conservés) */}
+            <Route path="/care/*" element={<LP><LegacyCareRedirect /></LP>} />
+            <Route path="/care" element={<LP><LegacyCareRedirect /></LP>} />
             <Route path="/pitchdeck" element={<PitchdeckRedirect />} />
             <Route path="/recherche" element={<LP><SearchResultsPage /></LP>} />
             <Route path="/produit/:slug" element={<LP><SafeBoundary label="la fiche produit" context={{ feature: "product_page_root", route: "/produit/:slug" }}><ProductPage /></SafeBoundary></LP>} />

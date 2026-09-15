@@ -1,88 +1,61 @@
-# Verrou de concurrence Qogita — Plan révisé (v2)
+# LOT 0 — Sous-domaine care.medikong.pro et routage deux-hôtes
 
-Feedback intégré : heartbeat (pas started_at), migration non-transactionnelle safe, auto-exclusion du run courant.
+Objectif : faire naître Care sur sa propre origine avant tout travail PWA. Aucun écran métier dans cette étape — uniquement l'ossature d'hôte, les routes, les redirections et la configuration d'authentification.
 
-## 1. Migration SQL (une seule transaction, sans CONCURRENTLY)
+## 1. Détection d'hôte
 
-```sql
--- (a) Nettoyer les runs 'running' orphelins AVANT tout index unique
-UPDATE public.sync_pipeline_runs
-SET status = 'stale',
-    completed_at = COALESCE(completed_at, now()),
-    error_message = COALESCE(error_message, 'Auto-staled during concurrency lock migration')
-WHERE status = 'running';
+Extension de `src/config/env.ts` (déjà en place pour prod/staging) avec une notion de **surface** :
 
--- (b) Ajouter heartbeat pour staleness robuste (Full sync peut dépasser 15 min)
-ALTER TABLE public.sync_pipeline_runs
-  ADD COLUMN IF NOT EXISTS last_progress_at timestamptz;
+- `care` : `care.medikong.pro`, `care.dev.medikong.pro`, et en local/preview via `?surface=care` mémorisé + variable `VITE_SURFACE=care`.
+- `market` : tout le reste (`medikong.pro`, `www`, `dev.medikong.pro`, previews).
 
-UPDATE public.sync_pipeline_runs
-SET last_progress_at = COALESCE(last_progress_at, completed_at, started_at)
-WHERE last_progress_at IS NULL;
+La surface est calculée une seule fois au chargement et exposée en constante (`APP_SURFACE`, `IS_CARE`, `IS_MARKET`). Aucun composant ne relit `window.location.hostname`.
 
--- (c) Élargir l'enum de statut si CHECK constraint existe
--- (à adapter : soit DROP+ADD CHECK, soit rien si colonne text libre)
--- superseded / stale / skipped / completed_with_errors doivent être acceptés.
+## 2. Routage deux-hôtes
 
--- (d) Index unique partiel : un seul run 'running' par pays
--- PAS de CONCURRENTLY (bloque en migration transactionnelle Supabase).
--- Table petite, lock négligeable.
-CREATE UNIQUE INDEX IF NOT EXISTS sync_pipeline_runs_one_running_per_country
-  ON public.sync_pipeline_runs (country_code)
-  WHERE status = 'running';
+`App.tsx` choisit l'arbre de routes selon la surface :
+
+- Surface `market` : arbre actuel inchangé (catalogue, compte, `/admin/*` superadmin).
+- Surface `care` : arbre Care isolé, avec ses propres providers.
+
+Routes Care posées dès maintenant (écrans réels livrés à l'étape suivante, ici des coquilles vides ou placeholders) :
+
+```text
+/                       → portail Care (remplace l'ancien portail)
+/groups/:slug           → tableau de bord multi-groupes
+/groups/:id             → back-office Groupe
+/residences/:id         → back-office Résidence
+/auth                   → connexion Care
+/*                      → 404 Care
 ```
 
-## 2. Edge function `run-sync-pipeline`
+Les routes Care ne sont pas montées sur `medikong.pro`, et les routes marketplace ne sont pas montées sur Care : une URL croisée tombe sur le 404 de sa surface.
 
-**Staleness basée sur heartbeat, pas sur started_at :**
+## 3. Redirections 301
 
-- Constante `PIPELINE_HEARTBEAT_STALE_MINUTES = 15` (temps sans progression, robuste quelle que soit la durée totale du Full sync).
-- Chaque étape (offers, offers-detail, recalc prix, meilisearch) bump `last_progress_at = now()` en début et fin.
-- Aussi `started_at` mis à jour côté insert initial ; `last_progress_at` = `started_at` à l'insert.
+Les anciennes URLs `/care/*` de `medikong.pro` doivent partir en 301 vers `care.medikong.pro/*` (chemin conservé, query conservée). L'hébergement Lovable ne lit pas de fichier de redirections : la seule voie disponible côté application est une redirection au chargement (`window.location.replace`) sur un composant monté sur `/care/*` de la surface market.
 
-**Flow au démarrage d'un run :**
+Conséquence à valider : ce sera une redirection navigateur, pas un vrai 301 HTTP. Pour le SEO c'est sans effet ici puisque Care est en `noindex` global, mais il faut le savoir. Si un vrai 301 est exigé, il faut un proxy en amont — hors périmètre Lovable.
 
-1. Chercher run actif : `SELECT ... WHERE country_code = ? AND status = 'running'`.
-2. Si trouvé :
-   - `EXTRACT(EPOCH FROM (now() - last_progress_at))/60 < 15` → **skipped** : renvoyer `HTTP 200 { skipped: true, active_run_id, minutes_since_progress }` sans rien insérer.
-   - Sinon → marquer ce run `stale` (pas failed) avec `error_message = 'No progress for N min'`.
-3. INSERT du nouveau run en `running`, `last_progress_at = now()`.
-4. Catch `23505` (unique_violation) → race condition, retourner `HTTP 200 { skipped: true, reason: 'race' }`.
-5. `markPreviousRunsAsSuperseded(country, currentRunId)` : `UPDATE ... SET status='superseded' WHERE country_code=? AND status='running' AND id <> currentRunId` — **exclusion explicite du run courant** (point 4 du feedback).
+## 4. Noindex global Care
 
-**Bumper le heartbeat :** helper `bumpProgress(runId, stepName)` appelé au début et fin de chaque étape, met à jour `last_progress_at` + `current_step`.
+Sur la surface Care : `<meta name="robots" content="noindex, nofollow">` monté inconditionnellement, aucune entrée dans le sitemap, aucun hreflang. Le composant existant de non-indexation pré-prod est réutilisé.
 
-## 3. Mapping des statuts (inchangé, validé)
+## 5. Configuration authentification
 
-- `running` — actif
-- `completed` — vert, tout OK
-- `completed_with_errors` — orange, au moins une étape en échec (déjà géré étape 4 précédente)
-- `superseded` — gris neutre, supplanté par un run plus récent (jamais rouge)
-- `stale` — gris neutre, pas de progression > 15 min, auto-nettoyé
-- `skipped` — n'insère plus de ligne (retour immédiat sans row) ; pas de bruit dans l'historique
-- `failed` — rouge, échec réel avec message
+- Sessions distinctes : le stockage navigateur étant scopé à l'origine, `care.medikong.pro` a naturellement sa propre session. Aucun cookie sur `.medikong.pro`, on garde les réglages de stockage par défaut.
+- Ajout de `https://care.medikong.pro/**` (et `https://care.medikong.pro`) dans les URLs de redirection autorisées de l'authentification, en gardant celles de `medikong.pro`.
+- Les redirections d'authentification Care utilisent `window.location.origin`, jamais une URL codée en dur.
+- Aucune modification des méthodes de connexion existantes dans cette étape.
 
-## 4. UI `AdminSync.tsx`
+## 6. Ce que je ne fais pas dans cette étape
 
-- Bouton "Relancer" désactivé si un run `running` existe pour le pays, tooltip "Un run est déjà en cours (démarré il y a X min, dernière progression il y a Y min)".
-- Réponse `{ skipped: true }` → toast neutre "Run ignoré : déjà en cours".
-- Badges historique :
-  - `superseded` / `stale` → badge gris `bg-muted text-muted-foreground` avec label "Supplanté" / "Interrompu (sans progression)"
-  - `completed_with_errors` → badge orange
-  - `failed` → badge rouge (comportement inchangé)
+Aucune migration base de données, aucun écran métier, aucun service worker ni manifeste PWA, aucun PIN, aucune souscription push. La PWA vient après, sur la bonne origine.
 
-## 5. Garde-fous préservés (aucune régression)
+## Action manuelle de votre côté
 
-- Fix self-invocation edge→edge (`functions.invoke`) — non touché.
-- Sweeps A/B/C — non touchés.
-- Cron stale-refresh, mute detection — non touchés.
-- Balooh vendor, connexion Qogita — non touchés.
-- Étape 4 Meilisearch (fix précédent) — non touchée.
+Le sous-domaine `care.medikong.pro` doit être connecté au projet dans les réglages de domaines (TLS wildcard ou entrée dédiée). Je ne peux pas créer l'entrée DNS chez votre registrar. Dites-moi quand il répond, je vérifie.
 
-## Notes techniques
+## Critère de sortie
 
-- Heartbeat rend `PIPELINE_STALE_MINUTES` (15 min) valide pour Full ET incrémental : c'est le temps sans progression, pas la durée totale. Un Full de 45 min qui progresse toutes les 2 min reste `running`.
-- Migration non-transactionnelle évitée : pas de `CONCURRENTLY`, table petite (< quelques milliers de lignes), lock ACCESS EXCLUSIVE bref sur CREATE INDEX standard.
-- `id <> currentRunId` protège contre l'auto-supersede si markPreviousRunsAsSuperseded est appelé après l'INSERT.
-
-Confirme et j'applique la migration + les 3 edits (`run-sync-pipeline/index.ts`, helpers heartbeat dans les étapes qui bumpent, `AdminSync.tsx`).
+`care.medikong.pro/` sert le portail Care, `medikong.pro/care/...` redirige vers Care, une route Care sur `medikong.pro` renvoie 404, la connexion sur Care revient bien sur Care, et les deux surfaces ont des sessions indépendantes.

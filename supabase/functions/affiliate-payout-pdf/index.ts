@@ -15,7 +15,7 @@ const corsHeaders = {
 const BUCKET = "order-pdfs";
 const SIGNED_URL_TTL = 60 * 60 * 24 * 7;
 
-// Coordonnées légales MediKong (Balooh SRL renommée MediKong).
+// Coordonnées légales MediKong SRL.
 const ISSUER = {
   name: "MediKong SRL",
   address: "23 rue de la Procession, 7822 Meslin-l'Évêque, Belgique",

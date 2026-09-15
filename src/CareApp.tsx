@@ -54,7 +54,7 @@ const CareApp = () => (
                   <Routes>
                     <Route path="/" element={<CarePortalPage />} />
                     <Route path="/auth" element={<CareAuthPage />} />
-                    <Route path="/groups/:slug" element={<CareGroupsDashboardPage />} />
+                    <Route path="/groups/:param" element={<CareGroupRouter />} />
                     <Route path="/residences/:id" element={<CareResidenceBackOfficePage />} />
                     <Route path="*" element={<CareNotFoundPage />} />
                   </Routes>
@@ -69,4 +69,3 @@ const CareApp = () => (
 );
 
 export default CareApp;
-export { CareGroupBackOfficePage };

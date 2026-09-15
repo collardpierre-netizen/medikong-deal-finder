@@ -18,10 +18,7 @@ const CareGroupsDashboardPage = lazyWithRetry(
   () => import("./pages/care/CareGroupsDashboardPage"),
   "CareGroupsDashboardPage",
 );
-const CareGroupBackOfficePage = lazyWithRetry(
-  () => import("./pages/care/CareGroupBackOfficePage"),
-  "CareGroupBackOfficePage",
-);
+const CareGroupRouter = lazyWithRetry(() => import("./pages/care/CareGroupRouter"), "CareGroupRouter");
 const CareResidenceBackOfficePage = lazyWithRetry(
   () => import("./pages/care/CareResidenceBackOfficePage"),
   "CareResidenceBackOfficePage",

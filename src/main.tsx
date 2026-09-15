@@ -1,6 +1,8 @@
 import { createRoot } from "react-dom/client";
 import "./i18n";
 import App from "./App.tsx";
+import CareApp from "./CareApp.tsx";
+import { IS_CARE } from "@/config/surface";
 import "./index.css";
 import { installViteChunkReloadGuard } from "@/lib/lazy-with-retry";
 import {
@@ -52,7 +54,8 @@ async function bootstrap() {
     );
     renderSupabaseEnvError(supabaseEnv);
   } else {
-    createRoot(document.getElementById("root")!).render(<App />);
+    // Routage deux-hôtes : care.medikong.pro sert la surface Care, tout le reste la marketplace.
+    createRoot(document.getElementById("root")!).render(IS_CARE ? <CareApp /> : <App />);
   }
 }
 

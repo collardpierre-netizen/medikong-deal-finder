@@ -3,6 +3,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { jsPDF } from "npm:jspdf@2.5.2";
 import { MEDIKONG_LOGO_PNG_BASE64 } from "../_shared/medikong-logo.ts";
+import { drawEpcQr } from "../_shared/epc-qr.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

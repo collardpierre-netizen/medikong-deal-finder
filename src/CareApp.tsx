@@ -14,10 +14,6 @@ import { lazyWithRetry } from "@/lib/lazy-with-retry";
 import { Loader2 } from "lucide-react";
 
 const CarePortalPage = lazyWithRetry(() => import("./pages/care/CarePortalPage"), "CarePortalPage");
-const CareGroupsDashboardPage = lazyWithRetry(
-  () => import("./pages/care/CareGroupsDashboardPage"),
-  "CareGroupsDashboardPage",
-);
 const CareGroupRouter = lazyWithRetry(() => import("./pages/care/CareGroupRouter"), "CareGroupRouter");
 const CareResidenceBackOfficePage = lazyWithRetry(
   () => import("./pages/care/CareResidenceBackOfficePage"),

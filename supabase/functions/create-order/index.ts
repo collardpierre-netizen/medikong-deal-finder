@@ -56,9 +56,13 @@ interface CreateOrderInput {
 }
 
 function mapPaymentMethod(label: string): "card" | "bank_transfer" | "invoice" {
-  if (label === "Carte bancaire") return "card";
-  if (label === "Virement SEPA") return "bank_transfer";
-  if (label.startsWith("Paiement sur facture")) return "invoice";
+  const l = (label || "").trim();
+  if (l.startsWith("Carte bancaire")) return "card";
+  // Le front libelle le virement « Virement bancaire (SEPA) » ; on accepte
+  // toute variante commençant par « Virement » pour éviter de retomber par
+  // défaut sur le paiement sur facture.
+  if (l.toLowerCase().startsWith("virement")) return "bank_transfer";
+  if (l.startsWith("Paiement sur facture")) return "invoice";
   return "invoice";
 }
 

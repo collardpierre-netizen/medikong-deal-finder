@@ -98,8 +98,15 @@ export default function OrderPaymentConfirmationPage() {
   const order = (data as any)?.order;
   const pis = ((data as any)?.payment_intents || []) as Array<{ id: string; vendor_id: string | null; amount: number; status: PIStatus }>;
   const { getLabel: getVendorLabel } = useVendorLabels(pis.map((p) => p.vendor_id));
-  const allSucceeded = pis.length > 0 && pis.every((p) => p.status === "succeeded");
-  const anyFailed = pis.some((p) => p.status === "requires_payment_method" || p.status === "canceled");
+  const paymentStatus = String(order?.payment_status || "");
+  const noStripePayment = !!order && pis.length === 0;
+  const allSucceeded =
+    (pis.length > 0 && pis.every((p) => p.status === "succeeded")) ||
+    (noStripePayment && paymentStatus === "paid");
+  const anyFailed =
+    pis.some((p) => p.status === "requires_payment_method" || p.status === "canceled") ||
+    (noStripePayment && (paymentStatus === "failed" || paymentStatus === "cancelled"));
+  const awaitingManualPayment = noStripePayment && !allSucceeded && !anyFailed;
 
   return (
     <Layout>

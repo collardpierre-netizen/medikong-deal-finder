@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { useParams, Link } from "react-router-dom";
-import { Download, FileText, FileSpreadsheet } from "lucide-react";
+import { Download, FileText, FileSpreadsheet, QrCode } from "lucide-react";
 import { formatPrice } from "@/data/mock";
 import { useOrderDetail } from "@/hooks/useOrders";
 import { ORDER_WORKFLOW_STEPS, getOrderStatusMeta, formatOrderDateTime } from "@/lib/order-status";

@@ -8,7 +8,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { getFalcoConfig, logFalco } from "../_shared/falco-peppol.ts";
-import { mapFalcoStatusToTransmission } from "../_shared/peppol-flow.ts";
+import { mapFalcoStatusToTransmission, deriveFalcoInvoiceLifecycle } from "../_shared/peppol-flow.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,17 +40,24 @@ function normalizeStatus(raw: unknown): string | null {
   return STATUS_MAP[s] ?? s;
 }
 
-function extractDoc(doc: any): { id: string | null; status: string | null; error: string | null } {
+function extractDoc(doc: any): {
+  id: string | null;
+  status: string | null;
+  error: string | null;
+  acknowledgedAt: string | null;
+  acknowledgementType: string | null;
+} {
   const id = doc?.id ? String(doc.id) : null;
-  const status = normalizeStatus(doc?.peppol_send_status ?? doc?.status);
-  let error: string | null = null;
-  if (Array.isArray(doc?.events)) {
-    const failure = [...doc.events]
-      .reverse()
-      .find((e: any) => e?.type === "peppol_send_failure");
-    if (failure) error = failure?.message || failure?.details || `peppol_send_failure @ ${failure?.date || "?"}`;
-  }
-  return { id, status, error };
+  // Les accusés/retours Peppol (MLR) priment sur le simple statut d'envoi.
+  const life = deriveFalcoInvoiceLifecycle(doc);
+  const status = life.status ? normalizeStatus(life.status) : null;
+  return {
+    id,
+    status,
+    error: life.error,
+    acknowledgedAt: life.acknowledgedAt,
+    acknowledgementType: life.acknowledgementType,
+  };
 }
 
 Deno.serve(async (req) => {
@@ -135,13 +142,13 @@ Deno.serve(async (req) => {
     const changes: Array<{ document_id: string; from: string | null; to: string }> = [];
 
     for (const raw of documents) {
-      const { id, status, error } = extractDoc(raw);
+      const { id, status, error, acknowledgedAt, acknowledgementType } = extractDoc(raw);
       if (!id || !status) continue;
       checked++;
 
       const { data: inv } = await supabase
         .from("order_invoices")
-        .select("id, peppol_status")
+        .select("id, order_id, peppol_status")
         .eq("peppol_document_id", id)
         .maybeSingle();
 
@@ -156,7 +163,10 @@ Deno.serve(async (req) => {
         peppol_status: status,
         peppol_error: error,
       };
-
+      // Un accusé reçu (positif ou négatif) est une réponse du réseau : on trace la date.
+      if (acknowledgedAt || ["accepted", "rejected"].includes(status.toLowerCase())) {
+        patch.peppol_last_attempt_at = acknowledgedAt || new Date().toISOString();
+      }
 
       const { error: updErr } = await supabase
         .from("order_invoices")
@@ -168,6 +178,25 @@ Deno.serve(async (req) => {
       }
       updated++;
       changes.push({ document_id: id, from: inv.peppol_status || null, to: status });
+
+      if (["accepted", "rejected"].includes(status.toLowerCase())) {
+        await supabase.from("audit_logs").insert({
+          action: status.toLowerCase() === "accepted" ? "peppol_invoice_accepted" : "peppol_invoice_rejected",
+          module: "peppol",
+          detail: `document ${id} → ${status}${error ? ` — ${error}` : ""}`,
+          target_type: "order",
+          target_id: inv.order_id,
+          entity_type: "order_invoice",
+          entity_id: inv.id,
+          metadata: {
+            document_id: id,
+            peppol_status: status,
+            acknowledgement_type: acknowledgementType,
+            acknowledged_at: acknowledgedAt,
+            error,
+          },
+        }).then(() => {}, () => {});
+      }
     }
 
     // ── Flux B / journal peppol_transmissions (sans toucher aux colonnes historiques).

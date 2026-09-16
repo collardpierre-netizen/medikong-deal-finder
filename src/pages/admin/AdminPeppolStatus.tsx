@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Send, Loader2, ExternalLink, AlertTriangle } from "lucide-react";
 
-type PeppolFilter = "all" | "sent" | "failed" | "pending" | "none";
+type PeppolFilter = "all" | "accepted" | "sent" | "rejected" | "failed" | "pending" | "none";
 
 interface Transmission {
   id: string;
@@ -76,21 +76,27 @@ const TYPE_LABELS: Record<string, string> = {
 const statusBucket = (s: string | null): Exclude<PeppolFilter, "all"> => {
   const v = (s || "").toLowerCase();
   if (!v) return "none";
-  if (["sent", "delivered", "accepted", "success"].includes(v)) return "sent";
-  if (["failed", "error", "rejected"].includes(v)) return "failed";
+  if (["accepted", "delivered"].includes(v)) return "accepted";
+  if (["rejected", "refused"].includes(v)) return "rejected";
+  if (["sent", "success", "submitted"].includes(v)) return "sent";
+  if (["failed", "error"].includes(v)) return "failed";
   return "pending";
 };
 
 const STATUS_CLASSES: Record<Exclude<PeppolFilter, "all">, string> = {
-  sent: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  accepted: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  sent: "bg-blue-100 text-blue-800 border-blue-200",
+  rejected: "bg-red-100 text-red-800 border-red-200",
   failed: "bg-red-100 text-red-800 border-red-200",
   pending: "bg-amber-100 text-amber-800 border-amber-200",
   none: "bg-slate-100 text-slate-700 border-slate-200",
 };
 
 const STATUS_LABELS: Record<Exclude<PeppolFilter, "all">, string> = {
-  sent: "Envoyée",
-  failed: "Échec",
+  accepted: "Acceptée",
+  sent: "Émise / transmise",
+  rejected: "Rejetée",
+  failed: "Échec technique",
   pending: "En cours",
   none: "Non envoyée",
 };
@@ -162,7 +168,9 @@ const AdminPeppolStatus = () => {
       rows.filter((r) => statusBucket(r.peppol_status) === b).length;
     return {
       total: rows.length,
+      accepted: count("accepted"),
       sent: count("sent"),
+      rejected: count("rejected"),
       failed: count("failed"),
       pending: count("pending"),
       none: count("none"),
@@ -180,12 +188,14 @@ const AdminPeppolStatus = () => {
         erreurs détaillées.
       </p>
 
-      <div className="grid gap-3 sm:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-4 xl:grid-cols-7">
         {[
           { label: "Factures", value: kpis.total },
-          { label: "Envoyées", value: kpis.sent },
-          { label: "En cours", value: kpis.pending },
+          { label: "Acceptées", value: kpis.accepted },
+          { label: "Émises", value: kpis.sent },
+          { label: "Rejetées", value: kpis.rejected },
           { label: "Échecs", value: kpis.failed },
+          { label: "En cours", value: kpis.pending },
           { label: "Non envoyées", value: kpis.none },
         ].map((k) => (
           <div key={k.label} className="bg-white border rounded-lg p-4" style={{ borderColor: "#E2E8F0" }}>
@@ -206,9 +216,11 @@ const AdminPeppolStatus = () => {
           <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tous les statuts</SelectItem>
-            <SelectItem value="sent">Envoyées</SelectItem>
+            <SelectItem value="accepted">Acceptées</SelectItem>
+            <SelectItem value="sent">Émises / transmises</SelectItem>
+            <SelectItem value="rejected">Rejetées</SelectItem>
             <SelectItem value="pending">En cours</SelectItem>
-            <SelectItem value="failed">Échecs</SelectItem>
+            <SelectItem value="failed">Échecs techniques</SelectItem>
             <SelectItem value="none">Non envoyées</SelectItem>
           </SelectContent>
         </Select>

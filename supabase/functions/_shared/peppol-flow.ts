@@ -275,8 +275,88 @@ export function mapFalcoStatusToTransmission(status: string | null | undefined):
     failed: "failed",
     failure: "failed",
     rejected: "failed",
+    accepted_mlr: "delivered",
+    rejected_mlr: "failed",
   };
   return MAP[s] ?? null;
+}
+
+// ─────────── accusés / retours Peppol (MLR) → cycle de vie facture ───────────
+/**
+ * Vocabulaire order_invoices.peppol_status :
+ *   submitted (émise, déposée chez Falco) → sent (transmise au réseau)
+ *   → accepted (accusé de réception positif du destinataire)
+ *   → rejected (accusé négatif) | failed (échec technique d'envoi)
+ *
+ * Falco n'expose pas de webhook : les accusés arrivent dans le tableau `events`
+ * du document. On lit d'abord l'événement d'accusé le plus récent, puis on
+ * retombe sur `peppol_send_status`.
+ */
+export type FalcoInvoiceLifecycle = {
+  status: string | null;
+  error: string | null;
+  acknowledgedAt: string | null;
+  acknowledgementType: string | null;
+};
+
+const FALCO_SEND_STATUS_MAP: Record<string, string> = {
+  not_sent: "submitted",
+  submitted: "submitted",
+  success: "sent",
+  sent: "sent",
+  failure: "failed",
+  failed: "failed",
+  rejected: "rejected",
+  accepted: "accepted",
+};
+
+/** Classe un type d'événement Falco en accusé positif / négatif, ou null. */
+export function classifyFalcoEvent(type: string | null | undefined): "accepted" | "rejected" | null {
+  const t = String(type || "").trim().toLowerCase();
+  if (!t) return null;
+  if (t.includes("reject") || t.includes("refus") || t.includes("denied")) return "rejected";
+  if (
+    t.includes("accept") ||
+    t.includes("acknowledg") ||
+    t.includes("mlr") ||
+    t.includes("receipt") ||
+    t.includes("delivered")
+  ) {
+    return "accepted";
+  }
+  return null;
+}
+
+export function deriveFalcoInvoiceLifecycle(doc: any): FalcoInvoiceLifecycle {
+  const events: any[] = Array.isArray(doc?.events) ? [...doc.events] : [];
+  // Falco renvoie les events du plus ancien au plus récent : on part de la fin.
+  const ordered = events.reverse();
+
+  const failure = ordered.find((e: any) => String(e?.type || "").toLowerCase().includes("failure"));
+  const ack = ordered.find((e: any) => classifyFalcoEvent(e?.type) !== null);
+
+  const rawSend = String(doc?.peppol_send_status ?? doc?.status ?? "").trim().toLowerCase();
+  let status: string | null = rawSend ? (FALCO_SEND_STATUS_MAP[rawSend] ?? rawSend) : null;
+  let acknowledgedAt: string | null = null;
+  let acknowledgementType: string | null = null;
+  let error: string | null = null;
+
+  if (ack) {
+    const kind = classifyFalcoEvent(ack?.type)!;
+    status = kind; // accepted | rejected — l'accusé prime sur le statut d'envoi
+    acknowledgedAt = ack?.date || ack?.created_at || null;
+    acknowledgementType = String(ack?.type || "");
+    if (kind === "rejected") {
+      error = ack?.message || ack?.details || `peppol_rejected @ ${acknowledgedAt || "?"}`;
+    }
+  }
+
+  if (!error && failure) {
+    error = failure?.message || failure?.details || `peppol_send_failure @ ${failure?.date || "?"}`;
+  }
+  if (!error && doc?.peppol_status?.error_message) error = String(doc.peppol_status.error_message);
+
+  return { status, error, acknowledgedAt, acknowledgementType };
 }
 
 

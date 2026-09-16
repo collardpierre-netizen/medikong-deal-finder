@@ -92,7 +92,7 @@ export async function notifyExhaustedPeppolInvoices(
     const statusLabel = String(inv.peppol_status).toLowerCase() === "rejected" ? "rejetée" : "en échec";
     const { error: insErr } = await supabase.from("admin_notifications").insert({
       type: "peppol_invoice_failed",
-      severity: "error",
+      severity: "critical",
       title: `Facture Peppol ${statusLabel} après ${attempts} tentative${attempts > 1 ? "s" : ""}`,
       body: [
         `Facture ${inv.invoice_number || inv.id}${orderNumber ? ` — commande ${orderNumber}` : ""}`,

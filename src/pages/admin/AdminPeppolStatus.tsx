@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 // CSV : séparateur « ; » (Excel FR), valeurs échappées par guillemets doubles.
 const csvCell = (v: string | number | null | undefined): string => {
   const s = v === null || v === undefined ? "" : String(v);
@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Send, Loader2, ExternalLink, AlertTriangle, Download } from "lucide-react";
+import { Send, Loader2, ExternalLink, AlertTriangle, Download, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type PeppolFilter = "all" | "accepted" | "sent" | "rejected" | "failed" | "pending" | "none";
@@ -27,6 +27,15 @@ interface Transmission {
   delivered_at: string | null;
   receiver_name_snapshot: string | null;
   receiver_peppol_id: string | null;
+  document_type: string | null;
+  flow: string | null;
+  peppol_document_id: string | null;
+  falco_import_id: string | null;
+  payload_storage_path: string | null;
+  payload_sha256: string | null;
+  ubl_storage_path: string | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 interface InvoiceRow {
@@ -146,6 +155,99 @@ const attemptsMatch = (n: number, f: AttemptsFilter): boolean => {
   return n === Number(f);
 };
 
+// --- Chronologie des tentatives par facture ---
+interface TimelineEvent {
+  at: string | null;
+  label: string;
+  kind: "info" | "sent" | "ok" | "error";
+  details?: string[];
+  error?: string | null;
+}
+
+const buildTimeline = (r: InvoiceRow, tx: Transmission[]): TimelineEvent[] => {
+  const events: TimelineEvent[] = [];
+
+  events.push({ at: r.created_at, label: "Facture créée", kind: "info" });
+
+  if (r.peppol_submitted_at) {
+    events.push({
+      at: r.peppol_submitted_at,
+      label: "Envoi Peppol (facture)",
+      kind: "sent",
+      details: [
+        r.peppol_document_id ? `document : ${r.peppol_document_id}` : "",
+        r.peppol_identifier ? `destinataire : ${r.peppol_identifier}` : "",
+      ].filter(Boolean),
+    });
+  }
+
+  if (r.peppol_last_attempt_at && r.peppol_last_attempt_at !== r.peppol_submitted_at) {
+    events.push({
+      at: r.peppol_last_attempt_at,
+      label: `Dernière tentative (facture)${r.peppol_retry_count ? ` · tentative n°${r.peppol_retry_count}` : ""}`,
+      kind: r.peppol_error ? "error" : "sent",
+      error: r.peppol_error,
+    });
+  } else if (r.peppol_error) {
+    events.push({ at: r.peppol_last_attempt_at, label: "Erreur signalée sur la facture", kind: "error", error: r.peppol_error });
+  }
+
+  for (const t of tx) {
+    const who = t.receiver_name_snapshot || t.receiver_peppol_id || "destinataire inconnu";
+    const base = [
+      t.flow ? `flux : ${t.flow}` : "",
+      t.document_type ? `type : ${t.document_type}` : "",
+      t.channel ? `canal : ${t.channel}` : "",
+      t.peppol_document_id ? `document : ${t.peppol_document_id}` : "",
+      t.falco_import_id ? `import : ${t.falco_import_id}` : "",
+      t.payload_storage_path ? `payload : ${t.payload_storage_path}` : "",
+      t.payload_sha256 ? `sha256 : ${t.payload_sha256}` : "",
+      t.ubl_storage_path ? `UBL : ${t.ubl_storage_path}` : "",
+    ].filter(Boolean);
+
+    events.push({
+      at: t.created_at,
+      label: `Transmission créée → ${who}`,
+      kind: "info",
+      details: base,
+    });
+    if (t.submitted_at) {
+      events.push({ at: t.submitted_at, label: `Transmission envoyée → ${who}`, kind: "sent" });
+    }
+    if (t.last_attempt_at && t.last_attempt_at !== t.submitted_at) {
+      events.push({
+        at: t.last_attempt_at,
+        label: `Tentative${t.retry_count ? ` n°${t.retry_count}` : ""} → ${who} · ${t.status || "statut inconnu"}`,
+        kind: t.last_error ? "error" : "sent",
+        error: t.last_error,
+      });
+    } else if (t.last_error) {
+      events.push({
+        at: t.updated_at,
+        label: `Erreur → ${who} · ${t.status || "statut inconnu"}`,
+        kind: "error",
+        error: t.last_error,
+      });
+    }
+    if (t.delivered_at) {
+      events.push({ at: t.delivered_at, label: `Accusé reçu (livrée) → ${who}`, kind: "ok" });
+    }
+  }
+
+  return events.sort((a, b) => {
+    const ta = a.at ? new Date(a.at).getTime() : 0;
+    const tb = b.at ? new Date(b.at).getTime() : 0;
+    return ta - tb;
+  });
+};
+
+const EVENT_DOT: Record<TimelineEvent["kind"], string> = {
+  info: "bg-slate-400",
+  sent: "bg-blue-500",
+  ok: "bg-emerald-500",
+  error: "bg-red-500",
+};
+
 const AdminPeppolStatus = () => {
   const [filter, setFilter] = useState<PeppolFilter>("all");
   const [search, setSearch] = useState("");
@@ -153,6 +255,8 @@ const AdminPeppolStatus = () => {
   const [dateTo, setDateTo] = useState("");
   const [attemptsFilter, setAttemptsFilter] = useState<AttemptsFilter>("all");
   const [errorTypeFilter, setErrorTypeFilter] = useState<ErrorTypeFilter>("all");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const toggleTimeline = (id: string) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-peppol-status"],
@@ -175,7 +279,7 @@ const AdminPeppolStatus = () => {
         const { data: tx, error: txErr } = await supabase
           .from("peppol_transmissions")
           .select(
-            "id, order_invoice_id, status, channel, retry_count, last_error, submitted_at, last_attempt_at, delivered_at, receiver_name_snapshot, receiver_peppol_id",
+            "id, order_invoice_id, status, channel, retry_count, last_error, submitted_at, last_attempt_at, delivered_at, receiver_name_snapshot, receiver_peppol_id, document_type, flow, peppol_document_id, falco_import_id, payload_storage_path, payload_sha256, ubl_storage_path, created_at, updated_at",
           )
           .in("order_invoice_id", ids)
           .order("created_at", { ascending: false });
@@ -447,7 +551,8 @@ const AdminPeppolStatus = () => {
                     r.peppol_last_attempt_at || tx.find((t) => t.last_attempt_at)?.last_attempt_at || null;
                   const errors = [r.peppol_error, ...tx.map((t) => t.last_error)].filter(Boolean) as string[];
                   return (
-                    <tr key={r.id} className="border-t align-top" style={{ borderColor: "#EEF2F7" }}>
+                    <Fragment key={r.id}>
+                    <tr className="border-t align-top" style={{ borderColor: "#EEF2F7" }}>
                       <td className="px-3 py-3 whitespace-nowrap">
                         <Link
                           to={`/admin/commandes/${r.order_id}`}
@@ -513,8 +618,65 @@ const AdminPeppolStatus = () => {
                         {!errors.length && !tx.length && !r.peppol_document_id && (
                           <span className="text-muted-foreground">—</span>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mt-2 h-7 px-2 text-[11px]"
+                          onClick={() => toggleTimeline(r.id)}
+                        >
+                          {expanded[r.id] ? (
+                            <ChevronDown className="h-3 w-3 mr-1" />
+                          ) : (
+                            <ChevronRight className="h-3 w-3 mr-1" />
+                          )}
+                          Chronologie des tentatives
+                        </Button>
                       </td>
                     </tr>
+                    {expanded[r.id] && (
+                      <tr className="bg-slate-50/60" style={{ borderColor: "#EEF2F7" }}>
+                        <td colSpan={8} className="px-6 py-4">
+                          <div className="text-xs font-semibold text-mk-navy mb-3">
+                            Chronologie Peppol — facture {r.invoice_number || r.id.slice(0, 8)}
+                          </div>
+                          {(() => {
+                            const events = buildTimeline(r, tx);
+                            if (!events.length) {
+                              return <div className="text-xs text-muted-foreground">Aucun événement enregistré.</div>;
+                            }
+                            return (
+                              <ol className="relative border-l pl-4 space-y-3" style={{ borderColor: "#DDE5EF" }}>
+                                {events.map((e, i) => (
+                                  <li key={i} className="relative">
+                                    <span
+                                      className={`absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full ${EVENT_DOT[e.kind]}`}
+                                    />
+                                    <div className="text-[11px] text-muted-foreground font-mono">{fmtDateTime(e.at)}</div>
+                                    <div className="text-xs text-mk-navy">{e.label}</div>
+                                    {e.details && e.details.length > 0 && (
+                                      <div className="mt-1 space-y-0.5">
+                                        {e.details.map((d, j) => (
+                                          <div key={j} className="text-[11px] text-muted-foreground font-mono break-all">
+                                            {d}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {e.error && (
+                                      <div className="mt-1 flex gap-1 text-[11px] text-red-700 bg-red-50 border border-red-200 rounded p-2 break-words">
+                                        <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" />
+                                        <span>{e.error}</span>
+                                      </div>
+                                    )}
+                                  </li>
+                                ))}
+                              </ol>
+                            );
+                          })()}
+                        </td>
+                      </tr>
+                    )}
+                    </Fragment>
                   );
                 })}
               </tbody>

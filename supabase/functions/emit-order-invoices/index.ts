@@ -96,7 +96,12 @@ Deno.serve(async (req) => {
     const processed: Array<Record<string, unknown>> = [];
     for (const id of todo) {
       const res = await emitOrderInvoices(supabase, id, nowIso);
-      processed.push({ order_id: id, emitted_vendors: res.emitted_vendors, skipped_no_mandate: res.skipped_no_mandate });
+      processed.push({
+        order_id: id,
+        emitted_vendors: res.emitted_vendors,
+        skipped_no_mandate: res.skipped_no_mandate,
+        peppol_dispatch: res.peppol_dispatch,
+      });
     }
 
     return json(200, { ok: true, candidates: ids.length, processed: processed.length, details: processed });

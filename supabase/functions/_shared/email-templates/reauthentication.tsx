@@ -15,6 +15,8 @@ import {
   Text,
 } from 'npm:@react-email/components@0.0.22'
 
+import { OTP_LENGTH } from '../otp.ts'
+
 const LOGO_URL = 'https://iokwqxhhpblcbkrxgcje.supabase.co/storage/v1/object/public/email-assets/logo-horizontal.png'
 
 interface ReauthenticationEmailProps {
@@ -33,7 +35,7 @@ export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => 
         <Hr style={divider} />
         <Heading style={h1}>Votre code de vérification</Heading>
         <Text style={text}>
-          Utilisez le code ci-dessous pour confirmer votre identité :
+          Utilisez le code à {OTP_LENGTH} chiffres ci-dessous pour confirmer votre identité :
         </Text>
         <Section style={codeSection}>
           <Text style={codeStyle}>{token}</Text>

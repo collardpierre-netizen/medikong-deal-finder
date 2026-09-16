@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { isValidAnyPeppolId, normalizeAnyPeppolId } from "@/lib/peppol";
+import { OTP_LENGTH } from "@/config/otp";
 import { toast } from "sonner";
 import i18n from "@/i18n";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -182,7 +183,7 @@ export default function OnboardingPage() {
   const [role, setRole] = useState<"buyer" | "seller" | "">("");
 
   /* ─── Shared state ─── */
-  const OTP_LENGTH = 8;
+  /* Longueur du code : source unique de vérité dans src/config/otp.ts */
   const EMPTY_OTP = Array.from({ length: OTP_LENGTH }, () => "");
   const [email, setEmail] = useState("");
   const [emailTouched, setEmailTouched] = useState(false);

@@ -249,6 +249,59 @@ const AdminPeppolStatus = () => {
     };
   }, [rows]);
 
+  // Export CSV de la liste filtrée : statut, tentatives, dernière tentative, erreurs détaillées.
+  const exportCsv = () => {
+    const header = [
+      "Commande",
+      "Date commande",
+      "Facture",
+      "Type",
+      "Montant TTC",
+      "Statut Peppol",
+      "Statut brut",
+      "Tentatives",
+      "Dernière tentative",
+      "Document Peppol",
+      "Destinataire Peppol",
+      "Erreurs détaillées",
+    ];
+    const lines = filtered.map((r) => {
+      const bucket = statusBucket(r.peppol_status);
+      const tx = txByInvoice.get(r.id) || [];
+      const attempts = Math.max(
+        r.peppol_retry_count || 0,
+        tx.reduce((acc, t) => acc + (t.retry_count || 0), 0),
+      );
+      const lastAttempt =
+        r.peppol_last_attempt_at || tx.find((t) => t.last_attempt_at)?.last_attempt_at || null;
+      const errors = [r.peppol_error, ...tx.map((t) => t.last_error)].filter(Boolean) as string[];
+      return [
+        r.order?.order_number || r.order_id,
+        fmtDateTime(r.order?.created_at || null),
+        r.invoice_number || r.id,
+        TYPE_LABELS[r.type || ""] || r.type || "",
+        (Number(r.amount_incl_vat || 0)).toFixed(2).replace(".", ","),
+        STATUS_LABELS[bucket],
+        r.peppol_status || "",
+        attempts,
+        fmtDateTime(lastAttempt),
+        r.peppol_document_id || "",
+        r.peppol_identifier || "",
+        errors.join(" | "),
+      ]
+        .map(csvCell)
+        .join(";");
+    });
+    const csv = "\uFEFF" + [header.map(csvCell).join(";"), ...lines].join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `peppol-virements-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-2">

@@ -705,11 +705,16 @@ export default function CheckoutPage() {
                     <motion.button
                       onClick={() => setStep(2)}
                       disabled={!canProceedStep1 || hasBlocking}
-                      title={hasBlocking ? "Résolvez les blocages vendeurs ci-dessus" : undefined}
+                      title={hasBlocking ? "Résolvez les blocages vendeurs ci-dessus" : step1Missing.length ? `À compléter : ${step1Missing.join(", ")}` : undefined}
                       className="w-full sm:w-auto bg-mk-navy text-white font-bold text-sm px-6 py-3 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
                       whileHover={canProceedStep1 && !hasBlocking ? { scale: 1.03 } : {}} whileTap={canProceedStep1 && !hasBlocking ? { scale: 0.97 } : {}}>
                       Continuer vers le paiement
                     </motion.button>
+                    {!hasBlocking && step1Missing.length > 0 && (
+                      <p role="alert" className="mt-2 text-sm text-destructive">
+                        Complétez pour continuer : {step1Missing.join(", ")}.
+                      </p>
+                    )}
                   </motion.div>
                 )}
 

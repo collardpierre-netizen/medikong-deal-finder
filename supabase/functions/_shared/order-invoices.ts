@@ -85,7 +85,10 @@ export async function emitOrderInvoices(
 
     const [{ data: order }, { data: vendors }] = await Promise.all([
       supabase.from("orders").select("order_number").eq("id", orderId).maybeSingle(),
-      supabase.from("vendors").select("id, name, company_name, mandate_signed_at").in("id", vendorIds),
+      supabase
+        .from("vendors")
+        .select("id, name, company_name, mandate_signed_at, self_billing_enabled")
+        .in("id", vendorIds),
     ]);
     const vendorMap = new Map<string, any>((vendors || []).map((v: any) => [v.id, v]));
     const orderNumber = order?.order_number ?? null;

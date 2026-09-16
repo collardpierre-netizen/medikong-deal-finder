@@ -23,6 +23,8 @@ export default function OrderPaymentConfirmationPage() {
     refetchInterval: (q) => {
       const d: any = q.state.data;
       if (!d) return 3000;
+      // Aucun paiement Stripe rattaché (ex. paiement hors ligne / virement) : rien à interroger
+      if (!d.payment_intents || d.payment_intents.length === 0) return false;
       // stop polling once all PI have a terminal status
       const allTerminal = (d.payment_intents || []).every((pi: any) =>
         ["succeeded", "processing", "canceled", "requires_payment_method"].includes(pi.status),

@@ -158,8 +158,21 @@ const AdminVendors = () => {
   const invoke = async (action: string, vendor_id: string) => {
     setBusyId(vendor_id);
     try {
+      // Sans session valide, `functions.invoke` envoie la clé anon en
+      // Authorization et la fonction répond 401 "Non autorisé".
+      // On rafraîchit/valide la session et on passe le JWT explicitement.
+      let { data: sess } = await supabase.auth.getSession();
+      if (!sess?.session?.access_token) {
+        const refreshed = await supabase.auth.refreshSession();
+        sess = refreshed.data;
+      }
+      const accessToken = sess?.session?.access_token;
+      if (!accessToken) {
+        throw new Error("Session expirée — reconnecte-toi pour gérer Stripe Connect.");
+      }
       const { data, error } = await supabase.functions.invoke("stripe-connect-onboarding", {
         body: { action, vendor_id, origin: window.location.origin },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (error) throw error;
       if (action === "create-account" || action === "refresh-link") {

@@ -34,7 +34,7 @@ export default function OrderPaymentConfirmationPage() {
     queryFn: async () => {
       const { data: order, error: e1 } = await supabase
         .from("orders")
-        .select("id, order_number, status, total_incl_vat, created_at")
+        .select("id, order_number, status, payment_status, payment_method, total_incl_vat, created_at")
         .eq("id", orderId)
         .maybeSingle();
       if (e1) throw e1;

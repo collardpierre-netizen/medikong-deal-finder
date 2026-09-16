@@ -78,6 +78,13 @@
       "when": 1789579256381,
       "tag": "0010_sweep_settled_bank_transfers",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1789580478012,
+      "tag": "0011_tighten_privileged_update_with_check_and_callback_scope",
+      "breakpoints": true
     }
   ]
 }

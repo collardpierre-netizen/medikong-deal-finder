@@ -32065,8 +32065,27 @@ export type Database = {
       }
       _cat_tokens: { Args: { _label: string }; Returns: string[] }
       _current_user_buyer_ids: { Args: never; Returns: string[] }
+      _customers_privileged_intact: {
+        Args: {
+          _credit_limit: number
+          _id: string
+          _is_verified: boolean
+          _payment_terms_days: number
+        }
+        Returns: boolean
+      }
       _is_admin_or_service: { Args: never; Returns: boolean }
       _is_privileged_actor: { Args: never; Returns: boolean }
+      _offers_commission_intact: {
+        Args: {
+          _commission_model: string
+          _commission_rate: number
+          _fixed_commission_amount: number
+          _id: string
+          _margin_split_pct: number
+        }
+        Returns: boolean
+      }
       _qogita_apply_sweep: {
         Args: {
           _candidate_offers: string[]
@@ -32093,6 +32112,19 @@ export type Database = {
         Returns: string
       }
       _sub_is_admin: { Args: never; Returns: boolean }
+      _vendors_privileged_intact: {
+        Args: {
+          _commission_model: Database["public"]["Enums"]["commission_model_enum"]
+          _commission_rate: number
+          _fixed_commission_amount: number
+          _id: string
+          _is_active: boolean
+          _is_verified: boolean
+          _margin_split_pct: number
+          _validation_status: Database["public"]["Enums"]["vendor_validation_status"]
+        }
+        Returns: boolean
+      }
       account_accept_invitation: {
         Args: { _join_code?: string; _token?: string }
         Returns: {

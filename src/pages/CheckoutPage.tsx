@@ -148,7 +148,7 @@ export default function CheckoutPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [user]);
+  }, [user, activeBuyerId]);
 
   const { data: shippingOpts = [] } = useQuery({
     queryKey: ["shipping-options", shippingAddr.country],

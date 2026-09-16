@@ -392,19 +392,20 @@ export default function CheckoutPage() {
 
 
 
-      // Enregistrement en adresse par défaut. Ne bloque pas la commande, mais
-      // ⚠️ ne doit plus échouer en silence : sinon l'acheteur croit son adresse
-      // mémorisée et doit la réencoder à la commande suivante.
-      if (saveAsDefault && customerId) {
+      // Mémorisation de l'adresse de livraison. Systématique : l'acheteur ne doit
+      // jamais avoir à réencoder son adresse à la commande suivante. La case
+      // « adresse par défaut » ne conditionne plus l'enregistrement.
+      const addrCustomerId = customerId || activeBuyerId;
+      if (addrCustomerId && (shippingAddr.street || shippingAddr.city)) {
         try {
           const { error: unsetErr } = await supabase
             .from("customer_shipping_addresses")
             .update({ is_default: false })
-            .eq("customer_id", customerId)
+            .eq("customer_id", addrCustomerId)
             .eq("is_default", true);
           if (unsetErr) throw unsetErr;
           const { error: insertErr } = await supabase.from("customer_shipping_addresses").insert({
-            customer_id: customerId,
+            customer_id: addrCustomerId,
             label: "Adresse par défaut",
             contact_name: shippingAddr.company || null,
             address_l1: shippingAddr.street,
@@ -436,14 +437,24 @@ export default function CheckoutPage() {
         return;
       }
 
+      // Virement SEPA : l'argent arrive sur le compte MediKong, Stripe n'est pas
+      // impliqué. On ne dépend donc PAS de l'inscription Stripe des vendeurs :
+      // on envoie directement l'acheteur sur le bon de paiement SEPA.
+      const isBankTransfer = selectedLabel.toLowerCase().startsWith("virement");
+      if (isBankTransfer) {
+        toast.success("Commande enregistrée — payez par virement SEPA");
+        clearCart.mutate();
+        navigate(`/commande/${oid}/paiement`);
+        return;
+      }
+
       // Step 2 : create PaymentIntent(s) — 1 par vendeur (Stripe Connect mandataire)
       stage = "session";
-      const isBankTransfer = selectedLabel.startsWith("Virement bancaire");
       const { data, error } = await supabase.functions.invoke("stripe-checkout", {
         body: {
           action: "create-payment-intent",
           order_id: oid,
-          payment_method: isBankTransfer ? "bank_transfer" : "card",
+          payment_method: "card",
         },
       });
       if (error) {

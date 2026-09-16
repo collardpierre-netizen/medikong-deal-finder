@@ -454,19 +454,19 @@ export function lazyWithRetry<T extends ComponentType<any>>(
         if (isTransientChunkProbe(probe) && url) {
           await waitForChunkServerRecovery(url);
           if (safeTransientChunkReload(url)) {
-            return new Promise<never>(() => undefined);
+            return pendingUntilReload(key, "transient", probe);
           }
         }
         if (isStaleHtmlFallbackProbe(probe)) {
           window.sessionStorage.setItem(`${CACHE_BUST_TOKEN_PREFIX}${key}`, "1");
           if (safeCacheBustReload()) {
-            return new Promise<never>(() => undefined);
+            return pendingUntilReload(key, "cache-bust", probe);
           }
         }
         if (!alreadyRetried && canAutoReload()) {
           window.sessionStorage.setItem(retryKey, "1");
           if (safeAutoReload()) {
-            return new Promise<never>(() => undefined);
+            return pendingUntilReload(key, "auto-reload", probe);
           }
         }
       }

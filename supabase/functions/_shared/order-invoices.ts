@@ -241,6 +241,9 @@ export async function emitOrderInvoices(
         console.error(`[order-invoices] commission exception vendor=${vendorId}`, e);
       }
     }
+
+    // Envoi Peppol automatique des factures générées (statut + retry horaire).
+    result.peppol_dispatch = await dispatchPeppolForOrder(supabase, orderId);
   } catch (e) {
     console.error("[order-invoices] fatal", e);
   }

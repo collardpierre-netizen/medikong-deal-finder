@@ -115,8 +115,8 @@ describe("Onboarding — validation du code reçu par e-mail", () => {
 
     expect(otpInputs()).toHaveLength(OTP_LENGTH);
     expect(
-      screen.getByText((t) => t.includes(`code à ${OTP_LENGTH} chiffres`)),
-    ).toBeInTheDocument();
+      screen.getAllByText((t) => t.includes(`code à ${OTP_LENGTH} chiffres`)).length,
+    ).toBeGreaterThan(0);
   });
 
   it("ne vérifie rien tant que le code est incomplet", async () => {

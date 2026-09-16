@@ -277,6 +277,9 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ── Alertes admin : factures encore en erreur après N tentatives.
+    const alerts = await notifyExhaustedPeppolInvoices(supabase, { caller: "retry-peppol-failed" });
+
     logFalco("info", "retry_batch_done", {
       scanned: (candidates || []).length,
       succeeded: results.filter((r) => r.ok && r.peppol_status !== "failed").length,

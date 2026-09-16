@@ -388,7 +388,7 @@ const AdminVendors = () => {
                       {st === "none" && (
                         <button
                           disabled={busy}
-                          onClick={() => invoke("create-account", v.id)}
+                          onClick={() => invoke("create-account", v)}
                           className="text-[12px] px-3 py-1.5 rounded-md bg-[#1B5BDA] text-white hover:bg-[#1747b0] disabled:opacity-50"
                         >
                           Créer compte Stripe
@@ -397,7 +397,7 @@ const AdminVendors = () => {
                       {st === "pending" && (
                         <button
                           disabled={busy}
-                          onClick={() => invoke("refresh-link", v.id)}
+                          onClick={() => invoke("refresh-link", v)}
                           className="text-[12px] px-3 py-1.5 rounded-md bg-[#F59E0B] text-white hover:bg-[#d8870a] disabled:opacity-50"
                         >
                           Régénérer lien
@@ -407,7 +407,7 @@ const AdminVendors = () => {
                         <>
                           <button
                             disabled={busy}
-                            onClick={() => invoke("check-status", v.id)}
+                            onClick={() => invoke("check-status", v)}
                             className="text-[12px] px-3 py-1.5 rounded-md border border-[#E2E8F0] bg-white hover:bg-[#F1F5F9] disabled:opacity-50"
                           >
                             Vérifier statut

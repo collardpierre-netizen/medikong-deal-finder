@@ -577,9 +577,24 @@ const AdminCommandeManuelle = () => {
         // Option d'anonymisation du fournisseur (PDF + page client).
         await supabase.from("orders").update({ anonymize_vendors: anonymizeVendors } as any).eq("id", orderIdForNotes);
       }
+      // Virement encaissé : MediKong facture au nom et pour le compte du fournisseur.
+      // Best-effort, idempotent côté serveur.
+      if (orderIdForNotes && paymentMethod === "bank_transfer" && paymentStatus === "paid" && status !== "draft") {
+        try {
+          const { error: invErr } = await supabase.functions.invoke("emit-order-invoices", {
+            body: { order_id: orderIdForNotes },
+          });
+          if (invErr) {
+            toast.warning("Commande enregistrée, mais l'émission des factures fournisseur a échoué.");
+          }
+        } catch {
+          toast.warning("Commande enregistrée, mais l'émission des factures fournisseur a échoué.");
+        }
+      }
       if (draftId) {
         await supabase.rpc("admin_delete_manual_order_draft", { _id: draftId });
       }
+
       toast.success(editingOrderId ? "Commande mise à jour" : `Commande ${result?.order_number ?? ""} créée`);
 
       await Promise.all([

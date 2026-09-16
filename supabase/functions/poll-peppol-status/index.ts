@@ -286,6 +286,7 @@ Deno.serve(async (req) => {
       transmissions_checked: txChecked,
       transmissions_updated: txUpdated,
       changes,
+      admin_alerts: alerts,
     });
 
   } catch (error: any) {

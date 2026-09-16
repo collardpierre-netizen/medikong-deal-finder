@@ -12,12 +12,102 @@
 
 export type InvoiceLink = { label: string; url: string };
 
+export type PeppolDispatchEntry = {
+  invoice_id: string;
+  invoice_number: string | null;
+  type: string;
+  status: string | null;
+  ok: boolean;
+  error?: string;
+};
+
 export type EmitOrderInvoicesResult = {
   links: InvoiceLink[];
   emitted_vendors: string[];
   skipped_no_mandate: string[];
   skipped_disabled: string[];
+  peppol_dispatch: PeppolDispatchEntry[];
 };
+
+// Statuts considérés comme déjà transmis : on ne renvoie pas.
+const PEPPOL_TERMINAL_OK = new Set(["accepted", "delivered", "sent"]);
+
+/**
+ * Envoi Peppol automatique des factures de la commande.
+ * Idempotent : les factures déjà transmises sont ignorées.
+ * En cas d'échec, la facture est marquée peppol_status = 'failed' afin que
+ * le job horaire retry-peppol-failed la reprenne automatiquement.
+ */
+async function dispatchPeppolForOrder(
+  supabase: any,
+  orderId: string,
+): Promise<PeppolDispatchEntry[]> {
+  const out: PeppolDispatchEntry[] = [];
+  try {
+    const { data: invoices, error } = await supabase
+      .from("order_invoices")
+      .select("id, invoice_number, type, peppol_status, pdf_path")
+      .eq("order_id", orderId);
+    if (error) {
+      console.error("[order-invoices] peppol invoices fetch failed", error);
+      return out;
+    }
+    for (const inv of invoices || []) {
+      const status = String(inv.peppol_status || "").toLowerCase();
+      if (PEPPOL_TERMINAL_OK.has(status)) {
+        out.push({
+          invoice_id: inv.id,
+          invoice_number: inv.invoice_number ?? null,
+          type: inv.type,
+          status: inv.peppol_status ?? null,
+          ok: true,
+        });
+        continue;
+      }
+      try {
+        const { data: sent, error: sendErr } = await supabase.functions.invoke("send-invoice-peppol", {
+          body: { invoice_id: inv.id },
+        });
+        if (sendErr) throw sendErr;
+        out.push({
+          invoice_id: inv.id,
+          invoice_number: inv.invoice_number ?? null,
+          type: inv.type,
+          status: sent?.peppol_status ?? null,
+          ok: sent?.ok !== false,
+          error: sent?.error ?? sent?.peppol_error ?? undefined,
+        });
+      } catch (e) {
+        const message = String((e as any)?.message || e);
+        console.error(`[order-invoices] peppol send failed invoice=${inv.id}`, message);
+        // Marque l'échec pour que le retry horaire reprenne la facture.
+        try {
+          await supabase
+            .from("order_invoices")
+            .update({
+              peppol_status: "failed",
+              peppol_error: `auto_dispatch_failed: ${message}`.slice(0, 500),
+              peppol_last_attempt_at: new Date().toISOString(),
+            })
+            .eq("id", inv.id);
+        } catch (updErr) {
+          console.error("[order-invoices] peppol status update failed", updErr);
+        }
+        out.push({
+          invoice_id: inv.id,
+          invoice_number: inv.invoice_number ?? null,
+          type: inv.type,
+          status: "failed",
+          ok: false,
+          error: message,
+        });
+      }
+    }
+  } catch (e) {
+    console.error("[order-invoices] peppol dispatch fatal", e);
+  }
+  return out;
+}
 
 async function flagMissingMandate(
   supabase: any,
@@ -70,6 +160,7 @@ export async function emitOrderInvoices(
     emitted_vendors: [],
     skipped_no_mandate: [],
     skipped_disabled: [],
+    peppol_dispatch: [],
   };
   try {
     const { data: vendorRows, error } = await supabase
@@ -150,6 +241,9 @@ export async function emitOrderInvoices(
         console.error(`[order-invoices] commission exception vendor=${vendorId}`, e);
       }
     }
+
+    // Envoi Peppol automatique des factures générées (statut + retry horaire).
+    result.peppol_dispatch = await dispatchPeppolForOrder(supabase, orderId);
   } catch (e) {
     console.error("[order-invoices] fatal", e);
   }

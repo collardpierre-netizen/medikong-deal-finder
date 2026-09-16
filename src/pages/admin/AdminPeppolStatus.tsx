@@ -400,6 +400,17 @@ const AdminPeppolStatus = () => {
           </button>
         )}
         <span className="text-xs text-muted-foreground">{filtered.length} facture(s)</span>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={exportCsv}
+          disabled={isLoading || filtered.length === 0}
+          className="ml-auto"
+        >
+          <Download className="h-4 w-4 mr-1" />
+          Exporter en CSV ({filtered.length})
+        </Button>
       </div>
 
       <div className="bg-white border rounded-lg overflow-hidden" style={{ borderColor: "#E2E8F0" }}>

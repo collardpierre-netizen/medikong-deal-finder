@@ -8,6 +8,7 @@
 export const OTP_LENGTH = 8
 
 /** Code d'exemple utilisé uniquement par l'endpoint de prévisualisation des e-mails. */
-export const OTP_SAMPLE_TOKEN = '1'.repeat(OTP_LENGTH).slice(0, OTP_LENGTH) === ''
-  ? ''
-  : Array.from({ length: OTP_LENGTH }, (_, i) => String((i + 1) % 10)).join('')
+export const OTP_SAMPLE_TOKEN = Array.from(
+  { length: OTP_LENGTH },
+  (_, i) => String((i + 1) % 10),
+).join('')

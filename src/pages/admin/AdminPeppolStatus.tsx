@@ -255,6 +255,8 @@ const AdminPeppolStatus = () => {
   const [dateTo, setDateTo] = useState("");
   const [attemptsFilter, setAttemptsFilter] = useState<AttemptsFilter>("all");
   const [errorTypeFilter, setErrorTypeFilter] = useState<ErrorTypeFilter>("all");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const toggleTimeline = (id: string) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-peppol-status"],

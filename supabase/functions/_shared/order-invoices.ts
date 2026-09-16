@@ -65,7 +65,12 @@ export async function emitOrderInvoices(
   orderId: string,
   paidAtIso: string,
 ): Promise<EmitOrderInvoicesResult> {
-  const result: EmitOrderInvoicesResult = { links: [], emitted_vendors: [], skipped_no_mandate: [] };
+  const result: EmitOrderInvoicesResult = {
+    links: [],
+    emitted_vendors: [],
+    skipped_no_mandate: [],
+    skipped_disabled: [],
+  };
   try {
     const { data: vendorRows, error } = await supabase
       .from("order_lines")

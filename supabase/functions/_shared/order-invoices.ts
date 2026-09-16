@@ -16,6 +16,7 @@ export type EmitOrderInvoicesResult = {
   links: InvoiceLink[];
   emitted_vendors: string[];
   skipped_no_mandate: string[];
+  skipped_disabled: string[];
 };
 
 async function flagMissingMandate(

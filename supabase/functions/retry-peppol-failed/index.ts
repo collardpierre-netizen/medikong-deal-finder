@@ -285,6 +285,7 @@ Deno.serve(async (req) => {
     return json(200, {
       ok: true,
       scanned: (candidates || []).length,
+      skipped_in_progress: skippedInProgress,
       results,
       buyer_transmissions_retried: buyerResults.length,
       buyer_results: buyerResults,

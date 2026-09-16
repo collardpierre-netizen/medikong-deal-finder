@@ -27,6 +27,15 @@ interface Transmission {
   delivered_at: string | null;
   receiver_name_snapshot: string | null;
   receiver_peppol_id: string | null;
+  document_type: string | null;
+  flow: string | null;
+  peppol_document_id: string | null;
+  falco_import_id: string | null;
+  payload_storage_path: string | null;
+  payload_sha256: string | null;
+  ubl_storage_path: string | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 interface InvoiceRow {

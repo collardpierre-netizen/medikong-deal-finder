@@ -292,10 +292,25 @@ export default function CheckoutPage() {
     exit: { opacity: 0, x: -30 },
   };
 
-  const isAddressValid = (addr: AddressForm) =>
-    addr.company.trim().length > 1 && addr.street.trim().length > 3 && addr.postalCode.trim().length > 2 && addr.city.trim().length > 1;
+  // Champs manquants pour l'étape 1. On les expose à l'écran : un bouton grisé
+  // sans explication (ex. rue courte type « Ath ») bloque l'acheteur sans raison
+  // visible.
+  const missingAddressFields = (addr: AddressForm) => {
+    const missing: string[] = [];
+    if (addr.company.trim().length < 2) missing.push("Société");
+    if (addr.street.trim().length < 2) missing.push("Adresse");
+    if (addr.postalCode.trim().length < 2) missing.push("Code postal");
+    if (addr.city.trim().length < 2) missing.push("Ville");
+    return missing;
+  };
+  const isAddressValid = (addr: AddressForm) => missingAddressFields(addr).length === 0;
 
   const canProceedStep1 = isAddressValid(shippingAddr) && (sameAsBilling || isAddressValid(billingAddr));
+  const step1Missing = [
+    ...missingAddressFields(shippingAddr).map((f) => `${f} (livraison)`),
+    ...(sameAsBilling ? [] : missingAddressFields(billingAddr).map((f) => `${f} (facturation)`)),
+  ];
+
 
   const formatAddr = (a: AddressForm) =>
     `${a.company}, ${a.street}${a.street2 ? ", " + a.street2 : ""}, ${a.postalCode} ${a.city}, ${a.country}`;
@@ -690,11 +705,16 @@ export default function CheckoutPage() {
                     <motion.button
                       onClick={() => setStep(2)}
                       disabled={!canProceedStep1 || hasBlocking}
-                      title={hasBlocking ? "Résolvez les blocages vendeurs ci-dessus" : undefined}
+                      title={hasBlocking ? "Résolvez les blocages vendeurs ci-dessus" : step1Missing.length ? `À compléter : ${step1Missing.join(", ")}` : undefined}
                       className="w-full sm:w-auto bg-mk-navy text-white font-bold text-sm px-6 py-3 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
                       whileHover={canProceedStep1 && !hasBlocking ? { scale: 1.03 } : {}} whileTap={canProceedStep1 && !hasBlocking ? { scale: 0.97 } : {}}>
                       Continuer vers le paiement
                     </motion.button>
+                    {!hasBlocking && step1Missing.length > 0 && (
+                      <p role="alert" className="mt-2 text-sm text-destructive">
+                        Complétez pour continuer : {step1Missing.join(", ")}.
+                      </p>
+                    )}
                   </motion.div>
                 )}
 

@@ -306,9 +306,13 @@ export default function CheckoutPage() {
   const isAddressValid = (addr: AddressForm) => missingAddressFields(addr).length === 0;
 
   const canProceedStep1 = isAddressValid(shippingAddr) && (sameAsBilling || isAddressValid(billingAddr));
+  // Liste ordonnée des champs à compléter : d'abord l'adresse de livraison,
+  // puis l'adresse de facturation si elle diffère. Ordre = ordre du formulaire.
+  const step1MissingShipping = missingAddressFields(shippingAddr);
+  const step1MissingBilling = sameAsBilling ? [] : missingAddressFields(billingAddr);
   const step1Missing = [
-    ...missingAddressFields(shippingAddr).map((f) => `${f} (livraison)`),
-    ...(sameAsBilling ? [] : missingAddressFields(billingAddr).map((f) => `${f} (facturation)`)),
+    ...step1MissingShipping.map((f) => `${f} (livraison)`),
+    ...step1MissingBilling.map((f) => `${f} (facturation)`),
   ];
 
 

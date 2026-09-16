@@ -23,6 +23,8 @@ export default function OrderPaymentConfirmationPage() {
     refetchInterval: (q) => {
       const d: any = q.state.data;
       if (!d) return 3000;
+      // Aucun paiement Stripe rattaché (ex. paiement hors ligne / virement) : rien à interroger
+      if (!d.payment_intents || d.payment_intents.length === 0) return false;
       // stop polling once all PI have a terminal status
       const allTerminal = (d.payment_intents || []).every((pi: any) =>
         ["succeeded", "processing", "canceled", "requires_payment_method"].includes(pi.status),
@@ -32,7 +34,7 @@ export default function OrderPaymentConfirmationPage() {
     queryFn: async () => {
       const { data: order, error: e1 } = await supabase
         .from("orders")
-        .select("id, order_number, status, total_incl_vat, created_at")
+        .select("id, order_number, status, payment_status, payment_method, total_incl_vat, created_at")
         .eq("id", orderId)
         .maybeSingle();
       if (e1) throw e1;
@@ -96,8 +98,15 @@ export default function OrderPaymentConfirmationPage() {
   const order = (data as any)?.order;
   const pis = ((data as any)?.payment_intents || []) as Array<{ id: string; vendor_id: string | null; amount: number; status: PIStatus }>;
   const { getLabel: getVendorLabel } = useVendorLabels(pis.map((p) => p.vendor_id));
-  const allSucceeded = pis.length > 0 && pis.every((p) => p.status === "succeeded");
-  const anyFailed = pis.some((p) => p.status === "requires_payment_method" || p.status === "canceled");
+  const paymentStatus = String(order?.payment_status || "");
+  const noStripePayment = !!order && pis.length === 0;
+  const allSucceeded =
+    (pis.length > 0 && pis.every((p) => p.status === "succeeded")) ||
+    (noStripePayment && paymentStatus === "paid");
+  const anyFailed =
+    pis.some((p) => p.status === "requires_payment_method" || p.status === "canceled") ||
+    (noStripePayment && (paymentStatus === "failed" || paymentStatus === "cancelled"));
+  const awaitingManualPayment = noStripePayment && !allSucceeded && !anyFailed;
 
   return (
     <Layout>
@@ -115,6 +124,15 @@ export default function OrderPaymentConfirmationPage() {
                 <AlertTriangle className="mx-auto text-destructive mb-3" size={56} />
                 <h1 className="text-2xl font-bold text-mk-navy mb-1">Paiement incomplet</h1>
                 <p className="text-sm text-mk-sec">Certains paiements n'ont pas abouti. Contactez le support si besoin.</p>
+              </>
+            ) : awaitingManualPayment ? (
+              <>
+                <CheckCircle2 className="mx-auto text-mk-green mb-3" size={56} />
+                <h1 className="text-2xl font-bold text-mk-navy mb-1">Commande enregistrée</h1>
+                <p className="text-sm text-mk-sec">
+                  Votre commande est bien enregistrée. Le paiement se fait hors ligne (virement / facture) — les
+                  instructions vous sont transmises par e-mail.
+                </p>
               </>
             ) : (
               <>

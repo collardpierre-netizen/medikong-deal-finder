@@ -44,12 +44,12 @@ const SAMPLE_DATA: Record<string, object> = {
     siteUrl: SAMPLE_PROJECT_URL,
     recipient: SAMPLE_EMAIL,
     confirmationUrl: SAMPLE_PROJECT_URL,
-    token: '12345678',
+    token: OTP_SAMPLE_TOKEN,
   },
   magiclink: {
     siteName: SITE_NAME,
     confirmationUrl: SAMPLE_PROJECT_URL,
-    token: '12345678',
+    token: OTP_SAMPLE_TOKEN,
   },
   recovery: {
     siteName: SITE_NAME,
@@ -68,7 +68,7 @@ const SAMPLE_DATA: Record<string, object> = {
     confirmationUrl: SAMPLE_PROJECT_URL,
   },
   reauthentication: {
-    token: '123456',
+    token: OTP_SAMPLE_TOKEN,
   },
 }
 

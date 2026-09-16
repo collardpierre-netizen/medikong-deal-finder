@@ -82,7 +82,10 @@ export default function CheckoutPage() {
   const [billingAddr, setBillingAddr] = useState<AddressForm>(emptyAddress);
   const [sameAsBilling, setSameAsBilling] = useState(true);
   const [shipping, setShipping] = useState(0);
-  const [payment, setPayment] = useState(0);
+  // ?paiement=sepa (bouton « Payer par virement SEPA » du panier) présélectionne
+  // le virement bancaire SEPA — index 2 de `paymentMethods`.
+  const [searchParams] = useSearchParams();
+  const [payment, setPayment] = useState(searchParams.get("paiement") === "sepa" ? 2 : 0);
   const [submitting, setSubmitting] = useState(false);
   const [prefillSource, setPrefillSource] = useState<"saved_address" | "customer_profile" | null>(null);
   const [saveAsDefault, setSaveAsDefault] = useState(false);

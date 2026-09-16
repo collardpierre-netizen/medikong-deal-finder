@@ -101,9 +101,52 @@ const STATUS_LABELS: Record<Exclude<PeppolFilter, "all">, string> = {
   none: "Non envoyée",
 };
 
+// --- Filtres avancés : tentatives + type d'erreur ---
+type AttemptsFilter = "all" | "0" | "1" | "2" | "3plus";
+type ErrorTypeFilter = "all" | "none" | "receiver_not_found" | "invalid_identifier" | "network" | "auth" | "other";
+
+const ATTEMPTS_LABELS: Record<AttemptsFilter, string> = {
+  all: "Tentatives : toutes",
+  "0": "0 tentative",
+  "1": "1 tentative",
+  "2": "2 tentatives",
+  "3plus": "3 tentatives et +",
+};
+
+const ERROR_TYPE_LABELS: Record<Exclude<ErrorTypeFilter, "all">, string> = {
+  none: "Sans erreur",
+  receiver_not_found: "Destinataire introuvable / non enregistré",
+  invalid_identifier: "Identifiant ou format invalide",
+  network: "Réseau / timeout",
+  auth: "Authentification / autorisation",
+  other: "Autre erreur",
+};
+
+// Classification heuristique du premier message d'erreur connu (facture puis transmissions).
+const classifyError = (msgs: string[]): Exclude<ErrorTypeFilter, "all"> => {
+  const msg = (msgs.find(Boolean) || "").toLowerCase();
+  if (!msg) return "none";
+  if (/(not registered|not found|introuvable|non enregistr|unknown participant|no such participant)/.test(msg))
+    return "receiver_not_found";
+  if (/(invalid|invalide|malformed|format|scheme|peppol id)/.test(msg)) return "invalid_identifier";
+  if (/(timeout|timed out|network|fetch|econn|socket|502|503|504)/.test(msg)) return "network";
+  if (/(401|403|unauthorized|forbidden|non autoris|authentification|token)/.test(msg)) return "auth";
+  return "other";
+};
+
+const attemptsMatch = (n: number, f: AttemptsFilter): boolean => {
+  if (f === "all") return true;
+  if (f === "3plus") return n >= 3;
+  return n === Number(f);
+};
+
 const AdminPeppolStatus = () => {
   const [filter, setFilter] = useState<PeppolFilter>("all");
   const [search, setSearch] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [attemptsFilter, setAttemptsFilter] = useState<AttemptsFilter>("all");
+  const [errorTypeFilter, setErrorTypeFilter] = useState<ErrorTypeFilter>("all");
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-peppol-status"],

@@ -160,6 +160,7 @@ export async function emitOrderInvoices(
     emitted_vendors: [],
     skipped_no_mandate: [],
     skipped_disabled: [],
+    peppol_dispatch: [],
   };
   try {
     const { data: vendorRows, error } = await supabase

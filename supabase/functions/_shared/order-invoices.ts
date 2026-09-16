@@ -95,17 +95,28 @@ export async function emitOrderInvoices(
 
     for (const vendorId of vendorIds) {
       const vendor = vendorMap.get(vendorId);
-      if (!vendor?.mandate_signed_at) {
-        result.skipped_no_mandate.push(vendorId);
-        await flagMissingMandate(
-          supabase,
-          orderId,
-          vendorId,
-          vendor?.company_name || vendor?.name || vendorId,
-          orderNumber,
-        );
+      const vendorLabel = vendor?.company_name || vendor?.name || vendorId;
+      if (vendor && vendor.self_billing_enabled === false) {
+        result.skipped_disabled.push(vendorId);
+        try {
+          await supabase.from("audit_logs").insert({
+            action: "self_billing_skipped_disabled",
+            module: "invoicing",
+            detail:
+              `Commande ${orderNumber ?? orderId} : facturation au nom et pour le compte de ` +
+              `${vendorLabel} désactivée pour ce fournisseur, aucune facture émise.`,
+          });
+        } catch (e) {
+          console.error("[order-invoices] audit_logs insert failed", e);
+        }
         continue;
       }
+      if (!vendor?.mandate_signed_at) {
+        result.skipped_no_mandate.push(vendorId);
+        await flagMissingMandate(supabase, orderId, vendorId, vendorLabel, orderNumber);
+        continue;
+      }
+
 
       // Facture au nom et pour le compte du fournisseur (acheteur)
       try {

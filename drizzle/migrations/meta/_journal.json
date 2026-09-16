@@ -92,6 +92,13 @@
       "when": 1789581089401,
       "tag": "0012_idempotency_locks",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1789581114829,
+      "tag": "0013_idempotency_locks_atomic_acquire",
+      "breakpoints": true
     }
   ]
 }

@@ -99,6 +99,13 @@
       "when": 1789581114829,
       "tag": "0013_idempotency_locks_atomic_acquire",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1789581599939,
+      "tag": "0014_protect_profiles_price_level_code",
+      "breakpoints": true
     }
   ]
 }

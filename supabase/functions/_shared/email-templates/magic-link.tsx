@@ -16,6 +16,8 @@ import {
   Text,
 } from 'npm:@react-email/components@0.0.22'
 
+import { OTP_LENGTH } from '../otp.ts'
+
 const LOGO_URL = 'https://iokwqxhhpblcbkrxgcje.supabase.co/storage/v1/object/public/email-assets/logo-horizontal.png'
 
 interface MagicLinkEmailProps {
@@ -50,7 +52,7 @@ export const MagicLinkEmail = ({
         </Section>
         {token ? (
           <Section style={codeSection}>
-            <Text style={codeLabel}>Ou saisissez ce code de vérification :</Text>
+            <Text style={codeLabel}>Ou saisissez ce code de vérification à {OTP_LENGTH} chiffres :</Text>
             <Text style={codeValue}>{token}</Text>
           </Section>
         ) : null}

@@ -88,6 +88,19 @@ async function dispatchPeppolForOrder(
         });
       } catch (e) {
         const message = String((e as any)?.message || e);
+        const httpStatus = Number((e as any)?.context?.status ?? 0);
+        // 409 = envoi déjà en cours / déjà transmis : ce n'est pas un échec, on
+        // ne réécrit surtout pas le statut en 'failed'.
+        if (httpStatus === 409) {
+          out.push({
+            invoice_id: inv.id,
+            invoice_number: inv.invoice_number ?? null,
+            type: inv.type,
+            status: inv.peppol_status ?? null,
+            ok: true,
+          });
+          continue;
+        }
         console.error(`[order-invoices] peppol send failed invoice=${inv.id}`, message);
         // Marque l'échec pour que le retry horaire reprenne la facture.
         try {

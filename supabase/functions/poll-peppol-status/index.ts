@@ -8,7 +8,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { getFalcoConfig, logFalco } from "../_shared/falco-peppol.ts";
-import { mapFalcoStatusToTransmission } from "../_shared/peppol-flow.ts";
+import { mapFalcoStatusToTransmission, deriveFalcoInvoiceLifecycle } from "../_shared/peppol-flow.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,17 +40,24 @@ function normalizeStatus(raw: unknown): string | null {
   return STATUS_MAP[s] ?? s;
 }
 
-function extractDoc(doc: any): { id: string | null; status: string | null; error: string | null } {
+function extractDoc(doc: any): {
+  id: string | null;
+  status: string | null;
+  error: string | null;
+  acknowledgedAt: string | null;
+  acknowledgementType: string | null;
+} {
   const id = doc?.id ? String(doc.id) : null;
-  const status = normalizeStatus(doc?.peppol_send_status ?? doc?.status);
-  let error: string | null = null;
-  if (Array.isArray(doc?.events)) {
-    const failure = [...doc.events]
-      .reverse()
-      .find((e: any) => e?.type === "peppol_send_failure");
-    if (failure) error = failure?.message || failure?.details || `peppol_send_failure @ ${failure?.date || "?"}`;
-  }
-  return { id, status, error };
+  // Les accusés/retours Peppol (MLR) priment sur le simple statut d'envoi.
+  const life = deriveFalcoInvoiceLifecycle(doc);
+  const status = life.status ? normalizeStatus(life.status) : null;
+  return {
+    id,
+    status,
+    error: life.error,
+    acknowledgedAt: life.acknowledgedAt,
+    acknowledgementType: life.acknowledgementType,
+  };
 }
 
 Deno.serve(async (req) => {

@@ -155,6 +155,99 @@ const attemptsMatch = (n: number, f: AttemptsFilter): boolean => {
   return n === Number(f);
 };
 
+// --- Chronologie des tentatives par facture ---
+interface TimelineEvent {
+  at: string | null;
+  label: string;
+  kind: "info" | "sent" | "ok" | "error";
+  details?: string[];
+  error?: string | null;
+}
+
+const buildTimeline = (r: InvoiceRow, tx: Transmission[]): TimelineEvent[] => {
+  const events: TimelineEvent[] = [];
+
+  events.push({ at: r.created_at, label: "Facture créée", kind: "info" });
+
+  if (r.peppol_submitted_at) {
+    events.push({
+      at: r.peppol_submitted_at,
+      label: "Envoi Peppol (facture)",
+      kind: "sent",
+      details: [
+        r.peppol_document_id ? `document : ${r.peppol_document_id}` : "",
+        r.peppol_identifier ? `destinataire : ${r.peppol_identifier}` : "",
+      ].filter(Boolean),
+    });
+  }
+
+  if (r.peppol_last_attempt_at && r.peppol_last_attempt_at !== r.peppol_submitted_at) {
+    events.push({
+      at: r.peppol_last_attempt_at,
+      label: `Dernière tentative (facture)${r.peppol_retry_count ? ` · tentative n°${r.peppol_retry_count}` : ""}`,
+      kind: r.peppol_error ? "error" : "sent",
+      error: r.peppol_error,
+    });
+  } else if (r.peppol_error) {
+    events.push({ at: r.peppol_last_attempt_at, label: "Erreur signalée sur la facture", kind: "error", error: r.peppol_error });
+  }
+
+  for (const t of tx) {
+    const who = t.receiver_name_snapshot || t.receiver_peppol_id || "destinataire inconnu";
+    const base = [
+      t.flow ? `flux : ${t.flow}` : "",
+      t.document_type ? `type : ${t.document_type}` : "",
+      t.channel ? `canal : ${t.channel}` : "",
+      t.peppol_document_id ? `document : ${t.peppol_document_id}` : "",
+      t.falco_import_id ? `import : ${t.falco_import_id}` : "",
+      t.payload_storage_path ? `payload : ${t.payload_storage_path}` : "",
+      t.payload_sha256 ? `sha256 : ${t.payload_sha256}` : "",
+      t.ubl_storage_path ? `UBL : ${t.ubl_storage_path}` : "",
+    ].filter(Boolean);
+
+    events.push({
+      at: t.created_at,
+      label: `Transmission créée → ${who}`,
+      kind: "info",
+      details: base,
+    });
+    if (t.submitted_at) {
+      events.push({ at: t.submitted_at, label: `Transmission envoyée → ${who}`, kind: "sent" });
+    }
+    if (t.last_attempt_at && t.last_attempt_at !== t.submitted_at) {
+      events.push({
+        at: t.last_attempt_at,
+        label: `Tentative${t.retry_count ? ` n°${t.retry_count}` : ""} → ${who} · ${t.status || "statut inconnu"}`,
+        kind: t.last_error ? "error" : "sent",
+        error: t.last_error,
+      });
+    } else if (t.last_error) {
+      events.push({
+        at: t.updated_at,
+        label: `Erreur → ${who} · ${t.status || "statut inconnu"}`,
+        kind: "error",
+        error: t.last_error,
+      });
+    }
+    if (t.delivered_at) {
+      events.push({ at: t.delivered_at, label: `Accusé reçu (livrée) → ${who}`, kind: "ok" });
+    }
+  }
+
+  return events.sort((a, b) => {
+    const ta = a.at ? new Date(a.at).getTime() : 0;
+    const tb = b.at ? new Date(b.at).getTime() : 0;
+    return ta - tb;
+  });
+};
+
+const EVENT_DOT: Record<TimelineEvent["kind"], string> = {
+  info: "bg-slate-400",
+  sent: "bg-blue-500",
+  ok: "bg-emerald-500",
+  error: "bg-red-500",
+};
+
 const AdminPeppolStatus = () => {
   const [filter, setFilter] = useState<PeppolFilter>("all");
   const [search, setSearch] = useState("");

@@ -551,6 +551,7 @@ const App = () => (
               <Route path="vendor-visibility" element={<LP><AdminVendorVisibility /></LP>} />
               <Route path="vendors-stripe" element={<LP><AdminVendors /></LP>} />
               <Route path="factures-fournisseurs" element={<LP><AdminVendorInvoices /></LP>} />
+              <Route path="facturation-mandat" element={<LP><AdminSelfBilling /></LP>} />
               <Route path="onboarding" element={<LP><AdminOnboarding /></LP>} />
               <Route path="pharmacies-be" element={<LP><AdminBePharmaciesPage /></LP>} />
               <Route path="produits" element={<LP><AdminProduits /></LP>} />

@@ -202,7 +202,8 @@ const AdminVendors = () => {
     return getFreshAccessToken(true);
   };
 
-  const invoke = async (action: string, vendor_id: string) => {
+  const invoke = async (action: string, vendor: VendorRow) => {
+    const vendor_id = vendor.id;
     setBusyId(vendor_id);
     try {
       // Sans session valide, `functions.invoke` envoie la clé anon en

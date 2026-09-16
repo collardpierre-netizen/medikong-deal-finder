@@ -60,9 +60,17 @@ interface VmiRow {
   trial_days_remaining: number | null;
 }
 
+interface OnboardingLink {
+  vendorId: string;
+  name: string | null;
+  email: string | null;
+  url: string;
+}
+
 const AdminVendors = () => {
   const { isAdmin, loading: authLoading } = useAdminAuth();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [onboardingLink, setOnboardingLink] = useState<OnboardingLink | null>(null);
   const [vmiBusyId, setVmiBusyId] = useState<string | null>(null);
   const [movMoqVendor, setMovMoqVendor] = useState<{ id: string; name: string | null } | null>(null);
   const [complianceVendor, setComplianceVendor] = useState<{ id: string; name: string | null } | null>(null);

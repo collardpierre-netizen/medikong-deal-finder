@@ -1,4 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
+import { useActiveAccount } from "@/contexts/ActiveAccountContext";
 import { computeCartTotals } from "@/lib/cart-totals";
 import { formatPrice } from "@/data/mock";
 import { useState, useCallback, useEffect, useMemo } from "react";
@@ -90,18 +91,24 @@ export default function CheckoutPage() {
   const [prefillSource, setPrefillSource] = useState<"saved_address" | "customer_profile" | null>(null);
   const [saveAsDefault, setSaveAsDefault] = useState(false);
   const [customerId, setCustomerId] = useState<string | null>(null);
+  const { activeKind, activeId } = useActiveAccount();
+  const activeBuyerId = activeKind === "buyer" ? activeId : null;
 
 
   // Pré-remplissage automatique depuis le compte (adresse par défaut > profil client)
+  // ⚠️ On lit et on écrit sur le compte acheteur ACTIF : sinon les adresses sont
+  // enregistrées sur un autre compte (ou refusées par la sécurité) et l'acheteur
+  // doit tout réencoder à chaque commande.
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
     (async () => {
-      const { data: cust } = await supabase
+      const base = supabase
         .from("customers")
-        .select("id, company_name, address_line1, address_line2, city, postal_code, country_code")
-        .eq("auth_user_id", user.id)
-        .maybeSingle();
+        .select("id, company_name, address_line1, address_line2, city, postal_code, country_code");
+      const { data: cust } = activeBuyerId
+        ? await base.eq("id", activeBuyerId).maybeSingle()
+        : await base.eq("auth_user_id", user.id).maybeSingle();
       if (cancelled || !cust) return;
       setCustomerId((cust as any).id);
       const { data: savedAddrs } = await supabase
@@ -141,7 +148,7 @@ export default function CheckoutPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [user]);
+  }, [user, activeBuyerId]);
 
   const { data: shippingOpts = [] } = useQuery({
     queryKey: ["shipping-options", shippingAddr.country],
@@ -385,17 +392,21 @@ export default function CheckoutPage() {
 
 
 
-      // Enregistrement en adresse par défaut (best-effort)
+      // Enregistrement en adresse par défaut. Ne bloque pas la commande, mais
+      // ⚠️ ne doit plus échouer en silence : sinon l'acheteur croit son adresse
+      // mémorisée et doit la réencoder à la commande suivante.
       if (saveAsDefault && customerId) {
         try {
-          await supabase
+          const { error: unsetErr } = await supabase
             .from("customer_shipping_addresses")
             .update({ is_default: false })
             .eq("customer_id", customerId)
             .eq("is_default", true);
-          await supabase.from("customer_shipping_addresses").insert({
+          if (unsetErr) throw unsetErr;
+          const { error: insertErr } = await supabase.from("customer_shipping_addresses").insert({
             customer_id: customerId,
             label: "Adresse par défaut",
+            contact_name: shippingAddr.company || null,
             address_l1: shippingAddr.street,
             address_l2: shippingAddr.street2 || null,
             postal_code: shippingAddr.postalCode,
@@ -403,9 +414,15 @@ export default function CheckoutPage() {
             country_code: shippingAddr.country,
             is_default: true,
           });
+          if (insertErr) throw insertErr;
           setSaveAsDefault(false);
-        } catch {
-          // best-effort — n'interrompt pas la commande
+          toast.success("Adresse enregistrée pour vos prochaines commandes");
+        } catch (addrErr: any) {
+          console.error("[checkout] enregistrement adresse par défaut échoué", addrErr);
+          toast.error("Adresse non mémorisée", {
+            description:
+              "La commande est bien enregistrée, mais l'adresse n'a pas pu être sauvegardée pour la prochaine fois.",
+          });
         }
       }
 

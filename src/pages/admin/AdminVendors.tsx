@@ -5,7 +5,15 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Copy, ExternalLink, Loader2, RefreshCw, Sparkles, SlidersHorizontal, ShieldCheck, ShieldAlert } from "lucide-react";
+import { Copy, ExternalLink, Loader2, Mail, RefreshCw, Sparkles, SlidersHorizontal, ShieldCheck, ShieldAlert } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { formatUpdatedAt } from "@/lib/format-date";
 import AdminVendorMovMoqModal from "@/components/admin/AdminVendorMovMoqModal";
 import AdminVendorComplianceModal from "@/components/admin/AdminVendorComplianceModal";
@@ -19,6 +27,7 @@ interface VendorRow {
   name: string | null;
   slug: string | null;
   type: string | null;
+  email: string | null;
   commission_rate: number | null;
   stripe_account_id: string | null;
   stripe_onboarding_complete: boolean;
@@ -59,9 +68,17 @@ interface VmiRow {
   trial_days_remaining: number | null;
 }
 
+interface OnboardingLink {
+  vendorId: string;
+  name: string | null;
+  email: string | null;
+  url: string;
+}
+
 const AdminVendors = () => {
   const { isAdmin, loading: authLoading } = useAdminAuth();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [onboardingLink, setOnboardingLink] = useState<OnboardingLink | null>(null);
   const [vmiBusyId, setVmiBusyId] = useState<string | null>(null);
   const [movMoqVendor, setMovMoqVendor] = useState<{ id: string; name: string | null } | null>(null);
   const [complianceVendor, setComplianceVendor] = useState<{ id: string; name: string | null } | null>(null);
@@ -72,7 +89,7 @@ const AdminVendors = () => {
       const { data, error } = await supabase
         .from("vendors")
         .select(
-          "id, name, slug, type, commission_rate, stripe_account_id, stripe_onboarding_complete, stripe_charges_enabled, stripe_payouts_enabled, country_code, peppol_id"
+          "id, name, slug, type, email, commission_rate, stripe_account_id, stripe_onboarding_complete, stripe_charges_enabled, stripe_payouts_enabled, country_code, peppol_id"
         )
         .order("name");
       if (error) throw error;
@@ -137,22 +154,37 @@ const AdminVendors = () => {
   if (authLoading) return <div className="p-8 text-sm text-muted-foreground">Chargement…</div>;
   if (!isAdmin) return <Navigate to="/admin/login" replace />;
 
-  const showOnboardingUrl = (url: string) => {
-    toast.success("Lien d'onboarding Stripe généré", {
-      description: url,
-      duration: 30000,
-      action: {
-        label: "Ouvrir",
-        onClick: () => window.open(url, "_blank", "noopener,noreferrer"),
-      },
-      cancel: {
-        label: "Copier",
-        onClick: () => {
-          navigator.clipboard.writeText(url);
-          toast.success("URL copiée");
-        },
-      },
-    });
+  const copyLink = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Lien copié");
+    } catch {
+      toast.error("Copie impossible", { description: "Sélectionne le lien puis copie-le manuellement." });
+    }
+  };
+
+  const openMailDraft = (link: OnboardingLink) => {
+    if (!link.email) {
+      toast.error("Aucune adresse e-mail pour ce vendeur", {
+        description: "Renseigne son e-mail dans sa fiche, ou copie le lien et envoie-le manuellement.",
+      });
+      return;
+    }
+    const subject = "Finalisez votre inscription Stripe pour MediKong";
+    const body = [
+      `Bonjour ${link.name ?? ""},`.trim(),
+      "",
+      "Pour recevoir vos paiements via MediKong, il reste à finaliser votre inscription Stripe (identité, société, coordonnées bancaires).",
+      "",
+      "Lien sécurisé à compléter :",
+      link.url,
+      "",
+      "Ce lien est temporaire : s'il a expiré, répondez à cet e-mail et nous vous en renverrons un nouveau.",
+      "",
+      "Bien à vous,",
+      "L'équipe MediKong",
+    ].join("\n");
+    window.location.href = `mailto:${encodeURIComponent(link.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
   // Renvoie un JWT réellement accepté par l'auth (rafraîchi si nécessaire).
@@ -178,7 +210,8 @@ const AdminVendors = () => {
     return getFreshAccessToken(true);
   };
 
-  const invoke = async (action: string, vendor_id: string) => {
+  const invoke = async (action: string, vendor: VendorRow) => {
+    const vendor_id = vendor.id;
     setBusyId(vendor_id);
     try {
       // Sans session valide, `functions.invoke` envoie la clé anon en
@@ -218,8 +251,12 @@ const AdminVendors = () => {
       }
       if (action === "create-account" || action === "refresh-link") {
         const url = (data as any)?.url || (data as any)?.onboarding_url;
-        if (url) showOnboardingUrl(url);
-        else toast.success("OK", { description: JSON.stringify(data) });
+        if (url) {
+          setOnboardingLink({ vendorId: vendor.id, name: vendor.name, email: vendor.email, url });
+          toast.success("Lien Stripe généré");
+        } else {
+          toast.success("OK", { description: JSON.stringify(data) });
+        }
       } else if (action === "check-status") {
         toast.success("Statut mis à jour", {
           description: `charges=${(data as any)?.charges_enabled} · payouts=${(data as any)?.payouts_enabled}`,
@@ -359,7 +396,7 @@ const AdminVendors = () => {
                       {st === "none" && (
                         <button
                           disabled={busy}
-                          onClick={() => invoke("create-account", v.id)}
+                          onClick={() => invoke("create-account", v)}
                           className="text-[12px] px-3 py-1.5 rounded-md bg-[#1B5BDA] text-white hover:bg-[#1747b0] disabled:opacity-50"
                         >
                           Créer compte Stripe
@@ -368,7 +405,7 @@ const AdminVendors = () => {
                       {st === "pending" && (
                         <button
                           disabled={busy}
-                          onClick={() => invoke("refresh-link", v.id)}
+                          onClick={() => invoke("refresh-link", v)}
                           className="text-[12px] px-3 py-1.5 rounded-md bg-[#F59E0B] text-white hover:bg-[#d8870a] disabled:opacity-50"
                         >
                           Régénérer lien
@@ -378,7 +415,7 @@ const AdminVendors = () => {
                         <>
                           <button
                             disabled={busy}
-                            onClick={() => invoke("check-status", v.id)}
+                            onClick={() => invoke("check-status", v)}
                             className="text-[12px] px-3 py-1.5 rounded-md border border-[#E2E8F0] bg-white hover:bg-[#F1F5F9] disabled:opacity-50"
                           >
                             Vérifier statut
@@ -427,6 +464,58 @@ const AdminVendors = () => {
         open={!!complianceVendor}
         onOpenChange={(v) => { if (!v) setComplianceVendor(null); }}
       />
+
+      <Dialog open={!!onboardingLink} onOpenChange={(o) => { if (!o) setOnboardingLink(null); }}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Lien Stripe à envoyer</DialogTitle>
+            <DialogDescription>
+              {onboardingLink?.name ?? "Vendeur"} doit ouvrir ce lien pour finaliser son inscription Stripe.
+              Le lien est temporaire : régénère-le s'il a expiré.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <textarea
+              readOnly
+              value={onboardingLink?.url ?? ""}
+              onFocus={(e) => e.currentTarget.select()}
+              className="w-full h-24 text-[12px] font-mono p-2 rounded-md border border-[#E2E8F0] bg-[#F8FAFC] break-all"
+            />
+            <p className="text-[12px] text-muted-foreground">
+              Destinataire :{" "}
+              {onboardingLink?.email ? (
+                <span className="font-medium">{onboardingLink.email}</span>
+              ) : (
+                <span className="text-[#B91C1C]">aucune adresse e-mail enregistrée pour ce vendeur</span>
+              )}
+            </p>
+          </div>
+
+          <DialogFooter className="gap-2 sm:justify-start">
+            <button
+              onClick={() => onboardingLink && copyLink(onboardingLink.url)}
+              className="inline-flex items-center gap-1.5 text-[12px] px-3 py-1.5 rounded-md border border-[#E2E8F0] bg-white hover:bg-[#F1F5F9]"
+            >
+              <Copy size={12} /> Copier le lien
+            </button>
+            <button
+              onClick={() => onboardingLink && openMailDraft(onboardingLink)}
+              className="inline-flex items-center gap-1.5 text-[12px] px-3 py-1.5 rounded-md bg-[#1B5BDA] text-white hover:bg-[#1747b0]"
+            >
+              <Mail size={12} /> Préparer l'e-mail
+            </button>
+            <a
+              href={onboardingLink?.url ?? "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-[12px] px-3 py-1.5 rounded-md border border-[#E2E8F0] bg-white hover:bg-[#F1F5F9]"
+            >
+              <ExternalLink size={12} /> Ouvrir
+            </a>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

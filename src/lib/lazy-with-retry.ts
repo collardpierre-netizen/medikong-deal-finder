@@ -338,6 +338,28 @@ function isLikelyTransient(error: unknown, probe: ChunkProbeResult | null) {
   );
 }
 
+/**
+ * Delai de sécurité avant d'abandonner l'attente d'un rechargement planifié.
+ * Sans ça, la promesse « en attente de reload » ne se résout jamais : si le
+ * rechargement n'aboutit pas (onglet en arrière-plan, navigation bloquée,
+ * timer gelé), Suspense reste sur le spinner indéfiniment — la page « tourne
+ * dans le vide ». Passé ce délai on rejette pour afficher l'écran de retry.
+ */
+const PENDING_RELOAD_SAFETY_MS = 12_000;
+
+function pendingUntilReload(key: string, reason: string, probe: ChunkProbeResult | null) {
+  return new Promise<never>((_resolve, reject) => {
+    setTimeout(() => {
+      const err = new Error(
+        `Lazy chunk "${key}" : rechargement automatique non abouti (${reason}). Réessayez.`,
+      ) as Error & { chunkKey?: string; probe?: ChunkProbeResult | null };
+      err.chunkKey = key;
+      err.probe = probe;
+      reject(err);
+    }, PENDING_RELOAD_SAFETY_MS);
+  });
+}
+
 async function attemptImport<T>(
   importer: () => Promise<{ default: T }>,
 ): Promise<{ mod: { default: T } | null; error: unknown }> {

@@ -93,15 +93,19 @@ export default function CheckoutPage() {
 
 
   // Pré-remplissage automatique depuis le compte (adresse par défaut > profil client)
+  // ⚠️ On lit et on écrit sur le compte acheteur ACTIF : sinon les adresses sont
+  // enregistrées sur un autre compte (ou refusées par la sécurité) et l'acheteur
+  // doit tout réencoder à chaque commande.
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
     (async () => {
-      const { data: cust } = await supabase
+      const base = supabase
         .from("customers")
-        .select("id, company_name, address_line1, address_line2, city, postal_code, country_code")
-        .eq("auth_user_id", user.id)
-        .maybeSingle();
+        .select("id, company_name, address_line1, address_line2, city, postal_code, country_code");
+      const { data: cust } = activeBuyerId
+        ? await base.eq("id", activeBuyerId).maybeSingle()
+        : await base.eq("auth_user_id", user.id).maybeSingle();
       if (cancelled || !cust) return;
       setCustomerId((cust as any).id);
       const { data: savedAddrs } = await supabase

@@ -4,7 +4,7 @@ import { computeCartTotals } from "@/lib/cart-totals";
 import { formatPrice } from "@/data/mock";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
-import { Download, Upload, Trash2, Minus, Plus, ShoppingCart, ChevronDown, ChevronUp, Package, AlertTriangle, HelpCircle, CheckCircle2, Store, Truck, AlertCircle } from "lucide-react";
+import { Download, Upload, Trash2, Minus, Plus, ShoppingCart, ChevronDown, ChevronUp, Package, AlertTriangle, HelpCircle, CheckCircle2, Store, Truck, AlertCircle, QrCode } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";

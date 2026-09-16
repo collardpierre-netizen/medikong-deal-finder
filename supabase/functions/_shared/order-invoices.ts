@@ -10,6 +10,13 @@
 // pas signé le mandat de facturation (vendors.mandate_signed_at). Le cas est
 // signalé à l'admin et tracé, jamais silencieux.
 
+import {
+  acquireLock,
+  releaseLock,
+  orderInvoicesLockKey,
+  IDEMPOTENCY_TTL,
+} from "./idempotency.ts";
+
 export type InvoiceLink = { label: string; url: string };
 
 export type PeppolDispatchEntry = {
@@ -27,6 +34,8 @@ export type EmitOrderInvoicesResult = {
   skipped_no_mandate: string[];
   skipped_disabled: string[];
   peppol_dispatch: PeppolDispatchEntry[];
+  /** true quand une émission est déjà en cours pour cette commande (rien n'a été refait). */
+  skipped_in_progress?: boolean;
 };
 
 // Statuts considérés comme déjà transmis : on ne renvoie pas.
@@ -79,6 +88,19 @@ async function dispatchPeppolForOrder(
         });
       } catch (e) {
         const message = String((e as any)?.message || e);
+        const httpStatus = Number((e as any)?.context?.status ?? 0);
+        // 409 = envoi déjà en cours / déjà transmis : ce n'est pas un échec, on
+        // ne réécrit surtout pas le statut en 'failed'.
+        if (httpStatus === 409) {
+          out.push({
+            invoice_id: inv.id,
+            invoice_number: inv.invoice_number ?? null,
+            type: inv.type,
+            status: inv.peppol_status ?? null,
+            ok: true,
+          });
+          continue;
+        }
         console.error(`[order-invoices] peppol send failed invoice=${inv.id}`, message);
         // Marque l'échec pour que le retry horaire reprenne la facture.
         try {
@@ -162,6 +184,22 @@ export async function emitOrderInvoices(
     skipped_disabled: [],
     peppol_dispatch: [],
   };
+
+  // Idempotence : un seul cycle d'émission par commande à la fois. Protège des
+  // marquages « payée » répétés (webhook Stripe rejoué, sweep virements, admin).
+  const orderLockKey = orderInvoicesLockKey(orderId);
+  const gotOrderLock = await acquireLock(
+    supabase,
+    orderLockKey,
+    IDEMPOTENCY_TTL.orderInvoices,
+    "emit-order-invoices",
+  );
+  if (!gotOrderLock) {
+    console.log(`[order-invoices] skipped, already in progress order=${orderId}`);
+    result.skipped_in_progress = true;
+    return result;
+  }
+
   try {
     const { data: vendorRows, error } = await supabase
       .from("order_lines")
@@ -246,6 +284,8 @@ export async function emitOrderInvoices(
     result.peppol_dispatch = await dispatchPeppolForOrder(supabase, orderId);
   } catch (e) {
     console.error("[order-invoices] fatal", e);
+  } finally {
+    await releaseLock(supabase, orderLockKey);
   }
   return result;
 }

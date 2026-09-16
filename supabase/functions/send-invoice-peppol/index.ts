@@ -21,6 +21,12 @@ import {
   type FalcoTaxSubtotal,
 } from "../_shared/falco-peppol.ts";
 import { buildSelfBillingMandateMention } from "../_shared/invoice-pdf.ts";
+import {
+  acquireLock,
+  releaseLock,
+  peppolInvoiceLockKey,
+  IDEMPOTENCY_TTL,
+} from "../_shared/idempotency.ts";
 
 const BUCKET = "invoices";
 
@@ -168,6 +174,17 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { error: "method_not_allowed" });
 
+  // Verrou d'idempotence : libéré sur tous les chemins de sortie.
+  let lockKey: string | null = null;
+  let lockClient: any = null;
+  const release = async () => {
+    if (lockKey && lockClient) {
+      const k = lockKey;
+      lockKey = null;
+      await releaseLock(lockClient, k);
+    }
+  };
+
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -282,6 +299,22 @@ Deno.serve(async (req) => {
     // avec le message dans peppol_error via persistFalcoResult().
 
 
+    // Idempotence : un seul envoi en vol par facture (retry horaire, webhook,
+    // marquage « payée » répété…). Le verrou expire tout seul.
+    lockClient = supabase;
+    const key = peppolInvoiceLockKey(inv.id);
+    const got = await acquireLock(supabase, key, IDEMPOTENCY_TTL.invoicePeppol, "send-invoice-peppol");
+    if (!got) {
+      logFalco("info", "send_skipped_in_progress", { invoice_id: inv.id });
+      return json(409, {
+        ok: false,
+        error: "already_in_progress",
+        invoice_id: inv.id,
+        hint: "Un envoi Peppol est déjà en cours pour cette facture.",
+      });
+    }
+    lockKey = key;
+
     const built = inv.type === "commission"
       ? await buildCommissionMetadata(supabase, inv)
       : await buildSelfBillingMetadata(supabase, inv);
@@ -292,6 +325,7 @@ Deno.serve(async (req) => {
         peppol_error: `send_build_failed: ${built.error}`,
       }).eq("id", inv.id);
       logFalco("error", "send_build_failed", { invoice_id: inv.id, type: inv.type, error: built.error });
+      await release();
       return json(422, { ok: false, error: "build_failed", details: built.error });
     }
 
@@ -332,6 +366,8 @@ Deno.serve(async (req) => {
       document_id: falcoRes.document_id,
     });
 
+    await release();
+
     return json(falcoRes.ok ? 200 : 502, {
       ok: falcoRes.ok,
       invoice_id: inv.id,
@@ -344,6 +380,7 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     console.error("send-invoice-peppol error:", error);
+    await release();
 
     return new Response(JSON.stringify({
       success: false,

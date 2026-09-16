@@ -6777,6 +6777,27 @@ export type Database = {
           },
         ]
       }
+      idempotency_locks: {
+        Row: {
+          acquired_at: string
+          expires_at: string
+          holder: string | null
+          lock_key: string
+        }
+        Insert: {
+          acquired_at?: string
+          expires_at: string
+          holder?: string | null
+          lock_key: string
+        }
+        Update: {
+          acquired_at?: string
+          expires_at?: string
+          holder?: string | null
+          lock_key?: string
+        }
+        Relationships: []
+      }
       import_job_payload: {
         Row: {
           created_at: string
@@ -35328,6 +35349,7 @@ export type Database = {
         Args: { _reason: string; _req_id: string }
         Returns: undefined
       }
+      release_idempotency_lock: { Args: { _key: string }; Returns: undefined }
       release_scraper_lock: { Args: { _key: string }; Returns: undefined }
       request_subscription_extension: {
         Args: { _callback_window?: string; _reason?: string }
@@ -36050,6 +36072,10 @@ export type Database = {
       trigger_qogita_offers_api_sync: {
         Args: { _body?: Json }
         Returns: number
+      }
+      try_acquire_idempotency_lock: {
+        Args: { _holder?: string; _key: string; _ttl_seconds?: number }
+        Returns: boolean
       }
       unaccent: { Args: { "": string }; Returns: string }
       update_brand_product_counts: { Args: never; Returns: undefined }

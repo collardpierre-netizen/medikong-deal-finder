@@ -23,6 +23,12 @@ import {
   buildVendorCopyFalcoMetadata,
   assertPayloadMatchesInvoice,
 } from "../_shared/peppol-flow.ts";
+import {
+  acquireLock,
+  releaseLock,
+  peppolInvoiceLockKey,
+  IDEMPOTENCY_TTL,
+} from "../_shared/idempotency.ts";
 
 
 const MAX_RETRIES = 3;
@@ -189,42 +195,58 @@ Deno.serve(async (req) => {
     if (qErr) return json(500, { error: "query_failed", details: qErr.message });
 
     const results: any[] = [];
+    let skippedInProgress = 0;
     for (const inv of candidates || []) {
-      const built = inv.type === "commission"
-        ? await buildCommissionMetadata(supabase, inv)
-        : await buildSelfBillingMetadata(supabase, inv);
-
-      if ("error" in built) {
-        // Count attempt but keep failed; log reason.
-        await supabase.from("order_invoices").update({
-          peppol_retry_count: (inv.peppol_retry_count || 0) + 1,
-          peppol_last_attempt_at: new Date().toISOString(),
-          peppol_error: `retry_build_failed: ${built.error}`,
-        }).eq("id", inv.id);
-        logFalco("error", "retry_build_failed", { invoice_id: inv.id, type: inv.type, error: built.error });
-        results.push({ id: inv.id, ok: false, error: built.error });
+      // Idempotence : si un envoi de cette facture est déjà en vol (autre run du
+      // cron, envoi manuel admin, dispatch d'émission), on ne double pas.
+      const lockKey = peppolInvoiceLockKey(inv.id);
+      const got = await acquireLock(supabase, lockKey, IDEMPOTENCY_TTL.invoicePeppol, "retry-peppol-failed");
+      if (!got) {
+        skippedInProgress++;
+        logFalco("info", "retry_skipped_in_progress", { invoice_id: inv.id });
+        results.push({ id: inv.id, ok: true, skipped: "already_in_progress" });
         continue;
       }
 
-      const falcoRes = await submitInvoiceToFalco(built.pdfBytes, built.metadata, {
-        pdfFilename: `${inv.invoice_number}.pdf`,
-        caller: "retry-peppol-failed",
-        invoiceId: inv.id,
-      });
-      await persistFalcoResult(supabase, inv.id, falcoRes);
-      // Always bump retry counter.
-      await supabase.from("order_invoices").update({
-        peppol_retry_count: (inv.peppol_retry_count || 0) + 1,
-      }).eq("id", inv.id);
+      try {
+        const built = inv.type === "commission"
+          ? await buildCommissionMetadata(supabase, inv)
+          : await buildSelfBillingMetadata(supabase, inv);
 
-      results.push({
-        id: inv.id,
-        type: inv.type,
-        ok: falcoRes.ok,
-        peppol_status: falcoRes.peppol_status,
-        attempt: (inv.peppol_retry_count || 0) + 1,
-        error: falcoRes.peppol_error,
-      });
+        if ("error" in built) {
+          // Count attempt but keep failed; log reason.
+          await supabase.from("order_invoices").update({
+            peppol_retry_count: (inv.peppol_retry_count || 0) + 1,
+            peppol_last_attempt_at: new Date().toISOString(),
+            peppol_error: `retry_build_failed: ${built.error}`,
+          }).eq("id", inv.id);
+          logFalco("error", "retry_build_failed", { invoice_id: inv.id, type: inv.type, error: built.error });
+          results.push({ id: inv.id, ok: false, error: built.error });
+          continue;
+        }
+
+        const falcoRes = await submitInvoiceToFalco(built.pdfBytes, built.metadata, {
+          pdfFilename: `${inv.invoice_number}.pdf`,
+          caller: "retry-peppol-failed",
+          invoiceId: inv.id,
+        });
+        await persistFalcoResult(supabase, inv.id, falcoRes);
+        // Always bump retry counter.
+        await supabase.from("order_invoices").update({
+          peppol_retry_count: (inv.peppol_retry_count || 0) + 1,
+        }).eq("id", inv.id);
+
+        results.push({
+          id: inv.id,
+          type: inv.type,
+          ok: falcoRes.ok,
+          peppol_status: falcoRes.peppol_status,
+          attempt: (inv.peppol_retry_count || 0) + 1,
+          error: falcoRes.peppol_error,
+        });
+      } finally {
+        await releaseLock(supabase, lockKey);
+      }
     }
 
     // ── Flux B : reprise des transmissions acheteur en échec (backoff exponentiel).
@@ -263,6 +285,7 @@ Deno.serve(async (req) => {
     return json(200, {
       ok: true,
       scanned: (candidates || []).length,
+      skipped_in_progress: skippedInProgress,
       results,
       buyer_transmissions_retried: buyerResults.length,
       buyer_results: buyerResults,

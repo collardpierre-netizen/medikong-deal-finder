@@ -4,7 +4,7 @@ import { computeCartTotals } from "@/lib/cart-totals";
 import { formatPrice } from "@/data/mock";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/contexts/AuthContext";
-import { Download, Upload, Trash2, Minus, Plus, ShoppingCart, ChevronDown, ChevronUp, Package, AlertTriangle, HelpCircle, CheckCircle2, Store, Truck, AlertCircle } from "lucide-react";
+import { Download, Upload, Trash2, Minus, Plus, ShoppingCart, ChevronDown, ChevronUp, Package, AlertTriangle, HelpCircle, CheckCircle2, Store, Truck, AlertCircle, QrCode } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -718,19 +718,33 @@ export default function CartPage() {
                     }
 
                     return (
-                      <motion.div whileHover={{ scale: disabled ? 1 : 1.02 }} whileTap={{ scale: disabled ? 1 : 0.98 }} title={tooltip}>
+                      <>
+                        <motion.div whileHover={{ scale: disabled ? 1 : 1.02 }} whileTap={{ scale: disabled ? 1 : 0.98 }} title={tooltip}>
+                          <Link
+                            to="/checkout"
+                            aria-disabled={disabled}
+                            className={`block w-full text-center font-bold py-3.5 rounded-lg text-sm transition-colors ${
+                              !disabled
+                                ? "bg-mk-navy text-white hover:opacity-90"
+                                : "bg-gray-200 text-mk-sec cursor-not-allowed pointer-events-none"
+                            }`}
+                          >
+                            {validating ? "Vérification…" : "Passer commande"}
+                          </Link>
+                        </motion.div>
                         <Link
-                          to="/checkout"
+                          to="/checkout?paiement=sepa"
                           aria-disabled={disabled}
-                          className={`block w-full text-center font-bold py-3.5 rounded-lg text-sm transition-colors ${
+                          title={tooltip}
+                          className={`mt-2 flex items-center justify-center gap-1.5 w-full text-center font-bold py-3 rounded-lg text-sm border transition-colors ${
                             !disabled
-                              ? "bg-mk-navy text-white hover:opacity-90"
-                              : "bg-gray-200 text-mk-sec cursor-not-allowed pointer-events-none"
+                              ? "border-mk-navy text-mk-navy hover:bg-mk-alt"
+                              : "border-mk-line text-mk-sec cursor-not-allowed pointer-events-none"
                           }`}
                         >
-                          {validating ? "Vérification…" : "Passer commande"}
+                          <QrCode size={15} /> Payer par virement SEPA (QR)
                         </Link>
-                      </motion.div>
+                      </>
                     );
                   })()}
 

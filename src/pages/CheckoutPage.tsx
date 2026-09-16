@@ -2,7 +2,7 @@ import { Layout } from "@/components/layout/Layout";
 import { computeCartTotals } from "@/lib/cart-totals";
 import { formatPrice } from "@/data/mock";
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/shared/PageTransition";
 import { useCart } from "@/hooks/useCart";
@@ -82,7 +82,10 @@ export default function CheckoutPage() {
   const [billingAddr, setBillingAddr] = useState<AddressForm>(emptyAddress);
   const [sameAsBilling, setSameAsBilling] = useState(true);
   const [shipping, setShipping] = useState(0);
-  const [payment, setPayment] = useState(0);
+  // ?paiement=sepa (bouton « Payer par virement SEPA » du panier) présélectionne
+  // le virement bancaire SEPA — index 2 de `paymentMethods`.
+  const [searchParams] = useSearchParams();
+  const [payment, setPayment] = useState(searchParams.get("paiement") === "sepa" ? 2 : 0);
   const [submitting, setSubmitting] = useState(false);
   const [prefillSource, setPrefillSource] = useState<"saved_address" | "customer_profile" | null>(null);
   const [saveAsDefault, setSaveAsDefault] = useState(false);

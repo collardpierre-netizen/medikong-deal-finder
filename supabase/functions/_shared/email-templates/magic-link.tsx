@@ -21,11 +21,13 @@ const LOGO_URL = 'https://iokwqxhhpblcbkrxgcje.supabase.co/storage/v1/object/pub
 interface MagicLinkEmailProps {
   siteName: string
   confirmationUrl: string
+  token?: string
 }
 
 export const MagicLinkEmail = ({
   siteName,
   confirmationUrl,
+  token,
 }: MagicLinkEmailProps) => (
   <Html lang="fr" dir="ltr">
     <Head />
@@ -46,6 +48,12 @@ export const MagicLinkEmail = ({
             Se connecter
           </Button>
         </Section>
+        {token ? (
+          <Section style={codeSection}>
+            <Text style={codeLabel}>Ou saisissez ce code de vérification :</Text>
+            <Text style={codeValue}>{token}</Text>
+          </Section>
+        ) : null}
         <Hr style={divider} />
         <Text style={footer}>
           Si vous n'avez pas demandé ce lien, vous pouvez ignorer cet e-mail.
@@ -88,3 +96,13 @@ const button = {
 }
 const footer = { fontSize: '12px', color: '#9ca3af', margin: '20px 0 4px' }
 const footerBrand = { fontSize: '11px', color: '#9ca3af', margin: '0' }
+const codeSection = { textAlign: 'center' as const, margin: '8px 0 24px' }
+const codeLabel = { fontSize: '13px', color: '#3b4a5a', margin: '0 0 8px' }
+const codeValue = {
+  fontSize: '28px',
+  fontWeight: 'bold' as const,
+  letterSpacing: '6px',
+  color: '#1e3a5f',
+  margin: '0',
+  fontFamily: "'DM Sans', Arial, sans-serif",
+}

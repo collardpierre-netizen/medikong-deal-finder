@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Send, Loader2, ExternalLink, AlertTriangle } from "lucide-react";
 
-type PeppolFilter = "all" | "sent" | "failed" | "pending" | "none";
+type PeppolFilter = "all" | "accepted" | "sent" | "rejected" | "failed" | "pending" | "none";
 
 interface Transmission {
   id: string;

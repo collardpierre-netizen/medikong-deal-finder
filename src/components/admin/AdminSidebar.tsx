@@ -37,6 +37,7 @@ const sections: NavSection[] = [
       { label: "Vendeurs à valider", path: "/admin/vendeurs/a-valider", icon: ShieldCheck },
       { label: "Anonymisation vendeurs", path: "/admin/vendor-visibility", icon: EyeOff },
       { label: "Vendors Stripe", path: "/admin/vendors-stripe", icon: CreditCard },
+      { label: "Factures fournisseurs", path: "/admin/factures-fournisseurs", icon: FileText },
       { labelKey: "externalVendors", path: "/admin/vendeurs-externes", icon: ExternalLink },
       { labelKey: "onboarding", path: "/admin/onboarding", icon: UserPlus },
       { label: "Emails onboarding vendeur", path: "/admin/vendor-onboarding-emails", icon: Mail },

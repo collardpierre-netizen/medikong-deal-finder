@@ -366,6 +366,8 @@ Deno.serve(async (req) => {
       document_id: falcoRes.document_id,
     });
 
+    await release();
+
     return json(falcoRes.ok ? 200 : 502, {
       ok: falcoRes.ok,
       invoice_id: inv.id,
@@ -378,6 +380,7 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     console.error("send-invoice-peppol error:", error);
+    await release();
 
     return new Response(JSON.stringify({
       success: false,

@@ -29,6 +29,7 @@ import {
   peppolInvoiceLockKey,
   IDEMPOTENCY_TTL,
 } from "../_shared/idempotency.ts";
+import { notifyExhaustedPeppolInvoices } from "../_shared/peppol-alerts.ts";
 
 
 const MAX_RETRIES = 3;
@@ -276,6 +277,9 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ── Alertes admin : factures encore en erreur après N tentatives.
+    const alerts = await notifyExhaustedPeppolInvoices(supabase, { caller: "retry-peppol-failed" });
+
     logFalco("info", "retry_batch_done", {
       scanned: (candidates || []).length,
       succeeded: results.filter((r) => r.ok && r.peppol_status !== "failed").length,
@@ -291,6 +295,7 @@ Deno.serve(async (req) => {
       buyer_results: buyerResults,
       cutoff,
       max_retries: MAX_RETRIES,
+      admin_alerts: alerts,
     });
   } catch (e) {
     console.error("[retry-peppol-failed]", e);

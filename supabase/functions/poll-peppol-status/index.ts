@@ -9,6 +9,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { getFalcoConfig, logFalco } from "../_shared/falco-peppol.ts";
 import { mapFalcoStatusToTransmission, deriveFalcoInvoiceLifecycle } from "../_shared/peppol-flow.ts";
+import { notifyExhaustedPeppolInvoices } from "../_shared/peppol-alerts.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -261,6 +262,9 @@ Deno.serve(async (req) => {
 
 
 
+    // ── Alertes admin : factures encore en erreur après N tentatives.
+    const alerts = await notifyExhaustedPeppolInvoices(supabase, { caller: "poll-peppol-status" });
+
     logFalco("info", "poll_done", {
       latency_ms: Date.now() - started,
       documents_returned: documents.length,
@@ -282,6 +286,7 @@ Deno.serve(async (req) => {
       transmissions_checked: txChecked,
       transmissions_updated: txUpdated,
       changes,
+      admin_alerts: alerts,
     });
 
   } catch (error: any) {

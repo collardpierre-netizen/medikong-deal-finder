@@ -67,6 +67,7 @@ const CheckoutPage = lazyWithRetry(() => import("./pages/CheckoutPage"), "Checko
 const ConfirmationPage = lazyWithRetry(() => import("./pages/ConfirmationPage"), "ConfirmationPage");
 const OrderPaymentConfirmationPage = lazyWithRetry(() => import("./pages/OrderPaymentConfirmationPage"), "OrderPaymentConfirmationPage");
 const OrderDetailPage = lazyWithRetry(() => import("./pages/OrderDetailPage"), "OrderDetailPage");
+const OrderSepaPaymentPage = lazyWithRetry(() => import("./pages/OrderSepaPaymentPage"), "OrderSepaPaymentPage");
 const DeliveryConfirmationPage = lazyWithRetry(() => import("./pages/DeliveryConfirmationPage"), "DeliveryConfirmationPage");
 const LoginPage = lazyWithRetry(() => import("./pages/LoginPage"), "LoginPage");
 const SelectAccountPage = lazyWithRetry(() => import("./pages/SelectAccountPage"), "SelectAccountPage");

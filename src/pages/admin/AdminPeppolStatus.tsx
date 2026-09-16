@@ -184,7 +184,7 @@ const AdminPeppolStatus = () => {
         const { data: tx, error: txErr } = await supabase
           .from("peppol_transmissions")
           .select(
-            "id, order_invoice_id, status, channel, retry_count, last_error, submitted_at, last_attempt_at, delivered_at, receiver_name_snapshot, receiver_peppol_id",
+            "id, order_invoice_id, status, channel, retry_count, last_error, submitted_at, last_attempt_at, delivered_at, receiver_name_snapshot, receiver_peppol_id, document_type, flow, peppol_document_id, falco_import_id, payload_storage_path, payload_sha256, ubl_storage_path, created_at, updated_at",
           )
           .in("order_invoice_id", ids)
           .order("created_at", { ascending: false });

@@ -64,6 +64,13 @@
       "when": 1789561907964,
       "tag": "0008_vendors_self_billing_enabled",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789578793987,
+      "tag": "0009_order_bank_transfers_tracking",
+      "breakpoints": true
     }
   ]
 }

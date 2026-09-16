@@ -184,6 +184,22 @@ export async function emitOrderInvoices(
     skipped_disabled: [],
     peppol_dispatch: [],
   };
+
+  // Idempotence : un seul cycle d'émission par commande à la fois. Protège des
+  // marquages « payée » répétés (webhook Stripe rejoué, sweep virements, admin).
+  const orderLockKey = orderInvoicesLockKey(orderId);
+  const gotOrderLock = await acquireLock(
+    supabase,
+    orderLockKey,
+    IDEMPOTENCY_TTL.orderInvoices,
+    "emit-order-invoices",
+  );
+  if (!gotOrderLock) {
+    console.log(`[order-invoices] skipped, already in progress order=${orderId}`);
+    result.skipped_in_progress = true;
+    return result;
+  }
+
   try {
     const { data: vendorRows, error } = await supabase
       .from("order_lines")

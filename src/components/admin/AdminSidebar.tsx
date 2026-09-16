@@ -1,5 +1,7 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Handshake } from "lucide-react";
+import { Handshake
+  Landmark,
+} from "lucide-react";
 import { useI18n } from "@/contexts/I18nContext";
 import logoLight from "@/assets/logo-horizontal.png";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
@@ -39,6 +41,7 @@ const sections: NavSection[] = [
       { label: "Vendors Stripe", path: "/admin/vendors-stripe", icon: CreditCard },
       { label: "Factures fournisseurs", path: "/admin/factures-fournisseurs", icon: FileText },
       { label: "Facturation mandat", path: "/admin/facturation-mandat", icon: FileText },
+      { label: "Réception virements", path: "/admin/virements", icon: Landmark },
       { labelKey: "externalVendors", path: "/admin/vendeurs-externes", icon: ExternalLink },
       { labelKey: "onboarding", path: "/admin/onboarding", icon: UserPlus },
       { label: "Emails onboarding vendeur", path: "/admin/vendor-onboarding-emails", icon: Mail },

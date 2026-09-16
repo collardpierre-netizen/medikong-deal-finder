@@ -1,4 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
+import { useActiveAccount } from "@/contexts/ActiveAccountContext";
 import { computeCartTotals } from "@/lib/cart-totals";
 import { formatPrice } from "@/data/mock";
 import { useState, useCallback, useEffect, useMemo } from "react";

@@ -21,6 +21,12 @@ import {
   type FalcoTaxSubtotal,
 } from "../_shared/falco-peppol.ts";
 import { buildSelfBillingMandateMention } from "../_shared/invoice-pdf.ts";
+import {
+  acquireLock,
+  releaseLock,
+  peppolInvoiceLockKey,
+  IDEMPOTENCY_TTL,
+} from "../_shared/idempotency.ts";
 
 const BUCKET = "invoices";
 

@@ -284,6 +284,8 @@ export async function emitOrderInvoices(
     result.peppol_dispatch = await dispatchPeppolForOrder(supabase, orderId);
   } catch (e) {
     console.error("[order-invoices] fatal", e);
+  } finally {
+    await releaseLock(supabase, orderLockKey);
   }
   return result;
 }

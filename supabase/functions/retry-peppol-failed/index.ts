@@ -23,6 +23,12 @@ import {
   buildVendorCopyFalcoMetadata,
   assertPayloadMatchesInvoice,
 } from "../_shared/peppol-flow.ts";
+import {
+  acquireLock,
+  releaseLock,
+  peppolInvoiceLockKey,
+  IDEMPOTENCY_TTL,
+} from "../_shared/idempotency.ts";
 
 
 const MAX_RETRIES = 3;

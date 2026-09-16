@@ -591,6 +591,23 @@ const AdminCommandeManuelle = () => {
           toast.warning("Commande enregistrée, mais l'émission des factures fournisseur a échoué.");
         }
       }
+      // Annulation : informe l'acheteur par e-mail (best-effort, idempotent côté serveur).
+      if (orderIdForNotes && status === "cancelled") {
+        try {
+          const { data: notifData, error: notifErr } = await supabase.functions.invoke("notify-order-cancelled", {
+            body: { order_id: orderIdForNotes },
+          });
+          if (notifErr) {
+            toast.warning("Commande annulée, mais l'e-mail d'annulation au client n'a pas pu être envoyé.");
+          } else if ((notifData as any)?.success === false) {
+            toast.warning("Commande annulée : aucun e-mail envoyé (adresse client manquante ou commande de test).");
+          } else {
+            toast.success("E-mail d'annulation envoyé au client.");
+          }
+        } catch {
+          toast.warning("Commande annulée, mais l'e-mail d'annulation au client n'a pas pu être envoyé.");
+        }
+      }
       if (draftId) {
         await supabase.rpc("admin_delete_manual_order_draft", { _id: draftId });
       }

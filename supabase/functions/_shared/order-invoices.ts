@@ -16,6 +16,7 @@ export type EmitOrderInvoicesResult = {
   links: InvoiceLink[];
   emitted_vendors: string[];
   skipped_no_mandate: string[];
+  skipped_disabled: string[];
 };
 
 async function flagMissingMandate(
@@ -64,7 +65,12 @@ export async function emitOrderInvoices(
   orderId: string,
   paidAtIso: string,
 ): Promise<EmitOrderInvoicesResult> {
-  const result: EmitOrderInvoicesResult = { links: [], emitted_vendors: [], skipped_no_mandate: [] };
+  const result: EmitOrderInvoicesResult = {
+    links: [],
+    emitted_vendors: [],
+    skipped_no_mandate: [],
+    skipped_disabled: [],
+  };
   try {
     const { data: vendorRows, error } = await supabase
       .from("order_lines")
@@ -79,24 +85,38 @@ export async function emitOrderInvoices(
 
     const [{ data: order }, { data: vendors }] = await Promise.all([
       supabase.from("orders").select("order_number").eq("id", orderId).maybeSingle(),
-      supabase.from("vendors").select("id, name, company_name, mandate_signed_at").in("id", vendorIds),
+      supabase
+        .from("vendors")
+        .select("id, name, company_name, mandate_signed_at, self_billing_enabled")
+        .in("id", vendorIds),
     ]);
     const vendorMap = new Map<string, any>((vendors || []).map((v: any) => [v.id, v]));
     const orderNumber = order?.order_number ?? null;
 
     for (const vendorId of vendorIds) {
       const vendor = vendorMap.get(vendorId);
-      if (!vendor?.mandate_signed_at) {
-        result.skipped_no_mandate.push(vendorId);
-        await flagMissingMandate(
-          supabase,
-          orderId,
-          vendorId,
-          vendor?.company_name || vendor?.name || vendorId,
-          orderNumber,
-        );
+      const vendorLabel = vendor?.company_name || vendor?.name || vendorId;
+      if (vendor && vendor.self_billing_enabled === false) {
+        result.skipped_disabled.push(vendorId);
+        try {
+          await supabase.from("audit_logs").insert({
+            action: "self_billing_skipped_disabled",
+            module: "invoicing",
+            detail:
+              `Commande ${orderNumber ?? orderId} : facturation au nom et pour le compte de ` +
+              `${vendorLabel} désactivée pour ce fournisseur, aucune facture émise.`,
+          });
+        } catch (e) {
+          console.error("[order-invoices] audit_logs insert failed", e);
+        }
         continue;
       }
+      if (!vendor?.mandate_signed_at) {
+        result.skipped_no_mandate.push(vendorId);
+        await flagMissingMandate(supabase, orderId, vendorId, vendorLabel, orderNumber);
+        continue;
+      }
+
 
       // Facture au nom et pour le compte du fournisseur (acheteur)
       try {

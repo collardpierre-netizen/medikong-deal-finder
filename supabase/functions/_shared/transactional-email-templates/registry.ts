@@ -83,6 +83,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'subscription-extension-rejected': subscriptionExtensionRejected,
   'admin-vendor-market-intel-notification': adminVendorMarketIntelNotification,
   'order-line-refunded-customer': orderLineRefundedCustomer,
+  'order-cancelled-customer': orderCancelledCustomer,
   'order-line-refunded-admin': orderLineRefundedAdmin,
   'audit-confirmation': auditConfirmation,
   'audit-new-lead': auditNewLead,

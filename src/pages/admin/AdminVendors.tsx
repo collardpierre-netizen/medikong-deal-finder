@@ -19,6 +19,7 @@ interface VendorRow {
   name: string | null;
   slug: string | null;
   type: string | null;
+  email: string | null;
   commission_rate: number | null;
   stripe_account_id: string | null;
   stripe_onboarding_complete: boolean;
@@ -72,7 +73,7 @@ const AdminVendors = () => {
       const { data, error } = await supabase
         .from("vendors")
         .select(
-          "id, name, slug, type, commission_rate, stripe_account_id, stripe_onboarding_complete, stripe_charges_enabled, stripe_payouts_enabled, country_code, peppol_id"
+          "id, name, slug, type, email, commission_rate, stripe_account_id, stripe_onboarding_complete, stripe_charges_enabled, stripe_payouts_enabled, country_code, peppol_id"
         )
         .order("name");
       if (error) throw error;
@@ -137,22 +138,37 @@ const AdminVendors = () => {
   if (authLoading) return <div className="p-8 text-sm text-muted-foreground">Chargement…</div>;
   if (!isAdmin) return <Navigate to="/admin/login" replace />;
 
-  const showOnboardingUrl = (url: string) => {
-    toast.success("Lien d'onboarding Stripe généré", {
-      description: url,
-      duration: 30000,
-      action: {
-        label: "Ouvrir",
-        onClick: () => window.open(url, "_blank", "noopener,noreferrer"),
-      },
-      cancel: {
-        label: "Copier",
-        onClick: () => {
-          navigator.clipboard.writeText(url);
-          toast.success("URL copiée");
-        },
-      },
-    });
+  const copyLink = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Lien copié");
+    } catch {
+      toast.error("Copie impossible", { description: "Sélectionne le lien puis copie-le manuellement." });
+    }
+  };
+
+  const openMailDraft = (link: OnboardingLink) => {
+    if (!link.email) {
+      toast.error("Aucune adresse e-mail pour ce vendeur", {
+        description: "Renseigne son e-mail dans sa fiche, ou copie le lien et envoie-le manuellement.",
+      });
+      return;
+    }
+    const subject = "Finalisez votre inscription Stripe pour MediKong";
+    const body = [
+      `Bonjour ${link.name ?? ""},`.trim(),
+      "",
+      "Pour recevoir vos paiements via MediKong, il reste à finaliser votre inscription Stripe (identité, société, coordonnées bancaires).",
+      "",
+      "Lien sécurisé à compléter :",
+      link.url,
+      "",
+      "Ce lien est temporaire : s'il a expiré, répondez à cet e-mail et nous vous en renverrons un nouveau.",
+      "",
+      "Bien à vous,",
+      "L'équipe MediKong",
+    ].join("\n");
+    window.location.href = `mailto:${encodeURIComponent(link.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
   // Renvoie un JWT réellement accepté par l'auth (rafraîchi si nécessaire).

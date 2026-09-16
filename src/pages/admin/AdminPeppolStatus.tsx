@@ -194,8 +194,31 @@ const AdminPeppolStatus = () => {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
+    const from = dateFrom ? new Date(`${dateFrom}T00:00:00`) : null;
+    const to = dateTo ? new Date(`${dateTo}T23:59:59.999`) : null;
     return rows.filter((r) => {
       if (filter !== "all" && statusBucket(r.peppol_status) !== filter) return false;
+      // Période : sur la date de création de la facture
+      if (from || to) {
+        const d = new Date(r.created_at);
+        if (from && d < from) return false;
+        if (to && d > to) return false;
+      }
+      // Tentatives : max(colonne facture, somme des transmissions)
+      if (attemptsFilter !== "all") {
+        const tx = txByInvoice.get(r.id) || [];
+        const attempts = Math.max(
+          r.peppol_retry_count || 0,
+          tx.reduce((acc, t) => acc + (t.retry_count || 0), 0),
+        );
+        if (!attemptsMatch(attempts, attemptsFilter)) return false;
+      }
+      // Type d'erreur : classification du premier message connu
+      if (errorTypeFilter !== "all") {
+        const tx = txByInvoice.get(r.id) || [];
+        const msgs = [r.peppol_error, ...tx.map((t) => t.last_error)].filter(Boolean) as string[];
+        if (classifyError(msgs) !== errorTypeFilter) return false;
+      }
       if (!q) return true;
       return (
         (r.invoice_number || "").toLowerCase().includes(q) ||

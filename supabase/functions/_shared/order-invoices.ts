@@ -34,6 +34,8 @@ export type EmitOrderInvoicesResult = {
   skipped_no_mandate: string[];
   skipped_disabled: string[];
   peppol_dispatch: PeppolDispatchEntry[];
+  /** true quand une émission est déjà en cours pour cette commande (rien n'a été refait). */
+  skipped_in_progress?: boolean;
 };
 
 // Statuts considérés comme déjà transmis : on ne renvoie pas.

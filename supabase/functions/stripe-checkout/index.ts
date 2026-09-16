@@ -410,11 +410,19 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
       // (partiellement ou totalement) en pending_payment_manual pour que l'équipe
       // reprenne la main.
       if (manualPaymentVendors.length > 0) {
+        // Si AUCUN PaymentIntent n'a pu être créé, la commande n'est pas payable
+        // par carte : on aligne aussi payment_method pour éviter l'incohérence
+        // payment_method='card' + pending_payment_manual sans intent.
+        const coherenceUpdate: Record<string, unknown> = { payment_status: "pending_payment_manual" };
+        if (results.length === 0) {
+          coherenceUpdate.payment_method = "bank_transfer";
+        }
         await supabase
           .from("orders")
-          .update({ payment_status: "pending_payment_manual" })
+          .update(coherenceUpdate)
           .eq("id", order.id);
       }
+
 
       // Compat rétro : renvoie aussi le premier client_secret si mono-vendeur
       return new Response(

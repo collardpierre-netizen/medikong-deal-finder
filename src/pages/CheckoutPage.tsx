@@ -90,6 +90,8 @@ export default function CheckoutPage() {
   const [prefillSource, setPrefillSource] = useState<"saved_address" | "customer_profile" | null>(null);
   const [saveAsDefault, setSaveAsDefault] = useState(false);
   const [customerId, setCustomerId] = useState<string | null>(null);
+  const { activeKind, activeId } = useActiveAccount();
+  const activeBuyerId = activeKind === "buyer" ? activeId : null;
 
 
   // Pré-remplissage automatique depuis le compte (adresse par défaut > profil client)

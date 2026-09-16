@@ -193,6 +193,17 @@ export default function OrderPaymentConfirmationPage() {
             </p>
           )}
 
+          {awaitingManualPayment && order?.id && (
+            <div className="flex justify-center mt-6">
+              <Link
+                to={`/commande/${order.id}/paiement`}
+                className="bg-mk-blue text-white font-bold text-sm px-5 py-3 rounded-md"
+              >
+                Payer maintenant par virement SEPA
+              </Link>
+            </div>
+          )}
+
           <div className="flex justify-center gap-3 mt-8">
             <Link to="/compte?tab=commandes" className="border border-mk-navy text-mk-navy font-bold text-sm px-5 py-2.5 rounded-md">
               Mes commandes

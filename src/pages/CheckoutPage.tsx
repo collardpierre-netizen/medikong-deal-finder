@@ -715,9 +715,14 @@ export default function CheckoutPage() {
                       Continuer vers le paiement
                     </motion.button>
                     {!hasBlocking && step1Missing.length > 0 && (
-                      <p role="alert" className="mt-2 text-sm text-destructive">
-                        Complétez pour continuer : {step1Missing.join(", ")}.
-                      </p>
+                      <div role="alert" className="mt-2 text-sm text-destructive border border-destructive/30 bg-destructive/5 rounded-md p-3">
+                        <p className="font-semibold">Pour continuer vers le paiement, complétez dans l'ordre :</p>
+                        <ol className="list-decimal list-inside mt-1 space-y-0.5">
+                          {step1Missing.map((f, i) => (
+                            <li key={i}>{f}</li>
+                          ))}
+                        </ol>
+                      </div>
                     )}
                   </motion.div>
                 )}

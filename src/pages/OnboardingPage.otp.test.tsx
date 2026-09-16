@@ -66,23 +66,27 @@ const renderPage = () =>
     </QueryClientProvider>,
   );
 
+/** Laisse les animations de transition d'étape se terminer (300ms + 500ms + 350ms de délai carte). */
+async function advanceTransition() {
+  await act(async () => {
+    vi.advanceTimersByTime(2000);
+  });
+}
+
 /** Amène l'écran jusqu'à l'étape "Vérifiez votre email" (code OTP). */
 async function goToOtpStep(user: ReturnType<typeof userEvent.setup>) {
   renderPage();
 
   await user.click(screen.getByText("Je souhaite acheter"));
-  await act(async () => {
-    vi.advanceTimersByTime(500);
-  });
+  await advanceTransition();
 
   await user.click(await screen.findByText("Pharmacien"));
-  await act(async () => {
-    vi.advanceTimersByTime(500);
-  });
+  await advanceTransition();
 
   const emailInput = await screen.findByPlaceholderText("votre@email.com");
   await user.type(emailInput, "pharmacie@example.be");
   await user.click(screen.getByText("Recevoir le code"));
+  await advanceTransition();
 
   await screen.findByText("Vérifiez votre email");
 }

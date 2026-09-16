@@ -85,7 +85,6 @@ async function goToOtpStep(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByText("Recevoir le code"));
 
   await screen.findByText("Vérifiez votre email");
-  return screen.getAllByInputMode ? [] : [];
 }
 
 const otpInputs = () =>

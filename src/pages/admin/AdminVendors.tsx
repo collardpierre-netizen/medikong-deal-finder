@@ -5,7 +5,15 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Copy, ExternalLink, Loader2, RefreshCw, Sparkles, SlidersHorizontal, ShieldCheck, ShieldAlert } from "lucide-react";
+import { Copy, ExternalLink, Loader2, Mail, RefreshCw, Sparkles, SlidersHorizontal, ShieldCheck, ShieldAlert } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { formatUpdatedAt } from "@/lib/format-date";
 import AdminVendorMovMoqModal from "@/components/admin/AdminVendorMovMoqModal";
 import AdminVendorComplianceModal from "@/components/admin/AdminVendorComplianceModal";
@@ -456,6 +464,58 @@ const AdminVendors = () => {
         open={!!complianceVendor}
         onOpenChange={(v) => { if (!v) setComplianceVendor(null); }}
       />
+
+      <Dialog open={!!onboardingLink} onOpenChange={(o) => { if (!o) setOnboardingLink(null); }}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Lien Stripe à envoyer</DialogTitle>
+            <DialogDescription>
+              {onboardingLink?.name ?? "Vendeur"} doit ouvrir ce lien pour finaliser son inscription Stripe.
+              Le lien est temporaire : régénère-le s'il a expiré.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <textarea
+              readOnly
+              value={onboardingLink?.url ?? ""}
+              onFocus={(e) => e.currentTarget.select()}
+              className="w-full h-24 text-[12px] font-mono p-2 rounded-md border border-[#E2E8F0] bg-[#F8FAFC] break-all"
+            />
+            <p className="text-[12px] text-muted-foreground">
+              Destinataire :{" "}
+              {onboardingLink?.email ? (
+                <span className="font-medium">{onboardingLink.email}</span>
+              ) : (
+                <span className="text-[#B91C1C]">aucune adresse e-mail enregistrée pour ce vendeur</span>
+              )}
+            </p>
+          </div>
+
+          <DialogFooter className="gap-2 sm:justify-start">
+            <button
+              onClick={() => onboardingLink && copyLink(onboardingLink.url)}
+              className="inline-flex items-center gap-1.5 text-[12px] px-3 py-1.5 rounded-md border border-[#E2E8F0] bg-white hover:bg-[#F1F5F9]"
+            >
+              <Copy size={12} /> Copier le lien
+            </button>
+            <button
+              onClick={() => onboardingLink && openMailDraft(onboardingLink)}
+              className="inline-flex items-center gap-1.5 text-[12px] px-3 py-1.5 rounded-md bg-[#1B5BDA] text-white hover:bg-[#1747b0]"
+            >
+              <Mail size={12} /> Préparer l'e-mail
+            </button>
+            <a
+              href={onboardingLink?.url ?? "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-[12px] px-3 py-1.5 rounded-md border border-[#E2E8F0] bg-white hover:bg-[#F1F5F9]"
+            >
+              <ExternalLink size={12} /> Ouvrir
+            </a>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

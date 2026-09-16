@@ -1,4 +1,9 @@
 import { useMemo, useState } from "react";
+// CSV : séparateur « ; » (Excel FR), valeurs échappées par guillemets doubles.
+const csvCell = (v: string | number | null | undefined): string => {
+  const s = v === null || v === undefined ? "" : String(v);
+  return `"${s.replace(/"/g, '""')}"`;
+};
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";

@@ -29,6 +29,7 @@ import { template as subscriptionExtensionRejected } from './subscription-extens
 import { template as adminVendorMarketIntelNotification } from './admin-vendor-market-intel-notification.tsx'
 import { template as vendorInvoices } from './vendor-invoices.tsx'
 import { template as orderLineRefundedCustomer } from './order-line-refunded-customer.tsx'
+import { template as orderCancelledCustomer } from './order-cancelled-customer.tsx'
 import { template as orderLineRefundedAdmin } from './order-line-refunded-admin.tsx'
 import { template as auditConfirmation } from './audit-confirmation.tsx'
 import { template as auditNewLead } from './audit-new-lead.tsx'
@@ -82,6 +83,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'subscription-extension-rejected': subscriptionExtensionRejected,
   'admin-vendor-market-intel-notification': adminVendorMarketIntelNotification,
   'order-line-refunded-customer': orderLineRefundedCustomer,
+  'order-cancelled-customer': orderCancelledCustomer,
   'order-line-refunded-admin': orderLineRefundedAdmin,
   'audit-confirmation': auditConfirmation,
   'audit-new-lead': auditNewLead,

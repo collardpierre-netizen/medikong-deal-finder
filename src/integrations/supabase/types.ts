@@ -36001,6 +36001,15 @@ export type Database = {
         Returns: string
       }
       subscription_run_daily_tick: { Args: never; Returns: Json }
+      sweep_settled_bank_transfers: {
+        Args: { _limit?: number }
+        Returns: {
+          order_id: string
+          order_number: string
+          settled_cents: number
+          total_cents: number
+        }[]
+      }
       sync_quote_to_forecast_order: {
         Args: { _quote_id: string }
         Returns: string

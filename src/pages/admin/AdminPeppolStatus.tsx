@@ -615,6 +615,19 @@ const AdminPeppolStatus = () => {
                         {!errors.length && !tx.length && !r.peppol_document_id && (
                           <span className="text-muted-foreground">—</span>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mt-2 h-7 px-2 text-[11px]"
+                          onClick={() => toggleTimeline(r.id)}
+                        >
+                          {expanded[r.id] ? (
+                            <ChevronDown className="h-3 w-3 mr-1" />
+                          ) : (
+                            <ChevronRight className="h-3 w-3 mr-1" />
+                          )}
+                          Chronologie des tentatives
+                        </Button>
                       </td>
                     </tr>
                   );

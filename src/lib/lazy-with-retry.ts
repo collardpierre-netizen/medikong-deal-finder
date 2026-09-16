@@ -338,6 +338,28 @@ function isLikelyTransient(error: unknown, probe: ChunkProbeResult | null) {
   );
 }
 
+/**
+ * Delai de sécurité avant d'abandonner l'attente d'un rechargement planifié.
+ * Sans ça, la promesse « en attente de reload » ne se résout jamais : si le
+ * rechargement n'aboutit pas (onglet en arrière-plan, navigation bloquée,
+ * timer gelé), Suspense reste sur le spinner indéfiniment — la page « tourne
+ * dans le vide ». Passé ce délai on rejette pour afficher l'écran de retry.
+ */
+const PENDING_RELOAD_SAFETY_MS = 12_000;
+
+function pendingUntilReload(key: string, reason: string, probe: ChunkProbeResult | null) {
+  return new Promise<never>((_resolve, reject) => {
+    setTimeout(() => {
+      const err = new Error(
+        `Lazy chunk "${key}" : rechargement automatique non abouti (${reason}). Réessayez.`,
+      ) as Error & { chunkKey?: string; probe?: ChunkProbeResult | null };
+      err.chunkKey = key;
+      err.probe = probe;
+      reject(err);
+    }, PENDING_RELOAD_SAFETY_MS);
+  });
+}
+
 async function attemptImport<T>(
   importer: () => Promise<{ default: T }>,
 ): Promise<{ mod: { default: T } | null; error: unknown }> {
@@ -432,19 +454,19 @@ export function lazyWithRetry<T extends ComponentType<any>>(
         if (isTransientChunkProbe(probe) && url) {
           await waitForChunkServerRecovery(url);
           if (safeTransientChunkReload(url)) {
-            return new Promise<never>(() => undefined);
+            return pendingUntilReload(key, "transient", probe);
           }
         }
         if (isStaleHtmlFallbackProbe(probe)) {
           window.sessionStorage.setItem(`${CACHE_BUST_TOKEN_PREFIX}${key}`, "1");
           if (safeCacheBustReload()) {
-            return new Promise<never>(() => undefined);
+            return pendingUntilReload(key, "cache-bust", probe);
           }
         }
         if (!alreadyRetried && canAutoReload()) {
           window.sessionStorage.setItem(retryKey, "1");
           if (safeAutoReload()) {
-            return new Promise<never>(() => undefined);
+            return pendingUntilReload(key, "auto-reload", probe);
           }
         }
       }

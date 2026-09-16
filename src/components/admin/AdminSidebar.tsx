@@ -39,6 +39,7 @@ const sections: NavSection[] = [
       { label: "Vendors Stripe", path: "/admin/vendors-stripe", icon: CreditCard },
       { label: "Factures fournisseurs", path: "/admin/factures-fournisseurs", icon: FileText },
       { label: "Facturation mandat", path: "/admin/facturation-mandat", icon: FileText },
+      { label: "État mandats & factures", path: "/admin/facturation-mandat/etat", icon: FileText },
       { label: "Réception virements", path: "/admin/virements", icon: Landmark },
       { labelKey: "externalVendors", path: "/admin/vendeurs-externes", icon: ExternalLink },
       { labelKey: "onboarding", path: "/admin/onboarding", icon: UserPlus },

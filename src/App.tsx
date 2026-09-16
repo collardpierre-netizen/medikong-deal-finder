@@ -162,6 +162,7 @@ const AdminAbonnements = lazyWithRetry(() => import("./pages/admin/AdminAbonneme
 const AdminVendors = lazyWithRetry(() => import("./pages/admin/AdminVendors"), "AdminVendors");
 const AdminVendorInvoices = lazyWithRetry(() => import("./pages/admin/AdminVendorInvoices"), "AdminVendorInvoices");
 const AdminSelfBilling = lazyWithRetry(() => import("./pages/admin/AdminSelfBilling"), "AdminSelfBilling");
+const AdminSelfBillingMandateStatus = lazyWithRetry(() => import("./pages/admin/AdminSelfBillingMandateStatus"), "AdminSelfBillingMandateStatus");
 const AdminBankTransfers = lazyWithRetry(() => import("./pages/admin/AdminBankTransfers"), "AdminBankTransfers");
 const AdminVendeurDetail = lazyWithRetry(() => import("./pages/admin/AdminVendeurDetail"), "AdminVendeurDetail");
 const AdminVendorVisibility = lazyWithRetry(() => import("./pages/admin/AdminVendorVisibility"), "AdminVendorVisibility");
@@ -553,6 +554,7 @@ const App = () => (
               <Route path="vendors-stripe" element={<LP><AdminVendors /></LP>} />
               <Route path="factures-fournisseurs" element={<LP><AdminVendorInvoices /></LP>} />
               <Route path="facturation-mandat" element={<LP><AdminSelfBilling /></LP>} />
+              <Route path="facturation-mandat/etat" element={<LP><AdminSelfBillingMandateStatus /></LP>} />
               <Route path="virements" element={<LP><AdminBankTransfers /></LP>} />
               <Route path="onboarding" element={<LP><AdminOnboarding /></LP>} />
               <Route path="pharmacies-be" element={<LP><AdminBePharmaciesPage /></LP>} />

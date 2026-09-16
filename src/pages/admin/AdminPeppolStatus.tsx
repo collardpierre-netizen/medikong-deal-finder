@@ -168,7 +168,9 @@ const AdminPeppolStatus = () => {
       rows.filter((r) => statusBucket(r.peppol_status) === b).length;
     return {
       total: rows.length,
+      accepted: count("accepted"),
       sent: count("sent"),
+      rejected: count("rejected"),
       failed: count("failed"),
       pending: count("pending"),
       none: count("none"),
@@ -186,12 +188,14 @@ const AdminPeppolStatus = () => {
         erreurs détaillées.
       </p>
 
-      <div className="grid gap-3 sm:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-4 xl:grid-cols-7">
         {[
           { label: "Factures", value: kpis.total },
-          { label: "Envoyées", value: kpis.sent },
-          { label: "En cours", value: kpis.pending },
+          { label: "Acceptées", value: kpis.accepted },
+          { label: "Émises", value: kpis.sent },
+          { label: "Rejetées", value: kpis.rejected },
           { label: "Échecs", value: kpis.failed },
+          { label: "En cours", value: kpis.pending },
           { label: "Non envoyées", value: kpis.none },
         ].map((k) => (
           <div key={k.label} className="bg-white border rounded-lg p-4" style={{ borderColor: "#E2E8F0" }}>

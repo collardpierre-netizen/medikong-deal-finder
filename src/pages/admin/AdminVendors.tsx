@@ -332,7 +332,7 @@ const AdminVendors = () => {
                   <TableCell className="text-muted-foreground">{v.slug ?? "—"}</TableCell>
                   <TableCell>{v.type ?? "—"}</TableCell>
                   <TableCell>
-                    {v.commission_rate != null ? `${(v.commission_rate * 100).toFixed(1)}%` : "—"}
+                    {v.commission_rate != null ? `${Number(v.commission_rate).toFixed(1)}%` : "—"}
                   </TableCell>
                   <TableCell><StatusBadge status={st} /></TableCell>
                   <TableCell>

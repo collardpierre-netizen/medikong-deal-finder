@@ -227,7 +227,7 @@ const AdminPeppolStatus = () => {
         (r.peppol_identifier || "").toLowerCase().includes(q)
       );
     });
-  }, [rows, filter, search]);
+  }, [rows, filter, search, dateFrom, dateTo, attemptsFilter, errorTypeFilter, txByInvoice]);
 
   const kpis = useMemo(() => {
     const count = (b: Exclude<PeppolFilter, "all">) =>
@@ -290,6 +290,57 @@ const AdminPeppolStatus = () => {
             <SelectItem value="none">Non envoyées</SelectItem>
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-2">
+          <Input
+            type="date"
+            aria-label="Du"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="w-40"
+          />
+          <span className="text-xs text-muted-foreground">au</span>
+          <Input
+            type="date"
+            aria-label="Au"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="w-40"
+          />
+        </div>
+        <Select value={attemptsFilter} onValueChange={(v) => setAttemptsFilter(v as AttemptsFilter)}>
+          <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {(Object.keys(ATTEMPTS_LABELS) as AttemptsFilter[]).map((k) => (
+              <SelectItem key={k} value={k}>{ATTEMPTS_LABELS[k]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={errorTypeFilter} onValueChange={(v) => setErrorTypeFilter(v as ErrorTypeFilter)}>
+          <SelectTrigger className="w-64"><SelectValue placeholder="Type d'erreur : toutes" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Type d'erreur : toutes</SelectItem>
+            {(Object.keys(ERROR_TYPE_LABELS) as Exclude<ErrorTypeFilter, "all">[]).map((k) => (
+              <SelectItem key={k} value={k}>{ERROR_TYPE_LABELS[k]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {(dateFrom || dateTo || attemptsFilter !== "all" || errorTypeFilter !== "all" || filter !== "all" || search) && (
+          <button
+            type="button"
+            onClick={() => {
+              setFilter("all");
+              setSearch("");
+              setDateFrom("");
+              setDateTo("");
+              setAttemptsFilter("all");
+              setErrorTypeFilter("all");
+            }}
+            className="text-xs text-mk-blue hover:underline"
+          >
+            Réinitialiser les filtres
+          </button>
+        )}
+        <span className="text-xs text-muted-foreground">{filtered.length} facture(s)</span>
       </div>
 
       <div className="bg-white border rounded-lg overflow-hidden" style={{ borderColor: "#E2E8F0" }}>

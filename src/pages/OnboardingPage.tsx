@@ -188,7 +188,7 @@ export default function OnboardingPage() {
   const [email, setEmail] = useState("");
   const [emailTouched, setEmailTouched] = useState(false);
   const [otpDigits, setOtpDigits] = useState(EMPTY_OTP);
-  const [otpError, setOtpError] = useState(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
   const [otpShake, setOtpShake] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
   const [otpTimer, setOtpTimer] = useState(59);
@@ -659,7 +659,7 @@ export default function OnboardingPage() {
     if (!isEmailValid || sendingOtp) return;
 
     setSendingOtp(true);
-    setOtpError(false);
+    setOtpError(null);
     setOtpDigits([...EMPTY_OTP]);
     setEmailDeliveryMode("code_or_link");
     persistOnboardingDraft(email, "code_or_link");
@@ -697,11 +697,12 @@ export default function OnboardingPage() {
     if (verifyingOtp) return;
 
     setVerifyingOtp(true);
-    setOtpError(false);
+    setOtpError(null);
 
     // Try all OTP types in a single pass — stop at first success
     const types: Array<"email" | "recovery" | "magiclink" | "signup"> = ["recovery", "email", "magiclink", "signup"];
     let verified = false;
+    let lastErrorMessage: string | null = null;
 
     for (const otpType of types) {
       if (verified) break;
@@ -713,6 +714,8 @@ export default function OnboardingPage() {
         });
         if (!error) {
           verified = true;
+        } else {
+          lastErrorMessage = error.message ?? null;
         }
       } catch {
         // continue to next type
@@ -724,7 +727,13 @@ export default function OnboardingPage() {
       setTimeout(() => goNext(), 400);
     } else {
       console.error("OTP verify failed for all types");
-      setOtpError(true);
+      // Message explicite : distinguer code expiré de code invalide, et rappeler le format attendu
+      const isExpired = /expir/i.test(lastErrorMessage ?? "");
+      setOtpError(
+        isExpired
+          ? "Code expiré. Cliquez sur « Renvoyer le code » ci-dessous pour en recevoir un nouveau."
+          : `Code invalide. Vérifiez le code à ${OTP_LENGTH} chiffres reçu par e-mail et réessayez.`
+      );
       setOtpShake(true);
       setTimeout(() => setOtpShake(false), 400);
     }
@@ -780,7 +789,7 @@ export default function OnboardingPage() {
   const handleOtpChange = (idx: number, val: string) => {
     if (verifyingOtp) return;
     if (!/^\d?$/.test(val)) return;
-    const nd = [...otpDigits]; nd[idx] = val; setOtpDigits(nd); setOtpError(false);
+    const nd = [...otpDigits]; nd[idx] = val; setOtpDigits(nd); setOtpError(null);
     if (val && idx < OTP_LENGTH - 1) otpRefs.current[idx + 1]?.focus();
     if (nd.every(d => d)) {
       verifyOtpCode(nd.join(""));
@@ -800,6 +809,12 @@ export default function OnboardingPage() {
       setOtpDigits(digits);
       otpRefs.current[Math.min(text.length, OTP_LENGTH) - 1]?.focus();
       if (digits.every(d => d)) verifyOtpCode(digits.join(""));
+    } else if (text.length > 0) {
+      e.preventDefault();
+      setOtpError(
+        `Code incomplet : ${text.length} sur ${OTP_LENGTH} chiffres collés. Le code attendu contient ${OTP_LENGTH} chiffres.`
+      );
+      otpRefs.current[text.length]?.focus();
     }
   };
 
@@ -1047,7 +1062,7 @@ export default function OnboardingPage() {
               />
             ))}
           </div>
-          {otpError && <p style={{ fontSize: 11, color: S.red }}>Code invalide. Réessayez.</p>}
+          {otpError && <p style={{ fontSize: 11, color: S.red }} role="alert">{otpError}</p>}
           {verifyingOtp && <p style={{ fontSize: 11, color: S.blue }}><Loader2 size={12} className="tf-spin inline-block mr-1" />Vérification...</p>}
         </div>
 
@@ -1074,7 +1089,7 @@ export default function OnboardingPage() {
               } catch(e) { console.error(e); }
               setOtpTimer(59);
               setOtpDigits([...EMPTY_OTP]);
-              setOtpError(false);
+              setOtpError(null);
               otpRefs.current[0]?.focus();
             }}>Renvoyer le code</button>
           )}

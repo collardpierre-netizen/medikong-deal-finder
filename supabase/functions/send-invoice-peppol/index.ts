@@ -174,6 +174,17 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { error: "method_not_allowed" });
 
+  // Verrou d'idempotence : libéré sur tous les chemins de sortie.
+  let lockKey: string | null = null;
+  let lockClient: any = null;
+  const release = async () => {
+    if (lockKey && lockClient) {
+      const k = lockKey;
+      lockKey = null;
+      await releaseLock(lockClient, k);
+    }
+  };
+
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,

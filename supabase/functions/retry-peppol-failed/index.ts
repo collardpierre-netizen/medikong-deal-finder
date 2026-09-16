@@ -295,6 +295,7 @@ Deno.serve(async (req) => {
       buyer_results: buyerResults,
       cutoff,
       max_retries: MAX_RETRIES,
+      admin_alerts: alerts,
     });
   } catch (e) {
     console.error("[retry-peppol-failed]", e);

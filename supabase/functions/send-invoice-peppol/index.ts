@@ -299,6 +299,22 @@ Deno.serve(async (req) => {
     // avec le message dans peppol_error via persistFalcoResult().
 
 
+    // Idempotence : un seul envoi en vol par facture (retry horaire, webhook,
+    // marquage « payée » répété…). Le verrou expire tout seul.
+    lockClient = supabase;
+    const key = peppolInvoiceLockKey(inv.id);
+    const got = await acquireLock(supabase, key, IDEMPOTENCY_TTL.invoicePeppol, "send-invoice-peppol");
+    if (!got) {
+      logFalco("info", "send_skipped_in_progress", { invoice_id: inv.id });
+      return json(409, {
+        ok: false,
+        error: "already_in_progress",
+        invoice_id: inv.id,
+        hint: "Un envoi Peppol est déjà en cours pour cette facture.",
+      });
+    }
+    lockKey = key;
+
     const built = inv.type === "commission"
       ? await buildCommissionMetadata(supabase, inv)
       : await buildSelfBillingMetadata(supabase, inv);
@@ -309,6 +325,7 @@ Deno.serve(async (req) => {
         peppol_error: `send_build_failed: ${built.error}`,
       }).eq("id", inv.id);
       logFalco("error", "send_build_failed", { invoice_id: inv.id, type: inv.type, error: built.error });
+      await release();
       return json(422, { ok: false, error: "build_failed", details: built.error });
     }
 

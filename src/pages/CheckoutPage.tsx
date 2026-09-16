@@ -392,17 +392,21 @@ export default function CheckoutPage() {
 
 
 
-      // Enregistrement en adresse par défaut (best-effort)
+      // Enregistrement en adresse par défaut. Ne bloque pas la commande, mais
+      // ⚠️ ne doit plus échouer en silence : sinon l'acheteur croit son adresse
+      // mémorisée et doit la réencoder à la commande suivante.
       if (saveAsDefault && customerId) {
         try {
-          await supabase
+          const { error: unsetErr } = await supabase
             .from("customer_shipping_addresses")
             .update({ is_default: false })
             .eq("customer_id", customerId)
             .eq("is_default", true);
-          await supabase.from("customer_shipping_addresses").insert({
+          if (unsetErr) throw unsetErr;
+          const { error: insertErr } = await supabase.from("customer_shipping_addresses").insert({
             customer_id: customerId,
             label: "Adresse par défaut",
+            contact_name: shippingAddr.company || null,
             address_l1: shippingAddr.street,
             address_l2: shippingAddr.street2 || null,
             postal_code: shippingAddr.postalCode,
@@ -410,9 +414,15 @@ export default function CheckoutPage() {
             country_code: shippingAddr.country,
             is_default: true,
           });
+          if (insertErr) throw insertErr;
           setSaveAsDefault(false);
-        } catch {
-          // best-effort — n'interrompt pas la commande
+          toast.success("Adresse enregistrée pour vos prochaines commandes");
+        } catch (addrErr: any) {
+          console.error("[checkout] enregistrement adresse par défaut échoué", addrErr);
+          toast.error("Adresse non mémorisée", {
+            description:
+              "La commande est bien enregistrée, mais l'adresse n'a pas pu être sauvegardée pour la prochaine fois.",
+          });
         }
       }
 

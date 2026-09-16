@@ -11828,6 +11828,87 @@ export type Database = {
         }
         Relationships: []
       }
+      order_bank_transfers: {
+        Row: {
+          amount_cents: number
+          bank_reference: string | null
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          order_id: string
+          state: Database["public"]["Enums"]["bank_transfer_state"]
+          updated_at: string
+          value_date: string | null
+        }
+        Insert: {
+          amount_cents: number
+          bank_reference?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          order_id: string
+          state?: Database["public"]["Enums"]["bank_transfer_state"]
+          updated_at?: string
+          value_date?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          bank_reference?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          order_id?: string
+          state?: Database["public"]["Enums"]["bank_transfer_state"]
+          updated_at?: string
+          value_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_bank_transfers_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_bank_transfers_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_with_forecast_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_bank_transfers_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_bank_transfers_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders_visible_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_bank_transfers_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orders_v"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_invoices: {
         Row: {
           amount_excl_vat: number
@@ -36405,6 +36486,7 @@ export type Database = {
         | "auto_resolved"
       alert_type: "market_price" | "external_offer"
       app_role: "super_admin" | "admin" | "moderator" | "user"
+      bank_transfer_state: "pending" | "received" | "settled"
       buyer_line_confirmation_status:
         | "confirmed"
         | "partial"
@@ -36797,6 +36879,7 @@ export const Constants = {
       alert_status: ["new", "seen", "in_progress", "resolved", "auto_resolved"],
       alert_type: ["market_price", "external_offer"],
       app_role: ["super_admin", "admin", "moderator", "user"],
+      bank_transfer_state: ["pending", "received", "settled"],
       buyer_line_confirmation_status: [
         "confirmed",
         "partial",

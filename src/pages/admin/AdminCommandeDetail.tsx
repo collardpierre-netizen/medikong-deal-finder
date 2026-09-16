@@ -15,6 +15,7 @@ import { OrderMessages } from "@/components/orders/OrderMessages";
 import OrderInvoiceStatusPanel from "@/components/orders/OrderInvoiceStatusPanel";
 import OrderProductsSummary from "@/components/orders/OrderProductsSummary";
 import DeliveryNotesPanel from "@/components/orders/DeliveryNotesPanel";
+import OrderBankTransfersPanel from "@/components/admin/OrderBankTransfersPanel";
 
 import StripePaymentStatusBadge from "@/components/orders/StripePaymentStatusBadge";
 import OrderSourceBadge from "@/components/orders/OrderSourceBadge";
@@ -585,6 +586,13 @@ const AdminCommandeDetail = () => {
               incl_vat: Number(order.total_incl_vat) || 0,
             }}
           />
+
+          <OrderBankTransfersPanel
+            orderId={order.id}
+            orderTotalInclVat={Number(order.total_incl_vat) || 0}
+          />
+
+
 
 
 

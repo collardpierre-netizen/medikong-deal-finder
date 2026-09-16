@@ -36,6 +36,7 @@ function typeIcon(type: string) {
     case "sla_alert": return AlertTriangle;
     case "security": return ShieldAlert;
     case "rfq": return MessageSquare;
+    case "peppol_invoice_failed": return FileWarning;
     default: return Bell;
   }
 }

@@ -188,7 +188,7 @@ export default function OnboardingPage() {
   const [email, setEmail] = useState("");
   const [emailTouched, setEmailTouched] = useState(false);
   const [otpDigits, setOtpDigits] = useState(EMPTY_OTP);
-  const [otpError, setOtpError] = useState(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
   const [otpShake, setOtpShake] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
   const [otpTimer, setOtpTimer] = useState(59);
@@ -697,11 +697,12 @@ export default function OnboardingPage() {
     if (verifyingOtp) return;
 
     setVerifyingOtp(true);
-    setOtpError(false);
+    setOtpError(null);
 
     // Try all OTP types in a single pass — stop at first success
     const types: Array<"email" | "recovery" | "magiclink" | "signup"> = ["recovery", "email", "magiclink", "signup"];
     let verified = false;
+    let lastErrorMessage: string | null = null;
 
     for (const otpType of types) {
       if (verified) break;
@@ -713,6 +714,8 @@ export default function OnboardingPage() {
         });
         if (!error) {
           verified = true;
+        } else {
+          lastErrorMessage = error.message ?? null;
         }
       } catch {
         // continue to next type
@@ -724,7 +727,13 @@ export default function OnboardingPage() {
       setTimeout(() => goNext(), 400);
     } else {
       console.error("OTP verify failed for all types");
-      setOtpError(true);
+      // Message explicite : distinguer code expiré de code invalide, et rappeler le format attendu
+      const isExpired = /expir/i.test(lastErrorMessage ?? "");
+      setOtpError(
+        isExpired
+          ? "Code expiré. Cliquez sur « Renvoyer le code » ci-dessous pour en recevoir un nouveau."
+          : `Code invalide. Vérifiez le code à ${OTP_LENGTH} chiffres reçu par e-mail et réessayez.`
+      );
       setOtpShake(true);
       setTimeout(() => setOtpShake(false), 400);
     }

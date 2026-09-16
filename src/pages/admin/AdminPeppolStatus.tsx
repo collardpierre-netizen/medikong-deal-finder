@@ -631,6 +631,50 @@ const AdminPeppolStatus = () => {
                         </Button>
                       </td>
                     </tr>
+                    {expanded[r.id] && (
+                      <tr className="bg-slate-50/60" style={{ borderColor: "#EEF2F7" }}>
+                        <td colSpan={8} className="px-6 py-4">
+                          <div className="text-xs font-semibold text-mk-navy mb-3">
+                            Chronologie Peppol — facture {r.invoice_number || r.id.slice(0, 8)}
+                          </div>
+                          {(() => {
+                            const events = buildTimeline(r, tx);
+                            if (!events.length) {
+                              return <div className="text-xs text-muted-foreground">Aucun événement enregistré.</div>;
+                            }
+                            return (
+                              <ol className="relative border-l pl-4 space-y-3" style={{ borderColor: "#DDE5EF" }}>
+                                {events.map((e, i) => (
+                                  <li key={i} className="relative">
+                                    <span
+                                      className={`absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full ${EVENT_DOT[e.kind]}`}
+                                    />
+                                    <div className="text-[11px] text-muted-foreground font-mono">{fmtDateTime(e.at)}</div>
+                                    <div className="text-xs text-mk-navy">{e.label}</div>
+                                    {e.details && e.details.length > 0 && (
+                                      <div className="mt-1 space-y-0.5">
+                                        {e.details.map((d, j) => (
+                                          <div key={j} className="text-[11px] text-muted-foreground font-mono break-all">
+                                            {d}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {e.error && (
+                                      <div className="mt-1 flex gap-1 text-[11px] text-red-700 bg-red-50 border border-red-200 rounded p-2 break-words">
+                                        <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" />
+                                        <span>{e.error}</span>
+                                      </div>
+                                    )}
+                                  </li>
+                                ))}
+                              </ol>
+                            );
+                          })()}
+                        </td>
+                      </tr>
+                    )}
+                    </Fragment>
                   );
                 })}
               </tbody>

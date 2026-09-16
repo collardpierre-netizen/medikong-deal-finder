@@ -155,16 +155,27 @@ const AdminVendors = () => {
     });
   };
 
-  // Renvoie un JWT valide (rafraîchi si expiré/proche de l'expiration).
+  // Renvoie un JWT réellement accepté par l'auth (rafraîchi si nécessaire).
   const getFreshAccessToken = async (forceRefresh = false) => {
     let { data: sess } = await supabase.auth.getSession();
     const expiresAt = sess?.session?.expires_at ?? 0;
     const expiringSoon = !expiresAt || expiresAt * 1000 - Date.now() < 60_000;
     if (forceRefresh || !sess?.session?.access_token || expiringSoon) {
       const refreshed = await supabase.auth.refreshSession();
-      if (refreshed.data?.session?.access_token) sess = refreshed.data;
+      if (refreshed.error || !refreshed.data?.session?.access_token) return null;
+      sess = refreshed.data;
     }
-    return sess?.session?.access_token ?? null;
+
+    const accessToken = sess?.session?.access_token;
+    if (!accessToken) return null;
+
+    // getSession() lit le cache local et peut encore rendre un ancien jeton.
+    // getUser(token) le valide côté serveur avant l'appel Stripe Connect.
+    const { data: verified, error: verificationError } = await supabase.auth.getUser(accessToken);
+    if (!verificationError && verified.user) return accessToken;
+    if (forceRefresh) return null;
+
+    return getFreshAccessToken(true);
   };
 
   const invoke = async (action: string, vendor_id: string) => {
@@ -189,7 +200,7 @@ const AdminVendors = () => {
       // Jeton rejeté malgré tout : on force un refresh et on retente une fois.
       if (error) {
         const retried = await getFreshAccessToken(true);
-        if (retried && retried !== accessToken) {
+        if (retried) {
           accessToken = retried;
           ({ data, error } = await call(retried));
         }

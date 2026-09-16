@@ -10,6 +10,13 @@
 // pas signé le mandat de facturation (vendors.mandate_signed_at). Le cas est
 // signalé à l'admin et tracé, jamais silencieux.
 
+import {
+  acquireLock,
+  releaseLock,
+  orderInvoicesLockKey,
+  IDEMPOTENCY_TTL,
+} from "./idempotency.ts";
+
 export type InvoiceLink = { label: string; url: string };
 
 export type PeppolDispatchEntry = {

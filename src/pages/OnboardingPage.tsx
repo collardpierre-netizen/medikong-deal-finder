@@ -659,7 +659,7 @@ export default function OnboardingPage() {
     if (!isEmailValid || sendingOtp) return;
 
     setSendingOtp(true);
-    setOtpError(false);
+    setOtpError(null);
     setOtpDigits([...EMPTY_OTP]);
     setEmailDeliveryMode("code_or_link");
     persistOnboardingDraft(email, "code_or_link");
@@ -789,7 +789,7 @@ export default function OnboardingPage() {
   const handleOtpChange = (idx: number, val: string) => {
     if (verifyingOtp) return;
     if (!/^\d?$/.test(val)) return;
-    const nd = [...otpDigits]; nd[idx] = val; setOtpDigits(nd); setOtpError(false);
+    const nd = [...otpDigits]; nd[idx] = val; setOtpDigits(nd); setOtpError(null);
     if (val && idx < OTP_LENGTH - 1) otpRefs.current[idx + 1]?.focus();
     if (nd.every(d => d)) {
       verifyOtpCode(nd.join(""));
@@ -809,6 +809,12 @@ export default function OnboardingPage() {
       setOtpDigits(digits);
       otpRefs.current[Math.min(text.length, OTP_LENGTH) - 1]?.focus();
       if (digits.every(d => d)) verifyOtpCode(digits.join(""));
+    } else if (text.length > 0) {
+      e.preventDefault();
+      setOtpError(
+        `Code incomplet : ${text.length} sur ${OTP_LENGTH} chiffres collés. Le code attendu contient ${OTP_LENGTH} chiffres.`
+      );
+      otpRefs.current[text.length]?.focus();
     }
   };
 
@@ -1056,7 +1062,7 @@ export default function OnboardingPage() {
               />
             ))}
           </div>
-          {otpError && <p style={{ fontSize: 11, color: S.red }}>Code invalide. Réessayez.</p>}
+          {otpError && <p style={{ fontSize: 11, color: S.red }} role="alert">{otpError}</p>}
           {verifyingOtp && <p style={{ fontSize: 11, color: S.blue }}><Loader2 size={12} className="tf-spin inline-block mr-1" />Vérification...</p>}
         </div>
 
@@ -1083,7 +1089,7 @@ export default function OnboardingPage() {
               } catch(e) { console.error(e); }
               setOtpTimer(59);
               setOtpDigits([...EMPTY_OTP]);
-              setOtpError(false);
+              setOtpError(null);
               otpRefs.current[0]?.focus();
             }}>Renvoyer le code</button>
           )}

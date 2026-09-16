@@ -182,7 +182,7 @@ export default function OnboardingPage() {
   const [role, setRole] = useState<"buyer" | "seller" | "">("");
 
   /* ─── Shared state ─── */
-  const OTP_LENGTH = 6;
+  const OTP_LENGTH = 8;
   const EMPTY_OTP = Array.from({ length: OTP_LENGTH }, () => "");
   const [email, setEmail] = useState("");
   const [emailTouched, setEmailTouched] = useState(false);
@@ -664,7 +664,7 @@ export default function OnboardingPage() {
     persistOnboardingDraft(email, "code_or_link");
 
     try {
-      // Use signInWithOtp which sends a 6-digit code by email
+      // Use signInWithOtp, which sends the 8-digit code shown in the auth email.
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {

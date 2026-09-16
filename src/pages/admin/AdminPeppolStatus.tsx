@@ -216,9 +216,11 @@ const AdminPeppolStatus = () => {
           <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tous les statuts</SelectItem>
-            <SelectItem value="sent">Envoyées</SelectItem>
+            <SelectItem value="accepted">Acceptées</SelectItem>
+            <SelectItem value="sent">Émises / transmises</SelectItem>
+            <SelectItem value="rejected">Rejetées</SelectItem>
             <SelectItem value="pending">En cours</SelectItem>
-            <SelectItem value="failed">Échecs</SelectItem>
+            <SelectItem value="failed">Échecs techniques</SelectItem>
             <SelectItem value="none">Non envoyées</SelectItem>
           </SelectContent>
         </Select>

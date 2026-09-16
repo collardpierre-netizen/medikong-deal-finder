@@ -187,27 +187,31 @@ const AdminVendors = () => {
     window.location.href = `mailto:${encodeURIComponent(link.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
-  // Renvoie un JWT réellement accepté par l'auth (rafraîchi si nécessaire).
+  // Renvoie le JWT courant, rafraîchi seulement lorsqu'il manque ou arrive à expiration.
+  // La validation définitive reste faite par la fonction sécurisée côté serveur.
   const getFreshAccessToken = async (forceRefresh = false) => {
-    let { data: sess } = await supabase.auth.getSession();
-    const expiresAt = sess?.session?.expires_at ?? 0;
+    const { data: sess } = await supabase.auth.getSession();
+    const currentSession = sess.session;
+    const expiresAt = currentSession?.expires_at ?? 0;
     const expiringSoon = !expiresAt || expiresAt * 1000 - Date.now() < 60_000;
-    if (forceRefresh || !sess?.session?.access_token || expiringSoon) {
+
+    if (forceRefresh || !currentSession?.access_token || expiringSoon) {
       const refreshed = await supabase.auth.refreshSession();
-      if (refreshed.error || !refreshed.data?.session?.access_token) return null;
-      sess = refreshed.data;
+      if (refreshed.data.session?.access_token) {
+        return refreshed.data.session.access_token;
+      }
+
+      // Le stockage d'authentification de l'aperçu peut refuser un refresh tout
+      // en conservant un jeton courant encore valide. Ne pas déconnecter l'admin
+      // dans ce cas : le serveur vérifiera lui-même ce jeton.
+      if (!forceRefresh && currentSession?.access_token && expiresAt * 1000 > Date.now()) {
+        return currentSession.access_token;
+      }
+
+      return null;
     }
 
-    const accessToken = sess?.session?.access_token;
-    if (!accessToken) return null;
-
-    // getSession() lit le cache local et peut encore rendre un ancien jeton.
-    // getUser(token) le valide côté serveur avant l'appel Stripe Connect.
-    const { data: verified, error: verificationError } = await supabase.auth.getUser(accessToken);
-    if (!verificationError && verified.user) return accessToken;
-    if (forceRefresh) return null;
-
-    return getFreshAccessToken(true);
+    return currentSession.access_token;
   };
 
   const invoke = async (action: string, vendor: VendorRow) => {

@@ -306,9 +306,13 @@ export default function CheckoutPage() {
   const isAddressValid = (addr: AddressForm) => missingAddressFields(addr).length === 0;
 
   const canProceedStep1 = isAddressValid(shippingAddr) && (sameAsBilling || isAddressValid(billingAddr));
+  // Liste ordonnée des champs à compléter : d'abord l'adresse de livraison,
+  // puis l'adresse de facturation si elle diffère. Ordre = ordre du formulaire.
+  const step1MissingShipping = missingAddressFields(shippingAddr);
+  const step1MissingBilling = sameAsBilling ? [] : missingAddressFields(billingAddr);
   const step1Missing = [
-    ...missingAddressFields(shippingAddr).map((f) => `${f} (livraison)`),
-    ...(sameAsBilling ? [] : missingAddressFields(billingAddr).map((f) => `${f} (facturation)`)),
+    ...step1MissingShipping.map((f) => `${f} (livraison)`),
+    ...step1MissingBilling.map((f) => `${f} (facturation)`),
   ];
 
 
@@ -711,9 +715,14 @@ export default function CheckoutPage() {
                       Continuer vers le paiement
                     </motion.button>
                     {!hasBlocking && step1Missing.length > 0 && (
-                      <p role="alert" className="mt-2 text-sm text-destructive">
-                        Complétez pour continuer : {step1Missing.join(", ")}.
-                      </p>
+                      <div role="alert" className="mt-2 text-sm text-destructive border border-destructive/30 bg-destructive/5 rounded-md p-3">
+                        <p className="font-semibold">Pour continuer vers le paiement, complétez dans l'ordre :</p>
+                        <ol className="list-decimal list-inside mt-1 space-y-0.5">
+                          {step1Missing.map((f, i) => (
+                            <li key={i}>{f}</li>
+                          ))}
+                        </ol>
+                      </div>
                     )}
                   </motion.div>
                 )}

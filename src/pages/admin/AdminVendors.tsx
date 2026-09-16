@@ -243,8 +243,12 @@ const AdminVendors = () => {
       }
       if (action === "create-account" || action === "refresh-link") {
         const url = (data as any)?.url || (data as any)?.onboarding_url;
-        if (url) showOnboardingUrl(url);
-        else toast.success("OK", { description: JSON.stringify(data) });
+        if (url) {
+          setOnboardingLink({ vendorId: vendor.id, name: vendor.name, email: vendor.email, url });
+          toast.success("Lien Stripe généré");
+        } else {
+          toast.success("OK", { description: JSON.stringify(data) });
+        }
       } else if (action === "check-status") {
         toast.success("Statut mis à jour", {
           description: `charges=${(data as any)?.charges_enabled} · payouts=${(data as any)?.payouts_enabled}`,

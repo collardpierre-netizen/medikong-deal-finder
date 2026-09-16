@@ -1,6 +1,8 @@
 import Stripe from "https://esm.sh/stripe@14";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { computeVatBaseSafe, cagnotteVatModeLabel, loadCagnotteVatSettings, formatEurBe } from "../_shared/cagnotte-vat.ts";
+import { emitOrderInvoices as emitSharedOrderInvoices } from "../_shared/order-invoices.ts";
+
 
 // Lazy-initialized singletons so tests can inject stubs before any handler runs.
 let stripe: any = null;
@@ -124,53 +126,12 @@ Deno.serve(async (req) => {
 });
 
 async function emitOrderInvoices(orderId: string, paidAtIso: string): Promise<Array<{ label: string; url: string }>> {
-  const links: Array<{ label: string; url: string }> = [];
-  try {
-    // Distinct vendors that have lines on this order
-    const { data: vendorRows, error } = await supabase
-      .from("order_lines")
-      .select("vendor_id")
-      .eq("order_id", orderId);
-    if (error || !vendorRows) {
-      console.error("[stripe-webhook] emitOrderInvoices: vendors fetch failed", error);
-      return links;
-    }
-    const vendorIds = Array.from(new Set(vendorRows.map((r: any) => r.vendor_id).filter(Boolean)));
-
-    for (const vendorId of vendorIds) {
-      // Self-billing (buyer-facing)
-      try {
-        const { data: sb, error: sbErr } = await supabase.functions.invoke("emit-self-billing-invoice", {
-          body: { order_id: orderId, vendor_id: vendorId, paid_at: paidAtIso },
-        });
-        if (sbErr) {
-          console.error(`[stripe-webhook] self-billing failed vendor=${vendorId}`, sbErr);
-        } else if (sb?.invoice_id) {
-          const { data: signed } = await supabase.storage
-            .from("invoices")
-            .createSignedUrl(`${orderId}/self_billing-${vendorId}.pdf`, 60 * 60 * 24 * 7, { download: `${sb.invoice_number}.pdf` });
-          if (signed?.signedUrl) {
-            links.push({ label: `Facture ${sb.invoice_number}`, url: signed.signedUrl });
-          }
-        }
-      } catch (e) {
-        console.error(`[stripe-webhook] self-billing exception vendor=${vendorId}`, e);
-      }
-      // Commission (MediKong → vendor, NOT sent to buyer)
-      try {
-        const { error: comErr } = await supabase.functions.invoke("emit-commission-invoice", {
-          body: { order_id: orderId, vendor_id: vendorId, paid_at: paidAtIso },
-        });
-        if (comErr) console.error(`[stripe-webhook] commission failed vendor=${vendorId}`, comErr);
-      } catch (e) {
-        console.error(`[stripe-webhook] commission exception vendor=${vendorId}`, e);
-      }
-    }
-  } catch (e) {
-    console.error("[stripe-webhook] emitOrderInvoices fatal", e);
-  }
-  return links;
+  // Point d'entrée unique partagé avec la fonction emit-order-invoices
+  // (virements encaissés hors Stripe). Inclut le garde-fou mandat.
+  const res = await emitSharedOrderInvoices(supabase, orderId, paidAtIso);
+  return res.links;
 }
+
 
 async function sendBuyerOrderConfirmation(orderId: string) {
   try {

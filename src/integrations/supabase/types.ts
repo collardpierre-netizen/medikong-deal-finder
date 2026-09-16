@@ -27032,6 +27032,7 @@ export type Database = {
           rating: number | null
           representative_name: string | null
           representative_role: string | null
+          self_billing_enabled: boolean
           sendcloud_brand_id: string | null
           sendcloud_sender_address_id: string | null
           shipping_address_line1: string | null
@@ -27125,6 +27126,7 @@ export type Database = {
           rating?: number | null
           representative_name?: string | null
           representative_role?: string | null
+          self_billing_enabled?: boolean
           sendcloud_brand_id?: string | null
           sendcloud_sender_address_id?: string | null
           shipping_address_line1?: string | null
@@ -27218,6 +27220,7 @@ export type Database = {
           rating?: number | null
           representative_name?: string | null
           representative_role?: string | null
+          self_billing_enabled?: boolean
           sendcloud_brand_id?: string | null
           sendcloud_sender_address_id?: string | null
           shipping_address_line1?: string | null

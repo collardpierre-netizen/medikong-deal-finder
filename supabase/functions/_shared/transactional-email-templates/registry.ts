@@ -56,10 +56,12 @@ import { template as invoicePaymentLink } from './invoice-payment-link.tsx'
 import { template as cagnotteEarned } from './cagnotte-earned.tsx'
 import { template as orderMessageCustomer } from './order-message-customer.tsx'
 import { template as orderMessageAdmin } from './order-message-admin.tsx'
+import { template as vendorInvoiceDocument } from './vendor-invoice-document.tsx'
 
 
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
+  'vendor-invoice-document': vendorInvoiceDocument,
   'vendor-invoices': vendorInvoices,
   'rfq-vendor-invitation': rfqVendorInvitation,
   'wholesale-savings-report': wholesaleSavingsReport,

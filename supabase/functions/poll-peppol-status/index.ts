@@ -262,6 +262,9 @@ Deno.serve(async (req) => {
 
 
 
+    // ── Alertes admin : factures encore en erreur après N tentatives.
+    const alerts = await notifyExhaustedPeppolInvoices(supabase, { caller: "poll-peppol-status" });
+
     logFalco("info", "poll_done", {
       latency_ms: Date.now() - started,
       documents_returned: documents.length,

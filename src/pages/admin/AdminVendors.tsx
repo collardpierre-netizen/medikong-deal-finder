@@ -155,26 +155,56 @@ const AdminVendors = () => {
     });
   };
 
+  // Renvoie un JWT valide (rafraîchi si expiré/proche de l'expiration).
+  const getFreshAccessToken = async (forceRefresh = false) => {
+    let { data: sess } = await supabase.auth.getSession();
+    const expiresAt = sess?.session?.expires_at ?? 0;
+    const expiringSoon = !expiresAt || expiresAt * 1000 - Date.now() < 60_000;
+    if (forceRefresh || !sess?.session?.access_token || expiringSoon) {
+      const refreshed = await supabase.auth.refreshSession();
+      if (refreshed.data?.session?.access_token) sess = refreshed.data;
+    }
+    return sess?.session?.access_token ?? null;
+  };
+
   const invoke = async (action: string, vendor_id: string) => {
     setBusyId(vendor_id);
     try {
       // Sans session valide, `functions.invoke` envoie la clé anon en
       // Authorization et la fonction répond 401 "Non autorisé".
       // On rafraîchit/valide la session et on passe le JWT explicitement.
-      let { data: sess } = await supabase.auth.getSession();
-      if (!sess?.session?.access_token) {
-        const refreshed = await supabase.auth.refreshSession();
-        sess = refreshed.data;
-      }
-      const accessToken = sess?.session?.access_token;
+      let accessToken = await getFreshAccessToken();
       if (!accessToken) {
         throw new Error("Session expirée — reconnecte-toi pour gérer Stripe Connect.");
       }
-      const { data, error } = await supabase.functions.invoke("stripe-connect-onboarding", {
-        body: { action, vendor_id, origin: window.location.origin },
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      if (error) throw error;
+
+      const call = (token: string) =>
+        supabase.functions.invoke("stripe-connect-onboarding", {
+          body: { action, vendor_id, origin: window.location.origin },
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+      let { data, error } = await call(accessToken);
+
+      // Jeton rejeté malgré tout : on force un refresh et on retente une fois.
+      if (error) {
+        const retried = await getFreshAccessToken(true);
+        if (retried && retried !== accessToken) {
+          accessToken = retried;
+          ({ data, error } = await call(retried));
+        }
+      }
+
+      if (error) {
+        const status = (error as any)?.context?.status;
+        if (status === 401) {
+          throw new Error("Session expirée — reconnecte-toi puis réessaie.");
+        }
+        if (status === 403) {
+          throw new Error("Accès refusé : compte administrateur requis.");
+        }
+        throw error;
+      }
       if (action === "create-account" || action === "refresh-link") {
         const url = (data as any)?.url || (data as any)?.onboarding_url;
         if (url) showOnboardingUrl(url);

@@ -549,7 +549,8 @@ const AdminPeppolStatus = () => {
                     r.peppol_last_attempt_at || tx.find((t) => t.last_attempt_at)?.last_attempt_at || null;
                   const errors = [r.peppol_error, ...tx.map((t) => t.last_error)].filter(Boolean) as string[];
                   return (
-                    <tr key={r.id} className="border-t align-top" style={{ borderColor: "#EEF2F7" }}>
+                    <Fragment key={r.id}>
+                    <tr className="border-t align-top" style={{ borderColor: "#EEF2F7" }}>
                       <td className="px-3 py-3 whitespace-nowrap">
                         <Link
                           to={`/admin/commandes/${r.order_id}`}

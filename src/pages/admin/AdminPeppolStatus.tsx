@@ -101,9 +101,52 @@ const STATUS_LABELS: Record<Exclude<PeppolFilter, "all">, string> = {
   none: "Non envoyée",
 };
 
+// --- Filtres avancés : tentatives + type d'erreur ---
+type AttemptsFilter = "all" | "0" | "1" | "2" | "3plus";
+type ErrorTypeFilter = "all" | "none" | "receiver_not_found" | "invalid_identifier" | "network" | "auth" | "other";
+
+const ATTEMPTS_LABELS: Record<AttemptsFilter, string> = {
+  all: "Tentatives : toutes",
+  "0": "0 tentative",
+  "1": "1 tentative",
+  "2": "2 tentatives",
+  "3plus": "3 tentatives et +",
+};
+
+const ERROR_TYPE_LABELS: Record<Exclude<ErrorTypeFilter, "all">, string> = {
+  none: "Sans erreur",
+  receiver_not_found: "Destinataire introuvable / non enregistré",
+  invalid_identifier: "Identifiant ou format invalide",
+  network: "Réseau / timeout",
+  auth: "Authentification / autorisation",
+  other: "Autre erreur",
+};
+
+// Classification heuristique du premier message d'erreur connu (facture puis transmissions).
+const classifyError = (msgs: string[]): Exclude<ErrorTypeFilter, "all"> => {
+  const msg = (msgs.find(Boolean) || "").toLowerCase();
+  if (!msg) return "none";
+  if (/(not registered|not found|introuvable|non enregistr|unknown participant|no such participant)/.test(msg))
+    return "receiver_not_found";
+  if (/(invalid|invalide|malformed|format|scheme|peppol id)/.test(msg)) return "invalid_identifier";
+  if (/(timeout|timed out|network|fetch|econn|socket|502|503|504)/.test(msg)) return "network";
+  if (/(401|403|unauthorized|forbidden|non autoris|authentification|token)/.test(msg)) return "auth";
+  return "other";
+};
+
+const attemptsMatch = (n: number, f: AttemptsFilter): boolean => {
+  if (f === "all") return true;
+  if (f === "3plus") return n >= 3;
+  return n === Number(f);
+};
+
 const AdminPeppolStatus = () => {
   const [filter, setFilter] = useState<PeppolFilter>("all");
   const [search, setSearch] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [attemptsFilter, setAttemptsFilter] = useState<AttemptsFilter>("all");
+  const [errorTypeFilter, setErrorTypeFilter] = useState<ErrorTypeFilter>("all");
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-peppol-status"],
@@ -151,8 +194,31 @@ const AdminPeppolStatus = () => {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
+    const from = dateFrom ? new Date(`${dateFrom}T00:00:00`) : null;
+    const to = dateTo ? new Date(`${dateTo}T23:59:59.999`) : null;
     return rows.filter((r) => {
       if (filter !== "all" && statusBucket(r.peppol_status) !== filter) return false;
+      // Période : sur la date de création de la facture
+      if (from || to) {
+        const d = new Date(r.created_at);
+        if (from && d < from) return false;
+        if (to && d > to) return false;
+      }
+      // Tentatives : max(colonne facture, somme des transmissions)
+      if (attemptsFilter !== "all") {
+        const tx = txByInvoice.get(r.id) || [];
+        const attempts = Math.max(
+          r.peppol_retry_count || 0,
+          tx.reduce((acc, t) => acc + (t.retry_count || 0), 0),
+        );
+        if (!attemptsMatch(attempts, attemptsFilter)) return false;
+      }
+      // Type d'erreur : classification du premier message connu
+      if (errorTypeFilter !== "all") {
+        const tx = txByInvoice.get(r.id) || [];
+        const msgs = [r.peppol_error, ...tx.map((t) => t.last_error)].filter(Boolean) as string[];
+        if (classifyError(msgs) !== errorTypeFilter) return false;
+      }
       if (!q) return true;
       return (
         (r.invoice_number || "").toLowerCase().includes(q) ||
@@ -161,7 +227,7 @@ const AdminPeppolStatus = () => {
         (r.peppol_identifier || "").toLowerCase().includes(q)
       );
     });
-  }, [rows, filter, search]);
+  }, [rows, filter, search, dateFrom, dateTo, attemptsFilter, errorTypeFilter, txByInvoice]);
 
   const kpis = useMemo(() => {
     const count = (b: Exclude<PeppolFilter, "all">) =>
@@ -224,6 +290,57 @@ const AdminPeppolStatus = () => {
             <SelectItem value="none">Non envoyées</SelectItem>
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-2">
+          <Input
+            type="date"
+            aria-label="Du"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="w-40"
+          />
+          <span className="text-xs text-muted-foreground">au</span>
+          <Input
+            type="date"
+            aria-label="Au"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="w-40"
+          />
+        </div>
+        <Select value={attemptsFilter} onValueChange={(v) => setAttemptsFilter(v as AttemptsFilter)}>
+          <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {(Object.keys(ATTEMPTS_LABELS) as AttemptsFilter[]).map((k) => (
+              <SelectItem key={k} value={k}>{ATTEMPTS_LABELS[k]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={errorTypeFilter} onValueChange={(v) => setErrorTypeFilter(v as ErrorTypeFilter)}>
+          <SelectTrigger className="w-64"><SelectValue placeholder="Type d'erreur : toutes" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Type d'erreur : toutes</SelectItem>
+            {(Object.keys(ERROR_TYPE_LABELS) as Exclude<ErrorTypeFilter, "all">[]).map((k) => (
+              <SelectItem key={k} value={k}>{ERROR_TYPE_LABELS[k]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {(dateFrom || dateTo || attemptsFilter !== "all" || errorTypeFilter !== "all" || filter !== "all" || search) && (
+          <button
+            type="button"
+            onClick={() => {
+              setFilter("all");
+              setSearch("");
+              setDateFrom("");
+              setDateTo("");
+              setAttemptsFilter("all");
+              setErrorTypeFilter("all");
+            }}
+            className="text-xs text-mk-blue hover:underline"
+          >
+            Réinitialiser les filtres
+          </button>
+        )}
+        <span className="text-xs text-muted-foreground">{filtered.length} facture(s)</span>
       </div>
 
       <div className="bg-white border rounded-lg overflow-hidden" style={{ borderColor: "#E2E8F0" }}>

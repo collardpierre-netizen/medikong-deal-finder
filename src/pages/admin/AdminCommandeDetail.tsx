@@ -587,6 +587,13 @@ const AdminCommandeDetail = () => {
             }}
           />
 
+          <OrderBankTransfersPanel
+            orderId={order.id}
+            orderTotalInclVat={Number(order.total_incl_vat) || 0}
+          />
+
+
+
 
 
 

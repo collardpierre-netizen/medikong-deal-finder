@@ -157,7 +157,7 @@ describe("Onboarding — validation du code reçu par e-mail", () => {
     expect(firstCall.token).toBe(code);
     expect(firstCall.token).toHaveLength(OTP_LENGTH);
     expect(firstCall.email).toBe("pharmacie@example.be");
-    expect(screen.queryByText("Code invalide. Réessayez.")).not.toBeInTheDocument();
+    expect(screen.queryByText(`Code invalide. Vérifiez le code à ${OTP_LENGTH} chiffres reçu par e-mail et réessayez.`)).not.toBeInTheDocument();
   });
 
   it("vérifie le code collé depuis l'e-mail (collage complet)", async () => {
@@ -172,7 +172,7 @@ describe("Onboarding — validation du code reçu par e-mail", () => {
     expect((verifyOtp.mock.calls[0][0] as { token: string }).token).toBe(code);
   });
 
-  it("ignore un collage trop court (moins de chiffres que la longueur attendue)", async () => {
+  it("affiche un message explicite pour un collage trop court (moins de chiffres que la longueur attendue)", async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     await goToOtpStep(user);
 
@@ -180,6 +180,9 @@ describe("Onboarding — validation du code reçu par e-mail", () => {
     await user.paste("1234");
 
     expect(verifyOtp).not.toHaveBeenCalled();
+    expect(await screen.findByText(
+      `Code incomplet : 4 sur ${OTP_LENGTH} chiffres collés. Le code attendu contient ${OTP_LENGTH} chiffres.`
+    )).toBeInTheDocument();
   });
 
   it("affiche une erreur quand le code est expiré", async () => {
@@ -194,7 +197,7 @@ describe("Onboarding — validation du code reçu par e-mail", () => {
     const inputs = otpInputs();
     for (let i = 0; i < OTP_LENGTH; i++) await user.type(inputs[i], "1");
 
-    expect(await screen.findByText("Code invalide. Réessayez.")).toBeInTheDocument();
+    expect(await screen.findByText("Code expiré. Cliquez sur « Renvoyer le code » ci-dessous pour en recevoir un nouveau.")).toBeInTheDocument();
     // L'écran reste sur l'étape de vérification (pas de passage à l'étape suivante)
     expect(screen.getByText("Vérifiez votre email")).toBeInTheDocument();
   });
@@ -211,7 +214,7 @@ describe("Onboarding — validation du code reçu par e-mail", () => {
     const inputs = otpInputs();
     for (let i = 0; i < OTP_LENGTH; i++) await user.type(inputs[i], "7");
 
-    expect(await screen.findByText("Code invalide. Réessayez.")).toBeInTheDocument();
+    expect(await screen.findByText(`Code invalide. Vérifiez le code à ${OTP_LENGTH} chiffres reçu par e-mail et réessayez.`)).toBeInTheDocument();
     // Tous les types d'OTP ont été essayés avant de conclure à l'échec
     expect(verifyOtp.mock.calls.length).toBeGreaterThan(1);
   });

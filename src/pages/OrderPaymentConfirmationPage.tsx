@@ -125,6 +125,15 @@ export default function OrderPaymentConfirmationPage() {
                 <h1 className="text-2xl font-bold text-mk-navy mb-1">Paiement incomplet</h1>
                 <p className="text-sm text-mk-sec">Certains paiements n'ont pas abouti. Contactez le support si besoin.</p>
               </>
+            ) : awaitingManualPayment ? (
+              <>
+                <CheckCircle2 className="mx-auto text-mk-green mb-3" size={56} />
+                <h1 className="text-2xl font-bold text-mk-navy mb-1">Commande enregistrée</h1>
+                <p className="text-sm text-mk-sec">
+                  Votre commande est bien enregistrée. Le paiement se fait hors ligne (virement / facture) — les
+                  instructions vous sont transmises par e-mail.
+                </p>
+              </>
             ) : (
               <>
                 <Loader2 className="mx-auto text-mk-blue mb-3 animate-spin" size={56} />

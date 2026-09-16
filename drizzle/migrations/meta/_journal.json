@@ -43,6 +43,13 @@
       "when": 1789460806705,
       "tag": "0005_care_fix_nh_order_items_rls_join",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789548809743,
+      "tag": "0006_care_nh_orders_soignant_update_cancel",
+      "breakpoints": true
     }
   ]
 }

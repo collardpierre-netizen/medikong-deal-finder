@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Send, Loader2, ExternalLink, AlertTriangle } from "lucide-react";
+import { Send, Loader2, ExternalLink, AlertTriangle, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type PeppolFilter = "all" | "accepted" | "sent" | "rejected" | "failed" | "pending" | "none";
 

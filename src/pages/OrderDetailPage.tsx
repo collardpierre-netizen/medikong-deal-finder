@@ -153,6 +153,14 @@ export default function OrderDetailPage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-3">
           <h1 className="text-2xl md:text-[28px] font-bold text-mk-navy">Commande #{orderNumber}</h1>
           <div className="flex items-center gap-2 flex-wrap">
+            {id && (
+              <Link
+                to={`/commande/${id}/paiement`}
+                className="border border-mk-navy bg-mk-navy text-white text-sm px-4 py-2 rounded-md flex items-center gap-1.5 hover:opacity-90"
+              >
+                <QrCode size={14} /> Payer par virement SEPA
+              </Link>
+            )}
             <button onClick={handleExportCSV} disabled={!items.length} className="border border-mk-line text-sm px-3 py-2 rounded-md text-mk-sec flex items-center gap-1.5 disabled:opacity-50">
               <FileSpreadsheet size={14} /> Export CSV
             </button>

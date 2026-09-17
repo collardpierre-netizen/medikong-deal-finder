@@ -1,12 +1,17 @@
 // Portail apporteur — Mes clients.
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Phone } from "lucide-react";
+import AffiliateClientSheet from "@/components/affiliate/AffiliateClientSheet";
 import { useAffiliateAccount, affiliateArgs } from "@/hooks/useAffiliateAccount";
 import { fmtCents, fmtDate, daysUntil } from "@/lib/affiliate-format";
 
 type Referral = {
+  referral_id: string;
   pseudo: string;
   client_name: string | null;
   attributed_at: string | null;
@@ -26,6 +31,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 export default function AffiliateClientsPage() {
   const { account, asAffiliateId } = useAffiliateAccount();
+  const [openReferralId, setOpenReferralId] = useState<string | null>(null);
   const { data: rows = [] } = useQuery<Referral[]>({
     queryKey: ["affiliate-referrals", asAffiliateId],
     enabled: Boolean(account),
@@ -41,7 +47,7 @@ export default function AffiliateClientsPage() {
       <div>
         <h1 className="text-xl font-semibold">Mes clients</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Clients attribués à votre code apporteur. MediKong ne transmet ni email, ni téléphone.
+          Clients attribués à votre code apporteur. Ouvrez la fiche client pour l'appeler et suivre ses commandes.
         </p>
       </div>
 
@@ -57,6 +63,7 @@ export default function AffiliateClientsPage() {
                 <th className="p-3 text-right">CA HTVA</th>
                 <th className="p-3">Situation</th>
                 <th className="p-3">Attribution</th>
+                <th className="p-3 text-right">Fiche</th>
               </tr>
             </thead>
             <tbody>
@@ -84,16 +91,23 @@ export default function AffiliateClientsPage() {
                         </Badge>
                       )}
                     </td>
+                    <td className="p-3 text-right">
+                      <Button size="sm" variant="outline" onClick={() => setOpenReferralId(r.referral_id)}>
+                        <Phone className="h-3.5 w-3.5 mr-1" /> Fiche client
+                      </Button>
+                    </td>
                   </tr>
                 );
               })}
               {rows.length === 0 && (
-                <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Aucun client attribué pour l'instant.</td></tr>
+                <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Aucun client attribué pour l'instant.</td></tr>
               )}
             </tbody>
           </table>
         </CardContent>
       </Card>
+
+      <AffiliateClientSheet referralId={openReferralId} onClose={() => setOpenReferralId(null)} />
     </div>
   );
 }

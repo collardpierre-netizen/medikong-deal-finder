@@ -113,6 +113,13 @@
       "when": 1789648966772,
       "tag": "0015_affiliate_client_name_and_vendors_admins_privileged_check",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1789654036958,
+      "tag": "0016_0016_affiliate_net_margin_commission_fallback_and_card_only_fees",
+      "breakpoints": true
     }
   ]
 }

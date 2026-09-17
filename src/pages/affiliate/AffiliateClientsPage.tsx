@@ -31,6 +31,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 export default function AffiliateClientsPage() {
   const { account, asAffiliateId } = useAffiliateAccount();
+  const [openReferralId, setOpenReferralId] = useState<string | null>(null);
   const { data: rows = [] } = useQuery<Referral[]>({
     queryKey: ["affiliate-referrals", asAffiliateId],
     enabled: Boolean(account),
@@ -46,7 +47,7 @@ export default function AffiliateClientsPage() {
       <div>
         <h1 className="text-xl font-semibold">Mes clients</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Clients attribués à votre code apporteur. MediKong ne transmet ni email, ni téléphone.
+          Clients attribués à votre code apporteur. Ouvrez la fiche client pour l'appeler et suivre ses commandes.
         </p>
       </div>
 

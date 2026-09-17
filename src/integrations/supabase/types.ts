@@ -32080,6 +32080,10 @@ export type Database = {
     }
     Functions: {
       _account_hash_token: { Args: { _token: string }; Returns: string }
+      _affiliate_client_display_name: {
+        Args: { _user_id: string }
+        Returns: string
+      }
       _apply_buyer_delivery_confirmation: {
         Args: { _lines: Json; _order_id: string; _source: string }
         Returns: Json
@@ -33872,6 +33876,7 @@ export type Database = {
         Args: { _affiliate_id?: string }
         Returns: {
           attributed_at: string
+          client_name: string
           first_order_at: string
           orders_count: number
           pseudo: string

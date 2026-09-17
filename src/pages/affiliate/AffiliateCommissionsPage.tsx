@@ -120,6 +120,16 @@ export default function AffiliateCommissionsPage() {
                     <td className="p-3">
                       {r.client_name ?? "—"}
                       {r.pseudo && <p className="font-mono text-[11px] text-muted-foreground mt-0.5">{r.pseudo}</p>}
+                      {r.referral_id && (
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="h-auto p-0 mt-1 text-xs"
+                          onClick={() => setOpenReferralId(r.referral_id)}
+                        >
+                          <UserRound className="h-3 w-3 mr-1" /> Fiche client
+                        </Button>
+                      )}
                     </td>
                     <td className="p-3 text-right">{fmtCents(r.order_total_ht_cents)}</td>
                     <td className="p-3 text-right font-medium">{fmtCents(r.commission_cents)}</td>

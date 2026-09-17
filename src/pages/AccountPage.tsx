@@ -3,7 +3,7 @@ import EinvoicingSettingsCard from "@/components/shared/EinvoicingSettingsCard";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getOrderStatusMeta, formatOrderDateTime } from "@/lib/order-status";
 import { ProductImage } from "@/components/shared/ProductCard";
-import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail, Phone, Clock, List, Plus, Trash2, Eye, ShoppingCart, Search, TrendingDown, BarChart3, Upload, FileSpreadsheet, Recycle, BellRing, Tag, Coins, ScanLine, Store, ArrowRight, LogOut, Inbox, Globe } from "lucide-react";
+import { Users, MapPin, Package, AlertCircle, Heart, Zap, Download, Layers, Mail, Phone, Clock, List, Plus, Trash2, Eye, ShoppingCart, Search, TrendingDown, BarChart3, Upload, FileSpreadsheet, Recycle, BellRing, Tag, Coins, ScanLine, Store, ArrowRight, LogOut, Inbox, Globe, Handshake } from "lucide-react";
 import { BuyerImportModal } from "@/components/buyer/BuyerImportModal";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
@@ -46,6 +46,7 @@ const tabs = [
   { key: "ocr-economies", label: "Calcul d'économies (OCR)", icon: ScanLine, disabled: false, href: "/compte/mes-analyses-economies" },
   { key: "catalogue", label: "Catalogue", icon: Download, disabled: false },
   { key: "restock", label: "ReStock", icon: Recycle, disabled: false, href: "/restock" },
+  { key: "apporteur", label: "Portail apporteur", icon: Handshake, disabled: false, href: "/apporteur", affiliateOnly: true },
   { key: "bnpl", label: "Payer plus tard", icon: Layers, disabled: true },
 ];
 
@@ -302,6 +303,11 @@ export default function AccountPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = searchParams.get("tab") || "profil";
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [isAffiliate, setIsAffiliate] = useState(false);
+  useEffect(() => {
+    if (!user) { setIsAffiliate(false); return; }
+    (supabase as any).rpc("affiliate_my_account").then(({ data }: any) => setIsAffiliate(!!data));
+  }, [user]);
   useEffect(() => {
     const t = searchParams.get("tab");
     if (t && t !== activeTab) setActiveTab(t);
@@ -521,7 +527,7 @@ export default function AccountPage() {
               transition={{ duration: 0.4, delay: 0.1 }}
             >
               <div className="flex md:flex-col gap-1 overflow-x-auto pb-2 md:pb-0">
-                {tabs.map((t, i) => {
+                {tabs.filter((t) => !(t as any).affiliateOnly || isAffiliate).map((t, i) => {
                   const isLink = 'href' in t && (t as any).href;
                   const inner = (
                     <>

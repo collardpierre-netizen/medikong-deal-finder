@@ -63,6 +63,7 @@ export default function AffiliateClientsPage() {
                 <th className="p-3 text-right">CA HTVA</th>
                 <th className="p-3">Situation</th>
                 <th className="p-3">Attribution</th>
+                <th className="p-3 text-right">Fiche</th>
               </tr>
             </thead>
             <tbody>
@@ -90,16 +91,23 @@ export default function AffiliateClientsPage() {
                         </Badge>
                       )}
                     </td>
+                    <td className="p-3 text-right">
+                      <Button size="sm" variant="outline" onClick={() => setOpenReferralId(r.referral_id)}>
+                        <Phone className="h-3.5 w-3.5 mr-1" /> Fiche client
+                      </Button>
+                    </td>
                   </tr>
                 );
               })}
               {rows.length === 0 && (
-                <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Aucun client attribué pour l'instant.</td></tr>
+                <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Aucun client attribué pour l'instant.</td></tr>
               )}
             </tbody>
           </table>
         </CardContent>
       </Card>
+
+      <AffiliateClientSheet referralId={openReferralId} onClose={() => setOpenReferralId(null)} />
     </div>
   );
 }

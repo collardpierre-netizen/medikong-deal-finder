@@ -33841,6 +33841,7 @@ export type Database = {
           adjustment_of_id: string
           calc_details: Json
           cancelled_reason: string
+          client_name: string
           commission_cents: number
           id: string
           invoice_number: string

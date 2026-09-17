@@ -18,6 +18,7 @@ type Commission = {
   order_date: string | null;
   pseudo: string | null;
   client_name: string | null;
+  referral_id: string | null;
   order_total_ht_cents: number;
   commission_cents: number;
   margin_guard_hit: boolean;

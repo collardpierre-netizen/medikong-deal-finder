@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAffiliateAccount, affiliateArgs } from "@/hooks/useAffiliateAccount";
 import { CommissionCalcDetails } from "@/components/affiliate/CommissionCalcDetails";
+import AffiliateClientSheet from "@/components/affiliate/AffiliateClientSheet";
 import { fmtCents, fmtDate, COMMISSION_STATUS_LABELS, type CalcDetails } from "@/lib/affiliate-format";
-import { Download } from "lucide-react";
+import { Download, UserRound } from "lucide-react";
 
 type Commission = {
   id: string;
@@ -18,6 +19,7 @@ type Commission = {
   order_date: string | null;
   pseudo: string | null;
   client_name: string | null;
+  referral_id: string | null;
   order_total_ht_cents: number;
   commission_cents: number;
   margin_guard_hit: boolean;
@@ -34,6 +36,8 @@ const STATUSES = ["pending", "on_hold", "validated", "invoiced", "paid", "cancel
 export default function AffiliateCommissionsPage() {
   const { account, asAffiliateId } = useAffiliateAccount();
   const [status, setStatus] = useState("all");
+  const [openReferralId, setOpenReferralId] = useState<string | null>(null);
+
 
   const { data: rows = [] } = useQuery<Commission[]>({
     queryKey: ["affiliate-commissions", asAffiliateId],
@@ -116,6 +120,16 @@ export default function AffiliateCommissionsPage() {
                     <td className="p-3">
                       {r.client_name ?? "—"}
                       {r.pseudo && <p className="font-mono text-[11px] text-muted-foreground mt-0.5">{r.pseudo}</p>}
+                      {r.referral_id && (
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="h-auto p-0 mt-1 text-xs"
+                          onClick={() => setOpenReferralId(r.referral_id)}
+                        >
+                          <UserRound className="h-3 w-3 mr-1" /> Fiche client
+                        </Button>
+                      )}
                     </td>
                     <td className="p-3 text-right">{fmtCents(r.order_total_ht_cents)}</td>
                     <td className="p-3 text-right font-medium">{fmtCents(r.commission_cents)}</td>
@@ -144,6 +158,8 @@ export default function AffiliateCommissionsPage() {
           </table>
         </CardContent>
       </Card>
+
+      <AffiliateClientSheet referralId={openReferralId} onClose={() => setOpenReferralId(null)} />
     </div>
   );
 }

@@ -33867,6 +33867,7 @@ export type Database = {
           order_number: string
           order_total_ht_cents: number
           pseudo: string
+          referral_id: string
           status: string
           validate_after: string
         }[]

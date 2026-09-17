@@ -17,6 +17,7 @@ type Commission = {
   order_number: string | null;
   order_date: string | null;
   pseudo: string | null;
+  client_name: string | null;
   order_total_ht_cents: number;
   commission_cents: number;
   margin_guard_hit: boolean;
@@ -52,7 +53,7 @@ export default function AffiliateCommissionsPage() {
   const exportCsv = () => {
     const header = ["Commande", "Date", "Client", "Montant HTVA", "Commission", "Statut", "Note de commission"];
     const lines = filtered.map((r) => [
-      r.order_number ?? "", r.order_date ?? "", r.pseudo ?? "",
+      r.order_number ?? "", r.order_date ?? "", r.client_name ?? r.pseudo ?? "",
       ((r.order_total_ht_cents ?? 0) / 100).toFixed(2),
       ((r.commission_cents ?? 0) / 100).toFixed(2),
       COMMISSION_STATUS_LABELS[r.status]?.label ?? r.status,
@@ -112,7 +113,10 @@ export default function AffiliateCommissionsPage() {
                       {r.adjustment_of_id && <p className="text-[11px] text-muted-foreground">régularisation</p>}
                     </td>
                     <td className="p-3">{fmtDate(r.order_date)}</td>
-                    <td className="p-3 font-mono text-xs">{r.pseudo ?? "—"}</td>
+                    <td className="p-3">
+                      {r.client_name ?? "—"}
+                      {r.pseudo && <p className="font-mono text-[11px] text-muted-foreground mt-0.5">{r.pseudo}</p>}
+                    </td>
                     <td className="p-3 text-right">{fmtCents(r.order_total_ht_cents)}</td>
                     <td className="p-3 text-right font-medium">{fmtCents(r.commission_cents)}</td>
                     <td className="p-3">

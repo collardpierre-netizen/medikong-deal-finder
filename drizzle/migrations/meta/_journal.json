@@ -120,6 +120,13 @@
       "when": 1789654036958,
       "tag": "0016_0016_affiliate_net_margin_commission_fallback_and_card_only_fees",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1789655532784,
+      "tag": "0017_0017_affiliate_my_commissions_client_name",
+      "breakpoints": true
     }
   ]
 }

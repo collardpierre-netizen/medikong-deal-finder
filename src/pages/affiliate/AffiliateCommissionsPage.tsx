@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAffiliateAccount, affiliateArgs } from "@/hooks/useAffiliateAccount";
 import { CommissionCalcDetails } from "@/components/affiliate/CommissionCalcDetails";
+import AffiliateClientSheet from "@/components/affiliate/AffiliateClientSheet";
 import { fmtCents, fmtDate, COMMISSION_STATUS_LABELS, type CalcDetails } from "@/lib/affiliate-format";
-import { Download } from "lucide-react";
+import { Download, UserRound } from "lucide-react";
 
 type Commission = {
   id: string;

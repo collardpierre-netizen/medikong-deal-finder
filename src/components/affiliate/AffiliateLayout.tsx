@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AFFILIATE_STATUS_LABELS } from "@/lib/affiliate-format";
-import { Handshake, LayoutDashboard, Link2, Users, Percent, Wallet, LogOut, Eye } from "lucide-react";
+import { Handshake, LayoutDashboard, Link2, Users, Percent, Wallet, LogOut, Eye, Home, User } from "lucide-react";
 import logoDark from "@/assets/Logo_horizontal_sombre2.png";
 
 const NAV = [

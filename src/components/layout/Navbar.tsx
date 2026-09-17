@@ -1,4 +1,4 @@
-import { ShoppingCart, Users, Menu, X, LogOut, Shield, Store, Tag, Percent, Lock } from "lucide-react";
+import { ShoppingCart, Users, Menu, X, LogOut, Shield, Store, Tag, Percent, Lock, Handshake } from "lucide-react";
 import { usePriceDisplay } from "@/contexts/PriceDisplayContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -40,6 +40,7 @@ export function Navbar() {
   const { cartCount } = useCart();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isVendor, setIsVendor] = useState(false);
+  const [isAffiliate, setIsAffiliate] = useState(false);
   const { isTVAC, toggleTVAC } = usePriceDisplay();
 
   // Close mobile menu on route change
@@ -57,7 +58,7 @@ export function Navbar() {
   }, [mobileMenuOpen]);
 
   useEffect(() => {
-    if (!user) { setIsAdmin(false); setIsVendor(false); return; }
+    if (!user) { setIsAdmin(false); setIsVendor(false); setIsAffiliate(false); return; }
     const check = async () => {
       const { data: adminData } = await supabase
         .from("admin_users")
@@ -73,6 +74,9 @@ export function Navbar() {
         .eq("auth_user_id", user.id)
         .maybeSingle();
       setIsVendor(!!vendorData);
+
+      const { data: affiliateData } = await (supabase as any).rpc("affiliate_my_account");
+      setIsAffiliate(!!affiliateData);
     };
     check();
   }, [user]);
@@ -167,6 +171,16 @@ export function Navbar() {
                 <span>{t("nav.myPrices")}</span>
               </Link>
 
+              {isAffiliate && (
+                <Link
+                  to="/apporteur"
+                  className="flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full hover:bg-primary/20 transition-colors"
+                  title="Portail apporteur d'affaires"
+                >
+                  <Handshake size={13} />
+                  <span>Apporteur</span>
+                </Link>
+              )}
               <ResellerNavLink />
               <Link
                 to="/compte"
@@ -252,6 +266,11 @@ export function Navbar() {
                   {isVendor && (
                     <Link to="/vendor" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-primary text-sm font-semibold py-1">
                       <Store size={16} /> {t("common.vendorSpace")}
+                    </Link>
+                  )}
+                  {isAffiliate && (
+                    <Link to="/apporteur" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-primary text-sm font-semibold py-1">
+                      <Handshake size={16} /> Portail apporteur
                     </Link>
                   )}
                   <Link to="/mes-prix" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-emerald-600 text-sm font-semibold py-1">

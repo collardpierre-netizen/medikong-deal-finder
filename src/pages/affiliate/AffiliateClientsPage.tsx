@@ -1,12 +1,17 @@
 // Portail apporteur — Mes clients.
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Phone } from "lucide-react";
+import AffiliateClientSheet from "@/components/affiliate/AffiliateClientSheet";
 import { useAffiliateAccount, affiliateArgs } from "@/hooks/useAffiliateAccount";
 import { fmtCents, fmtDate, daysUntil } from "@/lib/affiliate-format";
 
 type Referral = {
+  referral_id: string;
   pseudo: string;
   client_name: string | null;
   attributed_at: string | null;

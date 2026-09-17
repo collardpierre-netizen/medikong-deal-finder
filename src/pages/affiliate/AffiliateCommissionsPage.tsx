@@ -36,6 +36,8 @@ const STATUSES = ["pending", "on_hold", "validated", "invoiced", "paid", "cancel
 export default function AffiliateCommissionsPage() {
   const { account, asAffiliateId } = useAffiliateAccount();
   const [status, setStatus] = useState("all");
+  const [openReferralId, setOpenReferralId] = useState<string | null>(null);
+
 
   const { data: rows = [] } = useQuery<Commission[]>({
     queryKey: ["affiliate-commissions", asAffiliateId],

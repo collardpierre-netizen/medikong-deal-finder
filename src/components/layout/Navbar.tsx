@@ -268,6 +268,11 @@ export function Navbar() {
                       <Store size={16} /> {t("common.vendorSpace")}
                     </Link>
                   )}
+                  {isAffiliate && (
+                    <Link to="/apporteur" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-primary text-sm font-semibold py-1">
+                      <Handshake size={16} /> Portail apporteur
+                    </Link>
+                  )}
                   <Link to="/mes-prix" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 text-emerald-600 text-sm font-semibold py-1">
                     <Tag size={16} /> {t("nav.myPrices")}
                   </Link>

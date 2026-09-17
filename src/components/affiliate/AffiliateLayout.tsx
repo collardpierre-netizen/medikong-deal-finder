@@ -92,15 +92,23 @@ export default function AffiliateLayout() {
               <p className="text-xs text-muted-foreground">Apporteur {account.affiliate_code}</p>
             </div>
           </div>
-          {!impersonating && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={async () => { await supabase.auth.signOut(); navigate("/connexion"); }}
-            >
-              <LogOut className="h-4 w-4 mr-1" /> Déconnexion
+          <div className="flex items-center gap-1 shrink-0">
+            <Button variant="outline" size="sm" onClick={() => navigate("/")}>
+              <Home className="h-4 w-4 mr-1" /> Retour au site
             </Button>
-          )}
+            <Button variant="ghost" size="sm" onClick={() => navigate("/compte")}>
+              <User className="h-4 w-4 mr-1" /> Mon compte acheteur
+            </Button>
+            {!impersonating && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={async () => { await supabase.auth.signOut(); navigate("/connexion"); }}
+              >
+                <LogOut className="h-4 w-4 mr-1" /> Déconnexion
+              </Button>
+            )}
+          </div>
         </div>
         <nav className="max-w-6xl mx-auto px-4 flex gap-1 overflow-x-auto">
           {NAV.map((item) => (

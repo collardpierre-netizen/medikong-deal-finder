@@ -1,4 +1,4 @@
-import { ShoppingCart, Users, Menu, X, LogOut, Shield, Store, Tag, Percent, Lock } from "lucide-react";
+import { ShoppingCart, Users, Menu, X, LogOut, Shield, Store, Tag, Percent, Lock, Handshake } from "lucide-react";
 import { usePriceDisplay } from "@/contexts/PriceDisplayContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -40,6 +40,7 @@ export function Navbar() {
   const { cartCount } = useCart();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isVendor, setIsVendor] = useState(false);
+  const [isAffiliate, setIsAffiliate] = useState(false);
   const { isTVAC, toggleTVAC } = usePriceDisplay();
 
   // Close mobile menu on route change

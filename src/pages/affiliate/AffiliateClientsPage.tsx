@@ -1,14 +1,14 @@
-// Portail apporteur — Mes clients (pseudonymisés).
+// Portail apporteur — Mes clients.
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAffiliateAccount, affiliateArgs } from "@/hooks/useAffiliateAccount";
 import { fmtCents, fmtDate, daysUntil } from "@/lib/affiliate-format";
-import { ShieldCheck } from "lucide-react";
 
 type Referral = {
   pseudo: string;
+  client_name: string | null;
   attributed_at: string | null;
   first_order_at: string | null;
   window_expires_at: string | null;
@@ -40,10 +40,8 @@ export default function AffiliateClientsPage() {
     <div className="space-y-4">
       <div>
         <h1 className="text-xl font-semibold">Mes clients</h1>
-        <p className="text-sm text-muted-foreground flex items-start gap-1.5 mt-1">
-          <ShieldCheck className="h-4 w-4 mt-0.5 shrink-0" />
-          Pour protéger la confidentialité de vos clients, seul un identifiant anonyme vous est communiqué.
-          MediKong ne transmet ni nom, ni email, ni téléphone.
+        <p className="text-sm text-muted-foreground mt-1">
+          Clients attribués à votre code apporteur. MediKong ne transmet ni email, ni téléphone.
         </p>
       </div>
 
@@ -66,7 +64,10 @@ export default function AffiliateClientsPage() {
                 const left = daysUntil(r.window_expires_at);
                 return (
                   <tr key={`${r.pseudo}-${i}`} className="border-t">
-                    <td className="p-3 font-mono text-xs">{r.pseudo}</td>
+                    <td className="p-3">
+                      <div className="font-medium">{r.client_name ?? "—"}</div>
+                      <div className="font-mono text-xs text-muted-foreground">{r.pseudo}</div>
+                    </td>
                     <td className="p-3">{fmtDate(r.attributed_at)}</td>
                     <td className="p-3">{fmtDate(r.first_order_at)}</td>
                     <td className="p-3 text-right">{r.orders_count}</td>

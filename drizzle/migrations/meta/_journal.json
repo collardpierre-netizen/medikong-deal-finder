@@ -134,6 +134,13 @@
       "when": 1789656631409,
       "tag": "0018_0018_affiliate_client_sheet_and_profiles_privileged_check",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1789656763587,
+      "tag": "0019_0019_affiliate_client_display_name_customers_fallback",
+      "breakpoints": true
     }
   ]
 }

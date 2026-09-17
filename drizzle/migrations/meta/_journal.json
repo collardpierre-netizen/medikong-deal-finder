@@ -127,6 +127,13 @@
       "when": 1789655532784,
       "tag": "0017_0017_affiliate_my_commissions_client_name",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1789656631409,
+      "tag": "0018_0018_affiliate_client_sheet_and_profiles_privileged_check",
+      "breakpoints": true
     }
   ]
 }

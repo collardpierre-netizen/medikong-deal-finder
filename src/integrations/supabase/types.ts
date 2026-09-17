@@ -32111,6 +32111,18 @@ export type Database = {
         }
         Returns: boolean
       }
+      _profiles_privileged_intact: {
+        Args: {
+          _activated_at: string
+          _buyer_profile_id: string
+          _founder_since: string
+          _founder_source: string
+          _id: string
+          _is_founder: boolean
+          _price_level_code: string
+        }
+        Returns: boolean
+      }
       _qogita_apply_sweep: {
         Args: {
           _candidate_offers: string[]
@@ -33835,6 +33847,10 @@ export type Database = {
           utm_source: string
         }[]
       }
+      affiliate_my_client: {
+        Args: { _affiliate_id?: string; _referral_id: string }
+        Returns: Json
+      }
       affiliate_my_commissions: {
         Args: { _affiliate_id?: string }
         Returns: {
@@ -33881,6 +33897,7 @@ export type Database = {
           first_order_at: string
           orders_count: number
           pseudo: string
+          referral_id: string
           revenue_ht_cents: number
           status: string
           window_expires_at: string

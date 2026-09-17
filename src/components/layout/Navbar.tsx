@@ -171,6 +171,16 @@ export function Navbar() {
                 <span>{t("nav.myPrices")}</span>
               </Link>
 
+              {isAffiliate && (
+                <Link
+                  to="/apporteur"
+                  className="flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full hover:bg-primary/20 transition-colors"
+                  title="Portail apporteur d'affaires"
+                >
+                  <Handshake size={13} />
+                  <span>Apporteur</span>
+                </Link>
+              )}
               <ResellerNavLink />
               <Link
                 to="/compte"

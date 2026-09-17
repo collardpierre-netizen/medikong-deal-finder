@@ -58,7 +58,7 @@ export function Navbar() {
   }, [mobileMenuOpen]);
 
   useEffect(() => {
-    if (!user) { setIsAdmin(false); setIsVendor(false); return; }
+    if (!user) { setIsAdmin(false); setIsVendor(false); setIsAffiliate(false); return; }
     const check = async () => {
       const { data: adminData } = await supabase
         .from("admin_users")
@@ -74,6 +74,9 @@ export function Navbar() {
         .eq("auth_user_id", user.id)
         .maybeSingle();
       setIsVendor(!!vendorData);
+
+      const { data: affiliateData } = await (supabase as any).rpc("affiliate_my_account");
+      setIsAffiliate(!!affiliateData);
     };
     check();
   }, [user]);

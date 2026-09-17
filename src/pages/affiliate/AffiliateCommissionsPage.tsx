@@ -158,6 +158,8 @@ export default function AffiliateCommissionsPage() {
           </table>
         </CardContent>
       </Card>
+
+      <AffiliateClientSheet referralId={openReferralId} onClose={() => setOpenReferralId(null)} />
     </div>
   );
 }

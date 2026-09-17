@@ -84,7 +84,7 @@ export function AffiliateTrackingPanel({ affiliateId }: { affiliateId: string })
           <Kpi label="Inscriptions démarrées" value={sum("signups_started")} />
           <Kpi label="Inscriptions terminées" value={sum("signups_completed")} />
           <Kpi label="Commandes rattachées" value={orders.length} />
-          <Kpi label="Commissions" value={`${fmtCents(commissionsTotal)} €`} />
+          <Kpi label="Commissions" value={fmtCents(commissionsTotal)} />
         </CardContent>
       </Card>
 
@@ -154,9 +154,9 @@ export function AffiliateTrackingPanel({ affiliateId }: { affiliateId: string })
                       <div className="text-xs text-muted-foreground">{fmtDate(o.order_date)}</div>
                     </td>
                     <td>{o.customer_name ?? "—"}</td>
-                    <td className="text-right tabular-nums">{fmtCents(o.order_total_ht_cents)} €</td>
-                    <td className="text-right tabular-nums">{o.net_margin_cents == null ? "—" : `${fmtCents(o.net_margin_cents)} €`}</td>
-                    <td className="text-right tabular-nums font-semibold">{fmtCents(o.commission_cents)} €</td>
+                    <td className="text-right tabular-nums">{fmtCents(o.order_total_ht_cents)}</td>
+                    <td className="text-right tabular-nums">{o.net_margin_cents == null ? "—" : fmtCents(o.net_margin_cents)}</td>
+                    <td className="text-right tabular-nums font-semibold">{fmtCents(o.commission_cents)}</td>
                     <td className="pl-3">
                       <Badge variant="outline" className={COMMISSION_STATUS_LABELS[o.commission_status]?.className}>
                         {COMMISSION_STATUS_LABELS[o.commission_status]?.label ?? o.commission_status}

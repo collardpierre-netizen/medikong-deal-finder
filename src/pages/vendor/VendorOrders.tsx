@@ -1458,8 +1458,11 @@ export function VendorOrderLineRow({
 
         <div className="flex-1 min-w-0">
           <div className="text-[13px] font-medium text-foreground">{line.product_name}</div>
-          {(line.product_gtin || line.product_cnk) && (
+          {(line.product_gtin || line.product_cnk || (line as any).vendor_ref) && (
             <div className="mt-0.5 flex items-center gap-2 flex-wrap text-[10.5px] text-muted-foreground">
+              {(line as any).vendor_ref && (
+                <span className="inline-flex items-center gap-1 font-medium text-foreground">Réf. {(line as any).vendor_ref}</span>
+              )}
               {line.product_gtin && (
                 <span className="inline-flex items-center gap-1"><Barcode size={10} /> EAN {line.product_gtin}</span>
               )}

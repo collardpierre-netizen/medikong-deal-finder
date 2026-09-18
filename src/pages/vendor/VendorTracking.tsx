@@ -338,7 +338,7 @@ export default function VendorTracking() {
           <TabsContent value="orders" className="mt-4">
             <VCard className="p-4">
               {filteredOrders.length === 0 ? (
-                <VEmptyState icon={ShoppingCart} title="Aucune commande" description="Aucune commande reçue pour le moment." />
+                <VEmptyState icon="ShoppingCart" title="Aucune commande" description="Aucune commande reçue pour le moment." />
               ) : (
                 filteredOrders.map((o) => {
                   const st = ORDER_STATUS[o.status] || { label: o.status, color: "default" as BadgeColor };
@@ -369,7 +369,7 @@ export default function VendorTracking() {
           <TabsContent value="notes" className="mt-4">
             <VCard className="p-4">
               {filteredNotes.length === 0 ? (
-                <VEmptyState icon={FileText} title="Aucun bon de livraison" description="Aucun bon de livraison émis sur vos commandes." />
+                <VEmptyState icon="FileText" title="Aucun bon de livraison" description="Aucun bon de livraison émis sur vos commandes." />
               ) : (
                 filteredNotes.map((n) => {
                   const lines = notesQuery.data?.linesByNote.get(n.id) || [];
@@ -418,7 +418,7 @@ export default function VendorTracking() {
           <TabsContent value="releases" className="mt-4">
             <VCard className="p-4">
               {filteredReleases.length === 0 ? (
-                <VEmptyState icon={BanknoteIcon} title="Aucun déblocage" description="Aucune décision de paiement enregistrée." />
+                <VEmptyState icon="Banknote" title="Aucun déblocage" description="Aucune décision de paiement enregistrée." />
               ) : (
                 filteredReleases.map((r) => {
                   const d = RELEASE_DECISION[r.decision] || { label: r.decision, color: "default" as BadgeColor };
@@ -453,7 +453,7 @@ export default function VendorTracking() {
                 <RotateCcw size={16} /> Mes lots ReStock
               </h2>
               {filteredRestock.length === 0 ? (
-                <VEmptyState icon={Truck} title="Aucun lot" description="Aucun lot de déstockage publié avec ce compte." />
+                <VEmptyState icon="Truck" title="Aucun lot" description="Aucun lot de déstockage publié avec ce compte." />
               ) : (
                 filteredRestock.map((r) => {
                   const st = RESTOCK_STATUS[r.status] || { label: r.status, color: "default" as BadgeColor };
@@ -485,7 +485,7 @@ export default function VendorTracking() {
               </h2>
               {returns.length === 0 ? (
                 <VEmptyState
-                  icon={PackageX}
+                  icon="PackageX"
                   title="Aucun retour"
                   description="Aucune unité refusée ni bon de livraison annulé à réintégrer."
                 />

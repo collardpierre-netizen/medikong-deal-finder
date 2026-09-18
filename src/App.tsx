@@ -614,6 +614,7 @@ const App = () => (
               <Route path="devis/:id/editer" element={<LP><AdminDevisEditer /></LP>} />
               <Route path="commandes-en-retard" element={<LP><AdminCommandesEnRetard /></LP>} />
               <Route path="commandes-vendeurs-apporteur" element={<LP><AdminCommandesVendeursApporteur /></LP>} />
+              <Route path="suivi-vendeur-mensuel" element={<LP><AdminSuiviVendeurMensuel /></LP>} />
               <Route path="parcours-client" element={<LP><AdminParcoursClient /></LP>} />
               <Route path="parcours-apporteur" element={<LP><AdminParcoursApporteur /></LP>} />
               <Route path="vendor-fanout" element={<LP><AdminVendorFanout /></LP>} />

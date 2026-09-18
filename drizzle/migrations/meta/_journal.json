@@ -162,6 +162,13 @@
       "when": 1789716354738,
       "tag": "0022_vendor_reference_offers_quotes_orders",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1789722037645,
+      "tag": "0023_0023_fix_delivery_confirmation_token_pgcrypto_schema",
+      "breakpoints": true
     }
   ]
 }

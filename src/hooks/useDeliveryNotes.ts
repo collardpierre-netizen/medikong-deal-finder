@@ -97,6 +97,13 @@ const ERRORS: Record<string, string> = {
   unauthorized: "Action non autorisée.",
   line_not_in_order: "Ligne introuvable dans cette commande.",
   order_not_found: "Commande introuvable.",
+  delivery_note_not_found: "Bon de livraison introuvable.",
+  delivery_note_cancelled: "Ce bon de livraison est annulé.",
+  already_confirmed: "Ce bon de livraison est déjà signé par le client.",
+  customer_email_missing: "Aucune adresse e-mail client sur cette commande.",
+  email_invoke_failed: "L'e-mail n'a pas pu être envoyé.",
+  invalid_decision: "Décision de paiement invalide.",
+  reason_required: "Indiquez le motif du blocage.",
 };
 export const deliveryErrorMessage = (msg?: string): string => {
   if (!msg) return "Opération impossible";

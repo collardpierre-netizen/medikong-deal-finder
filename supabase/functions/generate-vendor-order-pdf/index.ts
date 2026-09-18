@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
 
     const { data: lines, error: lErr } = await admin
       .from("order_lines")
-      .select("id, offer_id, quantity, unit_price_excl_vat, vat_rate, line_total_excl_vat, cost_price, manual_label, cnk_code, tracking_number, tracking_url, tracking_carrier, status, products(name, gtin, cnk_code)")
+      .select("id, offer_id, quantity, unit_price_excl_vat, vat_rate, line_total_excl_vat, cost_price, manual_label, cnk_code, vendor_reference, tracking_number, tracking_url, tracking_carrier, status, products(name, gtin, cnk_code), offers(vendor_reference)")
       .eq("order_id", orderId)
       .eq("vendor_id", vendorRow.id);
 
@@ -293,7 +293,9 @@ Deno.serve(async (req) => {
       const label = doc.splitTextToSize(String((l as any).manual_label || l.products?.name || "—"), COLS.articleWidth);
       const cnk = (l as any).cnk_code || l.products?.cnk_code || null;
       const gtin = l.products?.gtin || null;
+      const vendorRef = (l as any).vendor_reference || (l as any).offers?.vendor_reference || null;
       const codeParts: string[] = [];
+      if (vendorRef) codeParts.push(`Réf. ${vendorRef}`);
       if (cnk) codeParts.push(`CNK ${cnk}`);
       if (gtin) codeParts.push(`EAN ${gtin}`);
       const codeLine = codeParts.length ? codeParts.join(" · ") : null;

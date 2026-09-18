@@ -208,7 +208,9 @@ export default function VendorOrders() {
       const orderIds = [...new Set(lines.map(l => l.order_id))];
       const productIds = [...new Set(lines.map(l => l.product_id))];
 
-      const [ordersRes, productsRes, invoicesRes] = await Promise.all([
+      const offerIds = [...new Set(lines.map(l => l.offer_id).filter(Boolean))] as string[];
+
+      const [ordersRes, productsRes, invoicesRes, offersRes] = await Promise.all([
         (supabase as any)
           .from("vendor_orders_v")
           .select("id, order_number, status, created_at, shipping_address, billing_address, customer_id, hidden_from_list, deleted_at, payment_method, payment_status, payment_due_date, tracking_number, tracking_url, tracking_carrier, shipped_at, notes")
@@ -221,10 +223,16 @@ export default function VendorOrders() {
           .select("id, order_id, invoice_number, status, hosted_url, pdf_url")
           .in("order_id", orderIds)
           .eq("vendor_id", vendorId!),
+        offerIds.length > 0
+          ? supabase.from("offers").select("id, vendor_reference").in("id", offerIds)
+          : Promise.resolve({ data: [] as any[] }),
       ]);
 
       const orderMap = new Map((ordersRes.data || []).map(o => [o.id, o]));
       const productMap = new Map((productsRes.data || []).map(p => [p.id, p]));
+      const offerRefMap = new Map<string, string | null>(
+        ((offersRes as any).data || []).map((o: any) => [o.id, o.vendor_reference ?? null]),
+      );
       const invoicesByOrder = new Map<string, any[]>();
       for (const inv of invoicesRes.data || []) {
         const arr = invoicesByOrder.get(inv.order_id) || [];

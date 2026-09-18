@@ -14,6 +14,7 @@ interface Props {
   customerName?: string
   confirmUrl?: string
   lineCount?: number
+  checklistItems?: string[]
 }
 
 const DeliveryConfirmationRequestEmail = ({
@@ -22,6 +23,7 @@ const DeliveryConfirmationRequestEmail = ({
   customerName,
   confirmUrl,
   lineCount,
+  checklistItems,
 }: Props) => (
   <Html lang="fr" dir="ltr">
     <Head />
@@ -89,6 +91,14 @@ export const template = {
     customerName: 'Pharmacie Centrale',
     confirmUrl: 'https://medikong.pro/livraison/abcdef1234567890',
     lineCount: 4,
+    checklistItems: [
+      'Nombre de colis reçus conforme au bon de livraison',
+      'Emballages intacts, aucun colis ouvert ou écrasé',
+      'Quantités reçues conformes aux quantités livrées',
+      'Numéros de lot et dates de péremption (DLU) vérifiés',
+      'Chaîne du froid respectée (si applicable)',
+      "Documents d'accompagnement présents et lisibles",
+    ],
   },
 } satisfies TemplateEntry
 

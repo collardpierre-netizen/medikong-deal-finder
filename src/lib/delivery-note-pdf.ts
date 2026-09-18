@@ -26,6 +26,14 @@ export type DeliveryNotePdfInput = {
     delivered: number;
     remaining: number;
   }[];
+  /** Points de contrôle imprimés sur le bon (checklist de réception). */
+  checklistItems?: { label: string; checked?: boolean }[];
+  /** Confirmation client déjà enregistrée (signature en ligne). */
+  confirmation?: {
+    confirmedAt?: string | null;
+    confirmedByName?: string | null;
+    remarks?: string | null;
+  } | null;
 };
 
 const NAVY: [number, number, number] = [30, 37, 47];

@@ -303,8 +303,11 @@ export default function DeliveryNotesPanel({ orderId, orderNumber, customerName,
         {notes.length === 0 && <p className="text-sm text-slate-400">Aucun bon de livraison pour cette commande.</p>}
         {notes.map((dn) => {
           const qtyTotal = dn.delivery_note_lines.reduce((s, l) => s + l.quantity, 0);
+          const release = dn.delivery_payment_releases?.[0];
+          const refused = dn.delivery_note_lines.reduce((s, l) => s + (l.refused_quantity ?? 0), 0);
           return (
-            <div key={dn.id} className="flex flex-wrap items-center justify-between gap-2 border rounded px-3 py-2" style={{ borderColor: "#E2E8F0" }}>
+            <div key={dn.id} className="border rounded px-3 py-2 space-y-2" style={{ borderColor: "#E2E8F0" }}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-slate-800 text-sm">{dn.document_number || "Sans numéro"}</span>

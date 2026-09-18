@@ -1,5 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { createEmailWebhookHandler } from 'npm:@lovable.dev/email-js@0.1.0'
+import { createEmailWebhookHandler } from 'npm:@lovable.dev/email-js@0.3.0'
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,

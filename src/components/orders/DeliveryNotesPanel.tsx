@@ -92,9 +92,19 @@ export default function DeliveryNotesPanel({ orderId, orderNumber, customerName,
       return;
     }
     try {
-      await createMut.mutateAsync({ lines: selected, carrier, tracking_number: tracking, note });
+      const res = await createMut.mutateAsync({ lines: selected, carrier, tracking_number: tracking, note });
       setQty({}); setCarrier(""); setTracking(""); setNote("");
-      toast({ title: "Bon de livraison créé" });
+      if (res.emailSent) {
+        toast({ title: "Bon de livraison créé", description: "E-mail envoyé au client avec la checklist et le lien de signature." });
+      } else {
+        toast({
+          title: "Bon de livraison créé",
+          description: res.emailError
+            ? `E-mail non envoyé : ${res.emailError}`
+            : "E-mail non envoyé au client.",
+          variant: "destructive",
+        });
+      }
     } catch (e: any) {
       toast({ title: "Création impossible", description: e.message, variant: "destructive" });
     }

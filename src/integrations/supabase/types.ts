@@ -3993,6 +3993,13 @@ export type Database = {
             foreignKeyName: "commission_invoice_lines_order_line_id_fkey"
             columns: ["order_line_id"]
             isOneToOne: false
+            referencedRelation: "buyer_order_lines_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_invoice_lines_order_line_id_fkey"
+            columns: ["order_line_id"]
+            isOneToOne: false
             referencedRelation: "customer_order_lines"
             referencedColumns: ["id"]
           },
@@ -4960,6 +4967,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "admin_commission_backlog_v"
             referencedColumns: ["order_line_id"]
+          },
+          {
+            foreignKeyName: "delivery_note_lines_order_line_id_fkey"
+            columns: ["order_line_id"]
+            isOneToOne: false
+            referencedRelation: "buyer_order_lines_v"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "delivery_note_lines_order_line_id_fkey"
@@ -12533,6 +12547,13 @@ export type Database = {
             foreignKeyName: "order_line_sub_orders_order_line_id_fkey"
             columns: ["order_line_id"]
             isOneToOne: true
+            referencedRelation: "buyer_order_lines_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_line_sub_orders_order_line_id_fkey"
+            columns: ["order_line_id"]
+            isOneToOne: true
             referencedRelation: "customer_order_lines"
             referencedColumns: ["id"]
           },
@@ -18048,6 +18069,13 @@ export type Database = {
             foreignKeyName: "restock_sendcloud_invoice_lines_shipment_id_fkey"
             columns: ["shipment_id"]
             isOneToOne: false
+            referencedRelation: "buyer_restock_shipments_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restock_sendcloud_invoice_lines_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
             referencedRelation: "restock_shipments"
             referencedColumns: ["id"]
           },
@@ -18167,6 +18195,13 @@ export type Database = {
             foreignKeyName: "restock_shipment_events_shipment_id_fkey"
             columns: ["shipment_id"]
             isOneToOne: false
+            referencedRelation: "buyer_restock_shipments_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restock_shipment_events_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
             referencedRelation: "restock_shipments"
             referencedColumns: ["id"]
           },
@@ -18216,6 +18251,13 @@ export type Database = {
           status?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "restock_shipment_incidents_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "buyer_restock_shipments_v"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "restock_shipment_incidents_shipment_id_fkey"
             columns: ["shipment_id"]
@@ -28057,6 +28099,389 @@ export type Database = {
           stock_availability_pct: number | null
         }
         Relationships: []
+      }
+      buyer_order_lines_v: {
+        Row: {
+          backorder_note: string | null
+          backorder_status: string | null
+          backorder_updated_at: string | null
+          buyer_confirmation_note: string | null
+          buyer_confirmation_source: string | null
+          buyer_confirmation_status:
+            | Database["public"]["Enums"]["buyer_line_confirmation_status"]
+            | null
+          buyer_confirmed_at: string | null
+          buyer_confirmed_quantity: number | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          fulfillment_status:
+            | Database["public"]["Enums"]["fulfillment_status"]
+            | null
+          fulfillment_type:
+            | Database["public"]["Enums"]["fulfillment_type"]
+            | null
+          id: string | null
+          line_total_excl_vat: number | null
+          line_total_incl_vat: number | null
+          manual_label: string | null
+          offer_id: string | null
+          order_id: string | null
+          product_id: string | null
+          quantity: number | null
+          quantity_shipped: number | null
+          refunded_amount_incl_vat: number | null
+          stripe_payment_intent_id: string | null
+          tracking_number: string | null
+          tracking_url: string | null
+          unit_price_excl_vat: number | null
+          unit_price_incl_vat: number | null
+          updated_at: string | null
+          vat_rate: number | null
+          vendor_id: string | null
+          vendor_reference: string | null
+        }
+        Insert: {
+          backorder_note?: string | null
+          backorder_status?: string | null
+          backorder_updated_at?: string | null
+          buyer_confirmation_note?: string | null
+          buyer_confirmation_source?: string | null
+          buyer_confirmation_status?:
+            | Database["public"]["Enums"]["buyer_line_confirmation_status"]
+            | null
+          buyer_confirmed_at?: string | null
+          buyer_confirmed_quantity?: number | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          fulfillment_status?:
+            | Database["public"]["Enums"]["fulfillment_status"]
+            | null
+          fulfillment_type?:
+            | Database["public"]["Enums"]["fulfillment_type"]
+            | null
+          id?: string | null
+          line_total_excl_vat?: number | null
+          line_total_incl_vat?: number | null
+          manual_label?: string | null
+          offer_id?: string | null
+          order_id?: string | null
+          product_id?: string | null
+          quantity?: number | null
+          quantity_shipped?: number | null
+          refunded_amount_incl_vat?: number | null
+          stripe_payment_intent_id?: string | null
+          tracking_number?: string | null
+          tracking_url?: string | null
+          unit_price_excl_vat?: number | null
+          unit_price_incl_vat?: number | null
+          updated_at?: string | null
+          vat_rate?: number | null
+          vendor_id?: string | null
+          vendor_reference?: string | null
+        }
+        Update: {
+          backorder_note?: string | null
+          backorder_status?: string | null
+          backorder_updated_at?: string | null
+          buyer_confirmation_note?: string | null
+          buyer_confirmation_source?: string | null
+          buyer_confirmation_status?:
+            | Database["public"]["Enums"]["buyer_line_confirmation_status"]
+            | null
+          buyer_confirmed_at?: string | null
+          buyer_confirmed_quantity?: number | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          fulfillment_status?:
+            | Database["public"]["Enums"]["fulfillment_status"]
+            | null
+          fulfillment_type?:
+            | Database["public"]["Enums"]["fulfillment_type"]
+            | null
+          id?: string | null
+          line_total_excl_vat?: number | null
+          line_total_incl_vat?: number | null
+          manual_label?: string | null
+          offer_id?: string | null
+          order_id?: string | null
+          product_id?: string | null
+          quantity?: number | null
+          quantity_shipped?: number | null
+          refunded_amount_incl_vat?: number | null
+          stripe_payment_intent_id?: string | null
+          tracking_number?: string | null
+          tracking_url?: string | null
+          unit_price_excl_vat?: number | null
+          unit_price_incl_vat?: number | null
+          updated_at?: string | null
+          vat_rate?: number | null
+          vendor_id?: string | null
+          vendor_reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_lines_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["mk_best_offer_id"]
+          },
+          {
+            foreignKeyName: "order_lines_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_offer_prices_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "order_lines_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_private"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_public_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_with_exclusivity_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "order_lines_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "public_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_with_forecast_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders_visible_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orders_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "order_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "order_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "order_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "order_lines_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "order_lines_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "order_lines_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_intelligence_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "order_lines_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "order_lines_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "order_lines_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      buyer_restock_shipments_v: {
+        Row: {
+          buyer_id: string | null
+          buyer_shipping_fee_cents: number | null
+          carrier: string | null
+          created_at: string | null
+          exception_reason: string | null
+          id: string | null
+          seller_id: string | null
+          sendcloud_label_url: string | null
+          sendcloud_tracking_number: string | null
+          sendcloud_tracking_url: string | null
+          status: string | null
+          status_updated_at: string | null
+          transaction_id: string | null
+          weight_g: number | null
+        }
+        Insert: {
+          buyer_id?: string | null
+          buyer_shipping_fee_cents?: number | null
+          carrier?: string | null
+          created_at?: string | null
+          exception_reason?: string | null
+          id?: string | null
+          seller_id?: string | null
+          sendcloud_label_url?: string | null
+          sendcloud_tracking_number?: string | null
+          sendcloud_tracking_url?: string | null
+          status?: string | null
+          status_updated_at?: string | null
+          transaction_id?: string | null
+          weight_g?: number | null
+        }
+        Update: {
+          buyer_id?: string | null
+          buyer_shipping_fee_cents?: number | null
+          carrier?: string | null
+          created_at?: string | null
+          exception_reason?: string | null
+          id?: string | null
+          seller_id?: string | null
+          sendcloud_label_url?: string | null
+          sendcloud_tracking_number?: string | null
+          sendcloud_tracking_url?: string | null
+          status?: string | null
+          status_updated_at?: string | null
+          transaction_id?: string | null
+          weight_g?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restock_shipments_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "restock_seller_transactions_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restock_shipments_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "restock_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restock_shipments_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "restock_transactions_seller_v"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cagnotte_balance: {
         Row: {

@@ -92,20 +92,35 @@ export function useOrderDetail(orderId: string) {
     queryFn: async () => {
       const { data, error } = await supabase.from("orders").select("*").eq("id", orderId).single();
       if (error) throw error;
+      // Vue acheteur : expose uniquement les colonnes non sensibles (pas de coût/marge/commission vendeur)
       const { data: orderLines } = await supabase
-        .from("order_lines")
-        .select("*, products:product_id(name, gtin, cnk_code, sku), vendors:vendor_id(name, slug, display_code)")
+        .from("buyer_order_lines_v" as any)
+        .select("*")
         .eq("order_id", orderId);
-      const items = (orderLines || []).map((l: any) => ({
+      const lines = ((orderLines as any[]) || []);
+      const productIds = Array.from(new Set(lines.map((l) => l.product_id).filter(Boolean)));
+      const vendorIds = Array.from(new Set(lines.map((l) => l.vendor_id).filter(Boolean)));
+      const [{ data: prods }, { data: vends }] = await Promise.all([
+        productIds.length
+          ? supabase.from("products").select("id, name, gtin, cnk_code, sku").in("id", productIds)
+          : Promise.resolve({ data: [] as any[] } as any),
+        vendorIds.length
+          ? supabase.from("vendors_public" as any).select("id, name, slug, display_code").in("id", vendorIds)
+          : Promise.resolve({ data: [] as any[] } as any),
+      ]);
+      const prodMap = new Map(((prods as any[]) || []).map((p) => [p.id, p]));
+      const vendMap = new Map(((vends as any[]) || []).map((v) => [v.id, v]));
+      const items = lines.map((l: any) => ({
         ...l,
-        product_name: l.products?.name,
-        product_gtin: l.products?.gtin,
-        product_cnk: l.products?.cnk_code,
-        product_sku: l.products?.sku,
-        vendor_name: l.vendors?.name,
-        vendor_slug: l.vendors?.slug,
-        vendor_display_code: l.vendors?.display_code,
+        product_name: prodMap.get(l.product_id)?.name,
+        product_gtin: prodMap.get(l.product_id)?.gtin,
+        product_cnk: prodMap.get(l.product_id)?.cnk_code,
+        product_sku: prodMap.get(l.product_id)?.sku,
+        vendor_name: vendMap.get(l.vendor_id)?.name,
+        vendor_slug: vendMap.get(l.vendor_id)?.slug,
+        vendor_display_code: vendMap.get(l.vendor_id)?.display_code,
       }));
+
       // Fallback legacy order_items if no order_lines
       if (items.length === 0) {
         const { data: legacy } = await supabase.from("order_items" as any).select("*").eq("order_id", orderId);

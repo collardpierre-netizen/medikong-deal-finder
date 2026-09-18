@@ -39,14 +39,15 @@ export default function OrderPaymentConfirmationPage() {
         .maybeSingle();
       if (e1) throw e1;
       const { data: lines } = await supabase
-        .from("order_lines")
+        .from("buyer_order_lines_v" as any)
         .select("id, vendor_id, stripe_payment_intent_id, line_total_incl_vat")
         .eq("order_id", orderId);
 
       // Regroupe par PI id
       const byPi = new Map<string, { vendor_id: string | null; amount: number }>();
-      for (const l of lines || []) {
-        const pid = (l as any).stripe_payment_intent_id;
+      for (const row of ((lines as any[]) || [])) {
+        const l = row as any;
+        const pid = l.stripe_payment_intent_id;
         if (!pid) continue;
         const cur = byPi.get(pid) || { vendor_id: l.vendor_id, amount: 0 };
         cur.amount += Number(l.line_total_incl_vat || 0);

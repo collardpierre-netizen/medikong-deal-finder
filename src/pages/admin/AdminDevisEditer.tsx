@@ -20,6 +20,7 @@ type Line = {
   product_id?: string | null;
   offer_id?: string | null;
   label: string;
+  vendor_reference?: string | null;
   qty: number;
   unit_price_ht_cents: number;
   vat_rate: number;
@@ -160,6 +161,7 @@ const AdminDevisEditer = () => {
         product_id: l.product_id,
         offer_id: l.offer_id,
         label: l.label,
+        vendor_reference: l.vendor_reference ?? "",
         qty: Number(l.qty || 1),
         unit_price_ht_cents: Number(l.unit_price_ht_cents || 0),
         vat_rate: Number(l.vat_rate || 21),
@@ -217,7 +219,7 @@ const AdminDevisEditer = () => {
   const addLine = () => {
     setLines((prev) => [
       ...prev,
-      { label: "", qty: 1, unit_price_ht_cents: 0, vat_rate: 21, commission_rate: null },
+      { label: "", vendor_reference: "", qty: 1, unit_price_ht_cents: 0, vat_rate: 21, commission_rate: null },
     ]);
   };
   const removeLine = (i: number) => {
@@ -250,6 +252,7 @@ const AdminDevisEditer = () => {
           product_id: l.product_id || null,
           offer_id: l.offer_id || null,
           label: l.label,
+          vendor_reference: l.vendor_reference?.trim() ? l.vendor_reference.trim().slice(0, 80) : null,
           qty: l.qty,
           unit_price_ht_cents: l.unit_price_ht_cents,
           vat_rate: l.vat_rate,

@@ -335,6 +335,9 @@ export default function DeliveryNotesPanel({ orderId, orderNumber, customerName,
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
+                <Button size="sm" variant="outline" onClick={() => setTrackingNoteId(dn.id)}>
+                  <Truck className="w-3.5 h-3.5 mr-1" /> Suivi livraison
+                </Button>
                 <Button size="sm" variant="outline" onClick={() => downloadPdf(dn.id)}>
                   <FileDown className="w-3.5 h-3.5 mr-1" /> PDF
                 </Button>

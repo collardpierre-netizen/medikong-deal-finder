@@ -74,7 +74,7 @@ BEGIN
     _delivery_note_id, v_note.vendor_id, _decision,
     CASE WHEN _decision = 'blocked' THEN 0 ELSE GREATEST(0, COALESCE(_authorized_amount_ht_cents, 0)) END,
     NULLIF(btrim(COALESCE(_reason, '')), ''),
-    CASE WHEN _decision = 'full' THEN v_code ELSE v_code END,
+    v_code,
     auth.uid()
   )
   ON CONFLICT (delivery_note_id) DO UPDATE

@@ -128,7 +128,64 @@ export default function DeliveryNotesPanel({ orderId, orderNumber, customerName,
       trackingNumber: dn.tracking_number,
       note: dn.note,
       rows: pdfRows,
+      checklistItems:
+        dn.checklist?.items?.map((i) => ({ label: i.label, checked: i.checked })) ??
+        CHECKLIST_ITEMS.map((i) => ({ label: i.label })),
+      confirmation: dn.confirmed_at
+        ? {
+            confirmedAt: dn.confirmed_at,
+            confirmedByName: dn.confirmed_by_name,
+            remarks: dn.client_remarks,
+          }
+        : null,
     });
+  };
+
+  /** Montant HT (en €) réellement accepté par le client sur ce bon de livraison. */
+  const acceptedAmount = (dn: DeliveryNote): number =>
+    dn.delivery_note_lines.reduce((sum, l) => {
+      const unit = unitPricesByLine?.[l.order_line_id] ?? 0;
+      const qty = l.accepted_quantity ?? l.quantity;
+      return sum + unit * qty;
+    }, 0);
+
+  const sendLink = async (dnId: string) => {
+    try {
+      const res = await sendLinkMut.mutateAsync({ deliveryNoteId: dnId });
+      toast({ title: "Lien de signature envoyé", description: res?.recipient });
+    } catch (e: any) {
+      toast({ title: "Envoi impossible", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const decide = async (dn: DeliveryNote, decision: "full" | "partial" | "blocked") => {
+    let reason: string | undefined;
+    if (decision === "blocked") {
+      reason = window.prompt("Motif du blocage du paiement fournisseur ?") ?? undefined;
+      if (!reason || !reason.trim()) return;
+    }
+    const amount =
+      decision === "blocked"
+        ? 0
+        : Math.round(
+            (decision === "full"
+              ? dn.delivery_note_lines.reduce(
+                  (s, l) => s + (unitPricesByLine?.[l.order_line_id] ?? 0) * l.quantity,
+                  0,
+                )
+              : acceptedAmount(dn)) * 100,
+          );
+    try {
+      await releaseMut.mutateAsync({
+        delivery_note_id: dn.id,
+        decision,
+        authorized_amount_ht_cents: amount,
+        reason,
+      });
+      toast({ title: RELEASE_LABELS[decision] });
+    } catch (e: any) {
+      toast({ title: "Décision impossible", description: e.message, variant: "destructive" });
+    }
   };
 
   const setBackorder = async (r: DeliveryStatusRow, status: string) => {

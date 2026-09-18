@@ -76,6 +76,8 @@ export interface OrderWithLines {
     product_image: string | null;
     product_gtin: string | null;
     product_cnk: string | null;
+    /** Référence propre au vendeur (ligne, sinon offre). */
+    vendor_ref: string | null;
   })[];
 }
 
@@ -264,6 +266,9 @@ export default function VendorOrders() {
           product_image: product?.image_url || null,
           product_gtin: product?.gtin || null,
           product_cnk: product?.cnk_code || null,
+          vendor_ref:
+            (line as any).vendor_reference ||
+            (line.offer_id ? offerRefMap.get(line.offer_id) || null : null),
         });
       }
 

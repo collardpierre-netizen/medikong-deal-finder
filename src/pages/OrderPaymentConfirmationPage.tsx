@@ -39,7 +39,7 @@ export default function OrderPaymentConfirmationPage() {
         .maybeSingle();
       if (e1) throw e1;
       const { data: lines } = await supabase
-        .from("order_lines")
+        .from("buyer_order_lines_v" as any)
         .select("id, vendor_id, stripe_payment_intent_id, line_total_incl_vat")
         .eq("order_id", orderId);
 

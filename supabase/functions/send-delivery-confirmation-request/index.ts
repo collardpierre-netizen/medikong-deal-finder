@@ -1,6 +1,7 @@
 // Envoie au client le lien de signature en ligne d'un bon de livraison.
 // Appelable par un admin connecté ou par le fournisseur propriétaire du BL.
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { sendTemplateEmail } from "../_shared/transactional-email-templates/send-email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -70,8 +71,9 @@ Deno.serve(async (req) => {
   const recipientEmail = String(body?.recipientEmail || customer?.email || "").trim();
   if (!recipientEmail) return json({ error: "customer_email_missing" }, 422);
 
-  const appOrigin = String(body?.appOrigin || "https://medikong.pro").replace(/\/+$/, "");
-  const confirmUrl = `${appOrigin}/livraison/${encodeURIComponent(String(token))}`;
+  // Le client doit toujours recevoir un lien public, jamais une URL d'aperçu
+  // ou l'origine transmise par le navigateur de l'opérateur.
+  const confirmUrl = `https://medikong.pro/livraison/${encodeURIComponent(String(token))}`;
 
   // Checklist de réception embarquée dans l'e-mail (les pièces jointes ne sont
   // pas supportées par l'infrastructure d'envoi) — même liste que la page signée.
@@ -98,15 +100,20 @@ Deno.serve(async (req) => {
     return json({ dryRun: true, recipient: recipientEmail, confirmUrl, templateData, idempotencyKey });
   }
 
-  const { error: sendErr } = await admin.functions.invoke("send-app-email", {
-    body: {
-      templateName: "delivery-confirmation-request",
+  try {
+    const result = await sendTemplateEmail(
+      "delivery-confirmation-request",
       recipientEmail,
-      idempotencyKey,
-      templateData,
-    },
-  });
-  if (sendErr) return json({ error: "email_invoke_failed", detail: sendErr.message, confirmUrl }, 502);
+      { idempotencyKey, templateData },
+    );
+    if (!result.sent) {
+      return json({ error: "email_send_rejected", detail: result.reason, confirmUrl }, 422);
+    }
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    console.error("Delivery confirmation email failed", { deliveryNoteId, detail });
+    return json({ error: "email_invoke_failed", detail, confirmUrl }, 502);
+  }
 
   return json({ success: true, recipient: recipientEmail, confirmUrl });
 });

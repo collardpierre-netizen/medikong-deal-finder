@@ -365,7 +365,7 @@ export default function AdminSuiviVendeurMensuel() {
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               );
             })}
           </tbody>

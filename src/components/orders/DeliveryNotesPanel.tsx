@@ -69,6 +69,7 @@ export default function DeliveryNotesPanel({ orderId, orderNumber, customerName,
   const [carrier, setCarrier] = useState("");
   const [tracking, setTracking] = useState("");
   const [note, setNote] = useState("");
+  const [trackingNoteId, setTrackingNoteId] = useState<string | null>(null);
 
   const totals = useMemo(() => {
     const ordered = rows.reduce((s, r) => s + Number(r.quantity || 0), 0);

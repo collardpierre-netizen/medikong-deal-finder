@@ -47,6 +47,15 @@ const DeliveryConfirmationRequestEmail = ({
           <Text style={infoLine}>✓ Signez et ajoutez vos remarques</Text>
         </Section>
 
+        {Array.isArray(checklistItems) && checklistItems.length > 0 && (
+          <Section style={box}>
+            <Text style={infoTitle}>Checklist de réception à contrôler :</Text>
+            {checklistItems.map((label, i) => (
+              <Text key={i} style={infoLine}>☐ {label}</Text>
+            ))}
+          </Section>
+        )}
+
         {confirmUrl && (
           <Section style={{ textAlign: 'center', margin: '22px 0' }}>
             <Button href={confirmUrl} style={btn}>Signer la réception →</Button>

@@ -607,6 +607,10 @@ const AdminCommandeDetail = () => {
             customerCountryCode={(order as any).customer?.country_code ?? null}
             customerVatNumber={(order as any).customer?.vat_number ?? null}
             shippingAddress={(order as any).shipping_address ?? null}
+            canReleasePayment
+            unitPricesByLine={Object.fromEntries(
+              (lines as any[]).map((l) => [l.id, Number(l.unit_price_excl_vat) || 0]),
+            )}
           />
 
 

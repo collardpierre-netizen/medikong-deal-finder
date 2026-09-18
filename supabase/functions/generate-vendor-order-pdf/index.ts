@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
 
     const { data: lines, error: lErr } = await admin
       .from("order_lines")
-      .select("id, offer_id, quantity, unit_price_excl_vat, vat_rate, line_total_excl_vat, cost_price, manual_label, cnk_code, vendor_reference, tracking_number, tracking_url, tracking_carrier, status, products(name, gtin, cnk_code), offers(vendor_reference)")
+      .select("id, offer_id, quantity, unit_price_excl_vat, vat_rate, line_total_excl_vat, cost_price, manual_label, vendor_reference, tracking_number, tracking_url, fulfillment_status, products(name, gtin, cnk_code), offers(vendor_reference)")
       .eq("order_id", orderId)
       .eq("vendor_id", vendorRow.id);
 

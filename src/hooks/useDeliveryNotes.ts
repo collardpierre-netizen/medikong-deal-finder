@@ -127,6 +127,8 @@ export function useCreateDeliveryNote(orderId?: string) {
       carrier?: string;
       tracking_number?: string;
       note?: string;
+      /** Envoi automatique de l'e-mail client (checklist + lien de signature). */
+      sendEmail?: boolean;
     }) => {
       const { data, error } = await supabase.rpc("create_delivery_note" as any, {
         _order_id: orderId,
@@ -136,7 +138,21 @@ export function useCreateDeliveryNote(orderId?: string) {
         _note: input.note || null,
       });
       if (error) throw new Error(deliveryErrorMessage(error.message));
-      return data as unknown as string;
+      const deliveryNoteId = data as unknown as string;
+
+      // Envoi automatique au client : le bon ne doit jamais rester sans e-mail.
+      let emailSent = false;
+      let emailError: string | undefined;
+      if (input.sendEmail !== false && deliveryNoteId) {
+        const { data: sendData, error: sendErr } = await supabase.functions.invoke(
+          "send-delivery-confirmation-request",
+          { body: { deliveryNoteId, appOrigin: window.location.origin } },
+        );
+        if (sendErr) emailError = deliveryErrorMessage(sendErr.message);
+        else if ((sendData as any)?.error) emailError = deliveryErrorMessage((sendData as any).error);
+        else emailSent = true;
+      }
+      return { deliveryNoteId, emailSent, emailError };
     },
     onSuccess: invalidate,
   });

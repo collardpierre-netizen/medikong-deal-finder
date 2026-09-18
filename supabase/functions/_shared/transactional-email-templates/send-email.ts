@@ -1,11 +1,12 @@
 import * as React from 'npm:react@18.3.1'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
-import {
-  FROM_DOMAIN,
-  SENDER_DOMAIN,
-  sendLovableEmail,
-} from 'npm:@lovable.dev/email-js@0.1.0'
+import { sendLovableEmail } from 'npm:@lovable.dev/email-js@0.1.0'
 import { TEMPLATES } from './registry.ts'
+
+// Domaine expéditeur vérifié (délégation NS Lovable). Le paquet email-js
+// n'exporte pas ces constantes : elles doivent être déclarées ici.
+const SENDER_DOMAIN = 'notify.medikong.pro'
+const FROM_DOMAIN = 'notify.medikong.pro'
 
 const SITE_NAME = 'MediKong'
 
@@ -70,7 +71,7 @@ export async function sendTemplateEmail(
   const result = await sendLovableEmail(
     {
       from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-      to: [to],
+      to,
       subject,
       html,
       text,
@@ -81,8 +82,10 @@ export async function sendTemplateEmail(
     { apiKey },
   )
 
-  if (!result.sent) {
-    return { sent: false, reason: result.reason }
+  // L'API renvoie { success, status, message_id }. Un destinataire supprimé
+  // (bounce/plainte/désinscription) est refusé côté serveur.
+  if (result.success === false) {
+    return { sent: false, reason: result.status ?? 'send_rejected' }
   }
 
   return { sent: true }

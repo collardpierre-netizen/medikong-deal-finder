@@ -286,8 +286,8 @@ export default function AdminSuiviVendeurMensuel() {
             {filtered.map((g) => {
               const open = !!expanded[g.key];
               return (
-                <>
-                  <tr key={g.key} className="border-t" style={{ borderColor: "#E2E8F0" }}>
+                <Fragment key={g.key}>
+                  <tr className="border-t" style={{ borderColor: "#E2E8F0" }}>
                     <td className="px-3 py-2">
                       <Button
                         variant="ghost"

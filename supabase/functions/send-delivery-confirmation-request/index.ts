@@ -73,12 +73,24 @@ Deno.serve(async (req) => {
   const appOrigin = String(body?.appOrigin || "https://medikong.pro").replace(/\/+$/, "");
   const confirmUrl = `${appOrigin}/livraison/${encodeURIComponent(String(token))}`;
 
+  // Checklist de réception embarquée dans l'e-mail (les pièces jointes ne sont
+  // pas supportées par l'infrastructure d'envoi) — même liste que la page signée.
+  const CHECKLIST_ITEMS = [
+    "Nombre de colis reçus conforme au bon de livraison",
+    "Emballages intacts, aucun colis ouvert ou écrasé",
+    "Quantités reçues conformes aux quantités livrées",
+    "Numéros de lot et dates de péremption (DLU) vérifiés",
+    "Chaîne du froid respectée (si applicable)",
+    "Documents d'accompagnement présents et lisibles",
+  ];
+
   const templateData = {
     documentNumber: note.document_number,
     orderNumber: order?.order_number,
     customerName: customer?.company_name || undefined,
     confirmUrl,
     lineCount: (note as any).delivery_note_lines?.length ?? 0,
+    checklistItems: CHECKLIST_ITEMS,
   };
   const idempotencyKey = `delivery-confirmation-${deliveryNoteId}-${String(token).slice(0, 8)}`;
 

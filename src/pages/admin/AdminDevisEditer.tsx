@@ -414,6 +414,7 @@ const AdminDevisEditer = () => {
               <thead className="bg-slate-50">
                 <tr>
                   <th className="text-left px-2 py-2 text-[11px] uppercase text-slate-500">Libellé</th>
+                  <th className="text-left px-2 py-2 text-[11px] uppercase text-slate-500 w-32" title="Référence propre au vendeur, reprise sur son bon de commande.">Réf. vendeur</th>
                   <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-16">Qté</th>
                   <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-24">PU HT (€)</th>
                   <th className="text-right px-2 py-2 text-[11px] uppercase text-slate-500 w-24" title="Prix d'achat HT par unité (coût). Vide = inconnu, marge non calculée.">Achat HT (€)</th>
@@ -436,6 +437,14 @@ const AdminDevisEditer = () => {
                           value={l.label}
                           onChange={(e) => updateLine(i, { label: e.target.value })}
                           placeholder="Article"
+                        />
+                      </td>
+                      <td className="px-2 py-1">
+                        <Input
+                          value={l.vendor_reference ?? ""}
+                          maxLength={80}
+                          onChange={(e) => updateLine(i, { vendor_reference: e.target.value })}
+                          placeholder="—"
                         />
                       </td>
                       <td className="px-2 py-1">

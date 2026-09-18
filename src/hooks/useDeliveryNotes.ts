@@ -163,3 +163,41 @@ export function useSetBackorderStatus(orderId?: string) {
     onSuccess: invalidate,
   });
 }
+
+/** Envoie au client l'e-mail contenant le lien de signature du bon de livraison. */
+export function useSendDeliveryConfirmationRequest(orderId?: string) {
+  const invalidate = useInvalidate(orderId);
+  return useMutation({
+    mutationFn: async (input: { deliveryNoteId: string }) => {
+      const { data, error } = await supabase.functions.invoke("send-delivery-confirmation-request", {
+        body: { deliveryNoteId: input.deliveryNoteId, appOrigin: window.location.origin },
+      });
+      if (error) throw new Error(deliveryErrorMessage(error.message));
+      if ((data as any)?.error) throw new Error(deliveryErrorMessage((data as any).error));
+      return data as { recipient: string; confirmUrl: string };
+    },
+    onSuccess: invalidate,
+  });
+}
+
+/** Décision admin de déblocage du paiement fournisseur pour un bon de livraison. */
+export function useSetDeliveryPaymentRelease(orderId?: string) {
+  const invalidate = useInvalidate(orderId);
+  return useMutation({
+    mutationFn: async (input: {
+      delivery_note_id: string;
+      decision: "full" | "partial" | "blocked";
+      authorized_amount_ht_cents: number;
+      reason?: string;
+    }) => {
+      const { error } = await supabase.rpc("set_delivery_payment_release" as any, {
+        _delivery_note_id: input.delivery_note_id,
+        _decision: input.decision,
+        _authorized_amount_ht_cents: input.authorized_amount_ht_cents,
+        _reason: input.reason || null,
+      });
+      if (error) throw new Error(deliveryErrorMessage(error.message));
+    },
+    onSuccess: invalidate,
+  });
+}

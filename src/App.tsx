@@ -186,6 +186,7 @@ const AdminLitiges = lazyWithRetry(() => import("./pages/admin/AdminLitiges"), "
 const AdminCommandesEnRetard = lazyWithRetry(() => import("./pages/admin/AdminCommandesEnRetard"), "AdminCommandesEnRetard");
 const AdminCommandesVendeursApporteur = lazyWithRetry(() => import("./pages/admin/AdminCommandesVendeursApporteur"), "AdminCommandesVendeursApporteur");
 const AdminParcoursClient = lazyWithRetry(() => import("./pages/admin/AdminParcoursClient"), "AdminParcoursClient");
+const AdminParcoursApporteur = lazyWithRetry(() => import("./pages/admin/AdminParcoursApporteur"), "AdminParcoursApporteur");
 const AdminVendorFanout = lazyWithRetry(() => import("./pages/admin/AdminVendorFanout"), "AdminVendorFanout");
 const AdminFalcoStatus = lazyWithRetry(() => import("./pages/admin/AdminFalcoStatus"), "AdminFalcoStatus");
 const AdminNotifications = lazyWithRetry(() => import("./pages/admin/AdminNotifications"), "AdminNotifications");

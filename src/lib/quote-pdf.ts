@@ -150,7 +150,7 @@ export function generateQuotePdf(input: QuotePdfInput) {
   doc.setFontSize(8);
   doc.setTextColor(...MUTED);
   doc.text(
-    "MediKong — Balooh SRL n'est plus la dénomination utilisée. Devis exprimé en euros, prix HTVA sauf mention contraire.",
+    "MediKong — Devis exprimé en euros, prix HTVA sauf mention contraire.",
     M,
     285,
     { maxWidth: pageW - 2 * M }

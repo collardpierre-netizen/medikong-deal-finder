@@ -248,7 +248,7 @@ export default function AdminSuiviVendeurMensuel() {
         </Select>
         <span className="text-sm text-slate-500">
           {filtered.length} ligne(s) · {totals.orders} commande(s) · {totals.notes} BL · {totals.releases} déblocage(s)
-          · {fmtEur(totals.ht)} HTVA · {fmtEur(totals.releasedHt)} débloqués
+          · {fmtEur(totals.ht)} € HTVA · {fmtEur(totals.releasedHt)} € débloqués
         </span>
       </div>
 
@@ -309,8 +309,8 @@ export default function AdminSuiviVendeurMensuel() {
                       )}
                     </td>
                     <td className="px-3 py-2 text-right">{g.releasesCount}</td>
-                    <td className="px-3 py-2 text-right">{fmtEur(g.releasedHt)}</td>
-                    <td className="px-3 py-2 text-right font-semibold">{fmtEur(g.totalHt)}</td>
+                    <td className="px-3 py-2 text-right">{fmtEur(g.releasedHt)} €</td>
+                    <td className="px-3 py-2 text-right font-semibold">{fmtEur(g.totalHt)} €</td>
                   </tr>
                   {open && (
                     <tr key={`${g.key}-detail`} style={{ backgroundColor: "#F8FAFC" }}>
@@ -320,6 +320,7 @@ export default function AdminSuiviVendeurMensuel() {
                           <thead>
                             <tr className="text-[11px] uppercase font-semibold text-slate-500">
                               <th className="text-left px-2 py-1">Commande</th>
+                              <th className="text-left px-2 py-1">Mois</th>
                               <th className="text-left px-2 py-1">Date</th>
                               <th className="text-left px-2 py-1">Bons de livraison</th>
                               <th className="text-left px-2 py-1">Déblocage</th>
@@ -332,6 +333,7 @@ export default function AdminSuiviVendeurMensuel() {
                             {g.orders.map((o) => (
                               <tr key={o.orderId} className="border-t" style={{ borderColor: "#E2E8F0" }}>
                                 <td className="px-2 py-1.5 font-medium">{o.orderNumber ?? "—"}</td>
+                                <td className="px-2 py-1.5 capitalize">{monthLabel(g.month)}</td>
                                 <td className="px-2 py-1.5">{fmtDate(o.createdAt)}</td>
                                 <td className="px-2 py-1.5">
                                   {o.deliveryNotes.length > 0 ? o.deliveryNotes.join(", ") : "—"}
@@ -346,10 +348,10 @@ export default function AdminSuiviVendeurMensuel() {
                                     ? o.releaseDecisions.map((d) => DECISION_LABEL[d] ?? d).join(", ")
                                     : "—"}
                                 </td>
-                                <td className="px-2 py-1.5 text-right">
-                                  {o.releaseDecisions.length > 0 ? fmtEur(o.releasedHt) : "—"}
-                                </td>
-                                <td className="px-2 py-1.5 text-right font-semibold">{fmtEur(o.totalHt)}</td>
+                                  <td className="px-2 py-1.5 text-right">
+                                    {o.releaseDecisions.length > 0 ? `${fmtEur(o.releasedHt)} €` : "—"}
+                                  </td>
+                                  <td className="px-2 py-1.5 text-right font-semibold">{fmtEur(o.totalHt)} €</td>
                                 <td className="px-2 py-1.5 text-right">
                                   <Link
                                     to={`/admin/commandes/${o.orderId}`}

@@ -67,6 +67,7 @@ const sections: NavSection[] = [
       { label: "Devis", path: "/admin/devis", icon: FileText },
       { label: "Commandes vendeurs / apporteur", path: "/admin/commandes-vendeurs-apporteur", icon: Handshake },
       { label: "Parcours client", path: "/admin/parcours-client", icon: FileText },
+      { label: "Parcours par apporteur", path: "/admin/parcours-apporteur", icon: Handshake },
       { label: "Commandes en retard", path: "/admin/commandes-en-retard", icon: AlertTriangle },
       { label: "Fan-out vendeurs", path: "/admin/vendor-fanout", icon: Send },
       { label: "Falco / Peppol", path: "/admin/falco-status", icon: Zap },

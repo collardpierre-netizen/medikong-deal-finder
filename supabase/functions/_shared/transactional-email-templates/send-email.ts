@@ -71,7 +71,7 @@ export async function sendTemplateEmail(
   const result = await sendLovableEmail(
     {
       from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-      to: [to],
+      to,
       subject,
       html,
       text,
@@ -82,8 +82,10 @@ export async function sendTemplateEmail(
     { apiKey },
   )
 
-  if (!result.sent) {
-    return { sent: false, reason: result.reason }
+  // L'API renvoie { success, status, message_id }. Un destinataire supprimé
+  // (bounce/plainte/désinscription) est refusé côté serveur.
+  if (result.success === false) {
+    return { sent: false, reason: result.status ?? 'send_rejected' }
   }
 
   return { sent: true }

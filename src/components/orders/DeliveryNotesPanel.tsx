@@ -353,6 +353,63 @@ export default function DeliveryNotesPanel({ orderId, orderNumber, customerName,
                 )}
               </div>
             </div>
+
+            {/* Confirmation client */}
+            {dn.status === "issued" && (
+              <div className="text-[11px] rounded px-2 py-1.5" style={{ backgroundColor: "#F8FAFC" }}>
+                {dn.confirmed_at ? (
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-1 text-emerald-700 font-medium">
+                      <PenLine className="w-3.5 h-3.5" />
+                      Signé par {dn.confirmed_by_name || "—"} le {new Date(dn.confirmed_at).toLocaleString("fr-BE")}
+                    </div>
+                    {refused > 0 && <div className="text-amber-700">{refused} unité(s) refusée(s) par le client.</div>}
+                    {dn.client_remarks && <div className="text-slate-600">Remarques : {dn.client_remarks}</div>}
+                  </div>
+                ) : dn.confirmation_sent_at ? (
+                  <div className="flex items-center gap-1 text-slate-600">
+                    <Link2 className="w-3.5 h-3.5" />
+                    Lien envoyé le {new Date(dn.confirmation_sent_at).toLocaleString("fr-BE")} — en attente de signature client.
+                  </div>
+                ) : (
+                  <div className="text-slate-500">Checklist et signature client pas encore demandées.</div>
+                )}
+              </div>
+            )}
+
+            {/* Déblocage du paiement fournisseur (admin) */}
+            {canReleasePayment && dn.status === "issued" && (
+              <div className="text-[11px] border-t pt-2" style={{ borderColor: "#E2E8F0" }}>
+                {release ? (
+                  <div className="flex items-center gap-1 text-slate-700">
+                    <Unlock className="w-3.5 h-3.5" />
+                    {RELEASE_LABELS[release.decision]} · {(release.authorized_amount_ht_cents / 100).toFixed(2)} € HT
+                    {release.reason ? ` · ${release.reason}` : ""} ·{" "}
+                    {new Date(release.decided_at).toLocaleString("fr-BE")}
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-slate-500">Paiement fournisseur :</span>
+                    <Button size="sm" variant="outline" disabled={releaseMut.isPending} onClick={() => decide(dn, "full")}>
+                      Débloquer en totalité
+                    </Button>
+                    <Button size="sm" variant="outline" disabled={releaseMut.isPending} onClick={() => decide(dn, "partial")}>
+                      Débloquer partiellement ({acceptedAmount(dn).toFixed(2)} € HT)
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-red-600 hover:text-red-700"
+                      disabled={releaseMut.isPending}
+                      onClick={() => decide(dn, "blocked")}
+                    >
+                      Bloquer
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+            </div>
           );
         })}
       </div>

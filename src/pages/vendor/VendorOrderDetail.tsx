@@ -188,6 +188,41 @@ export default function VendorOrderDetail() {
             variant="outline"
             size="sm"
             onClick={async () => {
+              const { generateVendorOrderPdf } = await import("@/lib/vendor-order-pdf");
+              const { toast } = await import("sonner");
+              try {
+                const sa: any = (order as any).billing_address ?? (order as any).shipping_address ?? null;
+                generateVendorOrderPdf({
+                  orderNumber: order.order_number,
+                  orderDate: order.order_date,
+                  statusLabel: status.label,
+                  vendorName: vendorQuery.data?.company_name ?? vendorQuery.data?.name ?? null,
+                  vendorVatNumber: (vendorQuery.data as any)?.vat_number ?? null,
+                  customerName: sa?.company_name ?? sa?.label ?? null,
+                  customerEmail: sa?.email ?? null,
+                  customerVatNumber: sa?.vat_number ?? null,
+                  notes: (order as any).notes ?? null,
+                  lines: order.lines.map((l: any) => ({
+                    label: l.manual_label ?? l.product_name ?? null,
+                    vendorReference: l.vendor_reference ?? null,
+                    qty: Number(l.quantity) || 0,
+                    unitPriceExclVat: Number(l.unit_price_excl_vat) || 0,
+                    vatRate: Number(l.vat_rate) || 0,
+                    lineTotalExclVat: Number(l.line_total_excl_vat) || 0,
+                  })),
+                });
+                toast.success("PDF imprimable généré");
+              } catch (err: any) {
+                toast.error(err?.message || "Échec du PDF imprimable");
+              }
+            }}
+          >
+            PDF imprimable
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
               const { generateExpressOrderPdf } = await import("@/lib/express-order-pdf");
               const { toast } = await import("sonner");
               try {

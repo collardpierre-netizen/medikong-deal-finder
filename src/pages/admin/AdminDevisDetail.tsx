@@ -9,6 +9,7 @@ import { fmtEur } from "@/lib/format-currency";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Send, FileDown, RefreshCw, ArrowRightCircle, Copy, Eye, CheckCircle2, XCircle, Clock, Pencil, Trash2, Check, X } from "lucide-react";
 import { VendorsEmbedError } from "@/lib/vendors-embed-error";
+import { generateQuotePdf } from "@/lib/quote-pdf";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Brouillon", sent: "Envoyé", accepted: "Accepté", declined: "Refusé", paid: "Payé", converted: "Converti",
@@ -98,6 +99,40 @@ const AdminDevisDetail = () => {
     toast.success("Devis dupliqué");
     if (data) navigate(`/admin/devis/${data}`);
   });
+
+  const downloadPdf = () => {
+    try {
+      generateQuotePdf({
+        quoteNumber: quote.quote_number,
+        createdAt: quote.created_at,
+        validUntil: (quote as any).valid_until ?? (quote as any).expires_at ?? null,
+        status: quote.status,
+        vendorName:
+          (quote as any).anonymize_vendor === true
+            ? "Fournisseur MediKong"
+            : quote.vendor?.company_name || quote.vendor?.name || null,
+        vendorVatNumber: (quote as any).anonymize_vendor === true ? null : quote.vendor?.vat_number ?? null,
+        customerName: quote.customer?.company_name ?? null,
+        customerEmail: quote.customer?.email ?? null,
+        customerVatNumber: quote.customer?.vat_number ?? null,
+        notesCustomer: quote.notes_customer ?? null,
+        lines: lines.map((l: any) => ({
+          label: l.label,
+          vendorReference: l.vendor_reference ?? null,
+          qty: Number(l.qty || 0),
+          unitPriceHtCents: Number(l.unit_price_ht_cents || 0),
+          vatRate: Number(l.vat_rate || 0),
+          totalHtCents: Number(l.total_ht_cents || 0),
+        })),
+        totalHtCents: Number(quote.total_ht_cents || 0),
+        totalTvaCents: Number(quote.total_tva_cents || 0),
+        totalTtcCents: Number(quote.total_ttc_cents || 0),
+      });
+      toast.success("PDF téléchargé");
+    } catch (e: any) {
+      toast.error(e?.message || "Échec de la génération du PDF");
+    }
+  };
 
   const copyLink = () => {
     if (!publicUrl) return;
@@ -214,6 +249,9 @@ const AdminDevisDetail = () => {
                 </Link>
               </Button>
             )}
+            <Button onClick={downloadPdf} className="w-full justify-start" variant="outline">
+              <FileDown size={14} className="mr-2" /> Télécharger le PDF imprimable
+            </Button>
             <Button onClick={regeneratePdf} disabled={busy !== null} className="w-full justify-start" variant="outline">
               <FileDown size={14} className="mr-2" /> {busy === "PDF" ? "Génération…" : "Générer / Re-générer le PDF"}
             </Button>

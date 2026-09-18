@@ -76,6 +76,8 @@ export interface OrderWithLines {
     product_image: string | null;
     product_gtin: string | null;
     product_cnk: string | null;
+    /** Référence propre au vendeur (ligne, sinon offre). */
+    vendor_ref: string | null;
   })[];
 }
 
@@ -206,7 +208,9 @@ export default function VendorOrders() {
       const orderIds = [...new Set(lines.map(l => l.order_id))];
       const productIds = [...new Set(lines.map(l => l.product_id))];
 
-      const [ordersRes, productsRes, invoicesRes] = await Promise.all([
+      const offerIds = [...new Set(lines.map(l => l.offer_id).filter(Boolean))] as string[];
+
+      const [ordersRes, productsRes, invoicesRes, offersRes] = await Promise.all([
         (supabase as any)
           .from("vendor_orders_v")
           .select("id, order_number, status, created_at, shipping_address, billing_address, customer_id, hidden_from_list, deleted_at, payment_method, payment_status, payment_due_date, tracking_number, tracking_url, tracking_carrier, shipped_at, notes")
@@ -219,10 +223,16 @@ export default function VendorOrders() {
           .select("id, order_id, invoice_number, status, hosted_url, pdf_url")
           .in("order_id", orderIds)
           .eq("vendor_id", vendorId!),
+        offerIds.length > 0
+          ? supabase.from("offers").select("id, vendor_reference").in("id", offerIds)
+          : Promise.resolve({ data: [] as any[] }),
       ]);
 
       const orderMap = new Map((ordersRes.data || []).map(o => [o.id, o]));
       const productMap = new Map((productsRes.data || []).map(p => [p.id, p]));
+      const offerRefMap = new Map<string, string | null>(
+        ((offersRes as any).data || []).map((o: any) => [o.id, o.vendor_reference ?? null]),
+      );
       const invoicesByOrder = new Map<string, any[]>();
       for (const inv of invoicesRes.data || []) {
         const arr = invoicesByOrder.get(inv.order_id) || [];
@@ -264,6 +274,9 @@ export default function VendorOrders() {
           product_image: product?.image_url || null,
           product_gtin: product?.gtin || null,
           product_cnk: product?.cnk_code || null,
+          vendor_ref:
+            (line as any).vendor_reference ||
+            (line.offer_id ? offerRefMap.get(line.offer_id) || null : null),
         });
       }
 
@@ -1445,8 +1458,11 @@ export function VendorOrderLineRow({
 
         <div className="flex-1 min-w-0">
           <div className="text-[13px] font-medium text-foreground">{line.product_name}</div>
-          {(line.product_gtin || line.product_cnk) && (
+          {(line.product_gtin || line.product_cnk || (line as any).vendor_ref) && (
             <div className="mt-0.5 flex items-center gap-2 flex-wrap text-[10.5px] text-muted-foreground">
+              {(line as any).vendor_ref && (
+                <span className="inline-flex items-center gap-1 font-medium text-foreground">Réf. {(line as any).vendor_ref}</span>
+              )}
               {line.product_gtin && (
                 <span className="inline-flex items-center gap-1"><Barcode size={10} /> EAN {line.product_gtin}</span>
               )}

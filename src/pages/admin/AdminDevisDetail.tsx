@@ -351,7 +351,12 @@ function QuoteLineRow({ line, editable, canDelete, onChanged }: { line: any; edi
   if (!editable) {
     return (
       <tr className="border-t">
-        <td className="px-3 py-2">{line.label}</td>
+        <td className="px-3 py-2">
+          {line.label}
+          {line.vendor_reference && (
+            <div className="text-[11px] text-slate-500">Réf. vendeur : {line.vendor_reference}</div>
+          )}
+        </td>
         <td className="px-3 py-2 text-right">{line.qty}</td>
         <td className="px-3 py-2 text-right">{fmtEur(Number(line.unit_price_ht_cents) / 100)} €</td>
         <td className="px-3 py-2 text-right">{Number(line.vat_rate).toFixed(0)}%</td>
@@ -364,7 +369,12 @@ function QuoteLineRow({ line, editable, canDelete, onChanged }: { line: any; edi
   if (!editing) {
     return (
       <tr className="border-t group">
-        <td className="px-3 py-2">{line.label}</td>
+        <td className="px-3 py-2">
+          {line.label}
+          {line.vendor_reference && (
+            <div className="text-[11px] text-slate-500">Réf. vendeur : {line.vendor_reference}</div>
+          )}
+        </td>
         <td className="px-3 py-2 text-right">{line.qty}</td>
         <td className="px-3 py-2 text-right">{fmtEur(Number(line.unit_price_ht_cents) / 100)} €</td>
         <td className="px-3 py-2 text-right">{Number(line.vat_rate).toFixed(0)}%</td>

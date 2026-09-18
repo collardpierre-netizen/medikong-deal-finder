@@ -11657,6 +11657,7 @@ export type Database = {
           vat_rate: number
           vendor_id: string
           vendor_note: string | null
+          vendor_reference: string | null
         }
         Insert: {
           admin_hidden?: boolean
@@ -11737,6 +11738,7 @@ export type Database = {
           vat_rate?: number
           vendor_id: string
           vendor_note?: string | null
+          vendor_reference?: string | null
         }
         Update: {
           admin_hidden?: boolean
@@ -11817,6 +11819,7 @@ export type Database = {
           vat_rate?: number
           vendor_id?: string
           vendor_note?: string | null
+          vendor_reference?: string | null
         }
         Relationships: [
           {
@@ -12601,6 +12604,7 @@ export type Database = {
           updated_at: string
           vat_rate: number
           vendor_id: string
+          vendor_reference: string | null
         }
         Insert: {
           backorder_note?: string | null
@@ -12646,6 +12650,7 @@ export type Database = {
           updated_at?: string
           vat_rate: number
           vendor_id: string
+          vendor_reference?: string | null
         }
         Update: {
           backorder_note?: string | null
@@ -12691,6 +12696,7 @@ export type Database = {
           updated_at?: string
           vat_rate?: number
           vendor_id?: string
+          vendor_reference?: string | null
         }
         Relationships: [
           {
@@ -16721,6 +16727,7 @@ export type Database = {
           unit_price_ht_cents: number
           updated_at: string
           vat_rate: number
+          vendor_reference: string | null
         }
         Insert: {
           commission_amount_cents?: number | null
@@ -16740,6 +16747,7 @@ export type Database = {
           unit_price_ht_cents: number
           updated_at?: string
           vat_rate?: number
+          vendor_reference?: string | null
         }
         Update: {
           commission_amount_cents?: number | null
@@ -16759,6 +16767,7 @@ export type Database = {
           unit_price_ht_cents?: number
           updated_at?: string
           vat_rate?: number
+          vendor_reference?: string | null
         }
         Relationships: [
           {
@@ -33298,6 +33307,7 @@ export type Database = {
           vat_rate: number
           vendor_id: string
           vendor_note: string | null
+          vendor_reference: string | null
         }
         SetofOptions: {
           from: "*"
@@ -33680,6 +33690,7 @@ export type Database = {
           vat_rate: number
           vendor_id: string
           vendor_note: string | null
+          vendor_reference: string | null
         }
         SetofOptions: {
           from: "*"
@@ -36713,6 +36724,7 @@ export type Database = {
           updated_at: string
           vat_rate: number
           vendor_id: string
+          vendor_reference: string | null
         }
         SetofOptions: {
           from: "*"

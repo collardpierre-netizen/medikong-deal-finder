@@ -152,6 +152,8 @@ interface OfferForm {
   suggested_retail_price: string;
   /** Source du PVP : manufacturer | distributor. */
   suggested_retail_price_source: string;
+  /** Référence interne du vendeur pour ce produit (son propre SKU). */
+  vendor_reference: string;
 }
 
 const emptyForm: OfferForm = {
@@ -160,6 +162,7 @@ const emptyForm: OfferForm = {
   carton_size_override: "", packaging_languages: [],
   source_supplier: "",
   suggested_retail_price: "", suggested_retail_price_source: "manufacturer",
+  vendor_reference: "",
 };
 
 
@@ -1572,6 +1575,7 @@ export default function VendorOffers() {
       carton_size_override: (offer as any).carton_size_override != null ? String((offer as any).carton_size_override) : "",
       packaging_languages: Array.isArray((offer as any).packaging_languages) ? (offer as any).packaging_languages : [],
       source_supplier: (offer as any).source_supplier ?? "",
+      vendor_reference: (offer as any).vendor_reference ?? "",
       suggested_retail_price: (offer as any).suggested_retail_price_cents != null
         ? ((offer as any).suggested_retail_price_cents / 100).toFixed(2)
         : "",
@@ -1810,6 +1814,7 @@ export default function VendorOffers() {
           : null,
         packaging_languages: form.packaging_languages.length > 0 ? form.packaging_languages : null,
         source_supplier: form.source_supplier?.trim() ? form.source_supplier.trim().slice(0, 120) : null,
+        vendor_reference: form.vendor_reference?.trim() ? form.vendor_reference.trim().slice(0, 80) : null,
         is_active: true,
         ...(canSetPvp
           ? (() => {
@@ -2169,6 +2174,16 @@ export default function VendorOffers() {
                 style={{ borderColor: "#E2E8F0" }} value={form.vat_rate} onChange={e => setForm(p => ({ ...p, vat_rate: e.target.value }))}>
                 <option value="21">21%</option><option value="6">6%</option><option value="0">0%</option>
               </select>
+            </div>
+            <div>
+              <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>Votre référence</label>
+              <input type="text" maxLength={80} placeholder="Ex. REF-12345"
+                className="w-full px-3 py-2 text-[13px] border rounded-lg focus:border-[#1B5BDA] focus:outline-none"
+                style={{ borderColor: "#E2E8F0" }} value={form.vendor_reference}
+                onChange={e => setForm(p => ({ ...p, vendor_reference: e.target.value }))} />
+              <p className="text-[10px] mt-1" style={{ color: "#8B95A5" }}>
+                Reprise sur vos bons de commande.
+              </p>
             </div>
             <div>
               <label className="text-[11px] block mb-1" style={{ color: "#8B95A5" }}>Stock</label>

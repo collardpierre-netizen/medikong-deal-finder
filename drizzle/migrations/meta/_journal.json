@@ -148,6 +148,13 @@
       "when": 1789656900034,
       "tag": "0020_0020_affiliate_my_commissions_referral_id",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1789715338646,
+      "tag": "0021_delivery_note_signed_confirmation_and_payment_release",
+      "breakpoints": true
     }
   ]
 }

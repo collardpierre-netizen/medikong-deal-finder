@@ -110,3 +110,9 @@ verify_jwt = false
 
 [functions.send-order-message]
 verify_jwt = true
+
+[functions.confirm-delivery-note]
+verify_jwt = false
+
+[functions.send-delivery-confirmation-request]
+verify_jwt = false

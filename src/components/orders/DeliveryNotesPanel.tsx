@@ -322,10 +322,16 @@ export default function DeliveryNotesPanel({ orderId, orderNumber, customerName,
                   {dn.carrier ? ` · ${dn.carrier}` : ""}{dn.tracking_number ? ` · ${dn.tracking_number}` : ""}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Button size="sm" variant="outline" onClick={() => downloadPdf(dn.id)}>
                   <FileDown className="w-3.5 h-3.5 mr-1" /> PDF
                 </Button>
+                {dn.status === "issued" && !dn.confirmed_at && (
+                  <Button size="sm" variant="outline" disabled={sendLinkMut.isPending} onClick={() => sendLink(dn.id)}>
+                    {sendLinkMut.isPending ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Mail className="w-3.5 h-3.5 mr-1" />}
+                    {dn.confirmation_sent_at ? "Renvoyer le lien" : "Envoyer le lien de signature"}
+                  </Button>
+                )}
                 {dn.status === "issued" && (
                   <Button
                     size="sm"

@@ -47,7 +47,7 @@ const ERRORS: Record<string, string> = {
   signature_too_large: "La signature est trop volumineuse, recommencez.",
 };
 
-export default function DeliveryConfirmationPage() {
+export default function DeliveryNoteSignaturePage() {
   const { token } = useParams<{ token: string }>();
   const [note, setNote] = useState<PublicNote | null>(null);
   const [loading, setLoading] = useState(true);

@@ -70,7 +70,7 @@ export async function sendTemplateEmail(
 
   const result = await sendLovableEmail(
     {
-      from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+      from: { name: SITE_NAME, address: `noreply@${FROM_DOMAIN}` },
       to,
       subject,
       html,

@@ -152,6 +152,8 @@ interface OfferForm {
   suggested_retail_price: string;
   /** Source du PVP : manufacturer | distributor. */
   suggested_retail_price_source: string;
+  /** Référence interne du vendeur pour ce produit (son propre SKU). */
+  vendor_reference: string;
 }
 
 const emptyForm: OfferForm = {
@@ -160,6 +162,7 @@ const emptyForm: OfferForm = {
   carton_size_override: "", packaging_languages: [],
   source_supplier: "",
   suggested_retail_price: "", suggested_retail_price_source: "manufacturer",
+  vendor_reference: "",
 };
 
 
@@ -1572,6 +1575,7 @@ export default function VendorOffers() {
       carton_size_override: (offer as any).carton_size_override != null ? String((offer as any).carton_size_override) : "",
       packaging_languages: Array.isArray((offer as any).packaging_languages) ? (offer as any).packaging_languages : [],
       source_supplier: (offer as any).source_supplier ?? "",
+      vendor_reference: (offer as any).vendor_reference ?? "",
       suggested_retail_price: (offer as any).suggested_retail_price_cents != null
         ? ((offer as any).suggested_retail_price_cents / 100).toFixed(2)
         : "",

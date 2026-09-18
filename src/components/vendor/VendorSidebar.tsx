@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Package, Tag, ShoppingCart, Lightbulb, Bell, FileText, BarChart3, Trophy,
+  LayoutDashboard, Package, Tag, ShoppingCart, ClipboardList, Lightbulb, Bell, FileText, BarChart3, Trophy,
   DollarSign, Truck, HeartPulse, MessageSquare, GraduationCap, Settings, ChevronLeft, ChevronRight, Receipt,
   AlertOctagon, BookOpen, PlusSquare, Inbox, FolderArchive, ShieldCheck, PhoneCall, QrCode,
 } from "lucide-react";

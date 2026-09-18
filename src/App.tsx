@@ -180,7 +180,7 @@ const AdminDevisDetail = lazyWithRetry(() => import("./pages/admin/AdminDevisDet
 const AdminDevisEditer = lazyWithRetry(() => import("./pages/admin/AdminDevisEditer"), "AdminDevisEditer");
 const PublicQuotePage = lazyWithRetry(() => import("./pages/PublicQuotePage"), "PublicQuotePage");
 const PublicOrderPage = lazyWithRetry(() => import("./pages/PublicOrderPage"), "PublicOrderPage");
-const DeliveryConfirmationPage = lazyWithRetry(() => import("./pages/DeliveryConfirmationPage"), "DeliveryConfirmationPage");
+const DeliveryNoteSignaturePage = lazyWithRetry(() => import("./pages/DeliveryNoteSignaturePage"), "DeliveryNoteSignaturePage");
 const AdminFinances = lazyWithRetry(() => import("./pages/admin/AdminFinances"), "AdminFinances");
 const AdminLitiges = lazyWithRetry(() => import("./pages/admin/AdminLitiges"), "AdminLitiges");
 const AdminCommandesEnRetard = lazyWithRetry(() => import("./pages/admin/AdminCommandesEnRetard"), "AdminCommandesEnRetard");
@@ -457,7 +457,7 @@ const App = () => (
             <Route path="/rfq/externe/:token" element={<LP><RfqExternalResponsePage /></LP>} />
             <Route path="/devis/:token" element={<LP><PublicQuotePage /></LP>} />
             <Route path="/commande/lien/:token" element={<LP><PublicOrderPage /></LP>} />
-            <Route path="/livraison/:token" element={<LP><DeliveryConfirmationPage /></LP>} />
+            <Route path="/livraison/:token" element={<LP><DeliveryNoteSignaturePage /></LP>} />
             <Route path="/compte/imports" element={<LP><ImportHistoryPage /></LP>} />
             <Route path="/espace-pharmacie/abonnement" element={<LP><PharmacieAbonnementPage /></LP>} />
             <Route path="/checkout" element={<LP><CheckoutPage /></LP>} />

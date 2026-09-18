@@ -18,6 +18,18 @@ export type DeliveryNoteLine = {
   id: string;
   order_line_id: string;
   quantity: number;
+  accepted_quantity: number | null;
+  refused_quantity: number | null;
+  refusal_reason: string | null;
+};
+
+export type DeliveryPaymentRelease = {
+  id: string;
+  delivery_note_id: string;
+  decision: "full" | "partial" | "blocked";
+  authorized_amount_ht_cents: number;
+  reason: string | null;
+  decided_at: string;
 };
 
 export type DeliveryNote = {

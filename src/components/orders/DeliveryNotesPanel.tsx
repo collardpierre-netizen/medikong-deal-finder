@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { FileDown, Loader2, PackageCheck, Ban, RotateCcw, Mail, PenLine, Link2, Unlock } from "lucide-react";
+import { FileDown, Loader2, PackageCheck, Ban, RotateCcw, Mail, PenLine, Link2, Unlock, Truck } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

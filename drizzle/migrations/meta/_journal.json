@@ -176,6 +176,13 @@
       "when": 1789739132253,
       "tag": "0024_0025_fix_convert_quote_to_order_order_lines_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1789739373043,
+      "tag": "0025_0026_mark_quote_paid_fix_and_buyer_safe_views",
+      "breakpoints": true
     }
   ]
 }

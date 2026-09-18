@@ -18,6 +18,18 @@ export type DeliveryNoteLine = {
   id: string;
   order_line_id: string;
   quantity: number;
+  accepted_quantity: number | null;
+  refused_quantity: number | null;
+  refusal_reason: string | null;
+};
+
+export type DeliveryPaymentRelease = {
+  id: string;
+  delivery_note_id: string;
+  decision: "full" | "partial" | "blocked";
+  authorized_amount_ht_cents: number;
+  reason: string | null;
+  decided_at: string;
 };
 
 export type DeliveryNote = {
@@ -32,7 +44,14 @@ export type DeliveryNote = {
   issued_at: string;
   cancelled_at: string | null;
   cancellation_reason: string | null;
+  confirmation_sent_at: string | null;
+  confirmed_at: string | null;
+  confirmed_by_name: string | null;
+  client_remarks: string | null;
+  signature_storage_path: string | null;
+  checklist: { items?: { key: string; label: string; checked: boolean }[] } | null;
   delivery_note_lines: DeliveryNoteLine[];
+  delivery_payment_releases: DeliveryPaymentRelease[];
 };
 
 export const BACKORDER_LABELS: Record<string, string> = {
@@ -60,7 +79,9 @@ export function useOrderDeliveryNotes(orderId?: string) {
     queryFn: async (): Promise<DeliveryNote[]> => {
       const { data, error } = await supabase
         .from("delivery_notes" as any)
-        .select("*, delivery_note_lines(id, order_line_id, quantity)")
+        .select(
+          "*, delivery_note_lines(id, order_line_id, quantity, accepted_quantity, refused_quantity, refusal_reason), delivery_payment_releases(id, delivery_note_id, decision, authorized_amount_ht_cents, reason, decided_at)",
+        )
         .eq("order_id", orderId!)
         .order("issued_at", { ascending: false });
       if (error) throw error;
@@ -76,6 +97,13 @@ const ERRORS: Record<string, string> = {
   unauthorized: "Action non autorisée.",
   line_not_in_order: "Ligne introuvable dans cette commande.",
   order_not_found: "Commande introuvable.",
+  delivery_note_not_found: "Bon de livraison introuvable.",
+  delivery_note_cancelled: "Ce bon de livraison est annulé.",
+  already_confirmed: "Ce bon de livraison est déjà signé par le client.",
+  customer_email_missing: "Aucune adresse e-mail client sur cette commande.",
+  email_invoke_failed: "L'e-mail n'a pas pu être envoyé.",
+  invalid_decision: "Décision de paiement invalide.",
+  reason_required: "Indiquez le motif du blocage.",
 };
 export const deliveryErrorMessage = (msg?: string): string => {
   if (!msg) return "Opération impossible";
@@ -136,6 +164,44 @@ export function useSetBackorderStatus(orderId?: string) {
         _order_line_id: input.order_line_id,
         _status: input.status,
         _note: input.note || null,
+      });
+      if (error) throw new Error(deliveryErrorMessage(error.message));
+    },
+    onSuccess: invalidate,
+  });
+}
+
+/** Envoie au client l'e-mail contenant le lien de signature du bon de livraison. */
+export function useSendDeliveryConfirmationRequest(orderId?: string) {
+  const invalidate = useInvalidate(orderId);
+  return useMutation({
+    mutationFn: async (input: { deliveryNoteId: string }) => {
+      const { data, error } = await supabase.functions.invoke("send-delivery-confirmation-request", {
+        body: { deliveryNoteId: input.deliveryNoteId, appOrigin: window.location.origin },
+      });
+      if (error) throw new Error(deliveryErrorMessage(error.message));
+      if ((data as any)?.error) throw new Error(deliveryErrorMessage((data as any).error));
+      return data as { recipient: string; confirmUrl: string };
+    },
+    onSuccess: invalidate,
+  });
+}
+
+/** Décision admin de déblocage du paiement fournisseur pour un bon de livraison. */
+export function useSetDeliveryPaymentRelease(orderId?: string) {
+  const invalidate = useInvalidate(orderId);
+  return useMutation({
+    mutationFn: async (input: {
+      delivery_note_id: string;
+      decision: "full" | "partial" | "blocked";
+      authorized_amount_ht_cents: number;
+      reason?: string;
+    }) => {
+      const { error } = await supabase.rpc("set_delivery_payment_release" as any, {
+        _delivery_note_id: input.delivery_note_id,
+        _decision: input.decision,
+        _authorized_amount_ht_cents: input.authorized_amount_ht_cents,
+        _reason: input.reason || null,
       });
       if (error) throw new Error(deliveryErrorMessage(error.message));
     },

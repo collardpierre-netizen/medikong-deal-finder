@@ -58,6 +58,7 @@ import { template as cagnotteEarned } from './cagnotte-earned.tsx'
 import { template as orderMessageCustomer } from './order-message-customer.tsx'
 import { template as orderMessageAdmin } from './order-message-admin.tsx'
 import { template as vendorInvoiceDocument } from './vendor-invoice-document.tsx'
+import { template as deliveryConfirmationRequest } from './delivery-confirmation-request.tsx'
 
 
 
@@ -105,6 +106,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'quote-sent': quoteSent,
   'order-shipped': orderShipped,
   'order-delivery-confirmation': orderDeliveryConfirmation,
+  'delivery-confirmation-request': deliveryConfirmationRequest,
   'vendor-statement-ready': vendorStatementReady,
   'vendor-peppol-id-reminder': vendorPeppolIdReminder,
   'invoice-payment-link': invoicePaymentLink,

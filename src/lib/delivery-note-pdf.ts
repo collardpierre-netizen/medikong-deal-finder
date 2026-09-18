@@ -26,6 +26,14 @@ export type DeliveryNotePdfInput = {
     delivered: number;
     remaining: number;
   }[];
+  /** Points de contrôle imprimés sur le bon (checklist de réception). */
+  checklistItems?: { label: string; checked?: boolean }[];
+  /** Confirmation client déjà enregistrée (signature en ligne). */
+  confirmation?: {
+    confirmedAt?: string | null;
+    confirmedByName?: string | null;
+    remarks?: string | null;
+  } | null;
 };
 
 const NAVY: [number, number, number] = [30, 37, 47];
@@ -262,6 +270,86 @@ export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
       doc.text("Signature du réceptionnaire : ______________________", pageW - M, pageH - 6, { align: "right" });
     },
   });
+
+  // ---- Checklist de réception + signature client ----
+  const items = input.checklistItems ?? [];
+  if (items.length > 0 || input.confirmation) {
+    let cy = ((doc as any).lastAutoTable?.finalY ?? y) + 10;
+    const blockH = items.length * 5.5 + 46;
+    if (cy + blockH > pageH - 25) {
+      doc.addPage();
+      cy = 25;
+    }
+
+    doc.setTextColor(...NAVY);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.text("Checklist de réception (à compléter par le client)", M, cy);
+    cy += 6;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    for (const item of items) {
+      doc.setDrawColor(148, 163, 184);
+      doc.setLineWidth(0.25);
+      doc.rect(M, cy - 3, 3.5, 3.5);
+      if (item.checked) {
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(22, 101, 52);
+        doc.text("X", M + 0.7, cy - 0.2);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...NAVY);
+      }
+      doc.text(item.label, M + 6, cy);
+      cy += 5.5;
+    }
+
+    cy += 4;
+    doc.setTextColor(...MUTED);
+    doc.setFontSize(8);
+    doc.text("Remarques :", M, cy);
+    const remarks = input.confirmation?.remarks;
+    if (remarks) {
+      doc.setTextColor(...NAVY);
+      const rLines = doc.splitTextToSize(String(remarks), pageW - 2 * M - 22);
+      doc.text(rLines, M + 22, cy);
+      cy += Math.max(rLines.length * 4, 4) + 6;
+    } else {
+      doc.setDrawColor(203, 213, 225);
+      doc.line(M + 22, cy + 1, pageW - M, cy + 1);
+      doc.line(M, cy + 7, pageW - M, cy + 7);
+      cy += 14;
+    }
+
+    doc.setTextColor(...NAVY);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    if (input.confirmation?.confirmedAt) {
+      doc.text(
+        `Réception signée par ${input.confirmation.confirmedByName || "—"} le ${new Date(
+          input.confirmation.confirmedAt,
+        ).toLocaleString("fr-BE")}`,
+        M,
+        cy,
+      );
+      cy += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...MUTED);
+      doc.setFontSize(7.5);
+      doc.text("Signature électronique horodatée — enregistrée par MediKong.", M, cy);
+    } else {
+      doc.text("Nom et fonction du réceptionnaire :", M, cy);
+      doc.setFont("helvetica", "normal");
+      doc.setDrawColor(203, 213, 225);
+      doc.line(M + 58, cy + 1, pageW - M, cy + 1);
+      cy += 12;
+      doc.setFont("helvetica", "bold");
+      doc.text("Date :", M, cy);
+      doc.line(M + 14, cy + 1, M + 60, cy + 1);
+      doc.text("Signature :", M + 70, cy);
+      doc.line(M + 92, cy + 1, pageW - M, cy + 1);
+    }
+  }
 
   doc.save(
     `bon-livraison_${input.documentNumber || "sans-numero"}_${isDraft ? "BROUILLON" : "FINAL"}.pdf`,

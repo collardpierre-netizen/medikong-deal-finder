@@ -4917,25 +4917,34 @@ export type Database = {
       }
       delivery_note_lines: {
         Row: {
+          accepted_quantity: number | null
           created_at: string
           delivery_note_id: string
           id: string
           order_line_id: string
           quantity: number
+          refusal_reason: string | null
+          refused_quantity: number | null
         }
         Insert: {
+          accepted_quantity?: number | null
           created_at?: string
           delivery_note_id: string
           id?: string
           order_line_id: string
           quantity: number
+          refusal_reason?: string | null
+          refused_quantity?: number | null
         }
         Update: {
+          accepted_quantity?: number | null
           created_at?: string
           delivery_note_id?: string
           id?: string
           order_line_id?: string
           quantity?: number
+          refusal_reason?: string | null
+          refused_quantity?: number | null
         }
         Relationships: [
           {
@@ -4973,6 +4982,13 @@ export type Database = {
           cancellation_reason: string | null
           cancelled_at: string | null
           carrier: string | null
+          checklist: Json | null
+          client_remarks: string | null
+          confirmation_ip: string | null
+          confirmation_sent_at: string | null
+          confirmation_token: string | null
+          confirmed_at: string | null
+          confirmed_by_name: string | null
           created_at: string
           document_number: string | null
           id: string
@@ -4981,6 +4997,7 @@ export type Database = {
           note: string | null
           order_id: string
           shipping_address: Json | null
+          signature_storage_path: string | null
           status: string
           tracking_number: string | null
           updated_at: string
@@ -4990,6 +5007,13 @@ export type Database = {
           cancellation_reason?: string | null
           cancelled_at?: string | null
           carrier?: string | null
+          checklist?: Json | null
+          client_remarks?: string | null
+          confirmation_ip?: string | null
+          confirmation_sent_at?: string | null
+          confirmation_token?: string | null
+          confirmed_at?: string | null
+          confirmed_by_name?: string | null
           created_at?: string
           document_number?: string | null
           id?: string
@@ -4998,6 +5022,7 @@ export type Database = {
           note?: string | null
           order_id: string
           shipping_address?: Json | null
+          signature_storage_path?: string | null
           status?: string
           tracking_number?: string | null
           updated_at?: string
@@ -5007,6 +5032,13 @@ export type Database = {
           cancellation_reason?: string | null
           cancelled_at?: string | null
           carrier?: string | null
+          checklist?: Json | null
+          client_remarks?: string | null
+          confirmation_ip?: string | null
+          confirmation_sent_at?: string | null
+          confirmation_token?: string | null
+          confirmed_at?: string | null
+          confirmed_by_name?: string | null
           created_at?: string
           document_number?: string | null
           id?: string
@@ -5015,6 +5047,7 @@ export type Database = {
           note?: string | null
           order_id?: string
           shipping_address?: Json | null
+          signature_storage_path?: string | null
           status?: string
           tracking_number?: string | null
           updated_at?: string
@@ -5107,6 +5140,109 @@ export type Database = {
           },
           {
             foreignKeyName: "delivery_notes_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivery_payment_releases: {
+        Row: {
+          authorized_amount_ht_cents: number
+          created_at: string
+          decided_at: string
+          decided_by: string | null
+          decision: string
+          delivery_note_id: string
+          id: string
+          reason: string | null
+          updated_at: string
+          vendor_id: string | null
+        }
+        Insert: {
+          authorized_amount_ht_cents?: number
+          created_at?: string
+          decided_at?: string
+          decided_by?: string | null
+          decision: string
+          delivery_note_id: string
+          id?: string
+          reason?: string | null
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Update: {
+          authorized_amount_ht_cents?: number
+          created_at?: string
+          decided_at?: string
+          decided_by?: string | null
+          decision?: string
+          delivery_note_id?: string
+          id?: string
+          reason?: string | null
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_payment_releases_delivery_note_id_fkey"
+            columns: ["delivery_note_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_payment_releases_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "admin_orders_sla_overview_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "delivery_payment_releases_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendor_trust_signals"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "delivery_payment_releases_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "public_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_payment_releases_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_intelligence_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "delivery_payment_releases_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_market_intel_status_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "delivery_payment_releases_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_rfq_kpis_v"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "delivery_payment_releases_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_payment_releases_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendors_public"
@@ -34251,6 +34387,10 @@ export type Database = {
         }
         Returns: string
       }
+      create_delivery_note_confirmation_token: {
+        Args: { _delivery_note_id: string }
+        Returns: string
+      }
       create_offers_from_products: {
         Args: { _country_code?: string }
         Returns: Json
@@ -34281,6 +34421,19 @@ export type Database = {
         Returns: Json
       }
       delete_user_account: { Args: { _user_id: string }; Returns: undefined }
+      delivery_note_confirm_by_token: {
+        Args: {
+          _checklist: Json
+          _confirmed_by_name: string
+          _ip?: string
+          _lines: Json
+          _remarks?: string
+          _signature_storage_path?: string
+          _token: string
+        }
+        Returns: Json
+      }
+      delivery_note_public_get: { Args: { _token: string }; Returns: Json }
       detect_market_delta_anomalies: {
         Args: { _threshold_pct?: number; _triggered_by?: string }
         Returns: {
@@ -36024,6 +36177,15 @@ export type Database = {
       set_active_account: {
         Args: { _account_id: string; _kind: string }
         Returns: Json
+      }
+      set_delivery_payment_release: {
+        Args: {
+          _authorized_amount_ht_cents?: number
+          _decision: string
+          _delivery_note_id: string
+          _reason?: string
+        }
+        Returns: string
       }
       set_order_line_backorder_status: {
         Args: { _note?: string; _order_line_id: string; _status: string }

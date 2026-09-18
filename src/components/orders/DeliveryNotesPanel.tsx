@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { FileDown, Loader2, PackageCheck, Ban, RotateCcw } from "lucide-react";
+import { FileDown, Loader2, PackageCheck, Ban, RotateCcw, Mail, PenLine, Link2, Unlock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,15 +14,25 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { generateDeliveryNotePdf } from "@/lib/delivery-note-pdf";
+import { CHECKLIST_ITEMS } from "@/lib/delivery-checklist";
 import {
   BACKORDER_LABELS,
   useCancelDeliveryNote,
   useCreateDeliveryNote,
   useOrderDeliveryNotes,
   useOrderDeliveryStatus,
+  useSendDeliveryConfirmationRequest,
   useSetBackorderStatus,
+  useSetDeliveryPaymentRelease,
+  type DeliveryNote,
   type DeliveryStatusRow,
 } from "@/hooks/useDeliveryNotes";
+
+const RELEASE_LABELS: Record<string, string> = {
+  full: "Paiement fournisseur autorisé (complet)",
+  partial: "Paiement fournisseur autorisé (partiel)",
+  blocked: "Paiement fournisseur bloqué",
+};
 
 interface Props {
   orderId: string;
@@ -35,15 +45,21 @@ interface Props {
   shippingAddress?: Record<string, any> | null;
   /** Statut de la commande : si "draft", les BL sont marqués BROUILLON. */
   orderStatus?: string | null;
+  /** Affiche le bloc admin « déblocage du paiement fournisseur ». */
+  canReleasePayment?: boolean;
+  /** Prix unitaire HT (en €) par ligne de commande — sert à proposer le montant autorisé. */
+  unitPricesByLine?: Record<string, number>;
 }
 
-export default function DeliveryNotesPanel({ orderId, orderNumber, customerName, customerCountryCode, customerVatNumber, shippingAddress, orderStatus }: Props) {
+export default function DeliveryNotesPanel({ orderId, orderNumber, customerName, customerCountryCode, customerVatNumber, shippingAddress, orderStatus, canReleasePayment = false, unitPricesByLine }: Props) {
   const isDraftOrder = String(orderStatus || "").toLowerCase() === "draft";
   const statusQuery = useOrderDeliveryStatus(orderId);
   const notesQuery = useOrderDeliveryNotes(orderId);
   const createMut = useCreateDeliveryNote(orderId);
   const cancelMut = useCancelDeliveryNote(orderId);
   const backorderMut = useSetBackorderStatus(orderId);
+  const sendLinkMut = useSendDeliveryConfirmationRequest(orderId);
+  const releaseMut = useSetDeliveryPaymentRelease(orderId);
 
   const rows = statusQuery.data ?? [];
   const notes = notesQuery.data ?? [];
@@ -112,7 +128,64 @@ export default function DeliveryNotesPanel({ orderId, orderNumber, customerName,
       trackingNumber: dn.tracking_number,
       note: dn.note,
       rows: pdfRows,
+      checklistItems:
+        dn.checklist?.items?.map((i) => ({ label: i.label, checked: i.checked })) ??
+        CHECKLIST_ITEMS.map((i) => ({ label: i.label })),
+      confirmation: dn.confirmed_at
+        ? {
+            confirmedAt: dn.confirmed_at,
+            confirmedByName: dn.confirmed_by_name,
+            remarks: dn.client_remarks,
+          }
+        : null,
     });
+  };
+
+  /** Montant HT (en €) réellement accepté par le client sur ce bon de livraison. */
+  const acceptedAmount = (dn: DeliveryNote): number =>
+    dn.delivery_note_lines.reduce((sum, l) => {
+      const unit = unitPricesByLine?.[l.order_line_id] ?? 0;
+      const qty = l.accepted_quantity ?? l.quantity;
+      return sum + unit * qty;
+    }, 0);
+
+  const sendLink = async (dnId: string) => {
+    try {
+      const res = await sendLinkMut.mutateAsync({ deliveryNoteId: dnId });
+      toast({ title: "Lien de signature envoyé", description: res?.recipient });
+    } catch (e: any) {
+      toast({ title: "Envoi impossible", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const decide = async (dn: DeliveryNote, decision: "full" | "partial" | "blocked") => {
+    let reason: string | undefined;
+    if (decision === "blocked") {
+      reason = window.prompt("Motif du blocage du paiement fournisseur ?") ?? undefined;
+      if (!reason || !reason.trim()) return;
+    }
+    const amount =
+      decision === "blocked"
+        ? 0
+        : Math.round(
+            (decision === "full"
+              ? dn.delivery_note_lines.reduce(
+                  (s, l) => s + (unitPricesByLine?.[l.order_line_id] ?? 0) * l.quantity,
+                  0,
+                )
+              : acceptedAmount(dn)) * 100,
+          );
+    try {
+      await releaseMut.mutateAsync({
+        delivery_note_id: dn.id,
+        decision,
+        authorized_amount_ht_cents: amount,
+        reason,
+      });
+      toast({ title: RELEASE_LABELS[decision] });
+    } catch (e: any) {
+      toast({ title: "Décision impossible", description: e.message, variant: "destructive" });
+    }
   };
 
   const setBackorder = async (r: DeliveryStatusRow, status: string) => {
@@ -230,8 +303,11 @@ export default function DeliveryNotesPanel({ orderId, orderNumber, customerName,
         {notes.length === 0 && <p className="text-sm text-slate-400">Aucun bon de livraison pour cette commande.</p>}
         {notes.map((dn) => {
           const qtyTotal = dn.delivery_note_lines.reduce((s, l) => s + l.quantity, 0);
+          const release = dn.delivery_payment_releases?.[0];
+          const refused = dn.delivery_note_lines.reduce((s, l) => s + (l.refused_quantity ?? 0), 0);
           return (
-            <div key={dn.id} className="flex flex-wrap items-center justify-between gap-2 border rounded px-3 py-2" style={{ borderColor: "#E2E8F0" }}>
+            <div key={dn.id} className="border rounded px-3 py-2 space-y-2" style={{ borderColor: "#E2E8F0" }}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-slate-800 text-sm">{dn.document_number || "Sans numéro"}</span>
@@ -246,10 +322,16 @@ export default function DeliveryNotesPanel({ orderId, orderNumber, customerName,
                   {dn.carrier ? ` · ${dn.carrier}` : ""}{dn.tracking_number ? ` · ${dn.tracking_number}` : ""}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Button size="sm" variant="outline" onClick={() => downloadPdf(dn.id)}>
                   <FileDown className="w-3.5 h-3.5 mr-1" /> PDF
                 </Button>
+                {dn.status === "issued" && !dn.confirmed_at && (
+                  <Button size="sm" variant="outline" disabled={sendLinkMut.isPending} onClick={() => sendLink(dn.id)}>
+                    {sendLinkMut.isPending ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Mail className="w-3.5 h-3.5 mr-1" />}
+                    {dn.confirmation_sent_at ? "Renvoyer le lien" : "Envoyer le lien de signature"}
+                  </Button>
+                )}
                 {dn.status === "issued" && (
                   <Button
                     size="sm"
@@ -270,6 +352,63 @@ export default function DeliveryNotesPanel({ orderId, orderNumber, customerName,
                   </Button>
                 )}
               </div>
+            </div>
+
+            {/* Confirmation client */}
+            {dn.status === "issued" && (
+              <div className="text-[11px] rounded px-2 py-1.5" style={{ backgroundColor: "#F8FAFC" }}>
+                {dn.confirmed_at ? (
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-1 text-emerald-700 font-medium">
+                      <PenLine className="w-3.5 h-3.5" />
+                      Signé par {dn.confirmed_by_name || "—"} le {new Date(dn.confirmed_at).toLocaleString("fr-BE")}
+                    </div>
+                    {refused > 0 && <div className="text-amber-700">{refused} unité(s) refusée(s) par le client.</div>}
+                    {dn.client_remarks && <div className="text-slate-600">Remarques : {dn.client_remarks}</div>}
+                  </div>
+                ) : dn.confirmation_sent_at ? (
+                  <div className="flex items-center gap-1 text-slate-600">
+                    <Link2 className="w-3.5 h-3.5" />
+                    Lien envoyé le {new Date(dn.confirmation_sent_at).toLocaleString("fr-BE")} — en attente de signature client.
+                  </div>
+                ) : (
+                  <div className="text-slate-500">Checklist et signature client pas encore demandées.</div>
+                )}
+              </div>
+            )}
+
+            {/* Déblocage du paiement fournisseur (admin) */}
+            {canReleasePayment && dn.status === "issued" && (
+              <div className="text-[11px] border-t pt-2" style={{ borderColor: "#E2E8F0" }}>
+                {release ? (
+                  <div className="flex items-center gap-1 text-slate-700">
+                    <Unlock className="w-3.5 h-3.5" />
+                    {RELEASE_LABELS[release.decision]} · {(release.authorized_amount_ht_cents / 100).toFixed(2)} € HT
+                    {release.reason ? ` · ${release.reason}` : ""} ·{" "}
+                    {new Date(release.decided_at).toLocaleString("fr-BE")}
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-slate-500">Paiement fournisseur :</span>
+                    <Button size="sm" variant="outline" disabled={releaseMut.isPending} onClick={() => decide(dn, "full")}>
+                      Débloquer en totalité
+                    </Button>
+                    <Button size="sm" variant="outline" disabled={releaseMut.isPending} onClick={() => decide(dn, "partial")}>
+                      Débloquer partiellement ({acceptedAmount(dn).toFixed(2)} € HT)
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-red-600 hover:text-red-700"
+                      disabled={releaseMut.isPending}
+                      onClick={() => decide(dn, "blocked")}
+                    >
+                      Bloquer
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
             </div>
           );
         })}

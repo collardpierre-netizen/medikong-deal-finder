@@ -44,7 +44,14 @@ export type DeliveryNote = {
   issued_at: string;
   cancelled_at: string | null;
   cancellation_reason: string | null;
+  confirmation_sent_at: string | null;
+  confirmed_at: string | null;
+  confirmed_by_name: string | null;
+  client_remarks: string | null;
+  signature_storage_path: string | null;
+  checklist: { items?: { key: string; label: string; checked: boolean }[] } | null;
   delivery_note_lines: DeliveryNoteLine[];
+  delivery_payment_releases: DeliveryPaymentRelease[];
 };
 
 export const BACKORDER_LABELS: Record<string, string> = {
@@ -72,7 +79,9 @@ export function useOrderDeliveryNotes(orderId?: string) {
     queryFn: async (): Promise<DeliveryNote[]> => {
       const { data, error } = await supabase
         .from("delivery_notes" as any)
-        .select("*, delivery_note_lines(id, order_line_id, quantity)")
+        .select(
+          "*, delivery_note_lines(id, order_line_id, quantity, accepted_quantity, refused_quantity, refusal_reason), delivery_payment_releases(id, delivery_note_id, decision, authorized_amount_ht_cents, reason, decided_at)",
+        )
         .eq("order_id", orderId!)
         .order("issued_at", { ascending: false });
       if (error) throw error;

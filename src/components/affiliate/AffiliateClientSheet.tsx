@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Mail, Phone, MapPin, Building2, Loader2, ShoppingBag } from "lucide-react";
+import { Mail, Phone, MapPin, Building2, Loader2, ShoppingBag, Truck } from "lucide-react";
 import { useAffiliateAccount } from "@/hooks/useAffiliateAccount";
 import { fmtCents, fmtDate } from "@/lib/affiliate-format";
 
@@ -37,6 +37,24 @@ type ClientSheet = {
     status: string | null;
     payment_status: string | null;
     total_ht_cents: number | null;
+    deliveries?: Array<{
+      delivery_note_id: string;
+      document_number: string | null;
+      status: string | null;
+      carrier: string | null;
+      tracking_number: string | null;
+      shipped_at: string | null;
+      received_at: string | null;
+      received_by: string | null;
+      client_remarks: string | null;
+      units: number | null;
+    }> | null;
+    delivery_summary?: {
+      notes_count: number | null;
+      received_count: number | null;
+      last_received_at: string | null;
+      last_shipped_at: string | null;
+    } | null;
   }>;
   stats: { orders_count: number; revenue_ht_cents: number; last_order_at: string | null };
 };
@@ -76,6 +94,11 @@ export default function AffiliateClientSheet({
         .filter(Boolean)
         .join(", ")
     : "";
+
+  const deliveryRows = (data?.orders ?? []).flatMap((o) =>
+    (o.deliveries ?? []).map((d) => ({ ...d, orderNumber: o.order_number }))
+  );
+
 
   return (
     <Dialog open={Boolean(referralId)} onOpenChange={(o) => !o && onClose()}>
@@ -195,6 +218,54 @@ export default function AffiliateClientSheet({
                 </div>
               )}
             </div>
+
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Truck className="h-4 w-4 text-muted-foreground" />
+                <h3 className="text-sm font-semibold">Suivi des livraisons</h3>
+              </div>
+              {deliveryRows.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Aucune livraison enregistrée pour ce client.
+                </p>
+              ) : (
+                <div className="divide-y border rounded-md">
+                  {deliveryRows.map((d) => (
+                    <div key={d.delivery_note_id} className="px-3 py-2 text-sm space-y-1">
+                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <span className="font-medium">{d.document_number ?? "Bon de livraison"}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">{d.orderNumber ?? "—"}</span>
+                          {d.received_at ? (
+                            <Badge className="bg-emerald-100 text-emerald-800">Réception signée</Badge>
+                          ) : d.status === "cancelled" ? (
+                            <Badge variant="outline">Annulé</Badge>
+                          ) : (
+                            <Badge variant="secondary">En cours de livraison</Badge>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Expédié le {fmtDate(d.shipped_at)}
+                        {d.carrier ? ` · ${d.carrier}` : ""}
+                        {d.tracking_number ? ` · suivi ${d.tracking_number}` : ""}
+                        {d.units ? ` · ${d.units} unité(s)` : ""}
+                      </p>
+                      {d.received_at && (
+                        <p className="text-xs text-emerald-700">
+                          Reçu le {fmtDate(d.received_at)}
+                          {d.received_by ? ` par ${d.received_by}` : ""}
+                        </p>
+                      )}
+                      {d.client_remarks && (
+                        <p className="text-xs text-muted-foreground italic">« {d.client_remarks} »</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
 
             <p className="text-xs text-muted-foreground">
               Ces coordonnées vous sont communiquées pour accompagner votre client. Elles ne

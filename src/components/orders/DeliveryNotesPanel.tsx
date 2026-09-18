@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { FileDown, Loader2, PackageCheck, Ban, RotateCcw } from "lucide-react";
+import { FileDown, Loader2, PackageCheck, Ban, RotateCcw, Mail, PenLine, Link2, Unlock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,15 +14,25 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { generateDeliveryNotePdf } from "@/lib/delivery-note-pdf";
+import { CHECKLIST_ITEMS } from "@/lib/delivery-checklist";
 import {
   BACKORDER_LABELS,
   useCancelDeliveryNote,
   useCreateDeliveryNote,
   useOrderDeliveryNotes,
   useOrderDeliveryStatus,
+  useSendDeliveryConfirmationRequest,
   useSetBackorderStatus,
+  useSetDeliveryPaymentRelease,
+  type DeliveryNote,
   type DeliveryStatusRow,
 } from "@/hooks/useDeliveryNotes";
+
+const RELEASE_LABELS: Record<string, string> = {
+  full: "Paiement fournisseur autorisé (complet)",
+  partial: "Paiement fournisseur autorisé (partiel)",
+  blocked: "Paiement fournisseur bloqué",
+};
 
 interface Props {
   orderId: string;

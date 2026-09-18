@@ -614,11 +614,20 @@ const AdminCommandeManuelle = () => {
 
       toast.success(editingOrderId ? "Commande mise à jour" : `Commande ${result?.order_number ?? ""} créée`);
 
+      const editedOrderId = editingOrderId ?? (result?.order_id as string | undefined) ?? null;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-orders"] }),
         queryClient.invalidateQueries({ queryKey: ["admin-orders-paginated"] }),
         queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] }),
         queryClient.invalidateQueries({ queryKey: ["vendor-dashboard-kpis"] }),
+        ...(editedOrderId
+          ? [
+              queryClient.invalidateQueries({ queryKey: ["admin-order", editedOrderId] }),
+              queryClient.invalidateQueries({ queryKey: ["admin-order-split", editedOrderId] }),
+              queryClient.invalidateQueries({ queryKey: ["order-delivery-status", editedOrderId] }),
+              queryClient.invalidateQueries({ queryKey: ["order-delivery-notes", editedOrderId] }),
+            ]
+          : []),
       ]);
       navigate(editingOrderId ? `/admin/commandes/${editingOrderId}` : "/admin/commandes");
     } catch (e: any) {

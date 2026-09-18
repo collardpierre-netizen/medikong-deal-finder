@@ -45,15 +45,21 @@ interface Props {
   shippingAddress?: Record<string, any> | null;
   /** Statut de la commande : si "draft", les BL sont marqués BROUILLON. */
   orderStatus?: string | null;
+  /** Affiche le bloc admin « déblocage du paiement fournisseur ». */
+  canReleasePayment?: boolean;
+  /** Prix unitaire HT (en €) par ligne de commande — sert à proposer le montant autorisé. */
+  unitPricesByLine?: Record<string, number>;
 }
 
-export default function DeliveryNotesPanel({ orderId, orderNumber, customerName, customerCountryCode, customerVatNumber, shippingAddress, orderStatus }: Props) {
+export default function DeliveryNotesPanel({ orderId, orderNumber, customerName, customerCountryCode, customerVatNumber, shippingAddress, orderStatus, canReleasePayment = false, unitPricesByLine }: Props) {
   const isDraftOrder = String(orderStatus || "").toLowerCase() === "draft";
   const statusQuery = useOrderDeliveryStatus(orderId);
   const notesQuery = useOrderDeliveryNotes(orderId);
   const createMut = useCreateDeliveryNote(orderId);
   const cancelMut = useCancelDeliveryNote(orderId);
   const backorderMut = useSetBackorderStatus(orderId);
+  const sendLinkMut = useSendDeliveryConfirmationRequest(orderId);
+  const releaseMut = useSetDeliveryPaymentRelease(orderId);
 
   const rows = statusQuery.data ?? [];
   const notes = notesQuery.data ?? [];

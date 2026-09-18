@@ -1,6 +1,6 @@
 import * as React from 'npm:react@18.3.1'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
-import { sendLovableEmail } from 'npm:@lovable.dev/email-js@0.3.0'
+import { sendLovableEmail } from 'npm:@lovable.dev/email-js@0.1.0'
 import { TEMPLATES } from './registry.ts'
 
 // Domaine expéditeur vérifié (délégation NS Lovable). Le paquet email-js
@@ -70,7 +70,7 @@ export async function sendTemplateEmail(
 
   const result = await sendLovableEmail(
     {
-      from: { name: SITE_NAME, address: `noreply@${FROM_DOMAIN}` },
+      from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
       to,
       subject,
       html,

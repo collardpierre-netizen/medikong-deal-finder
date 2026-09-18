@@ -1,6 +1,6 @@
 import * as React from 'npm:react@18.3.1'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
-import { createAuthEmailHandler } from 'npm:@lovable.dev/email-js@0.3.0'
+import { createAuthEmailHandler } from 'npm:@lovable.dev/email-js@0.1.0'
 import { SignupEmail } from '../_shared/email-templates/signup.tsx'
 import { InviteEmail } from '../_shared/email-templates/invite.tsx'
 import { MagicLinkEmail } from '../_shared/email-templates/magic-link.tsx'
@@ -127,7 +127,7 @@ async function handlePreview(req: Request): Promise<Response> {
 // owns only the email decisions: subjects, templates, and per-type props.
 const handler = createAuthEmailHandler({
   apiKey: Deno.env.get('LOVABLE_API_KEY')!,
-  from: { name: SITE_NAME, address: `noreply@${FROM_DOMAIN}` },
+  from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
   senderDomain: SENDER_DOMAIN,
   sendUrl: Deno.env.get('LOVABLE_SEND_URL'),
   emails: {

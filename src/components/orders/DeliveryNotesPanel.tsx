@@ -428,6 +428,68 @@ export default function DeliveryNotesPanel({ orderId, orderNumber, customerName,
           );
         })}
       </div>
+
+      <Dialog open={!!trackingNoteId} onOpenChange={(o) => !o && setTrackingNoteId(null)}>
+        <DialogContent className="max-w-md">
+          {(() => {
+            const dn = notes.find((n) => n.id === trackingNoteId);
+            if (!dn) return null;
+            const qtyTotal = dn.delivery_note_lines.reduce((s, l) => s + l.quantity, 0);
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Suivi livraison · {dn.document_number || "Sans numéro"}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Statut</span>
+                    {dn.status === "cancelled" ? (
+                      <Badge variant="outline" className="border-red-200 text-red-700 bg-red-50">Annulé</Badge>
+                    ) : dn.confirmed_at ? (
+                      <Badge variant="outline" className="border-emerald-200 text-emerald-700 bg-emerald-50">Réceptionné et signé</Badge>
+                    ) : dn.confirmation_sent_at ? (
+                      <Badge variant="outline" className="border-amber-200 text-amber-700 bg-amber-50">En attente de signature client</Badge>
+                    ) : (
+                      <Badge variant="outline" className="border-slate-200 text-slate-700 bg-slate-50">Émis — en cours de livraison</Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Transporteur</span>
+                    <span className="text-slate-800">{dn.carrier || "—"}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">N° de suivi</span>
+                    <span className="text-slate-800 font-mono">{dn.tracking_number || "—"}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Date d'expédition</span>
+                    <span className="text-slate-800">{new Date(dn.issued_at).toLocaleString("fr-BE")}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Date de réception</span>
+                    <span className="text-slate-800">
+                      {dn.confirmed_at ? new Date(dn.confirmed_at).toLocaleString("fr-BE") : "Non réceptionné"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Réceptionné par</span>
+                    <span className="text-slate-800">{dn.confirmed_by_name || "—"}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Unités livrées</span>
+                    <span className="text-slate-800">{qtyTotal}</span>
+                  </div>
+                  {dn.client_remarks && (
+                    <div className="rounded px-2 py-1.5 text-[12px] text-slate-600" style={{ backgroundColor: "#F8FAFC" }}>
+                      Remarques client : {dn.client_remarks}
+                    </div>
+                  )}
+                </div>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

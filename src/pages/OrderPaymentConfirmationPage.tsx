@@ -45,8 +45,9 @@ export default function OrderPaymentConfirmationPage() {
 
       // Regroupe par PI id
       const byPi = new Map<string, { vendor_id: string | null; amount: number }>();
-      for (const l of lines || []) {
-        const pid = (l as any).stripe_payment_intent_id;
+      for (const row of ((lines as any[]) || [])) {
+        const l = row as any;
+        const pid = l.stripe_payment_intent_id;
         if (!pid) continue;
         const cur = byPi.get(pid) || { vendor_id: l.vendor_id, amount: 0 };
         cur.amount += Number(l.line_total_incl_vat || 0);

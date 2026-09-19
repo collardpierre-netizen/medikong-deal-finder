@@ -203,8 +203,6 @@ export default function AdminSuiviCommande() {
         const refusedUnits = active.reduce((s, n) => s + n.refusedUnits, 0);
 
         let stage = 2;
-        if (quote) stage = 1;
-        stage = 2;
         if (active.length) stage = 3;
         if (active.some((n) => n.confirmedAt)) stage = 4;
         if (active.some((n) => n.release)) stage = 5;

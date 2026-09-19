@@ -186,6 +186,7 @@ const AdminLitiges = lazyWithRetry(() => import("./pages/admin/AdminLitiges"), "
 const AdminCommandesEnRetard = lazyWithRetry(() => import("./pages/admin/AdminCommandesEnRetard"), "AdminCommandesEnRetard");
 const AdminCommandesVendeursApporteur = lazyWithRetry(() => import("./pages/admin/AdminCommandesVendeursApporteur"), "AdminCommandesVendeursApporteur");
 const AdminSuiviVendeurMensuel = lazyWithRetry(() => import("./pages/admin/AdminSuiviVendeurMensuel"), "AdminSuiviVendeurMensuel");
+const AdminSuiviCommande = lazyWithRetry(() => import("./pages/admin/AdminSuiviCommande"), "AdminSuiviCommande");
 const AdminParcoursClient = lazyWithRetry(() => import("./pages/admin/AdminParcoursClient"), "AdminParcoursClient");
 const AdminParcoursApporteur = lazyWithRetry(() => import("./pages/admin/AdminParcoursApporteur"), "AdminParcoursApporteur");
 const AdminVendorFanout = lazyWithRetry(() => import("./pages/admin/AdminVendorFanout"), "AdminVendorFanout");
@@ -615,6 +616,7 @@ const App = () => (
               <Route path="commandes-en-retard" element={<LP><AdminCommandesEnRetard /></LP>} />
               <Route path="commandes-vendeurs-apporteur" element={<LP><AdminCommandesVendeursApporteur /></LP>} />
               <Route path="suivi-vendeur-mensuel" element={<LP><AdminSuiviVendeurMensuel /></LP>} />
+              <Route path="suivi-commande" element={<LP><AdminSuiviCommande /></LP>} />
               <Route path="parcours-client" element={<LP><AdminParcoursClient /></LP>} />
               <Route path="parcours-apporteur" element={<LP><AdminParcoursApporteur /></LP>} />
               <Route path="vendor-fanout" element={<LP><AdminVendorFanout /></LP>} />

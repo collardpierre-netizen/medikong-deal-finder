@@ -67,6 +67,7 @@ const sections: NavSection[] = [
       { label: "Devis", path: "/admin/devis", icon: FileText },
       { label: "Commandes vendeurs / apporteur", path: "/admin/commandes-vendeurs-apporteur", icon: Handshake },
       { label: "Suivi vendeur par mois", path: "/admin/suivi-vendeur-mensuel", icon: ShoppingCart },
+      { label: "Suivi par commande", path: "/admin/suivi-commande", icon: FileText },
       { label: "Parcours client", path: "/admin/parcours-client", icon: FileText },
       { label: "Parcours par apporteur", path: "/admin/parcours-apporteur", icon: Handshake },
       { label: "Commandes en retard", path: "/admin/commandes-en-retard", icon: AlertTriangle },

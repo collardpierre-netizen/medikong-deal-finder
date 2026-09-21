@@ -451,12 +451,12 @@ export async function importProducts(file: File, onProgress?: (p: ImportProgress
   const VALID_SOURCES = ["qogita", "medikong", "vendor", "medi-market", "valerco", "vanheek"];
   const knownCatNames = new Set<string>();
   {
-    const { data: allCats } = await supabase.from("categories").select("name").limit(10000);
+    const allCats = await fetchAllRows("categories", "name", "name").catch(() => []);
     (allCats || []).forEach((c: any) => c.name && knownCatNames.add(String(c.name).toLowerCase()));
   }
   const aliasedCatNames = new Set<string>();
   {
-    const { data: aliases } = await supabase.from("category_source_aliases").select("source_path").limit(10000);
+    const aliases = await fetchAllRows("category_source_aliases", "source_path", "source_path").catch(() => []);
     (aliases || []).forEach((a: any) => a.source_path && aliasedCatNames.add(String(a.source_path).toLowerCase()));
   }
 

@@ -16202,6 +16202,513 @@ export type Database = {
         }
         Relationships: []
       }
+      qo_campaigns: {
+        Row: {
+          allocation_note: string | null
+          ask_buyer_price: boolean
+          carrier_label: string | null
+          carrier_short_label: string | null
+          cashback_multiplier: number | null
+          code: string
+          contact_label: string | null
+          created_at: string
+          cutoff_hour: number
+          delivery_label: string | null
+          ends_on: string
+          franco_threshold_cents: number | null
+          headline: string | null
+          id: string
+          language: string
+          lead_time_days: number
+          margin_note: string
+          market_price_label: string
+          name: string
+          origin_label: string | null
+          payment_terms_days: number | null
+          payment_terms_label: string | null
+          returns_label: string | null
+          returns_short_label: string | null
+          shipping_fee_cents: number
+          shipping_vat_rate: number
+          starts_on: string
+          status: string
+          vendor_label: string | null
+        }
+        Insert: {
+          allocation_note?: string | null
+          ask_buyer_price?: boolean
+          carrier_label?: string | null
+          carrier_short_label?: string | null
+          cashback_multiplier?: number | null
+          code: string
+          contact_label?: string | null
+          created_at?: string
+          cutoff_hour?: number
+          delivery_label?: string | null
+          ends_on: string
+          franco_threshold_cents?: number | null
+          headline?: string | null
+          id?: string
+          language?: string
+          lead_time_days?: number
+          margin_note?: string
+          market_price_label?: string
+          name: string
+          origin_label?: string | null
+          payment_terms_days?: number | null
+          payment_terms_label?: string | null
+          returns_label?: string | null
+          returns_short_label?: string | null
+          shipping_fee_cents?: number
+          shipping_vat_rate?: number
+          starts_on?: string
+          status?: string
+          vendor_label?: string | null
+        }
+        Update: {
+          allocation_note?: string | null
+          ask_buyer_price?: boolean
+          carrier_label?: string | null
+          carrier_short_label?: string | null
+          cashback_multiplier?: number | null
+          code?: string
+          contact_label?: string | null
+          created_at?: string
+          cutoff_hour?: number
+          delivery_label?: string | null
+          ends_on?: string
+          franco_threshold_cents?: number | null
+          headline?: string | null
+          id?: string
+          language?: string
+          lead_time_days?: number
+          margin_note?: string
+          market_price_label?: string
+          name?: string
+          origin_label?: string | null
+          payment_terms_days?: number | null
+          payment_terms_label?: string | null
+          returns_label?: string | null
+          returns_short_label?: string | null
+          shipping_fee_cents?: number
+          shipping_vat_rate?: number
+          starts_on?: string
+          status?: string
+          vendor_label?: string | null
+        }
+        Relationships: []
+      }
+      qo_events: {
+        Row: {
+          created_at: string
+          id: number
+          meta: Json
+          recipient_id: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          meta?: Json
+          recipient_id?: string | null
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          meta?: Json
+          recipient_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qo_events_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "qo_recipients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      qo_offer_items: {
+        Row: {
+          active: boolean
+          availability: string
+          batch_doc_available: boolean
+          brand: string | null
+          campaign_id: string
+          category: string | null
+          cnk: string | null
+          created_at: string
+          ean: string | null
+          eta_label: string | null
+          free_units_offer: string | null
+          id: string
+          image_url: string | null
+          market_price_cents: number | null
+          max_qty: number | null
+          min_expiry_date: string | null
+          min_qty: number
+          name: string
+          origin_country: string | null
+          pack_size: string | null
+          packaging_languages: string[]
+          position: number
+          public_price_cents: number | null
+          short_expiry_date: string | null
+          step_qty: number
+          stock_qty: number | null
+          supply_type: string | null
+          tiers: Json
+          unit_price_cents: number
+          vat_rate: number
+        }
+        Insert: {
+          active?: boolean
+          availability?: string
+          batch_doc_available?: boolean
+          brand?: string | null
+          campaign_id: string
+          category?: string | null
+          cnk?: string | null
+          created_at?: string
+          ean?: string | null
+          eta_label?: string | null
+          free_units_offer?: string | null
+          id?: string
+          image_url?: string | null
+          market_price_cents?: number | null
+          max_qty?: number | null
+          min_expiry_date?: string | null
+          min_qty?: number
+          name: string
+          origin_country?: string | null
+          pack_size?: string | null
+          packaging_languages?: string[]
+          position?: number
+          public_price_cents?: number | null
+          short_expiry_date?: string | null
+          step_qty?: number
+          stock_qty?: number | null
+          supply_type?: string | null
+          tiers?: Json
+          unit_price_cents: number
+          vat_rate?: number
+        }
+        Update: {
+          active?: boolean
+          availability?: string
+          batch_doc_available?: boolean
+          brand?: string | null
+          campaign_id?: string
+          category?: string | null
+          cnk?: string | null
+          created_at?: string
+          ean?: string | null
+          eta_label?: string | null
+          free_units_offer?: string | null
+          id?: string
+          image_url?: string | null
+          market_price_cents?: number | null
+          max_qty?: number | null
+          min_expiry_date?: string | null
+          min_qty?: number
+          name?: string
+          origin_country?: string | null
+          pack_size?: string | null
+          packaging_languages?: string[]
+          position?: number
+          public_price_cents?: number | null
+          short_expiry_date?: string | null
+          step_qty?: number
+          stock_qty?: number | null
+          supply_type?: string | null
+          tiers?: Json
+          unit_price_cents?: number
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qo_offer_items_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "qo_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      qo_order_lines: {
+        Row: {
+          buyer_price_cents: number | null
+          cnk: string | null
+          created_at: string
+          free_units: number
+          id: string
+          line_ht_cents: number
+          line_type: string
+          name: string
+          offer_item_id: string | null
+          order_id: string
+          qty: number
+          unit_price_cents: number
+          vat_rate: number
+        }
+        Insert: {
+          buyer_price_cents?: number | null
+          cnk?: string | null
+          created_at?: string
+          free_units?: number
+          id?: string
+          line_ht_cents: number
+          line_type?: string
+          name: string
+          offer_item_id?: string | null
+          order_id: string
+          qty: number
+          unit_price_cents: number
+          vat_rate: number
+        }
+        Update: {
+          buyer_price_cents?: number | null
+          cnk?: string | null
+          created_at?: string
+          free_units?: number
+          id?: string
+          line_ht_cents?: number
+          line_type?: string
+          name?: string
+          offer_item_id?: string | null
+          order_id?: string
+          qty?: number
+          unit_price_cents?: number
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qo_order_lines_offer_item_id_fkey"
+            columns: ["offer_item_id"]
+            isOneToOne: false
+            referencedRelation: "qo_offer_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qo_order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "qo_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      qo_orders: {
+        Row: {
+          account_invited_at: string | null
+          campaign_id: string
+          comment: string | null
+          confirmation_sent_at: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          converted_at: string | null
+          converted_order_id: string | null
+          created_at: string
+          delivery_note: string | null
+          franco_reached: boolean
+          id: string
+          ip_hash: string | null
+          receipt_sent_at: string | null
+          recipient_id: string
+          reference: string
+          requested_delivery_date: string | null
+          shipping_ht_cents: number
+          status: string
+          subtotal_ht_cents: number
+          total_ttc_cents: number
+          user_agent: string | null
+          vat_cents: number
+        }
+        Insert: {
+          account_invited_at?: string | null
+          campaign_id: string
+          comment?: string | null
+          confirmation_sent_at?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          converted_at?: string | null
+          converted_order_id?: string | null
+          created_at?: string
+          delivery_note?: string | null
+          franco_reached?: boolean
+          id?: string
+          ip_hash?: string | null
+          receipt_sent_at?: string | null
+          recipient_id: string
+          reference: string
+          requested_delivery_date?: string | null
+          shipping_ht_cents?: number
+          status?: string
+          subtotal_ht_cents?: number
+          total_ttc_cents?: number
+          user_agent?: string | null
+          vat_cents?: number
+        }
+        Update: {
+          account_invited_at?: string | null
+          campaign_id?: string
+          comment?: string | null
+          confirmation_sent_at?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          converted_at?: string | null
+          converted_order_id?: string | null
+          created_at?: string
+          delivery_note?: string | null
+          franco_reached?: boolean
+          id?: string
+          ip_hash?: string | null
+          receipt_sent_at?: string | null
+          recipient_id?: string
+          reference?: string
+          requested_delivery_date?: string | null
+          shipping_ht_cents?: number
+          status?: string
+          subtotal_ht_cents?: number
+          total_ttc_cents?: number
+          user_agent?: string | null
+          vat_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qo_orders_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "qo_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qo_orders_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "qo_recipients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      qo_recipients: {
+        Row: {
+          bce_number: string | null
+          brevo_synced_at: string | null
+          campaign_id: string
+          city: string | null
+          consent_at: string | null
+          consent_ip_hash: string | null
+          consent_source: string | null
+          consent_status: string
+          consent_text_version: string | null
+          contact_email: string
+          contact_name: string | null
+          created_at: string
+          expires_at: string
+          external_ref: string | null
+          first_opened_at: string | null
+          flow: string
+          icp_score: number | null
+          id: string
+          language: string
+          last_opened_at: string | null
+          open_count: number
+          ordered_at: string | null
+          perso_1: string | null
+          perso_2: string | null
+          pharmacy_name: string
+          phone: string | null
+          postal_code: string | null
+          region: string | null
+          segment: string | null
+          street: string | null
+          tenant_id: string | null
+          token: string
+          unsubscribed_at: string | null
+        }
+        Insert: {
+          bce_number?: string | null
+          brevo_synced_at?: string | null
+          campaign_id: string
+          city?: string | null
+          consent_at?: string | null
+          consent_ip_hash?: string | null
+          consent_source?: string | null
+          consent_status?: string
+          consent_text_version?: string | null
+          contact_email: string
+          contact_name?: string | null
+          created_at?: string
+          expires_at: string
+          external_ref?: string | null
+          first_opened_at?: string | null
+          flow?: string
+          icp_score?: number | null
+          id?: string
+          language?: string
+          last_opened_at?: string | null
+          open_count?: number
+          ordered_at?: string | null
+          perso_1?: string | null
+          perso_2?: string | null
+          pharmacy_name: string
+          phone?: string | null
+          postal_code?: string | null
+          region?: string | null
+          segment?: string | null
+          street?: string | null
+          tenant_id?: string | null
+          token?: string
+          unsubscribed_at?: string | null
+        }
+        Update: {
+          bce_number?: string | null
+          brevo_synced_at?: string | null
+          campaign_id?: string
+          city?: string | null
+          consent_at?: string | null
+          consent_ip_hash?: string | null
+          consent_source?: string | null
+          consent_status?: string
+          consent_text_version?: string | null
+          contact_email?: string
+          contact_name?: string | null
+          created_at?: string
+          expires_at?: string
+          external_ref?: string | null
+          first_opened_at?: string | null
+          flow?: string
+          icp_score?: number | null
+          id?: string
+          language?: string
+          last_opened_at?: string | null
+          open_count?: number
+          ordered_at?: string | null
+          perso_1?: string | null
+          perso_2?: string | null
+          pharmacy_name?: string
+          phone?: string | null
+          postal_code?: string | null
+          region?: string | null
+          segment?: string | null
+          street?: string | null
+          tenant_id?: string | null
+          token?: string
+          unsubscribed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qo_recipients_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "qo_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       qogita_catalog_downloads: {
         Row: {
           catalog_request_id: string | null

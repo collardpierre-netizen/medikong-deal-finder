@@ -229,6 +229,7 @@ const AdminQogitaAmbiguousReview = lazyWithRetry(() => import("./pages/admin/Adm
 const AdminCategoryMappingDashboard = lazyWithRetry(() => import("./pages/admin/AdminCategoryMappingDashboard"), "AdminCategoryMappingDashboard");
 // AdminProductPrices supprimé : remplacé par offer_buyer_profile_prices (édition par offre dans /vendor/offers).
 const AdminInvestPipeline = lazyWithRetry(() => import("./pages/admin/AdminInvestPipeline"), "AdminInvestPipeline");
+const AdminInvestors = lazyWithRetry(() => import("./pages/admin/AdminInvestors"), "AdminInvestors");
 const AdminLogistique = lazyWithRetry(() => import("./pages/admin/AdminLogistique"), "AdminLogistique");
 const AdminShippingOptions = lazyWithRetry(() => import("./pages/admin/AdminShippingOptions"), "AdminShippingOptions");
 const AdminEquipe = lazyWithRetry(() => import("./pages/admin/AdminEquipe"), "AdminEquipe");
@@ -660,6 +661,7 @@ const App = () => (
               <Route path="prix-reference" element={<LP><AdminMarketCodes /></LP>} />
               {/* /admin/product-prices supprimé : utiliser /vendor/offers (offer_buyer_profile_prices) */}
               <Route path="invest-pipeline" element={<LP><AdminInvestPipeline /></LP>} />
+              <Route path="investisseurs" element={<LP><AdminInvestors /></LP>} />
               <Route path="logistique" element={<LP><AdminLogistique /></LP>} />
               <Route path="shipping-options" element={<LP><AdminShippingOptions /></LP>} />
               <Route path="equipe" element={<LP><AdminEquipe /></LP>} />

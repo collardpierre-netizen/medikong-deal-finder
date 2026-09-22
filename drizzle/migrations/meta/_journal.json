@@ -197,6 +197,13 @@
       "when": 1790066451053,
       "tag": "0027_order_self_billing_override",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1790073609802,
+      "tag": "0028_create_investors_table",
+      "breakpoints": true
     }
   ]
 }

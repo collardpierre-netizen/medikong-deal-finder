@@ -14,7 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import { fmtEurFromCents } from "@/lib/format-currency";
 import { Pencil, Plus, Search, Trash2, Users } from "lucide-react";
 
-type InvestorStatus = "pending" | "contacted" | "signed" | "paid" | "cancelled";
+type InvestorStatus = "pending" | "contacted" | "signed" | "paid" | "confirmed" | "refunded" | "cancelled";
 
 interface Investor {
   id: string;
@@ -33,8 +33,11 @@ const STATUS: Record<InvestorStatus, { label: string; bg: string; text: string }
   contacted: { label: "Contacté", bg: "#DBEAFE", text: "#2563EB" },
   signed: { label: "Signé", bg: "#D1FAE5", text: "#059669" },
   paid: { label: "Payé", bg: "#ECFDF5", text: "#047857" },
+  confirmed: { label: "Confirmé", bg: "#DCFCE7", text: "#15803D" },
+  refunded: { label: "Remboursé", bg: "#F1F5F9", text: "#475569" },
   cancelled: { label: "Annulé", bg: "#FEE2E2", text: "#DC2626" },
 };
+
 
 const STATUS_KEYS = Object.keys(STATUS) as InvestorStatus[];
 

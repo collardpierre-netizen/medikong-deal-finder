@@ -593,6 +593,14 @@ const AdminCommandeDetail = () => {
             orderTotalInclVat={Number(order.total_incl_vat) || 0}
           />
 
+          <OrderSelfBillingOverridePanel
+            orderId={order.id}
+            orderNumber={(order as any).order_number ?? null}
+            value={((order as any).self_billing_override ?? null) as boolean | null}
+          />
+
+
+
 
 
 

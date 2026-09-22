@@ -136,6 +136,7 @@ const sections: NavSection[] = [
       { labelKey: "onboardingCms", path: "/admin/onboarding-cms", icon: ClipboardList },
       { labelKey: "flashDeals", path: "/admin/flash-deals", icon: Zap },
       { labelKey: "investPipeline", path: "/admin/invest-pipeline", icon: DollarSign },
+      { label: "Investisseurs", path: "/admin/investisseurs", icon: DollarSign },
       { labelKey: "translations", path: "/admin/translations", icon: Globe },
     ],
   },

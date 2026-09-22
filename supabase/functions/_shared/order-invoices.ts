@@ -245,8 +245,9 @@ export async function emitOrderInvoices(
         }
         continue;
       }
-
+      if (!vendor?.mandate_signed_at) {
         result.skipped_no_mandate.push(vendorId);
+
         await flagMissingMandate(supabase, orderId, vendorId, vendorLabel, orderNumber);
         continue;
       }

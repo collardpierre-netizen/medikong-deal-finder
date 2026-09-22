@@ -52,9 +52,31 @@ Deno.serve(async (req) => {
     .eq("id", orderId)
     .maybeSingle();
   if (orderErr || !order) return json({ error: "Order not found" }, 404);
-  if (order.status !== "delivered") {
-    return json({ error: "order_not_delivered", status: order.status }, 422);
+  // L'envoi est autorisé après une livraison complète OU partielle :
+  // statut 'delivered'/'shipped', ou au moins un bon de livraison non annulé avec des quantités expédiées.
+  let deliveryStarted = order.status === "delivered" || order.status === "shipped";
+  if (!deliveryStarted) {
+    const { data: notes } = await admin
+      .from("delivery_notes")
+      .select("id, status, delivery_note_lines(quantity)")
+      .eq("order_id", order.id)
+      .neq("status", "cancelled");
+    deliveryStarted = (notes ?? []).some((n: any) =>
+      (n.delivery_note_lines ?? []).some((l: any) => Number(l.quantity) > 0),
+    );
   }
+  if (!deliveryStarted) {
+    return json(
+      {
+        error: "order_not_delivered",
+        status: order.status,
+        message:
+          "Commande pas encore livrée — marquez d'abord la livraison (totale ou partielle) ou créez un bon de livraison.",
+      },
+      422,
+    );
+  }
+
   if (order.delivery_confirmation_completed_at) {
     return json({ skipped: true, reason: "already_confirmed_by_buyer" }, 200);
   }

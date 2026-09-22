@@ -116,3 +116,6 @@ verify_jwt = false
 
 [functions.send-delivery-confirmation-request]
 verify_jwt = false
+
+[functions.submit-investor-inquiry]
+verify_jwt = false

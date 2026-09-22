@@ -3,7 +3,7 @@ import { X, ArrowRight, Check, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 const SHARE_PRICE = 1000;
-const quickAmounts = [1000, 2500, 5000, 7500, 10000, 12500, 15000];
+const quickAmounts = [2500, 5000, 10000, 15000, 25000, 50000];
 const countries = [
   { code: "BE", label: "Belgique", flag: "🇧🇪" },
   { code: "LU", label: "Luxembourg", flag: "🇱🇺" },
@@ -34,8 +34,8 @@ export default function InvestSubscriptionModal({ open, onClose }: Props) {
   const isTaxShelterEligible = country === "BE" && amount >= 5000;
   const taxReduction = isTaxShelterEligible ? Math.round(amount * 0.45) : 0;
   const netCost = amount - taxReduction;
-  const taxShelterRemaining = 15000 - amount;
-  const pct = ((amount - 1000) / (15000 - 1000)) * 100;
+  const taxShelterRemaining = 50000 - amount;
+  const pct = ((amount - 2500) / (50000 - 2500)) * 100;
   const canStep2 = firstName.trim() && lastName.trim() && email.trim() && phone.trim() && address.trim() && postalCode.trim() && city.trim();
   const selectedCountry = countries.find(c => c.code === country);
 
@@ -87,10 +87,10 @@ export default function InvestSubscriptionModal({ open, onClose }: Props) {
               </div>
               <div className="relative h-2 rounded-full bg-accent">
                 <div className="absolute inset-y-0 left-0 rounded-full bg-mk-green" style={{ width: `${pct}%` }} />
-                <input type="range" min={1000} max={15000} step={500} value={amount} onChange={e => setAmount(+e.target.value)}
+                <input type="range" min={2500} max={50000} step={500} value={amount} onChange={e => setAmount(+e.target.value)}
                   className="absolute inset-0 w-full appearance-none bg-transparent cursor-pointer [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-mk-green [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-mk-green [&::-moz-range-thumb]:border-0" />
               </div>
-              <div className="flex justify-between text-xs text-muted-foreground"><span>1 000 €</span><span>15 000 €</span></div>
+              <div className="flex justify-between text-xs text-muted-foreground"><span>2 500 €</span><span>50 000 €</span></div>
               <div className="flex flex-wrap gap-2">
                 {quickAmounts.map(a => (
                   <button key={a} onClick={() => setAmount(a)} className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${amount === a ? "bg-mk-blue text-white border-transparent" : "bg-white text-foreground border-border hover:bg-accent"}`}>{a.toLocaleString("fr-BE")} €</button>

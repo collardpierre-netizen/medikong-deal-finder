@@ -490,6 +490,7 @@ const App = () => (
             <Route path="/onboarding" element={<LP><OnboardingPage /></LP>} />
             <Route path="/buyer-completion" element={<LP><BuyerCompletionPage /></LP>} />
             <Route path="/invest" element={<LP><InvestPage /></LP>} />
+            <Route path="/invest/contact" element={<LP><InvestContactPage /></LP>} />
             <Route path="/mot-de-passe-oublie" element={<LP><ForgotPasswordPage /></LP>} />
             <Route path="/reset-password" element={<LP><ResetPasswordPage /></LP>} />
             <Route path="/definir-mot-de-passe" element={<ForcePasswordChangePage />} />

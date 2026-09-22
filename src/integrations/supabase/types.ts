@@ -13393,6 +13393,7 @@ export type Database = {
           public_access_expires_at: string | null
           public_access_pin: string | null
           public_token: string | null
+          self_billing_override: boolean | null
           shipped_at: string | null
           shipping_address: Json
           shipping_address_id: string | null
@@ -13452,6 +13453,7 @@ export type Database = {
           public_access_expires_at?: string | null
           public_access_pin?: string | null
           public_token?: string | null
+          self_billing_override?: boolean | null
           shipped_at?: string | null
           shipping_address?: Json
           shipping_address_id?: string | null
@@ -13511,6 +13513,7 @@ export type Database = {
           public_access_expires_at?: string | null
           public_access_pin?: string | null
           public_token?: string | null
+          self_billing_override?: boolean | null
           shipped_at?: string | null
           shipping_address?: Json
           shipping_address_id?: string | null
@@ -33064,6 +33067,7 @@ export type Database = {
           public_access_expires_at: string | null
           public_access_pin: string | null
           public_token: string | null
+          self_billing_override: boolean | null
           shipped_at: string | null
           shipping_address: Json
           shipping_address_id: string | null

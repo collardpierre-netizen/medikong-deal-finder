@@ -213,7 +213,7 @@ export async function emitOrderInvoices(
     if (vendorIds.length === 0) return result;
 
     const [{ data: order }, { data: vendors }] = await Promise.all([
-      supabase.from("orders").select("order_number").eq("id", orderId).maybeSingle(),
+      supabase.from("orders").select("order_number, self_billing_override").eq("id", orderId).maybeSingle(),
       supabase
         .from("vendors")
         .select("id, name, company_name, mandate_signed_at, self_billing_enabled")
@@ -221,11 +221,15 @@ export async function emitOrderInvoices(
     ]);
     const vendorMap = new Map<string, any>((vendors || []).map((v: any) => [v.id, v]));
     const orderNumber = order?.order_number ?? null;
+    // Réglage par vente : null = suit le fournisseur, true = force, false = exclut cette commande.
+    const orderOverride = (order as any)?.self_billing_override ?? null;
 
     for (const vendorId of vendorIds) {
       const vendor = vendorMap.get(vendorId);
       const vendorLabel = vendor?.company_name || vendor?.name || vendorId;
-      if (vendor && vendor.self_billing_enabled === false) {
+      const enabledForThisOrder =
+        orderOverride === true ? true : orderOverride === false ? false : vendor?.self_billing_enabled !== false;
+      if (!enabledForThisOrder) {
         result.skipped_disabled.push(vendorId);
         try {
           await supabase.from("audit_logs").insert({
@@ -233,14 +237,15 @@ export async function emitOrderInvoices(
             module: "invoicing",
             detail:
               `Commande ${orderNumber ?? orderId} : facturation au nom et pour le compte de ` +
-              `${vendorLabel} désactivée pour ce fournisseur, aucune facture émise.`,
+              `${vendorLabel} désactivée ${orderOverride === false ? "pour cette commande" : "pour ce fournisseur"}, ` +
+              `aucune facture émise.`,
           });
         } catch (e) {
           console.error("[order-invoices] audit_logs insert failed", e);
         }
         continue;
       }
-      if (!vendor?.mandate_signed_at) {
+
         result.skipped_no_mandate.push(vendorId);
         await flagMissingMandate(supabase, orderId, vendorId, vendorLabel, orderNumber);
         continue;

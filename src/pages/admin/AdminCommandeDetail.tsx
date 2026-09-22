@@ -1233,7 +1233,7 @@ const AdminCommandeDetail = () => {
                     if (d?.skipped) toast.info("Dry-run : déjà confirmée — aucun envoi ne partirait.");
                     else toast.success(`Dry-run OK · destinataire ${d?.recipient} · key ${d?.idempotencyKey}`);
                   } catch (e: any) {
-                    toast.error("Dry-run échec : " + (e?.message || "erreur"));
+                    toast.error(await deliveryConfirmationErrorMessage(e));
                   } finally {
                     setBusy(null);
                   }

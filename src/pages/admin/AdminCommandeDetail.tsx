@@ -16,6 +16,7 @@ import OrderInvoiceStatusPanel from "@/components/orders/OrderInvoiceStatusPanel
 import OrderProductsSummary from "@/components/orders/OrderProductsSummary";
 import DeliveryNotesPanel from "@/components/orders/DeliveryNotesPanel";
 import OrderBankTransfersPanel from "@/components/admin/OrderBankTransfersPanel";
+import OrderSelfBillingOverridePanel from "@/components/orders/OrderSelfBillingOverridePanel";
 
 import StripePaymentStatusBadge from "@/components/orders/StripePaymentStatusBadge";
 import OrderSourceBadge from "@/components/orders/OrderSourceBadge";

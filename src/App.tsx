@@ -229,6 +229,7 @@ const AdminQogitaAmbiguousReview = lazyWithRetry(() => import("./pages/admin/Adm
 const AdminCategoryMappingDashboard = lazyWithRetry(() => import("./pages/admin/AdminCategoryMappingDashboard"), "AdminCategoryMappingDashboard");
 // AdminProductPrices supprimé : remplacé par offer_buyer_profile_prices (édition par offre dans /vendor/offers).
 const AdminInvestPipeline = lazyWithRetry(() => import("./pages/admin/AdminInvestPipeline"), "AdminInvestPipeline");
+const AdminInvestors = lazyWithRetry(() => import("./pages/admin/AdminInvestors"), "AdminInvestors");
 const AdminLogistique = lazyWithRetry(() => import("./pages/admin/AdminLogistique"), "AdminLogistique");
 const AdminShippingOptions = lazyWithRetry(() => import("./pages/admin/AdminShippingOptions"), "AdminShippingOptions");
 const AdminEquipe = lazyWithRetry(() => import("./pages/admin/AdminEquipe"), "AdminEquipe");

@@ -57,6 +57,8 @@ import { template as invoicePaymentLink } from './invoice-payment-link.tsx'
 import { template as cagnotteEarned } from './cagnotte-earned.tsx'
 import { template as orderMessageCustomer } from './order-message-customer.tsx'
 import { template as orderMessageAdmin } from './order-message-admin.tsx'
+import { template as investorInquiryConfirmation } from './investor-inquiry-confirmation.tsx'
+import { template as investorInquiryAdmin } from './investor-inquiry-admin.tsx'
 import { template as vendorInvoiceDocument } from './vendor-invoice-document.tsx'
 import { template as deliveryConfirmationRequest } from './delivery-confirmation-request.tsx'
 
@@ -113,5 +115,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'cagnotte-earned': cagnotteEarned,
   'order-message-customer': orderMessageCustomer,
   'order-message-admin': orderMessageAdmin,
+  'investor-inquiry-confirmation': investorInquiryConfirmation,
+  'investor-inquiry-admin': investorInquiryAdmin,
 }
 

@@ -61,6 +61,28 @@ function validateTrackingUrl(raw: string): string | null {
   return null;
 }
 
+/**
+ * Traduit une erreur de la fonction "request-delivery-confirmation" en message admin explicite.
+ * Le corps de réponse non-2xx est lu pour récupérer le message métier renvoyé par le serveur.
+ */
+async function deliveryConfirmationErrorMessage(e: any): Promise<string> {
+  let payload: any = null;
+  try {
+    const res = e?.context;
+    if (res && typeof res.json === "function") payload = await res.json();
+  } catch {
+    /* corps illisible — on retombe sur le message générique */
+  }
+  if (payload?.message) return payload.message;
+  if (payload?.error === "order_not_delivered") {
+    return "Commande pas encore livrée — marquez d'abord la livraison (totale ou partielle).";
+  }
+  if (payload?.error === "Customer email missing") return "Aucune adresse e-mail client sur cette commande.";
+  return "Échec envoi : " + (payload?.error || e?.message || "erreur");
+}
+
+
+
 const AdminCommandeDetail = () => {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();

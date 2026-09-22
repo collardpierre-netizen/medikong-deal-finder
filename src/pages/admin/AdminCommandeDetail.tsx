@@ -1208,7 +1208,8 @@ const AdminCommandeDetail = () => {
                     setTimeout(() => refetchDeliveryEmailLogs(), 1500);
 
                   } catch (e: any) {
-                    toast.error("Échec envoi : " + (e?.message || "erreur"));
+                    toast.error(await deliveryConfirmationErrorMessage(e));
+
                   } finally {
                     setBusy(null);
                   }

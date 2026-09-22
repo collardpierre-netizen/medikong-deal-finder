@@ -13,7 +13,7 @@ const leveeCards = [
   { label: "Montant recherché", value: "1 000 000 €" },
   { label: "Valorisation post-money", value: "10 000 000 €" },
   { label: "Part cédée", value: "10%" },
-  { label: "Ticket minimum", value: "1 000 €" },
+  { label: "Ticket minimum", value: "2 500 €" },
   { label: "Type d'instrument", value: "Actions ordinaires" },
 ];
 
@@ -71,12 +71,12 @@ const fundColors = ["#1B5BDA", "#00b894", "#55efc4", "#6B9FE8", "#00cec9", "#CBD
 
 const investSteps = [
   { n: "01", title: "Inscrivez-vous", desc: "Créez votre compte sur la plateforme en 2 minutes" },
-  { n: "02", title: "Choisissez votre montant", desc: "À partir de 1 000 € (multiples de 1 000 €)" },
+  { n: "02", title: "Choisissez votre montant", desc: "À partir de 2 500 € (par paliers de 500 €)" },
   { n: "03", title: "Signez et transférez", desc: "Signature électronique + virement bancaire sécurisé" },
 ];
 
 const faqs = [
-  { q: "Quel est le montant minimum pour investir ?", a: "Vous pouvez investir à partir de 1 000 €. Les souscriptions se font par multiples de 1 000 €. Il n'y a pas de montant maximum, mais l'avantage fiscal Tax Shelter n'est applicable qu'à partir de 5 000 € et est plafonné à 15 000 € par personne par an." },
+  { q: "Quel est le montant minimum pour investir ?", a: "Vous pouvez investir à partir de 2 500 €. Il n'y a pas de montant maximum, mais l'avantage fiscal Tax Shelter n'est applicable qu'à partir de 5 000 € et est plafonné à 50 000 € par personne physique (maximum 100 000 € par contribuable)." },
   { q: "Qu'est-ce que le Tax Shelter ?", a: "Le Tax Shelter est un incitant fiscal belge permettant aux investisseurs particuliers de récupérer 45% de leur investissement dans une startup via une réduction d'impôt sur les personnes physiques." },
   { q: "Pourquoi une fondation pour les actionnaires ?", a: "La fondation privée (SPV) regroupe tous les petits actionnaires en une seule entité juridique. Cela simplifie la gouvernance de MediKong, protège vos droits et facilite les futures opérations (dividendes, exit)." },
   { q: "Quand vais-je recevoir mes actions ?", a: "Après signature de la convention et réception de votre virement, vos actions sont émises sous 15 jours ouvrables. Vous recevez un certificat d'actionnaire et votre attestation Tax Shelter." },
@@ -101,8 +101,8 @@ function TaxShelterSimulator() {
   const eligible = amount >= 5000 ? amount : 0;
   const reduction = Math.round(eligible * 0.45);
   const net = amount - reduction;
-  const remaining = eligible > 0 ? 15000 - amount : 15000;
-  const pct = ((amount - 1000) / (15000 - 1000)) * 100;
+  const remaining = eligible > 0 ? 50000 - amount : 50000;
+  const pct = ((amount - 2500) / (50000 - 2500)) * 100;
 
   return (
     <div className="rounded-2xl p-6 md:p-8" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #1a365d 100%)" }}>
@@ -111,15 +111,15 @@ function TaxShelterSimulator() {
 
       {/* Labels + selected amount */}
       <div className="flex items-end justify-between mb-2">
-        <span className="text-xs text-white/40">1 000 €</span>
+        <span className="text-xs text-white/40">2 500 €</span>
         <span className="text-xl font-bold text-white">{amount.toLocaleString("fr-BE")} €</span>
-        <span className="text-xs text-white/40">15 000 €</span>
+        <span className="text-xs text-white/40">50 000 €</span>
       </div>
 
       {/* Custom slider track */}
       <div className="relative h-2 rounded-full bg-white/10 mb-8">
         <div className="absolute inset-y-0 left-0 rounded-full bg-mk-green" style={{ width: `${pct}%` }} />
-        <input type="range" min={1000} max={15000} step={500} value={amount} onChange={e => setAmount(Number(e.target.value))}
+        <input type="range" min={2500} max={50000} step={500} value={amount} onChange={e => setAmount(Number(e.target.value))}
           className="absolute inset-0 w-full h-full appearance-none bg-transparent cursor-pointer [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(5,150,105,0.5)] [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-track]:bg-transparent" />
       </div>
 
@@ -155,7 +155,7 @@ function TaxShelterSimulator() {
         )}
       </div>
       <p className="text-xs text-white/30 mt-5">
-        Éligible de 5 000 € à 15 000 € / an (personnes physiques).{" "}
+        Éligible de 5 000 € à 50 000 € par personne physique (maximum 100 000 € par contribuable).{" "}
         <a href="https://economie.fgov.be/fr/themes/entreprises/pme-et-independants-en/tax-shelter" target="_blank" rel="noopener noreferrer" className="text-mk-green hover:underline">Voir le site officiel du SPF Économie →</a>
       </p>
     </div>
@@ -253,7 +253,7 @@ export default function InvestPage() {
           <motion.div className="flex flex-col sm:flex-row gap-3 justify-center"
             initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 }}>
             <button onClick={() => setShowSubscribe(true)} className="inline-flex items-center justify-center gap-2 bg-mk-green hover:brightness-110 text-white px-8 py-4 rounded-xl font-semibold text-sm transition-all">
-              Souscrire dès 1 000 € <ArrowRight size={16} />
+              Souscrire dès 2 500 € <ArrowRight size={16} />
             </button>
             <a href="https://www.medikong.pro/documents/MediKong_Fundraising_Pitch_Seed.pdf" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 bg-white/10 border border-white/20 text-white px-8 py-4 rounded-xl font-semibold text-sm hover:bg-white/15 transition-all">
               <Download size={16} /> Mémo d'investissement
@@ -498,7 +498,7 @@ export default function InvestPage() {
             <div className="border border-mk-line rounded-2xl p-6 md:p-8">
               <h3 className="text-lg font-bold text-mk-navy mb-4">Conditions du Tax Shelter</h3>
               <ul className="space-y-3">
-                {["Réduction d'impôt de 45% sur le montant investi", "Applicable dès 5 000 € d'investissement", "Maximum 15 000 € de réduction par personne par an", "Applicable jusqu'à 500 000 € investis", "Les actions doivent être conservées pendant 4 ans minimum", "Réservé aux personnes physiques (pas les sociétés)"].map((c) => (
+                {["Réduction d'impôt de 45% sur le montant investi", "Applicable dès 5 000 € d'investissement", "Maximum 50 000 € en Tax Shelter par personne physique (maximum 100 000 € par contribuable)", "Les actions doivent être conservées pendant 4 ans minimum", "Réservé aux personnes physiques (pas les sociétés)"].map((c) => (
                   <li key={c} className="flex items-start gap-2.5 text-sm text-mk-sec"><CheckCircle2 size={16} className="text-mk-green shrink-0 mt-0.5" />{c}</li>
                 ))}
               </ul>
@@ -630,7 +630,7 @@ export default function InvestPage() {
           <h2 className="text-2xl md:text-4xl font-bold mb-4">Prêt à investir dans l'avenir de la santé ?</h2>
           <p className="text-white/60 max-w-lg mx-auto mb-10 text-sm md:text-base">Rejoignez les premiers investisseurs de MediKong et bénéficiez du Tax Shelter.</p>
           <button onClick={() => setShowSubscribe(true)} className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white px-8 py-4 rounded-xl font-semibold text-sm hover:bg-white/15 transition-all">
-            Souscrire maintenant — dès 1 000 € <ArrowRight size={16} />
+            Souscrire maintenant — dès 2 500 € <ArrowRight size={16} />
           </button>
           <p className="text-white/40 text-xs mt-6">Vous avez des questions ? Contactez-nous à <a href="mailto:invest@medikong.pro" className="underline hover:text-white">invest@medikong.pro</a></p>
         </div>

@@ -661,6 +661,7 @@ const App = () => (
               <Route path="prix-reference" element={<LP><AdminMarketCodes /></LP>} />
               {/* /admin/product-prices supprimé : utiliser /vendor/offers (offer_buyer_profile_prices) */}
               <Route path="invest-pipeline" element={<LP><AdminInvestPipeline /></LP>} />
+              <Route path="investisseurs" element={<LP><AdminInvestors /></LP>} />
               <Route path="logistique" element={<LP><AdminLogistique /></LP>} />
               <Route path="shipping-options" element={<LP><AdminShippingOptions /></LP>} />
               <Route path="equipe" element={<LP><AdminEquipe /></LP>} />

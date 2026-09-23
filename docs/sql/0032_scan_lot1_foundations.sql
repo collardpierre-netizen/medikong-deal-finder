@@ -1,5 +1,5 @@
 -- ============================================================================
--- LOT 1 — MediKong Scan — fondations (BROUILLON, NON APPLIQUÉ)
+-- LOT 1 — MediKong Scan — fondations (appliqué 23/09/2026)
 -- Migration strictement additive. Aucune donnée existante réécrite.
 -- ============================================================================
 
@@ -155,7 +155,7 @@ CREATE POLICY "scan attr own" ON public.scan_cart_attributions FOR SELECT TO aut
 CREATE POLICY "scan attr own insert" ON public.scan_cart_attributions FOR INSERT TO authenticated
   WITH CHECK (customer_id IN (SELECT c.id FROM public.customers c WHERE c.auth_user_id = auth.uid()
                               UNION SELECT public.current_user_buyer_account_ids())
-              AND EXISTS (SELECT 1 FROM public.scan_events e WHERE e.id = scan_event_id AND e.customer_id = customer_id));
+              AND EXISTS (SELECT 1 FROM public.scan_events e WHERE e.id = scan_cart_attributions.scan_event_id AND e.customer_id = scan_cart_attributions.customer_id));
 CREATE POLICY "scan attr admin read" ON public.scan_cart_attributions FOR SELECT TO authenticated
   USING (public.is_admin(auth.uid()));
 

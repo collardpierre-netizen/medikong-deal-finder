@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import DocLanguageSelect from "@/components/documents/DocLanguageSelect";
-import type { DocLang } from "@/lib/doc-i18n";
+import { translateDocTexts, type DocLang } from "@/lib/doc-i18n";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Loader2 } from "lucide-react";

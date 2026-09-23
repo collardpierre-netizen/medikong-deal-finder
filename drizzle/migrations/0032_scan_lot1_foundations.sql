@@ -1,9 +1,3 @@
--- ============================================================================
--- LOT 1 — MediKong Scan — fondations (appliqué 23/09/2026)
--- Migration strictement additive. Aucune donnée existante réécrite.
--- ============================================================================
-
--- 1. Comptes (arbitrages 1, 10, 12) ------------------------------------------
 ALTER TABLE public.customers
   ADD COLUMN IF NOT EXISTS scan_enabled boolean NOT NULL DEFAULT false,
   ADD COLUMN IF NOT EXISTS be_pharmacy_id uuid NULL REFERENCES public.be_pharmacies(id) ON DELETE SET NULL;
@@ -12,18 +6,14 @@ CREATE INDEX IF NOT EXISTS customers_be_pharmacy_id_idx ON public.customers(be_p
 ALTER TABLE public.site_config
   ADD COLUMN IF NOT EXISTS scan_enabled boolean NOT NULL DEFAULT false;
 
--- 2. Codes produit : fonction immutable (index CONCURRENTLY en migration séparée 0033)
 CREATE OR REPLACE FUNCTION public.normalize_cnk(_v text)
 RETURNS text LANGUAGE sql IMMUTABLE PARALLEL SAFE SET search_path = public AS $$
   SELECT NULLIF(regexp_replace(coalesce(_v, ''), '\D', '', 'g'), '')
 $$;
 
--- 3. Grossistes (arbitrages 3, 4) ---------------------------------------------
 ALTER TABLE public.wholesaler_profiles
   ADD COLUMN IF NOT EXISTS display_prices_allowed boolean NOT NULL DEFAULT false;
 
--- Prix catalogue grossiste : market_prices stocke déjà prix_grossiste par produit
--- et par source (Febelco, CERP, Phoenix…). On relie simplement la source au profil.
 ALTER TABLE public.market_prices ADD COLUMN IF NOT EXISTS period date NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS market_prices_source_product_period_uidx
   ON public.market_prices(source_id, product_id, period) WHERE period IS NOT NULL;
@@ -53,15 +43,10 @@ CREATE POLICY "depots read active" ON public.wholesaler_depots
 CREATE POLICY "depots admin manage" ON public.wholesaler_depots
   FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
 
--- 4. Remises pharmacien (arbitrage 2) -----------------------------------------
 ALTER TABLE public.pharmacist_wholesaler_settings
   ADD COLUMN IF NOT EXISTS customer_id uuid NULL REFERENCES public.customers(id) ON DELETE CASCADE;
 CREATE INDEX IF NOT EXISTS pws_customer_id_idx ON public.pharmacist_wholesaler_settings(customer_id);
 
--- Policy actuelle conservée telle quelle : pws_owner_all (user_id = auth.uid()).
--- Ajout : membres actifs du compte customer rattaché. AUCUNE policy admin/vendeur,
--- aucune vue ni export ne lit cette table ; le calcul du prix de référence est
--- fait par scan-resolve (service_role) qui ne renvoie que le résultat.
 CREATE POLICY "pws_customer_members_all" ON public.pharmacist_wholesaler_settings
   FOR ALL TO authenticated
   USING (customer_id IS NOT NULL AND customer_id IN (
@@ -71,7 +56,6 @@ CREATE POLICY "pws_customer_members_all" ON public.pharmacist_wholesaler_setting
     SELECT c.id FROM public.customers c WHERE c.auth_user_id = auth.uid()
     UNION SELECT public.current_user_buyer_account_ids()));
 
--- Liste des grossistes pour Scan sans exposer extraction_hints_json
 CREATE OR REPLACE FUNCTION public.scan_list_wholesalers()
 RETURNS TABLE(id uuid, slug text, display_name text, country text, discount_mechanic text,
               default_discount_pct numeric, display_prices_allowed boolean)
@@ -82,7 +66,6 @@ $$;
 REVOKE ALL ON FUNCTION public.scan_list_wholesalers() FROM public, anon;
 GRANT EXECUTE ON FUNCTION public.scan_list_wholesalers() TO authenticated;
 
--- 5. Sessions et événements de scan ------------------------------------------
 CREATE TABLE public.scan_sessions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id uuid NOT NULL REFERENCES public.customers(id) ON DELETE CASCADE,
@@ -107,7 +90,7 @@ CREATE TABLE public.scan_events (
   user_id uuid NOT NULL,
   scanned_at timestamptz NOT NULL DEFAULT now(),
   symbology text NOT NULL CHECK (symbology IN ('ean13','datamatrix','manual_cnk','other')),
-  raw_code text NOT NULL,              -- AI 21 (n° de série) retiré avant stockage
+  raw_code text NOT NULL,
   gtin text, cnk text, lot text, expiry_date date,
   product_id uuid REFERENCES public.products(id) ON DELETE SET NULL,
   match_status text NOT NULL CHECK (match_status IN ('matched','ambiguous_match','not_found')),
@@ -115,10 +98,10 @@ CREATE TABLE public.scan_events (
   in_test_scope boolean NOT NULL DEFAULT false,
   result text NOT NULL CHECK (result IN ('offer','known_no_offer','unknown')),
   best_offer_id uuid REFERENCES public.offers(id) ON DELETE SET NULL,
-  best_price_excl_vat numeric,         -- euros, comme offers.price_excl_vat
-  ref_price_excl_vat numeric,          -- meilleur prix de référence pharmacien
-  ref_source text,                     -- 'FEBELCO', 'CERP', 'LAB:<id>', 'none'
-  delta_excl_vat numeric,              -- ref − MediKong (positif = gain)
+  best_price_excl_vat numeric,
+  ref_price_excl_vat numeric,
+  ref_source text,
+  delta_excl_vat numeric,
   verdict text CHECK (verdict IN ('green','orange','red','none')),
   action text NOT NULL DEFAULT 'none' CHECK (action IN ('none','added_to_cart','price_alert','stock_report','sourcing_request')),
   latency_ms integer
@@ -133,9 +116,7 @@ CREATE POLICY "scan events own read" ON public.scan_events FOR SELECT TO authent
                          UNION SELECT public.current_user_buyer_account_ids()));
 CREATE POLICY "scan events admin read" ON public.scan_events FOR SELECT TO authenticated
   USING (public.is_admin(auth.uid()));
--- Écriture uniquement par scan-resolve (service_role) : 1 appel = 1 ligne.
 
--- 6. Attribution panier (arbitrage 8) -----------------------------------------
 CREATE TABLE public.scan_cart_attributions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id uuid NOT NULL REFERENCES public.customers(id) ON DELETE CASCADE,
@@ -159,7 +140,6 @@ CREATE POLICY "scan attr own insert" ON public.scan_cart_attributions FOR INSERT
 CREATE POLICY "scan attr admin read" ON public.scan_cart_attributions FOR SELECT TO authenticated
   USING (public.is_admin(auth.uid()));
 
--- Rapprochement à la création d'une ligne de commande (fenêtre 7 jours).
 CREATE OR REPLACE FUNCTION public._scan_attribute_order_line()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE _customer uuid;
@@ -176,7 +156,6 @@ END $$;
 CREATE TRIGGER trg_scan_attribute_order_line AFTER INSERT ON public.order_lines
   FOR EACH ROW EXECUTE FUNCTION public._scan_attribute_order_line();
 
--- 7. Sourcing (arbitrage 9) ---------------------------------------------------
 ALTER TABLE public.sourcing_requests
   ADD COLUMN IF NOT EXISTS source text NOT NULL DEFAULT 'manual',
   ADD COLUMN IF NOT EXISTS monthly_quantity integer,
@@ -186,14 +165,13 @@ ALTER TABLE public.sourcing_requests
   ADD COLUMN IF NOT EXISTS sourcing_item_id uuid REFERENCES public.buyer_comparator_sourcing_items(id) ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS scan_event_id uuid REFERENCES public.scan_events(id) ON DELETE SET NULL;
 
--- 8. Complétion EAN via import Febelco/CERP (arbitrage 7) ---------------------
 CREATE TABLE public.product_gtin_proposals (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   product_id uuid NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
   proposed_gtin text NOT NULL,
   source_id uuid REFERENCES public.market_price_sources(id) ON DELETE SET NULL,
   matched_cnk text NOT NULL,
-  status text NOT NULL DEFAULT 'pending', -- pending | approved | rejected
+  status text NOT NULL DEFAULT 'pending',
   reviewed_by uuid, reviewed_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE (product_id, proposed_gtin)
@@ -203,6 +181,3 @@ GRANT ALL ON public.product_gtin_proposals TO service_role;
 ALTER TABLE public.product_gtin_proposals ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "gtin proposals admin" ON public.product_gtin_proposals FOR ALL TO authenticated
   USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
--- RPC admin_generate_gtin_proposals() (lecture market_prices.ean par CNK normalisé,
--- products.gtin vide uniquement) + admin_apply_gtin_proposal(id) : écrit products.gtin
--- seulement après validation, jamais si le gtin a été rempli entre-temps.

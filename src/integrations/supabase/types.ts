@@ -4557,6 +4557,7 @@ export type Database = {
           address_line1: string
           address_line2: string | null
           auth_user_id: string | null
+          be_pharmacy_id: string | null
           buyer_profile_id: string | null
           city: string
           company_name: string
@@ -4579,6 +4580,7 @@ export type Database = {
           peppol_verified_at: string | null
           phone: string | null
           postal_code: string | null
+          scan_enabled: boolean
           stripe_customer_id: string | null
           updated_at: string
           vat_number: string | null
@@ -4587,6 +4589,7 @@ export type Database = {
           address_line1: string
           address_line2?: string | null
           auth_user_id?: string | null
+          be_pharmacy_id?: string | null
           buyer_profile_id?: string | null
           city: string
           company_name: string
@@ -4609,6 +4612,7 @@ export type Database = {
           peppol_verified_at?: string | null
           phone?: string | null
           postal_code?: string | null
+          scan_enabled?: boolean
           stripe_customer_id?: string | null
           updated_at?: string
           vat_number?: string | null
@@ -4617,6 +4621,7 @@ export type Database = {
           address_line1?: string
           address_line2?: string | null
           auth_user_id?: string | null
+          be_pharmacy_id?: string | null
           buyer_profile_id?: string | null
           city?: string
           company_name?: string
@@ -4639,11 +4644,26 @@ export type Database = {
           peppol_verified_at?: string | null
           phone?: string | null
           postal_code?: string | null
+          scan_enabled?: boolean
           stripe_customer_id?: string | null
           updated_at?: string
           vat_number?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "customers_be_pharmacy_id_fkey"
+            columns: ["be_pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "be_pharmacies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_be_pharmacy_id_fkey"
+            columns: ["be_pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "be_pharmacies_export_v"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "customers_buyer_profile_id_fkey"
             columns: ["buyer_profile_id"]
@@ -8587,6 +8607,7 @@ export type Database = {
           slug: string
           source_type: string
           total_products: number | null
+          wholesaler_profile_id: string | null
         }
         Insert: {
           country_code?: string | null
@@ -8599,6 +8620,7 @@ export type Database = {
           slug: string
           source_type?: string
           total_products?: number | null
+          wholesaler_profile_id?: string | null
         }
         Update: {
           country_code?: string | null
@@ -8611,8 +8633,17 @@ export type Database = {
           slug?: string
           source_type?: string
           total_products?: number | null
+          wholesaler_profile_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "market_price_sources_wholesaler_profile_id_fkey"
+            columns: ["wholesaler_profile_id"]
+            isOneToOne: false
+            referencedRelation: "wholesaler_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       market_prices: {
         Row: {
@@ -8621,6 +8652,7 @@ export type Database = {
           id: string
           imported_at: string | null
           is_matched: boolean | null
+          period: string | null
           prix_grossiste: number | null
           prix_pharmacien: number | null
           prix_public: number | null
@@ -8640,6 +8672,7 @@ export type Database = {
           id?: string
           imported_at?: string | null
           is_matched?: boolean | null
+          period?: string | null
           prix_grossiste?: number | null
           prix_pharmacien?: number | null
           prix_public?: number | null
@@ -8659,6 +8692,7 @@ export type Database = {
           id?: string
           imported_at?: string | null
           is_matched?: boolean | null
+          period?: string | null
           prix_grossiste?: number | null
           prix_pharmacien?: number | null
           prix_public?: number | null
@@ -13783,6 +13817,7 @@ export type Database = {
           configured_at: string
           contract_start_date: string | null
           created_at: string
+          customer_id: string | null
           id: string
           is_supplier_of_pharmacist: boolean
           last_reviewed_at: string | null
@@ -13799,6 +13834,7 @@ export type Database = {
           configured_at?: string
           contract_start_date?: string | null
           created_at?: string
+          customer_id?: string | null
           id?: string
           is_supplier_of_pharmacist?: boolean
           last_reviewed_at?: string | null
@@ -13815,6 +13851,7 @@ export type Database = {
           configured_at?: string
           contract_start_date?: string | null
           created_at?: string
+          customer_id?: string | null
           id?: string
           is_supplier_of_pharmacist?: boolean
           last_reviewed_at?: string | null
@@ -13831,6 +13868,13 @@ export type Database = {
             columns: ["buyer_id"]
             isOneToOne: false
             referencedRelation: "buyers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pharmacist_wholesaler_settings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
             referencedColumns: ["id"]
           },
           {
@@ -14957,6 +15001,99 @@ export type Database = {
           label?: string
         }
         Relationships: []
+      }
+      product_gtin_proposals: {
+        Row: {
+          created_at: string
+          id: string
+          matched_cnk: string
+          product_id: string
+          proposed_gtin: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_id: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          matched_cnk: string
+          product_id: string
+          proposed_gtin: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_id?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          matched_cnk?: string
+          product_id?: string
+          proposed_gtin?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_gtin_proposals_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_gtin_proposals_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_gtin_proposals_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_gtin_proposals_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_gtin_proposals_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_gtin_proposals_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_gtin_proposals_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_gtin_proposals_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "market_price_sources"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_market_codes: {
         Row: {
@@ -20509,6 +20646,357 @@ export type Database = {
           },
         ]
       }
+      scan_cart_attributions: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          matched_at: string | null
+          offer_id: string
+          order_line_id: string | null
+          scan_event_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          matched_at?: string | null
+          offer_id: string
+          order_line_id?: string | null
+          scan_event_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          matched_at?: string | null
+          offer_id?: string
+          order_line_id?: string | null
+          scan_event_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_cart_attributions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_cart_attributions_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["mk_best_offer_id"]
+          },
+          {
+            foreignKeyName: "scan_cart_attributions_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_offer_prices_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "scan_cart_attributions_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_cart_attributions_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_private"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_cart_attributions_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_public_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_cart_attributions_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_with_exclusivity_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "scan_cart_attributions_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "public_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_cart_attributions_order_line_id_fkey"
+            columns: ["order_line_id"]
+            isOneToOne: false
+            referencedRelation: "admin_commission_backlog_v"
+            referencedColumns: ["order_line_id"]
+          },
+          {
+            foreignKeyName: "scan_cart_attributions_order_line_id_fkey"
+            columns: ["order_line_id"]
+            isOneToOne: false
+            referencedRelation: "buyer_order_lines_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_cart_attributions_order_line_id_fkey"
+            columns: ["order_line_id"]
+            isOneToOne: false
+            referencedRelation: "customer_order_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_cart_attributions_order_line_id_fkey"
+            columns: ["order_line_id"]
+            isOneToOne: false
+            referencedRelation: "order_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_cart_attributions_scan_event_id_fkey"
+            columns: ["scan_event_id"]
+            isOneToOne: false
+            referencedRelation: "scan_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scan_events: {
+        Row: {
+          action: string
+          best_offer_id: string | null
+          best_price_excl_vat: number | null
+          candidate_product_ids: string[]
+          cnk: string | null
+          customer_id: string
+          delta_excl_vat: number | null
+          expiry_date: string | null
+          gtin: string | null
+          id: string
+          in_test_scope: boolean
+          latency_ms: number | null
+          lot: string | null
+          match_status: string
+          product_id: string | null
+          raw_code: string
+          ref_price_excl_vat: number | null
+          ref_source: string | null
+          result: string
+          scanned_at: string
+          session_id: string | null
+          symbology: string
+          user_id: string
+          verdict: string | null
+        }
+        Insert: {
+          action?: string
+          best_offer_id?: string | null
+          best_price_excl_vat?: number | null
+          candidate_product_ids?: string[]
+          cnk?: string | null
+          customer_id: string
+          delta_excl_vat?: number | null
+          expiry_date?: string | null
+          gtin?: string | null
+          id?: string
+          in_test_scope?: boolean
+          latency_ms?: number | null
+          lot?: string | null
+          match_status: string
+          product_id?: string | null
+          raw_code: string
+          ref_price_excl_vat?: number | null
+          ref_source?: string | null
+          result: string
+          scanned_at?: string
+          session_id?: string | null
+          symbology: string
+          user_id: string
+          verdict?: string | null
+        }
+        Update: {
+          action?: string
+          best_offer_id?: string | null
+          best_price_excl_vat?: number | null
+          candidate_product_ids?: string[]
+          cnk?: string | null
+          customer_id?: string
+          delta_excl_vat?: number | null
+          expiry_date?: string | null
+          gtin?: string | null
+          id?: string
+          in_test_scope?: boolean
+          latency_ms?: number | null
+          lot?: string | null
+          match_status?: string
+          product_id?: string | null
+          raw_code?: string
+          ref_price_excl_vat?: number | null
+          ref_source?: string | null
+          result?: string
+          scanned_at?: string
+          session_id?: string | null
+          symbology?: string
+          user_id?: string
+          verdict?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_events_best_offer_id_fkey"
+            columns: ["best_offer_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["mk_best_offer_id"]
+          },
+          {
+            foreignKeyName: "scan_events_best_offer_id_fkey"
+            columns: ["best_offer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_offer_prices_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "scan_events_best_offer_id_fkey"
+            columns: ["best_offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_events_best_offer_id_fkey"
+            columns: ["best_offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_private"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_events_best_offer_id_fkey"
+            columns: ["best_offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_public_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_events_best_offer_id_fkey"
+            columns: ["best_offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers_with_exclusivity_v"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "scan_events_best_offer_id_fkey"
+            columns: ["best_offer_id"]
+            isOneToOne: false
+            referencedRelation: "public_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_events_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "scan_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "scan_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "scan_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "scan_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "scan_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scan_sessions: {
+        Row: {
+          customer_id: string
+          ended_at: string | null
+          id: string
+          mode: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          customer_id: string
+          ended_at?: string | null
+          id?: string
+          mode: string
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          customer_id?: string
+          ended_at?: string | null
+          id?: string
+          mode?: string
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_sessions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scraper_locks: {
         Row: {
           created_at: string
@@ -21231,6 +21719,7 @@ export type Database = {
           media_banner_title: string | null
           reduced_vat_rate: number
           restock_enabled: boolean
+          scan_enabled: boolean
           site_name: string
           tagline: string
         }
@@ -21253,6 +21742,7 @@ export type Database = {
           media_banner_title?: string | null
           reduced_vat_rate?: number
           restock_enabled?: boolean
+          scan_enabled?: boolean
           site_name?: string
           tagline?: string
         }
@@ -21275,6 +21765,7 @@ export type Database = {
           media_banner_title?: string | null
           reduced_vat_rate?: number
           restock_enabled?: boolean
+          scan_enabled?: boolean
           site_name?: string
           tagline?: string
         }
@@ -21331,13 +21822,20 @@ export type Database = {
           contact_name: string
           contact_phone: string | null
           created_at: string
+          current_price_excl_vat: number | null
+          current_supplier: string | null
           customer_id: string | null
           gtin: string | null
           id: string
+          monthly_quantity: number | null
+          photo_path: string | null
           product_description: string
           quantity_needed: number | null
           quoted_price: number | null
           request_number: string
+          scan_event_id: string | null
+          source: string
+          sourcing_item_id: string | null
           status: Database["public"]["Enums"]["sourcing_status"]
           updated_at: string
           urgency: Database["public"]["Enums"]["urgency_enum"]
@@ -21350,13 +21848,20 @@ export type Database = {
           contact_name: string
           contact_phone?: string | null
           created_at?: string
+          current_price_excl_vat?: number | null
+          current_supplier?: string | null
           customer_id?: string | null
           gtin?: string | null
           id?: string
+          monthly_quantity?: number | null
+          photo_path?: string | null
           product_description: string
           quantity_needed?: number | null
           quoted_price?: number | null
           request_number: string
+          scan_event_id?: string | null
+          source?: string
+          sourcing_item_id?: string | null
           status?: Database["public"]["Enums"]["sourcing_status"]
           updated_at?: string
           urgency?: Database["public"]["Enums"]["urgency_enum"]
@@ -21369,13 +21874,20 @@ export type Database = {
           contact_name?: string
           contact_phone?: string | null
           created_at?: string
+          current_price_excl_vat?: number | null
+          current_supplier?: string | null
           customer_id?: string | null
           gtin?: string | null
           id?: string
+          monthly_quantity?: number | null
+          photo_path?: string | null
           product_description?: string
           quantity_needed?: number | null
           quoted_price?: number | null
           request_number?: string
+          scan_event_id?: string | null
+          source?: string
+          sourcing_item_id?: string | null
           status?: Database["public"]["Enums"]["sourcing_status"]
           updated_at?: string
           urgency?: Database["public"]["Enums"]["urgency_enum"]
@@ -21386,6 +21898,20 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sourcing_requests_scan_event_id_fkey"
+            columns: ["scan_event_id"]
+            isOneToOne: false
+            referencedRelation: "scan_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sourcing_requests_sourcing_item_id_fkey"
+            columns: ["sourcing_item_id"]
+            isOneToOne: false
+            referencedRelation: "buyer_comparator_sourcing_items"
             referencedColumns: ["id"]
           },
         ]
@@ -28099,6 +28625,56 @@ export type Database = {
         }
         Relationships: []
       }
+      wholesaler_depots: {
+        Row: {
+          city: string | null
+          country_code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          latitude: number | null
+          longitude: number | null
+          name: string
+          postal_code: string | null
+          updated_at: string
+          wholesaler_profile_id: string
+        }
+        Insert: {
+          city?: string | null
+          country_code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          postal_code?: string | null
+          updated_at?: string
+          wholesaler_profile_id: string
+        }
+        Update: {
+          city?: string | null
+          country_code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          postal_code?: string | null
+          updated_at?: string
+          wholesaler_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wholesaler_depots_wholesaler_profile_id_fkey"
+            columns: ["wholesaler_profile_id"]
+            isOneToOne: false
+            referencedRelation: "wholesaler_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wholesaler_profiles: {
         Row: {
           country: string
@@ -28107,6 +28683,7 @@ export type Database = {
           default_discount_rules_json: Json | null
           discount_mechanic: string
           display_name: string
+          display_prices_allowed: boolean
           extraction_hints_json: Json | null
           id: string
           is_active: boolean
@@ -28121,6 +28698,7 @@ export type Database = {
           default_discount_rules_json?: Json | null
           discount_mechanic: string
           display_name: string
+          display_prices_allowed?: boolean
           extraction_hints_json?: Json | null
           id?: string
           is_active?: boolean
@@ -28135,6 +28713,7 @@ export type Database = {
           default_discount_rules_json?: Json | null
           discount_mechanic?: string
           display_name?: string
+          display_prices_allowed?: boolean
           extraction_hints_json?: Json | null
           id?: string
           is_active?: boolean
@@ -36399,6 +36978,7 @@ export type Database = {
         }[]
       }
       normalize_brand_name: { Args: { _name: string }; Returns: string }
+      normalize_cnk: { Args: { _v: string }; Returns: string }
       normalize_gtin: { Args: { _gtin: string }; Returns: string }
       normalize_product_gtin: { Args: { _gtin: string }; Returns: string }
       offer_exclusivity_flags: {
@@ -37197,6 +37777,18 @@ export type Database = {
           total_amount: number
           total_quantity: number
           total_savings: number
+        }[]
+      }
+      scan_list_wholesalers: {
+        Args: never
+        Returns: {
+          country: string
+          default_discount_pct: number
+          discount_mechanic: string
+          display_name: string
+          display_prices_allowed: boolean
+          id: string
+          slug: string
         }[]
       }
       scan_order_line_sla_alerts: {

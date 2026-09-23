@@ -5,9 +5,14 @@
 
 ## Lot sécurité (après LOT 1 Scan, migrations séparées)
 - [ ] Règles d'affichage vendeurs : bloquer lecture directe, fonction serveur renvoyant uniquement le libellé ; tester fiche produit, verdict Scan, panier (compte pharmacien)
-- [ ] Historique des prix : contient seulement prix de vente HTVA/TVAC par produit × pays (aucun prix d'achat ni vendeur), table vide, alimentée par scrape Qogita → proposé : laisser ouvert (attente décision)
-- [ ] Réglages P2P : 1 ligne globale (commission par défaut, payeur, validité max, activé) → à décider avec ReStock
+- [x] Historique des prix : laissé ouvert (décision Pit, prix de vente publics uniquement)
+- [x] Réglages P2P : laissé ouvert (décision Pit)
+- [ ] market_prices : contrainte unique existante (source, CNK) empêche de garder plusieurs mois par source — à arbitrer
 
 ## LOT 1 Scan
-- [ ] Migrations 0032 présentées, en attente GO
-- [ ] scan-resolve + /admin/scan/imports après GO
+- [x] Migrations 0032 appliquées + index CNK normalisés créés en CONCURRENTLY
+- [x] scan-resolve déployé (parser GS1, remise marque>catégorie>générale, verdict, journal)
+- [ ] Page /admin/scan/imports (upload, mapping, aperçu, rapport écarts >15 %, propositions EAN)
+- [ ] Test live « 1 appel = 1 ligne » avec un compte pharmacien test activé Scan
+- [ ] Scan DataMatrix réel NAN (boîte physique)
+- [ ] LOT 2 onboarding : texte « Jamais partagées avec un grossiste, un labo ou une autre pharmacie. » (remplace « Visibles par vous seul »)

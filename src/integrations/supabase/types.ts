@@ -32214,6 +32214,127 @@ export type Database = {
           },
         ]
       }
+      v_qo_brevo_ready: {
+        Row: {
+          CONSENTEMENT: string | null
+          CP: string | null
+          DATE_CONSENT: string | null
+          EMAIL: string | null
+          LANGUE: string | null
+          PHARMACIE: string | null
+          PRENOM: string | null
+          SEGMENT: string | null
+          SMS: string | null
+          SOURCE_CONSENT: string | null
+          VILLE: string | null
+        }
+        Insert: {
+          CONSENTEMENT?: string | null
+          CP?: string | null
+          DATE_CONSENT?: string | null
+          EMAIL?: string | null
+          LANGUE?: never
+          PHARMACIE?: string | null
+          PRENOM?: string | null
+          SEGMENT?: string | null
+          SMS?: string | null
+          SOURCE_CONSENT?: string | null
+          VILLE?: string | null
+        }
+        Update: {
+          CONSENTEMENT?: string | null
+          CP?: string | null
+          DATE_CONSENT?: string | null
+          EMAIL?: string | null
+          LANGUE?: never
+          PHARMACIE?: string | null
+          PRENOM?: string | null
+          SEGMENT?: string | null
+          SMS?: string | null
+          SOURCE_CONSENT?: string | null
+          VILLE?: string | null
+        }
+        Relationships: []
+      }
+      v_qo_campaign_stats: {
+        Row: {
+          ca_htva_eur: number | null
+          code: string | null
+          destinataires: number | null
+          ends_on: string | null
+          ont_commande: number | null
+          ont_ouvert: number | null
+          panier_moyen_htva_eur: number | null
+          status: string | null
+          taux_clic_pct: number | null
+          taux_conversion_page_pct: number | null
+        }
+        Relationships: []
+      }
+      v_qo_demand: {
+        Row: {
+          campaign_code: string | null
+          cnk: string | null
+          derniere_demande: string | null
+          name: string | null
+          nb_officines: number | null
+          qte_demandee: number | null
+        }
+        Relationships: []
+      }
+      v_qo_hot_prospects: {
+        Row: {
+          campaign_code: string | null
+          city: string | null
+          contact_email: string | null
+          first_opened_at: string | null
+          flow: string | null
+          language: string | null
+          last_opened_at: string | null
+          open_count: number | null
+          pharmacy_name: string | null
+          phone: string | null
+          segment: string | null
+        }
+        Relationships: []
+      }
+      v_qo_orders_export: {
+        Row: {
+          bce_number: string | null
+          city: string | null
+          cnk: string | null
+          contact_email: string | null
+          date_commande: string | null
+          libelle: string | null
+          line_type: string | null
+          pharmacy_name: string | null
+          phone: string | null
+          postal_code: string | null
+          pu_htva: number | null
+          quantite: number | null
+          reference: string | null
+          status: string | null
+          street: string | null
+          total_commande_htva: number | null
+          total_ligne_htva: number | null
+          tva: number | null
+          unites_offertes: number | null
+        }
+        Relationships: []
+      }
+      v_qo_price_intel: {
+        Row: {
+          cnk: string | null
+          ecart_moyen_eur: number | null
+          name: string | null
+          nb_declarations: number | null
+          notre_prix_moyen_eur: number | null
+          prix_declare_max_eur: number | null
+          prix_declare_min_eur: number | null
+          prix_declare_moyen_eur: number | null
+        }
+        Relationships: []
+      }
       vendor_brand_authorizations_private: {
         Row: {
           authorization_type: string | null

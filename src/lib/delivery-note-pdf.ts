@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { resolveVatExemption } from "@/lib/vat-exemption";
+import { docLocale, docT, type DocLang } from "@/lib/doc-i18n";
 
 export type DeliveryNotePdfInput = {
   documentNumber: string | null;
@@ -34,6 +35,8 @@ export type DeliveryNotePdfInput = {
     confirmedByName?: string | null;
     remarks?: string | null;
   } | null;
+  /** Langue de sortie du document (défaut : FR). */
+  lang?: DocLang;
 };
 
 const NAVY: [number, number, number] = [30, 37, 47];
@@ -54,17 +57,19 @@ function formatAddress(addr?: Record<string, any> | null): string[] {
 
 /** Génère et télécharge un bon de livraison PDF (gabarit MediKong). */
 export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
+  const lang: DocLang = input.lang ?? "fr";
+  const t = (k: string) => docT(lang, k);
+  const locale = docLocale(lang);
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageW = 210;
   const pageH = 297;
   const M = 15;
   const cancelled = input.status === "cancelled";
   const isDraft = input.isDraft === true;
+  const draftLabel = t("draft");
   doc.setProperties({
-    title: `${isDraft ? "BROUILLON" : "FINAL"} — Bon de livraison ${input.documentNumber || ""}`.trim(),
-    subject: isDraft
-      ? "Bon de livraison provisoire (brouillon) — sans valeur définitive"
-      : "Bon de livraison final",
+    title: `${isDraft ? draftLabel : "FINAL"} — ${t("dnFooter")} ${input.documentNumber || ""}`.trim(),
+    subject: isDraft ? t("dnDocDraft") : t("dnDocFinal"),
     keywords: isDraft ? "brouillon,draft,provisoire,MediKong" : "final,definitif,MediKong",
     author: "MediKong",
     creator: "MediKong",
@@ -75,16 +80,16 @@ export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
-  doc.text("MediKong — Bon de livraison", M, 14);
+  doc.text(t("dnTitle"), M, 14);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text(input.documentNumber || "Sans numéro", pageW - M, 10, { align: "right" });
-  doc.text(new Date(input.issuedAt).toLocaleDateString("fr-BE"), pageW - M, 16, { align: "right" });
+  doc.text(input.documentNumber || t("dnNoNumber"), pageW - M, 10, { align: "right" });
+  doc.text(new Date(input.issuedAt).toLocaleDateString(locale), pageW - M, 16, { align: "right" });
 
   if (isDraft) {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
-    const label = "BROUILLON";
+    const label = draftLabel;
     const bw = doc.getTextWidth(label) + 8;
     const bh = 6.5;
     const bx = pageW / 2 - bw / 2;
@@ -102,7 +107,7 @@ export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
   doc.setTextColor(...NAVY);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
-  doc.text(`Commande ${input.orderNumber || "—"}`, M, y);
+  doc.text(`${t("order")} ${input.orderNumber || "—"}`, M, y);
   y += 6;
 
   if (input.customerName) {
@@ -122,7 +127,7 @@ export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
   if (input.customerVatNumber) {
     doc.setTextColor(...MUTED);
     doc.setFontSize(8.5);
-    doc.text(`N° TVA intracommunautaire : ${input.customerVatNumber}`, M, y);
+    doc.text(`${t("vatIntra")} : ${input.customerVatNumber}`, M, y);
     y += 4.5;
     doc.setFontSize(9);
   }
@@ -150,8 +155,8 @@ export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
 
 
   const meta: string[] = [];
-  if (input.carrier) meta.push(`Transporteur : ${input.carrier}`);
-  if (input.trackingNumber) meta.push(`Suivi : ${input.trackingNumber}`);
+  if (input.carrier) meta.push(`${t("carrier")} : ${input.carrier}`);
+  if (input.trackingNumber) meta.push(`${t("tracking")} : ${input.trackingNumber}`);
   if (meta.length) {
     y += 2;
     doc.setTextColor(...NAVY);
@@ -184,14 +189,14 @@ export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
     doc.setFillColor(220, 252, 231);
     doc.setTextColor(22, 101, 52);
   }
-  const badge = isPartial ? "LIVRAISON PARTIELLE — RELIQUAT EN BACK ORDER" : "LIVRAISON TOTALE";
+  const badge = isPartial ? t("partialBadge") : t("fullBadge");
   doc.roundedRect(M, y, pageW - 2 * M, 8, 1.5, 1.5, "F");
   doc.text(badge, pageW / 2, y + 5.5, { align: "center" });
   y += 14;
 
   autoTable(doc, {
     startY: y,
-    head: [["#", "CNK", "EAN", "Produit", "Commandé", "Livré", "Reliquat"]],
+    head: [["#", t("colCnk"), t("colEan"), t("colProduct"), t("colOrdered"), t("colDelivered"), t("colRemaining")]],
     body: input.rows.map((r, i) => [
       String(i + 1),
       r.cnk || "—",
@@ -201,7 +206,7 @@ export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
       String(r.delivered),
       String(r.remaining),
     ]),
-    foot: [["", "", "", "Total", "", String(totalDelivered), String(totalRemaining)]],
+    foot: [["", "", "", t("total"), "", String(totalDelivered), String(totalRemaining)]],
     styles: { fontSize: 8, cellPadding: 2 },
     headStyles: { fillColor: BLUE, textColor: 255, fontStyle: "bold" },
     footStyles: { fillColor: [241, 245, 249], textColor: NAVY, fontStyle: "bold" },
@@ -226,14 +231,14 @@ export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
         let wmSize = 110;
         doc.setFontSize(wmSize);
         const maxSpan = (pageW - 2 * M) / Math.cos(rad);
-        const rawWidth = doc.getTextWidth("BROUILLON");
+        const rawWidth = doc.getTextWidth(draftLabel);
         if (rawWidth > maxSpan) {
           wmSize = Math.max(40, Math.floor((wmSize * maxSpan) / rawWidth));
           doc.setFontSize(wmSize);
         }
-        const wmWidth = doc.getTextWidth("BROUILLON");
+        const wmWidth = doc.getTextWidth(draftLabel);
         doc.text(
-          "BROUILLON",
+          draftLabel,
           pageW / 2 - (wmWidth / 2) * Math.cos(rad),
           pageH / 2 + (wmWidth / 2) * Math.sin(rad),
           { angle: wmAngle },
@@ -248,7 +253,7 @@ export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(8.5);
         doc.text(
-          "DOCUMENT PROVISOIRE — BROUILLON · Ne pas utiliser comme bon de livraison définitif",
+          t("draftFooter"),
           pageW / 2,
           pageH - 15.5,
           { align: "center" },
@@ -260,14 +265,14 @@ export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
         doc.setTextColor(220, 38, 38);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(80);
-        doc.text("ANNULÉ", pageW / 2, pageH / 2 + 20, { align: "center", angle: -30 });
+        doc.text(t("cancelled"), pageW / 2, pageH / 2 + 20, { align: "center", angle: -30 });
         if (gs) (doc as any).setGState(new (doc as any).GState({ opacity: 1 }));
       }
       doc.setTextColor(...MUTED);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(7);
-      doc.text(`MediKong — Bon de livraison · ${new Date().toLocaleString("fr-BE")}`, M, pageH - 6);
-      doc.text("Signature du réceptionnaire : ______________________", pageW - M, pageH - 6, { align: "right" });
+      doc.text(`${t("dnFooter")} · ${new Date().toLocaleString(locale)}`, M, pageH - 6);
+      doc.text(`${t("receiverSignature")} : ______________________`, pageW - M, pageH - 6, { align: "right" });
     },
   });
 
@@ -284,7 +289,7 @@ export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
     doc.setTextColor(...NAVY);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9.5);
-    doc.text("Checklist de réception (à compléter par le client)", M, cy);
+    doc.text(t("checklistTitle"), M, cy);
     cy += 6;
 
     doc.setFont("helvetica", "normal");
@@ -307,7 +312,7 @@ export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
     cy += 4;
     doc.setTextColor(...MUTED);
     doc.setFontSize(8);
-    doc.text("Remarques :", M, cy);
+    doc.text(`${t("remarks")} :`, M, cy);
     const remarks = input.confirmation?.remarks;
     if (remarks) {
       doc.setTextColor(...NAVY);
@@ -326,9 +331,9 @@ export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
     doc.setFontSize(8.5);
     if (input.confirmation?.confirmedAt) {
       doc.text(
-        `Réception signée par ${input.confirmation.confirmedByName || "—"} le ${new Date(
+        `${t("signedBy")} ${input.confirmation.confirmedByName || "—"} ${t("signedOn")} ${new Date(
           input.confirmation.confirmedAt,
-        ).toLocaleString("fr-BE")}`,
+        ).toLocaleString(locale)}`,
         M,
         cy,
       );
@@ -336,22 +341,22 @@ export function generateDeliveryNotePdf(input: DeliveryNotePdfInput) {
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...MUTED);
       doc.setFontSize(7.5);
-      doc.text("Signature électronique horodatée — enregistrée par MediKong.", M, cy);
+      doc.text(t("eSignNote"), M, cy);
     } else {
-      doc.text("Nom et fonction du réceptionnaire :", M, cy);
+      doc.text(t("receiverNameRole"), M, cy);
       doc.setFont("helvetica", "normal");
       doc.setDrawColor(203, 213, 225);
       doc.line(M + 58, cy + 1, pageW - M, cy + 1);
       cy += 12;
       doc.setFont("helvetica", "bold");
-      doc.text("Date :", M, cy);
+      doc.text(`${t("date")} :`, M, cy);
       doc.line(M + 14, cy + 1, M + 60, cy + 1);
-      doc.text("Signature :", M + 70, cy);
+      doc.text(t("signature"), M + 70, cy);
       doc.line(M + 92, cy + 1, pageW - M, cy + 1);
     }
   }
 
   doc.save(
-    `bon-livraison_${input.documentNumber || "sans-numero"}_${isDraft ? "BROUILLON" : "FINAL"}.pdf`,
+    `${t("dnFile")}_${input.documentNumber || "sans-numero"}_${isDraft ? draftLabel : "FINAL"}_${lang}.pdf`,
   );
 }

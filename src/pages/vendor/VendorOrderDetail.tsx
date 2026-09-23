@@ -1,4 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import DocLanguageSelect from "@/components/documents/DocLanguageSelect";
+import type { DocLang } from "@/lib/doc-i18n";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -38,6 +40,7 @@ const statusLabel: Record<string, { label: string; color: "info" | "success" | "
 };
 
 export default function VendorOrderDetail() {
+  const [docLang, setDocLang] = useState<DocLang>("fr");
   const { id } = useParams<{ id: string }>();
   const vendorQuery = useCurrentVendor();
   const vendorId = vendorQuery.data?.id;
@@ -183,6 +186,7 @@ export default function VendorOrderDetail() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         {backLink}
         <div className="flex items-center gap-2 flex-wrap">
+          <DocLanguageSelect value={docLang} onChange={setDocLang} label="Langue du PDF" />
           <VendorOrderPdfButton orderId={order.order_id} orderNumber={order.order_number} />
           <Button
             variant="outline"
@@ -210,6 +214,7 @@ export default function VendorOrderDetail() {
                     vatRate: Number(l.vat_rate) || 0,
                     lineTotalExclVat: Number(l.line_total_excl_vat) || 0,
                   })),
+                  lang: docLang,
                 });
                 toast.success("PDF imprimable généré");
               } catch (err: any) {

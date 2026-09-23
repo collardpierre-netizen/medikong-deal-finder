@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { buildEpcQrDataUrl, MEDIKONG_BENEFICIARY, MEDIKONG_IBAN } from "@/lib/epc-qr";
+import { docLocale, docT, type DocLang } from "@/lib/doc-i18n";
 
 /**
  * Facture fournisseur (gabarit MediKong) avec coordonnées bancaires MediKong
@@ -35,33 +36,38 @@ export interface VendorInvoicePdfInput {
   amountInclVat: number;
   /** Communication du virement (défaut : numéro de facture). */
   reference?: string;
+  /** Langue de sortie du document (défaut : FR). */
+  lang?: DocLang;
 }
 
 const NAVY: [number, number, number] = [30, 37, 47];
 const BLUE: [number, number, number] = [28, 88, 217];
 const MUTED: [number, number, number] = [100, 116, 139];
 
-const eur = (n: number) =>
-  new Intl.NumberFormat("fr-BE", { style: "currency", currency: "EUR" }).format(Number(n) || 0);
-
-const day = (v?: string | null) =>
-  v ? new Date(v).toLocaleDateString("fr-BE", { day: "2-digit", month: "short", year: "numeric" }) : "—";
-
-export function vendorInvoiceKindLabel(kind: VendorInvoiceKind): string {
-  if (kind === "commission") return "Facture de commission MediKong";
-  if (kind === "self_billing") return "Facture au nom et pour le compte du fournisseur";
-  return "Facture fournisseur";
+export function vendorInvoiceKindLabel(kind: VendorInvoiceKind, lang: DocLang = "fr"): string {
+  if (kind === "commission") return docT(lang, "invoiceCommission");
+  if (kind === "self_billing") return docT(lang, "invoiceSelfBilling");
+  return docT(lang, "invoiceManual");
 }
+
 
 /** Construit la facture fournisseur en PDF (Blob + nom de fichier). */
 export async function buildVendorInvoicePdf(
   input: VendorInvoicePdfInput,
 ): Promise<{ blob: Blob; fileName: string }> {
+  const lang: DocLang = input.lang ?? "fr";
+  const t = (k: string) => docT(lang, k);
+  const locale = docLocale(lang);
+  const eur = (n: number) =>
+    new Intl.NumberFormat(locale, { style: "currency", currency: "EUR" }).format(Number(n) || 0);
+  const day = (v?: string | null) =>
+    v ? new Date(v).toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" }) : "—";
+
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageW = 210;
   const M = 15;
   const reference = input.reference || input.invoiceNumber;
-  const kindLabel = vendorInvoiceKindLabel(input.kind);
+  const kindLabel = vendorInvoiceKindLabel(input.kind, lang);
 
   doc.setProperties({
     title: `${kindLabel} ${input.invoiceNumber}`,
@@ -88,8 +94,8 @@ export async function buildVendorInvoicePdf(
   doc.setTextColor(...MUTED);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
-  doc.text("ÉMETTEUR", M, y);
-  doc.text("FOURNISSEUR", pageW / 2, y);
+  doc.text(t("issuer"), M, y);
+  doc.text(t("supplier"), pageW / 2, y);
   y += 5;
   doc.setTextColor(...NAVY);
   doc.setFontSize(9.5);
@@ -105,7 +111,7 @@ export async function buildVendorInvoicePdf(
     input.vendor.addressLine1 || "",
     [input.vendor.postalCode, input.vendor.city].filter(Boolean).join(" "),
     input.vendor.countryCode || "",
-    input.vendor.vatNumber ? `TVA ${input.vendor.vatNumber}` : "",
+    input.vendor.vatNumber ? `${t("vatNumber")} ${input.vendor.vatNumber}` : "",
   ].filter(Boolean) as string[];
 
   const rows = Math.max(issuer.length, vendorLines.length);
@@ -121,19 +127,19 @@ export async function buildVendorInvoicePdf(
   y += 6;
   doc.setTextColor(...MUTED);
   doc.setFontSize(8.5);
-  doc.text(`Date d'émission : ${day(input.issuedAt)}`, M, y);
-  doc.text(`Échéance : ${day(input.dueDate)}`, M + 60, y);
-  if (input.orderNumber) doc.text(`Commande : ${input.orderNumber}`, M + 115, y);
+  doc.text(`${t("issueDate")} : ${day(input.issuedAt)}`, M, y);
+  doc.text(`${t("dueDate")} : ${day(input.dueDate)}`, M + 60, y);
+  if (input.orderNumber) doc.text(`${t("order")} : ${input.orderNumber}`, M + 115, y);
   y += 8;
 
   // Montants
   autoTable(doc, {
     startY: y,
-    head: [["Description", "Montant"]],
+    head: [[t("description"), t("amount")]],
     body: [
       [kindLabel, eur(input.amountExclVat)],
-      ["TVA", eur(input.vatAmount)],
-      ["Total à payer (TVAC)", eur(input.amountInclVat)],
+      [t("vatTotal"), eur(input.vatAmount)],
+      [t("totalToPay"), eur(input.amountInclVat)],
     ],
     theme: "grid",
     styles: { fontSize: 9.5, cellPadding: 2.5, textColor: NAVY },
@@ -153,14 +159,14 @@ export async function buildVendorInvoicePdf(
   doc.setTextColor(...BLUE);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
-  doc.text("PAIEMENT PAR VIREMENT SEPA", M + 5, y + 7);
+  doc.text(t("sepaTitle"), M + 5, y + 7);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...NAVY);
   doc.setFontSize(9);
-  doc.text(`Bénéficiaire : ${MEDIKONG_BENEFICIARY} (Balooh SRL)`, M + 5, y + 15);
-  doc.text(`IBAN : ${MEDIKONG_IBAN}`, M + 5, y + 21);
-  doc.text(`Communication : ${reference}`, M + 5, y + 27);
-  doc.text(`Montant : ${eur(input.amountInclVat)}`, M + 5, y + 33);
+  doc.text(`${t("beneficiary")} : ${MEDIKONG_BENEFICIARY} (Balooh SRL)`, M + 5, y + 15);
+  doc.text(`${t("iban")} : ${MEDIKONG_IBAN}`, M + 5, y + 21);
+  doc.text(`${t("communication")} : ${reference}`, M + 5, y + 27);
+  doc.text(`${t("amount")} : ${eur(input.amountInclVat)}`, M + 5, y + 33);
 
   try {
     const qr = await buildEpcQrDataUrl({ amountEur: Number(input.amountInclVat) || 0, reference }, 320);
@@ -173,12 +179,10 @@ export async function buildVendorInvoicePdf(
   doc.setTextColor(...MUTED);
   doc.setFontSize(8);
   const legal =
-    input.kind === "self_billing"
-      ? "Facture émise par MediKong au nom et pour le compte du fournisseur, en vertu du mandat de facturation signé lors de son inscription. Le compte de paiement est celui de MediKong."
-      : "Facture de commission émise par Balooh SRL (MediKong). Paiement à l'échéance sur le compte indiqué ci-dessus, en mentionnant la communication.";
+    input.kind === "self_billing" ? t("legalSelfBilling") : t("legalCommission");
   doc.text(doc.splitTextToSize(legal, pageW - 2 * M), M, y);
 
-  const fileName = `${input.invoiceNumber.replace(/[^\w.-]+/g, "-")}.pdf`;
+  const fileName = `${input.invoiceNumber.replace(/[^\w.-]+/g, "-")}-${lang}.pdf`;
   return { blob: doc.output("blob") as Blob, fileName };
 }
 

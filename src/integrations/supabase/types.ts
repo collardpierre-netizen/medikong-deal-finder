@@ -35764,6 +35764,28 @@ export type Database = {
           vendor_id: string
         }[]
       }
+      get_intelligence_module_public: {
+        Args: { _module: Database["public"]["Enums"]["intelligence_module"] }
+        Returns: {
+          default_trial_days: number
+          description: string
+          is_enabled: boolean
+          label: string
+          metric_kind: string
+          module: Database["public"]["Enums"]["intelligence_module"]
+        }[]
+      }
+      get_intelligence_tab_flags_public: {
+        Args: { _module: Database["public"]["Enums"]["intelligence_module"] }
+        Returns: {
+          id: string
+          is_free: boolean
+          label: string
+          module: Database["public"]["Enums"]["intelligence_module"]
+          sort_order: number
+          tab_key: string
+        }[]
+      }
       get_my_accounts: {
         Args: never
         Returns: {

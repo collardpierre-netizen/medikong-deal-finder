@@ -218,6 +218,13 @@
       "when": 1790157967075,
       "tag": "0030_restrict_settings_reads_and_user_profiles",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1790184645399,
+      "tag": "0031_restrict_intelligence_settings_reads",
+      "breakpoints": true
     }
   ]
 }

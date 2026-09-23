@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
     const { data } = await admin.from("products").select(cols).eq("gtin", code.gtin).eq("is_active", true);
     candidates = data ?? [];
   }
-  const lookup = code.cnk ?? (code.gtin ? null : null);
+  const lookup = code.cnk;
   if (!candidates.length && (code.gtin || code.cnk)) {
     const v = code.gtin ?? code.cnk!;
     const { data: pmc } = await admin.from("product_market_codes").select("product_id").eq("code_value", v);

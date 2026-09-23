@@ -103,8 +103,16 @@ const AdminDevisDetail = () => {
     if (data) navigate(`/admin/devis/${data}`);
   });
 
-  const downloadPdf = () => {
+  const downloadPdf = async () => {
     try {
+      // Traduction auto du contenu variable (libellés de lignes, notes) — cache partagé.
+      const dynamic = await translateDocTexts(
+        [quote.notes_customer ?? null, ...lines.map((l: any) => l.label ?? null)],
+        docLang,
+      );
+      const notesTranslated = dynamic[0] || null;
+      const lineLabels = dynamic.slice(1);
+
       generateQuotePdf({
         quoteNumber: quote.quote_number,
         createdAt: quote.created_at,

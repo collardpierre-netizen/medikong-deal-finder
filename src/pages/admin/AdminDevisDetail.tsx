@@ -126,9 +126,9 @@ const AdminDevisDetail = () => {
         customerName: quote.customer?.company_name ?? null,
         customerEmail: quote.customer?.email ?? null,
         customerVatNumber: quote.customer?.vat_number ?? null,
-        notesCustomer: quote.notes_customer ?? null,
-        lines: lines.map((l: any) => ({
-          label: l.label,
+        notesCustomer: notesTranslated,
+        lines: lines.map((l: any, i: number) => ({
+          label: lineLabels[i] || l.label,
           vendorReference: l.vendor_reference ?? null,
           qty: Number(l.qty || 0),
           unitPriceHtCents: Number(l.unit_price_ht_cents || 0),

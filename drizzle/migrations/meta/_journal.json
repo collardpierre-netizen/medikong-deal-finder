@@ -211,6 +211,13 @@
       "when": 1790074433132,
       "tag": "0029_investors_add_confirmed_refunded_status",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1790157967075,
+      "tag": "0030_restrict_settings_reads_and_user_profiles",
+      "breakpoints": true
     }
   ]
 }

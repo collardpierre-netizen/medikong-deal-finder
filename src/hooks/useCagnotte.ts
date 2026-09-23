@@ -68,13 +68,12 @@ export function useCagnotteSettings() {
     queryKey: ["cagnotte-settings"],
     staleTime: 5 * 60_000,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("settings")
-        .select("key, value")
-        .like("key", "cagnotte%");
+      const { data, error } = await (supabase as any).rpc("get_public_app_settings");
       if (error) throw error;
       const map: Record<string, any> = {};
-      for (const row of data ?? []) map[row.key] = row.value;
+      for (const row of data ?? []) {
+        if (row.source === "settings") map[row.key] = row.value;
+      }
       return {
         rate: Number(map.cagnotte_rate ?? 0.02),
         minCommissionEligibility: Number(map.cagnotte_min_commission_eligibility ?? 0.12),

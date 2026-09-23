@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, Send, FileDown, RefreshCw, ArrowRightCircle, Copy, Eye, CheckCircle2, XCircle, Clock, Pencil, Trash2, Check, X } from "lucide-react";
 import { VendorsEmbedError } from "@/lib/vendors-embed-error";
 import { generateQuotePdf } from "@/lib/quote-pdf";
+import DocLanguageSelect from "@/components/documents/DocLanguageSelect";
+import type { DocLang } from "@/lib/doc-i18n";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Brouillon", sent: "Envoyé", accepted: "Accepté", declined: "Refusé", paid: "Payé", converted: "Converti",
@@ -21,6 +23,7 @@ const AdminDevisDetail = () => {
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState<string | null>(null);
   const [recipientOverride, setRecipientOverride] = useState("");
+  const [docLang, setDocLang] = useState<DocLang>("fr");
 
   const { data: quote, isLoading, refetch, error: quoteError } = useQuery({
     queryKey: ["admin-quote", id],
@@ -127,6 +130,7 @@ const AdminDevisDetail = () => {
         totalHtCents: Number(quote.total_ht_cents || 0),
         totalTvaCents: Number(quote.total_tva_cents || 0),
         totalTtcCents: Number(quote.total_ttc_cents || 0),
+        lang: docLang,
       });
       toast.success("PDF téléchargé");
     } catch (e: any) {
@@ -249,6 +253,7 @@ const AdminDevisDetail = () => {
                 </Link>
               </Button>
             )}
+            <DocLanguageSelect value={docLang} onChange={setDocLang} className="pb-1" />
             <Button onClick={downloadPdf} className="w-full justify-start" variant="outline">
               <FileDown size={14} className="mr-2" /> Télécharger le PDF imprimable
             </Button>

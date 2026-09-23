@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import EpcPaymentQr from "@/components/payments/EpcPaymentQr";
 import { formatUpdatedAt } from "@/lib/format-date";
+import DocLanguageSelect from "@/components/documents/DocLanguageSelect";
+import type { DocLang } from "@/lib/doc-i18n";
 import {
   buildVendorInvoicePdf,
   downloadVendorInvoicePdf,
@@ -69,6 +71,7 @@ const AdminVendorInvoices = () => {
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
   const [selectedInvoice, setSelectedInvoice] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [docLang, setDocLang] = useState<DocLang>("fr");
 
   const { data: invoices, isLoading, refetch } = useQuery({
     queryKey: ["admin-vendor-invoices"],
@@ -132,6 +135,7 @@ const AdminVendorInvoices = () => {
     amountExclVat: Number(inv.amount_excl_vat) || 0,
     vatAmount: Number(inv.vat_amount) || 0,
     amountInclVat: Number(inv.amount_incl_vat) || 0,
+    lang: docLang,
   });
 
   const download = async (inv: InvoiceRow) => {
@@ -234,6 +238,9 @@ const AdminVendorInvoices = () => {
           </aside>
 
           <section className="space-y-4">
+            <div className="flex justify-end">
+              <DocLanguageSelect value={docLang} onChange={setDocLang} label="Langue du PDF" />
+            </div>
             {/* Liste des factures du fournisseur */}
             <div className="border border-[#E2E8F0] rounded-xl bg-white overflow-hidden">
               <table className="w-full text-sm">

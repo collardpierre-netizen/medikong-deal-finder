@@ -1,5 +1,6 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { docLocale, docT, type DocLang } from "@/lib/doc-i18n";
 
 export type VendorOrderPdfInput = {
   orderNumber: string | null;
@@ -19,18 +20,13 @@ export type VendorOrderPdfInput = {
     vatRate: number;
     lineTotalExclVat: number;
   }[];
+  /** Langue de sortie du document (défaut : FR). */
+  lang?: DocLang;
 };
 
 const NAVY: [number, number, number] = [30, 37, 47];
 const BLUE: [number, number, number] = [28, 88, 217];
 const MUTED: [number, number, number] = [100, 116, 139];
-
-const eur = (v: number) =>
-  new Intl.NumberFormat("fr-BE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
-    Number(v) || 0
-  ) + " €";
-
-const dateFr = (v?: string | null) => (v ? new Date(v).toLocaleDateString("fr-BE") : "—");
 
 const normalizedVatRate = (r: number) => {
   const n = Number(r) || 0;
@@ -39,13 +35,23 @@ const normalizedVatRate = (r: number) => {
 
 /** Génère et télécharge un bon de commande fournisseur imprimable (gabarit MediKong). */
 export function generateVendorOrderPdf(input: VendorOrderPdfInput) {
+  const lang: DocLang = input.lang ?? "fr";
+  const t = (k: string) => docT(lang, k);
+  const locale = docLocale(lang);
+
+  const eur = (v: number) =>
+    new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
+      Number(v) || 0
+    ) + " €";
+  const dateLoc = (v?: string | null) => (v ? new Date(v).toLocaleDateString(locale) : "—");
+
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageW = 210;
   const M = 15;
 
   doc.setProperties({
-    title: `Bon de commande ${input.orderNumber || ""}`.trim(),
-    subject: "Bon de commande fournisseur MediKong",
+    title: `${t("vendorOrderDocName")} ${input.orderNumber || ""}`.trim(),
+    subject: t("vendorOrderSubject"),
     author: "MediKong",
     creator: "MediKong",
   });
@@ -55,7 +61,7 @@ export function generateVendorOrderPdf(input: VendorOrderPdfInput) {
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
-  doc.text("MediKong — Bon de commande fournisseur", M, 14);
+  doc.text(t("vendorOrderTitle"), M, 14);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.text(input.orderNumber || "", pageW - M, 14, { align: "right" });
@@ -63,26 +69,26 @@ export function generateVendorOrderPdf(input: VendorOrderPdfInput) {
   let y = 32;
   doc.setTextColor(...MUTED);
   doc.setFontSize(9);
-  doc.text(`Date : ${dateFr(input.orderDate)}`, M, y);
-  if (input.statusLabel) doc.text(`Statut : ${input.statusLabel}`, pageW / 2, y);
+  doc.text(`${t("date")} : ${dateLoc(input.orderDate)}`, M, y);
+  if (input.statusLabel) doc.text(`${t("status")} : ${input.statusLabel}`, pageW / 2, y);
   y += 8;
 
   doc.setTextColor(...NAVY);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
-  doc.text("FOURNISSEUR", M, y);
-  doc.text("CLIENT", pageW / 2, y);
+  doc.text(t("supplier"), M, y);
+  doc.text(t("customer"), pageW / 2, y);
   y += 5;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9.5);
   const leftLines = [
     input.vendorName || "—",
-    input.vendorVatNumber ? `TVA : ${input.vendorVatNumber}` : null,
+    input.vendorVatNumber ? `${t("vatNumber")} : ${input.vendorVatNumber}` : null,
   ].filter(Boolean) as string[];
   const rightLines = [
     input.customerName || "—",
     input.customerEmail || null,
-    input.customerVatNumber ? `TVA : ${input.customerVatNumber}` : null,
+    input.customerVatNumber ? `${t("vatNumber")} : ${input.customerVatNumber}` : null,
   ].filter(Boolean) as string[];
   const rows = Math.max(leftLines.length, rightLines.length);
   for (let i = 0; i < rows; i++) {
@@ -101,7 +107,14 @@ export function generateVendorOrderPdf(input: VendorOrderPdfInput) {
 
   autoTable(doc, {
     startY: y,
-    head: [["Article", "Réf. fournisseur", "Qté", "PU HTVA", "TVA", "Total HTVA"]],
+    head: [[
+      t("colArticle"),
+      t("colVendorRef"),
+      t("colQty"),
+      t("colUnitPriceExcl"),
+      t("colVat"),
+      t("colTotalExcl"),
+    ]],
     body: input.lines.map((l) => [
       l.label || "—",
       l.vendorReference || "—",
@@ -136,12 +149,12 @@ export function generateVendorOrderPdf(input: VendorOrderPdfInput) {
 
   doc.setFontSize(9.5);
   doc.setTextColor(...MUTED);
-  doc.text("Total HTVA", labelX, ty);
+  doc.text(t("totalExcl"), labelX, ty);
   doc.setTextColor(...NAVY);
   doc.text(eur(totalHt), valX, ty, { align: "right" });
   ty += 5.5;
   doc.setTextColor(...MUTED);
-  doc.text("TVA", labelX, ty);
+  doc.text(t("vatTotal"), labelX, ty);
   doc.setTextColor(...NAVY);
   doc.text(eur(totalTva), valX, ty, { align: "right" });
   ty += 3;
@@ -151,18 +164,13 @@ export function generateVendorOrderPdf(input: VendorOrderPdfInput) {
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.text("Total TVAC", labelX, ty + 6.8);
+  doc.text(t("totalIncl"), labelX, ty + 6.8);
   doc.text(eur(totalTtc), valX - 1, ty + 6.8, { align: "right" });
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(...MUTED);
-  doc.text(
-    "MediKong — Bon de commande exprimé en euros, prix HTVA sauf mention contraire.",
-    M,
-    285,
-    { maxWidth: pageW - 2 * M }
-  );
+  doc.text(t("vendorOrderFooter"), M, 285, { maxWidth: pageW - 2 * M });
 
-  doc.save(`bon-de-commande-${input.orderNumber || "medikong"}.pdf`);
+  doc.save(`${t("vendorOrderFile")}-${input.orderNumber || "medikong"}-${lang}.pdf`);
 }

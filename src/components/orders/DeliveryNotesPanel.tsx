@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { generateDeliveryNotePdf } from "@/lib/delivery-note-pdf";
+import DocLanguageSelect from "@/components/documents/DocLanguageSelect";
+import type { DocLang } from "@/lib/doc-i18n";
 import { CHECKLIST_ITEMS } from "@/lib/delivery-checklist";
 import {
   BACKORDER_LABELS,
@@ -70,6 +72,7 @@ export default function DeliveryNotesPanel({ orderId, orderNumber, customerName,
   const [tracking, setTracking] = useState("");
   const [note, setNote] = useState("");
   const [trackingNoteId, setTrackingNoteId] = useState<string | null>(null);
+  const [docLang, setDocLang] = useState<DocLang>("fr");
 
   const totals = useMemo(() => {
     const ordered = rows.reduce((s, r) => s + Number(r.quantity || 0), 0);
@@ -150,6 +153,7 @@ export default function DeliveryNotesPanel({ orderId, orderNumber, customerName,
             remarks: dn.client_remarks,
           }
         : null,
+      lang: docLang,
     });
   };
 
@@ -224,9 +228,12 @@ export default function DeliveryNotesPanel({ orderId, orderNumber, customerName,
           <PackageCheck className="w-4 h-4 text-primary" />
           <h3 className="font-semibold text-slate-800 text-sm">Bons de livraison</h3>
         </div>
-        <div className="text-xs text-slate-500">
-          {totals.delivered} / {totals.ordered} livré(s)
-          {totals.remaining > 0 && <span className="ml-2 text-amber-700 font-medium">· {totals.remaining} en back order</span>}
+        <div className="flex items-center gap-3">
+          <DocLanguageSelect value={docLang} onChange={setDocLang} label="Langue du PDF" />
+          <div className="text-xs text-slate-500">
+            {totals.delivered} / {totals.ordered} livré(s)
+            {totals.remaining > 0 && <span className="ml-2 text-amber-700 font-medium">· {totals.remaining} en back order</span>}
+          </div>
         </div>
       </div>
 

@@ -212,9 +212,9 @@ export default function VendorOrderDetail() {
                   customerName: sa?.company_name ?? sa?.label ?? null,
                   customerEmail: sa?.email ?? null,
                   customerVatNumber: sa?.vat_number ?? null,
-                  notes: (order as any).notes ?? null,
-                  lines: order.lines.map((l: any) => ({
-                    label: l.manual_label ?? l.product_name ?? null,
+                  notes: notesTranslated,
+                  lines: order.lines.map((l: any, i: number) => ({
+                    label: lineLabels[i] || l.manual_label || l.product_name || null,
                     vendorReference: l.vendor_reference ?? null,
                     qty: Number(l.quantity) || 0,
                     unitPriceExclVat: Number(l.unit_price_excl_vat) || 0,

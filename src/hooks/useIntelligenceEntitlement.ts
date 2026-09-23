@@ -105,13 +105,13 @@ export function useIntelligenceModuleSettings(module: IntelligenceModule) {
   return useQuery({
     queryKey: ["intel-module-settings", module],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("intelligence_module_settings" as any)
-        .select("*")
-        .eq("module", module)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc(
+        "get_intelligence_module_public" as any,
+        { _module: module } as any,
+      );
       if (error) throw error;
-      return (data as any) ?? null;
+      const rows = (data as any[]) || [];
+      return rows[0] ?? null;
     },
   });
 }
@@ -123,11 +123,10 @@ export function useIntelligenceTabFlags(module: IntelligenceModule) {
   return useQuery({
     queryKey: ["intel-tab-flags", module],
     queryFn: async (): Promise<IntelTabFlag[]> => {
-      const { data, error } = await supabase
-        .from("intelligence_module_tab_flags" as any)
-        .select("*")
-        .eq("module", module)
-        .order("sort_order");
+      const { data, error } = await supabase.rpc(
+        "get_intelligence_tab_flags_public" as any,
+        { _module: module } as any,
+      );
       if (error) throw error;
       return (data as any[]) || [];
     },

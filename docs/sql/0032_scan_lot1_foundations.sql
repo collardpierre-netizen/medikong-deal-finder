@@ -12,19 +12,11 @@ CREATE INDEX IF NOT EXISTS customers_be_pharmacy_id_idx ON public.customers(be_p
 ALTER TABLE public.site_config
   ADD COLUMN IF NOT EXISTS scan_enabled boolean NOT NULL DEFAULT false;
 
--- 2. Codes produit (arbitrage 6) ----------------------------------------------
--- Colonne générée STORED : Postgres réécrit physiquement la table products
--- (verrou le temps de l'opération), mais aucune valeur existante n'est modifiée.
-ALTER TABLE public.products
-  ADD COLUMN IF NOT EXISTS cnk_normalized text
-  GENERATED ALWAYS AS (NULLIF(regexp_replace(coalesce(cnk_code, ''), '\D', '', 'g'), '')) STORED;
-CREATE INDEX IF NOT EXISTS products_cnk_normalized_idx ON public.products(cnk_normalized);
-CREATE INDEX IF NOT EXISTS products_gtin_idx ON public.products(gtin) WHERE gtin IS NOT NULL AND gtin <> '';
-
-ALTER TABLE public.product_market_codes
-  ADD COLUMN IF NOT EXISTS code_normalized text
-  GENERATED ALWAYS AS (NULLIF(regexp_replace(coalesce(code_value, ''), '\D', '', 'g'), '')) STORED;
-CREATE INDEX IF NOT EXISTS product_market_codes_code_normalized_idx ON public.product_market_codes(code_normalized);
+-- 2. Codes produit : fonction immutable (index CONCURRENTLY en migration séparée 0033)
+CREATE OR REPLACE FUNCTION public.normalize_cnk(_v text)
+RETURNS text LANGUAGE sql IMMUTABLE PARALLEL SAFE SET search_path = public AS $$
+  SELECT NULLIF(regexp_replace(coalesce(_v, ''), '\D', '', 'g'), '')
+$$;
 
 -- 3. Grossistes (arbitrages 3, 4) ---------------------------------------------
 ALTER TABLE public.wholesaler_profiles
@@ -32,6 +24,10 @@ ALTER TABLE public.wholesaler_profiles
 
 -- Prix catalogue grossiste : market_prices stocke déjà prix_grossiste par produit
 -- et par source (Febelco, CERP, Phoenix…). On relie simplement la source au profil.
+ALTER TABLE public.market_prices ADD COLUMN IF NOT EXISTS period date NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS market_prices_source_product_period_uidx
+  ON public.market_prices(source_id, product_id, period) WHERE period IS NOT NULL;
+
 ALTER TABLE public.market_price_sources
   ADD COLUMN IF NOT EXISTS wholesaler_profile_id uuid NULL REFERENCES public.wholesaler_profiles(id) ON DELETE SET NULL;
 
@@ -70,10 +66,10 @@ CREATE POLICY "pws_customer_members_all" ON public.pharmacist_wholesaler_setting
   FOR ALL TO authenticated
   USING (customer_id IS NOT NULL AND customer_id IN (
     SELECT c.id FROM public.customers c WHERE c.auth_user_id = auth.uid()
-    UNION SELECT unnest(public.current_user_buyer_account_ids())))
+    UNION SELECT public.current_user_buyer_account_ids()))
   WITH CHECK (customer_id IS NOT NULL AND customer_id IN (
     SELECT c.id FROM public.customers c WHERE c.auth_user_id = auth.uid()
-    UNION SELECT unnest(public.current_user_buyer_account_ids())));
+    UNION SELECT public.current_user_buyer_account_ids()));
 
 -- Liste des grossistes pour Scan sans exposer extraction_hints_json
 CREATE OR REPLACE FUNCTION public.scan_list_wholesalers()
@@ -100,7 +96,7 @@ GRANT ALL ON public.scan_sessions TO service_role;
 ALTER TABLE public.scan_sessions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "scan sessions own read" ON public.scan_sessions FOR SELECT TO authenticated
   USING (customer_id IN (SELECT c.id FROM public.customers c WHERE c.auth_user_id = auth.uid()
-                         UNION SELECT unnest(public.current_user_buyer_account_ids())));
+                         UNION SELECT public.current_user_buyer_account_ids()));
 CREATE POLICY "scan sessions admin read" ON public.scan_sessions FOR SELECT TO authenticated
   USING (public.is_admin(auth.uid()));
 
@@ -134,7 +130,7 @@ GRANT ALL ON public.scan_events TO service_role;
 ALTER TABLE public.scan_events ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "scan events own read" ON public.scan_events FOR SELECT TO authenticated
   USING (customer_id IN (SELECT c.id FROM public.customers c WHERE c.auth_user_id = auth.uid()
-                         UNION SELECT unnest(public.current_user_buyer_account_ids())));
+                         UNION SELECT public.current_user_buyer_account_ids()));
 CREATE POLICY "scan events admin read" ON public.scan_events FOR SELECT TO authenticated
   USING (public.is_admin(auth.uid()));
 -- Écriture uniquement par scan-resolve (service_role) : 1 appel = 1 ligne.
@@ -155,10 +151,10 @@ GRANT ALL ON public.scan_cart_attributions TO service_role;
 ALTER TABLE public.scan_cart_attributions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "scan attr own" ON public.scan_cart_attributions FOR SELECT TO authenticated
   USING (customer_id IN (SELECT c.id FROM public.customers c WHERE c.auth_user_id = auth.uid()
-                         UNION SELECT unnest(public.current_user_buyer_account_ids())));
+                         UNION SELECT public.current_user_buyer_account_ids()));
 CREATE POLICY "scan attr own insert" ON public.scan_cart_attributions FOR INSERT TO authenticated
   WITH CHECK (customer_id IN (SELECT c.id FROM public.customers c WHERE c.auth_user_id = auth.uid()
-                              UNION SELECT unnest(public.current_user_buyer_account_ids()))
+                              UNION SELECT public.current_user_buyer_account_ids())
               AND EXISTS (SELECT 1 FROM public.scan_events e WHERE e.id = scan_event_id AND e.customer_id = customer_id));
 CREATE POLICY "scan attr admin read" ON public.scan_cart_attributions FOR SELECT TO authenticated
   USING (public.is_admin(auth.uid()));

@@ -35715,6 +35715,14 @@ export type Database = {
           suggested_category_id: string
         }[]
       }
+      get_public_app_settings: {
+        Args: never
+        Returns: {
+          key: string
+          source: string
+          value: string
+        }[]
+      }
       get_quote_by_token: { Args: { _token: string }; Returns: Json }
       get_recent_import_runs: {
         Args: { _limit?: number }

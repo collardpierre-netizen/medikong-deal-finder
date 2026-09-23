@@ -31,12 +31,9 @@ export function SmartPricingWidget({ ean, cnk, priceHt, dlu, grade, quantity, on
   const { data: settings } = useQuery({
     queryKey: ["restock-pricing-settings"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("restock_settings")
-        .select("key, value")
-        .in("key", ["destruction_cost_per_unit_eur", "pricing_zone_red_max", "pricing_zone_yellow_max", "pricing_zone_green_max", "pricing_widget_enabled"]);
+      const { data } = await (supabase as any).rpc("get_public_app_settings");
       const map: Record<string, string> = {};
-      data?.forEach((s: any) => { map[s.key] = s.value; });
+      data?.forEach((s: any) => { if (s.source === "restock_settings") map[s.key] = s.value; });
       return map;
     },
   });

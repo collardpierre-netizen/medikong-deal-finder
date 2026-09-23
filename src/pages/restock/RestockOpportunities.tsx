@@ -641,8 +641,9 @@ export default function RestockOpportunities() {
   const { data: commissionPct = 5 } = useQuery({
     queryKey: ["restock-commission-buyer-pct"],
     queryFn: async () => {
-      const { data } = await supabase.from("restock_settings").select("value").eq("key", "commission_buyer_pct").maybeSingle();
-      const v = parseFloat(String(data?.value ?? 5));
+      const { data } = await (supabase as any).rpc("get_public_app_settings");
+      const row = (data ?? []).find((s: any) => s.source === "restock_settings" && s.key === "commission_buyer_pct");
+      const v = parseFloat(String(row?.value ?? 5));
       return isNaN(v) ? 5 : v;
     },
   });

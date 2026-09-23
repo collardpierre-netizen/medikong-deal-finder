@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import DocLanguageSelect from "@/components/documents/DocLanguageSelect";
-import type { DocLang } from "@/lib/doc-i18n";
+import { translateDocTexts, type DocLang } from "@/lib/doc-i18n";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -196,6 +196,13 @@ export default function VendorOrderDetail() {
               const { toast } = await import("sonner");
               try {
                 const sa: any = (order as any).billing_address ?? (order as any).shipping_address ?? null;
+                // Traduction auto du contenu variable (libellés produits, notes).
+                const dynamic = await translateDocTexts(
+                  [(order as any).notes ?? null, ...order.lines.map((l: any) => l.manual_label ?? l.product_name ?? null)],
+                  docLang,
+                );
+                const notesTranslated = dynamic[0] || null;
+                const lineLabels = dynamic.slice(1);
                 generateVendorOrderPdf({
                   orderNumber: order.order_number,
                   orderDate: order.order_date,
@@ -205,9 +212,9 @@ export default function VendorOrderDetail() {
                   customerName: sa?.company_name ?? sa?.label ?? null,
                   customerEmail: sa?.email ?? null,
                   customerVatNumber: sa?.vat_number ?? null,
-                  notes: (order as any).notes ?? null,
-                  lines: order.lines.map((l: any) => ({
-                    label: l.manual_label ?? l.product_name ?? null,
+                  notes: notesTranslated,
+                  lines: order.lines.map((l: any, i: number) => ({
+                    label: lineLabels[i] || l.manual_label || l.product_name || null,
                     vendorReference: l.vendor_reference ?? null,
                     qty: Number(l.quantity) || 0,
                     unitPriceExclVat: Number(l.unit_price_excl_vat) || 0,

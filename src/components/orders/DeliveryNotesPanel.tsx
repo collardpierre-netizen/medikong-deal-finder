@@ -16,7 +16,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { generateDeliveryNotePdf } from "@/lib/delivery-note-pdf";
 import DocLanguageSelect from "@/components/documents/DocLanguageSelect";
-import type { DocLang } from "@/lib/doc-i18n";
+import { translateDocTexts, type DocLang } from "@/lib/doc-i18n";
 import { CHECKLIST_ITEMS } from "@/lib/delivery-checklist";
 import {
   BACKORDER_LABELS,
@@ -115,11 +115,11 @@ export default function DeliveryNotesPanel({ orderId, orderNumber, customerName,
     }
   };
 
-  const downloadPdf = (dnId: string) => {
+  const downloadPdf = async (dnId: string) => {
     const dn = notes.find((n) => n.id === dnId);
     if (!dn) return;
     const byLine = new Map(dn.delivery_note_lines.map((l) => [l.order_line_id, l.quantity]));
-    const pdfRows = rows
+    const baseRows = rows
       .filter((r) => byLine.has(r.order_line_id))
       .map((r) => ({
         name: r.product_name || "Produit",
@@ -129,6 +129,25 @@ export default function DeliveryNotesPanel({ orderId, orderNumber, customerName,
         delivered: byLine.get(r.order_line_id) || 0,
         remaining: Math.max(r.quantity - (byLine.get(r.order_line_id) || 0), 0),
       }));
+    const checklist =
+      dn.checklist?.items?.map((i) => ({ label: i.label, checked: i.checked })) ??
+      CHECKLIST_ITEMS.map((i) => ({ label: i.label as string, checked: undefined as boolean | undefined }));
+
+    // Traduction auto du contenu variable (produits, checklist, note, remarques).
+    const dynamic = await translateDocTexts(
+      [
+        dn.note ?? null,
+        dn.client_remarks ?? null,
+        ...baseRows.map((r) => r.name),
+        ...checklist.map((c) => c.label),
+      ],
+      docLang,
+    );
+    const noteTranslated = dynamic[0] || null;
+    const remarksTranslated = dynamic[1] || null;
+    const rowNames = dynamic.slice(2, 2 + baseRows.length);
+    const checklistLabels = dynamic.slice(2 + baseRows.length);
+
     generateDeliveryNotePdf({
       documentNumber: dn.document_number,
       issuedAt: dn.issued_at,
@@ -141,16 +160,14 @@ export default function DeliveryNotesPanel({ orderId, orderNumber, customerName,
       shippingAddress,
       carrier: dn.carrier,
       trackingNumber: dn.tracking_number,
-      note: dn.note,
-      rows: pdfRows,
-      checklistItems:
-        dn.checklist?.items?.map((i) => ({ label: i.label, checked: i.checked })) ??
-        CHECKLIST_ITEMS.map((i) => ({ label: i.label })),
+      note: noteTranslated,
+      rows: baseRows.map((r, i) => ({ ...r, name: rowNames[i] || r.name })),
+      checklistItems: checklist.map((c, i) => ({ ...c, label: checklistLabels[i] || c.label })),
       confirmation: dn.confirmed_at
         ? {
             confirmedAt: dn.confirmed_at,
             confirmedByName: dn.confirmed_by_name,
-            remarks: dn.client_remarks,
+            remarks: remarksTranslated,
           }
         : null,
       lang: docLang,

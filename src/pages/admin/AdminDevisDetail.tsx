@@ -11,7 +11,7 @@ import { ArrowLeft, Send, FileDown, RefreshCw, ArrowRightCircle, Copy, Eye, Chec
 import { VendorsEmbedError } from "@/lib/vendors-embed-error";
 import { generateQuotePdf } from "@/lib/quote-pdf";
 import DocLanguageSelect from "@/components/documents/DocLanguageSelect";
-import type { DocLang } from "@/lib/doc-i18n";
+import { translateDocTexts, type DocLang } from "@/lib/doc-i18n";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Brouillon", sent: "Envoyé", accepted: "Accepté", declined: "Refusé", paid: "Payé", converted: "Converti",
@@ -103,8 +103,16 @@ const AdminDevisDetail = () => {
     if (data) navigate(`/admin/devis/${data}`);
   });
 
-  const downloadPdf = () => {
+  const downloadPdf = async () => {
     try {
+      // Traduction auto du contenu variable (libellés de lignes, notes) — cache partagé.
+      const dynamic = await translateDocTexts(
+        [quote.notes_customer ?? null, ...lines.map((l: any) => l.label ?? null)],
+        docLang,
+      );
+      const notesTranslated = dynamic[0] || null;
+      const lineLabels = dynamic.slice(1);
+
       generateQuotePdf({
         quoteNumber: quote.quote_number,
         createdAt: quote.created_at,
@@ -118,9 +126,9 @@ const AdminDevisDetail = () => {
         customerName: quote.customer?.company_name ?? null,
         customerEmail: quote.customer?.email ?? null,
         customerVatNumber: quote.customer?.vat_number ?? null,
-        notesCustomer: quote.notes_customer ?? null,
-        lines: lines.map((l: any) => ({
-          label: l.label,
+        notesCustomer: notesTranslated,
+        lines: lines.map((l: any, i: number) => ({
+          label: lineLabels[i] || l.label,
           vendorReference: l.vendor_reference ?? null,
           qty: Number(l.qty || 0),
           unitPriceHtCents: Number(l.unit_price_ht_cents || 0),

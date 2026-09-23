@@ -119,3 +119,6 @@ verify_jwt = false
 
 [functions.submit-investor-inquiry]
 verify_jwt = false
+
+[functions.quick-order]
+verify_jwt = false

@@ -11,7 +11,7 @@ import { ArrowLeft, Send, FileDown, RefreshCw, ArrowRightCircle, Copy, Eye, Chec
 import { VendorsEmbedError } from "@/lib/vendors-embed-error";
 import { generateQuotePdf } from "@/lib/quote-pdf";
 import DocLanguageSelect from "@/components/documents/DocLanguageSelect";
-import type { DocLang } from "@/lib/doc-i18n";
+import { translateDocTexts, type DocLang } from "@/lib/doc-i18n";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Brouillon", sent: "Envoyé", accepted: "Accepté", declined: "Refusé", paid: "Payé", converted: "Converti",

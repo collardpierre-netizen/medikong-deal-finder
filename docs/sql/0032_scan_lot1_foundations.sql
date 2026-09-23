@@ -46,7 +46,8 @@ CREATE TABLE public.wholesaler_depots (
   longitude numeric,
   is_active boolean NOT NULL DEFAULT true,
   created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (wholesaler_profile_id, name)
 );
 GRANT SELECT ON public.wholesaler_depots TO authenticated;
 GRANT ALL ON public.wholesaler_depots TO service_role;
@@ -62,7 +63,9 @@ ALTER TABLE public.pharmacist_wholesaler_settings
 CREATE INDEX IF NOT EXISTS pws_customer_id_idx ON public.pharmacist_wholesaler_settings(customer_id);
 
 -- Policy actuelle conservée telle quelle : pws_owner_all (user_id = auth.uid()).
--- Ajout : membres actifs du compte customer rattaché. Aucune policy admin/vendeur.
+-- Ajout : membres actifs du compte customer rattaché. AUCUNE policy admin/vendeur,
+-- aucune vue ni export ne lit cette table ; le calcul du prix de référence est
+-- fait par scan-resolve (service_role) qui ne renvoie que le résultat.
 CREATE POLICY "pws_customer_members_all" ON public.pharmacist_wholesaler_settings
   FOR ALL TO authenticated
   USING (customer_id IS NOT NULL AND customer_id IN (
@@ -83,24 +86,50 @@ $$;
 REVOKE ALL ON FUNCTION public.scan_list_wholesalers() FROM public, anon;
 GRANT EXECUTE ON FUNCTION public.scan_list_wholesalers() TO authenticated;
 
--- 5. Événements de scan -------------------------------------------------------
-CREATE TABLE public.scan_events (
+-- 5. Sessions et événements de scan ------------------------------------------
+CREATE TABLE public.scan_sessions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id uuid NOT NULL REFERENCES public.customers(id) ON DELETE CASCADE,
   user_id uuid NOT NULL,
-  raw_code text NOT NULL,
-  code_kind text,                    -- gtin | cnk | unknown
-  match_status text NOT NULL,        -- matched | ambiguous_match | no_offer | not_found
-  product_id uuid REFERENCES public.products(id) ON DELETE SET NULL,
-  candidate_product_ids uuid[] NOT NULL DEFAULT '{}',
-  best_offer_id uuid REFERENCES public.offers(id) ON DELETE SET NULL,
-  best_price_excl_vat numeric,       -- euros, même type que offers.price_excl_vat
-  reference_price_excl_vat numeric,  -- prix pharmacien calculé (grossiste - remise)
-  mode text NOT NULL DEFAULT 'single', -- single | burst
-  created_at timestamptz NOT NULL DEFAULT now()
+  mode text NOT NULL CHECK (mode IN ('single','burst')),
+  started_at timestamptz NOT NULL DEFAULT now(),
+  ended_at timestamptz
 );
-CREATE INDEX scan_events_customer_created_idx ON public.scan_events(customer_id, created_at DESC);
-GRANT SELECT, INSERT ON public.scan_events TO authenticated;
+GRANT SELECT ON public.scan_sessions TO authenticated;
+GRANT ALL ON public.scan_sessions TO service_role;
+ALTER TABLE public.scan_sessions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "scan sessions own read" ON public.scan_sessions FOR SELECT TO authenticated
+  USING (customer_id IN (SELECT c.id FROM public.customers c WHERE c.auth_user_id = auth.uid()
+                         UNION SELECT unnest(public.current_user_buyer_account_ids())));
+CREATE POLICY "scan sessions admin read" ON public.scan_sessions FOR SELECT TO authenticated
+  USING (public.is_admin(auth.uid()));
+
+CREATE TABLE public.scan_events (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id uuid REFERENCES public.scan_sessions(id) ON DELETE SET NULL,
+  customer_id uuid NOT NULL REFERENCES public.customers(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL,
+  scanned_at timestamptz NOT NULL DEFAULT now(),
+  symbology text NOT NULL CHECK (symbology IN ('ean13','datamatrix','manual_cnk','other')),
+  raw_code text NOT NULL,              -- AI 21 (n° de série) retiré avant stockage
+  gtin text, cnk text, lot text, expiry_date date,
+  product_id uuid REFERENCES public.products(id) ON DELETE SET NULL,
+  match_status text NOT NULL CHECK (match_status IN ('matched','ambiguous_match','not_found')),
+  candidate_product_ids uuid[] NOT NULL DEFAULT '{}',
+  in_test_scope boolean NOT NULL DEFAULT false,
+  result text NOT NULL CHECK (result IN ('offer','known_no_offer','unknown')),
+  best_offer_id uuid REFERENCES public.offers(id) ON DELETE SET NULL,
+  best_price_excl_vat numeric,         -- euros, comme offers.price_excl_vat
+  ref_price_excl_vat numeric,          -- meilleur prix de référence pharmacien
+  ref_source text,                     -- 'FEBELCO', 'CERP', 'LAB:<id>', 'none'
+  delta_excl_vat numeric,              -- ref − MediKong (positif = gain)
+  verdict text CHECK (verdict IN ('green','orange','red','none')),
+  action text NOT NULL DEFAULT 'none' CHECK (action IN ('none','added_to_cart','price_alert','stock_report','sourcing_request')),
+  latency_ms integer
+);
+CREATE INDEX scan_events_customer_scanned_idx ON public.scan_events(customer_id, scanned_at DESC);
+CREATE INDEX scan_events_gtin_idx ON public.scan_events(gtin);
+GRANT SELECT ON public.scan_events TO authenticated;
 GRANT ALL ON public.scan_events TO service_role;
 ALTER TABLE public.scan_events ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "scan events own read" ON public.scan_events FOR SELECT TO authenticated
@@ -108,7 +137,7 @@ CREATE POLICY "scan events own read" ON public.scan_events FOR SELECT TO authent
                          UNION SELECT unnest(public.current_user_buyer_account_ids())));
 CREATE POLICY "scan events admin read" ON public.scan_events FOR SELECT TO authenticated
   USING (public.is_admin(auth.uid()));
--- Insertion uniquement par l'edge function scan-resolve (service_role).
+-- Écriture uniquement par scan-resolve (service_role) : 1 appel = 1 ligne.
 
 -- 6. Attribution panier (arbitrage 8) -----------------------------------------
 CREATE TABLE public.scan_cart_attributions (

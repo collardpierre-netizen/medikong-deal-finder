@@ -135,8 +135,8 @@ export default function ScanHomePage() {
       )}
 
       {!result && manual && (
-        <form className="px-5 space-y-3" onSubmit={(e) => { e.preventDefault(); if (cnk.trim()) void run(cnk.trim(), "manual_cnk", null); }}>
-          <Input inputMode="numeric" autoFocus placeholder="CNK (7 chiffres)" value={cnk} onChange={(e) => setCnk(e.target.value)} className="h-12 text-lg" />
+        <form className="px-5 space-y-3" onSubmit={(e) => { e.preventDefault(); const v = cnk.replace(/\D/g, ""); if (v) void run(v, v.length === 13 ? "ean13" : "manual_cnk", null); }}>
+          <Input inputMode="numeric" autoFocus placeholder="CNK (7 chiffres) ou EAN" value={cnk} onChange={(e) => setCnk(e.target.value)} className="h-12 text-lg" />
           <Button type="submit" className="scan-tap h-12 w-full text-base" disabled={busy}>
             {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Search className="mr-2 h-4 w-4" />Rechercher</>}
           </Button>

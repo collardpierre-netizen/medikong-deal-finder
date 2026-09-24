@@ -228,7 +228,7 @@ function VerdictCard({ r, customerId, hasConditions, estimated }: { r: ScanResul
         </div>
         <Button className="scan-tap h-12 w-full text-base" onClick={add}><ShoppingCart className="mr-2 h-5 w-5" />Ajouter au panier</Button>
       </div>
-      {!hasConditions && r.verdict !== "none" ? null : !hasConditions && (
+      {!hasConditions && (
         <Button asChild variant="outline" className="scan-tap w-full"><Link to="/conditions">Ajouter mes conditions</Link></Button>
       )}
     </div>

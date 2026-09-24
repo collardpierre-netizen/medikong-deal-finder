@@ -34631,6 +34631,15 @@ export type Database = {
           variant: string
         }[]
       }
+      admin_import_wholesaler_prices: {
+        Args: {
+          _period: string
+          _rows: Json
+          _source_file?: string
+          _source_id: string
+        }
+        Returns: Json
+      }
       admin_inspect_table_grants: {
         Args: { _schema?: string; _table?: string }
         Returns: {

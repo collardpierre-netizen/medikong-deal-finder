@@ -253,6 +253,13 @@
       "when": 1790240439860,
       "tag": "0035_security_vendor_visibility_rules_server_resolve",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1790240563098,
+      "tag": "0036_scan_admin_import_wholesaler_prices",
+      "breakpoints": true
     }
   ]
 }

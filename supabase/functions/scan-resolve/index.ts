@@ -155,15 +155,24 @@ Deno.serve(async (req) => {
   }).select("id").single();
   if (evErr) return json({ error: "log_failed", detail: evErr.message }, 500);
 
-  // Produit inconnu → item de sourcing dédoublonné (GTIN puis CNK), visible dans /admin/sourcing/pipeline
-  if (result === "unknown" && (code.gtin || code.cnk)) {
+  // Produit inconnu (GTIN puis CNK) ou connu sans offre (id produit) → item de sourcing dédoublonné
+  const sourcingArgs = result === "unknown" && (code.gtin || code.cnk)
+    ? { _dedupe_key: code.gtin ? `gtin:${code.gtin}` : `cnk:${code.cnk}`, _product_id: null, _brand_id: null,
+        _gtin: code.gtin ?? null, _cnk: code.cnk ?? null, _status: "unmatched" }
+    : result === "known_no_offer" && product
+    ? { _dedupe_key: product.id, _product_id: product.id, _brand_id: product.brand_id ?? null,
+        _gtin: code.gtin ?? product.gtin ?? null, _cnk: code.cnk ?? product.cnk_code ?? null, _status: "no_active_offer" }
+    : null;
+  if (sourcingArgs) {
     const { error: sErr } = await admin.rpc("upsert_sourcing_item", {
-      _dedupe_key: code.gtin ? `gtin:${code.gtin}` : `cnk:${code.cnk}`,
-      _product_id: null, _brand_id: null, _gtin: code.gtin ?? null, _cnk: code.cnk ?? null,
-      _raw_name: null, _raw_brand: null, _status: "unmatched", _user_id: userId,
+      ...sourcingArgs, _raw_name: null, _raw_brand: null, _user_id: userId,
       _quantity: null, _buyer_price_cents: null,
     });
     if (sErr) console.error("sourcing upsert failed", sErr.message);
+    else {
+      const { error: aErr } = await admin.from("scan_events").update({ action: "sourcing_request" }).eq("id", ev.id);
+      if (aErr) console.error("scan action update failed", aErr.message);
+    }
   }
 
   const vendorLabel = best

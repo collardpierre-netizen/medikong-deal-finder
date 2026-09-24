@@ -260,6 +260,13 @@
       "when": 1790240563098,
       "tag": "0036_scan_admin_import_wholesaler_prices",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1790240594571,
+      "tag": "0037_scan_import_audit_log_fix",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,29 @@
+/* Charte MediKong Scan — limitée à la surface scan.medikong.pro */
+.scan-theme {
+  --background: 150 11% 97%;          /* #F6F8F7 */
+  --foreground: 217 33% 17%;          /* #1E293B */
+  --card: 0 0% 100%;
+  --card-foreground: 217 33% 17%;
+  --primary: 160 84% 39%;             /* #10B981 */
+  --primary-foreground: 0 0% 100%;
+  --scan-emerald-text: 161 94% 26%;   /* #047857 texte sur fond clair */
+  --scan-navy: 217 33% 17%;
+  --scan-green: 161 94% 26%;
+  --scan-orange: 32 95% 44%;
+  --scan-red: 0 72% 45%;
+  --muted: 150 10% 93%;
+  --muted-foreground: 215 16% 40%;
+  --border: 150 8% 88%;
+  --input: 150 8% 88%;
+  --ring: 160 84% 39%;
+  font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+}
+.scan-theme h1, .scan-theme h2, .scan-theme h3 { font-family: "Plus Jakarta Sans", system-ui, sans-serif; letter-spacing: -0.02em; }
+.scan-theme .scan-tap { min-height: 44px; min-width: 44px; }
+.scan-theme .text-scan-emerald { color: hsl(var(--scan-emerald-text)); }
+.scan-theme .bg-scan-navy { background-color: hsl(var(--scan-navy)); }
+.scan-theme .text-on-navy { color: hsl(0 0% 100%); }
+.scan-theme .verdict-green { background-color: hsl(var(--scan-green)); color: hsl(0 0% 100%); }
+.scan-theme .verdict-orange { background-color: hsl(var(--scan-orange)); color: hsl(0 0% 100%); }
+.scan-theme .verdict-red { background-color: hsl(var(--scan-red)); color: hsl(0 0% 100%); }
+.scan-theme .verdict-none { background-color: hsl(var(--scan-navy)); color: hsl(0 0% 100%); }

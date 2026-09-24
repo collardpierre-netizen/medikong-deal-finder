@@ -13903,7 +13903,7 @@ export type Database = {
       pharmacist_wholesaler_settings: {
         Row: {
           account_number: string | null
-          buyer_id: string
+          buyer_id: string | null
           configured_at: string
           contract_start_date: string | null
           created_at: string
@@ -13920,7 +13920,7 @@ export type Database = {
         }
         Insert: {
           account_number?: string | null
-          buyer_id: string
+          buyer_id?: string | null
           configured_at?: string
           contract_start_date?: string | null
           created_at?: string
@@ -13937,7 +13937,7 @@ export type Database = {
         }
         Update: {
           account_number?: string | null
-          buyer_id?: string
+          buyer_id?: string | null
           configured_at?: string
           contract_start_date?: string | null
           created_at?: string

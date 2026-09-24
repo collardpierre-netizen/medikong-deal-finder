@@ -12,6 +12,7 @@ const Body = z.object({
   symbology: z.enum(["ean13", "datamatrix", "manual_cnk", "other"]),
   session_id: z.string().uuid().optional().nullable(),
   mode: z.enum(["single", "burst"]).default("single"),
+  client_decode_ms: z.number().int().min(0).max(60000).optional().nullable(),
 });
 
 const json = (b: unknown, status = 200) =>
@@ -37,13 +38,13 @@ Deno.serve(async (req) => {
 
   // Officine : propriétaire direct ou membre actif
   const [{ data: own }, { data: mem }, { data: cfg }] = await Promise.all([
-    admin.from("customers").select("id, scan_enabled, country_code, buyer_profile_id").eq("auth_user_id", userId).limit(1),
+    admin.from("customers").select("id, scan_enabled, country_code, buyer_profile_id, is_test").eq("auth_user_id", userId).limit(1),
     admin.from("account_memberships").select("account_id").eq("user_id", userId).eq("account_kind", "buyer").eq("status", "active").limit(1),
     admin.from("site_config").select("scan_enabled").eq("id", 1).maybeSingle(),
   ]);
   let customer = own?.[0] ?? null;
   if (!customer && mem?.[0]) {
-    const { data } = await admin.from("customers").select("id, scan_enabled, country_code, buyer_profile_id").eq("id", mem[0].account_id).maybeSingle();
+    const { data } = await admin.from("customers").select("id, scan_enabled, country_code, buyer_profile_id, is_test").eq("id", mem[0].account_id).maybeSingle();
     customer = data;
   }
   if (!customer) return json({ error: "no_pharmacy_account" }, 403);
@@ -109,11 +110,13 @@ Deno.serve(async (req) => {
     const active = (settings ?? []).filter((s) => s.is_supplier_of_pharmacist !== false);
     if (active.length) {
       const wpIds = active.map((s) => s.wholesaler_profile_id);
-      const [{ data: wps }, { data: sources }] = await Promise.all([
+      const [{ data: wps }, { data: sourcesAll }] = await Promise.all([
         admin.from("wholesaler_profiles").select("id, slug, display_name, default_discount_pct, display_prices_allowed").in("id", wpIds),
-        admin.from("market_price_sources").select("id, wholesaler_profile_id").in("wholesaler_profile_id", wpIds),
+        admin.from("market_price_sources").select("id, wholesaler_profile_id, is_test").in("wholesaler_profile_id", wpIds),
       ]);
-      const srcIds = (sources ?? []).map((s) => s.id);
+      // Sources de test : visibles uniquement pour les comptes de test
+      const sources = (sourcesAll ?? []).filter((s: any) => !s.is_test || customer.is_test === true);
+      const srcIds = sources.map((s) => s.id);
       const { data: prices } = srcIds.length
         ? await admin.from("market_prices").select("source_id, prix_grossiste, prix_pharmacien, period, imported_at")
             .eq("product_id", product.id).in("source_id", srcIds)
@@ -151,7 +154,7 @@ Deno.serve(async (req) => {
     product_id: product?.id ?? null, match_status: matchStatus,
     candidate_product_ids: candidates.length > 1 ? candidates.map((c) => c.id) : [],
     in_test_scope: inScope, result, best_offer_id: best?.offer_id ?? null, best_price_excl_vat: bestPrice,
-    ref_price_excl_vat: refMin, ref_source: refSource, delta_excl_vat: delta, verdict, latency_ms: latency,
+    ref_price_excl_vat: refMin, ref_source: refSource, delta_excl_vat: delta, verdict, latency_ms: latency, client_decode_ms: input.client_decode_ms ?? null,
   }).select("id").single();
   if (evErr) return json({ error: "log_failed", detail: evErr.message }, 500);
 

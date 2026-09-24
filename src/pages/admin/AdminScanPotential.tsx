@@ -73,7 +73,7 @@ export default function AdminScanPotential() {
   const exportCsv = () => {
     const headers = ["Produit", "Marque", "Laboratoire", "Nb officines", "Sans volume", "Volume exact annuel", "Volume estimé annuel", "Volume total annuel", "Prix payé moyen pondéré", "Prix cible", "Prix MediKong", "Potentiel prix cible", "Potentiel prix MediKong", "Écart potentiels"];
     const rows = products.map((row) => [row.product, row.brand, row.lab, row.pharmacies, row.withoutVolume, row.exactAnnual, row.estimatedAnnual, row.totalAnnual, row.weightedPrice.toFixed(2), row.targetPrice.toFixed(2), row.medikongPrice.toFixed(2), row.targetPotential.toFixed(2), row.medikongPotential.toFixed(2), row.potentialGap.toFixed(2)]);
-    const csv = [headers, ...rows].map((line) => line.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(";")).join("\n");
+    const csv = [headers, ...rows].map((line) => line.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(";")).join("\n");
     const url = URL.createObjectURL(new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8" }));
     const link = document.createElement("a");
     link.href = url;

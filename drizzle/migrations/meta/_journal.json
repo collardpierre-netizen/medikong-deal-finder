@@ -239,6 +239,13 @@
       "when": 1790240051162,
       "tag": "0033_scan_index_traceability_20260923",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1790240063014,
+      "tag": "0034_market_price_history",
+      "breakpoints": true
     }
   ]
 }

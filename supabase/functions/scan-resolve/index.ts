@@ -104,6 +104,16 @@ Deno.serve(async (req) => {
   let refSource = "none";
   let hideDetail = false;
   if (product) {
+    const { data: declared } = await admin.from("pharmacy_product_declared_prices")
+      .select("price_excl_vat_cents, supplier_name")
+      .eq("customer_id", customer.id)
+      .eq("product_id", product.id)
+      .maybeSingle();
+    if (declared?.price_excl_vat_cents) {
+      refMin = round2(Number(declared.price_excl_vat_cents) / 100);
+      refSource = "DECLARED";
+      references.push({ source: "DECLARED", label: `Prix déclaré · ${declared.supplier_name}`, discount_pct: null, net: refMin, _allowed: true });
+    }
     const { data: settings } = await admin.from("pharmacist_wholesaler_settings")
       .select("wholesaler_profile_id, override_default_discount_pct, override_rules_json, is_supplier_of_pharmacist")
       .eq("customer_id", customer.id);
@@ -136,7 +146,7 @@ Deno.serve(async (req) => {
         const net = round2(gross * (1 - pct / 100));
         if (!wp.display_prices_allowed) hideDetail = true;
         references.push({ source: (wp.slug ?? "").toUpperCase(), label: wp.display_name, discount_pct: pct, net, _allowed: wp.display_prices_allowed });
-        if (refMin == null || net < refMin) { refMin = net; refSource = (wp.slug ?? "").toUpperCase(); }
+        if (refSource !== "DECLARED" && (refMin == null || net < refMin)) { refMin = net; refSource = (wp.slug ?? "").toUpperCase(); }
       }
     }
   }
@@ -190,7 +200,7 @@ Deno.serve(async (req) => {
     candidates: candidates.length > 1 ? candidates.map((c) => ({ id: c.id, name: c.name })) : [],
     product: product ? { id: product.id, name: product.name, pack: product.pack_size, cnk: product.cnk_code, image: product.image_url } : null,
     lot: code.lot, expiry_date: code.expiry_date, verdict, delta,
-    best: best ? { price: bestPrice, vendor_label: vendorLabel, franco: null, lead_time_days: best.delivery_days ?? null, offer_id: best.offer_id } : null,
+    best: best ? { price: bestPrice, vendor_label: vendorLabel, vendor_id: best.vendor_id, franco: null, lead_time_days: best.delivery_days ?? null, offer_id: best.offer_id, stock_quantity: best.stock_quantity ?? null } : null,
     references: hideDetail ? [] : references.map(({ _allowed, ...r }) => r),
     best_reference_price: refMin,
     stock_signals: [],

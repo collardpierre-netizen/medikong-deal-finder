@@ -9,6 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { formatMoney } from "@/lib/money-format";
+import { QuantityInput } from "@/components/cart/QuantityInput";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useVendorMov } from "@/hooks/useVendorMov";
 import { createZxingScanner, type BarcodeScanner } from "@/lib/scanner/BarcodeScanner";
 import { resolveScan, type ScanResult } from "@/lib/scanner/api";
 import { useScanCustomer } from "./ScanGate";
@@ -147,9 +150,9 @@ export default function ScanHomePage() {
       {result && (
         <div className="px-5 space-y-4">
           {result.product && result.best
-            ? <VerdictCard r={result} customerId={customer.id} hasConditions={hasConditions} estimated={estimated} />
+            ? <VerdictCard r={result} customerId={customer.id} hasConditions={hasConditions} estimated={estimated} onResult={setResult} />
             : <NoOfferCard r={result} customerId={customer.id} />}
-          <Button className="scan-tap h-12 w-full text-base" onClick={() => { setResult(null); setManual(false); setCnk(""); }}>
+          <Button variant="outline" className="scan-tap h-12 w-full text-base" onClick={() => { setResult(null); setManual(false); setCnk(""); }}>
             <Camera className="mr-2 h-5 w-5" />Scanner un autre produit
           </Button>
         </div>
@@ -181,19 +184,65 @@ function ProductHead({ r }: { r: ScanResult }) {
   );
 }
 
-function VerdictCard({ r, customerId, hasConditions, estimated }: { r: ScanResult; customerId: string; hasConditions: boolean; estimated: boolean }) {
+function VerdictCard({ r, customerId, hasConditions, estimated, onResult }: { r: ScanResult; customerId: string; hasConditions: boolean; estimated: boolean; onResult: (r: ScanResult) => void }) {
   const { addToCart } = useCart();
+  const [quantity, setQuantity] = useState(1);
+  const [declaredPrice, setDeclaredPrice] = useState("");
+  const [declaredSupplier, setDeclaredSupplier] = useState("");
+  const [declaring, setDeclaring] = useState(false);
+  const { data: offerMeta } = useQuery({
+    queryKey: ["scan-offer-meta", r.best?.offer_id],
+    queryFn: async () => {
+      const { data } = await sb.from("offers").select("vendor_id, stock_quantity").eq("id", r.best!.offer_id).maybeSingle();
+      return data as { vendor_id: string; stock_quantity: number | null } | null;
+    },
+    enabled: !!r.best?.offer_id,
+  });
+  const vendorId = r.best?.vendor_id ?? offerMeta?.vendor_id;
+  const stockQuantity = r.best?.stock_quantity ?? offerMeta?.stock_quantity ?? null;
+  const vendorIds = vendorId ? [vendorId] : [];
+  const { getMovForVendor } = useVendorMov(vendorIds);
+  const mov = vendorId ? getMovForVendor(vendorId) : null;
+  const subtotal = (r.best?.price ?? 0) * quantity;
+  const movRemaining = mov != null ? Math.max(mov - subtotal, 0) : 0;
+  const francoTarget = r.best?.franco ?? 250;
+  const francoRemaining = Math.max(francoTarget - subtotal, 0);
   const v = VERDICT[r.verdict];
   const gain = r.delta != null && r.delta > 0 ? r.delta : null;
   const add = async () => {
     if (!r.best || !r.product) return;
     addToCart.mutate({
-      offerId: r.best.offer_id, productId: r.product.id, priceExclVat: r.best.price, deliveryDays: r.best.lead_time_days,
+      offerId: r.best.offer_id, productId: r.product.id, quantity, maxQuantity: stockQuantity ?? undefined, vendorId, priceExclVat: r.best.price, deliveryDays: r.best.lead_time_days,
       productData: { id: r.product.id, name: r.product.name, brand: "", slug: "", price: r.best.price, imageUrl: r.product.image ?? undefined },
     });
     const { error } = await sb.from("scan_cart_attributions").insert({ customer_id: customerId, offer_id: r.best.offer_id, scan_event_id: r.scan_event_id });
     if (error) console.error("scan attribution failed", error.message);
     toast.success("Ajouté au panier");
+  };
+  const compareDeclaredPrice = async () => {
+    const euros = Number(declaredPrice.replace(",", "."));
+    if (!Number.isFinite(euros) || euros <= 0) { toast.error("Indiquez un prix HTVA valide."); return; }
+    if (!declaredSupplier) { toast.error("Choisissez votre grossiste ou labo."); return; }
+    setDeclaring(true);
+    try {
+      const { data, error } = await sb.rpc("scan_declare_product_price", {
+        _scan_event_id: r.scan_event_id,
+        _price_excl_vat_cents: Math.round(euros * 100),
+        _supplier_name: declaredSupplier,
+      });
+      if (error) throw error;
+      onResult({
+        ...r,
+        verdict: data.verdict,
+        delta: Number(data.delta),
+        best_reference_price: Number(data.best_reference_price),
+        references: [{ source: "DECLARED", label: `Prix déclaré · ${data.supplier_name}`, discount_pct: 0, net: Number(data.best_reference_price) }],
+      });
+      toast.success("Prix enregistré pour votre officine");
+    } catch (error) {
+      console.error("declared price failed", error);
+      toast.error("Comparaison impossible, réessayez.");
+    } finally { setDeclaring(false); }
   };
   return (
     <div className="space-y-3">
@@ -203,13 +252,40 @@ function VerdictCard({ r, customerId, hasConditions, estimated }: { r: ScanResul
         {gain != null && (
           <div className="text-2xl font-extrabold">{estimated ? "Gain estimé" : "Gain"} : {formatMoney(gain)} / boîte</div>
         )}
-        {r.verdict === "none" && !hasConditions && <div className="text-sm opacity-90">Ajoutez vos conditions pour voir votre gain.</div>}
+        {r.verdict === "none" && <div className="text-sm opacity-90">Nous n'avons pas encore votre prix d'achat pour ce produit.</div>}
       </div>
+
+      {r.verdict === "none" && (
+        <div className="rounded-xl border bg-card p-4 space-y-3">
+          <div className="font-bold">Vous le payez combien ?</div>
+          <div>
+            <label className="mb-1 block text-xs text-muted-foreground">Prix HTVA</label>
+            <Input inputMode="decimal" value={declaredPrice} onChange={(e) => setDeclaredPrice(e.target.value)} className="h-11" placeholder="ex. 14,50" />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-muted-foreground">Chez</label>
+            <Select value={declaredSupplier} onValueChange={setDeclaredSupplier}>
+              <SelectTrigger className="h-11"><SelectValue placeholder="Grossiste ou labo" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Febelco">Febelco</SelectItem>
+                <SelectItem value="CERP Belgique">CERP Belgique</SelectItem>
+                <SelectItem value="Cophana">Cophana</SelectItem>
+                <SelectItem value="Pharma Belgium">Pharma Belgium</SelectItem>
+                <SelectItem value="Phoenix">Phoenix</SelectItem>
+                <SelectItem value="Laboratoire direct">Laboratoire direct</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button className="scan-tap h-12 w-full text-base" onClick={compareDeclaredPrice} disabled={declaring}>
+            {declaring ? <Loader2 className="h-5 w-5 animate-spin" /> : "Comparer"}
+          </Button>
+        </div>
+      )}
 
       {r.best_reference_price != null && (
         <div className="rounded-xl border bg-card p-3 space-y-1 text-sm">
           {r.references.length > 0 ? r.references.map((x) => (
-            <div key={x.source} className="flex justify-between"><span>{x.label} (−{String(x.discount_pct).replace(".", ",")} %)</span><span>{formatMoney(x.net)}</span></div>
+            <div key={x.source} className="flex justify-between"><span>{x.label}{x.source !== "DECLARED" ? ` (−${String(x.discount_pct).replace(".", ",")} %)` : ""}</span><span>{formatMoney(x.net)}</span></div>
           )) : (
             <div className="flex justify-between"><span>Votre meilleur prix actuel</span><span className="font-semibold">{formatMoney(r.best_reference_price)}</span></div>
           )}
@@ -226,7 +302,21 @@ function VerdictCard({ r, customerId, hasConditions, estimated }: { r: ScanResul
           {r.best!.lead_time_days != null ? ` · livraison ${r.best!.lead_time_days} j` : ""}
           {r.best!.franco != null ? ` · franco ${formatMoney(r.best!.franco)}` : ""}
         </div>
-        <Button className="scan-tap h-12 w-full text-base" onClick={add}><ShoppingCart className="mr-2 h-5 w-5" />Ajouter au panier</Button>
+        <div className="flex items-center justify-between gap-3 border-t pt-3">
+          <span className="text-sm font-medium">Quantité</span>
+          <QuantityInput value={quantity} min={1} max={stockQuantity ?? undefined} onChange={setQuantity} />
+        </div>
+        {mov != null && (
+          <div className="rounded-lg bg-muted p-3 text-sm">
+            <div className="flex justify-between"><span>Minimum de commande</span><span className="font-semibold">{formatMoney(mov)} HTVA</span></div>
+            {movRemaining > 0 && <div className="mt-1 text-muted-foreground">Il manque {formatMoney(movRemaining)} chez ce fournisseur.</div>}
+          </div>
+        )}
+        <div className="rounded-lg bg-muted p-3 text-sm">
+          <div className="flex justify-between"><span>Franco de port</span><span className="font-semibold">{formatMoney(francoTarget)} HTVA</span></div>
+          <div className="mt-1 text-muted-foreground">{francoRemaining > 0 ? `Il manque ${formatMoney(francoRemaining)} pour la livraison gratuite.` : "Livraison gratuite"}</div>
+        </div>
+        <Button className="scan-tap h-12 w-full text-base" onClick={add}><ShoppingCart className="mr-2 h-5 w-5" />Ajouter {quantity} au panier</Button>
       </div>
       {!hasConditions && (
         <Button asChild variant="outline" className="scan-tap w-full"><Link to="/conditions">Ajouter mes conditions</Link></Button>

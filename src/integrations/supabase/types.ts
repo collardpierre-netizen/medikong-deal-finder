@@ -37465,6 +37465,17 @@ export type Database = {
           is_active: boolean
         }[]
       }
+      resolve_vendor_visibility: {
+        Args: {
+          _country: string
+          _customer_type: string
+          _vendor_ids: string[]
+        }
+        Returns: {
+          show_real_name: boolean
+          vendor_id: string
+        }[]
+      }
       restock_get_buyer_contact_for_seller: {
         Args: { _tx_id: string }
         Returns: {

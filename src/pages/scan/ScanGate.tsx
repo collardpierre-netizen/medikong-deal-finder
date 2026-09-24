@@ -154,7 +154,7 @@ function BottomBar() {
       {item("/", "Scanner", ScanLine)}
       {item("/ruptures", "Ruptures", PackageX, true)}
       {item("/panier", "Panier", ShoppingCart, false, cartCount)}
-      {item("/moi", "Moi", User)}
+      {item("/moi", "Moi", User, true)}
     </nav>
   );
 }
@@ -188,7 +188,7 @@ export default function ScanGate({ children }: { children: ReactNode }) {
   }
   return (
     <ScanCtx.Provider value={data.customer}>
-      <div className="mx-auto max-w-md pb-[calc(53px+env(safe-area-inset-bottom))]">{children}</div>
+      <div className="mx-auto max-w-md pb-[calc(64px+env(safe-area-inset-bottom))]">{children}</div>
       <BottomBar />
     </ScanCtx.Provider>
   );

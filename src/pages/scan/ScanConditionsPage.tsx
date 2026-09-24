@@ -2,11 +2,11 @@
  * Onboarding « Vos conditions » — 4 écrans, passable, < 2 min.
  * Stockage : pharmacist_wholesaler_settings (customer_id + override_rules_json v2).
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ShieldCheck, ChevronLeft } from "lucide-react";
+import { ShieldCheck, ChevronLeft, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -41,21 +41,31 @@ export default function ScanConditionsPage() {
   const [yearEnd, setYearEnd] = useState(false);
   const [freeGoods, setFreeGoods] = useState(false);
   const [saving, setSaving] = useState(false);
+  const initializedCustomer = useRef<string | null>(null);
 
-  const { data: ws = [] } = useQuery<W[]>({
+  const { data: ws = [], isLoading: wholesalersLoading, isError: wholesalersError } = useQuery<W[]>({
     queryKey: ["scan-wholesalers"],
-    queryFn: async () => (await sb.rpc("scan_list_wholesalers")).data ?? [],
+    queryFn: async () => {
+      const { data, error } = await sb.rpc("scan_list_wholesalers");
+      if (error) throw error;
+      return data ?? [];
+    },
   });
-  const { data: existing } = useQuery({
+  const { data: existing, isLoading: conditionsLoading, isError: conditionsError } = useQuery({
     queryKey: ["scan-conditions", customer.id],
-    queryFn: async () => (await sb.from("pharmacist_wholesaler_settings")
+    queryFn: async () => {
+      const { data, error } = await sb.from("pharmacist_wholesaler_settings")
       .select("id, wholesaler_profile_id, is_supplier_of_pharmacist, override_default_discount_pct, override_rules_json")
-      .eq("customer_id", customer.id)).data ?? [],
+      .eq("customer_id", customer.id);
+      if (error) throw error;
+      return data ?? [];
+    },
   });
 
   useEffect(() => {
-    if (!ws.length || existing === undefined) return;
+    if (!ws.length || existing === undefined || initializedCustomer.current === customer.id) return;
     const next: Record<string, Row> = {};
+    let sharedRules: any = null;
     for (const w of ws) {
       const s = existing.find((e: any) => e.wholesaler_profile_id === w.id);
       const r = s?.override_rules_json ?? {};
@@ -66,12 +76,15 @@ export default function ScanConditionsPage() {
         gammes: Object.fromEntries((r.categories ?? []).map((c: any) => [c.category_id, String(c.pct)])),
         settingId: s?.id, rules: r,
       };
-      if (r.direct_labs) setLabs((r.direct_labs as string[]).join(", "));
-      if (r.year_end_rebate) setYearEnd(true);
-      if (r.free_goods) setFreeGoods(true);
+      if (!sharedRules && s) sharedRules = r;
     }
     setRows(next);
-  }, [ws, existing]);
+    setLabs(Array.isArray(sharedRules?.direct_labs) ? sharedRules.direct_labs.join(", ") : "");
+    setOtherWholesaler(sharedRules?.other_wholesaler ?? "");
+    setYearEnd(!!sharedRules?.year_end_rebate);
+    setFreeGoods(!!sharedRules?.free_goods);
+    initializedCustomer.current = customer.id;
+  }, [customer.id, ws, existing]);
 
   const set = (id: string, patch: Partial<Row>) => setRows((p) => ({ ...p, [id]: { ...p[id], ...patch } }));
   const checked = ws.filter((w) => rows[w.id]?.checked);
@@ -85,22 +98,34 @@ export default function ScanConditionsPage() {
         const r = rows[w.id];
         if (!r) continue;
         if (!r.checked) {
-          if (r.settingId) await sb.from("pharmacist_wholesaler_settings").update({ is_supplier_of_pharmacist: false }).eq("id", r.settingId);
+          if (r.settingId) {
+            const { error } = await sb.from("pharmacist_wholesaler_settings").update({ is_supplier_of_pharmacist: false }).eq("id", r.settingId);
+            if (error) throw error;
+          }
           continue;
         }
-        const general = num(r.pct);
+        const existingGeneral = num(String(r.rules?.general_pct ?? ""));
+        const general = num(r.pct) ?? existingGeneral;
+        const existingCategories = new Map<string, number>(
+          (Array.isArray(r.rules?.categories) ? r.rules.categories : [])
+            .filter((category: any) => category?.category_id && num(String(category.pct)) != null)
+            .map((category: any) => [category.category_id, num(String(category.pct)) as number]),
+        );
+        for (const gamme of SCAN_GAMMES) {
+          const entered = num(r.gammes[gamme.id] ?? "");
+          if (entered != null) existingCategories.set(gamme.id, entered);
+        }
         const rules = {
           ...(r.rules ?? {}),
           version: 2,
           general_pct: general,
-          categories: SCAN_GAMMES.map((g) => ({ category_id: g.id, pct: num(r.gammes[g.id] ?? "") }))
-            .filter((c) => c.pct != null),
+          categories: Array.from(existingCategories, ([category_id, pct]) => ({ category_id, pct })),
           brands: r.rules?.brands ?? [],
-          depot: r.depot.trim() || null,
-          direct_labs: directLabs,
+          depot: r.depot.trim() || r.rules?.depot || null,
+          direct_labs: directLabs.length ? directLabs : (r.rules?.direct_labs ?? []),
           year_end_rebate: yearEnd,
           free_goods: freeGoods,
-          other_wholesaler: otherWholesaler.trim() || null,
+          other_wholesaler: otherWholesaler.trim() || r.rules?.other_wholesaler || null,
         };
         const payload = {
           customer_id: customer.id, user_id: user.id, wholesaler_profile_id: w.id,
@@ -122,6 +147,20 @@ export default function ScanConditionsPage() {
   };
 
   const titles = ["Vos grossistes", "Exceptions par gamme", "Labos en direct", "Avantages en fin d'année"];
+
+  if (wholesalersLoading || conditionsLoading || !Object.keys(rows).length) {
+    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+
+  if (wholesalersError || conditionsError) {
+    return (
+      <div className="px-5 pt-5 space-y-5">
+        <h1 className="text-2xl font-extrabold">Mes conditions</h1>
+        <p className="text-muted-foreground">Impossible de charger vos conditions. Réessayez.</p>
+        <Button variant="outline" className="scan-tap w-full" onClick={() => nav("/")}>Retour au scanner</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="px-5 pt-5 space-y-5">

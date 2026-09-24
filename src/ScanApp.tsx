@@ -12,6 +12,7 @@ import { PriceDisplayProvider } from "@/contexts/PriceDisplayContext";
 import { LazyRouteBoundary } from "@/components/LazyRouteBoundary";
 import { lazyWithRetry } from "@/lib/lazy-with-retry";
 import { Loader2 } from "lucide-react";
+import { SCAN_BASENAME } from "@/config/surface";
 import ScanGate from "@/pages/scan/ScanGate";
 import "@/pages/scan/scan-theme.css";
 
@@ -54,7 +55,7 @@ const ScanApp = () => {
               <PriceDisplayProvider>
                 <TooltipProvider>
                   <Sonner position="top-center" />
-                  <BrowserRouter>
+                  <BrowserRouter basename={SCAN_BASENAME}>
                     <div className="scan-theme min-h-screen bg-background text-foreground">
                       <LazyRouteBoundary>
                         <Suspense fallback={<Loader />}>

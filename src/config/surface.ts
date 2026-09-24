@@ -18,6 +18,17 @@ export type AppSurface = "market" | "care" | "scan";
 const CARE_SURFACE_STORAGE_KEY = "mk_surface_override";
 const SURFACES: AppSurface[] = ["market", "care", "scan"];
 
+/**
+ * Tant que scan.medikong.pro n'est pas actif, le Scan est servi sous
+ * medikong.pro/scan (aucune redirection). Passer VITE_SCAN_DOMAIN_ACTIVE=true
+ * une fois le domaine actif pour réactiver la redirection 301 côté client.
+ */
+export const SCAN_DOMAIN_ACTIVE = (import.meta.env.VITE_SCAN_DOMAIN_ACTIVE as string | undefined) === "true";
+
+function isLegacyScanPath(): boolean {
+  return typeof window !== "undefined" && /^\/scan(\/|$)/.test(window.location.pathname);
+}
+
 function detectSurface(): AppSurface {
   // 1. Override explicite au build (CI / preview dédiée)
   const explicit = (import.meta.env.VITE_SURFACE as string | undefined)?.toLowerCase();
@@ -32,6 +43,9 @@ function detectSurface(): AppSurface {
   if (host.startsWith("care.")) return "care";
   if (host === "scan.medikong.pro" || host === "scan.dev.medikong.pro") return "scan";
   if (host.startsWith("scan.")) return "scan";
+
+  // 2 bis. Domaine scan pas encore actif : servir le Scan sous /scan
+  if (!SCAN_DOMAIN_ACTIVE && isLegacyScanPath()) return "scan";
 
   // 3. Local / preview : ?surface=care|scan mémorisé pour la session d'onglet
   try {
@@ -53,6 +67,8 @@ export const APP_SURFACE: AppSurface = detectSurface();
 export const IS_CARE = APP_SURFACE === "care";
 export const IS_SCAN = APP_SURFACE === "scan";
 export const IS_MARKET = APP_SURFACE === "market";
+/** Préfixe de routes de la surface Scan (`/scan` tant que le domaine dédié est inactif). */
+export const SCAN_BASENAME = IS_SCAN && !SCAN_DOMAIN_ACTIVE && isLegacyScanPath() ? "/scan" : undefined;
 
 /** Origine canonique de la surface Care (production). */
 export const CARE_ORIGIN = "https://care.medikong.pro";

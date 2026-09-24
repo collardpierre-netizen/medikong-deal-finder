@@ -344,6 +344,13 @@
       "when": 1790249655805,
       "tag": "0048_account_invitations_locale",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1790254438992,
+      "tag": "0049_fix_scan_sourcing_week_rank_column",
+      "breakpoints": true
     }
   ]
 }

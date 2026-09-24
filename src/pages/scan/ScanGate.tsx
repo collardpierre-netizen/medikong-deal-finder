@@ -1,3 +1,4 @@
+import { SCAN_BASENAME } from "@/config/surface";
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { NavLink } from "react-router-dom";
@@ -36,7 +37,7 @@ function MagicLinkLogin() {
     setBusy(true);
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
-      options: { emailRedirectTo: window.location.origin, shouldCreateUser: false },
+      options: { emailRedirectTo: window.location.origin + (SCAN_BASENAME ?? ""), shouldCreateUser: false },
     });
     setBusy(false);
     if (error) { toast.error("Envoi impossible. Vérifiez l'adresse e-mail."); return; }

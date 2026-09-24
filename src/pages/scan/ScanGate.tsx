@@ -154,7 +154,7 @@ function BottomBar() {
       {item("/", "Scanner", ScanLine)}
       {item("/ruptures", "Ruptures", PackageX, true)}
       {item("/panier", "Panier", ShoppingCart, false, cartCount)}
-      {item("/moi", "Moi", User, true)}
+      {item("/moi", "Moi", User)}
     </nav>
   );
 }

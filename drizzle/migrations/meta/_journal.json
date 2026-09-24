@@ -288,6 +288,48 @@
       "when": 1790243554392,
       "tag": "0040_security_affiliate_cost_params_admin_only",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1790245239336,
+      "tag": "0041_scan_client_decode_ms",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1790245244489,
+      "tag": "0042_market_price_sources_is_test",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1790245255621,
+      "tag": "0043_scan_photos_policies",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1790245298736,
+      "tag": "0044_scan_submit_sourcing_request",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1790245304412,
+      "tag": "0045_scan_sourcing_week_rank",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1790245317323,
+      "tag": "0046_admin_gtin_proposals_rpcs",
+      "breakpoints": true
     }
   ]
 }

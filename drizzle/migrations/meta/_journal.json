@@ -274,6 +274,13 @@
       "when": 1790240613693,
       "tag": "0038_scan_import_audit_entity_uuid",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1790243540876,
+      "tag": "0039_security_revoke_net_margin_fn_public",
+      "breakpoints": true
     }
   ]
 }

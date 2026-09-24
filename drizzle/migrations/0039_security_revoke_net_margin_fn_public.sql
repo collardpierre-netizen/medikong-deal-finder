@@ -1,0 +1,2 @@
+REVOKE EXECUTE ON FUNCTION public.affiliate_compute_order_net_margin_cents(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.affiliate_compute_order_net_margin_cents(uuid) TO service_role;

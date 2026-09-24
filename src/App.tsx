@@ -222,6 +222,7 @@ const AdminTrackingCampaignsPage = lazyWithRetry(() => import("./pages/admin/Adm
 const TrackedRedirectPage = lazyWithRetry(() => import("./pages/TrackedRedirectPage"), "TrackedRedirectPage");
 const AdminCategoryAliases = lazyWithRetry(() => import("./pages/admin/AdminCategoryAliases"), "AdminCategoryAliases");
 const AdminSourcingPipeline = lazyWithRetry(() => import("./pages/admin/AdminSourcingPipeline"), "AdminSourcingPipeline");
+const AdminScanImports = lazyWithRetry(() => import("./pages/admin/AdminScanImports"), "AdminScanImports");
 const AdminCategoryAnomalies = lazyWithRetry(() => import("./pages/admin/AdminCategoryAnomalies"), "AdminCategoryAnomalies");
 const AdminCategoryAnomalyDetail = lazyWithRetry(() => import("./pages/admin/AdminCategoryAnomalyDetail"), "AdminCategoryAnomalyDetail");
 const AdminQogitaLlmMapping = lazyWithRetry(() => import("./pages/admin/AdminQogitaLlmMapping"), "AdminQogitaLlmMapping");
@@ -654,6 +655,7 @@ const App = () => (
               <Route path="categories/non-mappees" element={<LP><AdminUnmappedCategories /></LP>} />
               <Route path="categories/aliases" element={<LP><AdminCategoryAliases /></LP>} />
               <Route path="sourcing/pipeline" element={<LP><AdminSourcingPipeline /></LP>} />
+              <Route path="scan/imports" element={<LP><AdminScanImports /></LP>} />
               <Route path="categories/anomalies" element={<LP><AdminCategoryAnomalies /></LP>} />
               <Route path="categories/anomalies/:id" element={<LP><AdminCategoryAnomalyDetail /></LP>} />
               <Route path="preview/brand-product-card" element={<LP><AdminBrandProductCardPreview /></LP>} />

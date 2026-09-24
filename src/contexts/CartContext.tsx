@@ -255,7 +255,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         if (undoToast) {
           toast.success("Ajouté ✓", {
             duration: 5000,
-            data: { nonModal: true },
             action: {
               label: "Annuler",
               onClick: () => {

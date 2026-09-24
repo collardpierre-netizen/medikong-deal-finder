@@ -1,3 +1,4 @@
+import { fetchVendorVisibilityRules } from "@/lib/vendor-visibility-fetch";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getPreferredProductImageUrls, isValidProductImage } from "@/lib/image-utils";
@@ -337,7 +338,7 @@ export function useProductOffers(productId: string | undefined) {
           ? supabase.from("offer_price_tiers").select("id, offer_id, tier_index, mov_threshold, mov_currency, price_excl_vat, price_incl_vat, is_active, mov_progress, created_at").in("offer_id", offerIds).order("tier_index", { ascending: true })
           : Promise.resolve({ data: [] }),
         vendorIds.length > 0
-          ? supabase.from("vendor_visibility_rules" as any).select("vendor_id, country_code, customer_type, show_real_name, priority").in("vendor_id", vendorIds)
+          ? fetchVendorVisibilityRules(vendorIds, country, buyerProfileId).then((data) => ({ data }))
           : Promise.resolve({ data: [] }),
       ]);
 

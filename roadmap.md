@@ -12,7 +12,9 @@
 ## LOT 1 Scan
 - [x] Migrations 0032 appliquées + index CNK normalisés créés en CONCURRENTLY
 - [x] scan-resolve déployé (parser GS1, remise marque>catégorie>générale, verdict, journal)
-- [ ] Page /admin/scan/imports (upload, mapping, aperçu, rapport écarts >15 %, propositions EAN)
-- [ ] Test live « 1 appel = 1 ligne » avec un compte pharmacien test activé Scan
-- [ ] Scan DataMatrix réel NAN (boîte physique)
+- [x] Page /admin/scan/imports (upload, mapping, aperçu, rapport écarts >15 % via market_price_history)
+- [ ] Propositions EAN (gtin vide complété par CNK) + écran de validation — à faire
+- [x] Test live « 1 appel = 1 ligne » (Pharmacie Test MediKong)
+- [ ] Scan DataMatrix réel NAN — en attente des contenus bruts de l'utilisateur
+- [x] Sécurité 1 : règles d'affichage vendeurs (fonction serveur)
 - [ ] LOT 2 onboarding : texte « Jamais partagées avec un grossiste, un labo ou une autre pharmacie. » (remplace « Visibles par vous seul »)

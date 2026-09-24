@@ -34631,6 +34631,15 @@ export type Database = {
           variant: string
         }[]
       }
+      admin_import_wholesaler_prices: {
+        Args: {
+          _period: string
+          _rows: Json
+          _source_file?: string
+          _source_id: string
+        }
+        Returns: Json
+      }
       admin_inspect_table_grants: {
         Args: { _schema?: string; _table?: string }
         Returns: {
@@ -37463,6 +37472,17 @@ export type Database = {
           display_code: string
           id: string
           is_active: boolean
+        }[]
+      }
+      resolve_vendor_visibility: {
+        Args: {
+          _country: string
+          _customer_type: string
+          _vendor_ids: string[]
+        }
+        Returns: {
+          show_real_name: boolean
+          vendor_id: string
         }[]
       }
       restock_get_buyer_contact_for_seller: {

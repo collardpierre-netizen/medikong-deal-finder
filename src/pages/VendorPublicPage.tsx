@@ -1,3 +1,4 @@
+import { fetchVendorVisibilityRules } from "@/lib/vendor-visibility-fetch";
 import { Layout } from "@/components/layout/Layout";
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import NotFound from "@/pages/NotFound";
@@ -228,11 +229,8 @@ export default function VendorPublicPage() {
 
   // Fetch visibility rules for this vendor
   const { data: visRules = [] } = useQuery({
-    queryKey: ["vendor-visibility-rules-public", vendor?.id],
-    queryFn: async () => {
-      const { data } = await supabase.from("vendor_visibility_rules" as any).select("*").eq("vendor_id", vendor!.id);
-      return (data || []) as any[];
-    },
+    queryKey: ["vendor-visibility-rules-public", vendor?.id, currentCountry?.code, buyerProfileId],
+    queryFn: async () => fetchVendorVisibilityRules([vendor!.id], currentCountry?.code, buyerProfileId),
     enabled: !!vendor?.id,
     staleTime: 5 * 60 * 1000,
   });

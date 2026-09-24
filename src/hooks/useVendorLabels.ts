@@ -1,3 +1,4 @@
+import { fetchVendorVisibilityRules } from "@/lib/vendor-visibility-fetch";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,7 +38,7 @@ export function useVendorLabels(vendorIds: Array<string | null | undefined>) {
   const { data: buyerProfileId } = useCurrentBuyerProfile();
 
   const { data } = useQuery({
-    queryKey: ["vendor-labels", ids],
+    queryKey: ["vendor-labels", ids, country, buyerProfileId],
     enabled: ids.length > 0,
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
@@ -46,10 +47,7 @@ export function useVendorLabels(vendorIds: Array<string | null | undefined>) {
           .from("vendors_public" as any)
           .select("id, slug, display_code, name, company_name, show_real_name")
           .in("id", ids),
-        supabase
-          .from("vendor_visibility_rules" as any)
-          .select("vendor_id, country_code, customer_type, show_real_name, priority")
-          .in("vendor_id", ids),
+        fetchVendorVisibilityRules(ids, country, buyerProfileId).then((data) => ({ data })),
       ]);
       return {
         vendors: (vRes.data || []) as any[],

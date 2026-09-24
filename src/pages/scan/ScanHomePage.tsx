@@ -186,9 +186,12 @@ function ProductHead({ r }: { r: ScanResult }) {
 
 function VerdictCard({ r, customerId, hasConditions, estimated, onResult }: { r: ScanResult; customerId: string; hasConditions: boolean; estimated: boolean; onResult: (r: ScanResult) => void }) {
   const { addToCart } = useCart();
+  const declaredReference = r.references.find((reference) => reference.source === "DECLARED");
+  const declaredSupplierName = declaredReference?.label.replace(/^Prix déclaré ·\s*/, "") ?? "";
   const [quantity, setQuantity] = useState(1);
-  const [declaredPrice, setDeclaredPrice] = useState("");
-  const [declaredSupplier, setDeclaredSupplier] = useState("");
+  const [declaredPrice, setDeclaredPrice] = useState(declaredReference ? String(declaredReference.net).replace(".", ",") : "");
+  const [declaredSupplier, setDeclaredSupplier] = useState(declaredSupplierName);
+  const [editingDeclaredPrice, setEditingDeclaredPrice] = useState(false);
   const [declaring, setDeclaring] = useState(false);
   const { data: offerMeta } = useQuery({
     queryKey: ["scan-offer-meta", r.best?.offer_id],
@@ -209,6 +212,7 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult }: { r:
   const francoRemaining = Math.max(francoTarget - subtotal, 0);
   const v = VERDICT[r.verdict];
   const gain = r.delta != null && r.delta > 0 ? r.delta : null;
+  const minimumBoxCount = mov != null && r.best?.price ? Math.ceil(mov / r.best.price) : null;
   const add = async () => {
     if (!r.best || !r.product) return;
     addToCart.mutate({
@@ -238,6 +242,7 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult }: { r:
         best_reference_price: Number(data.best_reference_price),
         references: [{ source: "DECLARED", label: `Prix déclaré · ${data.supplier_name}`, discount_pct: 0, net: Number(data.best_reference_price) }],
       });
+      setEditingDeclaredPrice(false);
       toast.success("Prix enregistré pour votre officine");
     } catch (error) {
       console.error("declared price failed", error);
@@ -250,12 +255,19 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult }: { r:
       <div className={`rounded-2xl p-4 ${v.cls}`}>
         <div className="text-lg font-extrabold">{v.title}</div>
         {gain != null && (
-          <div className="text-2xl font-extrabold">{estimated ? "Gain estimé" : "Gain"} : {formatMoney(gain)} / boîte</div>
+          <>
+            <div className="text-2xl font-extrabold">{estimated ? "Gain estimé" : "Gain"} : {formatMoney(gain)} / boîte</div>
+            {minimumBoxCount != null && quantity < minimumBoxCount && mov != null && (
+              <div className="mt-2 text-sm font-medium">
+                Gain réel à partir de {minimumBoxCount} boîtes (minimum de commande {formatMoney(mov)}), ou complétez avec d'autres produits de ce fournisseur.
+              </div>
+            )}
+          </>
         )}
         {r.verdict === "none" && <div className="text-sm opacity-90">Nous n'avons pas encore votre prix d'achat pour ce produit.</div>}
       </div>
 
-      {r.verdict === "none" && (
+      {(r.verdict === "none" || editingDeclaredPrice) && (
         <div className="rounded-xl border bg-card p-4 space-y-3">
           <div className="font-bold">Vous le payez combien ?</div>
           <div>
@@ -285,7 +297,25 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult }: { r:
       {r.best_reference_price != null && (
         <div className="rounded-xl border bg-card p-3 space-y-1 text-sm">
           {r.references.length > 0 ? r.references.map((x) => (
-            <div key={x.source} className="flex justify-between"><span>{x.label}{x.source !== "DECLARED" ? ` (−${String(x.discount_pct).replace(".", ",")} %)` : ""}</span><span>{formatMoney(x.net)}</span></div>
+            <div key={x.source} className="flex items-center justify-between gap-3">
+              <span className="min-w-0 flex-1">{x.label}{x.source !== "DECLARED" ? ` (−${String(x.discount_pct).replace(".", ",")} %)` : ""}</span>
+              <span className="shrink-0">{formatMoney(x.net)}</span>
+              {x.source === "DECLARED" && (
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="h-auto shrink-0 px-0"
+                  onClick={() => {
+                    setDeclaredPrice(String(x.net).replace(".", ","));
+                    setDeclaredSupplier(x.label.replace(/^Prix déclaré ·\s*/, ""));
+                    setEditingDeclaredPrice(true);
+                  }}
+                >
+                  Modifier
+                </Button>
+              )}
+            </div>
           )) : (
             <div className="flex justify-between"><span>Votre meilleur prix actuel</span><span className="font-semibold">{formatMoney(r.best_reference_price)}</span></div>
           )}

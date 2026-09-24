@@ -166,10 +166,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
             saveCartOwner(cid);
           }
         } else {
-          setItems(loadCart());
+          setItems(localStorage.getItem(CART_OWNER_KEY) === "guest" ? loadCart() : []);
         }
       } else {
-        setItems(loadCart());
+        setItems(localStorage.getItem(CART_OWNER_KEY) === "guest" ? loadCart() : []);
       }
       if (!cancelled) setIsLoading(false);
     })();

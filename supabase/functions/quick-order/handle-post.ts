@@ -7,6 +7,9 @@ import {
   reference, NOTIFY_EMAIL, BREVO_API_KEY, type OfferItem,
 } from "./_shared.ts";
 
+const eur = (cents: number) =>
+  (cents / 100).toFixed(2).replace(".", ",");
+
 type IncomingLine = {
   item_id: string;
   qty: number;
@@ -215,7 +218,7 @@ export async function handlePost(req: Request, ip: string): Promise<Response> {
     (l.line_type === "request" ? "[EN PROSPECTION] " : "") +
     `${l.cnk ?? "CNK ?"} · ${l.qty} x ${l.name}` +
     (Number(l.free_units) > 0 ? ` (+${l.free_units} offertes)` : "") +
-    ` — ${(Number(l.unit_price_cents) / 100).toFixed(2)} €/u`
+    ` — ${eur(Number(l.unit_price_cents))} €/u`
   ).join("\n");
 
   const eta = estimatedDelivery(campaign.cutoff_hour ?? 14, campaign.lead_time_days ?? 2);
@@ -232,20 +235,24 @@ export async function handlePost(req: Request, ip: string): Promise<Response> {
           subject: `Bien reçu — votre commande ${ref}`,
           textContent:
             `Bonjour,\n\n` +
+            `Vous venez de passer commande sur commande.medikong.pro.\n` +
+            `Voici le récapitulatif et les coordonnées de paiement.\n\n` +
             `Nous avons bien reçu votre commande ${ref}.\n\n` +
             lineText + `\n\n` +
-            `Total marchandises HTVA : ${(subtotal / 100).toFixed(2)} €\n` +
+            `Total marchandises HTVA : ${eur(subtotal)} €\n` +
             (shipping > 0
-              ? `Frais de livraison : ${(shipping / 100).toFixed(2)} € ` +
-                `(offerts dès ${((campaign.franco_threshold_cents ?? 0) / 100).toFixed(2)} €)\n`
+              ? `Frais de livraison : ${eur(shipping)} € ` +
+                `(offerts dès ${eur(campaign.franco_threshold_cents ?? 0)} €)\n`
               : `Livraison offerte\n`) +
             `\n` +
-            `PAIEMENT PAR VIREMENT\n` +
-            `Montant à virer : ${((subtotal + shipping + vatTotal) / 100).toFixed(2)} € TTC\n` +
+            `------------------------------\n` +
+            `Paiement par virement\n` +
+            `Montant à virer : ${eur(subtotal + shipping + vatTotal)} € TTC\n` +
             `Bénéficiaire : MediKong SRL\n` +
             `IBAN : BE86 7320 7305 0650\n` +
             `BIC : CREGBEBB\n` +
             `Communication : ${ref}\n` +
+            `------------------------------\n` +
             `\n` +
             (campaign.vendor_label ? `${campaign.vendor_label}\n` : "") +
             `Livraison estimée : ${eta.label} — après réception de votre virement` +
@@ -279,7 +286,7 @@ export async function handlePost(req: Request, ip: string): Promise<Response> {
             `${recipient.contact_email} · ${recipient.phone ?? "-"}\n` +
             `Flux : ${recipient.flow} · Client existant : ${recipient.tenant_id ? "OUI" : "non"}\n` +
             `Campagne : ${campaign.code}\n` +
-            `Total HTVA : ${(subtotal / 100).toFixed(2)} €\n` +
+            `Total HTVA : ${eur(subtotal)} €\n` +
             `Franco atteint : ${francoReached ? "oui" : "non"}\n\n` +
             lineText +
             `\n\nCommentaire : ${body.comment ?? "-"}\n` +

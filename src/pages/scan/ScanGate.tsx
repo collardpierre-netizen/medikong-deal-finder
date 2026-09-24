@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/hooks/useCart";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { OTP_LENGTH } from "@/config/otp";
 import { fetchScanAccess, type ScanCustomer } from "@/lib/scanner/api";
 
 const ScanCtx = createContext<ScanCustomer | null>(null);
@@ -171,7 +172,7 @@ export default function ScanGate({ children }: { children: ReactNode }) {
   if (loading || (user && isLoading)) {
     return <Center><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></Center>;
   }
-  if (!user) return <MagicLinkLogin />;
+  if (!user) return <CodeLogin />;
   if (!data?.allowed || !data.customer) {
     return (
       <Center>

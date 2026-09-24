@@ -8299,6 +8299,93 @@ export type Database = {
           },
         ]
       }
+      market_price_history: {
+        Row: {
+          id: number
+          imported_at: string
+          period: string
+          price_excl_vat: number | null
+          price_incl_vat: number | null
+          product_id: string
+          source_id: string
+        }
+        Insert: {
+          id?: never
+          imported_at?: string
+          period: string
+          price_excl_vat?: number | null
+          price_incl_vat?: number | null
+          product_id: string
+          source_id: string
+        }
+        Update: {
+          id?: never
+          imported_at?: string
+          period?: string
+          price_excl_vat?: number | null
+          price_incl_vat?: number | null
+          product_id?: string
+          source_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "market_price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "market_price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "market_price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "market_price_history_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "market_price_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       market_price_observations: {
         Row: {
           created_at: string

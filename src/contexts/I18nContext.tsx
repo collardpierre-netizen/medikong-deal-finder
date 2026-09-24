@@ -573,6 +573,15 @@ const LANG_STORAGE_KEY = "mk_lang";
 export const I18nProvider = ({ children }: { children: ReactNode }) => {
   const [lang, setLangState] = useState<Lang>(() => {
     if (typeof window === "undefined") return "fr";
+    try {
+      const fromUrl = new URLSearchParams(window.location.search).get("lang") as Lang | null;
+      if (fromUrl && ["fr", "nl", "de", "en"].includes(fromUrl)) {
+        window.localStorage.setItem(LANG_STORAGE_KEY, fromUrl);
+        return fromUrl;
+      }
+    } catch {
+      // noop
+    }
     const stored = window.localStorage.getItem(LANG_STORAGE_KEY) as Lang | null;
     return stored && ["fr", "nl", "de", "en"].includes(stored) ? stored : "fr";
   });

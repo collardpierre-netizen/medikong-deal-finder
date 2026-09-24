@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
@@ -78,6 +78,7 @@ export default function AccountInvitationPage() {
     };
   }, [hasToken, token]);
 
+  const autoAcceptedRef = useRef(false);
   const accept = async (payload: { token?: string; joinCode?: string }) => {
     setSubmitting(true);
     setError(null);
@@ -95,6 +96,23 @@ export default function AccountInvitationPage() {
       }, 600);
     } catch (e: any) {
       const msg = e?.message || "Erreur lors de l'acceptation";
+      // Invitation déjà utilisée : si l'utilisateur connecté est déjà membre
+      // actif d'un compte de ce type, on le renvoie simplement dans son espace.
+      if (/already used/i.test(msg) && user) {
+        const kind = invitation?.account_kind;
+        const { data: m } = await supabase
+          .from("account_memberships")
+          .select("account_kind")
+          .eq("user_id", user.id)
+          .eq("status", "active")
+          .limit(10);
+        const match = (m ?? []).find((r: any) => !kind || r.account_kind === kind) as any;
+        if (match) {
+          toast.success("Vous êtes déjà membre de ce compte");
+          navigate(match.account_kind === "vendor" ? "/vendor" : "/compte", { replace: true });
+          return;
+        }
+      }
       setError(msg);
       toast.error(msg);
     } finally {
@@ -106,6 +124,8 @@ export default function AccountInvitationPage() {
   // right after a successful signup that returns a session immediately).
   useEffect(() => {
     if (!hasToken || authLoading || !user || submitting) return;
+    if (autoAcceptedRef.current) return;
+    autoAcceptedRef.current = true;
     accept({ token });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasToken, authLoading, user, token]);

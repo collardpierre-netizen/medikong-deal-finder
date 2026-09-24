@@ -34611,6 +34611,10 @@ export type Database = {
           vendor_type: string
         }[]
       }
+      admin_generate_gtin_proposals: {
+        Args: { _rows: Json; _source_id: string }
+        Returns: number
+      }
       admin_get_order_customer_notes: {
         Args: { _order_id: string }
         Returns: string
@@ -35003,6 +35007,13 @@ export type Database = {
         }[]
       }
       admin_restore_order: { Args: { _order_id: string }; Returns: undefined }
+      admin_review_gtin_proposals: {
+        Args: { _approve: boolean; _ids: string[] }
+        Returns: {
+          id: string
+          outcome: string
+        }[]
+      }
       admin_review_offer_commission: {
         Args: { _decision: string; _offer_id: string; _reason?: string }
         Returns: {
@@ -37910,6 +37921,21 @@ export type Database = {
           alerts_created: number
           lines_overdue: number
         }[]
+      }
+      scan_sourcing_week_rank: {
+        Args: { _scan_event_id: string }
+        Returns: number
+      }
+      scan_submit_sourcing_request: {
+        Args: {
+          _current_price?: number
+          _current_supplier?: string
+          _monthly_qty?: number
+          _name?: string
+          _photo_path?: string
+          _scan_event_id: string
+        }
+        Returns: string
       }
       search_discount_offers: {
         Args: {

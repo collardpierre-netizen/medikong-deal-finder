@@ -358,6 +358,13 @@
       "when": 1790257137172,
       "tag": "0050_scan_pharmacy_declared_product_prices",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1790258669269,
+      "tag": "0051_exclude_test_market_price_sources",
+      "breakpoints": true
     }
   ]
 }

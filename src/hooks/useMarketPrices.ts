@@ -60,7 +60,8 @@ export function useMarketPrices(productId: string | undefined) {
     queryFn: async () => {
       const { data } = await supabase
         .from("market_prices")
-        .select("*, market_price_sources(*)")
+        .select("*, market_price_sources!inner(*)")
+        .eq("market_price_sources.is_test", false)
         .eq("product_id", productId!);
       return data || [];
     },

@@ -26,7 +26,8 @@ export default function RestockAdminPriceReferences() {
 
       let query = supabase
         .from("market_prices")
-        .select("id, ean, cnk, product_name_source, prix_grossiste, prix_pharmacien, prix_public, tva_rate, supplier_name, source:market_price_sources(name)")
+        .select("id, ean, cnk, product_name_source, prix_grossiste, prix_pharmacien, prix_public, tva_rate, supplier_name, source:market_price_sources!inner(name, is_test)")
+        .eq("market_price_sources.is_test", false)
         .order("product_name_source")
         .limit(100);
 
@@ -48,11 +49,12 @@ export default function RestockAdminPriceReferences() {
   const { data: stats } = useQuery({
     queryKey: ["market-prices-stats"],
     queryFn: async () => {
-      const { count: total } = await supabase.from("market_prices").select("id", { count: "exact", head: true });
+      const { count: total } = await supabase.from("market_prices").select("id, market_price_sources!inner(is_test)", { count: "exact", head: true }).eq("market_price_sources.is_test", false);
       const { data: sources } = await supabase
         .from("market_price_sources")
         .select("name, total_products")
         .eq("is_active", true)
+        .eq("is_test", false)
         .order("total_products", { ascending: false });
       return { total: total || 0, sources: sources || [] };
     },

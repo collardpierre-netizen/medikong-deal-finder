@@ -64,7 +64,7 @@ export default function AdminVeillePrix() {
   const { data: sources = [] } = useQuery({
     queryKey: ["market-sources"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("market_price_sources").select("*").order("name");
+      const { data, error } = await supabase.from("market_price_sources").select("*").eq("is_test", false).order("name");
       if (error) throw error;
       return (data || []) as MarketSource[];
     },
@@ -75,7 +75,7 @@ export default function AdminVeillePrix() {
   const { data: unmatchedCount = 0 } = useQuery({
     queryKey: ["market-prices-unmatched-count"],
     queryFn: async () => {
-      const { count } = await supabase.from("market_prices").select("id", { count: "exact", head: true }).eq("is_matched", false);
+      const { count } = await supabase.from("market_prices").select("id, market_price_sources!inner(is_test)", { count: "exact", head: true }).eq("market_price_sources.is_test", false).eq("is_matched", false);
       return count || 0;
     },
     staleTime: 60_000,
@@ -123,7 +123,7 @@ export default function AdminVeillePrix() {
       const unmatched: any[] = [];
       from = 0;
       while (true) {
-        const { data } = await supabase.from("market_prices").select("id, ean, cnk").eq("is_matched", false).range(from, from + 999);
+        const { data } = await supabase.from("market_prices").select("id, ean, cnk, market_price_sources!inner(is_test)").eq("market_price_sources.is_test", false).eq("is_matched", false).range(from, from + 999);
         if (!data || data.length === 0) break;
         unmatched.push(...data);
         if (data.length < 1000) break;
@@ -176,7 +176,8 @@ export default function AdminVeillePrix() {
       while (true) {
         const { data, error } = await supabase
           .from("market_prices")
-          .select("id, product_id, prix_grossiste, prix_pharmacien, prix_public, tva_rate, source_id, stock_source, remise_pct, imported_at, market_price_sources(name, slug, country_code)")
+          .select("id, product_id, prix_grossiste, prix_pharmacien, prix_public, tva_rate, source_id, stock_source, remise_pct, imported_at, market_price_sources!inner(name, slug, country_code, is_test)")
+          .eq("market_price_sources.is_test", false)
           .eq("is_matched", true)
           .not("product_id", "is", null)
           .range(from, from + batchSize - 1);

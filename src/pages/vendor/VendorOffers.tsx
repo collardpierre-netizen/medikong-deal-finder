@@ -195,7 +195,8 @@ function CompetitiveIntel({ productId, currentPrice, vendorId }: { productId: st
       const [{ data: offers }, { data: marketPrices }, { data: externalOffers }] = await Promise.all([
         supabase.from("offers").select("id, price_excl_vat, price_incl_vat, vendor_id, moq, mov_amount, country_code, is_active, vendors(company_name)")
           .eq("product_id", productId).eq("is_active", true).order("price_excl_vat"),
-        supabase.from("market_prices").select("prix_pharmacien, prix_grossiste, prix_public, market_price_sources(name, source_type)")
+        supabase.from("market_prices").select("prix_pharmacien, prix_grossiste, prix_public, market_price_sources!inner(name, source_type, is_test)")
+          .eq("market_price_sources.is_test", false)
           .eq("product_id", productId).limit(10),
         supabase.from("external_offers").select("unit_price, external_vendors(name), stock_status")
           .eq("product_id", productId).eq("is_active", true).order("unit_price").limit(10),

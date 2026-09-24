@@ -33,7 +33,8 @@ export function usePvpVsMarketComparison(productIds: string[]) {
           .in("id", ids),
         supabase
           .from("market_prices")
-          .select("product_id, prix_grossiste, tva_rate")
+          .select("product_id, prix_grossiste, tva_rate, market_price_sources!inner(is_test)")
+          .eq("market_price_sources.is_test", false)
           .in("product_id", ids)
           .not("prix_grossiste", "is", null),
       ]);

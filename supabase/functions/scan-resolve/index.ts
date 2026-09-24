@@ -12,6 +12,7 @@ const Body = z.object({
   symbology: z.enum(["ean13", "datamatrix", "manual_cnk", "other"]),
   session_id: z.string().uuid().optional().nullable(),
   mode: z.enum(["single", "burst"]).default("single"),
+  client_decode_ms: z.number().int().min(0).max(60000).optional().nullable(),
 });
 
 const json = (b: unknown, status = 200) =>
@@ -109,11 +110,13 @@ Deno.serve(async (req) => {
     const active = (settings ?? []).filter((s) => s.is_supplier_of_pharmacist !== false);
     if (active.length) {
       const wpIds = active.map((s) => s.wholesaler_profile_id);
-      const [{ data: wps }, { data: sources }] = await Promise.all([
+      const [{ data: wps }, { data: sourcesAll }] = await Promise.all([
         admin.from("wholesaler_profiles").select("id, slug, display_name, default_discount_pct, display_prices_allowed").in("id", wpIds),
-        admin.from("market_price_sources").select("id, wholesaler_profile_id").in("wholesaler_profile_id", wpIds),
+        admin.from("market_price_sources").select("id, wholesaler_profile_id, is_test").in("wholesaler_profile_id", wpIds),
       ]);
-      const srcIds = (sources ?? []).map((s) => s.id);
+      // Sources de test : visibles uniquement pour les comptes de test
+      const sources = (sourcesAll ?? []).filter((s: any) => !s.is_test || customer.is_test === true);
+      const srcIds = sources.map((s) => s.id);
       const { data: prices } = srcIds.length
         ? await admin.from("market_prices").select("source_id, prix_grossiste, prix_pharmacien, period, imported_at")
             .eq("product_id", product.id).in("source_id", srcIds)

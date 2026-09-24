@@ -90,6 +90,18 @@ export default function AdminScanImports() {
     } finally { setBusy(false); }
   };
 
+  const deleteTestData = async () => {
+    if (!window.confirm("Supprimer tous les prix de cette source de test ?")) return;
+    setBusy(true);
+    const [a, b] = await Promise.all([
+      sb.from("market_price_history").delete().eq("source_id", sourceId),
+      sb.from("market_prices").delete().eq("source_id", sourceId),
+    ]);
+    setBusy(false);
+    if (a.error || b.error) toast.error((a.error ?? b.error).message);
+    else toast.success("Données de test supprimées");
+  };
+
   const exportUnmatched = () => {
     if (!report) return;
     const ws = XLSX.utils.json_to_sheet(report.unmatched);
@@ -186,6 +198,15 @@ export default function AdminScanImports() {
               </TableBody>
             </Table>
           )}
+        </div>
+      )}
+
+      <GtinProposalsPanel sourceId={sourceId} month={month} rows={mapped} />
+
+      {sources.find((s: any) => s.id === sourceId)?.is_test && (
+        <div className="rounded-xl border border-destructive/40 bg-card p-4 flex items-center justify-between gap-3">
+          <span className="text-sm">Source de test : ses prix ne sont visibles que par les comptes de test.</span>
+          <Button variant="destructive" onClick={deleteTestData} disabled={busy}>Supprimer les données de test</Button>
         </div>
       )}
     </div>

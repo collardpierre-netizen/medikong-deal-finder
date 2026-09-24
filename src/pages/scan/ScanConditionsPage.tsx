@@ -65,7 +65,7 @@ export default function ScanConditionsPage() {
   useEffect(() => {
     if (!ws.length || existing === undefined || initializedCustomer.current === customer.id) return;
     const next: Record<string, Row> = {};
-    let sharedRules: any = null;
+    let sharedRules: any = {};
     for (const w of ws) {
       const s = existing.find((e: any) => e.wholesaler_profile_id === w.id);
       const r = s?.override_rules_json ?? {};
@@ -76,7 +76,12 @@ export default function ScanConditionsPage() {
         gammes: Object.fromEntries((r.categories ?? []).map((c: any) => [c.category_id, String(c.pct)])),
         settingId: s?.id, rules: r,
       };
-      if (!sharedRules && s) sharedRules = r;
+      if (s) {
+        if (Array.isArray(r.direct_labs) && r.direct_labs.length) sharedRules.direct_labs = r.direct_labs;
+        if (r.other_wholesaler) sharedRules.other_wholesaler = r.other_wholesaler;
+        if (r.year_end_rebate) sharedRules.year_end_rebate = true;
+        if (r.free_goods) sharedRules.free_goods = true;
+      }
     }
     setRows(next);
     setLabs(Array.isArray(sharedRules?.direct_labs) ? sharedRules.direct_labs.join(", ") : "");
@@ -148,10 +153,6 @@ export default function ScanConditionsPage() {
 
   const titles = ["Vos grossistes", "Exceptions par gamme", "Labos en direct", "Avantages en fin d'année"];
 
-  if (wholesalersLoading || conditionsLoading || !Object.keys(rows).length) {
-    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-  }
-
   if (wholesalersError || conditionsError) {
     return (
       <div className="px-5 pt-5 space-y-5">
@@ -160,6 +161,10 @@ export default function ScanConditionsPage() {
         <Button variant="outline" className="scan-tap w-full" onClick={() => nav("/")}>Retour au scanner</Button>
       </div>
     );
+  }
+
+  if (wholesalersLoading || conditionsLoading || !Object.keys(rows).length) {
+    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
   return (

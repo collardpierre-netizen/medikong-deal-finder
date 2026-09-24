@@ -306,16 +306,17 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult }: { r:
           <span className="text-sm font-medium">Quantité</span>
           <QuantityInput value={quantity} min={1} max={stockQuantity ?? undefined} onChange={setQuantity} />
         </div>
-        {mov != null && (
+        {mov != null && movRemaining > 0 ? (
           <div className="rounded-lg bg-muted p-3 text-sm">
-            <div className="flex justify-between"><span>Minimum de commande</span><span className="font-semibold">{formatMoney(mov)} HTVA</span></div>
-            {movRemaining > 0 && <div className="mt-1 text-muted-foreground">Il manque {formatMoney(movRemaining)} chez ce fournisseur.</div>}
+            <div className="font-medium">Minimum de commande</div>
+            <div className="mt-1 text-muted-foreground">Il manque {formatMoney(movRemaining)} pour atteindre le minimum de commande de ce fournisseur ({formatMoney(mov)} HTVA).</div>
+          </div>
+        ) : (
+          <div className="rounded-lg bg-muted p-3 text-sm">
+            <div className="font-medium">Franco de port</div>
+            <div className="mt-1 text-muted-foreground">{francoRemaining > 0 ? `Plus que ${formatMoney(francoRemaining)} pour la livraison gratuite` : "✓ Livraison gratuite"}</div>
           </div>
         )}
-        <div className="rounded-lg bg-muted p-3 text-sm">
-          <div className="flex justify-between"><span>Franco de port</span><span className="font-semibold">{formatMoney(francoTarget)} HTVA</span></div>
-          <div className="mt-1 text-muted-foreground">{francoRemaining > 0 ? `Il manque ${formatMoney(francoRemaining)} pour la livraison gratuite.` : "Livraison gratuite"}</div>
-        </div>
         <Button className="scan-tap h-12 w-full text-base" onClick={add}><ShoppingCart className="mr-2 h-5 w-5" />Ajouter {quantity} au panier</Button>
       </div>
       {!hasConditions && (

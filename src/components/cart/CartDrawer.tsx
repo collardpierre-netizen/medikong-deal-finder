@@ -4,11 +4,22 @@ import { ShoppingCart, X, Trash2, ArrowRight, Package, Truck } from "lucide-reac
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { QuantityInput } from "@/components/cart/QuantityInput";
+import { useVendorMov } from "@/hooks/useVendorMov";
+import { useMemo } from "react";
 
 export default function CartDrawer() {
   const { items, cartCount, isDrawerOpen, closeDrawer, updateQuantity, removeFromCart } = useCart();
 
   const total = items.reduce((s, i) => s + (i.price_excl_vat || i.product?.price || 0) * i.quantity, 0);
+  const vendorIds = useMemo(() => [...new Set(items.map(i => i.vendor_id).filter(Boolean))] as string[], [items]);
+  const { getMovForVendor } = useVendorMov(vendorIds);
+  const movGaps = vendorIds
+    .map((vid) => {
+      const sub = items.filter(i => i.vendor_id === vid).reduce((s, i) => s + (i.price_excl_vat || i.product?.price || 0) * i.quantity, 0);
+      const mov = getMovForVendor(vid);
+      return { vid, mov, missing: Math.max(mov - sub, 0) };
+    })
+    .filter(g => g.missing > 0);
   const francoTarget = 250;
   const francoProgress = Math.min((total / francoTarget) * 100, 100);
   const francoRemaining = Math.max(francoTarget - total, 0);
@@ -22,7 +33,7 @@ export default function CartDrawer() {
             <div className="flex items-center justify-between px-5 py-4 border-b border-mk-line">
               <div className="flex items-center gap-2"><ShoppingCart size={20} className="text-mk-navy" /><span className="text-lg font-bold text-mk-navy">Mon Panier</span></div>
               <div className="flex items-center gap-3">
-                <span className="text-sm text-mk-sec">{cartCount} article{cartCount > 1 ? "s" : ""}</span>
+                <span className="text-sm text-mk-sec">{items.length} produit{items.length > 1 ? "s" : ""} · {cartCount} pack{cartCount > 1 ? "s" : ""}</span>
                 <button onClick={closeDrawer} className="text-mk-sec hover:text-mk-navy transition-colors"><X size={20} /></button>
               </div>
             </div>
@@ -32,7 +43,7 @@ export default function CartDrawer() {
               ) : (
                 <div className="space-y-0">
                   <div className="bg-mk-alt rounded-t-lg px-4 py-3 border border-mk-line">
-                    <h3 className="font-semibold text-mk-navy text-[15px]">Panier ({items.length} article{items.length > 1 ? "s" : ""})</h3>
+                    <h3 className="font-semibold text-mk-navy text-[15px]">Panier ({items.length} produit{items.length > 1 ? "s" : ""})</h3>
                   </div>
                   <div className="border-x border-mk-line">
                     {items.map((item, i) => {
@@ -44,7 +55,7 @@ export default function CartDrawer() {
                               <p className="text-sm font-medium text-mk-navy leading-tight">{item.product?.name || "Produit"}</p>
                               <p className="text-sm text-mk-navy mt-1">
                                 <span className="font-medium">{formatPrice(unitPrice)}€</span>
-                                <span className="text-mk-ter"> × {item.quantity} = </span>
+                                <span className="text-mk-ter"> / pack × {item.quantity} pack{item.quantity > 1 ? "s" : ""} = </span>
                                 <span className="font-bold">{formatPrice(unitPrice * item.quantity)}€</span>
                               </p>
                               <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
@@ -67,11 +78,24 @@ export default function CartDrawer() {
                     })}
                   </div>
                   <div className="border border-mk-line rounded-b-lg px-4 py-3 bg-white">
-                    <div className="flex items-center gap-2 mb-2"><Package size={14} className="text-mk-navy" /><span className="text-sm font-medium text-mk-navy">Franco de port</span></div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-2">
-                      <motion.div className="h-full rounded-full" style={{ backgroundColor: francoProgress >= 100 ? "#16A34A" : "#F97316" }} initial={{ width: 0 }} animate={{ width: `${francoProgress}%` }} transition={{ duration: 0.6 }} />
-                    </div>
-                    {francoProgress >= 100 ? <p className="text-sm text-mk-green font-medium">✓ Livraison gratuite</p> : <p className="text-sm text-orange-500">Plus que {formatPrice(francoRemaining)}€ pour la livraison gratuite</p>}
+                    {movGaps.length > 0 ? (
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 mb-1"><Package size={14} className="text-mk-navy" /><span className="text-sm font-medium text-mk-navy">Minimum de commande</span></div>
+                        {movGaps.map(g => (
+                          <p key={g.vid} className="text-sm text-orange-600">
+                            Il manque {formatPrice(g.missing)}€ pour atteindre le minimum de commande de ce fournisseur ({formatPrice(g.mov)}€ HTVA).
+                          </p>
+                        ))}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2 mb-2"><Package size={14} className="text-mk-navy" /><span className="text-sm font-medium text-mk-navy">Franco de port</span></div>
+                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-2">
+                          <motion.div className="h-full rounded-full" style={{ backgroundColor: francoProgress >= 100 ? "#16A34A" : "#F97316" }} initial={{ width: 0 }} animate={{ width: `${francoProgress}%` }} transition={{ duration: 0.6 }} />
+                        </div>
+                        {francoProgress >= 100 ? <p className="text-sm text-mk-green font-medium">✓ Livraison gratuite</p> : <p className="text-sm text-orange-500">Plus que {formatPrice(francoRemaining)}€ pour la livraison gratuite</p>}
+                      </>
+                    )}
                   </div>
                 </div>
               )}

@@ -281,6 +281,13 @@
       "when": 1790243540876,
       "tag": "0039_security_revoke_net_margin_fn_public",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1790243554392,
+      "tag": "0040_security_affiliate_cost_params_admin_only",
+      "breakpoints": true
     }
   ]
 }

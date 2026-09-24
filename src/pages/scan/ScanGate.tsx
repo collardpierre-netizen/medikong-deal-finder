@@ -27,13 +27,17 @@ function Brand() {
   );
 }
 
-/** Connexion par lien magique e-mail (session longue, stockée sur l'origine scan). */
-function MagicLinkLogin() {
+/**
+ * Connexion par code e-mail saisi dans l'app (fonctionne dans l'app installée sur l'écran d'accueil,
+ * dont la session est séparée de Safari). Lien magique conservé en option secondaire.
+ */
+function CodeLogin() {
   const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
+  const [step, setStep] = useState<"email" | "code" | "link">("email");
+  const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const send = async (mode: "code" | "link") => {
+    if (!email.trim()) { toast.error("Indiquez votre adresse e-mail."); return; }
     setBusy(true);
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
@@ -41,26 +45,53 @@ function MagicLinkLogin() {
     });
     setBusy(false);
     if (error) { toast.error("Envoi impossible. Vérifiez l'adresse e-mail."); return; }
-    setSent(true);
+    setStep(mode);
+  };
+  const verify = async (value: string) => {
+    if (value.length !== OTP_LENGTH || busy) return;
+    setBusy(true);
+    const { error } = await supabase.auth.verifyOtp({ email: email.trim(), token: value, type: "email" });
+    setBusy(false);
+    if (error) { toast.error("Code invalide ou expiré."); setCode(""); }
   };
   return (
     <Center>
       <Brand />
-      {sent ? (
+      {step === "email" && (
+        <form onSubmit={(e) => { e.preventDefault(); send("code"); }} className="space-y-4">
+          <p className="text-muted-foreground">Entrez votre e-mail, nous vous envoyons un code à {OTP_LENGTH} chiffres.</p>
+          <Input type="email" required autoComplete="email" placeholder="vous@pharmacie.be" value={email}
+            onChange={(e) => setEmail(e.target.value)} className="h-12 text-base" />
+          <Button type="submit" className="scan-tap h-12 w-full text-base" disabled={busy}>
+            {busy ? "Envoi…" : "Recevoir le code"}
+          </Button>
+          <Button type="button" variant="link" className="w-full" disabled={busy} onClick={() => send("link")}>
+            ou recevoir un lien
+          </Button>
+        </form>
+      )}
+      {step === "code" && (
+        <form onSubmit={(e) => { e.preventDefault(); verify(code); }} className="space-y-4">
+          <p className="text-muted-foreground">Code envoyé à {email}. Saisissez-le ici.</p>
+          <Input inputMode="numeric" autoComplete="one-time-code" autoFocus maxLength={OTP_LENGTH}
+            value={code} placeholder={"•".repeat(OTP_LENGTH)}
+            onChange={(e) => { const v = e.target.value.replace(/\D/g, "").slice(0, OTP_LENGTH); setCode(v); if (v.length === OTP_LENGTH) verify(v); }}
+            className="h-14 text-center text-2xl tracking-[0.4em]" aria-label="Code reçu par e-mail" />
+          <Button type="submit" className="scan-tap h-12 w-full text-base" disabled={busy || code.length !== OTP_LENGTH}>
+            {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : "Se connecter"}
+          </Button>
+          <Button type="button" variant="link" className="w-full" onClick={() => { setStep("email"); setCode(""); }}>
+            Changer d'e-mail ou renvoyer
+          </Button>
+        </form>
+      )}
+      {step === "link" && (
         <div className="rounded-xl border bg-card p-5 space-y-2">
           <Mail className="h-6 w-6 text-scan-emerald" />
           <p className="font-semibold">Vérifiez votre boîte mail</p>
           <p className="text-sm text-muted-foreground">Un lien de connexion a été envoyé à {email}. Ouvrez-le sur ce téléphone.</p>
+          <Button type="button" variant="link" className="px-0" onClick={() => setStep("code")}>Saisir le code à la place</Button>
         </div>
-      ) : (
-        <form onSubmit={submit} className="space-y-4">
-          <p className="text-muted-foreground">Recevez un lien de connexion par e-mail.</p>
-          <Input type="email" required autoComplete="email" placeholder="vous@pharmacie.be" value={email}
-            onChange={(e) => setEmail(e.target.value)} className="h-12 text-base" />
-          <Button type="submit" className="scan-tap h-12 w-full text-base" disabled={busy}>
-            {busy ? "Envoi…" : "Recevoir le lien"}
-          </Button>
-        </form>
       )}
     </Center>
   );

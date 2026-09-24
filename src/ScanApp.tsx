@@ -30,7 +30,7 @@ function useScanManifest() {
   useEffect(() => {
     let link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
     if (!link) { link = document.createElement("link"); link.rel = "manifest"; document.head.appendChild(link); }
-    link.href = "/manifest-scan.json";
+    link.href = SCAN_BASENAME ? "/manifest-scan-legacy.json" : "/manifest-scan.json";
     document.documentElement.classList.add("scan-surface");
     const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
     meta?.setAttribute("content", "#1E293B");

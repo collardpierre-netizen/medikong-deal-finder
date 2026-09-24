@@ -1,0 +1,1 @@
+ALTER TABLE public.scan_events ADD COLUMN IF NOT EXISTS client_decode_ms integer;

@@ -1,0 +1,1 @@
+ALTER TABLE public.market_price_sources ADD COLUMN IF NOT EXISTS is_test boolean NOT NULL DEFAULT false;

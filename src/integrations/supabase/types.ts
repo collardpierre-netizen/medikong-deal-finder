@@ -8689,6 +8689,7 @@ export type Database = {
           file_format: string | null
           id: string
           is_active: boolean | null
+          is_test: boolean
           last_import_at: string | null
           name: string
           slug: string
@@ -8702,6 +8703,7 @@ export type Database = {
           file_format?: string | null
           id?: string
           is_active?: boolean | null
+          is_test?: boolean
           last_import_at?: string | null
           name: string
           slug: string
@@ -8715,6 +8717,7 @@ export type Database = {
           file_format?: string | null
           id?: string
           is_active?: boolean | null
+          is_test?: boolean
           last_import_at?: string | null
           name?: string
           slug?: string
@@ -20861,6 +20864,7 @@ export type Database = {
           best_offer_id: string | null
           best_price_excl_vat: number | null
           candidate_product_ids: string[]
+          client_decode_ms: number | null
           cnk: string | null
           customer_id: string
           delta_excl_vat: number | null
@@ -20887,6 +20891,7 @@ export type Database = {
           best_offer_id?: string | null
           best_price_excl_vat?: number | null
           candidate_product_ids?: string[]
+          client_decode_ms?: number | null
           cnk?: string | null
           customer_id: string
           delta_excl_vat?: number | null
@@ -20913,6 +20918,7 @@ export type Database = {
           best_offer_id?: string | null
           best_price_excl_vat?: number | null
           candidate_product_ids?: string[]
+          client_decode_ms?: number | null
           cnk?: string | null
           customer_id?: string
           delta_excl_vat?: number | null

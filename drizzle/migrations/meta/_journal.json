@@ -288,6 +288,27 @@
       "when": 1790243554392,
       "tag": "0040_security_affiliate_cost_params_admin_only",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1790245239336,
+      "tag": "0041_scan_client_decode_ms",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1790245244489,
+      "tag": "0042_market_price_sources_is_test",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1790245255621,
+      "tag": "0043_scan_photos_policies",
+      "breakpoints": true
     }
   ]
 }

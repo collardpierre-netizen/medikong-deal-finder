@@ -716,21 +716,21 @@ function OfferRow({
           {isBest && showMovHint && !outOfStock && (
             movReached ? (
               <div className="text-[10px] font-semibold text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1 w-full text-right tabular-nums">
-                ✓ MOV atteint ({formatEur(effectiveMov)} € HT)
+                ✓ Minimum de commande atteint ({formatEur(effectiveMov)} € HT)
               </div>
             ) : (
               <div className="flex flex-col items-end gap-1 w-full">
                 <span className="text-[10px] text-orange-700 tabular-nums text-right">
-                  Il manque <span className="font-semibold">{formatEur(movMissing)} €</span> pour atteindre le MOV vendor
+                  Il manque <span className="font-semibold">{formatEur(movMissing)} €</span> pour atteindre le minimum de commande de ce fournisseur ({formatEur(effectiveMov)} €)
                 </span>
                 <button
                   type="button"
                   onClick={() => setQty(Math.min(maxQty, Math.max(step, minQtyForMov)))}
                   disabled={minQtyForMov > maxQty}
                   className="text-[10px] font-medium text-primary border border-primary/40 hover:bg-primary/5 disabled:opacity-50 disabled:cursor-not-allowed rounded px-2 py-1 tabular-nums"
-                  title={minQtyForMov > maxQty ? "Stock insuffisant pour atteindre le MOV" : undefined}
+                  title={minQtyForMov > maxQty ? "Stock insuffisant pour atteindre le minimum de commande" : undefined}
                 >
-                  Atteindre le MOV ({minQtyForMov.toLocaleString("fr-FR")} {sellingUnitLabelShort} · {formatEur(minQtyForMov * (offer.unitPriceEur || basePackPrice))} €)
+                  Atteindre le minimum ({minQtyForMov.toLocaleString("fr-FR")} {sellingUnitLabelShort} · {formatEur(minQtyForMov * (offer.unitPriceEur || basePackPrice))} €)
                 </button>
               </div>
             )
@@ -899,21 +899,21 @@ function OfferRow({
         {isBest && showMovHint && !outOfStock && (
           movReached ? (
             <div className="text-[11px] font-semibold text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1 w-full text-right tabular-nums">
-              ✓ MOV atteint ({formatEur(effectiveMov)} € HT)
+              ✓ Minimum de commande atteint ({formatEur(effectiveMov)} € HT)
             </div>
           ) : (
             <div className="flex flex-col items-end gap-1 w-full">
               <span className="text-[11px] text-orange-700 tabular-nums text-right">
-                Il manque <span className="font-semibold">{formatEur(movMissing)} €</span> pour atteindre le MOV vendor
+                Il manque <span className="font-semibold">{formatEur(movMissing)} €</span> pour atteindre le minimum de commande de ce fournisseur ({formatEur(effectiveMov)} €)
               </span>
               <button
                 type="button"
                 onClick={() => setQty(Math.min(maxQty, Math.max(step, minQtyForMov)))}
                 disabled={minQtyForMov > maxQty}
                 className="text-[11px] font-medium text-primary border border-primary/40 hover:bg-primary/5 disabled:opacity-50 disabled:cursor-not-allowed rounded px-2 py-1 tabular-nums"
-                title={minQtyForMov > maxQty ? "Stock insuffisant pour atteindre le MOV" : undefined}
+                title={minQtyForMov > maxQty ? "Stock insuffisant pour atteindre le minimum de commande" : undefined}
               >
-                Atteindre le MOV ({minQtyForMov.toLocaleString("fr-FR")} {sellingUnitLabelShort} · {formatEur(minQtyForMov * (offer.unitPriceEur || basePackPrice))} €)
+                Atteindre le minimum ({minQtyForMov.toLocaleString("fr-FR")} {sellingUnitLabelShort} · {formatEur(minQtyForMov * (offer.unitPriceEur || basePackPrice))} €)
               </button>
             </div>
           )

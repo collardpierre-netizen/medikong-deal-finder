@@ -190,9 +190,19 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult }: { r:
   const [declaredPrice, setDeclaredPrice] = useState("");
   const [declaredSupplier, setDeclaredSupplier] = useState("");
   const [declaring, setDeclaring] = useState(false);
-  const vendorIds = r.best?.vendor_id ? [r.best.vendor_id] : [];
+  const { data: offerMeta } = useQuery({
+    queryKey: ["scan-offer-meta", r.best?.offer_id],
+    queryFn: async () => {
+      const { data } = await sb.from("offers").select("vendor_id, stock_quantity").eq("id", r.best!.offer_id).maybeSingle();
+      return data as { vendor_id: string; stock_quantity: number | null } | null;
+    },
+    enabled: !!r.best?.offer_id,
+  });
+  const vendorId = r.best?.vendor_id ?? offerMeta?.vendor_id;
+  const stockQuantity = r.best?.stock_quantity ?? offerMeta?.stock_quantity ?? null;
+  const vendorIds = vendorId ? [vendorId] : [];
   const { getMovForVendor } = useVendorMov(vendorIds);
-  const mov = r.best?.vendor_id ? getMovForVendor(r.best.vendor_id) : null;
+  const mov = vendorId ? getMovForVendor(vendorId) : null;
   const subtotal = (r.best?.price ?? 0) * quantity;
   const movRemaining = mov != null ? Math.max(mov - subtotal, 0) : 0;
   const francoTarget = r.best?.franco ?? 250;
@@ -202,7 +212,7 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult }: { r:
   const add = async () => {
     if (!r.best || !r.product) return;
     addToCart.mutate({
-      offerId: r.best.offer_id, productId: r.product.id, quantity, maxQuantity: r.best.stock_quantity ?? undefined, vendorId: r.best.vendor_id, priceExclVat: r.best.price, deliveryDays: r.best.lead_time_days,
+      offerId: r.best.offer_id, productId: r.product.id, quantity, maxQuantity: stockQuantity ?? undefined, vendorId, priceExclVat: r.best.price, deliveryDays: r.best.lead_time_days,
       productData: { id: r.product.id, name: r.product.name, brand: "", slug: "", price: r.best.price, imageUrl: r.product.image ?? undefined },
     });
     const { error } = await sb.from("scan_cart_attributions").insert({ customer_id: customerId, offer_id: r.best.offer_id, scan_event_id: r.scan_event_id });
@@ -275,7 +285,7 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult }: { r:
       {r.best_reference_price != null && (
         <div className="rounded-xl border bg-card p-3 space-y-1 text-sm">
           {r.references.length > 0 ? r.references.map((x) => (
-            <div key={x.source} className="flex justify-between"><span>{x.label} (−{String(x.discount_pct).replace(".", ",")} %)</span><span>{formatMoney(x.net)}</span></div>
+            <div key={x.source} className="flex justify-between"><span>{x.label}{x.source !== "DECLARED" ? ` (−${String(x.discount_pct).replace(".", ",")} %)` : ""}</span><span>{formatMoney(x.net)}</span></div>
           )) : (
             <div className="flex justify-between"><span>Votre meilleur prix actuel</span><span className="font-semibold">{formatMoney(r.best_reference_price)}</span></div>
           )}
@@ -294,7 +304,7 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult }: { r:
         </div>
         <div className="flex items-center justify-between gap-3 border-t pt-3">
           <span className="text-sm font-medium">Quantité</span>
-          <QuantityInput value={quantity} min={1} max={r.best!.stock_quantity ?? undefined} onChange={setQuantity} />
+          <QuantityInput value={quantity} min={1} max={stockQuantity ?? undefined} onChange={setQuantity} />
         </div>
         {mov != null && (
           <div className="rounded-lg bg-muted p-3 text-sm">

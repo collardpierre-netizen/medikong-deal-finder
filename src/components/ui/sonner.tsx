@@ -12,7 +12,7 @@ type ToasterProps = React.ComponentProps<typeof Sonner>;
  */
 const ToastBackdrop = () => {
   const { toasts } = useSonner();
-  const active = !!toasts && toasts.length > 0;
+  const active = !!toasts && toasts.some((item) => !item.action);
   const trapRef = useToastFocusTrap(active);
   useScrollLock(active);
 

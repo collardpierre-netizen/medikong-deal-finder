@@ -24,6 +24,7 @@ export interface CartItem {
 }
 
 const CART_KEY = "medikong_cart";
+const CART_OWNER_KEY = "medikong_cart_owner";
 
 function loadCart(): CartItem[] {
   try {
@@ -35,6 +36,11 @@ function saveCartLocal(items: CartItem[]) {
   localStorage.setItem(CART_KEY, JSON.stringify(items));
 }
 
+function saveCartOwner(owner: string | null) {
+  if (owner) localStorage.setItem(CART_OWNER_KEY, owner);
+  else localStorage.removeItem(CART_OWNER_KEY);
+}
+
 interface CartContextType {
   items: CartItem[];
   isLoading: boolean;
@@ -43,7 +49,7 @@ interface CartContextType {
   openDrawer: () => void;
   closeDrawer: () => void;
   addToCart: {
-    mutate: (args: { offerId: string; productId: string; quantity?: number; maxQuantity?: number; productData?: CartItem["product"]; vendorId?: string; priceExclVat?: number; priceInclVat?: number; deliveryDays?: number | null }) => void;
+    mutate: (args: { offerId: string; productId: string; quantity?: number; maxQuantity?: number; productData?: CartItem["product"]; vendorId?: string; priceExclVat?: number; priceInclVat?: number; deliveryDays?: number | null; openDrawer?: boolean; undoToast?: boolean }) => void;
     isPending: boolean;
   };
   updateQuantity: {
@@ -143,21 +149,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
           customerIdRef.current = cid;
           const dbItems = await loadCartFromDB(cid);
           const localItems = loadCart();
-          // Merge: if local has items not in DB, add them
-          if (localItems.length > 0 && dbItems.length === 0) {
+          const localOwner = localStorage.getItem(CART_OWNER_KEY);
+          // Only merge a cart explicitly created while signed out. An old authenticated
+          // cache must never recreate a cart that was emptied in the database.
+          if (localOwner === "guest" && localItems.length > 0 && dbItems.length === 0) {
             setItems(localItems);
+            saveCartOwner(cid);
             syncCartToDB(localItems, cid).catch(console.error);
           } else if (dbItems.length > 0) {
             setItems(dbItems);
             saveCartLocal(dbItems);
+            saveCartOwner(cid);
           } else {
             setItems([]);
+            saveCartLocal([]);
+            saveCartOwner(cid);
           }
         } else {
-          setItems(loadCart());
+          setItems(localStorage.getItem(CART_OWNER_KEY) === "guest" ? loadCart() : []);
         }
       } else {
-        setItems(loadCart());
+        setItems(localStorage.getItem(CART_OWNER_KEY) === "guest" ? loadCart() : []);
       }
       if (!cancelled) setIsLoading(false);
     })();
@@ -178,8 +190,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
           customerIdRef.current = cid;
           const localItems = loadCart();
-          if (localItems.length > 0) {
+          const localOwner = localStorage.getItem(CART_OWNER_KEY);
+          if (localOwner === "guest" && localItems.length > 0) {
             await syncCartToDB(localItems, cid);
+            saveCartOwner(cid);
+          } else {
+            const dbItems = await loadCartFromDB(cid);
+            if (cancelled) return;
+            setItems(dbItems);
+            saveCartLocal(dbItems);
+            saveCartOwner(cid);
           }
         })().catch(console.error);
       }, 0);
@@ -190,6 +210,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         handleSignedIn(session.user.id);
       } else if (event === "SIGNED_OUT") {
         customerIdRef.current = null;
+        saveCartOwner("guest");
       }
     });
 
@@ -201,14 +222,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const persistItems = useCallback((next: CartItem[]) => {
     saveCartLocal(next);
+    saveCartOwner(customerIdRef.current ?? "guest");
     debouncedSync(next);
   }, [debouncedSync]);
 
   const addToCart = useMemo(() => ({
-    mutate: ({ offerId, productId, quantity = 1, maxQuantity, productData, vendorId, priceExclVat, priceInclVat, deliveryDays }: {
-      offerId: string; productId: string; quantity?: number; maxQuantity?: number; productData?: CartItem["product"]; vendorId?: string; priceExclVat?: number; priceInclVat?: number; deliveryDays?: number | null;
+    mutate: ({ offerId, productId, quantity = 1, maxQuantity, productData, vendorId, priceExclVat, priceInclVat, deliveryDays, openDrawer = true, undoToast = false }: {
+      offerId: string; productId: string; quantity?: number; maxQuantity?: number; productData?: CartItem["product"]; vendorId?: string; priceExclVat?: number; priceInclVat?: number; deliveryDays?: number | null; openDrawer?: boolean; undoToast?: boolean;
     }) => {
       setItems(prev => {
+        const previousItems = prev;
         const existing = prev.find(i => i.offer_id === offerId);
         const safeMax = typeof maxQuantity === "number" && maxQuantity > 0 ? maxQuantity : undefined;
         let next: CartItem[];
@@ -229,9 +252,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
 
         persistItems(next);
+        if (undoToast) {
+          toast.success("Ajouté ✓", {
+            duration: 5000,
+            action: {
+              label: "Annuler",
+              onClick: () => {
+                setItems(previousItems);
+                persistItems(previousItems);
+              },
+            },
+          });
+        }
         return next;
       });
-      setIsDrawerOpen(true);
+      if (openDrawer) setIsDrawerOpen(true);
       // Vérification just-in-time du prix fournisseur dès l'ajout au panier :
       // best-effort, silencieux (le garde-fou checkout reste seul juge).
       void (async () => {

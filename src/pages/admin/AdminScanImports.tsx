@@ -43,7 +43,7 @@ export default function AdminScanImports() {
   const { data: sources = [] } = useQuery({
     queryKey: ["admin-market-price-sources"],
     queryFn: async () => {
-      const { data } = await sb.from("market_price_sources").select("id, name").order("name");
+      const { data } = await sb.from("market_price_sources").select("id, name, is_test").order("name");
       return data ?? [];
     },
   });

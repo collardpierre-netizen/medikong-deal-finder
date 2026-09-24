@@ -226,7 +226,7 @@ export async function handlePost(req: Request, ip: string): Promise<Response> {
         method: "POST",
         headers: { "api-key": BREVO_API_KEY, "content-type": "application/json" },
         body: JSON.stringify({
-          sender: { name: "MediKong", email: "commandes@medikong.pro" },
+          sender: { name: "MediKong", email: "pcoll@medikong.pro" },
           replyTo: { email: NOTIFY_EMAIL || "commandes@medikong.pro" },
           to: [{ email: recipient.contact_email, name: recipient.pharmacy_name }],
           subject: `Bien reçu — votre commande ${ref}`,
@@ -239,8 +239,16 @@ export async function handlePost(req: Request, ip: string): Promise<Response> {
               ? `Frais de livraison : ${(shipping / 100).toFixed(2)} € ` +
                 `(offerts dès ${((campaign.franco_threshold_cents ?? 0) / 100).toFixed(2)} €)\n`
               : `Livraison offerte\n`) +
+            `\n` +
+            `PAIEMENT PAR VIREMENT\n` +
+            `Montant à virer : ${((subtotal + shipping + vatTotal) / 100).toFixed(2)} € TTC\n` +
+            `Bénéficiaire : MediKong SRL\n` +
+            `IBAN : BE86 7320 7305 0650\n` +
+            `BIC : CREGBEBB\n` +
+            `Communication : ${ref}\n` +
+            `\n` +
             (campaign.vendor_label ? `${campaign.vendor_label}\n` : "") +
-            `Livraison estimée : ${eta.label}` +
+            `Livraison estimée : ${eta.label} — après réception de votre virement` +
             (campaign.carrier_label ? ` — ${campaign.carrier_label}` : "") + `\n` +
             (lines.some((l) => l.line_type === "request")
               ? `Les références en prospection ne sont pas couvertes par cette date : ` +
@@ -254,7 +262,7 @@ export async function handlePost(req: Request, ip: string): Promise<Response> {
       await db.from("qo_orders")
         .update({ receipt_sent_at: new Date().toISOString() })
         .eq("id", order.id);
-    } catch (_) { /* silencieux */ }
+    } catch (e) { console.error("[quick-order] Brevo accusé pharmacien échoué:", (e as Error)?.message ?? String(e), (e as { body?: unknown })?.body ?? null); }
   }
 
   if (BREVO_API_KEY && NOTIFY_EMAIL) {
@@ -263,7 +271,7 @@ export async function handlePost(req: Request, ip: string): Promise<Response> {
         method: "POST",
         headers: { "api-key": BREVO_API_KEY, "content-type": "application/json" },
         body: JSON.stringify({
-          sender: { name: "MediKong", email: "no-reply@medikong.pro" },
+          sender: { name: "MediKong", email: "pcoll@medikong.pro" },
           to: [{ email: NOTIFY_EMAIL }],
           subject: `Nouvelle commande ${ref} — ${recipient.pharmacy_name}`,
           textContent:
@@ -279,7 +287,7 @@ export async function handlePost(req: Request, ip: string): Promise<Response> {
             `Puis envoyer la confirmation et créer le compte.`,
         }),
       });
-    } catch (_) { /* silencieux */ }
+    } catch (e) { console.error("[quick-order] Brevo notification interne échouée:", (e as Error)?.message ?? String(e), (e as { body?: unknown })?.body ?? null); }
   }
 
   return json({

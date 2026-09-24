@@ -155,6 +155,17 @@ Deno.serve(async (req) => {
   }).select("id").single();
   if (evErr) return json({ error: "log_failed", detail: evErr.message }, 500);
 
+  // Produit inconnu → item de sourcing dédoublonné (GTIN puis CNK), visible dans /admin/sourcing/pipeline
+  if (result === "unknown" && (code.gtin || code.cnk)) {
+    const { error: sErr } = await admin.rpc("upsert_sourcing_item", {
+      _dedupe_key: code.gtin ? `gtin:${code.gtin}` : `cnk:${code.cnk}`,
+      _product_id: null, _brand_id: null, _gtin: code.gtin ?? null, _cnk: code.cnk ?? null,
+      _raw_name: null, _raw_brand: null, _status: "unmatched", _user_id: userId,
+      _quantity: null, _buyer_price_cents: null,
+    });
+    if (sErr) console.error("sourcing upsert failed", sErr.message);
+  }
+
   const vendorLabel = best
     ? best.vendor_show_real_name_resolved
       ? sanitizeVendorLabel(best.vendor_company_name || best.vendor_name, best.vendor_display_code)

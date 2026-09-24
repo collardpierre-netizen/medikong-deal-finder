@@ -337,6 +337,13 @@
       "when": 1790246165479,
       "tag": "0047_pws_customer_conditions",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1790249655805,
+      "tag": "0048_account_invitations_locale",
+      "breakpoints": true
     }
   ]
 }

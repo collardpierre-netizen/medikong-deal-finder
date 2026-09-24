@@ -11,36 +11,85 @@ interface Props {
   invitationUrl?: string
   role?: string
   accountKind?: string
+  locale?: string
 }
 
-const AccountInvitationEmail = ({ invitationUrl, role, accountKind }: Props) => {
-  const kindLabel = accountKind === 'vendor' ? 'vendeur' : accountKind === 'buyer' ? 'acheteur' : ''
-  const roleLabel = role === 'admin' ? 'Administrateur' : 'Membre'
+type L = 'fr' | 'nl' | 'de' | 'en'
+const pick = (l?: string): L => (l === 'nl' || l === 'de' || l === 'en' ? l : 'fr')
+
+const COPY: Record<L, {
+  kind: Record<string, string>; admin: string; member: string
+  preview: (k: string) => string; title: string; intro: (k: string, r: string) => React.ReactNode
+  how: string; cta: string; fallback: string; team: string; subject: string
+}> = {
+  fr: {
+    kind: { vendor: 'vendeur', buyer: 'acheteur' }, admin: 'Administrateur', member: 'Membre',
+    preview: (k) => `Vous êtes invité·e à rejoindre un compte ${k} sur ${SITE_NAME}`,
+    title: `Vous êtes invité·e à rejoindre ${SITE_NAME}`,
+    intro: (k, r) => <>Vous avez été invité·e à rejoindre un compte {k} sur <strong>{SITE_NAME}</strong> avec le rôle <strong>{r}</strong>.</>,
+    how: "Cliquez sur le bouton ci-dessous pour accepter l'invitation. Connectez-vous (ou créez un compte) avec l'email exact qui a reçu ce message.",
+    cta: "Accepter l'invitation",
+    fallback: 'Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :',
+    team: `L'équipe ${SITE_NAME}`,
+    subject: `Invitation à rejoindre un compte sur ${SITE_NAME}`,
+  },
+  nl: {
+    kind: { vendor: 'verkopers', buyer: 'kopers' }, admin: 'Beheerder', member: 'Lid',
+    preview: (k) => `U bent uitgenodigd om lid te worden van een ${k}account op ${SITE_NAME}`,
+    title: `U bent uitgenodigd voor ${SITE_NAME}`,
+    intro: (k, r) => <>U bent uitgenodigd om lid te worden van een {k}account op <strong>{SITE_NAME}</strong> met de rol <strong>{r}</strong>.</>,
+    how: 'Klik op de knop hieronder om de uitnodiging te aanvaarden. Meld u aan (of maak een account aan) met exact het e-mailadres dat dit bericht ontving.',
+    cta: 'Uitnodiging aanvaarden',
+    fallback: 'Werkt de knop niet? Kopieer deze link in uw browser:',
+    team: `Het ${SITE_NAME}-team`,
+    subject: `Uitnodiging om lid te worden van een account op ${SITE_NAME}`,
+  },
+  de: {
+    kind: { vendor: 'Verkäufer', buyer: 'Käufer' }, admin: 'Administrator', member: 'Mitglied',
+    preview: (k) => `Sie wurden eingeladen, einem ${k}konto auf ${SITE_NAME} beizutreten`,
+    title: `Sie wurden zu ${SITE_NAME} eingeladen`,
+    intro: (k, r) => <>Sie wurden eingeladen, einem {k}konto auf <strong>{SITE_NAME}</strong> mit der Rolle <strong>{r}</strong> beizutreten.</>,
+    how: 'Klicken Sie auf die Schaltfläche unten, um die Einladung anzunehmen. Melden Sie sich mit genau der E-Mail-Adresse an (oder registrieren Sie sich), die diese Nachricht erhalten hat.',
+    cta: 'Einladung annehmen',
+    fallback: 'Falls die Schaltfläche nicht funktioniert, kopieren Sie diesen Link in Ihren Browser:',
+    team: `Ihr ${SITE_NAME}-Team`,
+    subject: `Einladung zu einem Konto auf ${SITE_NAME}`,
+  },
+  en: {
+    kind: { vendor: 'seller', buyer: 'buyer' }, admin: 'Administrator', member: 'Member',
+    preview: (k) => `You are invited to join a ${k} account on ${SITE_NAME}`,
+    title: `You are invited to join ${SITE_NAME}`,
+    intro: (k, r) => <>You have been invited to join a {k} account on <strong>{SITE_NAME}</strong> with the role <strong>{r}</strong>.</>,
+    how: 'Click the button below to accept the invitation. Sign in (or create an account) with the exact email address that received this message.',
+    cta: 'Accept invitation',
+    fallback: "If the button doesn't work, copy this link into your browser:",
+    team: `The ${SITE_NAME} team`,
+    subject: `Invitation to join an account on ${SITE_NAME}`,
+  },
+}
+
+const AccountInvitationEmail = ({ invitationUrl, role, accountKind, locale }: Props) => {
+  const l = pick(locale)
+  const c = COPY[l]
+  const kindLabel = c.kind[accountKind ?? ''] ?? ''
+  const roleLabel = role === 'admin' ? c.admin : c.member
   return (
-    <Html lang="fr" dir="ltr">
+    <Html lang={l} dir="ltr">
       <Head />
-      <Preview>Vous êtes invité·e à rejoindre un compte {kindLabel} sur {SITE_NAME}</Preview>
+      <Preview>{c.preview(kindLabel)}</Preview>
       <Body style={main}>
         <Container style={container}>
           <Img src={LOGO_URL} width="180" alt="MediKong" style={{ marginBottom: '24px' }} />
-          <Heading style={h1}>Vous êtes invité·e à rejoindre {SITE_NAME}</Heading>
-          <Text style={text}>
-            Vous avez été invité·e à rejoindre un compte {kindLabel} sur <strong>{SITE_NAME}</strong>
-            {' '}avec le rôle <strong>{roleLabel}</strong>.
-          </Text>
-          <Text style={text}>
-            Cliquez sur le bouton ci-dessous pour accepter l'invitation. Connectez-vous (ou créez un compte) avec
-            l'email exact qui a reçu ce message.
-          </Text>
+          <Heading style={h1}>{c.title}</Heading>
+          <Text style={text}>{c.intro(kindLabel, roleLabel)}</Text>
+          <Text style={text}>{c.how}</Text>
           {invitationUrl && (
-            <Button href={invitationUrl} style={button}>Accepter l'invitation</Button>
+            <Button href={invitationUrl} style={button}>{c.cta}</Button>
           )}
           <Hr style={divider} />
-          <Text style={footerText}>
-            Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :
-          </Text>
+          <Text style={footerText}>{c.fallback}</Text>
           <Text style={{ ...footerText, wordBreak: 'break-all' as const, color: '#1C58D9' }}>{invitationUrl}</Text>
-          <Text style={footer}>L'équipe {SITE_NAME}</Text>
+          <Text style={footer}>{c.team}</Text>
         </Container>
       </Body>
     </Html>
@@ -49,9 +98,9 @@ const AccountInvitationEmail = ({ invitationUrl, role, accountKind }: Props) => 
 
 export const template = {
   component: AccountInvitationEmail,
-  subject: `Invitation à rejoindre un compte sur ${SITE_NAME}`,
+  subject: (data: Record<string, any>) => COPY[pick(data?.locale)].subject,
   displayName: 'Invitation compte',
-  previewData: { invitationUrl: 'https://medikong.pro/account/invitation/abc123', role: 'member', accountKind: 'vendor' },
+  previewData: { invitationUrl: 'https://medikong.pro/account/invitation/abc123?lang=nl', role: 'member', accountKind: 'vendor', locale: 'nl' },
 } satisfies TemplateEntry
 
 const main = { backgroundColor: '#ffffff', fontFamily: "'DM Sans', Arial, sans-serif" }

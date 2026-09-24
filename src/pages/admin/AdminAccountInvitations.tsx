@@ -62,14 +62,17 @@ export default function AdminAccountInvitations() {
       const accountKind = row?.account_kind as string | undefined;
       const role = row?.role as string | undefined;
       if (!token || !email) throw new Error("Token manquant");
-      const invitationUrl = `${window.location.origin}/account/invitation/${token}`;
+      const { data: locRow } = await (supabase.from("account_invitations") as any)
+        .select("locale").eq("id", invitationId).maybeSingle();
+      const locale = (locRow?.locale as string | undefined) ?? "fr";
+      const invitationUrl = `${window.location.origin}/account/invitation/${token}?lang=${locale}`;
       try {
         await supabase.functions.invoke("send-app-email", {
           body: {
             templateName: "account-invitation",
             recipientEmail: email,
             idempotencyKey: `account-invite-resend-${invitationId}-${Date.now()}`,
-            templateData: { invitationUrl, role, accountKind, expiresAt: null },
+            templateData: { invitationUrl, role, accountKind, locale, expiresAt: null },
           },
         });
       } catch (e) {

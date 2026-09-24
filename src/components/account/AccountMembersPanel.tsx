@@ -69,6 +69,7 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
 
 
   const [inviteRole, setInviteRole] = useState<Role>("member");
+  const [inviteLocale, setInviteLocale] = useState<"fr" | "nl" | "de" | "en">("fr");
   const [inviteSending, setInviteSending] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [emailStatus, setEmailStatus] = useState<"sent" | "failed" | null>(null);
@@ -176,9 +177,16 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
       const token = row?.token as string | undefined;
       const invitationId = row?.invitation_id as string | undefined;
       if (!token) throw new Error("Invitation créée mais lien indisponible — réessaie.");
+      if (invitationId && inviteLocale !== "fr") {
+        const { error: locErr } = await (supabase.rpc as any)("account_set_invitation_locale", {
+          _invitation_id: invitationId,
+          _locale: inviteLocale,
+        });
+        if (locErr) console.warn("account_set_invitation_locale failed", locErr);
+      }
       // Envoi email best-effort, statut remonté à l'utilisateur.
       try {
-        const invitationUrl = `${window.location.origin}/account/invitation/${token}`;
+        const invitationUrl = `${window.location.origin}/account/invitation/${token}?lang=${inviteLocale}`;
         const { error: mailError } = await supabase.functions.invoke("send-app-email", {
           body: {
             templateName: "account-invitation",
@@ -188,6 +196,7 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
               invitationUrl,
               role: inviteRole,
               accountKind,
+              locale: inviteLocale,
               expiresAt: null,
             },
           },
@@ -290,6 +299,7 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
     setShowInvite(false);
     setInviteEmail("");
     setInviteRole("member");
+    setInviteLocale("fr");
     setGeneratedToken(null);
     setInviteError(null);
     setEmailStatus(null);
@@ -606,6 +616,20 @@ export function AccountMembersPanel({ accountKind, accountId, canManage, ownerUs
                   <SelectContent>
                     <SelectItem value="admin">Admin — tout faire (y compris gérer l'équipe)</SelectItem>
                     <SelectItem value="member">Membre — gérer offres, commandes, RFQ</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="invite-locale">Langue de l'invitation</Label>
+                <Select value={inviteLocale} onValueChange={(v) => setInviteLocale(v as any)}>
+                  <SelectTrigger id="invite-locale">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fr">Français</SelectItem>
+                    <SelectItem value="nl">Nederlands</SelectItem>
+                    <SelectItem value="de">Deutsch</SelectItem>
+                    <SelectItem value="en">English</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

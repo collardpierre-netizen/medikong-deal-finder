@@ -26,6 +26,7 @@ export type Database = {
           expires_at: string
           id: string
           join_code: string | null
+          locale: string
           revoked_at: string | null
           role: string
           token_hash: string | null
@@ -41,6 +42,7 @@ export type Database = {
           expires_at?: string
           id?: string
           join_code?: string | null
+          locale?: string
           revoked_at?: string | null
           role?: string
           token_hash?: string | null
@@ -56,6 +58,7 @@ export type Database = {
           expires_at?: string
           id?: string
           join_code?: string | null
+          locale?: string
           revoked_at?: string | null
           role?: string
           token_hash?: string | null
@@ -34138,6 +34141,10 @@ export type Database = {
       }
       account_revoke_member: {
         Args: { _membership_id: string }
+        Returns: undefined
+      }
+      account_set_invitation_locale: {
+        Args: { _invitation_id: string; _locale: string }
         Returns: undefined
       }
       account_update_member_role: {

@@ -38,13 +38,13 @@ Deno.serve(async (req) => {
 
   // Officine : propriétaire direct ou membre actif
   const [{ data: own }, { data: mem }, { data: cfg }] = await Promise.all([
-    admin.from("customers").select("id, scan_enabled, country_code, buyer_profile_id").eq("auth_user_id", userId).limit(1),
+    admin.from("customers").select("id, scan_enabled, country_code, buyer_profile_id, is_test").eq("auth_user_id", userId).limit(1),
     admin.from("account_memberships").select("account_id").eq("user_id", userId).eq("account_kind", "buyer").eq("status", "active").limit(1),
     admin.from("site_config").select("scan_enabled").eq("id", 1).maybeSingle(),
   ]);
   let customer = own?.[0] ?? null;
   if (!customer && mem?.[0]) {
-    const { data } = await admin.from("customers").select("id, scan_enabled, country_code, buyer_profile_id").eq("id", mem[0].account_id).maybeSingle();
+    const { data } = await admin.from("customers").select("id, scan_enabled, country_code, buyer_profile_id, is_test").eq("id", mem[0].account_id).maybeSingle();
     customer = data;
   }
   if (!customer) return json({ error: "no_pharmacy_account" }, 403);
@@ -154,7 +154,7 @@ Deno.serve(async (req) => {
     product_id: product?.id ?? null, match_status: matchStatus,
     candidate_product_ids: candidates.length > 1 ? candidates.map((c) => c.id) : [],
     in_test_scope: inScope, result, best_offer_id: best?.offer_id ?? null, best_price_excl_vat: bestPrice,
-    ref_price_excl_vat: refMin, ref_source: refSource, delta_excl_vat: delta, verdict, latency_ms: latency,
+    ref_price_excl_vat: refMin, ref_source: refSource, delta_excl_vat: delta, verdict, latency_ms: latency, client_decode_ms: input.client_decode_ms ?? null,
   }).select("id").single();
   if (evErr) return json({ error: "log_failed", detail: evErr.message }, 500);
 

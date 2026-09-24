@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Upload, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import AdminTopBar from "@/components/admin/AdminTopBar";
+import GtinProposalsPanel from "@/components/admin/scan/GtinProposalsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";

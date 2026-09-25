@@ -15542,35 +15542,50 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          matched_cnk: string
+          matched_cnk: string | null
+          packaging_level: string
           product_id: string
+          proposal_source: string
+          proposed_by: string | null
           proposed_gtin: string
           reviewed_at: string | null
           reviewed_by: string | null
+          scan_event_id: string | null
           source_id: string | null
           status: string
+          units_per_pack: number
         }
         Insert: {
           created_at?: string
           id?: string
-          matched_cnk: string
+          matched_cnk?: string | null
+          packaging_level?: string
           product_id: string
+          proposal_source?: string
+          proposed_by?: string | null
           proposed_gtin: string
           reviewed_at?: string | null
           reviewed_by?: string | null
+          scan_event_id?: string | null
           source_id?: string | null
           status?: string
+          units_per_pack?: number
         }
         Update: {
           created_at?: string
           id?: string
-          matched_cnk?: string
+          matched_cnk?: string | null
+          packaging_level?: string
           product_id?: string
+          proposal_source?: string
+          proposed_by?: string | null
           proposed_gtin?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
+          scan_event_id?: string | null
           source_id?: string | null
           status?: string
+          units_per_pack?: number
         }
         Relationships: [
           {
@@ -15630,6 +15645,13 @@ export type Database = {
             referencedColumns: ["product_id"]
           },
           {
+            foreignKeyName: "product_gtin_proposals_scan_event_id_fkey"
+            columns: ["scan_event_id"]
+            isOneToOne: false
+            referencedRelation: "scan_events"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "product_gtin_proposals_source_id_fkey"
             columns: ["source_id"]
             isOneToOne: false
@@ -15644,8 +15666,10 @@ export type Database = {
           created_at: string | null
           id: string
           market_code_type_id: string | null
+          packaging_level: string
           product_id: string | null
           source: string | null
+          units_per_pack: number
           updated_at: string | null
           updated_by: string | null
           verified: boolean | null
@@ -15655,8 +15679,10 @@ export type Database = {
           created_at?: string | null
           id?: string
           market_code_type_id?: string | null
+          packaging_level?: string
           product_id?: string | null
           source?: string | null
+          units_per_pack?: number
           updated_at?: string | null
           updated_by?: string | null
           verified?: boolean | null
@@ -15666,8 +15692,10 @@ export type Database = {
           created_at?: string | null
           id?: string
           market_code_type_id?: string | null
+          packaging_level?: string
           product_id?: string | null
           source?: string | null
+          units_per_pack?: number
           updated_at?: string | null
           updated_by?: string | null
           verified?: boolean | null
@@ -38824,6 +38852,15 @@ export type Database = {
           total_quantity: number
           total_savings: number
         }[]
+      }
+      scan_create_gtin_proposal: {
+        Args: {
+          _packaging_level?: string
+          _product_id: string
+          _scan_event_id: string
+          _units_per_pack?: number
+        }
+        Returns: string
       }
       scan_declare_product_price: {
         Args: {

@@ -365,6 +365,13 @@
       "when": 1790258669269,
       "tag": "0051_exclude_test_market_price_sources",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1790344732999,
+      "tag": "0052_scan_multiple_product_codes",
+      "breakpoints": true
     }
   ]
 }

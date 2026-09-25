@@ -224,6 +224,8 @@ const AdminCategoryAliases = lazyWithRetry(() => import("./pages/admin/AdminCate
 const AdminSourcingPipeline = lazyWithRetry(() => import("./pages/admin/AdminSourcingPipeline"), "AdminSourcingPipeline");
 const AdminScanImports = lazyWithRetry(() => import("./pages/admin/AdminScanImports"), "AdminScanImports");
 const AdminScanPotential = lazyWithRetry(() => import("./pages/admin/AdminScanPotential"), "AdminScanPotential");
+const AdminScanDeclaredPrices = lazyWithRetry(() => import("./pages/admin/AdminScanDeclaredPrices"), "AdminScanDeclaredPrices");
+const AdminScanEvents = lazyWithRetry(() => import("./pages/admin/AdminScanEvents"), "AdminScanEvents");
 const AdminCategoryAnomalies = lazyWithRetry(() => import("./pages/admin/AdminCategoryAnomalies"), "AdminCategoryAnomalies");
 const AdminCategoryAnomalyDetail = lazyWithRetry(() => import("./pages/admin/AdminCategoryAnomalyDetail"), "AdminCategoryAnomalyDetail");
 const AdminQogitaLlmMapping = lazyWithRetry(() => import("./pages/admin/AdminQogitaLlmMapping"), "AdminQogitaLlmMapping");
@@ -662,6 +664,8 @@ const App = () => (
               <Route path="sourcing/pipeline" element={<LP><AdminSourcingPipeline /></LP>} />
               <Route path="scan/imports" element={<LP><AdminScanImports /></LP>} />
               <Route path="scan/potentiel" element={<LP><AdminScanPotential /></LP>} />
+              <Route path="scan/prix-declares" element={<LP><AdminScanDeclaredPrices /></LP>} />
+              <Route path="scan/evenements" element={<LP><AdminScanEvents /></LP>} />
               <Route path="categories/anomalies" element={<LP><AdminCategoryAnomalies /></LP>} />
               <Route path="categories/anomalies/:id" element={<LP><AdminCategoryAnomalyDetail /></LP>} />
               <Route path="preview/brand-product-card" element={<LP><AdminBrandProductCardPreview /></LP>} />

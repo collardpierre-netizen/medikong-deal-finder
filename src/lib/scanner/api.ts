@@ -26,7 +26,7 @@ export interface ScanResult {
   scan_event_id: string;
   match_status: string;
   product: { id: string; name: string; pack: number | null; cnk: string | null; image: string | null } | null;
-  scanned_packaging?: { packaging_level: "unit" | "pack" | "carton"; units_per_pack: number } | null;
+  scanned_packaging?: { packaging_level: "unit" | "pack" | "carton" | "unknown"; units_per_pack: number } | null;
   lot: string | null;
   expiry_date: string | null;
   verdict: "green" | "orange" | "red" | "none";
@@ -37,10 +37,14 @@ export interface ScanResult {
   in_test_scope: boolean;
   latency_ms: number;
   error?: string;
+  margin?: { pvp_ttc: number; pvp_ht: number; vat_pct: number;
+    medikong: { eur: number; pct: number | null } | null; current: { eur: number; pct: number | null } | null } | null;
+  top_offers?: { offer_id: string; vendor_id: string; price: number; vendor_label: string | null; lead_time_days: number | null; stock_quantity: number | null }[];
+  market_price?: { price_excl_vat: number; observed_at: string } | null;
 }
 
 export async function resolveScan(input: {
-  raw_code: string; symbology: "ean13" | "datamatrix" | "manual_cnk" | "other"; client_decode_ms?: number | null;
+  raw_code: string; symbology: "ean13" | "datamatrix" | "manual_cnk" | "other"; client_decode_ms?: number | null; reopen_scan_event_id?: string | null;
 }): Promise<ScanResult> {
   const { data, error } = await supabase.functions.invoke("scan-resolve", {
     body: { ...input, mode: "single" },

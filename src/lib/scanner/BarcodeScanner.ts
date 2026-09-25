@@ -27,18 +27,41 @@ function mapFormat(f: string): ScanSymbology {
   return "other";
 }
 
+// Contexte audio unique, déverrouillé au premier toucher : sur iPhone (pas de vibration),
+// un AudioContext créé hors geste utilisateur reste muet.
+let audioCtx: any = null;
+function getAudio() {
+  if (audioCtx) return audioCtx;
+  const Ctx = typeof window !== "undefined" ? ((window as any).AudioContext || (window as any).webkitAudioContext) : null;
+  if (!Ctx) return null;
+  audioCtx = new Ctx();
+  return audioCtx;
+}
+if (typeof window !== "undefined") {
+  const unlock = () => {
+    const a = getAudio();
+    try {
+      a?.resume?.();
+      // Tampon silencieux : déverrouillage Safari iOS
+      const b = a?.createBuffer(1, 1, 22050); const src = a?.createBufferSource();
+      if (src && b) { src.buffer = b; src.connect(a.destination); src.start(0); }
+    } catch { /* noop */ }
+    window.removeEventListener("touchend", unlock); window.removeEventListener("click", unlock);
+  };
+  window.addEventListener("touchend", unlock, { passive: true }); window.addEventListener("click", unlock);
+}
+
 function beep() {
   try {
-    const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
-    if (!Ctx) return;
-    const ctx = new Ctx();
+    const ctx = getAudio();
+    if (!ctx) return;
+    if (ctx.state === "suspended") void ctx.resume?.();
     const o = ctx.createOscillator();
     const g = ctx.createGain();
     o.frequency.value = 1760;
-    g.gain.value = 0.08;
+    g.gain.value = 0.12;
     o.connect(g); g.connect(ctx.destination);
-    o.start(); o.stop(ctx.currentTime + 0.08);
-    o.onended = () => ctx.close();
+    o.start(); o.stop(ctx.currentTime + 0.09);
   } catch { /* silencieux */ }
 }
 

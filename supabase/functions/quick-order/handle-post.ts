@@ -22,7 +22,7 @@ type IncomingLine = {
 export async function handlePost(req: Request, ip: string): Promise<Response> {
   let body: {
     token?: string;
-    action?: "order" | "unsubscribe";
+    action?: string;
     lines?: IncomingLine[];
     contact_name?: string;
     contact_phone?: string;
@@ -30,11 +30,26 @@ export async function handlePost(req: Request, ip: string): Promise<Response> {
     requested_delivery_date?: string;
     consent?: boolean;
     consent_text_version?: string;
+    /** Parcours groupement uniquement. */
+    campaign_code?: string;
+    access_code?: string;
+    identity?: GroupIdentity;
+    email?: string;
+    pharmacy_name?: string;
   };
   try {
     body = await req.json();
   } catch {
     return json({ error: "bad_request" }, 400);
+  }
+
+  // --- Aiguillage groupement -------------------------------------------------
+  // Discriminant strict : `action` groupement ET `campaign_code` présent.
+  // En dessous, le parcours par token est inchangé.
+  const groupAction = typeof body.action === "string" ? body.action : "";
+  const groupCode = typeof body.campaign_code === "string" ? body.campaign_code.trim() : "";
+  if (groupCode && (groupAction === "unlock" || groupAction === "order" || groupAction === "subscribe")) {
+    return await handleGroupPost(req, ip, body, groupAction, groupCode);
   }
 
   const token = (body.token ?? "").trim();

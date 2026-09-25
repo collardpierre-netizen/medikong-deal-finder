@@ -56,8 +56,15 @@ Deno.serve(async (req) => {
   const cols = "id, name, pack_size, cnk_code, gtin, image_url, brand_id, brand_name, category_id, primary_category_id";
   let candidates: any[] = [];
   let matchedCode: { packaging_level: "unit" | "pack" | "carton"; units_per_pack: number } | null = null;
+  // Normalisation identique pour products.gtin et product_market_codes :
+  // chiffres seuls, zéros de tête ignorés, variantes GTIN-8/12/13/14.
+  const codeVariants = (raw: string) => {
+    const core = raw.replace(/\D/g, "").replace(/^0+/, "");
+    if (!core) return [];
+    return Array.from(new Set([core, ...[8, 12, 13, 14].filter((l) => l >= core.length).map((l) => core.padStart(l, "0"))]));
+  };
   if (code.gtin) {
-    const { data } = await admin.from("products").select(cols).eq("gtin", code.gtin).eq("is_active", true);
+    const { data } = await admin.from("products").select(cols).in("gtin", codeVariants(code.gtin)).eq("is_active", true);
     candidates = data ?? [];
     if (candidates.length) {
       const units = Math.max(1, Number(candidates[0]?.pack_size ?? 1));
@@ -68,7 +75,7 @@ Deno.serve(async (req) => {
   if (!candidates.length && (code.gtin || code.cnk)) {
     const v = code.gtin ?? code.cnk!;
     const { data: pmc } = await admin.from("product_market_codes")
-      .select("product_id, packaging_level, units_per_pack").eq("code_value", v);
+      .select("product_id, packaging_level, units_per_pack").in("code_value", codeVariants(v));
     const ids = (pmc ?? []).map((r) => r.product_id);
     if (ids.length) {
       const { data } = await admin.from("products").select(cols).in("id", ids).eq("is_active", true);

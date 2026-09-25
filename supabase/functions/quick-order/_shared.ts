@@ -165,7 +165,8 @@ export async function dedupeKey(
 /**
  * Mécanisme 2 — anti-re-soumission : commande NON ANNULÉE du même
  * destinataire, lignes identiques, created_at < 10 minutes.
- * Retourne la commande jumelle, null sinon. Lève en cas d'erreur de lecture.
+ * Retourne la commande jumelle, null sinon. En cas d'erreur de lecture :
+ * journalisée puis null — la commande passe.
  */
 export async function findRecentTwin(
   recipientId: string,

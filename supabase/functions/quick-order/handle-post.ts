@@ -7,6 +7,7 @@ import {
   reference, NOTIFY_EMAIL, BREVO_API_KEY, type OfferItem,
   timingSafeEqualStr, normalizeEmail, isValidEmail, isValidBce, digitsOnly,
   dedupeKey,
+  findRecentTwin,
 } from "./_shared.ts";
 
 const eur = (cents: number) =>
@@ -183,9 +184,22 @@ export async function handlePost(req: Request, ip: string): Promise<Response> {
     vatTotal += Math.round(shipping * Number(campaign.shipping_vat_rate ?? 21) / 100);
   }
 
-  const { data: order, error: orderErr } = await db
+  // --- Déduplication (mêmes deux mécanismes que le parcours /g) -----------
+  const sigLines = lines.map((l) => ({ item_id: String(l.offer_item_id), qty: Number(l.qty) }));
+  let twin10: { reference: string; total_ttc_cents: number } | null;
+  try {
+    twin10 = await findRecentTwin(recipient.id, sigLines, "token");
+  } catch {
+    return json({ error: "server_error" }, 500);
+  }
+  if (twin10) {
+    return json({ ok: true, reference: twin10.reference, duplicate: true });
+  }
+  const key = await dedupeKey(recipient.id, sigLines);
+
+  const { data: insertedRows, error: orderErr } = await db
     .from("qo_orders")
-    .insert({
+    .upsert({
       reference: ref,
       recipient_id: recipient.id,
       campaign_id: campaign.id,
@@ -198,17 +212,34 @@ export async function handlePost(req: Request, ip: string): Promise<Response> {
       contact_phone: (body.contact_phone ?? "").slice(0, 40) || recipient.phone,
       comment: (body.comment ?? "").slice(0, 2000),
       requested_delivery_date: body.requested_delivery_date || null,
+      dedupe_key: key,
       ip_hash: await hashIp(ip),
       user_agent: (req.headers.get("user-agent") ?? "").slice(0, 300),
-    })
-    .select("id, reference")
-    .single();
+    }, { onConflict: "dedupe_key", ignoreDuplicates: true })
+    .select("id, reference");
 
-  if (orderErr || !order) return json({ error: "server_error" }, 500);
+  if (orderErr) {
+    console.error("[quick-order][token] création commande échouée:", orderErr.message, orderErr);
+    return json({ error: "server_error" }, 500);
+  }
+  const order = (insertedRows ?? [])[0];
+  if (!order) {
+    // Course perdue : la requête parallèle a déjà inséré la même commande.
+    const { data: twin, error: twinErr } = await db
+      .from("qo_orders").select("reference").eq("dedupe_key", key).maybeSingle();
+    if (twinErr || !twin) {
+      console.error("[quick-order][token] relecture doublon échouée:", twinErr?.message ?? "introuvable", twinErr);
+      return json({ error: "server_error" }, 500);
+    }
+    return json({ ok: true, reference: twin.reference, duplicate: true });
+  }
 
-  await db.from("qo_order_lines").insert(
+  const { error: linesErr } = await db.from("qo_order_lines").insert(
     lines.map((l) => ({ ...l, order_id: order.id })),
   );
+  if (linesErr) {
+    console.error("[quick-order][token] insertion lignes échouée:", linesErr.message, linesErr);
+  }
 
   // Commande + case cochée = consentement explicite, horodaté et prouvable.
   const recipientUpdate: Record<string, unknown> = {
@@ -791,11 +822,20 @@ async function groupOrder(
     }
   }
 
-  // --- Déduplication : l'index UNIQUE sur dedupe_key tranche ---------------
-  const key = await dedupeKey(
-    recipient.id,
-    lines.map((l) => ({ item_id: String(l.offer_item_id), qty: Number(l.qty) })),
-  );
+  // --- Déduplication ---------------------------------------------------------
+  const sigLines = lines.map((l) => ({ item_id: String(l.offer_item_id), qty: Number(l.qty) }));
+  // Mécanisme 2 : re-soumission < 10 min (created_at), lignes identiques.
+  let twin10: { reference: string; total_ttc_cents: number } | null;
+  try {
+    twin10 = await findRecentTwin(recipient.id, sigLines, "group");
+  } catch {
+    return json({ error: "server_error" }, 500);
+  }
+  if (twin10) {
+    return json({ ok: true, duplicate: true, reference: twin10.reference, total_ttc_cents: twin10.total_ttc_cents });
+  }
+  // Mécanisme 1 : course — l'index UNIQUE sur dedupe_key (minute) tranche.
+  const key = await dedupeKey(recipient.id, sigLines);
 
   const { data: inserted, error: orderErr } = await db
     .from("qo_orders")

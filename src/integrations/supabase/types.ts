@@ -17330,6 +17330,7 @@ export type Database = {
       }
       qo_recipients: {
         Row: {
+          apb_number: string | null
           bce_number: string | null
           brevo_synced_at: string | null
           campaign_id: string
@@ -17366,6 +17367,7 @@ export type Database = {
           unsubscribed_at: string | null
         }
         Insert: {
+          apb_number?: string | null
           bce_number?: string | null
           brevo_synced_at?: string | null
           campaign_id: string
@@ -17402,6 +17404,7 @@ export type Database = {
           unsubscribed_at?: string | null
         }
         Update: {
+          apb_number?: string | null
           bce_number?: string | null
           brevo_synced_at?: string | null
           campaign_id?: string

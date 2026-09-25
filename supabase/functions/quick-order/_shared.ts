@@ -182,8 +182,12 @@ export async function findRecentTwin(
     .order("created_at", { ascending: false })
     .limit(20);
   if (error) {
-    console.error(`[quick-order][${tag}] recherche re-soumission échouée:`, error.message, error);
-    throw error;
+    console.error(
+      `[quick-order][${tag}] recherche re-soumission échouée — commande laissée passer:`,
+      error.message,
+      error,
+    );
+    return null; // Un hoquet de base de données ne doit jamais faire perdre une commande.
   }
   const wanted = linesSignature(lines);
   for (const o of data ?? []) {

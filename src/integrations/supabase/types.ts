@@ -36116,6 +36116,16 @@ export type Database = {
         Args: { _draft_id: string; _payload: Json }
         Returns: string
       }
+      admin_save_market_code: {
+        Args: {
+          _code: string
+          _id: string
+          _product_id: string
+          _type_id: string
+          _verified: boolean
+        }
+        Returns: string
+      }
       admin_savings_by_pharmacy: {
         Args: never
         Returns: {
@@ -38869,6 +38879,15 @@ export type Database = {
           _supplier_name: string
         }
         Returns: Json
+      }
+      scan_find_products_by_code: {
+        Args: { _code: string }
+        Returns: {
+          origin: string
+          packaging_level: string
+          product_id: string
+          units_per_pack: number
+        }[]
       }
       scan_list_wholesalers: {
         Args: never

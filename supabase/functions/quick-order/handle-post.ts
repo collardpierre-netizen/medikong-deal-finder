@@ -598,7 +598,7 @@ async function upsertGroupRecipient(args: {
   fill("postal_code", identity.postal_code ? digitsOnly(identity.postal_code).slice(0, 10) : null);
   fill("city", identity.city?.slice(0, 120) ?? null);
   fill("bce_number", identity.bce ? digitsOnly(identity.bce) : null);
-  fill("apb_number", identity.apb ? digitsOnly(identity.apb).slice(0, 20) || null : null);
+  fill("apb_number", identity.apb ? digitsOnly(identity.apb).slice(0, 10) || null : null);
   fill("source", "dynaphar");
 
   // Consentement : jamais de rétrogradation.

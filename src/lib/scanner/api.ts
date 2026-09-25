@@ -26,6 +26,7 @@ export interface ScanResult {
   scan_event_id: string;
   match_status: string;
   product: { id: string; name: string; pack: number | null; cnk: string | null; image: string | null } | null;
+  scanned_packaging?: { packaging_level: "unit" | "pack" | "carton"; units_per_pack: number } | null;
   lot: string | null;
   expiry_date: string | null;
   verdict: "green" | "orange" | "red" | "none";

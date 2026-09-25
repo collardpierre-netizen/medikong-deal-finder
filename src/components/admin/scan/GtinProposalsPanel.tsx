@@ -23,7 +23,7 @@ export default function GtinProposalsPanel({ sourceId, rows, month }: {
     queryKey: ["admin-gtin-proposals"],
     queryFn: async () => {
       const { data } = await sb.from("product_gtin_proposals")
-        .select("id, proposed_gtin, matched_cnk, created_at, product:products(name), source:market_price_sources(name)")
+        .select("id, proposed_gtin, matched_cnk, created_at, proposal_source, packaging_level, units_per_pack, scan_event:scan_events(customer:customers(company_name)), product:products(name), source:market_price_sources(name)")
         .eq("status", "pending").order("created_at", { ascending: false }).limit(500);
       return data ?? [];
     },
@@ -49,7 +49,7 @@ export default function GtinProposalsPanel({ sourceId, rows, month }: {
     const out = (data ?? []) as { outcome: string }[];
     const c = (k: string) => out.filter((o) => o.outcome === k).length;
     toast.success(approve
-      ? `${c("approved")} validé(s) · ${c("conflict")} refusé(s) (EAN déjà utilisé) · ${c("already_filled")} déjà rempli(s)`
+      ? `${c("approved")} validé(s) · ${c("conflict")} refusé(s) (EAN déjà utilisé)`
       : `${c("rejected")} rejeté(s)`);
     setSel(new Set());
     qc.invalidateQueries({ queryKey: ["admin-gtin-proposals"] });
@@ -62,7 +62,7 @@ export default function GtinProposalsPanel({ sourceId, rows, month }: {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="font-semibold">EAN à compléter</h2>
-          <p className="text-sm text-muted-foreground">Produits sans EAN dont le CNK figure dans le fichier ({month}). Refus automatique si l'EAN est déjà porté par un autre produit ou vaut 0000000000000.</p>
+          <p className="text-sm text-muted-foreground">Propositions issues des scans et des fichiers grossistes ({month}). Une validation ajoute l'EAN secondaire sans remplacer le GTIN de la fiche.</p>
         </div>
         <Button variant="outline" onClick={generate} disabled={busy || rows.length === 0}>Chercher dans ce fichier</Button>
       </div>
@@ -74,7 +74,7 @@ export default function GtinProposalsPanel({ sourceId, rows, month }: {
             <Button size="sm" variant="destructive" onClick={() => review([...sel], false)} disabled={busy || !sel.size}>Rejeter la sélection</Button>
           </div>
           <Table>
-            <TableHeader><TableRow><TableHead /><TableHead>Produit</TableHead><TableHead>CNK</TableHead><TableHead>EAN proposé</TableHead><TableHead>Grossiste</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead /><TableHead>Produit</TableHead><TableHead>CNK</TableHead><TableHead>EAN proposé</TableHead><TableHead>Origine</TableHead><TableHead>Conditionnement</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
             <TableBody>
               {proposals.map((p: any) => (
                 <TableRow key={p.id}>
@@ -82,7 +82,8 @@ export default function GtinProposalsPanel({ sourceId, rows, month }: {
                   <TableCell className="max-w-xs truncate">{p.product?.name ?? "—"}</TableCell>
                   <TableCell>{p.matched_cnk}</TableCell>
                   <TableCell className="font-mono">{p.proposed_gtin}</TableCell>
-                  <TableCell>{p.source?.name ?? "—"}</TableCell>
+                  <TableCell>{p.proposal_source === "scan" ? `Scan · ${p.scan_event?.customer?.company_name ?? "Officine"}` : p.source?.name ?? "Import"}</TableCell>
+                  <TableCell>{p.packaging_level === "unit" ? "Unité" : p.packaging_level === "pack" ? "Pack" : "Carton"} · {p.units_per_pack} unité(s)</TableCell>
                   <TableCell>{new Date(p.created_at).toLocaleDateString("fr-BE")}</TableCell>
                 </TableRow>
               ))}

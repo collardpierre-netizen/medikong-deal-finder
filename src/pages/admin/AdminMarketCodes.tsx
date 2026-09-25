@@ -138,6 +138,9 @@ export default function AdminMarketCodes() {
                     <div key={ct.id} className="space-y-1.5">
                       <label className="text-sm font-medium flex items-center gap-2">
                         <span>{FLAG_MAP[ct.country_code] || "🏳️"}</span> {ct.label} ({ct.country_name})
+                        <span className="text-[11px] font-normal text-muted-foreground">
+                          · {existingCodes.some((e: any) => e.market_code_type_id === ct.id) ? "Modifier" : "Ajouter un code"}
+                        </span>
                       </label>
                       <div className="flex items-center gap-2">
                         <Input placeholder={ct.description || ct.code} value={val.value}

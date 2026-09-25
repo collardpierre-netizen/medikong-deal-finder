@@ -550,7 +550,7 @@ async function upsertGroupRecipient(args: {
         postal_code: identity.postal_code ? digitsOnly(identity.postal_code).slice(0, 10) : null,
         city: identity.city?.slice(0, 120) ?? null,
         bce_number: identity.bce ? digitsOnly(identity.bce) : null,
-        apb_number: identity.apb ? digitsOnly(identity.apb).slice(0, 20) || null : null,
+        apb_number: identity.apb ? digitsOnly(identity.apb).slice(0, 10) || null : null,
         source: "dynaphar",
         flow: "cold",
         expires_at: expiresAt,
@@ -631,7 +631,9 @@ async function groupOrder(
   const identity: GroupIdentity = (body.identity ?? {}) as GroupIdentity;
   const email = normalizeEmail(identity.email);
   const bce = digitsOnly(identity.bce);
-  const apb = digitsOnly(identity.apb).slice(0, 20);
+  // APB : chiffres uniquement, borne large 4–10 (arrêter les saisies vides de
+  // sens, pas de contrôle de format précis — décision du 25/09/2026).
+  const apb = digitsOnly(identity.apb);
   const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
 
   const missing =
@@ -639,7 +641,7 @@ async function groupOrder(
     !str(identity.street) || !str(identity.city) || !email || !bce || !apb;
   if (
     missing || !isValidEmail(email) || !isValidBce(bce) ||
-    !/^\d{4}$/.test(digitsOnly(identity.postal_code))
+    !/^\d{4}$/.test(digitsOnly(identity.postal_code)) || !/^\d{4,10}$/.test(apb)
   ) {
     return json({ error: "invalid_identity" }, 400);
   }

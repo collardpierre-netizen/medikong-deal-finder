@@ -379,6 +379,13 @@
       "when": 1790345476547,
       "tag": "0053_pmc_level_source_constraints",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1790345861410,
+      "tag": "0054_admin_read_declared_prices",
+      "breakpoints": true
     }
   ]
 }

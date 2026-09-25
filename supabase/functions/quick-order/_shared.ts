@@ -146,20 +146,58 @@ export async function sha256Hex(input: string): Promise<string> {
     .join("");
 }
 
+const linesSignature = (lines: Array<{ item_id: string; qty: number }>): string =>
+  lines.map((l) => `${l.item_id}:${l.qty}`).sort().join("|");
+
 /**
- * Clé anti-course : destinataire + lignes normalisées triées + compartiment
- * de 10 minutes. L'index UNIQUE sur qo_orders.dedupe_key fait l'arbitrage.
+ * Mécanisme 1 — anti-course : destinataire + lignes triées + compartiment
+ * d'UNE MINUTE (floor(epoch/60)). Seul rôle : arbitrer deux requêtes
+ * parallèles. L'index UNIQUE sur qo_orders.dedupe_key tranche.
  */
 export async function dedupeKey(
   recipientId: string,
   lines: Array<{ item_id: string; qty: number }>,
 ): Promise<string> {
-  const normalized = lines
-    .map((l) => `${l.item_id}:${l.qty}`)
-    .sort()
-    .join("|");
-  const bucket = Math.floor(Date.now() / 1000 / 600);
-  return await sha256Hex(`${recipientId}#${normalized}#${bucket}`);
+  const bucket = Math.floor(Date.now() / 1000 / 60);
+  return await sha256Hex(`${recipientId}#${linesSignature(lines)}#${bucket}`);
+}
+
+/**
+ * Mécanisme 2 — anti-re-soumission : commande NON ANNULÉE du même
+ * destinataire, lignes identiques, created_at < 10 minutes.
+ * Retourne la commande jumelle, null sinon. Lève en cas d'erreur de lecture.
+ */
+export async function findRecentTwin(
+  recipientId: string,
+  lines: Array<{ item_id: string; qty: number }>,
+  tag: string,
+): Promise<{ reference: string; total_ttc_cents: number } | null> {
+  const since = new Date(Date.now() - 10 * 60_000).toISOString();
+  const { data, error } = await db
+    .from("qo_orders")
+    .select("reference, total_ttc_cents, qo_order_lines(offer_item_id, qty)")
+    .eq("recipient_id", recipientId)
+    .neq("status", "cancelled")
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (error) {
+    console.error(`[quick-order][${tag}] recherche re-soumission échouée:`, error.message, error);
+    throw error;
+  }
+  const wanted = linesSignature(lines);
+  for (const o of data ?? []) {
+    const sig = linesSignature(
+      ((o as any).qo_order_lines ?? []).map((l: any) => ({
+        item_id: String(l.offer_item_id),
+        qty: Number(l.qty),
+      })),
+    );
+    if (sig === wanted) {
+      return { reference: (o as any).reference, total_ttc_cents: (o as any).total_ttc_cents };
+    }
+  }
+  return null;
 }
 
 export type OfferItem = {

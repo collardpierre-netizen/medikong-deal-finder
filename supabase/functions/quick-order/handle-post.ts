@@ -5,6 +5,8 @@
 import {
   db, json, hashIp, effectiveUnitPrice, freeUnits, estimatedDelivery,
   reference, NOTIFY_EMAIL, BREVO_API_KEY, type OfferItem,
+  timingSafeEqualStr, normalizeEmail, isValidEmail, isValidBce, digitsOnly,
+  dedupeKey,
 } from "./_shared.ts";
 
 const eur = (cents: number) =>

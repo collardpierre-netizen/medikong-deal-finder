@@ -333,6 +333,7 @@ export async function handlePost(req: Request, ip: string): Promise<Response> {
 export type GroupIdentity = {
   pharmacy_name?: string;
   bce?: string;
+  apb?: string;
   email?: string;
   contact_name?: string;
   phone?: string;
@@ -549,6 +550,7 @@ async function upsertGroupRecipient(args: {
         postal_code: identity.postal_code ? digitsOnly(identity.postal_code).slice(0, 10) : null,
         city: identity.city?.slice(0, 120) ?? null,
         bce_number: identity.bce ? digitsOnly(identity.bce) : null,
+        apb_number: identity.apb ? digitsOnly(identity.apb).slice(0, 20) || null : null,
         source: "dynaphar",
         flow: "cold",
         expires_at: expiresAt,
@@ -596,6 +598,7 @@ async function upsertGroupRecipient(args: {
   fill("postal_code", identity.postal_code ? digitsOnly(identity.postal_code).slice(0, 10) : null);
   fill("city", identity.city?.slice(0, 120) ?? null);
   fill("bce_number", identity.bce ? digitsOnly(identity.bce) : null);
+  fill("apb_number", identity.apb ? digitsOnly(identity.apb).slice(0, 20) || null : null);
   fill("source", "dynaphar");
 
   // Consentement : jamais de rétrogradation.
@@ -628,11 +631,12 @@ async function groupOrder(
   const identity: GroupIdentity = (body.identity ?? {}) as GroupIdentity;
   const email = normalizeEmail(identity.email);
   const bce = digitsOnly(identity.bce);
+  const apb = digitsOnly(identity.apb).slice(0, 20);
   const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
 
   const missing =
     !str(identity.pharmacy_name) || !str(identity.contact_name) || !str(identity.phone) ||
-    !str(identity.street) || !str(identity.city) || !email || !bce;
+    !str(identity.street) || !str(identity.city) || !email || !bce || !apb;
   if (
     missing || !isValidEmail(email) || !isValidBce(bce) ||
     !/^\d{4}$/.test(digitsOnly(identity.postal_code))
@@ -759,7 +763,7 @@ async function groupOrder(
   {
     const { data: sameEmail, error: e1 } = await db
       .from("qo_orders")
-      .select("id, recipient_id, qo_recipients!inner(contact_email, bce_number)")
+      .select("id, recipient_id, qo_recipients!inner(contact_email)")
       .eq("campaign_id", campaign.id)
       .neq("status", "cancelled")
       .eq("qo_recipients.contact_email", email)
@@ -767,18 +771,21 @@ async function groupOrder(
     if (e1) console.error("[quick-order][group] recherche commandes (email) échouée:", e1.message, e1);
     if ((sameEmail ?? []).length > 0) repeatPharmacy = true;
 
-    if (!repeatPharmacy && bce) {
-      const { data: sameBce, error: e2 } = await db
+    // Le BCE n'est PAS utilisé ici : plusieurs officines peuvent partager
+    // un même numéro d'entreprise (faux avertissements). Il reste enregistré
+    // pour la facturation.
+    if (!repeatPharmacy && apb) {
+      const { data: sameApb, error: e2 } = await db
         .from("qo_orders")
-        .select("id, qo_recipients!inner(bce_number)")
+        .select("id, qo_recipients!inner(apb_number)")
         .eq("campaign_id", campaign.id)
         .neq("status", "cancelled")
-        .not("qo_recipients.bce_number", "is", null)
-        .neq("qo_recipients.bce_number", "")
-        .eq("qo_recipients.bce_number", bce)
+        .not("qo_recipients.apb_number", "is", null)
+        .neq("qo_recipients.apb_number", "")
+        .eq("qo_recipients.apb_number", apb)
         .limit(1);
-      if (e2) console.error("[quick-order][group] recherche commandes (BCE) échouée:", e2.message, e2);
-      if ((sameBce ?? []).length > 0) repeatPharmacy = true;
+      if (e2) console.error("[quick-order][group] recherche commandes (APB) échouée:", e2.message, e2);
+      if ((sameApb ?? []).length > 0) repeatPharmacy = true;
     }
   }
 
@@ -994,7 +1001,7 @@ async function sendGroupEmails(a: {
               : "") +
             `${identity.pharmacy_name} (${identity.city ?? "-"})\n` +
             `${recipient.contact_email} · ${identity.phone ?? "-"}\n` +
-            `BCE : ${identity.bce ?? "-"}\n` +
+            `BCE : ${identity.bce ?? "-"} · APB : ${apb || "-"}\n` +
             `Flux : cold · Source : dynaphar (groupement)\n` +
             `Campagne : ${campaign.code}\n` +
             `Total HTVA : ${eur(a.subtotal)} €\n` +

@@ -13,6 +13,8 @@ const Body = z.object({
   session_id: z.string().uuid().optional().nullable(),
   mode: z.enum(["single", "burst"]).default("single"),
   client_decode_ms: z.number().int().min(0).max(60000).optional().nullable(),
+  // Rouvrir un verdict depuis « Derniers scans » sans créer de nouveau scan
+  reopen_scan_event_id: z.string().uuid().optional().nullable(),
 });
 
 const json = (b: unknown, status = 200) =>
@@ -38,13 +40,13 @@ Deno.serve(async (req) => {
 
   // Officine : propriétaire direct ou membre actif
   const [{ data: own }, { data: mem }, { data: cfg }] = await Promise.all([
-    admin.from("customers").select("id, scan_enabled, country_code, buyer_profile_id, is_test").eq("auth_user_id", userId).limit(1),
+    admin.from("customers").select("id, scan_enabled, country_code, buyer_profile_id, is_test, is_verified").eq("auth_user_id", userId).limit(1),
     admin.from("account_memberships").select("account_id").eq("user_id", userId).eq("account_kind", "buyer").eq("status", "active").limit(1),
     admin.from("site_config").select("scan_enabled").eq("id", 1).maybeSingle(),
   ]);
   let customer = own?.[0] ?? null;
   if (!customer && mem?.[0]) {
-    const { data } = await admin.from("customers").select("id, scan_enabled, country_code, buyer_profile_id, is_test").eq("id", mem[0].account_id).maybeSingle();
+    const { data } = await admin.from("customers").select("id, scan_enabled, country_code, buyer_profile_id, is_test, is_verified").eq("id", mem[0].account_id).maybeSingle();
     customer = data;
   }
   if (!customer) return json({ error: "no_pharmacy_account" }, 403);
@@ -59,7 +61,18 @@ Deno.serve(async (req) => {
   // Normalisation unique côté base : public.normalize_gtin (suffixe .0/,0 retiré,
   // chiffres seuls, zéros de tête retirés) appliquée à products.gtin ET product_market_codes.
   const lookup = code.cnk;
-  const v = code.gtin ?? code.cnk;
+  let reopenEvent: any = null;
+  if (input.reopen_scan_event_id) {
+    const { data: rev } = await admin.from("scan_events").select("id, customer_id, product_id")
+      .eq("id", input.reopen_scan_event_id).maybeSingle();
+    if (!rev || rev.customer_id !== customer.id) return json({ error: "forbidden" }, 403);
+    reopenEvent = rev;
+    if (rev.product_id) {
+      const { data } = await admin.from("products").select(cols).eq("id", rev.product_id).eq("is_active", true);
+      candidates = data ?? [];
+    }
+  }
+  const v = reopenEvent ? null : (code.gtin ?? code.cnk);
   if (v) {
     const { data: hits } = await admin.rpc("scan_find_products_by_code", { _code: v });
     const rows = (hits ?? []) as Array<{ product_id: string; origin: string; packaging_level: string | null; units_per_pack: number | null }>;
@@ -83,7 +96,7 @@ Deno.serve(async (req) => {
       }
     }
   }
-  if (!candidates.length && lookup) {
+  if (!candidates.length && lookup && !reopenEvent) {
     // CNK stocké en « 4761-839 » ou « 4761839 »
     const dashed = `${lookup.slice(0, 4)}-${lookup.slice(4)}`;
     const { data } = await admin.from("products").select(cols).in("cnk_code", [lookup, dashed]).eq("is_active", true);
@@ -171,7 +184,7 @@ Deno.serve(async (req) => {
   const inScope = !!product && TEST_SCOPE.test(`${product.brand_name ?? ""} ${product.name ?? ""}`);
   const latency = Math.round(performance.now() - t0);
 
-  const { data: ev, error: evErr } = await admin.from("scan_events").insert({
+  const { data: ev, error: evErr } = reopenEvent ? { data: { id: reopenEvent.id }, error: null } : await admin.from("scan_events").insert({
     session_id: input.session_id ?? null, customer_id: customer.id, user_id: userId,
     symbology: input.symbology, raw_code: code.sanitized_raw, gtin: code.gtin ?? product?.gtin ?? null,
     cnk: code.cnk ?? product?.cnk_code ?? null, lot: code.lot, expiry_date: code.expiry_date,
@@ -183,7 +196,7 @@ Deno.serve(async (req) => {
   if (evErr) return json({ error: "log_failed", detail: evErr.message }, 500);
 
   // Produit inconnu (GTIN puis CNK) ou connu sans offre (id produit) → item de sourcing dédoublonné
-  const sourcingArgs = result === "unknown" && (code.gtin || code.cnk)
+  const sourcingArgs = reopenEvent ? null : result === "unknown" && (code.gtin || code.cnk)
     ? { _dedupe_key: code.gtin ? `gtin:${code.gtin}` : `cnk:${code.cnk}`, _product_id: null, _brand_id: null,
         _gtin: code.gtin ?? null, _cnk: code.cnk ?? null, _status: "unmatched" }
     : result === "known_no_offer" && product
@@ -208,7 +221,68 @@ Deno.serve(async (req) => {
       : getVendorPublicName({ display_code: best.vendor_display_code })
     : null;
 
+  // ── E1 : prix public, TVA et marge (officines vérifiées uniquement) ──
+  let margin: any = null;
+  if (product && best && customer.is_verified === true) {
+    const [{ data: pvpRows }, { data: vatRows }] = await Promise.all([
+      admin.rpc("resolve_product_pvp", { _product_id: product.id, _country_code: country }),
+      admin.rpc("resolve_product_vat_rate", { _product_id: product.id, _country_code: country }),
+    ]);
+    const pvpCents = Number((pvpRows as any[])?.[0]?.pvp_ttc_cents ?? 0);
+    const vatPct = Number((vatRows as any[])?.[0]?.vat_rate);
+    if (pvpCents > 0 && Number.isFinite(vatPct)) {
+      const pvpTtc = round2(pvpCents / 100);
+      const pvpHt = round2(pvpTtc / (1 + vatPct / 100));
+      const m = (buy: number | null) => buy != null && buy > 0
+        ? { eur: round2(pvpHt - buy), pct: pvpHt > 0 ? Math.round(((pvpHt - buy) / pvpHt) * 1000) / 10 : null }
+        : null;
+      margin = { pvp_ttc: pvpTtc, pvp_ht: pvpHt, vat_pct: vatPct, medikong: m(bestPrice), current: m(refMin) };
+    }
+  }
+
+  // ── E2 : 3 meilleures offres, une par vendeur ──
+  const topOffers: any[] = [];
+  if (product && best) {
+    topOffers.push({ offer_id: best.offer_id, vendor_id: best.vendor_id, price: bestPrice, vendor_label: null, lead_time_days: best.delivery_days ?? null, stock_quantity: best.stock_quantity ?? null });
+    const { data: others } = await admin.from("offers")
+      .select("id, vendor_id, price_excl_vat, delivery_days, stock_quantity, vendors(display_code)")
+      .eq("product_id", product.id).eq("is_active", true).neq("vendor_id", best.vendor_id)
+      .order("price_excl_vat", { ascending: true }).limit(50);
+    const seen = new Set<string>([best.vendor_id]);
+    for (const o of others ?? []) {
+      if (seen.has(o.vendor_id) || !(Number(o.price_excl_vat) > 0)) continue;
+      if (o.stock_quantity != null && Number(o.stock_quantity) <= 0) continue;
+      seen.add(o.vendor_id);
+      topOffers.push({
+        offer_id: o.id, vendor_id: o.vendor_id, price: round2(Number(o.price_excl_vat)),
+        vendor_label: getVendorPublicName({ display_code: (o as any).vendors?.display_code }),
+        lead_time_days: o.delivery_days ?? null, stock_quantity: o.stock_quantity ?? null,
+      });
+      if (topOffers.length >= 3) break;
+    }
+  }
+
+  // ── E3 : prix B2B constaté (< 60 jours, hors sources de test et sources non affichables) ──
+  let marketPrice: any = null;
+  if (product) {
+    const since = new Date(Date.now() - 60 * 86400000).toISOString();
+    const { data: srcs } = await admin.from("market_price_sources")
+      .select("id, is_test, wholesaler_profiles(display_prices_allowed)").eq("is_active", true);
+    const okSrc = (srcs ?? []).filter((s: any) => s.is_test !== true && s.wholesaler_profiles?.display_prices_allowed !== false).map((s: any) => s.id);
+    if (okSrc.length) {
+      const { data: mp } = await admin.from("market_prices").select("prix_grossiste, prix_pharmacien, imported_at")
+        .eq("product_id", product.id).in("source_id", okSrc).gte("imported_at", since)
+        .order("imported_at", { ascending: false }).limit(1);
+      const row = mp?.[0];
+      const val = Number(row?.prix_pharmacien ?? row?.prix_grossiste ?? 0);
+      if (row && val > 0) marketPrice = { price_excl_vat: round2(val), observed_at: row.imported_at };
+    }
+  }
+
   return json({
+    margin,
+    top_offers: topOffers.map((o, i) => (i === 0 ? { ...o, vendor_label: vendorLabel } : o)),
+    market_price: marketPrice,
     scan_event_id: ev.id,
     match_status: matchStatus,
     candidates: candidates.length > 1 ? candidates.map((c) => ({ id: c.id, name: c.name })) : [],

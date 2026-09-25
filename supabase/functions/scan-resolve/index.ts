@@ -55,36 +55,32 @@ Deno.serve(async (req) => {
   // Résolution produit : GTIN → product_market_codes → CNK normalisé
   const cols = "id, name, pack_size, cnk_code, gtin, image_url, brand_id, brand_name, category_id, primary_category_id";
   let candidates: any[] = [];
-  let matchedCode: { packaging_level: "unit" | "pack" | "carton"; units_per_pack: number } | null = null;
-  // Normalisation identique pour products.gtin et product_market_codes :
-  // chiffres seuls, zéros de tête ignorés, variantes GTIN-8/12/13/14.
-  const codeVariants = (raw: string) => {
-    const core = raw.replace(/\D/g, "").replace(/^0+/, "");
-    if (!core) return [];
-    return Array.from(new Set([core, ...[8, 12, 13, 14].filter((l) => l >= core.length).map((l) => core.padStart(l, "0"))]));
-  };
-  if (code.gtin) {
-    const { data } = await admin.from("products").select(cols).in("gtin", codeVariants(code.gtin)).eq("is_active", true);
-    candidates = data ?? [];
-    if (candidates.length) {
-      const units = Math.max(1, Number(candidates[0]?.pack_size ?? 1));
-      matchedCode = { packaging_level: units > 1 ? "pack" : "unit", units_per_pack: units };
-    }
-  }
+  let matchedCode: { packaging_level: "unit" | "pack" | "carton" | "unknown"; units_per_pack: number } | null = null;
+  // Normalisation unique côté base : public.normalize_gtin (suffixe .0/,0 retiré,
+  // chiffres seuls, zéros de tête retirés) appliquée à products.gtin ET product_market_codes.
   const lookup = code.cnk;
-  if (!candidates.length && (code.gtin || code.cnk)) {
-    const v = code.gtin ?? code.cnk!;
-    const { data: pmc } = await admin.from("product_market_codes")
-      .select("product_id, packaging_level, units_per_pack").in("code_value", codeVariants(v));
-    const ids = (pmc ?? []).map((r) => r.product_id);
+  const v = code.gtin ?? code.cnk;
+  if (v) {
+    const { data: hits } = await admin.rpc("scan_find_products_by_code", { _code: v });
+    const rows = (hits ?? []) as Array<{ product_id: string; origin: string; packaging_level: string | null; units_per_pack: number | null }>;
+    const gtinHits = rows.filter((r) => r.origin === "gtin");
+    const useRows = gtinHits.length ? gtinHits : rows.filter((r) => r.origin === "market_code");
+    const ids = Array.from(new Set(useRows.map((r) => r.product_id)));
     if (ids.length) {
       const { data } = await admin.from("products").select(cols).in("id", ids).eq("is_active", true);
       candidates = data ?? [];
-      const codeRow = (pmc ?? []).find((r) => candidates.some((c) => c.id === r.product_id));
-      if (codeRow) matchedCode = {
-        packaging_level: codeRow.packaging_level,
-        units_per_pack: Math.max(1, Number(codeRow.units_per_pack ?? 1)),
-      };
+      if (candidates.length) {
+        if (gtinHits.length) {
+          const units = Math.max(1, Number(candidates[0]?.pack_size ?? 1));
+          matchedCode = { packaging_level: units > 1 ? "pack" : "unit", units_per_pack: units };
+        } else {
+          const codeRow = useRows.find((r) => candidates.some((c) => c.id === r.product_id));
+          if (codeRow) matchedCode = {
+            packaging_level: (codeRow.packaging_level ?? "unknown") as any,
+            units_per_pack: Math.max(1, Number(codeRow.units_per_pack ?? 1)),
+          };
+        }
+      }
     }
   }
   if (!candidates.length && lookup) {

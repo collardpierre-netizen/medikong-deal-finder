@@ -16905,6 +16905,7 @@ export type Database = {
       }
       qo_campaigns: {
         Row: {
+          access_code: string | null
           allocation_note: string | null
           ask_buyer_price: boolean
           carrier_label: string | null
@@ -16936,6 +16937,7 @@ export type Database = {
           vendor_label: string | null
         }
         Insert: {
+          access_code?: string | null
           allocation_note?: string | null
           ask_buyer_price?: boolean
           carrier_label?: string | null
@@ -16967,6 +16969,7 @@ export type Database = {
           vendor_label?: string | null
         }
         Update: {
+          access_code?: string | null
           allocation_note?: string | null
           ask_buyer_price?: boolean
           carrier_label?: string | null
@@ -17325,6 +17328,7 @@ export type Database = {
           postal_code: string | null
           region: string | null
           segment: string | null
+          source: string | null
           street: string | null
           tenant_id: string | null
           token: string
@@ -17360,6 +17364,7 @@ export type Database = {
           postal_code?: string | null
           region?: string | null
           segment?: string | null
+          source?: string | null
           street?: string | null
           tenant_id?: string | null
           token?: string
@@ -17395,6 +17400,7 @@ export type Database = {
           postal_code?: string | null
           region?: string | null
           segment?: string | null
+          source?: string | null
           street?: string | null
           tenant_id?: string | null
           token?: string

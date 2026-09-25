@@ -17243,6 +17243,7 @@ export type Database = {
           converted_at: string | null
           converted_order_id: string | null
           created_at: string
+          dedupe_key: string | null
           delivery_note: string | null
           franco_reached: boolean
           id: string
@@ -17268,6 +17269,7 @@ export type Database = {
           converted_at?: string | null
           converted_order_id?: string | null
           created_at?: string
+          dedupe_key?: string | null
           delivery_note?: string | null
           franco_reached?: boolean
           id?: string
@@ -17293,6 +17295,7 @@ export type Database = {
           converted_at?: string | null
           converted_order_id?: string | null
           created_at?: string
+          dedupe_key?: string | null
           delivery_note?: string | null
           franco_reached?: boolean
           id?: string

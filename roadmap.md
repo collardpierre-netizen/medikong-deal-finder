@@ -6,6 +6,6 @@
 - [x] Créer Pharmacie Test 2 sans Scan et vérifier le refus en ligne
 - [x] Terminer les retours UI Scan restants et vérifier sur mobile
 
-- [ ] Diagnostiquer les EAN Fresubin en lecture seule
-- [ ] Présenter la migration multi-codes avant application
-- [ ] Préparer en preview le parcours code non reconnu après validation
+- [x] Diagnostiquer les EAN Fresubin en lecture seule
+- [x] Présenter puis appliquer la migration multi-codes après validation
+- [x] Préparer en preview le parcours code non reconnu et la validation admin

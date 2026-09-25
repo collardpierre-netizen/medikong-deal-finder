@@ -55,18 +55,29 @@ Deno.serve(async (req) => {
   // Résolution produit : GTIN → product_market_codes → CNK normalisé
   const cols = "id, name, pack_size, cnk_code, gtin, image_url, brand_id, brand_name, category_id, primary_category_id";
   let candidates: any[] = [];
+  let matchedCode: { packaging_level: "unit" | "pack" | "carton"; units_per_pack: number } | null = null;
   if (code.gtin) {
     const { data } = await admin.from("products").select(cols).eq("gtin", code.gtin).eq("is_active", true);
     candidates = data ?? [];
+    if (candidates.length) {
+      const units = Math.max(1, Number(candidates[0]?.pack_size ?? 1));
+      matchedCode = { packaging_level: units > 1 ? "pack" : "unit", units_per_pack: units };
+    }
   }
   const lookup = code.cnk;
   if (!candidates.length && (code.gtin || code.cnk)) {
     const v = code.gtin ?? code.cnk!;
-    const { data: pmc } = await admin.from("product_market_codes").select("product_id").eq("code_value", v);
+    const { data: pmc } = await admin.from("product_market_codes")
+      .select("product_id, packaging_level, units_per_pack").eq("code_value", v);
     const ids = (pmc ?? []).map((r) => r.product_id);
     if (ids.length) {
       const { data } = await admin.from("products").select(cols).in("id", ids).eq("is_active", true);
       candidates = data ?? [];
+      const codeRow = (pmc ?? []).find((r) => candidates.some((c) => c.id === r.product_id));
+      if (codeRow) matchedCode = {
+        packaging_level: codeRow.packaging_level,
+        units_per_pack: Math.max(1, Number(codeRow.units_per_pack ?? 1)),
+      };
     }
   }
   if (!candidates.length && lookup) {
@@ -199,6 +210,7 @@ Deno.serve(async (req) => {
     match_status: matchStatus,
     candidates: candidates.length > 1 ? candidates.map((c) => ({ id: c.id, name: c.name })) : [],
     product: product ? { id: product.id, name: product.name, pack: product.pack_size, cnk: product.cnk_code, image: product.image_url } : null,
+    scanned_packaging: matchedCode,
     lot: code.lot, expiry_date: code.expiry_date, verdict, delta,
     best: best ? { price: bestPrice, vendor_label: vendorLabel, vendor_id: best.vendor_id, franco: null, lead_time_days: best.delivery_days ?? null, offer_id: best.offer_id, stock_quantity: best.stock_quantity ?? null } : null,
     references: hideDetail ? [] : references.map(({ _allowed, ...r }) => r),

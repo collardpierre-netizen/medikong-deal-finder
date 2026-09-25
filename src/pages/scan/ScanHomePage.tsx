@@ -117,7 +117,7 @@ export default function ScanHomePage() {
         <div className="px-5 space-y-4">
           {result.product && result.best
             ? <VerdictCard r={result} customerId={customer.id} hasConditions={hasConditions} estimated={estimated} onResult={setResult} onScanNext={() => { setResult(null); setManual(false); setCnk(""); }} />
-            : <NoOfferCard r={result} customerId={customer.id} />}
+            : <NoOfferCard r={result} customerId={customer.id} onResult={setResult} />}
           <Button variant="outline" className="scan-tap h-12 w-full text-base" onClick={() => { setResult(null); setManual(false); setCnk(""); }}>
             <Camera className="mr-2 h-5 w-5" />Scanner un autre produit
           </Button>
@@ -178,6 +178,8 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
   const francoRemaining = Math.max(francoTarget - subtotal, 0);
   const v = VERDICT[r.verdict];
   const gain = r.delta != null && r.delta > 0 ? r.delta : null;
+  const soldUnits = Math.max(1, Number(r.product?.pack ?? 1));
+  const unitPrice = soldUnits > 1 && r.best ? r.best.price / soldUnits : null;
   const minimumBoxCount = mov != null && r.best?.price ? Math.ceil(mov / r.best.price) : null;
   const add = (scanNext: boolean) => {
     if (!r.best || !r.product) return;
@@ -230,6 +232,12 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
           {r.best!.lead_time_days != null ? ` · livraison ${r.best!.lead_time_days} j` : ""}
           {r.best!.franco != null ? ` · franco ${formatMoney(r.best!.franco)}` : ""}
         </div>
+        {soldUnits > 1 && (
+          <div className="rounded-lg bg-muted p-3 text-sm">
+            <div className="font-semibold">Vendu par pack de {soldUnits}</div>
+            {unitPrice != null && <div className="text-muted-foreground">{formatMoney(unitPrice)} HTVA par bouteille</div>}
+          </div>
+        )}
         <div className="flex items-center justify-between gap-3 border-t pt-3">
           <span className="text-sm font-medium">Quantité</span>
           <QuantityInput value={quantity} min={1} max={stockQuantity ?? undefined} onChange={setQuantity} />
@@ -326,8 +334,9 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
   );
 }
 
-function NoOfferCard({ r, customerId }: { r: ScanResult; customerId: string }) {
+function NoOfferCard({ r, customerId, onResult }: { r: ScanResult; customerId: string; onResult: (result: ScanResult) => void }) {
   const unknown = !r.product;
+  const [search, setSearch] = useState("");
   const [name, setName] = useState("");
   const [qty, setQty] = useState("");
   const [price, setPrice] = useState("");
@@ -335,6 +344,41 @@ function NoOfferCard({ r, customerId }: { r: ScanResult; customerId: string }) {
   const [photo, setPhoto] = useState<File | null>(null);
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  const { data: matches = [], isFetching: searching } = useQuery({
+    queryKey: ["scan-product-search", search],
+    enabled: unknown && search.trim().length >= 2,
+    queryFn: async () => {
+      const q = search.trim().replace(/[,%()]/g, " ");
+      const { data, error } = await sb.from("products")
+        .select("id, name, brand_name, cnk_code, pack_size")
+        .eq("is_active", true)
+        .or(`name.ilike.%${q}%,brand_name.ilike.%${q}%,cnk_code.ilike.%${q}%`)
+        .order("name").limit(8);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const chooseProduct = async (product: { id: string; cnk_code: string | null }) => {
+    if (!product.cnk_code) { toast.error("Cette fiche n'a pas de CNK exploitable."); return; }
+    setBusy(true);
+    try {
+      const { error } = await sb.rpc("scan_create_gtin_proposal", {
+        _scan_event_id: r.scan_event_id,
+        _product_id: product.id,
+        _packaging_level: "unit",
+        _units_per_pack: 1,
+      });
+      if (error) throw error;
+      const resolved = await resolveScan({ raw_code: product.cnk_code, symbology: "manual_cnk", client_decode_ms: null });
+      onResult(resolved);
+      toast.success("Fiche trouvée · EAN envoyé pour validation");
+    } catch (error) {
+      console.error("scan product proposal failed", error);
+      toast.error("Impossible de rattacher cette fiche, réessayez.");
+    } finally { setBusy(false); }
+  };
 
   const { data: rank } = useQuery({
     queryKey: ["scan-rank", r.scan_event_id],
@@ -369,18 +413,43 @@ function NoOfferCard({ r, customerId }: { r: ScanResult; customerId: string }) {
 
   return (
     <div className="space-y-3">
-      <ProductHead r={r} />
+      {!unknown && <ProductHead r={r} />}
       <div className="rounded-2xl verdict-none p-4 space-y-1">
-        <div className="text-lg font-extrabold">On le cherche pour vous</div>
+        <div className="text-lg font-extrabold">{unknown ? "Code non reconnu — cherchez le produit" : "On le cherche pour vous"}</div>
         {rank != null && <div className="text-sm opacity-90">Vous êtes la {rank}{rank === 1 ? "re" : "e"} pharmacie à le chercher cette semaine.</div>}
       </div>
+      {unknown && (
+        <div className="rounded-xl border bg-card p-4 space-y-3">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} className="h-11 pl-10" placeholder="Nom, marque ou CNK" />
+          </div>
+          {searching && <div className="flex justify-center py-2"><Loader2 className="h-5 w-5 animate-spin" /></div>}
+          {matches.length > 0 && (
+            <div className="divide-y rounded-lg border">
+              {matches.map((product: any) => (
+                <Button key={product.id} type="button" variant="ghost" className="h-auto w-full justify-start rounded-none px-3 py-3 text-left" disabled={busy} onClick={() => chooseProduct(product)}>
+                  <span className="min-w-0">
+                    <span className="block whitespace-normal font-medium">{product.name}</span>
+                    <span className="block text-xs text-muted-foreground">{product.brand_name ?? ""}{product.cnk_code ? ` · CNK ${product.cnk_code}` : ""}</span>
+                  </span>
+                </Button>
+              ))}
+            </div>
+          )}
+          {search.trim().length >= 2 && !searching && matches.length === 0 && <p className="text-sm text-muted-foreground">Aucune fiche correspondante.</p>}
+        </div>
+      )}
       {sent ? (
         <div className="rounded-xl border bg-card p-4 text-sm">Merci, votre demande est enregistrée.</div>
       ) : (
         <div className="rounded-xl border bg-card p-4 space-y-3">
           {unknown && (
             <>
-              <Input placeholder="Nom du produit" value={name} onChange={(e) => setName(e.target.value)} className="h-11" />
+              <div className="border-t pt-3">
+                <div className="mb-2 font-semibold">Aucune fiche ne convient ?</div>
+                <Input placeholder="Nom du produit" value={name} onChange={(e) => setName(e.target.value)} className="h-11" />
+              </div>
               <label className="scan-tap flex cursor-pointer items-center gap-2 rounded-lg border border-dashed p-3 text-sm">
                 <Camera className="h-5 w-5" />{photo ? photo.name : "Photo de la boîte (facultatif)"}
                 <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} />

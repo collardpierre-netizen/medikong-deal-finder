@@ -99,6 +99,69 @@ export function reference(campaignCode: string): string {
   return `QO-${short}-${suffix}`;
 }
 
+// ---------------------------------------------------------------------------
+// Parcours groupement (Dynaphar) — utilitaires additifs.
+// Rien ici n'est utilisé par le parcours par token existant.
+// ---------------------------------------------------------------------------
+
+/** Comparaison à temps constant de deux chaînes (code d'accès). */
+export function timingSafeEqualStr(a: string, b: string): boolean {
+  const ea = new TextEncoder().encode(a);
+  const eb = new TextEncoder().encode(b);
+  // Longueurs différentes : on compare quand même pour ne pas fuir la longueur.
+  let diff = ea.length ^ eb.length;
+  const n = Math.max(ea.length, eb.length, 1);
+  for (let i = 0; i < n; i++) {
+    diff |= (ea[i % (ea.length || 1)] ?? 0) ^ (eb[i % (eb.length || 1)] ?? 0);
+  }
+  return diff === 0;
+}
+
+export const normalizeEmail = (v: unknown): string =>
+  typeof v === "string" ? v.trim().toLowerCase() : "";
+
+export function isValidEmail(v: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(v) && v.length <= 190;
+}
+
+/** BCE belge : 10 chiffres, commence par 0 ou 1, modulo 97 sur les 8 premiers. */
+export function isValidBce(v: string): boolean {
+  const d = (v ?? "").replace(/[^0-9]/g, "");
+  if (!/^[01]\d{9}$/.test(d)) return false;
+  const base = Number(d.slice(0, 8));
+  const check = Number(d.slice(8));
+  return 97 - (base % 97) === check;
+}
+
+export const digitsOnly = (v: unknown): string =>
+  typeof v === "string" ? v.replace(/[^0-9]/g, "") : "";
+
+export async function sha256Hex(input: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(input),
+  );
+  return [...new Uint8Array(digest)]
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+/**
+ * Clé anti-course : destinataire + lignes normalisées triées + compartiment
+ * de 10 minutes. L'index UNIQUE sur qo_orders.dedupe_key fait l'arbitrage.
+ */
+export async function dedupeKey(
+  recipientId: string,
+  lines: Array<{ item_id: string; qty: number }>,
+): Promise<string> {
+  const normalized = lines
+    .map((l) => `${l.item_id}:${l.qty}`)
+    .sort()
+    .join("|");
+  const bucket = Math.floor(Date.now() / 1000 / 600);
+  return await sha256Hex(`${recipientId}#${normalized}#${bucket}`);
+}
+
 export type OfferItem = {
   id: string;
   position: number;

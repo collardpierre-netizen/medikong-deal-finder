@@ -1,5 +1,5 @@
 import { SCAN_BASENAME } from "@/config/surface";
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { NavLink } from "react-router-dom";
 import { Loader2, ScanLine, PackageX, ShoppingCart, User, Lock, Mail, type LucideIcon } from "lucide-react";
@@ -100,10 +100,17 @@ function CodeLogin() {
 
 function BottomBar() {
   const { cartCount } = useCart();
+  // Rebond de l'icône panier quand le nombre d'articles augmente
+  const prevCount = useRef(cartCount);
+  const [bounce, setBounce] = useState(0);
+  useEffect(() => {
+    if (cartCount > prevCount.current) setBounce((n) => n + 1);
+    prevCount.current = cartCount;
+  }, [cartCount]);
   const item = (to: string, label: string, Icon: LucideIcon, soon = false, badge?: number) => {
     const content = (
       <>
-        <span className="relative flex h-6 w-6 items-center justify-center">
+        <span key={badge != null ? `b${bounce}` : undefined} className={`relative flex h-6 w-6 items-center justify-center ${badge != null && bounce ? "scan-bounce" : ""}`}>
           <Icon className="h-6 w-6" />
           {soon && (
             <span className="absolute -right-5 -top-2 whitespace-nowrap rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium leading-none text-muted-foreground">

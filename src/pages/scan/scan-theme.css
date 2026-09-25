@@ -27,3 +27,18 @@
 .scan-theme .verdict-orange { background-color: hsl(var(--scan-orange)); color: hsl(0 0% 100%); }
 .scan-theme .verdict-red { background-color: hsl(var(--scan-red)); color: hsl(0 0% 100%); }
 .scan-theme .verdict-none { background-color: hsl(var(--scan-navy)); color: hsl(0 0% 100%); }
+
+/* Micro-animations Scan (< 300 ms), désactivées si réduction de mouvement */
+@keyframes scan-verdict-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes scan-flash { 0% { box-shadow: 0 0 0 0 hsl(var(--primary) / .9); border-color: hsl(var(--primary)); background-color: hsl(var(--primary) / .25); } 100% { box-shadow: 0 0 0 14px hsl(var(--primary) / 0); background-color: transparent; } }
+@keyframes scan-bounce { 0%,100% { transform: none; } 40% { transform: translateY(-5px) scale(1.12); } 70% { transform: translateY(1px); } }
+@keyframes scan-skeleton { 0% { opacity: .55; } 50% { opacity: 1; } 100% { opacity: .55; } }
+.scan-theme .scan-verdict-in { animation: scan-verdict-in 260ms ease-out both; }
+.scan-theme .scan-flash { animation: scan-flash 280ms ease-out; }
+.scan-theme .scan-bounce { animation: scan-bounce 280ms ease-out; }
+.scan-theme .scan-skeleton { background-color: hsl(var(--muted)); border-radius: .5rem; animation: scan-skeleton 1.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .scan-theme .scan-verdict-in, .scan-theme .scan-bounce { animation: none; }
+  .scan-theme .scan-flash { animation: none; border-color: hsl(var(--primary)); background-color: hsl(var(--primary) / .25); }
+  .scan-theme .scan-skeleton { animation: none; }
+}

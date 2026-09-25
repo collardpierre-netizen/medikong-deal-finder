@@ -21,6 +21,7 @@ const ScanConditionsPage = lazyWithRetry(() => import("./pages/scan/ScanConditio
 const ScanCartPage = lazyWithRetry(() => import("./pages/scan/ScanCartPage"), "ScanCartPage");
 const ScanSoonPage = lazyWithRetry(() => import("./pages/scan/ScanSoonPage"), "ScanSoonPage");
 const ScanMePage = lazyWithRetry(() => import("./pages/scan/ScanMePage"), "ScanMePage");
+const ScanHistoryPage = lazyWithRetry(() => import("./pages/scan/ScanHistoryPage"), "ScanHistoryPage");
 
 function Loader() {
   return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -67,6 +68,7 @@ const ScanApp = () => {
                               <Route path="/panier" element={<ScanCartPage />} />
                               <Route path="/ruptures" element={<ScanSoonPage title="Ruptures" />} />
                               <Route path="/moi" element={<ScanMePage />} />
+                             <Route path="/historique" element={<ScanHistoryPage />} />
                               <Route path="*" element={<ScanHomePage />} />
                             </Routes>
                           </ScanGate>

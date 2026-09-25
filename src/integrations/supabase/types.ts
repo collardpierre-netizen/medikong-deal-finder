@@ -17243,6 +17243,7 @@ export type Database = {
           converted_at: string | null
           converted_order_id: string | null
           created_at: string
+          dedupe_key: string | null
           delivery_note: string | null
           franco_reached: boolean
           id: string
@@ -17268,6 +17269,7 @@ export type Database = {
           converted_at?: string | null
           converted_order_id?: string | null
           created_at?: string
+          dedupe_key?: string | null
           delivery_note?: string | null
           franco_reached?: boolean
           id?: string
@@ -17293,6 +17295,7 @@ export type Database = {
           converted_at?: string | null
           converted_order_id?: string | null
           created_at?: string
+          dedupe_key?: string | null
           delivery_note?: string | null
           franco_reached?: boolean
           id?: string
@@ -21637,6 +21640,94 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "scan_sessions"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      scan_favorites: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          id: string
+          product_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          id?: string
+          product_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_favorites_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_favorites_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_live_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "scan_favorites_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "scan_favorites_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_favorites_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "scan_favorites_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "scan_favorites_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_favorites_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_favorites_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
           },
         ]
       }

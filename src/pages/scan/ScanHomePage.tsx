@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Flashlight, Keyboard, Loader2, Camera, Search, ShoppingCart, Settings2 } from "lucide-react";
+import { Flashlight, Keyboard, Loader2, Camera, Search, ShoppingCart, Settings2, History, Star, ChevronDown } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/hooks/useCart";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,8 @@ export default function ScanHomePage() {
   const [cnk, setCnk] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
+  const [flash, setFlash] = useState(0);
+  const [params, setParams] = useSearchParams();
 
   const { data: conditions = [] } = useQuery({
     queryKey: ["scan-conditions", customer.id],
@@ -44,22 +47,32 @@ export default function ScanHomePage() {
   const hasConditions = conditions.some((c: any) => c.is_supplier_of_pharmacist !== false);
   const estimated = conditions.some((c: any) => c.override_rules_json?.year_end_rebate || c.override_rules_json?.free_goods);
 
-  const run = useCallback(async (raw: string, symbology: "ean13" | "datamatrix" | "manual_cnk" | "other", decodeMs: number | null) => {
+  const run = useCallback(async (raw: string, symbology: "ean13" | "datamatrix" | "manual_cnk" | "other", decodeMs: number | null, reopenId?: string) => {
     setBusy(true);
     try {
-      const r = await resolveScan({ raw_code: raw, symbology, client_decode_ms: decodeMs });
+      const r = await resolveScan({ raw_code: raw, symbology, client_decode_ms: decodeMs, reopen_scan_event_id: reopenId ?? null });
       setResult(r);
     } catch {
       toast.error("Lecture impossible, réessayez.");
     } finally { setBusy(false); }
   }, []);
 
+  // Réouverture depuis « Derniers scans » / « Mes favoris »
+  const reopenId = params.get("reopen");
+  const reopenCnk = params.get("cnk");
+  useEffect(() => {
+    if (!reopenId && !reopenCnk) return;
+    setParams({}, { replace: true });
+    if (reopenId) void run("0", "manual_cnk", null, reopenId);
+    else if (reopenCnk) void run(reopenCnk, "manual_cnk", null);
+  }, [reopenId, reopenCnk, run, setParams]);
+
   // Caméra active tant qu'aucun résultat n'est affiché
   useEffect(() => {
-    if (result || manual) return;
+    if (result || manual || reopenId || reopenCnk) return;
     const s = createZxingScanner();
     scanner.current = s;
-    s.onDetect((d) => { s.stop(); void run(d.text, d.symbology, d.decodeMs); });
+    s.onDetect((d) => { setFlash((n) => n + 1); s.stop(); void run(d.text, d.symbology, d.decodeMs); });
     if (videoRef.current) {
       s.start(videoRef.current)
         .then(() => { setCamError(null); setTorchAvail(s.hasTorch()); })
@@ -78,9 +91,14 @@ export default function ScanHomePage() {
             <div className="text-xs opacity-80">{customer.company_name ?? "Votre officine"}</div>
             <h1 className="text-xl font-extrabold">Scanner</h1>
           </div>
+          <div className="flex items-center gap-2">
+          <Button asChild variant="secondary" size="icon" className="scan-tap" aria-label="Derniers scans et favoris">
+            <Link to="/historique"><History className="h-5 w-5" /></Link>
+          </Button>
           <Button asChild variant="secondary" size="sm" className="scan-tap">
             <Link to="/conditions"><Settings2 className="mr-1 h-4 w-4" />Mes conditions</Link>
           </Button>
+          </div>
         </div>
       </header>
 
@@ -88,14 +106,15 @@ export default function ScanHomePage() {
         <div className="px-5 space-y-3">
           <div className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-scan-navy">
             <video ref={videoRef} className="h-full w-full object-cover" playsInline muted />
-            <div className="pointer-events-none absolute inset-x-8 top-1/2 h-32 -translate-y-1/2 rounded-xl border-2 border-primary" />
-            {busy && <div className="absolute inset-0 flex items-center justify-center bg-scan-navy/60"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>}
+            <div key={flash} className={`pointer-events-none absolute inset-x-8 top-1/2 h-32 -translate-y-1/2 rounded-xl border-2 border-primary ${flash ? "scan-flash" : ""}`} />
+            {busy && <div className="absolute inset-0 bg-scan-navy/40" aria-label="Recherche en cours" />}
             {torchAvail && (
               <Button size="icon" variant="secondary" className="scan-tap absolute right-3 top-3" aria-label="Lampe" onClick={toggleTorch}>
                 <Flashlight className="h-5 w-5" />
               </Button>
             )}
           </div>
+          {busy && <VerdictSkeleton />}
           {camError && <p className="text-sm text-muted-foreground">{camError}</p>}
           <Button variant="link" className="scan-tap w-full" onClick={() => setManual(true)}>
             <Keyboard className="mr-2 h-4 w-4" />Code illisible ? Saisir le CNK
@@ -113,6 +132,7 @@ export default function ScanHomePage() {
         </form>
       )}
 
+      {!result && (reopenId || reopenCnk || (manual && busy)) && <div className="px-5"><VerdictSkeleton /></div>}
       {result && (
         <div className="px-5 space-y-4">
           {result.product && result.best
@@ -127,7 +147,61 @@ export default function ScanHomePage() {
   );
 }
 
-function ProductHead({ r }: { r: ScanResult }) {
+function VerdictSkeleton() {
+  return (
+    <div className="space-y-3" aria-hidden>
+      <div className="flex gap-3"><div className="scan-skeleton h-20 w-20" /><div className="flex-1 space-y-2"><div className="scan-skeleton h-4 w-3/4" /><div className="scan-skeleton h-3 w-1/2" /></div></div>
+      <div className="scan-skeleton h-36 w-full" />
+      <div className="scan-skeleton h-20 w-full" />
+    </div>
+  );
+}
+
+/** Compteur qui défile jusqu'à sa valeur (< 300 ms), instantané si réduction de mouvement. */
+function useCountUp(target: number | null, ms = 260) {
+  const [v, setV] = useState(target ?? 0);
+  useEffect(() => {
+    if (target == null) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) { setV(target); return; }
+    let raf = 0; const t0 = performance.now();
+    const step = (t: number) => {
+      const k = Math.min(1, (t - t0) / ms);
+      setV(target * (1 - Math.pow(1 - k, 3)));
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [target, ms]);
+  return v;
+}
+
+const fmtPct = (n: number | null | undefined) => n == null ? "" : `${String(Math.round(n)).replace(".", ",")} %`;
+
+function FavoriteStar({ customerId, productId }: { customerId: string; productId: string }) {
+  const qc = useQueryClient();
+  const key = ["scan-favorite", customerId, productId];
+  const { data: fav } = useQuery({
+    queryKey: key,
+    queryFn: async () => (await sb.from("scan_favorites").select("id").eq("customer_id", customerId).eq("product_id", productId).maybeSingle()).data,
+  });
+  const toggle = async () => {
+    const { data: u } = await supabase.auth.getUser();
+    const { error } = fav
+      ? await sb.from("scan_favorites").delete().eq("id", fav.id)
+      : await sb.from("scan_favorites").insert({ customer_id: customerId, product_id: productId, created_by: u.user?.id });
+    if (error) { toast.error("Favori non enregistré, réessayez."); return; }
+    toast.success(fav ? "Retiré des favoris" : "Ajouté aux favoris");
+    void qc.invalidateQueries({ queryKey: key });
+    void qc.invalidateQueries({ queryKey: ["scan-favorites", customerId] });
+  };
+  return (
+    <Button type="button" variant="ghost" size="icon" className="scan-tap shrink-0" aria-pressed={!!fav} aria-label={fav ? "Retirer des favoris" : "Ajouter aux favoris"} onClick={toggle}>
+      <Star className={`h-6 w-6 ${fav ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+    </Button>
+  );
+}
+
+function ProductHead({ r, customerId }: { r: ScanResult; customerId?: string }) {
   return (
     <div className="flex gap-3">
       {r.product?.image
@@ -146,6 +220,7 @@ function ProductHead({ r }: { r: ScanResult }) {
         )}
         {!r.in_test_scope && <Badge variant="secondary">Hors périmètre du test</Badge>}
       </div>
+      {customerId && r.product && <FavoriteStar customerId={customerId} productId={r.product.id} />}
     </div>
   );
 }
@@ -169,8 +244,11 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
   });
   const vendorId = r.best?.vendor_id ?? offerMeta?.vendor_id;
   const stockQuantity = r.best?.stock_quantity ?? offerMeta?.stock_quantity ?? null;
-  const vendorIds = vendorId ? [vendorId] : [];
+  const topOffers = r.top_offers ?? [];
+  const [showOthers, setShowOthers] = useState(false);
+  const vendorIds = Array.from(new Set([vendorId, ...topOffers.map((o) => o.vendor_id)].filter(Boolean))) as string[];
   const { getMovForVendor } = useVendorMov(vendorIds);
+  const animatedGain = useCountUp(r.delta != null && r.delta > 0 ? r.delta : null);
   const mov = vendorId ? getMovForVendor(vendorId) : null;
   const subtotal = (r.best?.price ?? 0) * quantity;
   const movRemaining = mov != null ? Math.max(mov - subtotal, 0) : 0;
@@ -221,7 +299,7 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
   };
   return (
     <div className="space-y-3">
-      <ProductHead r={r} />
+      <ProductHead r={r} customerId={customerId} />
       <div className="rounded-xl border-2 border-primary bg-card p-4 space-y-2">
         <div className="flex items-baseline justify-between">
           <span className="font-bold">MediKong</span>
@@ -232,6 +310,22 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
           {r.best!.lead_time_days != null ? ` · livraison ${r.best!.lead_time_days} j` : ""}
           {r.best!.franco != null ? ` · franco ${formatMoney(r.best!.franco)}` : ""}
         </div>
+        {r.market_price && (
+          <div className="text-xs text-muted-foreground">
+            Prix B2B constaté : {formatMoney(r.market_price.price_excl_vat)} HTVA · {new Date(r.market_price.observed_at).toLocaleDateString("fr-BE", { day: "2-digit", month: "2-digit" })}
+          </div>
+        )}
+        {r.margin?.medikong && (
+          <div className="rounded-lg bg-muted p-3 text-sm">
+            <div className="font-semibold">
+              Votre marge : {formatMoney(r.margin.medikong.eur)} · {fmtPct(r.margin.medikong.pct)}
+            </div>
+            {r.margin.current?.pct != null && r.margin.medikong.pct != null && (
+              <div className="text-muted-foreground">Votre marge passe de {fmtPct(r.margin.current.pct)} à {fmtPct(r.margin.medikong.pct)}</div>
+            )}
+            <div className="text-xs text-muted-foreground">Prix public {formatMoney(r.margin.pvp_ttc)} TVAC · {formatMoney(r.margin.pvp_ht)} HTVA (TVA {String(r.margin.vat_pct).replace(".", ",")} %)</div>
+          </div>
+        )}
         {soldUnits > 1 && (
           <div className="rounded-lg bg-muted p-3 text-sm">
             <div className="font-semibold">Vendu par pack de {soldUnits}</div>
@@ -260,16 +354,43 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
             <div className="mt-1 text-muted-foreground">{francoRemaining > 0 ? `Plus que ${formatMoney(francoRemaining)} pour la livraison gratuite` : "✓ Livraison gratuite"}</div>
           </div>
         )}
+        {topOffers.length > 1 && (
+          <div className="border-t pt-2">
+            <Button type="button" variant="ghost" size="sm" className="scan-tap w-full justify-between px-1" aria-expanded={showOthers} onClick={() => setShowOthers((x) => !x)}>
+              <span>{topOffers.length - 1} autre{topOffers.length > 2 ? "s" : ""} offre{topOffers.length > 2 ? "s" : ""}</span>
+              <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${showOthers ? "rotate-180" : ""}`} />
+            </Button>
+            {showOthers && (
+              <div className="mt-1 space-y-2">
+                {topOffers.slice(1).map((o) => {
+                  const m = getMovForVendor(o.vendor_id);
+                  return (
+                    <div key={o.offer_id} className="flex items-baseline justify-between gap-3 rounded-lg bg-muted p-3 text-sm">
+                      <div className="min-w-0">
+                        <div className="font-medium">{o.vendor_label}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {m != null ? `Minimum de commande ${formatMoney(m)} HTVA` : "Sans minimum de commande"}
+                          {o.lead_time_days != null ? ` · livraison ${o.lead_time_days} j` : ""}
+                        </div>
+                      </div>
+                      <span className="shrink-0 font-bold">{formatMoney(o.price)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
         <Button className="scan-tap h-12 w-full text-base" onClick={() => add(true)}><Camera className="mr-2 h-5 w-5" />Ajouter et scanner le suivant</Button>
         <Button asChild variant="link" className="scan-tap h-10 w-full"><Link to="/panier" onClick={() => add(false)}><ShoppingCart className="mr-2 h-4 w-4" />Ajouter et voir le panier</Link></Button>
       </div>
 
       {r.verdict !== "none" && (
-        <div className={`rounded-2xl p-4 ${v.cls}`}>
+        <div className={`scan-verdict-in rounded-2xl p-4 ${v.cls}`}>
           <div className="text-lg font-extrabold">{v.title}</div>
           {gain != null && (
             <>
-              <div className="text-2xl font-extrabold">{estimated ? "Gain estimé" : "Gain"} : {formatMoney(gain)} / boîte</div>
+              <div className="text-2xl font-extrabold">{estimated ? "Gain estimé" : "Gain"} : {formatMoney(Math.round(animatedGain * 100) / 100)} / boîte</div>
               {minimumBoxCount != null && quantity < minimumBoxCount && mov != null && (
                 <div className="mt-2 text-sm font-medium">
                   Gain réel à partir de {minimumBoxCount} boîtes (minimum de commande {formatMoney(mov)}), ou complétez avec d'autres produits de ce fournisseur.
@@ -424,7 +545,7 @@ function NoOfferCard({ r, customerId, onResult }: { r: ScanResult; customerId: s
             <Search className="pointer-events-none absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)} className="h-11 pl-10" placeholder="Nom, marque ou CNK" />
           </div>
-          {searching && <div className="flex justify-center py-2"><Loader2 className="h-5 w-5 animate-spin" /></div>}
+          {searching && <div className="space-y-2" aria-hidden><div className="scan-skeleton h-10 w-full" /><div className="scan-skeleton h-10 w-full" /></div>}
           {matches.length > 0 && (
             <div className="divide-y rounded-lg border">
               {matches.map((product: any) => (

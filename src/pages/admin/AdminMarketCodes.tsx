@@ -63,17 +63,24 @@ export default function AdminMarketCodes() {
     return vals;
   };
 
+  // Pas d'upsert implicite : ligne existante → mise à jour par id (tracée dans audit_logs),
+  // sinon « Ajouter un code » → nouvelle ligne. Tout passe par admin_save_market_code.
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const upserts = Object.entries(codeValues).filter(([, v]) => v.value.trim()).map(([typeId, v]) => ({
-        product_id: selectedProduct.id, market_code_type_id: typeId, code_value: v.value.trim(), verified: v.verified, source: "admin", updated_at: new Date().toISOString(),
-      }));
-      if (upserts.length === 0) return;
-      const { error } = await supabase.from("product_market_codes").upsert(upserts, { onConflict: "product_id,market_code_type_id" });
-      if (error) throw error;
+      const ops = Object.entries(codeValues).filter(([, v]) => v.value.trim()).map(([typeId, v]) => {
+        const existing = existingCodes.find((e: any) => e.market_code_type_id === typeId);
+        return { existing, typeId, v };
+      }).filter(({ existing, v }) => !existing || existing.code_value !== v.value.trim() || existing.verified !== v.verified);
+      for (const { existing, typeId, v } of ops) {
+        const { error } = await (supabase as any).rpc("admin_save_market_code", {
+          _id: existing?.id ?? null, _product_id: selectedProduct.id, _type_id: typeId,
+          _code: v.value.trim(), _verified: v.verified,
+        });
+        if (error) throw error;
+      }
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["product-market-codes", selectedProduct?.id] }); toast.success("Codes sauvegardés !"); },
-    onError: () => toast.error("Erreur lors de la sauvegarde"),
+    onError: (e: any) => toast.error(e?.message?.includes("duplicate") ? "Ce code est déjà utilisé" : "Erreur lors de la sauvegarde"),
   });
 
   const currentCodes = selectedProduct ? fillCodes() : {};
@@ -131,6 +138,9 @@ export default function AdminMarketCodes() {
                     <div key={ct.id} className="space-y-1.5">
                       <label className="text-sm font-medium flex items-center gap-2">
                         <span>{FLAG_MAP[ct.country_code] || "🏳️"}</span> {ct.label} ({ct.country_name})
+                        <span className="text-[11px] font-normal text-muted-foreground">
+                          · {existingCodes.some((e: any) => e.market_code_type_id === ct.id) ? "Modifier" : "Ajouter un code"}
+                        </span>
                       </label>
                       <div className="flex items-center gap-2">
                         <Input placeholder={ct.description || ct.code} value={val.value}

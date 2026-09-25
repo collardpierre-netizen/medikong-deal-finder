@@ -386,6 +386,13 @@
       "when": 1790345861410,
       "tag": "0054_admin_read_declared_prices",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1790346008595,
+      "tag": "0055_gtin_proposal_source_fix",
+      "breakpoints": true
     }
   ]
 }

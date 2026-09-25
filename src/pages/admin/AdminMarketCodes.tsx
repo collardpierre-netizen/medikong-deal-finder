@@ -66,7 +66,7 @@ export default function AdminMarketCodes() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       const upserts = Object.entries(codeValues).filter(([, v]) => v.value.trim()).map(([typeId, v]) => ({
-        product_id: selectedProduct.id, market_code_type_id: typeId, code_value: v.value.trim(), verified: v.verified, source: "manual", updated_at: new Date().toISOString(),
+        product_id: selectedProduct.id, market_code_type_id: typeId, code_value: v.value.trim(), verified: v.verified, source: "admin", updated_at: new Date().toISOString(),
       }));
       if (upserts.length === 0) return;
       const { error } = await supabase.from("product_market_codes").upsert(upserts, { onConflict: "product_id,market_code_type_id" });

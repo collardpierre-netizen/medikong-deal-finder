@@ -1001,7 +1001,7 @@ async function sendGroupEmails(a: {
               : "") +
             `${identity.pharmacy_name} (${identity.city ?? "-"})\n` +
             `${recipient.contact_email} · ${identity.phone ?? "-"}\n` +
-            `BCE : ${identity.bce ?? "-"} · APB : ${apb || "-"}\n` +
+            `BCE : ${identity.bce ?? "-"} · APB : ${identity.apb ?? "-"}\n` +
             `Flux : cold · Source : dynaphar (groupement)\n` +
             `Campagne : ${campaign.code}\n` +
             `Total HTVA : ${eur(a.subtotal)} €\n` +

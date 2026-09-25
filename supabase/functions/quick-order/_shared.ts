@@ -165,7 +165,8 @@ export async function dedupeKey(
 /**
  * Mécanisme 2 — anti-re-soumission : commande NON ANNULÉE du même
  * destinataire, lignes identiques, created_at < 10 minutes.
- * Retourne la commande jumelle, null sinon. Lève en cas d'erreur de lecture.
+ * Retourne la commande jumelle, null sinon. En cas d'erreur de lecture :
+ * journalisée puis null — la commande passe.
  */
 export async function findRecentTwin(
   recipientId: string,
@@ -182,8 +183,12 @@ export async function findRecentTwin(
     .order("created_at", { ascending: false })
     .limit(20);
   if (error) {
-    console.error(`[quick-order][${tag}] recherche re-soumission échouée:`, error.message, error);
-    throw error;
+    console.error(
+      `[quick-order][${tag}] recherche re-soumission échouée — commande laissée passer:`,
+      error.message,
+      error,
+    );
+    return null; // Un hoquet de base de données ne doit jamais faire perdre une commande.
   }
   const wanted = linesSignature(lines);
   for (const o of data ?? []) {

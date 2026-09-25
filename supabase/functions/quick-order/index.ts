@@ -20,7 +20,13 @@ Deno.serve(async (req) => {
       return await handlePost(req, ip);
     }
     return json({ error: "method_not_allowed" }, 405);
-  } catch (_e) {
+  } catch (e) {
+    // Aucune erreur avalée : message + pile dans les journaux de la fonction.
+    console.error(
+      "[quick-order] exception non gérée:",
+      (e as Error)?.message ?? String(e),
+      (e as Error)?.stack ?? null,
+    );
     return json({ error: "server_error" }, 500);
   }
 });

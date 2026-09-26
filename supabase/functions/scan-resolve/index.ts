@@ -127,6 +127,8 @@ Deno.serve(async (req) => {
 
   // Prix de référence pharmacien (service_role, jamais renvoyé au-delà du résultat)
   const references: any[] = [];
+  // Signalement terrain : grossistes anonymisés « Grossiste A / B » + date de mise à jour.
+  const wholesalers: any[] = [];
   let refMin: number | null = null;
   let refSource = "none";
   let hideDetail = false;
@@ -172,6 +174,14 @@ Deno.serve(async (req) => {
         });
         const net = round2(gross * (1 - pct / 100));
         if (!wp.display_prices_allowed) hideDetail = true;
+        const upd = row?.imported_at ?? null;
+        wholesalers.push({
+          wholesaler_profile_id: wp.id,
+          label: `Grossiste ${String.fromCharCode(65 + wholesalers.length)}`,
+          catalog_price: wp.display_prices_allowed ? round2(gross) : null,
+          updated_at: upd,
+          stale: upd ? Date.now() - new Date(upd).getTime() > 60 * 86400000 : false,
+        });
         references.push({ source: (wp.slug ?? "").toUpperCase(), label: wp.display_name, discount_pct: pct, net, _allowed: wp.display_prices_allowed });
         if (refSource !== "DECLARED" && (refMin == null || net < refMin)) { refMin = net; refSource = (wp.slug ?? "").toUpperCase(); }
       }
@@ -316,6 +326,7 @@ Deno.serve(async (req) => {
     lot: code.lot, expiry_date: code.expiry_date, verdict, delta,
     best: best ? { price: bestPrice, vendor_label: vendorLabel, vendor_id: best.vendor_id, franco: null, lead_time_days: best.delivery_days ?? null, offer_id: best.offer_id, stock_quantity: best.stock_quantity ?? null } : null,
     references: hideDetail ? [] : references.map(({ _allowed, ...r }) => r),
+    wholesalers,
     best_reference_price: refMin,
     stock_signals: [],
     in_test_scope: inScope,

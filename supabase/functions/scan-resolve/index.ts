@@ -221,22 +221,41 @@ Deno.serve(async (req) => {
       : getVendorPublicName({ display_code: best.vendor_display_code })
     : null;
 
-  // ── E1 : prix public, TVA et marge (officines vérifiées uniquement) ──
+  // ── E1 : prix public en cascade, TVA et marge (officines vérifiées uniquement) ──
+  // a) officiel (APB/PMR fiche) → b) conseillé (fiche ou fournisseur, anonymisé) → c) prix de vente de l'officine (TVAC).
   let margin: any = null;
   if (product && best && customer.is_verified === true) {
-    const [{ data: pvpRows }, { data: vatRows }] = await Promise.all([
+    const [{ data: pvpRows }, { data: vatRows }, { data: own }] = await Promise.all([
       admin.rpc("resolve_product_pvp", { _product_id: product.id, _country_code: country }),
       admin.rpc("resolve_product_vat_rate", { _product_id: product.id, _country_code: country }),
+      admin.from("pharmacy_product_selling_prices").select("price_incl_vat_cents, updated_at")
+        .eq("customer_id", customer.id).eq("product_id", product.id).maybeSingle(),
     ]);
-    const pvpCents = Number((pvpRows as any[])?.[0]?.pvp_ttc_cents ?? 0);
+    const pvpRow = (pvpRows as any[])?.[0];
     const vatPct = Number((vatRows as any[])?.[0]?.vat_rate);
-    if (pvpCents > 0 && Number.isFinite(vatPct)) {
-      const pvpTtc = round2(pvpCents / 100);
-      const pvpHt = round2(pvpTtc / (1 + vatPct / 100));
-      const m = (buy: number | null) => buy != null && buy > 0
+    const ownCents = Number(own?.price_incl_vat_cents ?? 0);
+    let ttcCents = 0; let kind: "official" | "suggested" | "own" | null = null; let label: string | null = null;
+    if (Number(pvpRow?.pvp_ttc_cents) > 0) {
+      ttcCents = Number(pvpRow.pvp_ttc_cents);
+      const src = String(pvpRow.source ?? "");
+      kind = src === "apb" || src === "pmr" ? "official" : "suggested";
+      label = kind === "official" ? "Prix public officiel" : "Prix public conseillé";
+    } else if (ownCents > 0) {
+      ttcCents = ownCents; kind = "own"; label = "Votre prix de vente";
+    }
+    if (Number.isFinite(vatPct)) {
+      const m = (pvpHt: number, buy: number | null) => buy != null && buy > 0
         ? { eur: round2(pvpHt - buy), pct: pvpHt > 0 ? Math.round(((pvpHt - buy) / pvpHt) * 1000) / 10 : null }
         : null;
-      margin = { pvp_ttc: pvpTtc, pvp_ht: pvpHt, vat_pct: vatPct, medikong: m(bestPrice), current: m(refMin) };
+      const pvpTtc = ttcCents > 0 ? round2(ttcCents / 100) : null;
+      const pvpHt = pvpTtc != null ? round2(pvpTtc / (1 + vatPct / 100)) : null;
+      margin = {
+        source: kind, source_label: label, vat_pct: vatPct,
+        pvp_ttc: pvpTtc, pvp_ht: pvpHt,
+        own_selling_price_ttc: ownCents > 0 ? round2(ownCents / 100) : null,
+        medikong: pvpHt != null ? m(pvpHt, bestPrice) : null,
+        current: pvpHt != null ? m(pvpHt, refMin) : null,
+      };
     }
   }
 

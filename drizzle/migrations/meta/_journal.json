@@ -407,6 +407,20 @@
       "when": 1790346738202,
       "tag": "0057_scan_favorites",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1790408660512,
+      "tag": "0058_qogita_sweep_stale_offers",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1790408847613,
+      "tag": "0059_qogita_stale_backfill_batch",
+      "breakpoints": true
     }
   ]
 }

@@ -29262,6 +29262,7 @@ export type Database = {
           phone: string | null
           postal_code: string | null
           preferred_language: string | null
+          qogita_auto_deactivated_at: string | null
           qogita_seller_alias: string | null
           rating: number | null
           representative_name: string | null
@@ -29356,6 +29357,7 @@ export type Database = {
           phone?: string | null
           postal_code?: string | null
           preferred_language?: string | null
+          qogita_auto_deactivated_at?: string | null
           qogita_seller_alias?: string | null
           rating?: number | null
           representative_name?: string | null
@@ -29450,6 +29452,7 @@ export type Database = {
           phone?: string | null
           postal_code?: string | null
           preferred_language?: string | null
+          qogita_auto_deactivated_at?: string | null
           qogita_seller_alias?: string | null
           rating?: number | null
           representative_name?: string | null
@@ -38345,6 +38348,10 @@ export type Database = {
       qogita_stale_backfill_batch: {
         Args: { _batch?: number; _threshold_days?: number }
         Returns: number
+      }
+      qogita_sweep_empty_vendors: {
+        Args: { _enforce_guardrail?: boolean }
+        Returns: Json
       }
       qogita_sweep_run_id: {
         Args: { _country?: string; _dry_run?: boolean; _sync_run_id: string }

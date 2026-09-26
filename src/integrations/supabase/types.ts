@@ -14373,6 +14373,194 @@ export type Database = {
           },
         ]
       }
+      pharmacy_product_selling_price_history: {
+        Row: {
+          changed_at: string
+          changed_by: string
+          customer_id: string
+          id: string
+          price_incl_vat_cents: number
+          product_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by: string
+          customer_id: string
+          id?: string
+          price_incl_vat_cents: number
+          product_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string
+          customer_id?: string
+          id?: string
+          price_incl_vat_cents?: number
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pharmacy_product_selling_price_history_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pharmacy_product_selling_price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_live_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "pharmacy_product_selling_price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "pharmacy_product_selling_price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pharmacy_product_selling_price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "pharmacy_product_selling_price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "pharmacy_product_selling_price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pharmacy_product_selling_price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pharmacy_product_selling_price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
+      pharmacy_product_selling_prices: {
+        Row: {
+          created_at: string
+          created_by: string
+          customer_id: string
+          id: string
+          price_incl_vat_cents: number
+          product_id: string
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          customer_id: string
+          id?: string
+          price_incl_vat_cents: number
+          product_id: string
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          customer_id?: string
+          id?: string
+          price_incl_vat_cents?: number
+          product_id?: string
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pharmacy_product_selling_prices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pharmacy_product_selling_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_live_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "pharmacy_product_selling_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "pharmacy_product_selling_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pharmacy_product_selling_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "pharmacy_product_selling_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "pharmacy_product_selling_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pharmacy_product_selling_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pharmacy_product_selling_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
       price_adjustment_log: {
         Row: {
           adjusted_at: string
@@ -39016,6 +39204,10 @@ export type Database = {
           alerts_created: number
           lines_overdue: number
         }[]
+      }
+      scan_set_selling_price: {
+        Args: { _price_incl_vat_cents: number; _product_id: string }
+        Returns: Json
       }
       scan_sourcing_week_rank: {
         Args: { _scan_event_id: string }

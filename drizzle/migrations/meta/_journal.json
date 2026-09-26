@@ -421,6 +421,27 @@
       "when": 1790408847613,
       "tag": "0059_qogita_stale_backfill_batch",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1790409053913,
+      "tag": "0060_qogita_vendor_out_sweep",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1790409094033,
+      "tag": "0061_qogita_vendor_sweep_service_role",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1790409121448,
+      "tag": "0062_qogita_sweep_vendor_call_safe",
+      "breakpoints": true
     }
   ]
 }

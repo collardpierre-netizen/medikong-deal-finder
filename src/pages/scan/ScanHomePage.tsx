@@ -314,7 +314,7 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
             Prix B2B constaté : {formatMoney(r.market_price.price_excl_vat)} HTVA · {new Date(r.market_price.observed_at).toLocaleDateString("fr-BE", { day: "2-digit", month: "2-digit" })}
           </div>
         )}
-        {r.margin?.medikong && (
+        {r.margin?.medikong && r.margin.pvp_ttc != null && (
           <div className="rounded-lg bg-muted p-3 text-sm">
             <div className="font-semibold">
               Votre marge : {formatMoney(r.margin.medikong.eur)} · {fmtPct(r.margin.medikong.pct)}
@@ -322,8 +322,13 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
             {r.margin.current?.pct != null && r.margin.medikong.pct != null && (
               <div className="text-muted-foreground">Votre marge passe de {fmtPct(r.margin.current.pct)} à {fmtPct(r.margin.medikong.pct)}</div>
             )}
-            <div className="text-xs text-muted-foreground">Prix public {formatMoney(r.margin.pvp_ttc)} TVAC · {formatMoney(r.margin.pvp_ht)} HTVA (TVA {String(r.margin.vat_pct).replace(".", ",")} %)</div>
+            {r.margin.source !== "own" && (
+              <div className="text-xs text-muted-foreground">{r.margin.source_label ?? "Prix public"} {formatMoney(r.margin.pvp_ttc)} TVAC · {formatMoney(r.margin.pvp_ht!)} HTVA (TVA {String(r.margin.vat_pct).replace(".", ",")} %)</div>
+            )}
           </div>
+        )}
+        {r.margin && r.product && (r.margin.source == null || r.margin.source === "own") && (
+          <SellingPriceLine r={r} onResult={onResult} />
         )}
         {soldUnits > 1 && (
           <div className="rounded-lg bg-muted p-3 text-sm">

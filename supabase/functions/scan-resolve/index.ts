@@ -252,7 +252,7 @@ Deno.serve(async (req) => {
       const isWholesaler = !pvpRow.vendor_id && String(pvpRow.source_label ?? "").startsWith("Prix public · grossiste");
       kind = src === "apb" || src === "pmr" ? "official" : isWholesaler ? "wholesaler" : "suggested";
       // Libellés sans jamais nommer le grossiste ni le fournisseur.
-      label = kind === "official" ? "Prix public officiel" : kind === "wholesaler" ? "Prix public · grossiste" : "Prix public conseillé";
+      label = kind === "official" ? "Prix public officiel" : kind === "wholesaler" ? "Prix public conseillé · grossiste" : "Prix public conseillé";
       if (kind === "wholesaler") pvpDate = pvpRow.updated_at ?? null;
     } else if (ownCents > 0) {
       ttcCents = ownCents; kind = "own"; label = "Votre prix de vente";

@@ -449,6 +449,13 @@
       "when": 1790409955884,
       "tag": "0063_vendor_guards_system_sweep_exception",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1790409970132,
+      "tag": "0064_qogita_sweep_restore_role_claim",
+      "breakpoints": true
     }
   ]
 }

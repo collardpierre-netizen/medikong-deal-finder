@@ -463,6 +463,13 @@
       "when": 1790410085830,
       "tag": "0065_manual_order_copy_qogita_ids",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1790412088168,
+      "tag": "0066_scan_pharmacy_selling_prices",
+      "breakpoints": true
     }
   ]
 }

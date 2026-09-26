@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Flashlight, Keyboard, Loader2, Camera, Search, ShoppingCart, Settings2, History, Star, ChevronDown } from "lucide-react";
+import { Flashlight, Keyboard, Loader2, Camera, Search, ShoppingCart, Settings2, History, Star } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/hooks/useCart";
@@ -245,7 +245,6 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
   const vendorId = r.best?.vendor_id ?? offerMeta?.vendor_id;
   const stockQuantity = r.best?.stock_quantity ?? offerMeta?.stock_quantity ?? null;
   const topOffers = r.top_offers ?? [];
-  const [showOthers, setShowOthers] = useState(false);
   const vendorIds = Array.from(new Set([vendorId, ...topOffers.map((o) => o.vendor_id)].filter(Boolean))) as string[];
   const { getMovForVendor } = useVendorMov(vendorIds);
   const animatedGain = useCountUp(r.delta != null && r.delta > 0 ? r.delta : null);

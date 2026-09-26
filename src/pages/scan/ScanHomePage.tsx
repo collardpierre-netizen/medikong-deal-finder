@@ -1,3 +1,4 @@
+import { FieldReports } from "@/components/scan/FieldReports";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -370,7 +371,7 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
               <div className="text-muted-foreground">Votre marge passe de {fmtPct(r.margin.current.pct)} à {fmtPct(r.margin.medikong.pct)}</div>
             )}
             {r.margin.source !== "own" && (
-              <div className="text-xs text-muted-foreground">{r.margin.source_label ?? "Prix public"} {formatMoney(r.margin.pvp_ttc)} TVAC · {formatMoney(r.margin.pvp_ht!)} HTVA (TVA {String(r.margin.vat_pct).replace(".", ",")} %)</div>
+              <div className="text-xs text-muted-foreground">{r.margin.source_label ?? "Prix public"}{r.margin.source_date && <span className={r.margin.source_stale ? "opacity-50" : ""}> · {new Date(r.margin.source_date).toLocaleDateString("fr-BE", { day: "2-digit", month: "2-digit" })}</span>} · {formatMoney(r.margin.pvp_ttc)} TVAC · {formatMoney(r.margin.pvp_ht!)} HTVA (TVA {String(r.margin.vat_pct).replace(".", ",")} %)</div>
             )}
           </div>
         )}
@@ -470,6 +471,10 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
             </div>
           ))}
         </div>
+      )}
+
+      {r.product && r.wholesalers && r.wholesalers.length > 0 && (
+        <FieldReports productId={r.product.id} wholesalers={r.wholesalers} />
       )}
 
       {(r.verdict === "none" || editingDeclaredPrice) && (

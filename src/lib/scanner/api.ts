@@ -38,10 +38,11 @@ export interface ScanResult {
   latency_ms: number;
   error?: string;
   margin?: { pvp_ttc: number | null; pvp_ht: number | null; vat_pct: number;
-    source?: "official" | "suggested" | "own" | null; source_label?: string | null; own_selling_price_ttc?: number | null;
+    source?: "official" | "wholesaler" | "suggested" | "own" | null; source_label?: string | null; source_date?: string | null; source_stale?: boolean; own_selling_price_ttc?: number | null;
     medikong: { eur: number; pct: number | null } | null; current: { eur: number; pct: number | null } | null } | null;
   top_offers?: { offer_id: string; vendor_id: string; price: number; vendor_label: string | null; lead_time_days: number | null; stock_quantity: number | null }[];
   market_price?: { price_excl_vat: number; observed_at: string } | null;
+  wholesalers?: { wholesaler_profile_id: string; label: string; catalog_price: number | null; updated_at: string | null; stale: boolean }[];
 }
 
 export async function resolveScan(input: {

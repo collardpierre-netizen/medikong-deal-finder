@@ -21922,6 +21922,219 @@ export type Database = {
           },
         ]
       }
+      scan_field_report_prices: {
+        Row: {
+          id: string
+          price_excl_vat_cents: number
+          product_id: string
+          report_ids: string[]
+          validated_at: string
+          validated_by: string | null
+          validated_via: string
+          wholesaler_profile_id: string
+        }
+        Insert: {
+          id?: string
+          price_excl_vat_cents: number
+          product_id: string
+          report_ids: string[]
+          validated_at?: string
+          validated_by?: string | null
+          validated_via: string
+          wholesaler_profile_id: string
+        }
+        Update: {
+          id?: string
+          price_excl_vat_cents?: number
+          product_id?: string
+          report_ids?: string[]
+          validated_at?: string
+          validated_by?: string | null
+          validated_via?: string
+          wholesaler_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_field_report_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_live_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "scan_field_report_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "scan_field_report_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_field_report_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "scan_field_report_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "scan_field_report_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_field_report_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_field_report_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "scan_field_report_prices_wholesaler_profile_id_fkey"
+            columns: ["wholesaler_profile_id"]
+            isOneToOne: false
+            referencedRelation: "wholesaler_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scan_field_reports: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          kind: string
+          price_excl_vat_cents: number | null
+          product_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+          validated_via: string | null
+          wholesaler_profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          kind: string
+          price_excl_vat_cents?: number | null
+          product_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+          validated_via?: string | null
+          wholesaler_profile_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          kind?: string
+          price_excl_vat_cents?: number | null
+          product_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string
+          validated_via?: string | null
+          wholesaler_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_field_reports_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_field_reports_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_live_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "scan_field_reports_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_price_cockpit_mv"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "scan_field_reports_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_field_reports_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_cagnotte_status"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "scan_field_reports_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pack_audit_v"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "scan_field_reports_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_field_reports_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_country_stats_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_field_reports_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "public_top_price_deltas"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "scan_field_reports_wholesaler_profile_id_fkey"
+            columns: ["wholesaler_profile_id"]
+            isOneToOne: false
+            referencedRelation: "wholesaler_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scan_sessions: {
         Row: {
           customer_id: string
@@ -35291,6 +35504,7 @@ export type Database = {
         Args: { _vendor_id: string }
         Returns: string
       }
+      _scan_current_customer: { Args: never; Returns: string }
       _sub_is_admin: { Args: never; Returns: boolean }
       _vendors_privileged_intact: {
         Args: {
@@ -35775,6 +35989,14 @@ export type Database = {
         Args: { _order_id: string }
         Returns: string
       }
+      admin_field_report_sentinel_counts: {
+        Args: never
+        Returns: {
+          customer_id: string
+          customer_name: string
+          validated_count: number
+        }[]
+      }
       admin_finalize_orphan_qogita_resync_logs: {
         Args: { _stale_minutes?: number }
         Returns: {
@@ -36242,6 +36464,10 @@ export type Database = {
         }[]
       }
       admin_restore_order: { Args: { _order_id: string }; Returns: undefined }
+      admin_review_field_report: {
+        Args: { _approve: boolean; _report_id: string }
+        Returns: Json
+      }
       admin_review_gtin_proposals: {
         Args: { _approve: boolean; _ids: string[] }
         Returns: {
@@ -39177,6 +39403,16 @@ export type Database = {
         }
         Returns: Json
       }
+      scan_field_report_summary: {
+        Args: { _product_id: string }
+        Returns: {
+          last_confirmed_at: string
+          unavailable_pharmacies: number
+          validated_price_at: string
+          validated_price_cents: number
+          wholesaler_profile_id: string
+        }[]
+      }
       scan_find_products_by_code: {
         Args: { _code: string }
         Returns: {
@@ -39212,6 +39448,15 @@ export type Database = {
       scan_sourcing_week_rank: {
         Args: { _scan_event_id: string }
         Returns: number
+      }
+      scan_submit_field_report: {
+        Args: {
+          _kind: string
+          _price_excl_vat_cents?: number
+          _product_id: string
+          _wholesaler_profile_id: string
+        }
+        Returns: Json
       }
       scan_submit_sourcing_request: {
         Args: {

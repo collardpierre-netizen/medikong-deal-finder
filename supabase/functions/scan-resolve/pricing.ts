@@ -4,8 +4,8 @@ export interface OverrideRulesV2 {
   version?: number;
   general_pct?: number | null;
   categories?: { category_id: string; pct: number }[];
-  brands?: { brand_id: string; pct: number }[];
-  manufacturers?: { manufacturer_id: string; pct: number }[];
+  brands?: { brand_id: string; pct: number; name?: string; min_order_cents?: number | null; franco_cents?: number | null }[];
+  manufacturers?: { manufacturer_id: string; pct: number; name?: string; min_order_cents?: number | null; franco_cents?: number | null }[];
 }
 
 /** Priorité : marque > fabricant > catégorie > générale (v2) > override_default > défaut grossiste. */
@@ -17,20 +17,34 @@ export function resolveDiscountPct(opts: {
   manufacturerId?: string | null;
   categoryIds?: (string | null | undefined)[];
 }): number {
+  return resolveDiscount(opts).pct;
+}
+
+export type DiscountKind = "brand" | "manufacturer" | "category" | "general" | "default";
+
+/** Même priorité, avec l'origine de la remise (pour « remise Nutricia 15 % »). */
+export function resolveDiscount(opts: Parameters<typeof resolveDiscountPct>[0]): { pct: number; kind: DiscountKind; name: string | null } {
   const r = opts.rules;
   if (r && r.version === 2) {
     const b = opts.brandId && r.brands?.find((x) => x.brand_id === opts.brandId);
-    if (b) return clamp(b.pct);
+    if (b) return { pct: clamp(b.pct), kind: "brand", name: b.name ?? null };
     const m = opts.manufacturerId && r.manufacturers?.find((x) => x.manufacturer_id === opts.manufacturerId);
-    if (m) return clamp(m.pct);
+    if (m) return { pct: clamp(m.pct), kind: "manufacturer", name: m.name ?? null };
     for (const cid of opts.categoryIds ?? []) {
       const c = cid && r.categories?.find((x) => x.category_id === cid);
-      if (c) return clamp(c.pct);
+      if (c) return { pct: clamp(c.pct), kind: "category", name: null };
     }
-    if (r.general_pct != null) return clamp(r.general_pct);
+    if (r.general_pct != null) return { pct: clamp(r.general_pct), kind: "general", name: null };
   }
-  if (opts.overrideDefaultPct != null) return clamp(Number(opts.overrideDefaultPct));
-  return clamp(Number(opts.wholesalerDefaultPct ?? 0));
+  if (opts.overrideDefaultPct != null) return { pct: clamp(Number(opts.overrideDefaultPct)), kind: "general", name: null };
+  return { pct: clamp(Number(opts.wholesalerDefaultPct ?? 0)), kind: "default", name: null };
+}
+
+export function discountLabel(d: { pct: number; kind: DiscountKind; name: string | null }): string {
+  const v = String(d.pct).replace(".", ",");
+  if ((d.kind === "brand" || d.kind === "manufacturer") && d.name) return `remise ${d.name} ${v} %`;
+  if (d.kind === "category") return `remise gamme ${v} %`;
+  return `remise générale ${v} %`;
 }
 
 function clamp(v: number): number {

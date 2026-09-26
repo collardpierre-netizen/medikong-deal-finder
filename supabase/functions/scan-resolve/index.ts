@@ -2,7 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3.23.8";
 import { parseCode } from "./parse.ts";
-import { computeVerdict, resolveDiscountPct, round2 } from "./pricing.ts";
+import { computeVerdict, resolveDiscount, discountLabel, round2 } from "./pricing.ts";
 import { getVendorPublicName, sanitizeVendorLabel } from "../_shared/vendor-display.ts";
 
 const TEST_SCOPE = /(^nan\b|nancare|nestl|nutricia|nutrilon|fortimel|fresubin|fresenius)/i;
@@ -157,9 +157,8 @@ Deno.serve(async (req) => {
       const sources = (sourcesAll ?? []).filter((s: any) => !s.is_test || customer.is_test === true);
       const srcIds = sources.map((s) => s.id);
       const { data: prices } = srcIds.length
-        ? await admin.from("market_prices").select("source_id, prix_grossiste, prix_pharmacien, period, imported_at")
-            .eq("product_id", product.id).in("source_id", srcIds)
-            .order("period", { ascending: false, nullsFirst: false }).order("imported_at", { ascending: false })
+        // Lignes grossistes rattachées à la fiche OU retrouvées par CNK nettoyé (sans réécriture en base)
+        ? await admin.rpc("scan_market_prices_for_product", { _product_id: product.id, _source_ids: srcIds })
         : { data: [] as any[] };
       for (const s of active) {
         const wp = (wps ?? []).find((w) => w.id === s.wholesaler_profile_id);
@@ -167,11 +166,12 @@ Deno.serve(async (req) => {
         const row = (prices ?? []).find((p) => src.includes(p.source_id));
         const gross = Number(row?.prix_pharmacien ?? row?.prix_grossiste ?? 0);
         if (!wp || !gross) continue;
-        const pct = resolveDiscountPct({
+        const disc = resolveDiscount({
           rules: s.override_rules_json as any, overrideDefaultPct: s.override_default_discount_pct,
           wholesalerDefaultPct: wp.default_discount_pct, brandId: product.brand_id, manufacturerId: product.manufacturer_id,
           categoryIds: [product.primary_category_id, product.category_id],
         });
+        const pct = disc.pct;
         const net = round2(gross * (1 - pct / 100));
         if (!wp.display_prices_allowed) hideDetail = true;
         const upd = row?.imported_at ?? null;
@@ -182,7 +182,7 @@ Deno.serve(async (req) => {
           updated_at: upd,
           stale: upd ? Date.now() - new Date(upd).getTime() > 60 * 86400000 : false,
         });
-        references.push({ source: (wp.slug ?? "").toUpperCase(), label: wp.display_name, discount_pct: pct, net, _allowed: wp.display_prices_allowed });
+        references.push({ source: (wp.slug ?? "").toUpperCase(), label: wp.display_name, discount_pct: pct, discount_label: discountLabel(disc), net, _allowed: wp.display_prices_allowed });
         if (refSource !== "DECLARED" && (refMin == null || net < refMin)) { refMin = net; refSource = (wp.slug ?? "").toUpperCase(); }
       }
     }

@@ -505,6 +505,13 @@
       "when": 1790423147422,
       "tag": "0071_manufacturers_redirect_to",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1790423682200,
+      "tag": "0072_market_prices_masked_and_cnk_normalization",
+      "breakpoints": true
     }
   ]
 }

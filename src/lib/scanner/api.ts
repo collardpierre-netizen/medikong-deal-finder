@@ -32,7 +32,7 @@ export interface ScanResult {
   verdict: "green" | "orange" | "red" | "none";
   delta: number | null;
   best: { price: number; vendor_label: string | null; vendor_id?: string; franco: number | null; lead_time_days: number | null; offer_id: string; stock_quantity?: number | null } | null;
-  references: { source: string; label: string; discount_pct: number; net: number }[];
+  references: { source: string; label: string; discount_pct: number; discount_label?: string; net: number }[];
   best_reference_price: number | null;
   in_test_scope: boolean;
   latency_ms: number;

@@ -460,7 +460,7 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
         <div className="rounded-xl border bg-card p-3 space-y-1 text-sm">
           {r.references.map((x) => (
             <div key={x.source} className="flex items-center justify-between gap-3">
-              <span className="min-w-0 flex-1">{x.label}{x.source !== "DECLARED" ? ` (−${String(x.discount_pct).replace(".", ",")} %)` : ""}</span>
+              <span className="min-w-0 flex-1">{x.label}{x.source !== "DECLARED" ? (x.discount_label ? ` · ${x.discount_label}` : ` (−${String(x.discount_pct).replace(".", ",")} %)`) : ""}</span>
               <span className="shrink-0">{formatMoney(x.net)}</span>
               {x.source === "DECLARED" && (
                 <Button type="button" variant="link" size="sm" className="h-auto shrink-0 px-0" onClick={() => {

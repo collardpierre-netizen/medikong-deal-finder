@@ -37968,6 +37968,23 @@ export type Database = {
           tab_key: string
         }[]
       }
+      get_market_prices_for_products: {
+        Args: { _product_ids: string[] }
+        Returns: {
+          id: string
+          imported_at: string
+          prix_grossiste: number
+          prix_pharmacien: number
+          prix_public: number
+          product_id: string
+          product_name_source: string
+          product_url: string
+          source_id: string
+          source_name: string
+          source_type: string
+          tva_rate: number
+        }[]
+      }
       get_my_accounts: {
         Args: never
         Returns: {
@@ -39451,6 +39468,16 @@ export type Database = {
           display_prices_allowed: boolean
           id: string
           slug: string
+        }[]
+      }
+      scan_market_prices_for_product: {
+        Args: { _product_id: string; _source_ids: string[] }
+        Returns: {
+          imported_at: string
+          period: string
+          prix_grossiste: number
+          prix_pharmacien: number
+          source_id: string
         }[]
       }
       scan_order_line_sla_alerts: {

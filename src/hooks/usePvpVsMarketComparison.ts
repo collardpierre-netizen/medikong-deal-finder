@@ -31,12 +31,8 @@ export function usePvpVsMarketComparison(productIds: string[]) {
           .from("products")
           .select("id, pvp_ttc_cents, vat_rate_be, vat_rate_override")
           .in("id", ids),
-        supabase
-          .from("market_prices")
-          .select("product_id, prix_grossiste, tva_rate, market_price_sources!inner(is_test)")
-          .eq("market_price_sources.is_test", false)
-          .in("product_id", ids)
-          .not("prix_grossiste", "is", null),
+        (supabase.rpc as any)("get_market_prices_for_products", { _product_ids: ids })
+          .then((r: any) => ({ ...r, data: (r.data || []).filter((m: any) => m.prix_grossiste != null) })),
       ]);
 
       if (prodRes.error) throw prodRes.error;

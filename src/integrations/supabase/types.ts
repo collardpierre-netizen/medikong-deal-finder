@@ -38342,6 +38342,10 @@ export type Database = {
         Args: { _download_id: string }
         Returns: Json
       }
+      qogita_stale_backfill_batch: {
+        Args: { _batch?: number; _threshold_days?: number }
+        Returns: number
+      }
       qogita_sweep_run_id: {
         Args: { _country?: string; _dry_run?: boolean; _sync_run_id: string }
         Returns: Json

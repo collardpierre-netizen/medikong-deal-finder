@@ -16,7 +16,7 @@ const usePublicManufacturers = () =>
   useQuery({
     queryKey: ["public-manufacturers"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("manufacturers").select("*").eq("is_active", true).order("name");
+      const { data, error } = await supabase.from("manufacturers").select("*").eq("is_active", true).is("redirect_to_manufacturer_id", null).order("name");
       if (error) throw error;
       return data;
     },

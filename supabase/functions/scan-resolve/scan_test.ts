@@ -32,6 +32,8 @@ Deno.test("Remise marque prioritaire sur catégorie et générale", () => {
   assertEquals(resolveDiscountPct({ rules, brandId: "b1", categoryIds: ["c1"] }), 12);
   assertEquals(resolveDiscountPct({ rules, brandId: "bX", categoryIds: ["c1"] }), 5);
   assertEquals(resolveDiscountPct({ rules, brandId: "bX", categoryIds: ["cX"] }), 4);
+  assertEquals(resolveDiscountPct({ rules: { ...rules, manufacturers: [{ manufacturer_id: "m1", pct: 9 }] }, brandId: "bX", manufacturerId: "m1", categoryIds: ["c1"] }), 9);
+  assertEquals(resolveDiscountPct({ rules: { ...rules, manufacturers: [{ manufacturer_id: "m1", pct: 9 }] }, brandId: "b1", manufacturerId: "m1", categoryIds: ["c1"] }), 12);
   assertEquals(resolveDiscountPct({ rules: null, overrideDefaultPct: 3, wholesalerDefaultPct: 2 }), 3);
   assertEquals(resolveDiscountPct({ rules: {}, wholesalerDefaultPct: 2 }), 2);
 });

@@ -7646,6 +7646,7 @@ export type Database = {
           product_count: number | null
           proposed_by_vendor_id: string | null
           qogita_qid: string | null
+          redirect_to_manufacturer_id: string | null
           slug: string
           social_links: Json
           specialties: string[] | null
@@ -7679,6 +7680,7 @@ export type Database = {
           product_count?: number | null
           proposed_by_vendor_id?: string | null
           qogita_qid?: string | null
+          redirect_to_manufacturer_id?: string | null
           slug: string
           social_links?: Json
           specialties?: string[] | null
@@ -7712,6 +7714,7 @@ export type Database = {
           product_count?: number | null
           proposed_by_vendor_id?: string | null
           qogita_qid?: string | null
+          redirect_to_manufacturer_id?: string | null
           slug?: string
           social_links?: Json
           specialties?: string[] | null
@@ -7781,6 +7784,13 @@ export type Database = {
             columns: ["proposed_by_vendor_id"]
             isOneToOne: false
             referencedRelation: "vendors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturers_redirect_to_manufacturer_id_fkey"
+            columns: ["redirect_to_manufacturer_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturers"
             referencedColumns: ["id"]
           },
         ]
@@ -37911,6 +37921,15 @@ export type Database = {
           vendor_name: string
           vendor_show_real_name: boolean
           vendor_show_real_name_resolved: boolean
+        }[]
+      }
+      get_buyer_p2p_settings: {
+        Args: never
+        Returns: {
+          commission_payer: Database["public"]["Enums"]["buyer_p2p_commission_payer"]
+          default_commission_bps: number
+          is_enabled: boolean
+          max_validity_days: number
         }[]
       }
       get_effective_offer_price: {

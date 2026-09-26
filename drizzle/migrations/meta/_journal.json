@@ -491,6 +491,20 @@
       "when": 1790413110939,
       "tag": "0069_scan_field_reports",
       "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1790423084198,
+      "tag": "0070_p2p_settings_admin_only_read",
+      "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1790423147422,
+      "tag": "0071_manufacturers_redirect_to",
+      "breakpoints": true
     }
   ]
 }

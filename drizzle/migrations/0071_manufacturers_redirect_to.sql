@@ -1,0 +1,2 @@
+ALTER TABLE public.manufacturers ADD COLUMN IF NOT EXISTS redirect_to_manufacturer_id uuid REFERENCES public.manufacturers(id) ON DELETE SET NULL;
+COMMENT ON COLUMN public.manufacturers.redirect_to_manufacturer_id IS 'Si renseigné : la page fabricant redirige vers ce fabricant et il est masqué des listes publiques (aucune suppression).';

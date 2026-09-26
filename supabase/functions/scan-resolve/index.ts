@@ -239,7 +239,9 @@ Deno.serve(async (req) => {
       ttcCents = Number(pvpRow.pvp_ttc_cents);
       const src = String(pvpRow.source ?? "");
       kind = src === "apb" || src === "pmr" ? "official" : "suggested";
-      label = kind === "official" ? "Prix public officiel" : "Prix public conseillé";
+      label = kind === "official" ? "Prix public officiel"
+        : (!pvpRow.vendor_id && String(pvpRow.source_label ?? "").startsWith("Prix public conseillé · grossiste")) ? String(pvpRow.source_label)
+        : "Prix public conseillé";
     } else if (ownCents > 0) {
       ttcCents = ownCents; kind = "own"; label = "Votre prix de vente";
     }

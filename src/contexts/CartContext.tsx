@@ -25,6 +25,8 @@ export interface CartItem {
 
 const CART_KEY = "medikong_cart";
 const CART_OWNER_KEY = "medikong_cart_owner";
+const CART_VERSION_KEY = "medikong_cart_version";
+const CART_VERSION = "2";
 
 function loadCart(): CartItem[] {
   try {
@@ -40,6 +42,22 @@ function saveCartOwner(owner: string | null) {
   if (owner) localStorage.setItem(CART_OWNER_KEY, owner);
   else localStorage.removeItem(CART_OWNER_KEY);
 }
+
+function clearCartLocal() {
+  localStorage.removeItem(CART_KEY);
+  localStorage.removeItem(CART_OWNER_KEY);
+}
+
+// One-time flush of caches written before the ownership rules below existed.
+// Such a cache could resurrect a cart that had been emptied in the database.
+function flushLegacyCartCache() {
+  try {
+    if (localStorage.getItem(CART_VERSION_KEY) === CART_VERSION) return;
+    clearCartLocal();
+    localStorage.setItem(CART_VERSION_KEY, CART_VERSION);
+  } catch { /* storage unavailable */ }
+}
+
 
 interface CartContextType {
   items: CartItem[];

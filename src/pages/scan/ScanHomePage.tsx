@@ -356,29 +356,31 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
         )}
         {topOffers.length > 1 && (
           <div className="border-t pt-2">
-            <Button type="button" variant="ghost" size="sm" className="scan-tap w-full justify-between px-1" aria-expanded={showOthers} onClick={() => setShowOthers((x) => !x)}>
-              <span>{topOffers.length - 1} autre{topOffers.length > 2 ? "s" : ""} offre{topOffers.length > 2 ? "s" : ""}</span>
-              <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${showOthers ? "rotate-180" : ""}`} />
-            </Button>
-            {showOthers && (
-              <div className="mt-1 space-y-2">
-                {topOffers.slice(1).map((o) => {
-                  const m = getMovForVendor(o.vendor_id);
-                  return (
-                    <div key={o.offer_id} className="flex items-baseline justify-between gap-3 rounded-lg bg-muted p-3 text-sm">
-                      <div className="min-w-0">
-                        <div className="font-medium">{o.vendor_label}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {m != null ? `Minimum de commande ${formatMoney(m)} HTVA` : "Sans minimum de commande"}
-                          {o.lead_time_days != null ? ` · livraison ${o.lead_time_days} j` : ""}
-                        </div>
+            <div className="px-1 pb-1 text-sm font-medium">Autres offres</div>
+            <div className="space-y-2">
+              {topOffers.slice(1, 3).map((o) => {
+                const m = getMovForVendor(o.vendor_id);
+                const bestPrice = topOffers[0]?.price ?? null;
+                const gap = bestPrice != null ? o.price - bestPrice : null;
+                return (
+                  <div key={o.offer_id} className="flex items-baseline justify-between gap-3 rounded-lg bg-muted p-3 text-sm">
+                    <div className="min-w-0">
+                      <div className="font-medium">{o.vendor_label}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {m != null ? `Minimum de commande ${formatMoney(m)} HTVA` : "Sans minimum de commande"}
+                        {o.lead_time_days != null ? ` · livraison ${o.lead_time_days} j` : ""}
                       </div>
-                      <span className="shrink-0 font-bold">{formatMoney(o.price)}</span>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                    <div className="shrink-0 text-right">
+                      <div className="font-bold">{formatMoney(o.price)}</div>
+                      {gap != null && gap > 0 && (
+                        <div className="text-xs text-muted-foreground">+{formatMoney(gap)} vs meilleure</div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
         <Button className="scan-tap h-12 w-full text-base" onClick={() => add(true)}><Camera className="mr-2 h-5 w-5" />Ajouter et scanner le suivant</Button>

@@ -58,12 +58,12 @@ export function useMarketPrices(productId: string | undefined) {
   const { data: marketPrices = [] } = useQuery({
     queryKey: ["market-prices-product", productId],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("market_prices")
-        .select("*, market_price_sources!inner(*)")
-        .eq("market_price_sources.is_test", false)
-        .eq("product_id", productId!);
-      return data || [];
+      // Fonction serveur : noms réels pour l'admin uniquement, sinon « Grossiste A / B ».
+      const { data } = await (supabase.rpc as any)("get_market_prices_for_products", { _product_ids: [productId!] });
+      return (data || []).map((m: any) => ({
+        ...m,
+        market_price_sources: { id: m.source_id, name: m.source_name, source_type: m.source_type },
+      }));
     },
     enabled: !!productId,
   });

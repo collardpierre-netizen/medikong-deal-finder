@@ -442,6 +442,13 @@
       "when": 1790409121448,
       "tag": "0062_qogita_sweep_vendor_call_safe",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1790409955884,
+      "tag": "0063_vendor_guards_system_sweep_exception",
+      "breakpoints": true
     }
   ]
 }

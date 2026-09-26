@@ -5,20 +5,24 @@ export interface OverrideRulesV2 {
   general_pct?: number | null;
   categories?: { category_id: string; pct: number }[];
   brands?: { brand_id: string; pct: number }[];
+  manufacturers?: { manufacturer_id: string; pct: number }[];
 }
 
-/** Priorité : marque > catégorie > générale (v2) > override_default > défaut grossiste. */
+/** Priorité : marque > fabricant > catégorie > générale (v2) > override_default > défaut grossiste. */
 export function resolveDiscountPct(opts: {
   rules?: OverrideRulesV2 | null;
   overrideDefaultPct?: number | null;
   wholesalerDefaultPct?: number | null;
   brandId?: string | null;
+  manufacturerId?: string | null;
   categoryIds?: (string | null | undefined)[];
 }): number {
   const r = opts.rules;
   if (r && r.version === 2) {
     const b = opts.brandId && r.brands?.find((x) => x.brand_id === opts.brandId);
     if (b) return clamp(b.pct);
+    const m = opts.manufacturerId && r.manufacturers?.find((x) => x.manufacturer_id === opts.manufacturerId);
+    if (m) return clamp(m.pct);
     for (const cid of opts.categoryIds ?? []) {
       const c = cid && r.categories?.find((x) => x.category_id === cid);
       if (c) return clamp(c.pct);

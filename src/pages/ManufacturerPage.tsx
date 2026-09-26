@@ -1,5 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { applyHiddenCategoryFilter } from "@/lib/catalog-filters";
@@ -24,7 +24,14 @@ const useManufacturer = (slug: string) =>
     queryFn: async () => {
       const { data, error } = await supabase.from("manufacturers").select("*").eq("slug", slug).single();
       if (error) throw error;
-      return data;
+      // Fabricant fusionné : redirection vers le fabricant cible (aucune suppression en base).
+      const target = (data as any)?.redirect_to_manufacturer_id as string | null;
+      if (target) {
+        const { data: t, error: tErr } = await supabase.from("manufacturers").select("slug").eq("id", target).maybeSingle();
+        if (tErr) console.error("manufacturer redirect", tErr);
+        if (t?.slug && t.slug !== slug) return { ...data, __redirectSlug: t.slug as string };
+      }
+      return { ...data, __redirectSlug: null as string | null };
     },
     enabled: !!slug,
   });
@@ -126,6 +133,10 @@ export default function ManufacturerPage() {
 
   if (isLoading) {
     return <Layout><div className="mk-container py-12 text-center text-mk-sec">Chargement...</div></Layout>;
+  }
+
+  if (manufacturer?.__redirectSlug) {
+    return <Navigate to={`/fabricant/${manufacturer.__redirectSlug}`} replace />;
   }
 
   if (!manufacturer) {

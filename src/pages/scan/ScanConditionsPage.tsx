@@ -126,6 +126,7 @@ export default function ScanConditionsPage() {
           general_pct: general,
           categories: Array.from(existingCategories, ([category_id, pct]) => ({ category_id, pct })),
           brands: r.rules?.brands ?? [],
+          manufacturers: r.rules?.manufacturers ?? [],
           depot: r.depot.trim() || r.rules?.depot || null,
           direct_labs: directLabs.length ? directLabs : (r.rules?.direct_labs ?? []),
           year_end_rebate: yearEnd,

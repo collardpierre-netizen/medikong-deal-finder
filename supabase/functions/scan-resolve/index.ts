@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
   const code = parseCode(input.raw_code, input.symbology);
 
   // Résolution produit : GTIN → product_market_codes → CNK normalisé
-  const cols = "id, name, pack_size, cnk_code, gtin, image_url, brand_id, brand_name, category_id, primary_category_id";
+  const cols = "id, name, pack_size, cnk_code, gtin, image_url, brand_id, brand_name, manufacturer_id, category_id, primary_category_id";
   let candidates: any[] = [];
   let matchedCode: { packaging_level: "unit" | "pack" | "carton" | "unknown"; units_per_pack: number } | null = null;
   // Normalisation unique côté base : public.normalize_gtin (suffixe .0/,0 retiré,
@@ -169,7 +169,7 @@ Deno.serve(async (req) => {
         if (!wp || !gross) continue;
         const pct = resolveDiscountPct({
           rules: s.override_rules_json as any, overrideDefaultPct: s.override_default_discount_pct,
-          wholesalerDefaultPct: wp.default_discount_pct, brandId: product.brand_id,
+          wholesalerDefaultPct: wp.default_discount_pct, brandId: product.brand_id, manufacturerId: product.manufacturer_id,
           categoryIds: [product.primary_category_id, product.category_id],
         });
         const net = round2(gross * (1 - pct / 100));

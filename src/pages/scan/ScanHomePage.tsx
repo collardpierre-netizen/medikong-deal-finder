@@ -1,4 +1,5 @@
 import { FieldReports } from "@/components/scan/FieldReports";
+const FIELD_REPORTS_ENABLED = false;
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -473,7 +474,8 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
         </div>
       )}
 
-      {r.product && r.wholesalers && r.wholesalers.length > 0 && (
+      {/* Signalements terrain : masqués jusqu'à leur publication séparée. */}
+      {FIELD_REPORTS_ENABLED && r.product && r.wholesalers && r.wholesalers.length > 0 && (
         <FieldReports productId={r.product.id} wholesalers={r.wholesalers} />
       )}
 

@@ -21,6 +21,13 @@ export const SCAN_GAMMES = [
   { id: "6d6b71a9-271c-44a6-99e0-d2cbfb5a98e2", label: "Compléments & nutrition médicale" },
 ];
 
+type Deal = { kind: "brand" | "manufacturer"; id: string; name: string; pct: string; min: string; franco: string };
+const eur = (s: string) => {
+  const v = Number(String(s).replace(",", "."));
+  return s.trim() !== "" && Number.isFinite(v) && v >= 0 ? Math.round(v * 100) : null;
+};
+const centsStr = (c: any) => (c != null && Number.isFinite(Number(c)) ? String(Number(c) / 100).replace(".", ",") : "");
+
 type W = { id: string; slug: string; display_name: string };
 type Row = { checked: boolean; pct: string; depot: string; gammes: Record<string, string>; settingId?: string; rules?: any };
 
@@ -41,6 +48,8 @@ export default function ScanConditionsPage() {
   const [yearEnd, setYearEnd] = useState(false);
   const [freeGoods, setFreeGoods] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [q, setQ] = useState("");
   const initializedCustomer = useRef<string | null>(null);
 
   const { data: ws = [], isLoading: wholesalersLoading, isError: wholesalersError } = useQuery<W[]>({
@@ -84,12 +93,38 @@ export default function ScanConditionsPage() {
       }
     }
     setRows(next);
+    const src = existing.find((e: any) => e.is_supplier_of_pharmacist !== false && e.override_rules_json)?.override_rules_json ?? {};
+    setDeals([
+      ...(src.brands ?? []).map((b: any) => ({ kind: "brand" as const, id: b.brand_id, name: b.name ?? "Marque", pct: String(b.pct ?? ""), min: centsStr(b.min_order_cents), franco: centsStr(b.franco_cents) })),
+      ...(src.manufacturers ?? []).map((m: any) => ({ kind: "manufacturer" as const, id: m.manufacturer_id, name: m.name ?? "Labo", pct: String(m.pct ?? ""), min: centsStr(m.min_order_cents), franco: centsStr(m.franco_cents) })),
+    ]);
     setLabs(Array.isArray(sharedRules?.direct_labs) ? sharedRules.direct_labs.join(", ") : "");
     setOtherWholesaler(sharedRules?.other_wholesaler ?? "");
     setYearEnd(!!sharedRules?.year_end_rebate);
     setFreeGoods(!!sharedRules?.free_goods);
     initializedCustomer.current = customer.id;
   }, [customer.id, ws, existing]);
+
+  const { data: suggestions = [] } = useQuery({
+    queryKey: ["scan-deal-search", q.trim()],
+    enabled: q.trim().length >= 2,
+    queryFn: async () => {
+      const term = `%${q.trim()}%`;
+      const [b, m] = await Promise.all([
+        sb.from("brands").select("id, name").ilike("name", term).order("name").limit(6),
+        sb.from("manufacturers").select("id, name").ilike("name", term).order("name").limit(6),
+      ]);
+      return [
+        ...(b.data ?? []).map((x: any) => ({ kind: "brand" as const, id: x.id, name: x.name })),
+        ...(m.data ?? []).map((x: any) => ({ kind: "manufacturer" as const, id: x.id, name: x.name })),
+      ].filter((x) => !deals.some((d) => d.kind === x.kind && d.id === x.id));
+    },
+  });
+  const setDeal = (i: number, patch: Partial<Deal>) => setDeals((p) => p.map((d, j) => (j === i ? { ...d, ...patch } : d)));
+  const dealRules = (kind: Deal["kind"]) => deals
+    .filter((d) => d.kind === kind && num(d.pct) != null)
+    .map((d) => ({ [kind === "brand" ? "brand_id" : "manufacturer_id"]: d.id, name: d.name, pct: num(d.pct) as number,
+      min_order_cents: eur(d.min), franco_cents: eur(d.franco) }));
 
   const set = (id: string, patch: Partial<Row>) => setRows((p) => ({ ...p, [id]: { ...p[id], ...patch } }));
   const checked = ws.filter((w) => rows[w.id]?.checked);
@@ -125,8 +160,8 @@ export default function ScanConditionsPage() {
           version: 2,
           general_pct: general,
           categories: Array.from(existingCategories, ([category_id, pct]) => ({ category_id, pct })),
-          brands: r.rules?.brands ?? [],
-          manufacturers: r.rules?.manufacturers ?? [],
+          brands: dealRules("brand"),
+          manufacturers: dealRules("manufacturer"),
           depot: r.depot.trim() || r.rules?.depot || null,
           direct_labs: directLabs.length ? directLabs : (r.rules?.direct_labs ?? []),
           year_end_rebate: yearEnd,
@@ -152,7 +187,7 @@ export default function ScanConditionsPage() {
     } finally { setSaving(false); }
   };
 
-  const titles = ["Vos grossistes", "Exceptions par gamme", "Labos en direct", "Avantages en fin d'année"];
+  const titles = ["Vos grossistes", "Exceptions par gamme", "Remises par marque ou labo", "Avantages en fin d'année"];
 
   if (wholesalersError || conditionsError) {
     return (
@@ -235,8 +270,38 @@ export default function ScanConditionsPage() {
 
       {step === 2 && (
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">Achetez-vous certaines marques directement au labo ?</p>
-          <Input value={labs} onChange={(e) => setLabs(e.target.value)} className="h-11" placeholder="ex. Nutricia, Fresenius" />
+          <p className="text-sm text-muted-foreground">Remise obtenue sur une marque ou un labo (fabricant). Elle passe avant la remise de gamme et la remise générale.</p>
+          <div className="relative">
+            <Input value={q} onChange={(e) => setQ(e.target.value)} className="h-11" placeholder="Rechercher une marque ou un labo (ex. Nutricia)" />
+            {q.trim().length >= 2 && suggestions.length > 0 && (
+              <div className="absolute z-10 mt-1 w-full rounded-xl border bg-popover shadow-md max-h-64 overflow-auto">
+                {suggestions.map((s: any) => (
+                  <button key={`${s.kind}-${s.id}`} type="button" className="scan-tap flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-muted"
+                    onClick={() => { setDeals((p) => [...p, { kind: s.kind, id: s.id, name: s.name, pct: "", min: "", franco: "" }]); setQ(""); }}>
+                    <span>{s.name}</span>
+                    <span className="text-xs text-muted-foreground">{s.kind === "brand" ? "Marque" : "Labo"}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {deals.map((d, i) => (
+            <div key={`${d.kind}-${d.id}`} className="rounded-xl border bg-card p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="font-semibold">{d.name} <span className="text-xs font-normal text-muted-foreground">{d.kind === "brand" ? "Marque" : "Labo"}</span></div>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setDeals((p) => p.filter((_, j) => j !== i))}>Retirer</Button>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div><div className="text-xs text-muted-foreground">Remise %</div>
+                  <Input inputMode="decimal" className="h-11" placeholder="ex. 15" value={d.pct} onChange={(e) => setDeal(i, { pct: e.target.value })} /></div>
+                <div><div className="text-xs text-muted-foreground">Minimum € (facult.)</div>
+                  <Input inputMode="decimal" className="h-11" value={d.min} onChange={(e) => setDeal(i, { min: e.target.value })} /></div>
+                <div><div className="text-xs text-muted-foreground">Franco € (facult.)</div>
+                  <Input inputMode="decimal" className="h-11" value={d.franco} onChange={(e) => setDeal(i, { franco: e.target.value })} /></div>
+              </div>
+            </div>
+          ))}
+          {checked.length === 0 && deals.length > 0 && <p className="text-xs text-muted-foreground">Cochez au moins un grossiste à l'étape 1 pour enregistrer ces remises.</p>}
         </div>
       )}
 

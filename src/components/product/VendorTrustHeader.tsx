@@ -148,13 +148,13 @@ export function VendorTrustHeader({ trust, variant = "full", realNameOverride = 
           {initials}
         </span>
 
-        <span className="font-bold text-sm text-foreground min-w-0 flex-1 flex items-baseline gap-1.5" title={displayName}>
+        <span className="font-bold text-sm text-foreground min-w-0 flex-1 flex flex-wrap items-baseline gap-x-1.5 gap-y-1" title={displayName}>
           {realName ? (
             <span className="min-w-0 truncate leading-tight" lang="fr">{realName}</span>
           ) : (
             <>
               <span className="text-foreground shrink-0">Fournisseur</span>
-              <span className="font-mono font-bold text-sm tracking-wider uppercase text-foreground bg-muted border border-border rounded px-2 py-0.5 select-all shrink-0">
+              <span className="font-mono font-bold text-sm tracking-wider uppercase text-foreground bg-muted border border-border rounded px-2 py-0.5 select-all whitespace-nowrap">
                 {trust.publicIdentifier}
               </span>
             </>

@@ -230,8 +230,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
         handleSignedIn(session.user.id);
       } else if (event === "SIGNED_OUT") {
         customerIdRef.current = null;
-        saveCartOwner("guest");
+        // An authenticated cart must never survive as a guest cart: it would be
+        // pushed back into the database on the next sign-in.
+        clearCartLocal();
+        setItems([]);
       }
+
     });
 
     return () => {

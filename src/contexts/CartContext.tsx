@@ -159,7 +159,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Load cart — from DB if logged in, else localStorage
   useEffect(() => {
     let cancelled = false;
+    flushLegacyCartCache();
     (async () => {
+
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         const cid = await getCustomerId(session.user.id);

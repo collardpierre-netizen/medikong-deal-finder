@@ -234,14 +234,16 @@ Deno.serve(async (req) => {
     const pvpRow = (pvpRows as any[])?.[0];
     const vatPct = Number((vatRows as any[])?.[0]?.vat_rate);
     const ownCents = Number(own?.price_incl_vat_cents ?? 0);
-    let ttcCents = 0; let kind: "official" | "suggested" | "own" | null = null; let label: string | null = null;
+    let ttcCents = 0; let kind: "official" | "wholesaler" | "suggested" | "own" | null = null; let label: string | null = null;
+    let pvpDate: string | null = null;
     if (Number(pvpRow?.pvp_ttc_cents) > 0) {
       ttcCents = Number(pvpRow.pvp_ttc_cents);
       const src = String(pvpRow.source ?? "");
-      kind = src === "apb" || src === "pmr" ? "official" : "suggested";
-      label = kind === "official" ? "Prix public officiel"
-        : (!pvpRow.vendor_id && String(pvpRow.source_label ?? "").startsWith("Prix public conseillé · grossiste")) ? String(pvpRow.source_label)
-        : "Prix public conseillé";
+      const isWholesaler = !pvpRow.vendor_id && String(pvpRow.source_label ?? "").startsWith("Prix public · grossiste");
+      kind = src === "apb" || src === "pmr" ? "official" : isWholesaler ? "wholesaler" : "suggested";
+      // Libellés sans jamais nommer le grossiste ni le fournisseur.
+      label = kind === "official" ? "Prix public officiel" : kind === "wholesaler" ? "Prix public · grossiste" : "Prix public conseillé";
+      if (kind === "wholesaler") pvpDate = pvpRow.updated_at ?? null;
     } else if (ownCents > 0) {
       ttcCents = ownCents; kind = "own"; label = "Votre prix de vente";
     }
@@ -252,7 +254,9 @@ Deno.serve(async (req) => {
       const pvpTtc = ttcCents > 0 ? round2(ttcCents / 100) : null;
       const pvpHt = pvpTtc != null ? round2(pvpTtc / (1 + vatPct / 100)) : null;
       margin = {
-        source: kind, source_label: label, vat_pct: vatPct,
+        source: kind, source_label: label, source_date: pvpDate,
+        source_stale: pvpDate ? Date.now() - new Date(pvpDate).getTime() > 60 * 86400000 : false,
+        vat_pct: vatPct,
         pvp_ttc: pvpTtc, pvp_ht: pvpHt,
         own_selling_price_ttc: ownCents > 0 ? round2(ownCents / 100) : null,
         medikong: pvpHt != null ? m(pvpHt, bestPrice) : null,

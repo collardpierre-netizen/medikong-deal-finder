@@ -2,7 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3.23.8";
 import { parseCode } from "./parse.ts";
-import { computeVerdict, resolveDiscountPct, round2 } from "./pricing.ts";
+import { computeVerdict, resolveDiscount, discountLabel, round2 } from "./pricing.ts";
 import { getVendorPublicName, sanitizeVendorLabel } from "../_shared/vendor-display.ts";
 
 const TEST_SCOPE = /(^nan\b|nancare|nestl|nutricia|nutrilon|fortimel|fresubin|fresenius)/i;

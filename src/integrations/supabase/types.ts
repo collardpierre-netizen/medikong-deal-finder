@@ -37913,6 +37913,15 @@ export type Database = {
           vendor_show_real_name_resolved: boolean
         }[]
       }
+      get_buyer_p2p_settings: {
+        Args: never
+        Returns: {
+          commission_payer: Database["public"]["Enums"]["buyer_p2p_commission_payer"]
+          default_commission_bps: number
+          is_enabled: boolean
+          max_validity_days: number
+        }[]
+      }
       get_effective_offer_price: {
         Args: { _buyer_profile_id: string; _offer_id: string }
         Returns: {

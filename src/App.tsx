@@ -225,6 +225,7 @@ const AdminSourcingPipeline = lazyWithRetry(() => import("./pages/admin/AdminSou
 const AdminScanImports = lazyWithRetry(() => import("./pages/admin/AdminScanImports"), "AdminScanImports");
 const AdminScanPotential = lazyWithRetry(() => import("./pages/admin/AdminScanPotential"), "AdminScanPotential");
 const AdminScanDeclaredPrices = lazyWithRetry(() => import("./pages/admin/AdminScanDeclaredPrices"), "AdminScanDeclaredPrices");
+const AdminScanFieldReports = lazyWithRetry(() => import("./pages/admin/AdminScanFieldReports"), "AdminScanFieldReports");
 const AdminScanEvents = lazyWithRetry(() => import("./pages/admin/AdminScanEvents"), "AdminScanEvents");
 const AdminCategoryAnomalies = lazyWithRetry(() => import("./pages/admin/AdminCategoryAnomalies"), "AdminCategoryAnomalies");
 const AdminCategoryAnomalyDetail = lazyWithRetry(() => import("./pages/admin/AdminCategoryAnomalyDetail"), "AdminCategoryAnomalyDetail");
@@ -666,6 +667,7 @@ const App = () => (
               <Route path="scan/potentiel" element={<LP><AdminScanPotential /></LP>} />
               <Route path="scan/prix-declares" element={<LP><AdminScanDeclaredPrices /></LP>} />
               <Route path="scan/evenements" element={<LP><AdminScanEvents /></LP>} />
+              <Route path="scan/signalements" element={<LP><AdminScanFieldReports /></LP>} />
               <Route path="categories/anomalies" element={<LP><AdminCategoryAnomalies /></LP>} />
               <Route path="categories/anomalies/:id" element={<LP><AdminCategoryAnomalyDetail /></LP>} />
               <Route path="preview/brand-product-card" element={<LP><AdminBrandProductCardPreview /></LP>} />

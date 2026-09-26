@@ -225,6 +225,53 @@ function ProductHead({ r, customerId }: { r: ScanResult; customerId?: string }) 
   );
 }
 
+function SellingPriceLine({ r, onResult }: { r: ScanResult; onResult: (r: ScanResult) => void }) {
+  const current = r.margin?.own_selling_price_ttc ?? null;
+  const [editing, setEditing] = useState(current == null);
+  const [value, setValue] = useState(current != null ? String(current).replace(".", ",") : "");
+  const [saving, setSaving] = useState(false);
+  const save = async () => {
+    const euros = Number(value.replace(",", "."));
+    if (!Number.isFinite(euros) || euros <= 0 || euros > 100000) { toast.error("Indiquez un prix TVAC valide."); return; }
+    setSaving(true);
+    try {
+      const { error } = await sb.rpc("scan_set_selling_price", { _product_id: r.product!.id, _price_incl_vat_cents: Math.round(euros * 100) });
+      if (error) throw error;
+      const vat = r.margin!.vat_pct;
+      const ttc = Math.round(euros * 100) / 100;
+      const ht = Math.round((ttc / (1 + vat / 100)) * 100) / 100;
+      const m = (buy: number | null | undefined) => buy != null && buy > 0
+        ? { eur: Math.round((ht - buy) * 100) / 100, pct: ht > 0 ? Math.round(((ht - buy) / ht) * 1000) / 10 : null }
+        : null;
+      onResult({ ...r, margin: { ...r.margin!, source: "own", source_label: "Votre prix de vente", pvp_ttc: ttc, pvp_ht: ht, own_selling_price_ttc: ttc,
+        medikong: m(r.best?.price), current: m(r.best_reference_price) } });
+      setEditing(false);
+      toast.success("Prix de vente enregistré pour votre officine");
+    } catch (error) {
+      console.error("selling price failed", error);
+      toast.error("Enregistrement impossible, réessayez.");
+    } finally { setSaving(false); }
+  };
+  if (!editing && current != null) {
+    return (
+      <button type="button" className="scan-tap flex w-full items-center justify-between rounded-lg bg-muted px-3 py-2 text-left text-sm" onClick={() => setEditing(true)}>
+        <span>Votre prix de vente : <strong>{formatMoney(current)} TVAC</strong></span>
+        <span className="text-xs text-primary">Modifier</span>
+      </button>
+    );
+  }
+  return (
+    <div className="rounded-lg bg-muted p-3 text-sm space-y-2">
+      <div className="font-medium">Votre prix de vente (TVAC)</div>
+      <div className="flex gap-2">
+        <Input inputMode="decimal" placeholder="ex. 12,90" value={value} onChange={(e) => setValue(e.target.value)} aria-label="Votre prix de vente TVAC" />
+        <Button type="button" onClick={save} disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "OK"}</Button>
+      </div>
+      <div className="text-xs text-muted-foreground">Visible uniquement par votre officine. Sert à calculer votre marge.</div>
+    </div>
+  );
+}
+
 function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScanNext }: { r: ScanResult; customerId: string; hasConditions: boolean; estimated: boolean; onResult: (r: ScanResult) => void; onScanNext: () => void }) {
   const { addToCart } = useCart();
   const declaredReference = r.references.find((reference) => reference.source === "DECLARED");

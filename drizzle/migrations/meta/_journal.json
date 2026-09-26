@@ -428,6 +428,13 @@
       "when": 1790409053913,
       "tag": "0060_qogita_vendor_out_sweep",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1790409094033,
+      "tag": "0061_qogita_vendor_sweep_service_role",
+      "breakpoints": true
     }
   ]
 }

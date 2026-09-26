@@ -1,5 +1,5 @@
 import { FieldReports } from "@/components/scan/FieldReports";
-const FIELD_REPORTS_ENABLED = false;
+const FIELD_REPORTS_ENABLED = true;
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";

@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { OTP_LENGTH } from "@/config/otp";
 import { fetchScanAccess, type ScanCustomer } from "@/lib/scanner/api";
+import ScanOnboarding, { onboardingKey } from "./ScanOnboarding";
 import { installScanSessionGuard, onSessionExpired, releasePending } from "@/lib/scanner/sessionGuard";
 
 installScanSessionGuard();
@@ -56,12 +57,12 @@ export function CodeLogin({ expired = false }: { expired?: boolean }) {
     if (!email.trim()) { toast.error("Indiquez votre adresse e-mail."); return; }
     if (wait > 0) return;
     setBusy(true);
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: { emailRedirectTo: window.location.origin + (SCAN_BASENAME ?? ""), shouldCreateUser: false },
+    // Contrôle « accès Scan » côté serveur ; réponse identique que l'adresse existe ou non
+    const { error } = await supabase.functions.invoke("scan-request-code", {
+      body: { email: email.trim(), redirect: window.location.origin + (SCAN_BASENAME ?? "") },
     });
     setBusy(false);
-    if (error) { toast.error("Envoi impossible. Vérifiez l'adresse e-mail."); return; }
+    if (error) { toast.error("Envoi impossible pour l'instant. Réessayez."); return; }
     setWait(RESEND_S);
     setStep("code");
   };
@@ -101,7 +102,7 @@ export function CodeLogin({ expired = false }: { expired?: boolean }) {
       )}
       {step === "code" && (
         <form onSubmit={(e) => { e.preventDefault(); verify(code); }} className="space-y-4">
-          <p className="text-muted-foreground">Code envoyé à {email}. Saisissez-le ici.</p>
+          <p className="text-sm text-muted-foreground">Si votre officine fait partie du pilote MediKong Scan, vous allez recevoir un code. Pas de code ? Écrivez-nous à <a className="underline" href="mailto:pcoll@medikong.pro">pcoll@medikong.pro</a>.</p>
           <Input inputMode="numeric" autoComplete="one-time-code" autoFocus maxLength={OTP_LENGTH} disabled={locked}
             value={code} placeholder={"•".repeat(OTP_LENGTH)}
             onChange={(e) => { const v = e.target.value.replace(/\D/g, "").slice(0, OTP_LENGTH); setCode(v); if (v.length === OTP_LENGTH) verify(v); }}
@@ -238,11 +239,22 @@ export default function ScanGate({ children }: { children: ReactNode }) {
     return () => { document.removeEventListener("visibilitychange", check); window.removeEventListener("online", check); };
   }, [qc]);
   useEffect(() => { if (user) setExpired(false); else if (hadUser.current && !sessionStorage.getItem("scan-manual-logout")) setExpired(true); sessionStorage.removeItem("scan-manual-logout"); }, [user]);
+  const [onbTick, setOnbTick] = useState(0);
   const { data, isLoading } = useQuery({
     queryKey: ["scan-access", user?.id],
     enabled: !!user,
     queryFn: () => fetchScanAccess(user!.id),
     staleTime: 5 * 60_000,
+  });
+  const custId = data?.allowed ? data.customer?.id : undefined;
+  const { data: hasConditions } = useQuery({
+    queryKey: ["scan-has-conditions", custId],
+    enabled: !!custId,
+    queryFn: async () => {
+      const { count, error } = await (supabase as any).from("pharmacist_wholesaler_settings").select("id", { count: "exact", head: true }).eq("customer_id", custId);
+      if (error) throw error;
+      return (count ?? 0) > 0;
+    },
   });
 
   if (loading || (user && isLoading)) {
@@ -267,11 +279,15 @@ export default function ScanGate({ children }: { children: ReactNode }) {
           <Lock className="h-6 w-6 text-muted-foreground" />
           <p className="font-semibold">Accès sur invitation</p>
           <p className="text-sm text-muted-foreground">MediKong Scan est en phase pilote, sur invitation.</p>
-          <p className="text-sm text-muted-foreground">Contact : <a className="underline" href="mailto:contact@medikong.pro">contact@medikong.pro</a></p>
+          <p className="text-sm text-muted-foreground">Contact : <a className="underline" href="mailto:pcoll@medikong.pro">pcoll@medikong.pro</a></p>
         </div>
         <Button variant="outline" className="scan-tap" onClick={() => { sessionStorage.setItem("scan-manual-logout", "1"); signOut(); }}>Se déconnecter</Button>
       </Center>
     );
+  }
+  void onbTick;
+  if (hasConditions === false && !localStorage.getItem(onboardingKey(data.customer.id))) {
+    return <ScanCtx.Provider value={data.customer}><ScanOnboarding customerId={data.customer.id} onDone={() => setOnbTick((n) => n + 1)} /></ScanCtx.Provider>;
   }
   return (
     <ScanCtx.Provider value={data.customer}>

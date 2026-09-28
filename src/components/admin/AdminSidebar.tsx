@@ -112,6 +112,7 @@ const sections: NavSection[] = [
       { label: "Liens & QR tracés", path: "/admin/tracking-campaigns", icon: QrCode },
       { labelKey: "analytics", path: "/admin/analytics", icon: BarChart3 },
       { label: "Analytics clients", path: "/admin/analytics-clients", icon: Users },
+      { label: "Scan — usage", path: "/admin/scan/usage", icon: TrendingUp },
       { label: "Potentiel Scan", path: "/admin/scan/potentiel", icon: TrendingUp },
       { label: "Prix déclarés (Scan)", path: "/admin/scan/prix-declares", icon: Euro },
       { label: "Scans (journal)", path: "/admin/scan/evenements", icon: ScanLine },

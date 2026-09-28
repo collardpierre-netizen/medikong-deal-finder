@@ -122,3 +122,9 @@ verify_jwt = false
 
 [functions.quick-order]
 verify_jwt = false
+
+[functions.scan-request-code]
+verify_jwt = false
+
+[functions.send-scan-invitation]
+verify_jwt = false

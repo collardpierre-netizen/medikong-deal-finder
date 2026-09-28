@@ -613,6 +613,16 @@ function ScanAccessCard({ customerId }: { customerId: string }) {
       return data as { scan_enabled: boolean | null; is_verified: boolean | null } | null;
     },
   });
+  const invite = useMutation({
+    mutationFn: async () => {
+      const { data: r, error } = await supabase.functions.invoke("send-scan-invitation", { body: { customer_id: customerId } });
+      if (error) throw error;
+      if ((r as any)?.error) throw new Error((r as any).error);
+      return r as { ok: boolean; to: string; reason: string | null };
+    },
+    onSuccess: (r) => r.ok ? toast.success(`Invitation Scan envoyée à ${r.to}`) : toast.warning(`Invitation non envoyée à ${r.to} (${r.reason ?? "adresse bloquée"})`),
+    onError: (e: any) => toast.error(`Invitation non envoyée : ${e?.message ?? "erreur"}`),
+  });
   const m = useMutation({
     mutationFn: async (on: boolean) => {
       const patch: Record<string, boolean> = { scan_enabled: on };
@@ -621,6 +631,7 @@ function ScanAccessCard({ customerId }: { customerId: string }) {
       if (error) throw error;
     },
     onSuccess: (_d, on) => {
+      if (on && !data?.scan_enabled) invite.mutate();
       qc.invalidateQueries({ queryKey: ["admin-customer-scan", customerId] });
       qc.invalidateQueries({ queryKey: ["admin-customers"] });
       toast.success(on ? "Accès Scan ouvert — officine vérifiée" : "Accès Scan fermé");
@@ -639,6 +650,12 @@ function ScanAccessCard({ customerId }: { customerId: string }) {
           onChange={(e) => m.mutate(e.target.checked)} className="h-5 w-5" />
         {on ? "Activé" : "Désactivé"}
       </label>
+      {on && (
+        <button type="button" onClick={() => invite.mutate()} disabled={invite.isPending}
+          className="text-xs font-medium text-primary underline disabled:opacity-50">
+          {invite.isPending ? "Envoi…" : "Renvoyer l'invitation"}
+        </button>
+      )}
     </div>
   );
 }

@@ -33,32 +33,29 @@ export const MagicLinkEmail = ({
 }: MagicLinkEmailProps) => (
   <Html lang="fr" dir="ltr">
     <Head />
-    <Preview>Votre lien de connexion Medikong</Preview>
+    <Preview>{token ? `Votre code de connexion MediKong : ${token}` : 'Votre connexion MediKong'}</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={logoSection}>
-          <Img src={LOGO_URL} alt="Medikong" width="180" style={logo} />
+          <Img src={LOGO_URL} alt="MediKong" width="180" style={logo} />
         </Section>
         <Hr style={divider} />
-        <Heading style={h1}>Votre lien de connexion</Heading>
-        <Text style={text}>
-          Cliquez sur le bouton ci-dessous pour vous connecter à{' '}
-          <strong>Medikong</strong>. Ce lien expire dans quelques instants.
-        </Text>
-        <Section style={buttonSection}>
-          <Button style={button} href={confirmationUrl}>
-            Se connecter
-          </Button>
-        </Section>
+        <Heading style={h1}>Votre code de connexion</Heading>
         {token ? (
           <Section style={codeSection}>
-            <Text style={codeLabel}>Ou saisissez ce code de vérification à {OTP_LENGTH} chiffres :</Text>
             <Text style={codeValue}>{token}</Text>
+            <Text style={codeLabel}>Saisissez ce code à {OTP_LENGTH} chiffres dans MediKong Scan ou sur medikong.pro.</Text>
           </Section>
         ) : null}
+        <Text style={text}>ou cliquez ici depuis votre ordinateur :</Text>
+        <Section style={buttonSection}>
+          <Button style={button} href={confirmationUrl}>
+            Se connecter à MediKong
+          </Button>
+        </Section>
         <Hr style={divider} />
         <Text style={footer}>
-          Si vous n'avez pas demandé ce lien, vous pouvez ignorer cet e-mail.
+          Ce code et ce lien expirent rapidement. Si vous n'avez rien demandé, ignorez cet e-mail.
         </Text>
         <Text style={footerBrand}>© MediKong SRL</Text>
       </Container>
@@ -76,11 +73,12 @@ const divider = { borderColor: '#d1d5db', margin: '20px 0' }
 const h1 = {
   fontSize: '22px',
   fontWeight: 'bold' as const,
-  color: '#1e3a5f',
+  color: '#1E252F',
   margin: '0 0 20px',
   fontFamily: "'Plus Jakarta Sans', 'DM Sans', Arial, sans-serif",
 }
 const text = {
+  textAlign: 'center' as const,
   fontSize: '14px',
   color: '#3b4a5a',
   lineHeight: '1.6',
@@ -88,7 +86,7 @@ const text = {
 }
 const buttonSection = { textAlign: 'center' as const, margin: '24px 0' }
 const button = {
-  backgroundColor: '#2563eb',
+  backgroundColor: '#1C58D9',
   color: '#ffffff',
   fontSize: '14px',
   fontWeight: '600' as const,
@@ -98,13 +96,13 @@ const button = {
 }
 const footer = { fontSize: '12px', color: '#9ca3af', margin: '20px 0 4px' }
 const footerBrand = { fontSize: '11px', color: '#9ca3af', margin: '0' }
-const codeSection = { textAlign: 'center' as const, margin: '8px 0 24px' }
-const codeLabel = { fontSize: '13px', color: '#3b4a5a', margin: '0 0 8px' }
+const codeSection = { textAlign: 'center' as const, margin: '8px 0 24px', backgroundColor: '#EEF3FD', borderRadius: '12px', padding: '20px 12px' }
+const codeLabel = { fontSize: '13px', color: '#3b4a5a', margin: '10px 0 0' }
 const codeValue = {
-  fontSize: '28px',
+  fontSize: '40px',
   fontWeight: 'bold' as const,
-  letterSpacing: '6px',
-  color: '#1e3a5f',
+  letterSpacing: '8px',
+  color: '#1E252F',
   margin: '0',
   fontFamily: "'DM Sans', Arial, sans-serif",
 }

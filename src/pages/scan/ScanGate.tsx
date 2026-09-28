@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { OTP_LENGTH } from "@/config/otp";
 import { fetchScanAccess, type ScanCustomer } from "@/lib/scanner/api";
+import ScanOnboarding, { onboardingKey } from "./ScanOnboarding";
 import { installScanSessionGuard, onSessionExpired, releasePending } from "@/lib/scanner/sessionGuard";
 
 installScanSessionGuard();
@@ -238,6 +239,7 @@ export default function ScanGate({ children }: { children: ReactNode }) {
     return () => { document.removeEventListener("visibilitychange", check); window.removeEventListener("online", check); };
   }, [qc]);
   useEffect(() => { if (user) setExpired(false); else if (hadUser.current && !sessionStorage.getItem("scan-manual-logout")) setExpired(true); sessionStorage.removeItem("scan-manual-logout"); }, [user]);
+  const [onbTick, setOnbTick] = useState(0);
   const { data, isLoading } = useQuery({
     queryKey: ["scan-access", user?.id],
     enabled: !!user,
@@ -248,6 +250,16 @@ export default function ScanGate({ children }: { children: ReactNode }) {
   if (loading || (user && isLoading)) {
     return <Center><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></Center>;
   }
+  const custId = data?.allowed ? data.customer?.id : undefined;
+  const { data: hasConditions } = useQuery({
+    queryKey: ["scan-has-conditions", custId],
+    enabled: !!custId,
+    queryFn: async () => {
+      const { count, error } = await (supabase as any).from("pharmacist_wholesaler_settings").select("id", { count: "exact", head: true }).eq("customer_id", custId);
+      if (error) throw error;
+      return (count ?? 0) > 0;
+    },
+  });
   if (data?.allowed && data.customer) lastCustomer.current = data.customer;
   // Session expirée en cours d'usage : l'écran reste en place (saisies conservées), code demandé par-dessus
   if ((!user || expired) && expired && lastCustomer.current) {
@@ -272,6 +284,10 @@ export default function ScanGate({ children }: { children: ReactNode }) {
         <Button variant="outline" className="scan-tap" onClick={() => { sessionStorage.setItem("scan-manual-logout", "1"); signOut(); }}>Se déconnecter</Button>
       </Center>
     );
+  }
+  void onbTick;
+  if (hasConditions === false && !localStorage.getItem(onboardingKey(data.customer.id))) {
+    return <ScanCtx.Provider value={data.customer}><ScanOnboarding customerId={data.customer.id} onDone={() => setOnbTick((n) => n + 1)} /></ScanCtx.Provider>;
   }
   return (
     <ScanCtx.Provider value={data.customer}>

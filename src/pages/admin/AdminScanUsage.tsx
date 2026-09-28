@@ -47,7 +47,7 @@ export default function AdminScanUsage() {
         };
       });
       const funnel = {
-        invited: rows.filter((r) => r.invited).length || rows.length,
+        invited: rows.length,
         connected: rows.filter((r) => r.total > 0 || r.conditions).length,
         first: rows.filter((r) => r.total >= 1).length,
         ten: rows.filter((r) => r.total >= 10).length,

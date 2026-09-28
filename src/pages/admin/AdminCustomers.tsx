@@ -345,6 +345,8 @@ export default function AdminCustomers() {
             )}
           </div>
 
+          {selected && !isCreating && <ScanAccessCard customerId={selected.id} />}
+
           {selected && !isCreating && <EinvoicingSettingsCard customerId={selected.id} variant="admin" />}
 
           {selected && <ShippingAddressesBlock customerId={selected.id} defaultCountry={selected.country_code || "BE"} />}
@@ -596,6 +598,47 @@ function ShippingAddressesBlock({ customerId, defaultCountry }: { customerId: st
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Interrupteur « Accès Scan » : ouvre scan_enabled ; la base marque l'officine vérifiée en même temps. */
+function ScanAccessCard({ customerId }: { customerId: string }) {
+  const qc = useQueryClient();
+  const { data } = useQuery({
+    queryKey: ["admin-customer-scan", customerId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("customers").select("scan_enabled, is_verified").eq("id", customerId).maybeSingle();
+      if (error) throw error;
+      return data as { scan_enabled: boolean | null; is_verified: boolean | null } | null;
+    },
+  });
+  const m = useMutation({
+    mutationFn: async (on: boolean) => {
+      const patch: Record<string, boolean> = { scan_enabled: on };
+      if (on) patch.is_verified = true;
+      const { error } = await (supabase as any).from("customers").update(patch).eq("id", customerId);
+      if (error) throw error;
+    },
+    onSuccess: (_d, on) => {
+      qc.invalidateQueries({ queryKey: ["admin-customer-scan", customerId] });
+      qc.invalidateQueries({ queryKey: ["admin-customers"] });
+      toast.success(on ? "Accès Scan ouvert — officine vérifiée" : "Accès Scan fermé");
+    },
+    onError: (e: any) => toast.error(e?.message || "Modification impossible"),
+  });
+  const on = !!data?.scan_enabled;
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-center justify-between gap-4">
+      <div>
+        <h3 className="text-sm font-semibold text-slate-900">Accès Scan</h3>
+        <p className="text-xs text-slate-500">Ouvrir l'accès marque aussi l'officine comme vérifiée.{data?.is_verified ? " Vérifiée actuellement." : ""}</p>
+      </div>
+      <label className="flex items-center gap-2 text-sm cursor-pointer">
+        <input type="checkbox" role="switch" aria-label="Accès Scan" checked={on} disabled={!data || m.isPending}
+          onChange={(e) => m.mutate(e.target.checked)} className="h-5 w-5" />
+        {on ? "Activé" : "Désactivé"}
+      </label>
     </div>
   );
 }

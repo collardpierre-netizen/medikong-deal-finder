@@ -36,6 +36,22 @@ const num = (s: string) => {
   return Number.isFinite(v) && s.trim() !== "" ? Math.min(80, Math.max(0, v)) : null;
 };
 
+/** Traduit l'erreur réelle en cause lisible, avec le détail technique en fin de message. */
+function explainSaveError(e: any): string {
+  const code = String(e?.code ?? "");
+  const msg = String(e?.message ?? e ?? "");
+  const detail = msg ? ` (${code ? code + " : " : ""}${msg.slice(0, 140)})` : "";
+  if (code === "PGRST301" || /jwt|expired|session/i.test(msg)) return "Session expirée : reconnectez-vous puis réessayez" + detail;
+  if (code === "42501" || /row-level security|permission denied/i.test(msg)) return "Accès refusé à ce compte" + detail;
+  if (code === "23503" && /wholesaler/i.test(msg)) return "Grossiste manquant ou inconnu" + detail;
+  if (code === "23503") return "Référence inconnue (marque, labo ou compte)" + detail;
+  if (code === "23505") return "Ce grossiste est déjà enregistré" + detail;
+  if (code === "23514" || code === "22003" || code === "22P02") return "Remise invalide (0 à 80 %)" + detail;
+  if (code === "42703" || code === "PGRST204") return "Champ non reconnu par le serveur" + detail;
+  if (/failed to fetch|network|load failed/i.test(msg)) return "Connexion perdue : vérifiez le réseau et réessayez" + detail;
+  return "Enregistrement impossible" + detail;
+}
+
 export default function ScanConditionsPage() {
   const customer = useScanCustomer();
   const { user } = useAuth();
@@ -182,7 +198,7 @@ export default function ScanConditionsPage() {
       toast.success("Conditions enregistrées");
       nav("/");
     } catch (e: any) {
-      toast.error("Enregistrement impossible");
+      toast.error(explainSaveError(e));
       console.error(e);
     } finally { setSaving(false); }
   };

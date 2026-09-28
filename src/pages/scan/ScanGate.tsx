@@ -56,12 +56,12 @@ export function CodeLogin({ expired = false }: { expired?: boolean }) {
     if (!email.trim()) { toast.error("Indiquez votre adresse e-mail."); return; }
     if (wait > 0) return;
     setBusy(true);
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: { emailRedirectTo: window.location.origin + (SCAN_BASENAME ?? ""), shouldCreateUser: false },
+    // Contrôle « accès Scan » côté serveur ; réponse identique que l'adresse existe ou non
+    const { error } = await supabase.functions.invoke("scan-request-code", {
+      body: { email: email.trim(), redirect: window.location.origin + (SCAN_BASENAME ?? "") },
     });
     setBusy(false);
-    if (error) { toast.error("Envoi impossible. Vérifiez l'adresse e-mail."); return; }
+    if (error) { toast.error("Envoi impossible pour l'instant. Réessayez."); return; }
     setWait(RESEND_S);
     setStep("code");
   };
@@ -101,7 +101,7 @@ export function CodeLogin({ expired = false }: { expired?: boolean }) {
       )}
       {step === "code" && (
         <form onSubmit={(e) => { e.preventDefault(); verify(code); }} className="space-y-4">
-          <p className="text-muted-foreground">Code envoyé à {email}. Saisissez-le ici.</p>
+          <p className="text-sm text-muted-foreground">Si votre officine fait partie du pilote MediKong Scan, vous allez recevoir un code. Pas de code ? Écrivez-nous à <a className="underline" href="mailto:pcoll@medikong.pro">pcoll@medikong.pro</a>.</p>
           <Input inputMode="numeric" autoComplete="one-time-code" autoFocus maxLength={OTP_LENGTH} disabled={locked}
             value={code} placeholder={"•".repeat(OTP_LENGTH)}
             onChange={(e) => { const v = e.target.value.replace(/\D/g, "").slice(0, OTP_LENGTH); setCode(v); if (v.length === OTP_LENGTH) verify(v); }}
@@ -267,7 +267,7 @@ export default function ScanGate({ children }: { children: ReactNode }) {
           <Lock className="h-6 w-6 text-muted-foreground" />
           <p className="font-semibold">Accès sur invitation</p>
           <p className="text-sm text-muted-foreground">MediKong Scan est en phase pilote, sur invitation.</p>
-          <p className="text-sm text-muted-foreground">Contact : <a className="underline" href="mailto:contact@medikong.pro">contact@medikong.pro</a></p>
+          <p className="text-sm text-muted-foreground">Contact : <a className="underline" href="mailto:pcoll@medikong.pro">pcoll@medikong.pro</a></p>
         </div>
         <Button variant="outline" className="scan-tap" onClick={() => { sessionStorage.setItem("scan-manual-logout", "1"); signOut(); }}>Se déconnecter</Button>
       </Center>

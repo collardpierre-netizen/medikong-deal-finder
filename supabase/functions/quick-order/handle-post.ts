@@ -180,9 +180,8 @@ export async function handlePost(req: Request, ip: string): Promise<Response> {
   // Frais de livraison si le franco n'est pas atteint. Recalculés ici, comme
   // tout le reste : le navigateur n'est jamais la source du montant facturé.
   const shipping = francoReached ? 0 : (campaign.shipping_fee_cents ?? 0);
-  if (shipping > 0) {
-    vatTotal += Math.round(shipping * Number(campaign.shipping_vat_rate ?? 21) / 100);
-  }
+  // Lot 6 : TVA sur la somme des bases par taux, un seul arrondi par taux.
+  vatTotal = vatFromBases(lines, shipping, Number(campaign.shipping_vat_rate ?? 21));
 
   // --- Déduplication (mêmes deux mécanismes que le parcours /g) -----------
   const sigLines = lines.map((l) => ({ item_id: String(l.offer_item_id), qty: Number(l.qty) }));
@@ -786,9 +785,8 @@ async function groupOrder(
     ? subtotal >= campaign.franco_threshold_cents
     : true;
   const shipping = francoReached ? 0 : (campaign.shipping_fee_cents ?? 0);
-  if (shipping > 0) {
-    vatTotal += Math.round(shipping * Number(campaign.shipping_vat_rate ?? 21) / 100);
-  }
+  // Lot 6 : TVA sur la somme des bases par taux, un seul arrondi par taux.
+  vatTotal = vatFromBases(lines, shipping, Number(campaign.shipping_vat_rate ?? 21));
   const totalTtc = subtotal + shipping + vatTotal;
 
   // --- Alerte « 2e commande » : correspondance élargie, AVERTISSEMENT SEUL --

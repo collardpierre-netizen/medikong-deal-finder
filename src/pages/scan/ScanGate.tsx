@@ -1,8 +1,8 @@
 import { SCAN_BASENAME } from "@/config/surface";
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { NavLink } from "react-router-dom";
-import { Loader2, ScanLine, ShoppingCart, User, Lock, Mail, type LucideIcon } from "lucide-react";
+import { Loader2, ScanLine, ShoppingCart, User, Lock, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,17 +28,30 @@ function Brand() {
   );
 }
 
-/**
- * Connexion par code e-mail saisi dans l'app (fonctionne dans l'app installée sur l'écran d'accueil,
- * dont la session est séparée de Safari). Lien magique conservé en option secondaire.
- */
-function CodeLogin() {
+const LOCK_KEY = "scan-otp-lock";
+const MAX_TRIES = 5;
+const LOCK_MS = 15 * 60_000;
+const RESEND_S = 60;
+
+/** Connexion par code à 6 chiffres saisi dans l'app (pas de lien : un lien ouvrirait Safari). */
+export function CodeLogin({ expired = false }: { expired?: boolean }) {
   const [email, setEmail] = useState("");
-  const [step, setStep] = useState<"email" | "code" | "link">("email");
+  const [step, setStep] = useState<"email" | "code">("email");
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
-  const send = async (mode: "code" | "link") => {
+  const [wait, setWait] = useState(0);
+  const [now, setNow] = useState(Date.now());
+  const readLock = () => { try { return JSON.parse(localStorage.getItem(LOCK_KEY) || "{}") as { tries?: number; until?: number }; } catch { return {}; } };
+  const [lock, setLock] = useState(readLock);
+  const locked = (lock.until ?? 0) > now;
+  useEffect(() => {
+    const t = setInterval(() => { setNow(Date.now()); setWait((w) => (w > 0 ? w - 1 : 0)); }, 1000);
+    return () => clearInterval(t);
+  }, []);
+  const saveLock = (l: { tries?: number; until?: number }) => { localStorage.setItem(LOCK_KEY, JSON.stringify(l)); setLock(l); };
+  const send = async () => {
     if (!email.trim()) { toast.error("Indiquez votre adresse e-mail."); return; }
+    if (wait > 0) return;
     setBusy(true);
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
@@ -46,55 +59,77 @@ function CodeLogin() {
     });
     setBusy(false);
     if (error) { toast.error("Envoi impossible. Vérifiez l'adresse e-mail."); return; }
-    setStep(mode);
+    setWait(RESEND_S);
+    setStep("code");
   };
   const verify = async (value: string) => {
-    if (value.length !== OTP_LENGTH || busy) return;
+    if (value.length !== OTP_LENGTH || busy || locked) return;
     setBusy(true);
     const { error } = await supabase.auth.verifyOtp({ email: email.trim(), token: value, type: "email" });
     setBusy(false);
-    if (error) { toast.error("Code invalide ou expiré."); setCode(""); }
+    if (error) {
+      const tries = (lock.tries ?? 0) + 1;
+      if (tries >= MAX_TRIES) { saveLock({ tries: 0, until: Date.now() + LOCK_MS }); toast.error("Trop d'essais. Réessayez dans 15 minutes."); }
+      else { saveLock({ tries }); toast.error(`Code invalide ou expiré (${MAX_TRIES - tries} essai(s) restant(s)).`); }
+      setCode("");
+      return;
+    }
+    localStorage.removeItem(LOCK_KEY);
   };
+  const lockMin = Math.ceil(((lock.until ?? 0) - now) / 60_000);
   return (
     <Center>
       <Brand />
+      {expired && (
+        <div className="rounded-xl border bg-card p-4">
+          <p className="font-semibold">Votre session a expiré</p>
+          <p className="text-sm text-muted-foreground">Recevez un nouveau code pour continuer.</p>
+        </div>
+      )}
       {step === "email" && (
-        <form onSubmit={(e) => { e.preventDefault(); send("code"); }} className="space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); send(); }} className="space-y-4">
           <p className="text-muted-foreground">Entrez votre e-mail, nous vous envoyons un code à {OTP_LENGTH} chiffres.</p>
           <Input type="email" required autoComplete="email" placeholder="vous@pharmacie.be" value={email}
             onChange={(e) => setEmail(e.target.value)} className="h-12 text-base" />
-          <Button type="submit" className="scan-tap h-12 w-full text-base" disabled={busy}>
-            {busy ? "Envoi…" : "Recevoir le code"}
-          </Button>
-          <Button type="button" variant="link" className="w-full" disabled={busy} onClick={() => send("link")}>
-            ou recevoir un lien
+          <Button type="submit" className="scan-tap h-12 w-full text-base" disabled={busy || wait > 0}>
+            {busy ? "Envoi…" : wait > 0 ? `Nouveau code dans ${wait} s` : "Recevoir mon code"}
           </Button>
         </form>
       )}
       {step === "code" && (
         <form onSubmit={(e) => { e.preventDefault(); verify(code); }} className="space-y-4">
           <p className="text-muted-foreground">Code envoyé à {email}. Saisissez-le ici.</p>
-          <Input inputMode="numeric" autoComplete="one-time-code" autoFocus maxLength={OTP_LENGTH}
+          <Input inputMode="numeric" autoComplete="one-time-code" autoFocus maxLength={OTP_LENGTH} disabled={locked}
             value={code} placeholder={"•".repeat(OTP_LENGTH)}
             onChange={(e) => { const v = e.target.value.replace(/\D/g, "").slice(0, OTP_LENGTH); setCode(v); if (v.length === OTP_LENGTH) verify(v); }}
             className="h-14 text-center text-2xl tracking-[0.4em]" aria-label="Code reçu par e-mail" />
-          <Button type="submit" className="scan-tap h-12 w-full text-base" disabled={busy || code.length !== OTP_LENGTH}>
+          {locked && <p className="text-sm text-destructive">Trop d'essais. Réessayez dans {lockMin} min.</p>}
+          <Button type="submit" className="scan-tap h-12 w-full text-base" disabled={busy || locked || code.length !== OTP_LENGTH}>
             {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : "Se connecter"}
           </Button>
+          <Button type="button" variant="link" className="w-full" disabled={busy || wait > 0} onClick={send}>
+            {wait > 0 ? `Renvoyer un code dans ${wait} s` : "Renvoyer un code"}
+          </Button>
           <Button type="button" variant="link" className="w-full" onClick={() => { setStep("email"); setCode(""); }}>
-            Changer d'e-mail ou renvoyer
+            Changer d'e-mail
           </Button>
         </form>
       )}
-      {step === "link" && (
-        <div className="rounded-xl border bg-card p-5 space-y-2">
-          <Mail className="h-6 w-6 text-scan-emerald" />
-          <p className="font-semibold">Vérifiez votre boîte mail</p>
-          <p className="text-sm text-muted-foreground">Un lien de connexion a été envoyé à {email}. Ouvrez-le sur ce téléphone.</p>
-          <Button type="button" variant="link" className="px-0" onClick={() => setStep("code")}>Saisir le code à la place</Button>
-        </div>
-      )}
     </Center>
+  );
+}
+
+/** Bandeau Safari « ajouter à l'écran d'accueil », affiché une seule fois, jamais dans l'app installée. */
+function InstallHint() {
+  const standalone = typeof window !== "undefined" && (window.matchMedia?.("(display-mode: standalone)").matches || (navigator as any).standalone === true);
+  const [show, setShow] = useState(() => !standalone && !localStorage.getItem("scan-install-hint-seen"));
+  if (!show) return null;
+  const close = () => { localStorage.setItem("scan-install-hint-seen", "1"); setShow(false); };
+  return (
+    <div className="mx-4 mt-3 flex items-start gap-3 rounded-xl border bg-card p-3 text-sm">
+      <p className="flex-1">Installez MediKong Scan : touchez <b>Partager</b> puis <b>Sur l'écran d'accueil</b>.</p>
+      <Button type="button" variant="ghost" size="sm" onClick={close}>OK</Button>
+    </div>
   );
 }
 
@@ -170,6 +205,29 @@ function BottomBar() {
 /** Accès Scan = interrupteur site ET interrupteur officine. Sinon : « Accès sur invitation ». */
 export default function ScanGate({ children }: { children: ReactNode }) {
   const { user, loading, signOut } = useAuth();
+  const qc = useQueryClient();
+  const hadUser = useRef(false);
+  const [expired, setExpired] = useState(false);
+  if (user) hadUser.current = true;
+  // Au retour au premier plan : vérifier/rafraîchir la session avant toute lecture
+  useEffect(() => {
+    const check = async () => {
+      if (document.visibilityState !== "visible") return;
+      const { data: s } = await supabase.auth.getSession();
+      if (!s.session) return;
+      const left = (s.session.expires_at ?? 0) * 1000 - Date.now();
+      if (left < 5 * 60_000) {
+        const { error } = await supabase.auth.refreshSession();
+        if (error) { setExpired(true); return; }
+      }
+      qc.invalidateQueries();
+    };
+    check();
+    document.addEventListener("visibilitychange", check);
+    window.addEventListener("online", check);
+    return () => { document.removeEventListener("visibilitychange", check); window.removeEventListener("online", check); };
+  }, [qc]);
+  useEffect(() => { if (user) setExpired(false); else if (hadUser.current && !sessionStorage.getItem("scan-manual-logout")) setExpired(true); sessionStorage.removeItem("scan-manual-logout"); }, [user]);
   const { data, isLoading } = useQuery({
     queryKey: ["scan-access", user?.id],
     enabled: !!user,
@@ -180,7 +238,7 @@ export default function ScanGate({ children }: { children: ReactNode }) {
   if (loading || (user && isLoading)) {
     return <Center><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></Center>;
   }
-  if (!user) return <CodeLogin />;
+  if (!user) return <CodeLogin expired={expired} />;
   if (!data?.allowed || !data.customer) {
     return (
       <Center>
@@ -188,15 +246,16 @@ export default function ScanGate({ children }: { children: ReactNode }) {
         <div className="rounded-xl border bg-card p-5 space-y-2">
           <Lock className="h-6 w-6 text-muted-foreground" />
           <p className="font-semibold">Accès sur invitation</p>
-          <p className="text-sm text-muted-foreground">MediKong Scan est en test auprès de quelques officines.</p>
+          <p className="text-sm text-muted-foreground">MediKong Scan est en phase pilote, sur invitation.</p>
+          <p className="text-sm text-muted-foreground">Contact : <a className="underline" href="mailto:contact@medikong.pro">contact@medikong.pro</a></p>
         </div>
-        <Button variant="outline" className="scan-tap" onClick={() => signOut()}>Se déconnecter</Button>
+        <Button variant="outline" className="scan-tap" onClick={() => { sessionStorage.setItem("scan-manual-logout", "1"); signOut(); }}>Se déconnecter</Button>
       </Center>
     );
   }
   return (
     <ScanCtx.Provider value={data.customer}>
-      <div className="mx-auto max-w-md pb-[calc(64px+env(safe-area-inset-bottom))]">{children}</div>
+      <div className="mx-auto max-w-md pb-[calc(64px+env(safe-area-inset-bottom))]"><InstallHint />{children}</div>
       <BottomBar />
     </ScanCtx.Provider>
   );

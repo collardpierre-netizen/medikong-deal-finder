@@ -34,7 +34,7 @@ export default function ScanMePage() {
         {row("/historique", "Mes derniers scans", History)}
       </nav>
       <Button variant="outline" className="scan-tap h-12 w-full text-base"
-        onClick={async () => { await signOut(); nav("/", { replace: true }); }}>
+        onClick={async () => { sessionStorage.setItem("scan-manual-logout", "1"); await signOut(); nav("/", { replace: true }); }}>
         <LogOut className="mr-2 h-5 w-5" /> Se déconnecter
       </Button>
       <p className="text-center text-xs text-muted-foreground">MediKong Scan · version {appVersion()}</p>

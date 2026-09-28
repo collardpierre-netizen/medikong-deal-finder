@@ -1608,7 +1608,8 @@ function ProductPageInner() {
   );
 
   // Market prices hook (must be before early returns)
-  const { marketPriceItems, externalOfferItems: marketExternalItems, visMap: mpVisMap } = useMarketPrices(product?.id);
+  // Comparaison marché réservée aux acheteurs vérifiés connectés (même règle que Bonnes affaires).
+  const { marketPriceItems, externalOfferItems: marketExternalItems, visMap: mpVisMap } = useMarketPrices(user && isVerifiedBuyer ? product?.id : undefined);
 
   // External offers from external_offers table (must be before early returns)
   const { data: externalOffers = [] } = useQuery({
@@ -3008,8 +3009,10 @@ function ProductPageInner() {
 
               {/* ── Deuxième Chance ReStock : déplacé sous "Meilleure offre" plus haut ── */}
 
-              {/* ── Historique de prix marché (source: qogita_public) ── */}
-              <ProductPriceHistory gtin={product.gtin || product.ean} productName={product.name} />
+              {/* ── Historique de prix marché (source: qogita_public) — acheteurs vérifiés uniquement ── */}
+              {user && isVerifiedBuyer && (
+                <ProductPriceHistory gtin={product.gtin || product.ean} productName={product.name} />
+              )}
 
               {/* ── Description ── */}
               <div className="mb-8">

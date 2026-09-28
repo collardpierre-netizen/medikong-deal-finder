@@ -8539,6 +8539,97 @@ export type Database = {
           },
         ]
       }
+      market_price_import_archive: {
+        Row: {
+          created_at: string
+          id: number
+          import_id: string
+          kind: string
+          old_row: Json | null
+          row_id: string
+          source_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          import_id: string
+          kind: string
+          old_row?: Json | null
+          row_id: string
+          source_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          import_id?: string
+          kind?: string
+          old_row?: Json | null
+          row_id?: string
+          source_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_price_import_archive_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "market_price_imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      market_price_imports: {
+        Row: {
+          changed_count: number
+          created_at: string
+          created_by: string | null
+          file_name: string | null
+          id: string
+          inserted_count: number
+          reverted_at: string | null
+          reverted_by: string | null
+          rows_count: number
+          source_id: string
+          status: string
+          tariff_date: string
+        }
+        Insert: {
+          changed_count?: number
+          created_at?: string
+          created_by?: string | null
+          file_name?: string | null
+          id?: string
+          inserted_count?: number
+          reverted_at?: string | null
+          reverted_by?: string | null
+          rows_count?: number
+          source_id: string
+          status?: string
+          tariff_date: string
+        }
+        Update: {
+          changed_count?: number
+          created_at?: string
+          created_by?: string | null
+          file_name?: string | null
+          id?: string
+          inserted_count?: number
+          reverted_at?: string | null
+          reverted_by?: string | null
+          rows_count?: number
+          source_id?: string
+          status?: string
+          tariff_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_price_imports_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "market_price_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       market_price_observations: {
         Row: {
           created_at: string
@@ -35567,6 +35658,10 @@ export type Database = {
       }
       _scan_current_customer: { Args: never; Returns: string }
       _sub_is_admin: { Args: never; Returns: boolean }
+      _supplier_matches_source: {
+        Args: { _source_id: string; _supplier: string }
+        Returns: boolean
+      }
       _vendors_privileged_intact: {
         Args: {
           _commission_model: Database["public"]["Enums"]["commission_model_enum"]
@@ -36080,6 +36175,10 @@ export type Database = {
           similarity: number
         }[]
       }
+      admin_finish_wholesaler_import: {
+        Args: { _import_id: string }
+        Returns: undefined
+      }
       admin_flash_deal_candidates: {
         Args: {
           _limit?: number
@@ -36166,6 +36265,10 @@ export type Database = {
           _source_file?: string
           _source_id: string
         }
+        Returns: Json
+      }
+      admin_import_wholesaler_prices_v2: {
+        Args: { _import_id: string; _rows: Json }
         Returns: Json
       }
       admin_inspect_table_grants: {
@@ -36409,6 +36512,10 @@ export type Database = {
           would_update_products: number
         }[]
       }
+      admin_preview_wholesaler_import: {
+        Args: { _rows: Json; _source_id: string }
+        Returns: Json
+      }
       admin_price_cockpit_gaps: {
         Args: { _brand_id?: string; _country?: string; _limit?: number }
         Returns: {
@@ -36547,6 +36654,10 @@ export type Database = {
         }[]
       }
       admin_restore_order: { Args: { _order_id: string }; Returns: undefined }
+      admin_revert_wholesaler_import: {
+        Args: { _import_id: string }
+        Returns: Json
+      }
       admin_review_field_report: {
         Args: { _approve: boolean; _report_id: string }
         Returns: Json
@@ -36898,6 +37009,10 @@ export type Database = {
       admin_soft_delete_order: {
         Args: { _order_id: string; _reason?: string }
         Returns: undefined
+      }
+      admin_start_wholesaler_import: {
+        Args: { _file_name: string; _source_id: string; _tariff_date: string }
+        Returns: string
       }
       admin_test_privileged_column_guards: { Args: never; Returns: Json }
       admin_test_show_payment_info_toggle: { Args: never; Returns: Json }

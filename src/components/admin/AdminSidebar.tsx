@@ -41,6 +41,7 @@ const sections: NavSection[] = [
       { label: "Facturation mandat", path: "/admin/facturation-mandat", icon: FileText },
       { label: "État mandats & factures", path: "/admin/facturation-mandat/etat", icon: FileText },
       { label: "Réception virements", path: "/admin/virements", icon: Landmark },
+      { label: "Commandes rapides", path: "/admin/quick-orders", icon: Zap },
       { label: "Statut Peppol virements", path: "/admin/peppol-virements", icon: FileText },
       { labelKey: "externalVendors", path: "/admin/vendeurs-externes", icon: ExternalLink },
       { labelKey: "onboarding", path: "/admin/onboarding", icon: UserPlus },

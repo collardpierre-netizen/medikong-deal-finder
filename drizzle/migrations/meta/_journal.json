@@ -512,6 +512,13 @@
       "when": 1790423682200,
       "tag": "0072_market_prices_masked_and_cnk_normalization",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1790580245281,
+      "tag": "0073_cart_items_customer_fk_cascade",
+      "breakpoints": true
     }
   ]
 }

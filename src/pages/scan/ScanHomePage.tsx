@@ -298,7 +298,8 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
   const francoRemaining = Math.max(francoTarget - subtotal, 0);
   const soldUnits = Math.max(1, Number(r.product?.pack ?? 1));
   const unitPrice = soldUnits > 1 ? best.price / soldUnits : null;
-  const saleUnit = soldUnits > 1 ? "pack" : "boîte";
+  const saleUnit = soldUnits > 1 ? `pack de ${soldUnits}` : "boîte";
+  const saleUnitPlural = soldUnits > 1 ? "packs" : "boîtes";
 
   // Référence affichée : prix de l'officine (déclaré ou grossiste moins remise), sinon prix grossiste le plus récent.
   const ownRef = r.best_reference_price;
@@ -308,6 +309,7 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
   const refPrice = ownRef ?? latestWholesaler?.catalog_price ?? null;
   const saving = refPrice != null ? Math.round((refPrice - best.price) * 100) / 100 : null;
   const savingPct = refPrice && saving != null ? (saving / refPrice) * 100 : null;
+  const minimumCount = mov != null && best.price > 0 ? Math.ceil(mov / best.price) : null;
   const animatedSaving = useCountUp(saving != null && saving > 0 ? saving : null, 300);
   const heroCls = ownRef == null
     ? (saving != null && saving > 0 ? (savingPct! > 10 ? "verdict-green" : "verdict-orange") : "verdict-none")
@@ -363,11 +365,21 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
             <div className="text-2xl font-extrabold leading-tight">
               {estimated ? "Économie estimée : " : "Vous économisez "}{formatMoney(Math.round(animatedSaving * 100) / 100)} par {saleUnit} <span className="whitespace-nowrap">(−{fmtPct(savingPct)})</span>
             </div>
-            <div className="mt-1 text-sm opacity-90">{formatMoney(ownRef)} chez vous → {formatMoney(best.price)} MediKong</div>
+            <div className="mt-1 text-sm opacity-90">{formatMoney(ownRef)} chez vous → {formatMoney(best.price)} MediKong{unitPrice != null ? ` · ${formatMoney(unitPrice)}/bouteille` : ""}</div>
+            {minimumCount != null && quantity < minimumCount && (
+              <div className="mt-1 text-xs font-medium opacity-90">Gain réel dès {minimumCount} {saleUnitPlural} (franco {formatMoney(mov!)}) ou en complétant avec ce fournisseur</div>
+            )}
           </>
         )}
         {ownRef != null && (saving == null || saving <= 0) && (
           <div className="text-xl font-extrabold leading-tight">Vous payez déjà moins cher ({formatMoney(ownRef)})</div>
+        )}
+        {declaredReference && !editingDeclaredPrice && (
+          <button type="button" className="scan-tap mt-1 inline-flex items-center text-sm font-semibold underline underline-offset-2" onClick={() => {
+            setDeclaredPrice(String(declaredReference.net).replace(".", ","));
+            setDeclaredSupplier(declaredSupplierName);
+            setEditingDeclaredPrice(true);
+          }}>Modifier mon prix ({declaredSupplierName})</button>
         )}
         {ownRef == null && refPrice != null && saving != null && (
           <>
@@ -472,13 +484,6 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
             <div key={x.source} className="flex items-center justify-between gap-3">
               <span className="min-w-0 flex-1">{x.label}{x.source !== "DECLARED" ? (x.discount_label ? ` · ${x.discount_label}` : ` (−${String(x.discount_pct).replace(".", ",")} %)`) : ""}</span>
               <span className="shrink-0">{formatMoney(x.net)}</span>
-              {x.source === "DECLARED" && (
-                <Button type="button" variant="link" size="sm" className="scan-tap h-auto shrink-0 px-0" onClick={() => {
-                  setDeclaredPrice(String(x.net).replace(".", ","));
-                  setDeclaredSupplier(x.label.replace(/^Prix déclaré ·\s*/, ""));
-                  setEditingDeclaredPrice(true);
-                }}>Modifier</Button>
-              )}
             </div>
           ))}
         </div>
@@ -486,9 +491,12 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
 
       {(r.best_reference_price == null || editingDeclaredPrice) && (
         <div className="rounded-xl border bg-muted/40 p-4 space-y-3">
-          <div>
-            <div className="font-semibold">Votre prix : comparez avec votre prix d'achat</div>
-            <div className="text-xs text-muted-foreground">Facultatif</div>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <div className="font-semibold">{editingDeclaredPrice ? "Modifier votre prix d'achat" : "Votre prix : comparez avec votre prix d'achat"}</div>
+              <div className="text-xs text-muted-foreground">Facultatif</div>
+            </div>
+            {editingDeclaredPrice && <Button type="button" variant="ghost" size="sm" className="scan-tap" onClick={() => setEditingDeclaredPrice(false)}>Annuler</Button>}
           </div>
           <div>
             <label className="mb-1 block text-xs text-muted-foreground">Prix HTVA</label>

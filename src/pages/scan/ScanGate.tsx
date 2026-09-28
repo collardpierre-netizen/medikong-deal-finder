@@ -213,7 +213,7 @@ export default function ScanGate({ children }: { children: ReactNode }) {
   const [expired, setExpired] = useState(false);
   if (user) hadUser.current = true;
   const lastCustomer = useRef<ScanCustomer | null>(null);
-  useEffect(() => onSessionExpired((v) => { if (v) setExpired(true); }), []);
+  useEffect(() => { const off = onSessionExpired((v) => { if (v) setExpired(true); }); return () => { off(); }; }, []);
   // Reconnexion : renvoyer les appels mis en attente pendant l'expiration
   useEffect(() => {
     if (!user) return;

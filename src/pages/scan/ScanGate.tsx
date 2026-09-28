@@ -2,7 +2,7 @@ import { SCAN_BASENAME } from "@/config/surface";
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { NavLink } from "react-router-dom";
-import { Loader2, ScanLine, PackageX, ShoppingCart, User, Lock, Mail, type LucideIcon } from "lucide-react";
+import { Loader2, ScanLine, ShoppingCart, User, Lock, Mail, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -99,7 +99,9 @@ function CodeLogin() {
 }
 
 function BottomBar() {
-  const { cartCount } = useCart();
+  const { items } = useCart();
+  // Lignes indisponibles (offre/produit plus lisible) exclues du badge
+  const cartCount = items.filter((i) => i.product && Number(i.price_excl_vat) > 0).reduce((s, i) => s + i.quantity, 0);
   // Rebond de l'icône panier quand le nombre d'articles augmente
   const prevCount = useRef(cartCount);
   const [bounce, setBounce] = useState(0);
@@ -156,12 +158,11 @@ function BottomBar() {
   return (
     <nav
       aria-label="Navigation Scan"
-      className="fixed inset-x-0 bottom-0 z-40 mx-auto grid w-full max-w-md grid-cols-4 border-t bg-card pb-[calc(env(safe-area-inset-bottom)+8px)]"
+      className="fixed inset-x-0 bottom-0 z-40 mx-auto grid w-full max-w-md grid-cols-3 border-t bg-card pb-[calc(env(safe-area-inset-bottom)+8px)]"
     >
       {item("/", "Scanner", ScanLine)}
-      {item("/ruptures", "Ruptures", PackageX, true)}
       {item("/panier", "Panier", ShoppingCart, false, cartCount)}
-      {item("/moi", "Moi", User, true)}
+      {item("/moi", "Moi", User)}
     </nav>
   );
 }

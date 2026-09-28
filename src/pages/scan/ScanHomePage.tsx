@@ -201,22 +201,18 @@ function FavoriteStar({ customerId, productId }: { customerId: string; productId
 
 function ProductHead({ r, customerId }: { r: ScanResult; customerId?: string }) {
   return (
-    <div className="flex gap-3">
+    <div className="flex items-center gap-3">
       {r.product?.image
-        ? <img src={r.product.image} alt="" className="h-20 w-20 rounded-lg bg-card object-contain" />
-        : <div className="h-20 w-20 rounded-lg bg-muted" />}
-      <div className="min-w-0 flex-1 space-y-1">
-        <div className="font-bold leading-tight">{r.product?.name ?? "Produit inconnu"}</div>
+        ? <img src={r.product.image} alt="" className="h-12 w-12 shrink-0 rounded-lg bg-card object-contain" />
+        : <div className="h-12 w-12 shrink-0 rounded-lg bg-muted" />}
+      <div className="min-w-0 flex-1">
+        <div className="line-clamp-2 text-sm font-bold leading-tight">{r.product?.name ?? "Produit inconnu"}</div>
         <div className="text-xs text-muted-foreground">
           {r.product?.pack ? `Conditionnement : ${r.product.pack}` : null}
           {r.product?.cnk ? ` · CNK ${r.product.cnk}` : null}
+          {(r.lot || r.expiry_date) ? ` · ${r.lot ? `Lot ${r.lot}` : ""}${r.lot && r.expiry_date ? " · " : ""}${r.expiry_date ? `Pér. ${new Date(r.expiry_date).toLocaleDateString("fr-BE")}` : ""}` : null}
         </div>
-        {(r.lot || r.expiry_date) && (
-          <div className="text-xs text-muted-foreground">
-            {r.lot ? `Lot ${r.lot}` : ""}{r.lot && r.expiry_date ? " · " : ""}{r.expiry_date ? `Péremption ${new Date(r.expiry_date).toLocaleDateString("fr-BE")}` : ""}
-          </div>
-        )}
-        {!r.in_test_scope && <Badge variant="secondary">Hors périmètre du test</Badge>}
+        {!r.in_test_scope && <Badge variant="secondary" className="mt-0.5">Hors périmètre du test</Badge>}
       </div>
       {customerId && r.product && <FavoriteStar customerId={customerId} productId={r.product.id} />}
     </div>
@@ -270,6 +266,8 @@ function SellingPriceLine({ r, onResult }: { r: ScanResult; onResult: (r: ScanRe
   );
 }
 
+const fmtShortDate = (d: string | null | undefined) => d ? new Date(d).toLocaleDateString("fr-BE", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "";
+
 function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScanNext }: { r: ScanResult; customerId: string; hasConditions: boolean; estimated: boolean; onResult: (r: ScanResult) => void; onScanNext: () => void }) {
   const { addToCart } = useCart();
   const declaredReference = r.references.find((reference) => reference.source === "DECLARED");
@@ -292,26 +290,38 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
   const topOffers = r.top_offers ?? [];
   const vendorIds = Array.from(new Set([vendorId, ...topOffers.map((o) => o.vendor_id)].filter(Boolean))) as string[];
   const { getMovForVendor } = useVendorMov(vendorIds);
-  const animatedGain = useCountUp(r.delta != null && r.delta > 0 ? r.delta : null);
   const mov = vendorId ? getMovForVendor(vendorId) : null;
-  const subtotal = (r.best?.price ?? 0) * quantity;
+  const best = r.best!;
+  const subtotal = best.price * quantity;
   const movRemaining = mov != null ? Math.max(mov - subtotal, 0) : 0;
-  const francoTarget = r.best?.franco ?? 250;
+  const francoTarget = best.franco ?? 250;
   const francoRemaining = Math.max(francoTarget - subtotal, 0);
-  const v = VERDICT[r.verdict];
-  const gain = r.delta != null && r.delta > 0 ? r.delta : null;
   const soldUnits = Math.max(1, Number(r.product?.pack ?? 1));
-  const unitPrice = soldUnits > 1 && r.best ? r.best.price / soldUnits : null;
-  const minimumBoxCount = mov != null && r.best?.price ? Math.ceil(mov / r.best.price) : null;
+  const unitPrice = soldUnits > 1 ? best.price / soldUnits : null;
+  const saleUnit = soldUnits > 1 ? "pack" : "boîte";
+
+  // Référence affichée : prix de l'officine (déclaré ou grossiste moins remise), sinon prix grossiste le plus récent.
+  const ownRef = r.best_reference_price;
+  const latestWholesaler = (r.wholesalers ?? [])
+    .filter((w) => w.catalog_price != null && w.catalog_price > 0)
+    .sort((a, b) => (b.updated_at ?? "").localeCompare(a.updated_at ?? ""))[0] ?? null;
+  const refPrice = ownRef ?? latestWholesaler?.catalog_price ?? null;
+  const saving = refPrice != null ? Math.round((refPrice - best.price) * 100) / 100 : null;
+  const savingPct = refPrice && saving != null ? (saving / refPrice) * 100 : null;
+  const animatedSaving = useCountUp(saving != null && saving > 0 ? saving : null, 300);
+  const heroCls = ownRef == null
+    ? (saving != null && saving > 0 ? (savingPct! > 10 ? "verdict-green" : "verdict-orange") : "verdict-none")
+    : saving != null && saving > 0 ? (savingPct! > 10 ? "verdict-green" : "verdict-orange") : "verdict-grey";
+
   const add = (scanNext: boolean) => {
-    if (!r.best || !r.product) return;
+    if (!r.product) return;
     addToCart.mutate({
-      offerId: r.best.offer_id, productId: r.product.id, quantity, maxQuantity: stockQuantity ?? undefined, vendorId, priceExclVat: r.best.price, deliveryDays: r.best.lead_time_days,
-      productData: { id: r.product.id, name: r.product.name, brand: "", slug: "", price: r.best.price, imageUrl: r.product.image ?? undefined },
+      offerId: best.offer_id, productId: r.product.id, quantity, maxQuantity: stockQuantity ?? undefined, vendorId, priceExclVat: best.price, deliveryDays: best.lead_time_days,
+      productData: { id: r.product.id, name: r.product.name, brand: "", slug: "", price: best.price, imageUrl: r.product.image ?? undefined },
       openDrawer: false,
       undoToast: true,
     });
-    void sb.from("scan_cart_attributions").insert({ customer_id: customerId, offer_id: r.best.offer_id, scan_event_id: r.scan_event_id })
+    void sb.from("scan_cart_attributions").insert({ customer_id: customerId, offer_id: best.offer_id, scan_event_id: r.scan_event_id })
       .then(({ error }: { error: { message: string } | null }) => { if (error) console.error("scan attribution failed", error.message); });
     if (scanNext) onScanNext();
   };
@@ -341,125 +351,129 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
       toast.error("Comparaison impossible, réessayez.");
     } finally { setDeclaring(false); }
   };
+
   return (
     <div className="space-y-3">
       <ProductHead r={r} customerId={customerId} />
-      <div className="rounded-xl border-2 border-primary bg-card p-4 space-y-2">
-        <div className="flex items-baseline justify-between">
-          <span className="font-bold">MediKong</span>
-          <span className="text-2xl font-extrabold">{formatMoney(r.best!.price)} <span className="text-xs font-normal text-muted-foreground">HTVA</span></span>
-        </div>
-        <div className="text-sm text-muted-foreground">
-          {r.best!.vendor_label}
-          {r.best!.lead_time_days != null ? ` · livraison ${r.best!.lead_time_days} j` : ""}
-          {r.best!.franco != null ? ` · franco ${formatMoney(r.best!.franco)}` : ""}
-        </div>
-        {r.market_price && (
-          <div className="text-xs text-muted-foreground">
-            Prix B2B constaté : {formatMoney(r.market_price.price_excl_vat)} HTVA · {new Date(r.market_price.observed_at).toLocaleDateString("fr-BE", { day: "2-digit", month: "2-digit" })}
-          </div>
-        )}
-        {r.margin?.medikong && r.margin.pvp_ttc != null && (
-          <div className="rounded-lg bg-muted p-3 text-sm">
-            <div className="font-semibold">
-              Votre marge : {formatMoney(r.margin.medikong.eur)} · {fmtPct(r.margin.medikong.pct)}
+
+      {/* BLOC VERDICT */}
+      <div className={`scan-verdict-in rounded-2xl p-4 ${heroCls}`}>
+        {ownRef != null && saving != null && saving > 0 && (
+          <>
+            <div className="text-2xl font-extrabold leading-tight">
+              {estimated ? "Économie estimée : " : "Vous économisez "}{formatMoney(Math.round(animatedSaving * 100) / 100)} par {saleUnit} <span className="whitespace-nowrap">(−{fmtPct(savingPct)})</span>
             </div>
-            {r.margin.current?.pct != null && r.margin.medikong.pct != null && (
-              <div className="text-muted-foreground">Votre marge passe de {fmtPct(r.margin.current.pct)} à {fmtPct(r.margin.medikong.pct)}</div>
-            )}
-            {r.margin.source !== "own" && (
-              <div className="text-xs text-muted-foreground">{r.margin.source_label ?? "Prix public"}{r.margin.source_date && <span className={r.margin.source_stale ? "opacity-50" : ""}> · {new Date(r.margin.source_date).toLocaleDateString("fr-BE", { day: "2-digit", month: "2-digit" })}</span>} · {formatMoney(r.margin.pvp_ttc)} TVAC · {formatMoney(r.margin.pvp_ht!)} HTVA (TVA {String(r.margin.vat_pct).replace(".", ",")} %)</div>
-            )}
-          </div>
+            <div className="mt-1 text-sm opacity-90">{formatMoney(ownRef)} chez vous → {formatMoney(best.price)} MediKong</div>
+          </>
         )}
-        {r.margin && r.product && (r.margin.source == null || r.margin.source === "own") && (
-          <SellingPriceLine r={r} onResult={onResult} />
+        {ownRef != null && (saving == null || saving <= 0) && (
+          <div className="text-xl font-extrabold leading-tight">Vous payez déjà moins cher ({formatMoney(ownRef)})</div>
         )}
-        {soldUnits > 1 && (
-          <div className="rounded-lg bg-muted p-3 text-sm">
-            <div className="font-semibold">Vendu par pack de {soldUnits}</div>
-            {unitPrice != null && <div className="text-muted-foreground">{formatMoney(unitPrice)} HTVA par bouteille</div>}
-          </div>
+        {ownRef == null && refPrice != null && saving != null && (
+          <>
+            <div className="text-2xl font-extrabold leading-tight">
+              {saving > 0
+                ? <>vs prix grossiste {formatMoney(refPrice)} <span className="whitespace-nowrap">(−{fmtPct(savingPct)})</span></>
+                : <>Prix grossiste {formatMoney(refPrice)}</>}
+            </div>
+            {latestWholesaler && <div className="mt-1 text-xs opacity-80">{latestWholesaler.label}{latestWholesaler.updated_at ? ` · ${fmtShortDate(latestWholesaler.updated_at)}` : ""}</div>}
+          </>
         )}
-        <div className="flex items-center justify-between gap-3 border-t pt-3">
-          <span className="text-sm font-medium">Quantité</span>
-          <QuantityInput value={quantity} min={1} max={stockQuantity ?? undefined} onChange={setQuantity} />
-        </div>
-        <div className="grid grid-cols-3 gap-2" aria-label="Quantités rapides">
-          {[6, 12, 24].map((quickQuantity) => (
-            <Button key={quickQuantity} type="button" variant="outline" size="sm" className="scan-tap" onClick={() => setQuantity(stockQuantity ? Math.min(quickQuantity, stockQuantity) : quickQuantity)}>
-              {quickQuantity}
-            </Button>
-          ))}
-        </div>
-        {mov != null && movRemaining > 0 ? (
-          <div className="rounded-lg bg-muted p-3 text-sm">
-            <div className="font-medium">Minimum de commande</div>
-            <div className="mt-1 text-muted-foreground">Il manque {formatMoney(movRemaining)} pour atteindre le minimum de commande de ce fournisseur ({formatMoney(mov)} HTVA).</div>
-          </div>
-        ) : (
-          <div className="rounded-lg bg-muted p-3 text-sm">
-            <div className="font-medium">Franco de port</div>
-            <div className="mt-1 text-muted-foreground">{francoRemaining > 0 ? `Plus que ${formatMoney(francoRemaining)} pour la livraison gratuite` : "✓ Livraison gratuite"}</div>
-          </div>
+        {refPrice == null && (
+          <div className="text-xl font-extrabold leading-tight">Aucun prix de comparaison connu</div>
         )}
-        {topOffers.length > 1 && (
-          <div className="border-t pt-2">
-            <div className="px-1 pb-1 text-sm font-medium">Autres offres</div>
-            <div className="space-y-2">
-              {topOffers.slice(1, 3).map((o) => {
-                const m = getMovForVendor(o.vendor_id);
-                const bestPrice = topOffers[0]?.price ?? null;
-                const gap = bestPrice != null ? o.price - bestPrice : null;
-                return (
-                  <div key={o.offer_id} className="flex items-baseline justify-between gap-3 rounded-lg bg-muted p-3 text-sm">
-                    <div className="min-w-0">
-                      <div className="font-medium">{o.vendor_label}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {m != null ? `Minimum de commande ${formatMoney(m)} HTVA` : "Sans minimum de commande"}
-                        {o.lead_time_days != null ? ` · livraison ${o.lead_time_days} j` : ""}
-                      </div>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <div className="font-bold">{formatMoney(o.price)}</div>
-                      {gap != null && gap > 0 && (
-                        <div className="text-xs text-muted-foreground">+{formatMoney(gap)} vs meilleure</div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+        {ownRef == null && (
+          <Link to="/conditions" className="scan-tap mt-1 inline-flex items-center text-sm font-semibold underline underline-offset-2">Ajoutez vos conditions pour un calcul exact</Link>
+        )}
+        {r.margin?.medikong?.pct != null && r.margin.pvp_ttc != null && (
+          <div className="mt-2 border-t border-current/20 pt-2">
+            <div className="text-base font-bold">
+              Marge : {r.margin.current?.pct != null ? `${fmtPct(r.margin.current.pct)} → ` : ""}{fmtPct(r.margin.medikong.pct)}
+            </div>
+            <div className="text-xs opacity-80">
+              {r.margin.source_label ?? "Prix public"} {formatMoney(r.margin.pvp_ttc)} TVAC{r.margin.source_date ? ` · ${fmtShortDate(r.margin.source_date)}` : ""}
             </div>
           </div>
         )}
-        <Button className="scan-tap h-12 w-full text-base" onClick={() => add(true)}><Camera className="mr-2 h-5 w-5" />Ajouter et scanner le suivant</Button>
-        <Button asChild variant="link" className="scan-tap h-10 w-full"><Link to="/panier" onClick={() => add(false)}><ShoppingCart className="mr-2 h-4 w-4" />Ajouter et voir le panier</Link></Button>
       </div>
 
-      {r.verdict !== "none" && (
-        <div className={`scan-verdict-in rounded-2xl p-4 ${v.cls}`}>
-          <div className="text-lg font-extrabold">{v.title}</div>
-          {gain != null && (
-            <>
-              <div className="text-2xl font-extrabold">{estimated ? "Gain estimé" : "Gain"} : {formatMoney(Math.round(animatedGain * 100) / 100)} / boîte</div>
-              {minimumBoxCount != null && quantity < minimumBoxCount && mov != null && (
-                <div className="mt-2 text-sm font-medium">
-                  Gain réel à partir de {minimumBoxCount} boîtes (minimum de commande {formatMoney(mov)}), ou complétez avec d'autres produits de ce fournisseur.
+      {/* Offre MediKong sur 2 lignes */}
+      <div className="rounded-xl border bg-card px-3 py-2">
+        <div className="flex items-baseline justify-between gap-2 text-sm">
+          <span className="min-w-0 text-muted-foreground">{best.vendor_label}{best.lead_time_days != null ? ` · ${best.lead_time_days} j` : ""}</span>
+          <span className="shrink-0 text-lg font-extrabold">{formatMoney(best.price)} <span className="text-xs font-normal text-muted-foreground">HTVA</span></span>
+        </div>
+        <div className="flex items-baseline justify-between gap-2 text-xs">
+          <span className="text-muted-foreground">{unitPrice != null ? `${formatMoney(unitPrice)}/bouteille · pack de ${soldUnits}` : ""}</span>
+          {topOffers.length > 1 && <a href="#autres-offres" className="scan-tap inline-flex shrink-0 items-center justify-end font-semibold text-scan-emerald">+ {topOffers.length - 1} autre{topOffers.length > 2 ? "s" : ""} offre{topOffers.length > 2 ? "s" : ""}</a>}
+        </div>
+      </div>
+
+      {/* Barre fixe au-dessus des onglets */}
+      <div className="fixed inset-x-0 z-30 mx-auto w-full max-w-md border-t bg-card px-4 pb-2 pt-2 shadow-lg" style={{ bottom: "calc(64px + env(safe-area-inset-bottom))" }}>
+        <div className="flex items-center gap-2">
+          <QuantityInput value={quantity} min={1} max={stockQuantity ?? undefined} onChange={setQuantity} />
+          <Button className="scan-tap h-12 flex-1 text-base font-bold" onClick={() => add(true)}>Ajouter · {formatMoney(subtotal)}</Button>
+        </div>
+        <div className="mt-1 text-center text-xs text-muted-foreground">
+          {mov != null && movRemaining > 0
+            ? `Minimum ${formatMoney(mov)} : il manque ${formatMoney(movRemaining)}`
+            : francoRemaining > 0 ? `Franco ${formatMoney(francoTarget)} : il manque ${formatMoney(francoRemaining)}` : "✓ Franco atteint"}
+        </div>
+      </div>
+
+      {/* Sous la ligne de flottaison */}
+      <div className="grid grid-cols-3 gap-2 pt-2" aria-label="Quantités rapides">
+        {[6, 12, 24].map((quickQuantity) => (
+          <Button key={quickQuantity} type="button" variant="outline" size="sm" className="scan-tap" onClick={() => setQuantity(stockQuantity ? Math.min(quickQuantity, stockQuantity) : quickQuantity)}>
+            {quickQuantity}
+          </Button>
+        ))}
+      </div>
+
+      {topOffers.length > 0 && (
+        <div id="autres-offres" className="rounded-xl border bg-card p-3 space-y-2">
+          <div className="text-sm font-medium">Offres</div>
+          {topOffers.slice(0, 3).map((o, i) => {
+            const m = getMovForVendor(o.vendor_id);
+            const gap = i > 0 ? o.price - topOffers[0].price : null;
+            return (
+              <div key={o.offer_id} className="flex items-baseline justify-between gap-3 rounded-lg bg-muted p-3 text-sm">
+                <div className="min-w-0">
+                  <div className="font-medium">{o.vendor_label}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {m != null ? `Minimum de commande ${formatMoney(m)} HTVA` : "Sans minimum de commande"}
+                    {o.lead_time_days != null ? ` · livraison ${o.lead_time_days} j` : ""}
+                  </div>
                 </div>
-              )}
-            </>
+                <div className="shrink-0 text-right">
+                  <div className="font-bold">{formatMoney(o.price)}</div>
+                  {gap != null && gap > 0 && <div className="text-xs text-muted-foreground">+{formatMoney(gap)} vs meilleure</div>}
+                </div>
+              </div>
+            );
+          })}
+          {r.market_price && (
+            <div className="text-xs text-muted-foreground">
+              Prix B2B constaté : {formatMoney(r.market_price.price_excl_vat)} HTVA · {fmtShortDate(r.market_price.observed_at)}
+            </div>
           )}
         </div>
       )}
 
+      {FIELD_REPORTS_ENABLED && r.product && r.wholesalers && r.wholesalers.length > 0 && (
+        <FieldReports productId={r.product.id} wholesalers={r.wholesalers} />
+      )}
+
       {r.best_reference_price != null && r.references.length > 0 && (
         <div className="rounded-xl border bg-card p-3 space-y-1 text-sm">
+          <div className="font-medium">Votre prix</div>
           {r.references.map((x) => (
             <div key={x.source} className="flex items-center justify-between gap-3">
               <span className="min-w-0 flex-1">{x.label}{x.source !== "DECLARED" ? (x.discount_label ? ` · ${x.discount_label}` : ` (−${String(x.discount_pct).replace(".", ",")} %)`) : ""}</span>
               <span className="shrink-0">{formatMoney(x.net)}</span>
               {x.source === "DECLARED" && (
-                <Button type="button" variant="link" size="sm" className="h-auto shrink-0 px-0" onClick={() => {
+                <Button type="button" variant="link" size="sm" className="scan-tap h-auto shrink-0 px-0" onClick={() => {
                   setDeclaredPrice(String(x.net).replace(".", ","));
                   setDeclaredSupplier(x.label.replace(/^Prix déclaré ·\s*/, ""));
                   setEditingDeclaredPrice(true);
@@ -470,15 +484,10 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
         </div>
       )}
 
-      {/* Signalements terrain : masqués jusqu'à leur publication séparée. */}
-      {FIELD_REPORTS_ENABLED && r.product && r.wholesalers && r.wholesalers.length > 0 && (
-        <FieldReports productId={r.product.id} wholesalers={r.wholesalers} />
-      )}
-
-      {(r.verdict === "none" || editingDeclaredPrice) && (
+      {(r.best_reference_price == null || editingDeclaredPrice) && (
         <div className="rounded-xl border bg-muted/40 p-4 space-y-3">
           <div>
-            <div className="font-semibold">Comparez avec votre prix d'achat</div>
+            <div className="font-semibold">Votre prix : comparez avec votre prix d'achat</div>
             <div className="text-xs text-muted-foreground">Facultatif</div>
           </div>
           <div>
@@ -504,6 +513,12 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
           </Button>
         </div>
       )}
+
+      {r.margin && r.product && (r.margin.source == null || r.margin.source === "own") && (
+        <SellingPriceLine r={r} onResult={onResult} />
+      )}
+
+      <Button asChild variant="link" className="scan-tap h-11 w-full"><Link to="/panier" onClick={() => add(false)}><ShoppingCart className="mr-2 h-4 w-4" />Ajouter et voir le panier</Link></Button>
       {!hasConditions && (
         <Button asChild variant="outline" className="scan-tap w-full"><Link to="/conditions">Ajouter mes conditions</Link></Button>
       )}

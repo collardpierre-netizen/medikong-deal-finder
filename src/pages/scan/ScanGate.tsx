@@ -213,7 +213,7 @@ export default function ScanGate({ children }: { children: ReactNode }) {
   const [expired, setExpired] = useState(false);
   if (user) hadUser.current = true;
   const lastCustomer = useRef<ScanCustomer | null>(null);
-  useEffect(() => onSessionExpired((v) => { if (v) setExpired(true); }), []);
+  useEffect(() => { const off = onSessionExpired((v) => { if (v) setExpired(true); }); return () => { off(); }; }, []);
   // Reconnexion : renvoyer les appels mis en attente pendant l'expiration
   useEffect(() => {
     if (!user) return;
@@ -254,7 +254,7 @@ export default function ScanGate({ children }: { children: ReactNode }) {
     return (
       <ScanCtx.Provider value={lastCustomer.current}>
         <div className="mx-auto max-w-md pb-[calc(64px+env(safe-area-inset-bottom))]" aria-hidden>{children}</div>
-        <div className="fixed inset-0 z-50 overflow-auto bg-background/95"><CodeLogin expired /></div>
+        <div className="fixed inset-0 z-50 overflow-auto bg-background"><CodeLogin expired /></div>
       </ScanCtx.Provider>
     );
   }

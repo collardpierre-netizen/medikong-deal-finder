@@ -73,7 +73,20 @@ export function Navbar() {
         .select("id")
         .eq("auth_user_id", user.id)
         .maybeSingle();
-      setIsVendor(!!vendorData);
+      let vendorAccess = !!vendorData;
+      if (!vendorAccess) {
+        // Administrateur actif de l'équipe d'un fournisseur
+        const { data: adminMember } = await supabase
+          .from("account_memberships")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("account_kind", "vendor")
+          .eq("status", "active")
+          .eq("role", "admin")
+          .limit(1);
+        vendorAccess = !!adminMember?.length;
+      }
+      setIsVendor(vendorAccess);
 
       const { data: affiliateData } = await (supabase as any).rpc("affiliate_my_account");
       setIsAffiliate(!!affiliateData);

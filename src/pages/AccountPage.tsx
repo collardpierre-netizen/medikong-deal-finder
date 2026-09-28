@@ -380,12 +380,24 @@ export default function AccountPage() {
   const [isVendor, setIsVendor] = useState<boolean | null>(null);
   useEffect(() => {
     if (!user) { setIsVendor(false); return; }
-    supabase
-      .from("vendors")
-      .select("id")
-      .eq("auth_user_id", user.id)
-      .maybeSingle()
-      .then(({ data }) => setIsVendor(!!data));
+    (async () => {
+      const { data } = await supabase
+        .from("vendors")
+        .select("id")
+        .eq("auth_user_id", user.id)
+        .maybeSingle();
+      if (data) { setIsVendor(true); return; }
+      // Administrateur actif de l'équipe d'un fournisseur
+      const { data: adminMember } = await supabase
+        .from("account_memberships")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("account_kind", "vendor")
+        .eq("status", "active")
+        .eq("role", "admin")
+        .limit(1);
+      setIsVendor(!!adminMember?.length);
+    })();
   }, [user]);
 
   // ---- Profile state ----

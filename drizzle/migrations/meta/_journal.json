@@ -540,6 +540,13 @@
       "when": 1790587625759,
       "tag": "0076_admin_list_quick_orders",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1790593183762,
+      "tag": "0077_manufacturer_product_count_trigger",
+      "breakpoints": true
     }
   ]
 }

@@ -25,6 +25,7 @@ Deno.serve(async (req) => {
       templateData: { pharmacyName: c.company_name ?? undefined },
       idempotencyKey: `scan-invitation-${c.id}-${Date.now()}`,
     });
+    if (r.sent) await admin.from("audit_logs").insert({ action: "scan_invitation_sent", user_id: auth.userId ?? null, module: "scan", entity_type: "customers", entity_id: c.id, metadata: { to } });
     return json({ ok: r.sent, to, reason: (r as any).reason ?? null });
   } catch (e) {
     return json({ error: (e as Error).message }, 502);

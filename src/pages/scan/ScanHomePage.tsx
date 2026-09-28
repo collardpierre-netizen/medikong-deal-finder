@@ -86,23 +86,19 @@ export default function ScanHomePage() {
   const toggleTorch = async () => { const ok = await scanner.current?.setTorch(!torch); if (ok) setTorch(!torch); };
 
   return (
-    <div className="space-y-4">
-      <header className="bg-scan-navy text-on-navy px-5 pb-4 pt-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-xs opacity-80">{customer.company_name ?? "Votre officine"}</div>
-            <h1 className="text-xl font-extrabold">Scanner</h1>
-          </div>
-          <div className="flex items-center gap-2">
-          <Button asChild variant="secondary" size="icon" className="scan-tap" aria-label="Derniers scans et favoris">
+    <div className={`space-y-3 ${result?.product && result.best ? "pb-32" : ""}`}>
+      <header className="bg-scan-navy text-on-navy flex h-14 items-center justify-between px-4">
+        <h1 className="text-lg font-extrabold leading-none">Scanner</h1>
+        <div className="flex items-center gap-1">
+          <Button asChild variant="ghost" size="icon" className="scan-tap text-on-navy hover:bg-transparent" aria-label="Derniers scans et favoris">
             <Link to="/historique"><History className="h-5 w-5" /></Link>
           </Button>
-          <Button asChild variant="secondary" size="sm" className="scan-tap">
-            <Link to="/conditions"><Settings2 className="mr-1 h-4 w-4" />Mes conditions</Link>
+          <Button asChild variant="ghost" size="icon" className="scan-tap text-on-navy hover:bg-transparent" aria-label="Mes conditions">
+            <Link to="/conditions"><Settings2 className="h-5 w-5" /></Link>
           </Button>
-          </div>
         </div>
       </header>
+
 
       {!result && !manual && (
         <div className="px-5 space-y-3">
@@ -136,7 +132,7 @@ export default function ScanHomePage() {
 
       {!result && (reopenId || reopenCnk || (manual && busy)) && <div className="px-5"><VerdictSkeleton /></div>}
       {result && (
-        <div className="px-5 space-y-4">
+        <div className="px-4 space-y-3">
           {result.product && result.best
             ? <VerdictCard r={result} customerId={customer.id} hasConditions={hasConditions} estimated={estimated} onResult={setResult} onScanNext={() => { setResult(null); setManual(false); setCnk(""); }} />
             : <NoOfferCard r={result} customerId={customer.id} onResult={setResult} />}

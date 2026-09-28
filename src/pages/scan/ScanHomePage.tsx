@@ -379,6 +379,7 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
             setDeclaredPrice(String(declaredReference.net).replace(".", ","));
             setDeclaredSupplier(declaredSupplierName);
             setEditingDeclaredPrice(true);
+            setTimeout(() => document.getElementById("prix-achat")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
           }}>Modifier mon prix ({declaredSupplierName})</button>
         )}
         {ownRef == null && refPrice != null && saving != null && (
@@ -490,7 +491,7 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
       )}
 
       {(r.best_reference_price == null || editingDeclaredPrice) && (
-        <div className="rounded-xl border bg-muted/40 p-4 space-y-3">
+        <div id="prix-achat" className="rounded-xl border bg-muted/40 p-4 space-y-3">
           <div className="flex items-start justify-between gap-2">
             <div>
               <div className="font-semibold">{editingDeclaredPrice ? "Modifier votre prix d'achat" : "Votre prix : comparez avec votre prix d'achat"}</div>

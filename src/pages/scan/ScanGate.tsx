@@ -246,10 +246,6 @@ export default function ScanGate({ children }: { children: ReactNode }) {
     queryFn: () => fetchScanAccess(user!.id),
     staleTime: 5 * 60_000,
   });
-
-  if (loading || (user && isLoading)) {
-    return <Center><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></Center>;
-  }
   const custId = data?.allowed ? data.customer?.id : undefined;
   const { data: hasConditions } = useQuery({
     queryKey: ["scan-has-conditions", custId],
@@ -260,6 +256,10 @@ export default function ScanGate({ children }: { children: ReactNode }) {
       return (count ?? 0) > 0;
     },
   });
+
+  if (loading || (user && isLoading)) {
+    return <Center><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></Center>;
+  }
   if (data?.allowed && data.customer) lastCustomer.current = data.customer;
   // Session expirée en cours d'usage : l'écran reste en place (saisies conservées), code demandé par-dessus
   if ((!user || expired) && expired && lastCustomer.current) {

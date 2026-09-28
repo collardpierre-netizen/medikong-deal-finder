@@ -55,6 +55,8 @@ export default function ScanHomePage() {
       const r = await resolveScan({ raw_code: raw, symbology, client_decode_ms: decodeMs, reopen_scan_event_id: reopenId ?? null });
       // Vrai nom pour les grossistes déclarés dans « Mes conditions » (les lignes renvoyées ne concernent que ceux-là)
       if (r.wholesalers?.length) {
+        const wRefs = (r.references ?? []).filter((x) => x.source !== "DECLARED");
+        if (wRefs.length === r.wholesalers.length) r.wholesalers = r.wholesalers.map((w, i) => ({ ...w, label: wRefs[i].label }));
         const { data: wps } = await (supabase as any).from("wholesaler_profiles").select("id, display_name")
           .in("id", r.wholesalers.map((w) => w.wholesaler_profile_id));
         r.wholesalers = r.wholesalers.map((w) => ({ ...w, label: wps?.find((x: any) => x.id === w.wholesaler_profile_id)?.display_name ?? w.label }));
@@ -308,7 +310,12 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
   const saleUnitPlural = soldUnits > 1 ? "packs" : "boîtes";
 
   // Référence affichée : prix de l'officine (déclaré ou grossiste moins remise), sinon prix grossiste le plus récent.
-  const ownRef = r.best_reference_price;
+  // Meilleur prix de l'officine = le plus bas entre prix déclaré et chaque grossiste déclaré moins sa remise
+  const retained = r.references.length ? r.references.reduce((a, b) => (b.net < a.net ? b : a)) : null;
+  const ownRef = retained?.net ?? r.best_reference_price;
+  const retainedName = retained ? (retained.source === "DECLARED" ? declaredSupplierName || "Prix déclaré" : retained.label) : "";
+  const [requesting, setRequesting] = useState(false);
+  const [requested, setRequested] = useState(false);
   const latestWholesaler = (r.wholesalers ?? [])
     .filter((w) => w.catalog_price != null && w.catalog_price > 0)
     .sort((a, b) => (b.updated_at ?? "").localeCompare(a.updated_at ?? ""))[0] ?? null;
@@ -319,7 +326,19 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
   const animatedSaving = useCountUp(saving != null && saving > 0 ? saving : null, 300);
   const heroCls = ownRef == null
     ? (saving != null && saving > 0 ? (savingPct! > 10 ? "verdict-green" : "verdict-orange") : "verdict-none")
-    : saving != null && saving > 0 ? (savingPct! > 10 ? "verdict-green" : "verdict-orange") : "verdict-grey";
+    : saving != null && saving > 0 ? (savingPct! > 10 ? "verdict-green" : "verdict-orange") : "verdict-red";
+  const requestPrice = async () => {
+    if (!r.product || ownRef == null) return;
+    setRequesting(true);
+    const { error } = await sb.rpc("scan_request_price", {
+      _scan_event_id: r.scan_event_id, _product_id: r.product.id, _target_price_excl_vat: ownRef,
+      _quantity: quantity, _reference_supplier: retainedName,
+    });
+    setRequesting(false);
+    if (error) { console.error("scan_request_price", error); toast.error("Demande impossible pour l'instant."); return; }
+    setRequested(true);
+    toast.success("Demande envoyée : on vous prévient si on trouve mieux");
+  };
 
   const add = (scanNext: boolean) => {
     if (!r.product) return;
@@ -378,7 +397,16 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
           </>
         )}
         {ownRef != null && (saving == null || saving <= 0) && (
-          <div className="text-xl font-extrabold leading-tight">Vous payez déjà moins cher ({formatMoney(ownRef)})</div>
+          <>
+            <div className="text-xl font-extrabold leading-tight">{retainedName} reste moins cher</div>
+            <div className="mt-1 text-sm opacity-90">
+              {formatMoney(ownRef)} chez vous · MediKong {formatMoney(best.price)}
+              {saving != null && saving < 0 ? ` (+${formatMoney(-saving)}, +${fmtPct(-(savingPct ?? 0))})` : ""}
+            </div>
+            <Button type="button" variant="secondary" className="scan-tap mt-2 w-full" disabled={requesting || requested} onClick={requestPrice}>
+              {requested ? "Demande envoyée" : requesting ? "Envoi…" : "Demander ce prix à MediKong"}
+            </Button>
+          </>
         )}
         {declaredReference && !editingDeclaredPrice && (
           <button type="button" className="scan-tap mt-1 inline-flex items-center text-sm font-semibold underline underline-offset-2" onClick={() => {
@@ -395,7 +423,7 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
                 ? <>vs prix grossiste {formatMoney(refPrice)} <span className="whitespace-nowrap">(−{fmtPct(savingPct)})</span></>
                 : <>Prix grossiste {formatMoney(refPrice)}</>}
             </div>
-            {latestWholesaler && <div className="mt-1 text-xs opacity-80">{latestWholesaler.label}{latestWholesaler.updated_at ? ` · ${fmtShortDate(latestWholesaler.updated_at)}` : ""}</div>}
+            {latestWholesaler && <div className="mt-1 text-xs opacity-80">{latestWholesaler.label} · {formatMoney(latestWholesaler.catalog_price!)}{latestWholesaler.updated_at ? ` · mis à jour le ${new Date(latestWholesaler.updated_at).toLocaleDateString("fr-BE", { day: "2-digit", month: "2-digit" })}` : ""}</div>}
           </>
         )}
         {refPrice == null && (
@@ -484,13 +512,13 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
         <FieldReports productId={r.product.id} wholesalers={r.wholesalers} />
       )}
 
-      {r.best_reference_price != null && r.references.length > 0 && (
+      {r.references.length > 0 && (
         <div className="rounded-xl border bg-card p-3 space-y-1 text-sm">
           <div className="font-medium">Votre prix</div>
           {r.references.map((x) => (
             <div key={x.source} className="flex items-center justify-between gap-3">
               <span className="min-w-0 flex-1">{x.label}{x.source !== "DECLARED" ? (x.discount_label ? ` · ${x.discount_label}` : ` (−${String(x.discount_pct).replace(".", ",")} %)`) : ""}</span>
-              <span className="shrink-0">{formatMoney(x.net)}</span>
+              <span className="shrink-0">{formatMoney(x.net)}{retained && x.source === retained.source ? <span className="ml-1 text-xs font-semibold text-scan-emerald">← retenu</span> : null}</span>
             </div>
           ))}
         </div>

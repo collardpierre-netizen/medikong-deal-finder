@@ -173,16 +173,18 @@ Deno.serve(async (req) => {
         });
         const pct = disc.pct;
         const net = round2(gross * (1 - pct / 100));
-        if (!wp.display_prices_allowed) hideDetail = true;
+        // Grossiste déclaré par l'officine dans ses conditions : c'est son fournisseur,
+        // elle connaît ce tarif → prix affiché dans le verdict Scan, quel que soit
+        // display_prices_allowed (réglage conservé pour toutes les autres surfaces).
         const upd = row?.imported_at ?? null;
         wholesalers.push({
           wholesaler_profile_id: wp.id,
           label: `Grossiste ${String.fromCharCode(65 + wholesalers.length)}`,
-          catalog_price: wp.display_prices_allowed ? round2(gross) : null,
+          catalog_price: round2(gross),
           updated_at: upd,
           stale: upd ? Date.now() - new Date(upd).getTime() > 60 * 86400000 : false,
         });
-        references.push({ source: (wp.slug ?? "").toUpperCase(), label: wp.display_name, discount_pct: pct, discount_label: discountLabel(disc), net, _allowed: wp.display_prices_allowed });
+        references.push({ source: (wp.slug ?? "").toUpperCase(), label: wp.display_name, discount_pct: pct, discount_label: discountLabel(disc), net, _allowed: true });
         if (refSource !== "DECLARED" && (refMin == null || net < refMin)) { refMin = net; refSource = (wp.slug ?? "").toUpperCase(); }
       }
     }

@@ -152,7 +152,7 @@ const handler = createAuthEmailHandler({
         }),
     },
     magiclink: {
-      subject: `Votre lien de connexion ${SITE_NAME}`,
+      subject: `Votre code de connexion ${SITE_NAME}`,
       render: (data) =>
         React.createElement(MagicLinkEmail, {
           siteName: SITE_NAME,

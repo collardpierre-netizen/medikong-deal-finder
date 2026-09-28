@@ -2,7 +2,7 @@ import { SCAN_BASENAME } from "@/config/surface";
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { NavLink } from "react-router-dom";
-import { Loader2, ScanLine, PackageX, ShoppingCart, User, Lock, Mail, type LucideIcon } from "lucide-react";
+import { Loader2, ScanLine, ShoppingCart, User, Lock, Mail, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";

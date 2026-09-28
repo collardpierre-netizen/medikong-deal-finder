@@ -4,6 +4,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useScanCustomer } from "./ScanGate";
 
+const appVersion = () => {
+  const n = Number(__BUILD_ID__);
+  return Number.isFinite(n) && n > 1e12
+    ? new Date(n).toLocaleString("fr-BE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+    : __BUILD_ID__;
+};
+
 /** Onglet « Moi » minimal : officine, e-mail, liens utiles, déconnexion, version. */
 export default function ScanMePage() {
   const customer = useScanCustomer();
@@ -30,7 +37,7 @@ export default function ScanMePage() {
         onClick={async () => { await signOut(); nav("/", { replace: true }); }}>
         <LogOut className="mr-2 h-5 w-5" /> Se déconnecter
       </Button>
-      <p className="text-center text-xs text-muted-foreground">MediKong Scan · version {__BUILD_ID__}</p>
+      <p className="text-center text-xs text-muted-foreground">MediKong Scan · version {appVersion()}</p>
     </div>
   );
 }

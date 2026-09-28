@@ -77,7 +77,7 @@ export default function ScanCartPage() {
       {available.length > 0 && (
         <div className="rounded-xl border bg-card p-4 space-y-3">
           <div className="flex justify-between font-semibold"><span>Total HTVA</span><span>{formatMoney(total)}</span></div>
-          <Button asChild className="scan-tap h-12 w-full text-base">
+          <Button asChild className="scan-tap h-auto min-h-12 w-full whitespace-normal py-3 text-center text-base leading-snug">
             <a href="https://medikong.pro/panier">Finaliser la commande sur medikong.pro</a>
           </Button>
         </div>

@@ -60,7 +60,21 @@ Deno.serve(async (req) => {
         .eq("id", vendor_id)
         .eq("auth_user_id", caller.id)
         .maybeSingle();
-      if (!ownerCheck) {
+      let allowed = !!ownerCheck;
+      if (!allowed) {
+        // Administrateur actif de l'équipe du fournisseur (simple membre refusé).
+        const { data: adminMember } = await supabase
+          .from("account_memberships")
+          .select("id")
+          .eq("account_id", vendor_id)
+          .eq("user_id", caller.id)
+          .eq("account_kind", "vendor")
+          .eq("status", "active")
+          .eq("role", "admin")
+          .maybeSingle();
+        allowed = !!adminMember;
+      }
+      if (!allowed) {
         return new Response(JSON.stringify({ error: "Non autorisé" }), {
           status: 403,
           headers: { ...corsHeaders, "Content-Type": "application/json" },

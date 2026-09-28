@@ -554,6 +554,13 @@
       "when": 1790597328444,
       "tag": "0078_scan_access_auto_verify",
       "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1790597955547,
+      "tag": "0079_guard_customers_sensitive_cols",
+      "breakpoints": true
     }
   ]
 }

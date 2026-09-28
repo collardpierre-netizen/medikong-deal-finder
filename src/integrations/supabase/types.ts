@@ -39637,6 +39637,7 @@ export type Database = {
         }
         Returns: Json
       }
+      scan_email_has_access: { Args: { _email: string }; Returns: boolean }
       scan_field_report_summary: {
         Args: { _product_id: string }
         Returns: {

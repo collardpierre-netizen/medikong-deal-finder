@@ -603,6 +603,13 @@
       "when": 1790625811240,
       "tag": "0085_wholesaler_import_finish_empty_status",
       "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1790627606283,
+      "tag": "0086_scan_email_has_access",
+      "breakpoints": true
     }
   ]
 }

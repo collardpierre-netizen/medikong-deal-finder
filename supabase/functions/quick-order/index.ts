@@ -12,9 +12,10 @@ Deno.serve(async (req) => {
 
   try {
     if (req.method === "GET") {
-      const token = new URL(req.url).searchParams.get("t")?.trim() ?? "";
+      const params = new URL(req.url).searchParams;
+      const token = params.get("t")?.trim() ?? "";
       if (!token || token.length > 64) return json({ error: "invalid_link" }, 404);
-      return await handleGet(token, ip);
+      return await handleGet(token, ip, params.get("lang"));
     }
     if (req.method === "POST") {
       return await handlePost(req, ip);

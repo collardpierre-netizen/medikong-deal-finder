@@ -8,10 +8,107 @@ import {
   timingSafeEqualStr, normalizeEmail, isValidEmail, isValidBce, digitsOnly,
   dedupeKey,
   findRecentTwin,
+  resolveLang, tr, vatFromBases, localizeItem, type Lang,
 } from "./_shared.ts";
 
 const eur = (cents: number) =>
   (cents / 100).toFixed(2).replace(".", ",");
+
+/**
+ * Accusé de réception pharmacien, dans la langue de la commande.
+ * Paiement à 30 jours sur facture : plus aucun bloc virement.
+ * (La notification interne n'utilise pas cette fonction : toujours en FR.)
+ */
+function buildReceipt(a: {
+  lang: Lang;
+  ref: string;
+  lines: Array<Record<string, unknown>>;
+  names: Map<string, string>;
+  subtotal: number;
+  shipping: number;
+  totalTtc: number;
+  campaign: Record<string, any>;
+  etaLabel: string;
+}): { subject: string; text: string } {
+  const { lang, ref, lines, campaign } = a;
+  const nl = lang === "nl";
+  const t = (f: string) => tr(campaign, f, lang);
+  const lineText = lines.map((l) =>
+    (l.line_type === "request" ? (nl ? "[IN PROSPECTIE] " : "[EN PROSPECTION] ") : "") +
+    `${l.cnk ?? "CNK ?"} · ${l.qty} x ${a.names.get(String(l.offer_item_id)) ?? l.name}` +
+    (Number(l.free_units) > 0 ? ` (+${l.free_units} ${nl ? "gratis" : "offertes"})` : "") +
+    ` — ${eur(Number(l.unit_price_cents))} €/${nl ? "st." : "u"}`
+  ).join("\n");
+  const vendor = t("vendor_label");
+  const carrier = t("carrier_label");
+  const contact = t("contact_label") ?? "";
+  const hasRequest = lines.some((l) => l.line_type === "request");
+  const footer =
+    `MediKong SRL · BE 1005.771.323 · Rue de la Procession 23, 7822 Meslin-l'Évêque (Ath)\n`;
+
+  if (nl) {
+    return {
+      subject: `Goed ontvangen — uw bestelling ${ref}`,
+      text:
+        `Goedendag,\n\n` +
+        `U hebt zonet een bestelling geplaatst op commande.medikong.pro.\n` +
+        `Hieronder vindt u het overzicht.\n\n` +
+        `Wij hebben uw bestelling ${ref} goed ontvangen.\n\n` +
+        lineText + `\n\n` +
+        `Totaal goederen excl. btw : ${eur(a.subtotal)} €\n` +
+        (a.shipping > 0
+          ? `Leveringskosten : ${eur(a.shipping)} € ` +
+            `(gratis vanaf ${eur(campaign.franco_threshold_cents ?? 0)} €)\n`
+          : `Gratis levering\n`) +
+        `\n------------------------------\n` +
+        `Bedrag van uw bestelling: ${eur(a.totalTtc)} € incl. btw\n` +
+        `Betaling op factuur binnen 30 dagen.\n` +
+        `Uw factuur volgt samen met de orderbevestiging.\n` +
+        `------------------------------\n\n` +
+        (vendor ? `${vendor}\n` : "") +
+        `Geschatte levering : ${a.etaLabel}` +
+        (carrier ? ` — ${carrier}` : "") + `\n` +
+        (hasRequest
+          ? `De referenties in prospectie vallen niet onder deze datum: ` +
+            `wij komen bij u terug met de vaste prijs en de levertermijn.\n`
+          : "") +
+        `\nWij bevestigen de bestelling binnen 24 werkuren.\n` +
+        `Een vraag in tussentijd: ${contact}\n\n` + footer,
+    };
+  }
+
+  return {
+    subject: `Bien reçu — votre commande ${ref}`,
+    text:
+      `Bonjour,\n\n` +
+      `Vous venez de passer commande sur commande.medikong.pro.\n` +
+      `Voici le récapitulatif.\n\n` +
+      `Nous avons bien reçu votre commande ${ref}.\n\n` +
+      lineText + `\n\n` +
+      `Total marchandises HTVA : ${eur(a.subtotal)} €\n` +
+      (a.shipping > 0
+        ? `Frais de livraison : ${eur(a.shipping)} € ` +
+          `(offerts dès ${eur(campaign.franco_threshold_cents ?? 0)} €)\n`
+        : `Livraison offerte\n`) +
+      `\n------------------------------\n` +
+      `Montant de votre commande : ${eur(a.totalTtc)} € TTC\n` +
+      `Paiement à 30 jours sur facture.\n` +
+      `Votre facture vous parvient avec la confirmation de commande.\n` +
+      `------------------------------\n\n` +
+      (vendor ? `${vendor}\n` : "") +
+      `Livraison estimée : ${a.etaLabel}` +
+      (carrier ? ` — ${carrier}` : "") + `\n` +
+      (hasRequest
+        ? `Les références en prospection ne sont pas couvertes par cette date : ` +
+          `nous revenons vers vous avec le prix ferme et le délai.\n`
+        : "") +
+      `\nNous confirmons la commande sous 24 h ouvrables.\n` +
+      `Une question d'ici là : ${contact}\n\n` + footer,
+  };
+}
+
+const localNames = (items: Map<string, OfferItem>, lang: Lang) =>
+  new Map([...items].map(([id, i]) => [id, String(tr(i as any, "name", lang) ?? i.name)]));
 
 type IncomingLine = {
   item_id: string;
@@ -37,6 +134,8 @@ export async function handlePost(req: Request, ip: string): Promise<Response> {
     identity?: GroupIdentity;
     email?: string;
     pharmacy_name?: string;
+    /** Lot 2 : langue de la commande ('fr' | 'nl'). */
+    language?: string;
   };
   try {
     body = await req.json();
@@ -73,6 +172,8 @@ export async function handlePost(req: Request, ip: string): Promise<Response> {
   }
 
   const campaign = recipient.qo_campaigns;
+  // Lot 2 : body.language > recipient.language > campaign.language > 'fr'.
+  const lang = resolveLang(body.language, recipient.language, campaign.language);
   if (recipient.unsubscribed_at) return json({ error: "unsubscribed" }, 410);
   if (new Date(recipient.expires_at) < new Date() || campaign.status !== "active") {
     return json({ error: "expired" }, 410);
@@ -151,10 +252,8 @@ export async function handlePost(req: Request, ip: string): Promise<Response> {
     const unit = effectiveUnitPrice(item, qty);
     const free = freeUnits(item, qty);
     const lineHt = unit * qty;
-    const lineVat = Math.round(lineHt * Number(item.vat_rate) / 100);
 
     subtotal += lineHt;
-    vatTotal += lineVat;
 
     lines.push({
       offer_item_id: item.id,
@@ -180,9 +279,8 @@ export async function handlePost(req: Request, ip: string): Promise<Response> {
   // Frais de livraison si le franco n'est pas atteint. Recalculés ici, comme
   // tout le reste : le navigateur n'est jamais la source du montant facturé.
   const shipping = francoReached ? 0 : (campaign.shipping_fee_cents ?? 0);
-  if (shipping > 0) {
-    vatTotal += Math.round(shipping * Number(campaign.shipping_vat_rate ?? 21) / 100);
-  }
+  // Lot 6 : TVA sur la somme des bases par taux, un seul arrondi par taux.
+  vatTotal = vatFromBases(lines, shipping, Number(campaign.shipping_vat_rate ?? 21));
 
   // --- Déduplication (mêmes deux mécanismes que le parcours /g) -----------
   const sigLines = lines.map((l) => ({ item_id: String(l.offer_item_id), qty: Number(l.qty) }));
@@ -212,6 +310,7 @@ export async function handlePost(req: Request, ip: string): Promise<Response> {
       contact_phone: (body.contact_phone ?? "").slice(0, 40) || recipient.phone,
       comment: (body.comment ?? "").slice(0, 2000),
       requested_delivery_date: body.requested_delivery_date || null,
+      language: lang,
       dedupe_key: key,
       ip_hash: await hashIp(ip),
       user_agent: (req.headers.get("user-agent") ?? "").slice(0, 300),
@@ -269,10 +368,15 @@ export async function handlePost(req: Request, ip: string): Promise<Response> {
     ` — ${eur(Number(l.unit_price_cents))} €/u`
   ).join("\n");
 
-  const eta = estimatedDelivery(campaign.cutoff_hour ?? 14, campaign.lead_time_days ?? 2);
+  const eta = estimatedDelivery(campaign.cutoff_hour ?? 14, campaign.lead_time_days ?? 2, lang);
 
   if (BREVO_API_KEY && recipient.contact_email) {
     try {
+      const receipt = buildReceipt({
+        lang, ref, lines, names: localNames(byId, lang),
+        subtotal, shipping, totalTtc: subtotal + shipping + vatTotal,
+        campaign, etaLabel: eta.label,
+      });
       await fetch("https://api.brevo.com/v3/smtp/email", {
         method: "POST",
         headers: { "api-key": BREVO_API_KEY, "content-type": "application/json" },
@@ -280,38 +384,8 @@ export async function handlePost(req: Request, ip: string): Promise<Response> {
           sender: { name: "MediKong", email: "pcoll@medikong.pro" },
           replyTo: { email: NOTIFY_EMAIL || "commandes@medikong.pro" },
           to: [{ email: recipient.contact_email, name: recipient.pharmacy_name }],
-          subject: `Bien reçu — votre commande ${ref}`,
-          textContent:
-            `Bonjour,\n\n` +
-            `Vous venez de passer commande sur commande.medikong.pro.\n` +
-            `Voici le récapitulatif et les coordonnées de paiement.\n\n` +
-            `Nous avons bien reçu votre commande ${ref}.\n\n` +
-            lineText + `\n\n` +
-            `Total marchandises HTVA : ${eur(subtotal)} €\n` +
-            (shipping > 0
-              ? `Frais de livraison : ${eur(shipping)} € ` +
-                `(offerts dès ${eur(campaign.franco_threshold_cents ?? 0)} €)\n`
-              : `Livraison offerte\n`) +
-            `\n` +
-            `------------------------------\n` +
-            `Paiement par virement\n` +
-            `Montant à virer : ${eur(subtotal + shipping + vatTotal)} € TTC\n` +
-            `Bénéficiaire : MediKong SRL\n` +
-            `IBAN : BE86 7320 7305 0650\n` +
-            `BIC : CREGBEBB\n` +
-            `Communication : ${ref}\n` +
-            `------------------------------\n` +
-            `\n` +
-            (campaign.vendor_label ? `${campaign.vendor_label}\n` : "") +
-            `Livraison estimée : ${eta.label} — après réception de votre virement` +
-            (campaign.carrier_label ? ` — ${campaign.carrier_label}` : "") + `\n` +
-            (lines.some((l) => l.line_type === "request")
-              ? `Les références en prospection ne sont pas couvertes par cette date : ` +
-                `nous revenons vers vous avec le prix ferme et le délai.\n`
-              : "") +
-            `\nNous confirmons la commande sous 24 h ouvrables.\n` +
-            `Une question d'ici là : ${campaign.contact_label ?? ""}\n\n` +
-            `MediKong SRL · BE 1005.771.323 · Rue de la Procession 23, 7822 Meslin-l'Évêque (Ath)\n`,
+          subject: receipt.subject,
+          textContent: receipt.text,
         }),
       });
       await db.from("qo_orders")
@@ -421,29 +495,30 @@ async function resolveGroupCampaign(
 }
 
 /** Bloc `campaign` du payload public, identique au parcours par token. */
-function groupCampaignPayload(c: Record<string, any>) {
+function groupCampaignPayload(c: Record<string, any>, lang: Lang) {
+  const t = (f: string) => tr(c, f, lang);
   return {
     name: c.name,
-    headline: c.headline,
+    headline: t("headline"),
     ends_on: c.ends_on,
     franco_threshold_cents: c.franco_threshold_cents,
     cashback_multiplier: c.cashback_multiplier,
     payment_terms_days: c.payment_terms_days,
-    allocation_note: c.allocation_note,
-    vendor_label: c.vendor_label,
+    allocation_note: t("allocation_note"),
+    vendor_label: t("vendor_label"),
     shipping_fee_cents: c.shipping_fee_cents,
-    market_price_label: c.market_price_label,
-    margin_note: c.margin_note,
+    market_price_label: t("market_price_label"),
+    margin_note: t("margin_note"),
     ask_buyer_price: c.ask_buyer_price,
-    delivery_label: c.delivery_label,
-    carrier_label: c.carrier_label,
-    estimated_delivery: estimatedDelivery(c.cutoff_hour ?? 14, c.lead_time_days ?? 2),
-    returns_label: c.returns_label,
-    carrier_short_label: c.carrier_short_label,
-    returns_short_label: c.returns_short_label,
-    origin_label: c.origin_label,
-    payment_terms_label: c.payment_terms_label,
-    contact_label: c.contact_label,
+    delivery_label: t("delivery_label"),
+    carrier_label: t("carrier_label"),
+    estimated_delivery: estimatedDelivery(c.cutoff_hour ?? 14, c.lead_time_days ?? 2, lang),
+    returns_label: t("returns_label"),
+    carrier_short_label: t("carrier_short_label"),
+    returns_short_label: t("returns_short_label"),
+    origin_label: t("origin_label"),
+    payment_terms_label: t("payment_terms_label"),
+    contact_label: t("contact_label"),
   };
 }
 
@@ -466,7 +541,7 @@ export async function handleGroupPost(
     return invalidCode();
   }
 
-  if (action === "unlock") return await groupUnlock(campaign, campaignCode, ip);
+  if (action === "unlock") return await groupUnlock(campaign, campaignCode, ip, body.language);
   if (action === "subscribe") return await groupSubscribe(campaign, body, ip);
   return await groupOrder(req, campaign, body, ip);
 }
@@ -476,7 +551,10 @@ async function groupUnlock(
   campaign: Record<string, any>,
   campaignCode: string,
   ip: string,
+  langParam: unknown,
 ): Promise<Response> {
+  // Lot 2 : body.language > campaign.language > 'fr' (pas de destinataire ici).
+  const lang = resolveLang(langParam, campaign.language);
   const { data: items, error } = await db
     .from("qo_offer_items")
     .select("*")
@@ -495,9 +573,10 @@ async function groupUnlock(
   });
 
   return json({
+    language: lang,
     pharmacy: null,
-    campaign: groupCampaignPayload(campaign),
-    items: (items ?? []) as OfferItem[],
+    campaign: groupCampaignPayload(campaign, lang),
+    items: (items ?? []).map((i: Record<string, any>) => localizeItem(i, lang)),
     already_ordered: null,
   });
 }
@@ -701,6 +780,7 @@ async function groupOrder(
   });
   if (!rec.ok || !rec.recipient) return json({ error: "server_error" }, 500);
   const recipient = rec.recipient;
+  const lang = resolveLang(body.language, campaign.language);
 
   // --- Recalcul intégral côté serveur (identique au parcours token) --------
   const { data: items, error: itemsErr } = await db
@@ -760,10 +840,8 @@ async function groupOrder(
     const unit = effectiveUnitPrice(item, qty);
     const free = freeUnits(item, qty);
     const lineHt = unit * qty;
-    const lineVat = Math.round(lineHt * Number(item.vat_rate) / 100);
 
     subtotal += lineHt;
-    vatTotal += lineVat;
 
     lines.push({
       offer_item_id: item.id,
@@ -786,9 +864,8 @@ async function groupOrder(
     ? subtotal >= campaign.franco_threshold_cents
     : true;
   const shipping = francoReached ? 0 : (campaign.shipping_fee_cents ?? 0);
-  if (shipping > 0) {
-    vatTotal += Math.round(shipping * Number(campaign.shipping_vat_rate ?? 21) / 100);
-  }
+  // Lot 6 : TVA sur la somme des bases par taux, un seul arrondi par taux.
+  vatTotal = vatFromBases(lines, shipping, Number(campaign.shipping_vat_rate ?? 21));
   const totalTtc = subtotal + shipping + vatTotal;
 
   // --- Alerte « 2e commande » : correspondance élargie, AVERTISSEMENT SEUL --
@@ -851,6 +928,7 @@ async function groupOrder(
       contact_name: (identity.contact_name ?? "").slice(0, 120),
       contact_phone: (identity.phone ?? "").slice(0, 40),
       comment: (typeof body.comment === "string" ? body.comment : "").slice(0, 2000),
+      language: lang,
       dedupe_key: key,
       ip_hash: await hashIp(ip),
       user_agent: (req.headers.get("user-agent") ?? "").slice(0, 300),
@@ -922,6 +1000,8 @@ async function groupOrder(
     orderId: order.id,
     comment: typeof body.comment === "string" ? body.comment : "",
     repeatPharmacy,
+    lang,
+    names: localNames(byId, lang),
   });
 
   return json({
@@ -949,6 +1029,8 @@ async function sendGroupEmails(a: {
   orderId: string;
   comment: string;
   repeatPharmacy: boolean;
+  lang: Lang;
+  names: Map<string, string>;
 }) {
   const { campaign, recipient, identity, lines, ref } = a;
 
@@ -959,10 +1041,15 @@ async function sendGroupEmails(a: {
     ` — ${eur(Number(l.unit_price_cents))} €/u`
   ).join("\n");
 
-  const eta = estimatedDelivery(campaign.cutoff_hour ?? 14, campaign.lead_time_days ?? 2);
+  const eta = estimatedDelivery(campaign.cutoff_hour ?? 14, campaign.lead_time_days ?? 2, a.lang);
 
   if (BREVO_API_KEY && recipient.contact_email) {
     try {
+      const receipt = buildReceipt({
+        lang: a.lang, ref, lines, names: a.names,
+        subtotal: a.subtotal, shipping: a.shipping, totalTtc: a.totalTtc,
+        campaign, etaLabel: eta.label,
+      });
       const res = await fetch("https://api.brevo.com/v3/smtp/email", {
         method: "POST",
         headers: { "api-key": BREVO_API_KEY, "content-type": "application/json" },
@@ -970,38 +1057,8 @@ async function sendGroupEmails(a: {
           sender: { name: "MediKong", email: "pcoll@medikong.pro" },
           replyTo: { email: NOTIFY_EMAIL || "commandes@medikong.pro" },
           to: [{ email: recipient.contact_email, name: identity.pharmacy_name }],
-          subject: `Bien reçu — votre commande ${ref}`,
-          textContent:
-            `Bonjour,\n\n` +
-            `Vous venez de passer commande sur commande.medikong.pro.\n` +
-            `Voici le récapitulatif et les coordonnées de paiement.\n\n` +
-            `Nous avons bien reçu votre commande ${ref}.\n\n` +
-            lineText + `\n\n` +
-            `Total marchandises HTVA : ${eur(a.subtotal)} €\n` +
-            (a.shipping > 0
-              ? `Frais de livraison : ${eur(a.shipping)} € ` +
-                `(offerts dès ${eur(campaign.franco_threshold_cents ?? 0)} €)\n`
-              : `Livraison offerte\n`) +
-            `\n` +
-            `------------------------------\n` +
-            `Paiement par virement\n` +
-            `Montant à virer : ${eur(a.totalTtc)} € TTC\n` +
-            `Bénéficiaire : MediKong SRL\n` +
-            `IBAN : BE86 7320 7305 0650\n` +
-            `BIC : CREGBEBB\n` +
-            `Communication : ${ref}\n` +
-            `------------------------------\n` +
-            `\n` +
-            (campaign.vendor_label ? `${campaign.vendor_label}\n` : "") +
-            `Livraison estimée : ${eta.label} — après réception de votre virement` +
-            (campaign.carrier_label ? ` — ${campaign.carrier_label}` : "") + `\n` +
-            (lines.some((l) => l.line_type === "request")
-              ? `Les références en prospection ne sont pas couvertes par cette date : ` +
-                `nous revenons vers vous avec le prix ferme et le délai.\n`
-              : "") +
-            `\nNous confirmons la commande sous 24 h ouvrables.\n` +
-            `Une question d'ici là : ${campaign.contact_label ?? ""}\n\n` +
-            `MediKong SRL · BE 1005.771.323 · Rue de la Procession 23, 7822 Meslin-l'Évêque (Ath)\n`,
+          subject: receipt.subject,
+          textContent: receipt.text,
         }),
       });
       if (!res.ok) {

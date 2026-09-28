@@ -575,6 +575,13 @@
       "when": 1790611151215,
       "tag": "0081_tighten_rls_three_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1790622930798,
+      "tag": "0082_wholesaler_import_protection",
+      "breakpoints": true
     }
   ]
 }

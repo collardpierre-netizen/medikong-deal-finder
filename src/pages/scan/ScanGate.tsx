@@ -254,7 +254,7 @@ export default function ScanGate({ children }: { children: ReactNode }) {
     return (
       <ScanCtx.Provider value={lastCustomer.current}>
         <div className="mx-auto max-w-md pb-[calc(64px+env(safe-area-inset-bottom))]" aria-hidden>{children}</div>
-        <div className="fixed inset-0 z-50 overflow-auto bg-background/95"><CodeLogin expired /></div>
+        <div className="fixed inset-0 z-50 overflow-auto bg-background"><CodeLogin expired /></div>
       </ScanCtx.Provider>
     );
   }

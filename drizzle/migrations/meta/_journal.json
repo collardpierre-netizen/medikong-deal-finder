@@ -547,6 +547,13 @@
       "when": 1790593183762,
       "tag": "0077_manufacturer_product_count_trigger",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1790597328444,
+      "tag": "0078_scan_access_auto_verify",
+      "breakpoints": true
     }
   ]
 }

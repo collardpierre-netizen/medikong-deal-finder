@@ -26,6 +26,7 @@
 .scan-theme .verdict-green { background-color: hsl(var(--scan-green)); color: hsl(0 0% 100%); }
 .scan-theme .verdict-orange { background-color: hsl(var(--scan-orange)); color: hsl(0 0% 100%); }
 .scan-theme .verdict-red { background-color: hsl(var(--scan-red)); color: hsl(0 0% 100%); }
+.scan-theme .verdict-grey { background-color: hsl(var(--muted)); color: hsl(var(--foreground)); }
 .scan-theme .verdict-none { background-color: hsl(var(--scan-navy)); color: hsl(0 0% 100%); }
 
 /* Micro-animations Scan (< 300 ms), désactivées si réduction de mouvement */

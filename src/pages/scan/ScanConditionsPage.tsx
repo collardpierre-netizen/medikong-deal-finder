@@ -82,6 +82,9 @@ export default function ScanConditionsPage() {
     refetchOnMount: "always",
     staleTime: 0,
     queryFn: async () => {
+      // Session rafraîchie avant lecture : un jeton expiré renverrait une liste vide sans erreur.
+      const { data: sess } = await supabase.auth.getSession();
+      if (!sess.session) throw new Error("Session expirée");
       const { data, error } = await sb.from("pharmacist_wholesaler_settings")
       .select("id, wholesaler_profile_id, is_supplier_of_pharmacist, override_default_discount_pct, override_rules_json")
       .eq("customer_id", customer.id);

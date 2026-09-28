@@ -36252,6 +36252,28 @@ export type Database = {
           role: string
         }[]
       }
+      admin_list_quick_orders: {
+        Args: { p_language?: string; p_vat_rate?: number }
+        Returns: {
+          campaign_id: string
+          city: string
+          contact_email: string
+          created_at: string
+          franco_reached: boolean
+          id: string
+          language: string
+          line_count: number
+          pharmacy_name: string
+          reference: string
+          requested_delivery_date: string
+          shipping_ht_cents: number
+          status: string
+          subtotal_ht_cents: number
+          total_ttc_cents: number
+          vat_cents: number
+          vat_rates: number[]
+        }[]
+      }
       admin_list_vendor_owner_mismatches: {
         Args: never
         Returns: {

@@ -519,6 +519,13 @@
       "when": 1790580245281,
       "tag": "0073_cart_items_customer_fk_cascade",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1790581290998,
+      "tag": "0074_qo_bilingual_nl_columns",
+      "breakpoints": true
     }
   ]
 }

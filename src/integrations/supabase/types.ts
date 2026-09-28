@@ -17133,98 +17133,137 @@ export type Database = {
         Row: {
           access_code: string | null
           allocation_note: string | null
+          allocation_note_nl: string | null
           ask_buyer_price: boolean
           carrier_label: string | null
+          carrier_label_nl: string | null
           carrier_short_label: string | null
+          carrier_short_label_nl: string | null
           cashback_multiplier: number | null
           code: string
           contact_label: string | null
+          contact_label_nl: string | null
           created_at: string
           cutoff_hour: number
           delivery_label: string | null
+          delivery_label_nl: string | null
           ends_on: string
           franco_threshold_cents: number | null
           headline: string | null
+          headline_nl: string | null
           id: string
           language: string
           lead_time_days: number
           margin_note: string
+          margin_note_nl: string | null
           market_price_label: string
+          market_price_label_nl: string | null
           name: string
           origin_label: string | null
+          origin_label_nl: string | null
           payment_terms_days: number | null
           payment_terms_label: string | null
+          payment_terms_label_nl: string | null
           returns_label: string | null
+          returns_label_nl: string | null
           returns_short_label: string | null
+          returns_short_label_nl: string | null
           shipping_fee_cents: number
           shipping_vat_rate: number
           starts_on: string
           status: string
           vendor_label: string | null
+          vendor_label_nl: string | null
         }
         Insert: {
           access_code?: string | null
           allocation_note?: string | null
+          allocation_note_nl?: string | null
           ask_buyer_price?: boolean
           carrier_label?: string | null
+          carrier_label_nl?: string | null
           carrier_short_label?: string | null
+          carrier_short_label_nl?: string | null
           cashback_multiplier?: number | null
           code: string
           contact_label?: string | null
+          contact_label_nl?: string | null
           created_at?: string
           cutoff_hour?: number
           delivery_label?: string | null
+          delivery_label_nl?: string | null
           ends_on: string
           franco_threshold_cents?: number | null
           headline?: string | null
+          headline_nl?: string | null
           id?: string
           language?: string
           lead_time_days?: number
           margin_note?: string
+          margin_note_nl?: string | null
           market_price_label?: string
+          market_price_label_nl?: string | null
           name: string
           origin_label?: string | null
+          origin_label_nl?: string | null
           payment_terms_days?: number | null
           payment_terms_label?: string | null
+          payment_terms_label_nl?: string | null
           returns_label?: string | null
+          returns_label_nl?: string | null
           returns_short_label?: string | null
+          returns_short_label_nl?: string | null
           shipping_fee_cents?: number
           shipping_vat_rate?: number
           starts_on?: string
           status?: string
           vendor_label?: string | null
+          vendor_label_nl?: string | null
         }
         Update: {
           access_code?: string | null
           allocation_note?: string | null
+          allocation_note_nl?: string | null
           ask_buyer_price?: boolean
           carrier_label?: string | null
+          carrier_label_nl?: string | null
           carrier_short_label?: string | null
+          carrier_short_label_nl?: string | null
           cashback_multiplier?: number | null
           code?: string
           contact_label?: string | null
+          contact_label_nl?: string | null
           created_at?: string
           cutoff_hour?: number
           delivery_label?: string | null
+          delivery_label_nl?: string | null
           ends_on?: string
           franco_threshold_cents?: number | null
           headline?: string | null
+          headline_nl?: string | null
           id?: string
           language?: string
           lead_time_days?: number
           margin_note?: string
+          margin_note_nl?: string | null
           market_price_label?: string
+          market_price_label_nl?: string | null
           name?: string
           origin_label?: string | null
+          origin_label_nl?: string | null
           payment_terms_days?: number | null
           payment_terms_label?: string | null
+          payment_terms_label_nl?: string | null
           returns_label?: string | null
+          returns_label_nl?: string | null
           returns_short_label?: string | null
+          returns_short_label_nl?: string | null
           shipping_fee_cents?: number
           shipping_vat_rate?: number
           starts_on?: string
           status?: string
           vendor_label?: string | null
+          vendor_label_nl?: string | null
         }
         Relationships: []
       }
@@ -17268,10 +17307,12 @@ export type Database = {
           brand: string | null
           campaign_id: string
           category: string | null
+          category_nl: string | null
           cnk: string | null
           created_at: string
           ean: string | null
           eta_label: string | null
+          eta_label_nl: string | null
           free_units_offer: string | null
           id: string
           image_url: string | null
@@ -17280,6 +17321,7 @@ export type Database = {
           min_expiry_date: string | null
           min_qty: number
           name: string
+          name_nl: string | null
           origin_country: string | null
           pack_size: string | null
           packaging_languages: string[]
@@ -17300,10 +17342,12 @@ export type Database = {
           brand?: string | null
           campaign_id: string
           category?: string | null
+          category_nl?: string | null
           cnk?: string | null
           created_at?: string
           ean?: string | null
           eta_label?: string | null
+          eta_label_nl?: string | null
           free_units_offer?: string | null
           id?: string
           image_url?: string | null
@@ -17312,6 +17356,7 @@ export type Database = {
           min_expiry_date?: string | null
           min_qty?: number
           name: string
+          name_nl?: string | null
           origin_country?: string | null
           pack_size?: string | null
           packaging_languages?: string[]
@@ -17332,10 +17377,12 @@ export type Database = {
           brand?: string | null
           campaign_id?: string
           category?: string | null
+          category_nl?: string | null
           cnk?: string | null
           created_at?: string
           ean?: string | null
           eta_label?: string | null
+          eta_label_nl?: string | null
           free_units_offer?: string | null
           id?: string
           image_url?: string | null
@@ -17344,6 +17391,7 @@ export type Database = {
           min_expiry_date?: string | null
           min_qty?: number
           name?: string
+          name_nl?: string | null
           origin_country?: string | null
           pack_size?: string | null
           packaging_languages?: string[]
@@ -17446,6 +17494,7 @@ export type Database = {
           franco_reached: boolean
           id: string
           ip_hash: string | null
+          language: string
           receipt_sent_at: string | null
           recipient_id: string
           reference: string
@@ -17472,6 +17521,7 @@ export type Database = {
           franco_reached?: boolean
           id?: string
           ip_hash?: string | null
+          language?: string
           receipt_sent_at?: string | null
           recipient_id: string
           reference: string
@@ -17498,6 +17548,7 @@ export type Database = {
           franco_reached?: boolean
           id?: string
           ip_hash?: string | null
+          language?: string
           receipt_sent_at?: string | null
           recipient_id?: string
           reference?: string

@@ -2,10 +2,14 @@
 // GET : résout le token en payload personnalisé.
 
 import {
-  db, json, hashIp, estimatedDelivery, type OfferItem,
+  db, json, hashIp, estimatedDelivery, resolveLang, tr, localizeItem,
 } from "./_shared.ts";
 
-export async function handleGet(token: string, ip: string): Promise<Response> {
+export async function handleGet(
+  token: string,
+  ip: string,
+  langParam: string | null = null,
+): Promise<Response> {
   const { data: recipient } = await db
     .from("qo_recipients")
     .select("*, qo_campaigns(*)")
@@ -60,7 +64,12 @@ export async function handleGet(token: string, ip: string): Promise<Response> {
     .limit(1)
     .maybeSingle();
 
+  // Lot 2 : paramètre lang > recipient.language > campaign.language > 'fr'.
+  const lang = resolveLang(langParam, recipient.language, campaign.language);
+  const t = (f: string) => tr(campaign, f, lang);
+
   return json({
+    language: lang,
     pharmacy: {
       name: recipient.pharmacy_name,
       city: recipient.city,
@@ -71,31 +80,32 @@ export async function handleGet(token: string, ip: string): Promise<Response> {
     },
     campaign: {
       name: campaign.name,
-      headline: campaign.headline,
+      headline: t("headline"),
       ends_on: campaign.ends_on,
       franco_threshold_cents: campaign.franco_threshold_cents,
       cashback_multiplier: campaign.cashback_multiplier,
       payment_terms_days: campaign.payment_terms_days,
-      allocation_note: campaign.allocation_note,
-      vendor_label: campaign.vendor_label,
+      allocation_note: t("allocation_note"),
+      vendor_label: t("vendor_label"),
       shipping_fee_cents: campaign.shipping_fee_cents,
-      market_price_label: campaign.market_price_label,
-      margin_note: campaign.margin_note,
+      market_price_label: t("market_price_label"),
+      margin_note: t("margin_note"),
       ask_buyer_price: campaign.ask_buyer_price,
-      delivery_label: campaign.delivery_label,
-      carrier_label: campaign.carrier_label,
+      delivery_label: t("delivery_label"),
+      carrier_label: t("carrier_label"),
       estimated_delivery: estimatedDelivery(
         campaign.cutoff_hour ?? 14,
         campaign.lead_time_days ?? 2,
+        lang,
       ),
-      returns_label: campaign.returns_label,
-      carrier_short_label: campaign.carrier_short_label,
-      returns_short_label: campaign.returns_short_label,
-      origin_label: campaign.origin_label,
-      payment_terms_label: campaign.payment_terms_label,
-      contact_label: campaign.contact_label,
+      returns_label: t("returns_label"),
+      carrier_short_label: t("carrier_short_label"),
+      returns_short_label: t("returns_short_label"),
+      origin_label: t("origin_label"),
+      payment_terms_label: t("payment_terms_label"),
+      contact_label: t("contact_label"),
     },
-    items: (items ?? []) as OfferItem[],
+    items: (items ?? []).map((i: Record<string, any>) => localizeItem(i, lang)),
     already_ordered: lastOrder ?? null,
   });
 }

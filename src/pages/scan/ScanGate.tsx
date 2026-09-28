@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { OTP_LENGTH } from "@/config/otp";
 import { fetchScanAccess, type ScanCustomer } from "@/lib/scanner/api";
+import { installScanSessionGuard, onSessionExpired, releasePending } from "@/lib/scanner/sessionGuard";
+
+installScanSessionGuard();
 
 const ScanCtx = createContext<ScanCustomer | null>(null);
 export const useScanCustomer = () => useContext(ScanCtx)!;
@@ -209,6 +212,13 @@ export default function ScanGate({ children }: { children: ReactNode }) {
   const hadUser = useRef(false);
   const [expired, setExpired] = useState(false);
   if (user) hadUser.current = true;
+  const lastCustomer = useRef<ScanCustomer | null>(null);
+  useEffect(() => onSessionExpired((v) => { if (v) setExpired(true); }), []);
+  // Reconnexion : renvoyer les appels mis en attente pendant l'expiration
+  useEffect(() => {
+    if (!user) return;
+    supabase.auth.getSession().then(({ data: s }) => releasePending(s.session?.access_token ?? null));
+  }, [user]);
   // Au retour au premier plan : vérifier/rafraîchir la session avant toute lecture
   useEffect(() => {
     const check = async () => {
@@ -237,6 +247,16 @@ export default function ScanGate({ children }: { children: ReactNode }) {
 
   if (loading || (user && isLoading)) {
     return <Center><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></Center>;
+  }
+  if (data?.allowed && data.customer) lastCustomer.current = data.customer;
+  // Session expirée en cours d'usage : l'écran reste en place (saisies conservées), code demandé par-dessus
+  if ((!user || expired) && expired && lastCustomer.current) {
+    return (
+      <ScanCtx.Provider value={lastCustomer.current}>
+        <div className="mx-auto max-w-md pb-[calc(64px+env(safe-area-inset-bottom))]" aria-hidden>{children}</div>
+        <div className="fixed inset-0 z-50 overflow-auto bg-background/95"><CodeLogin expired /></div>
+      </ScanCtx.Provider>
+    );
   }
   if (!user) return <CodeLogin expired={expired} />;
   if (!data?.allowed || !data.customer) {

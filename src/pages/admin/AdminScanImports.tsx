@@ -242,7 +242,7 @@ export default function AdminScanImports() {
       )}
 
       {preview && (
-        <div className={`rounded-xl border bg-card p-4 space-y-4 ${mismatch ? "border-destructive" : ""}`}>
+        <div className={`rounded-xl border bg-card p-4 space-y-4 ${noMatch ? "border-destructive" : ""}`}>
           <h2 className="font-semibold">Résumé avant validation · {sourceName(sourceId)} · tarif du {frDate(tariffDate)}</h2>
           <div className="grid gap-4 md:grid-cols-4">
             <div><div className="text-2xl font-bold">{preview.rows}</div><div className="text-sm text-muted-foreground">Lignes avec prix</div></div>

@@ -76,9 +76,15 @@ export default function ScanConditionsPage() {
       return data ?? [];
     },
   });
-  const { data: existing, isLoading: conditionsLoading, isError: conditionsError } = useQuery({
+  const { data: existing, isLoading: conditionsLoading, isFetching: conditionsFetching, isError: conditionsError } = useQuery({
     queryKey: ["scan-conditions", customer.id],
+    // Toujours relire à l'ouverture : ne jamais initialiser l'écran sur un cache périmé.
+    refetchOnMount: "always",
+    staleTime: 0,
     queryFn: async () => {
+      // Session rafraîchie avant lecture : un jeton expiré renverrait une liste vide sans erreur.
+      const { data: sess } = await supabase.auth.getSession();
+      if (!sess.session) throw new Error("Session expirée");
       const { data, error } = await sb.from("pharmacist_wholesaler_settings")
       .select("id, wholesaler_profile_id, is_supplier_of_pharmacist, override_default_discount_pct, override_rules_json")
       .eq("customer_id", customer.id);
@@ -88,7 +94,7 @@ export default function ScanConditionsPage() {
   });
 
   useEffect(() => {
-    if (!ws.length || existing === undefined || initializedCustomer.current === customer.id) return;
+    if (!ws.length || existing === undefined || conditionsFetching || initializedCustomer.current === customer.id) return;
     const next: Record<string, Row> = {};
     let sharedRules: any = {};
     for (const w of ws) {
@@ -119,7 +125,7 @@ export default function ScanConditionsPage() {
     setYearEnd(!!sharedRules?.year_end_rebate);
     setFreeGoods(!!sharedRules?.free_goods);
     initializedCustomer.current = customer.id;
-  }, [customer.id, ws, existing]);
+  }, [customer.id, ws, existing, conditionsFetching]);
 
   const { data: suggestions = [] } = useQuery({
     queryKey: ["scan-deal-search", q.trim()],
@@ -133,12 +139,12 @@ export default function ScanConditionsPage() {
       return [
         ...(b.data ?? []).map((x: any) => ({ kind: "brand" as const, id: x.id, name: x.name })),
         ...(m.data ?? []).map((x: any) => ({ kind: "manufacturer" as const, id: x.id, name: x.name })),
-      ].filter((x) => !deals.some((d) => d.kind === x.kind && d.id === x.id));
+      ];
     },
   });
   const setDeal = (i: number, patch: Partial<Deal>) => setDeals((p) => p.map((d, j) => (j === i ? { ...d, ...patch } : d)));
   const dealRules = (kind: Deal["kind"]) => deals
-    .filter((d) => d.kind === kind && num(d.pct) != null)
+    .filter((d, i, all) => d.kind === kind && num(d.pct) != null && all.findIndex((x) => x.kind === d.kind && x.id === d.id) === i)
     .map((d) => ({ [kind === "brand" ? "brand_id" : "manufacturer_id"]: d.id, name: d.name, pct: num(d.pct) as number,
       min_order_cents: eur(d.min), franco_cents: eur(d.franco) }));
 
@@ -149,13 +155,19 @@ export default function ScanConditionsPage() {
     if (!user) return;
     setSaving(true);
     try {
+      // Relecture fraîche : une ligne existante pour (officine, grossiste) est toujours mise à jour, jamais ré-ajoutée.
+      const { data: fresh, error: freshErr } = await sb.from("pharmacist_wholesaler_settings")
+        .select("id, wholesaler_profile_id").eq("customer_id", customer.id);
+      if (freshErr) throw freshErr;
+      const idByWholesaler = new Map<string, string>((fresh ?? []).map((f: any) => [f.wholesaler_profile_id, f.id]));
       const directLabs = labs.split(",").map((s) => s.trim()).filter(Boolean);
       for (const w of ws) {
         const r = rows[w.id];
         if (!r) continue;
+        const settingId = idByWholesaler.get(w.id) ?? r.settingId;
         if (!r.checked) {
-          if (r.settingId) {
-            const { error } = await sb.from("pharmacist_wholesaler_settings").update({ is_supplier_of_pharmacist: false }).eq("id", r.settingId);
+          if (settingId) {
+            const { error } = await sb.from("pharmacist_wholesaler_settings").update({ is_supplier_of_pharmacist: false }).eq("id", settingId);
             if (error) throw error;
           }
           continue;
@@ -189,9 +201,14 @@ export default function ScanConditionsPage() {
           is_supplier_of_pharmacist: true, override_default_discount_pct: general, override_rules_json: rules,
           last_reviewed_at: new Date().toISOString(),
         };
-        const { error } = r.settingId
-          ? await sb.from("pharmacist_wholesaler_settings").update(payload).eq("id", r.settingId)
+        let { error } = settingId
+          ? await sb.from("pharmacist_wholesaler_settings").update(payload).eq("id", settingId)
           : await sb.from("pharmacist_wholesaler_settings").insert(payload);
+        if (error?.code === "23505") {
+          // Ajoutée entre-temps (autre appareil) : on met à jour la ligne existante.
+          ({ error } = await sb.from("pharmacist_wholesaler_settings").update(payload)
+            .eq("customer_id", customer.id).eq("wholesaler_profile_id", w.id));
+        }
         if (error) throw error;
       }
       await qc.invalidateQueries({ queryKey: ["scan-conditions", customer.id] });
@@ -244,7 +261,8 @@ export default function ScanConditionsPage() {
               <div key={w.id} className="rounded-xl border bg-card p-3 space-y-3">
                 <label className="scan-tap flex items-center gap-3 font-semibold">
                   <Checkbox checked={r.checked} onCheckedChange={(v) => set(w.id, { checked: !!v })} />
-                  {w.display_name}
+                  <span className="flex-1">{w.display_name}</span>
+                  {r.settingId && <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">Déjà enregistré</span>}
                 </label>
                 {r.checked && (
                   <div className="grid grid-cols-2 gap-2">
@@ -291,13 +309,17 @@ export default function ScanConditionsPage() {
             <Input value={q} onChange={(e) => setQ(e.target.value)} className="h-11" placeholder="Rechercher une marque ou un labo (ex. Nutricia)" />
             {q.trim().length >= 2 && suggestions.length > 0 && (
               <div className="absolute z-10 mt-1 w-full rounded-xl border bg-popover shadow-md max-h-64 overflow-auto">
-                {suggestions.map((s: any) => (
-                  <button key={`${s.kind}-${s.id}`} type="button" className="scan-tap flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-muted"
-                    onClick={() => { setDeals((p) => [...p, { kind: s.kind, id: s.id, name: s.name, pct: "", min: "", franco: "" }]); setQ(""); }}>
-                    <span>{s.name}</span>
-                    <span className="text-xs text-muted-foreground">{s.kind === "brand" ? "Marque" : "Labo"}</span>
-                  </button>
-                ))}
+                {suggestions.map((s: any) => {
+                  const already = deals.some((d) => d.kind === s.kind && d.id === s.id);
+                  return (
+                    <button key={`${s.kind}-${s.id}`} type="button" disabled={already}
+                      className="scan-tap flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
+                      onClick={() => { if (already) return; setDeals((p) => [...p, { kind: s.kind, id: s.id, name: s.name, pct: "", min: "", franco: "" }]); setQ(""); }}>
+                      <span>{s.name}</span>
+                      <span className="text-xs text-muted-foreground">{already ? "Déjà ajouté, modifiez-le ci-dessous" : s.kind === "brand" ? "Marque" : "Labo"}</span>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>

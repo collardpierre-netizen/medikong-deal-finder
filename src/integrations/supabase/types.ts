@@ -36268,7 +36268,12 @@ export type Database = {
         Returns: Json
       }
       admin_import_wholesaler_prices_v2: {
-        Args: { _import_id: string; _rows: Json }
+        Args: {
+          _import_id: string
+          _include_no_supplier?: boolean
+          _rows: Json
+          _supplier_filter?: boolean
+        }
         Returns: Json
       }
       admin_inspect_table_grants: {
@@ -36513,7 +36518,12 @@ export type Database = {
         }[]
       }
       admin_preview_wholesaler_import: {
-        Args: { _rows: Json; _source_id: string }
+        Args: {
+          _include_no_supplier?: boolean
+          _rows: Json
+          _source_id: string
+          _supplier_filter?: boolean
+        }
         Returns: Json
       }
       admin_price_cockpit_gaps: {

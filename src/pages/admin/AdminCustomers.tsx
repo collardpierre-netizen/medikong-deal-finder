@@ -345,6 +345,8 @@ export default function AdminCustomers() {
             )}
           </div>
 
+          {selected && !isCreating && <ScanAccessCard customerId={selected.id} />}
+
           {selected && !isCreating && <EinvoicingSettingsCard customerId={selected.id} variant="admin" />}
 
           {selected && <ShippingAddressesBlock customerId={selected.id} defaultCountry={selected.country_code || "BE"} />}

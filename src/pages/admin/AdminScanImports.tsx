@@ -25,7 +25,7 @@ const eur = (v: number) => `${Number(v).toFixed(2).replace(".", ",")} €`;
 const frDate = (d: string) => new Date(d).toLocaleDateString("fr-BE");
 
 type Report = { rows: number; matched: number; changed: number; inserted: number; unmatched: any[]; deltas: any[] };
-type Preview = { rows: number; new: number; changed: number; avg_delta_pct: number | null; suppliers: Record<string, number>; mismatched_suppliers: Record<string, number> };
+type Preview = { rows: number; new: number; changed: number; avg_delta_pct: number | null; suppliers: Record<string, number>; mismatched_suppliers: Record<string, number>; skipped_no_supplier: number; skipped_other_supplier: number };
 
 function guess(headers: string[], re: RegExp) {
   return headers.find((h) => re.test(h)) ?? NONE;
@@ -39,6 +39,7 @@ export default function AdminScanImports() {
   const [headers, setHeaders] = useState<string[]>([]);
   const [rows, setRows] = useState<Record<string, any>[]>([]);
   const [map, setMap] = useState({ cnk: NONE, ean: NONE, price: NONE, name: NONE, supplier: NONE });
+  const [includeNoSupplier, setIncludeNoSupplier] = useState(false);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
   const [preview, setPreview] = useState<Preview | null>(null);
@@ -84,20 +85,23 @@ export default function AdminScanImports() {
   })), [rows, map]);
 
   const ready = !!sourceId && !!tariffDate && rows.length > 0 && map.price !== NONE && (map.cnk !== NONE || map.ean !== NONE);
-  const mismatch = preview ? Object.keys(preview.mismatched_suppliers ?? {}).length > 0 : false;
-  const canImport = ready && !!preview && !mismatch;
+  const hasSupplierCol = map.supplier !== NONE;
+  const filterArgs = { _supplier_filter: hasSupplierCol, _include_no_supplier: includeNoSupplier };
+  const noMatch = preview ? preview.rows === 0 : false;
+  const canImport = ready && !!preview && !noMatch;
 
   const resetPreview = () => { setPreview(null); setReport(null); };
 
   const runPreview = async () => {
     setBusy(true);
     try {
-      const agg: Preview = { rows: 0, new: 0, changed: 0, avg_delta_pct: null, suppliers: {}, mismatched_suppliers: {} };
+      const agg: Preview = { rows: 0, new: 0, changed: 0, avg_delta_pct: null, suppliers: {}, mismatched_suppliers: {}, skipped_no_supplier: 0, skipped_other_supplier: 0 };
       let sumPct = 0, nPct = 0;
       for (let i = 0; i < mapped.length; i += BATCH) {
-        const { data, error } = await sb.rpc("admin_preview_wholesaler_import", { _source_id: sourceId, _rows: mapped.slice(i, i + BATCH) });
+        const { data, error } = await sb.rpc("admin_preview_wholesaler_import", { _source_id: sourceId, _rows: mapped.slice(i, i + BATCH), ...filterArgs });
         if (error) throw error;
         agg.rows += data.rows; agg.new += data.new; agg.changed += data.changed;
+        agg.skipped_no_supplier += data.skipped_no_supplier ?? 0; agg.skipped_other_supplier += data.skipped_other_supplier ?? 0;
         if (data.avg_delta_pct != null) { sumPct += data.avg_delta_pct * data.changed; nPct += data.changed; }
         for (const [k, v] of Object.entries(data.suppliers ?? {})) agg.suppliers[k] = (agg.suppliers[k] ?? 0) + (v as number);
         for (const [k, v] of Object.entries(data.mismatched_suppliers ?? {})) agg.mismatched_suppliers[k] = (agg.mismatched_suppliers[k] ?? 0) + (v as number);
@@ -118,7 +122,7 @@ export default function AdminScanImports() {
       if (e0) throw e0;
       importId = id;
       for (let i = 0; i < mapped.length; i += BATCH) {
-        const { data, error } = await sb.rpc("admin_import_wholesaler_prices_v2", { _import_id: importId, _rows: mapped.slice(i, i + BATCH) });
+        const { data, error } = await sb.rpc("admin_import_wholesaler_prices_v2", { _import_id: importId, _rows: mapped.slice(i, i + BATCH), ...filterArgs });
         if (error) throw error;
         agg.rows += data.rows; agg.matched += data.matched; agg.changed += data.changed; agg.inserted += data.inserted;
         agg.unmatched.push(...(data.unmatched ?? [])); agg.deltas.push(...(data.deltas ?? []));
@@ -223,6 +227,12 @@ export default function AdminScanImports() {
             </TableBody>
           </Table>
           <div className="flex items-center gap-3">
+            {hasSupplierCol && (
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={includeNoSupplier} onChange={(e) => { setIncludeNoSupplier(e.target.checked); resetPreview(); }} />
+                Importer aussi les lignes sans fournisseur
+              </label>
+            )}
             <Button variant="outline" onClick={runPreview} disabled={!ready || busy}>
               <Eye className="h-4 w-4 mr-2" />Voir le résumé
             </Button>
@@ -245,9 +255,16 @@ export default function AdminScanImports() {
             {map.supplier === NONE ? "non détectée" : Object.keys(preview.suppliers).length === 0 ? "présente mais vide" :
               Object.entries(preview.suppliers).map(([k, v]) => `${k} (${v})`).join(", ")}
           </div>
-          {mismatch ? (
+          {hasSupplierCol && (
+            <div className="grid gap-2 md:grid-cols-3 text-sm">
+              <div className="rounded-lg border p-2"><strong>{preview.rows}</strong> lignes importées</div>
+              <div className="rounded-lg border p-2"><strong>{preview.skipped_no_supplier}</strong> ignorées · sans fournisseur</div>
+              <div className="rounded-lg border p-2"><strong>{preview.skipped_other_supplier}</strong> ignorées · autre fournisseur{Object.keys(preview.mismatched_suppliers).length > 0 ? ` (${Object.entries(preview.mismatched_suppliers).map(([k, v]) => `${k} ${v}`).join(", ")})` : ""}</div>
+            </div>
+          )}
+          {noMatch ? (
             <div className="rounded-lg border border-destructive bg-destructive/10 p-3 text-sm text-destructive">
-              Fichier refusé : la colonne Fournisseur indique {Object.entries(preview.mismatched_suppliers).map(([k, v]) => `« ${k} » (${v} lignes)`).join(", ")}, ce qui contredit la source « {sourceName(sourceId)} ».
+              Import bloqué : aucune ligne du fichier ne correspond à la source « {sourceName(sourceId)} ».
             </div>
           ) : (
             <Button onClick={runImport} disabled={!canImport || busy}>

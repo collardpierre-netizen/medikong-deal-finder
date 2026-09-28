@@ -533,6 +533,13 @@
       "when": 1790587336501,
       "tag": "0075_fix_infant_formula_vat_and_orders",
       "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1790587625759,
+      "tag": "0076_admin_list_quick_orders",
+      "breakpoints": true
     }
   ]
 }

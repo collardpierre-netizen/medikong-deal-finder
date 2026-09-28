@@ -423,7 +423,7 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
                 ? <>vs prix grossiste {formatMoney(refPrice)} <span className="whitespace-nowrap">(−{fmtPct(savingPct)})</span></>
                 : <>Prix grossiste {formatMoney(refPrice)}</>}
             </div>
-            {latestWholesaler && <div className="mt-1 text-xs opacity-80">{latestWholesaler.label}{latestWholesaler.updated_at ? ` · ${fmtShortDate(latestWholesaler.updated_at)}` : ""}</div>}
+            {latestWholesaler && <div className="mt-1 text-xs opacity-80">{latestWholesaler.label} · {formatMoney(latestWholesaler.catalog_price!)}{latestWholesaler.updated_at ? ` · mis à jour le ${new Date(latestWholesaler.updated_at).toLocaleDateString("fr-BE", { day: "2-digit", month: "2-digit" })}` : ""}</div>}
           </>
         )}
         {refPrice == null && (

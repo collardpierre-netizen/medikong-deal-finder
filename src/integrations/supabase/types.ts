@@ -39560,6 +39560,16 @@ export type Database = {
           lines_overdue: number
         }[]
       }
+      scan_request_price: {
+        Args: {
+          _product_id: string
+          _quantity?: number
+          _reference_supplier?: string
+          _scan_event_id: string
+          _target_price_excl_vat: number
+        }
+        Returns: string
+      }
       scan_set_selling_price: {
         Args: { _price_incl_vat_cents: number; _product_id: string }
         Returns: Json

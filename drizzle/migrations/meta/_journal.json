@@ -561,6 +561,13 @@
       "when": 1790597955547,
       "tag": "0079_guard_customers_sensitive_cols",
       "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1790606951527,
+      "tag": "0080_scan_request_price",
+      "breakpoints": true
     }
   ]
 }

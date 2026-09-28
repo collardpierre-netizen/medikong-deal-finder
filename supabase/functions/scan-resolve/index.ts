@@ -185,7 +185,8 @@ Deno.serve(async (req) => {
           stale: upd ? Date.now() - new Date(upd).getTime() > 60 * 86400000 : false,
         });
         references.push({ source: (wp.slug ?? "").toUpperCase(), label: wp.display_name, discount_pct: pct, discount_label: discountLabel(disc), net, _allowed: true });
-        if (refSource !== "DECLARED" && (refMin == null || net < refMin)) { refMin = net; refSource = (wp.slug ?? "").toUpperCase(); }
+        // Meilleur prix de l'officine : le plus bas entre prix déclaré et chaque grossiste net (même règle que l'écran)
+        if (refMin == null || net < refMin) { refMin = net; refSource = (wp.slug ?? "").toUpperCase(); }
       }
     }
   }

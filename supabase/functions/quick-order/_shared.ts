@@ -63,7 +63,80 @@ export const HOLIDAYS = new Set<string>([
   // "2026-11-11", "2026-12-25", ...
 ]);
 
-export function estimatedDelivery(cutoffHour: number, leadDays: number) {
+// ---------------------------------------------------------------------------
+// Bilinguisme FR/NL (lots 2, 3, 5).
+// ---------------------------------------------------------------------------
+
+export type Lang = "fr" | "nl";
+
+/** 'fr' | 'nl' si valide, sinon null (toute autre valeur est ignorée, pas rejetée). */
+export function asLang(v: unknown): Lang | null {
+  if (typeof v !== "string") return null;
+  const s = v.trim().toLowerCase();
+  return s === "fr" || s === "nl" ? s : null;
+}
+
+/** Première langue valide de la chaîne de résolution, sinon 'fr'. */
+export function resolveLang(...candidates: unknown[]): Lang {
+  for (const c of candidates) {
+    const l = asLang(c);
+    if (l) return l;
+  }
+  return "fr";
+}
+
+/** Règle de repli : `_nl` NULL ou vide → valeur FR. */
+export function tr(row: Record<string, any>, field: string, lang: Lang): any {
+  if (lang === "nl") {
+    const nl = row?.[`${field}_nl`];
+    if (typeof nl === "string" && nl.trim() !== "") return nl;
+  }
+  return row?.[field];
+}
+
+const ITEM_TEXT_FIELDS = ["name", "category", "eta_label"] as const;
+
+/** Offre localisée : un seul jeu de libellés, jamais les deux versions. */
+export function localizeItem(item: Record<string, any>, lang: Lang): OfferItem {
+  const out: Record<string, any> = { ...item };
+  for (const f of ITEM_TEXT_FIELDS) {
+    out[f] = tr(item, f, lang);
+    delete out[`${f}_nl`];
+  }
+  return out as OfferItem;
+}
+
+const NL_DAYS = ["zondag", "maandag", "dinsdag", "woensdag", "donderdag", "vrijdag", "zaterdag"];
+const NL_MONTHS = [
+  "januari", "februari", "maart", "april", "mei", "juni",
+  "juli", "augustus", "september", "oktober", "november", "december",
+];
+
+// ---------------------------------------------------------------------------
+// Lot 6 — TVA : somme des bases HTVA par taux, taux appliqué et arrondi UNE
+// seule fois par taux. Le port rejoint la base de son propre taux (21 %).
+// ---------------------------------------------------------------------------
+export function vatFromBases(
+  lines: Array<{ line_type?: unknown; vat_rate?: unknown; line_ht_cents?: unknown }>,
+  shippingHtCents: number,
+  shippingVatRate: number,
+): number {
+  const bases = new Map<number, number>();
+  const add = (rate: number, base: number) => {
+    if (!base) return;
+    bases.set(rate, (bases.get(rate) ?? 0) + base);
+  };
+  for (const l of lines) {
+    if (l.line_type !== "order") continue;
+    add(Number(l.vat_rate), Number(l.line_ht_cents));
+  }
+  if (shippingHtCents > 0) add(Number(shippingVatRate), shippingHtCents);
+  let vat = 0;
+  for (const [rate, base] of bases) vat += Math.round(base * rate / 100);
+  return vat;
+}
+
+export function estimatedDelivery(cutoffHour: number, leadDays: number, lang: Lang = "fr") {
   const nowBrussels = new Date(
     new Date().toLocaleString("en-US", { timeZone: "Europe/Brussels" }),
   );
@@ -83,9 +156,11 @@ export function estimatedDelivery(cutoffHour: number, leadDays: number) {
 
   return {
     date: iso(d),
-    label: d.toLocaleDateString("fr-BE", {
-      weekday: "long", day: "numeric", month: "long",
-    }),
+    label: lang === "nl"
+      ? `${NL_DAYS[d.getDay()]} ${d.getDate()} ${NL_MONTHS[d.getMonth()]}`
+      : d.toLocaleDateString("fr-BE", {
+        weekday: "long", day: "numeric", month: "long",
+      }),
     ships_today: !afterCutoff && isWorkday(nowBrussels),
     cutoff_hour: cutoffHour,
   };

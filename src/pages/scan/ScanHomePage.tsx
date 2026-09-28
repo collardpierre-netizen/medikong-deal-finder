@@ -53,6 +53,12 @@ export default function ScanHomePage() {
     setBusy(true);
     try {
       const r = await resolveScan({ raw_code: raw, symbology, client_decode_ms: decodeMs, reopen_scan_event_id: reopenId ?? null });
+      // Vrai nom pour les grossistes déclarés dans « Mes conditions » (les lignes renvoyées ne concernent que ceux-là)
+      if (r.wholesalers?.length) {
+        const { data: wps } = await (supabase as any).from("wholesaler_profiles").select("id, display_name")
+          .in("id", r.wholesalers.map((w) => w.wholesaler_profile_id));
+        r.wholesalers = r.wholesalers.map((w) => ({ ...w, label: wps?.find((x: any) => x.id === w.wholesaler_profile_id)?.display_name ?? w.label }));
+      }
       setResult(r);
     } catch {
       toast.error("Lecture impossible, réessayez.");
@@ -367,7 +373,7 @@ function VerdictCard({ r, customerId, hasConditions, estimated, onResult, onScan
             </div>
             <div className="mt-1 text-sm opacity-90">{formatMoney(ownRef)} chez vous → {formatMoney(best.price)} MediKong{unitPrice != null ? ` · ${formatMoney(unitPrice)}/bouteille` : ""}</div>
             {minimumCount != null && quantity < minimumCount && (
-              <div className="mt-1 text-xs font-medium opacity-90">Gain réel dès {minimumCount} {saleUnitPlural} (franco {formatMoney(mov!)}) ou en complétant avec ce fournisseur</div>
+              <div className="mt-1 whitespace-nowrap text-xs font-medium opacity-90">Gain réel dès {minimumCount} {saleUnitPlural} (franco {Number.isInteger(mov!) ? `${mov} €` : formatMoney(mov!)})</div>
             )}
           </>
         )}

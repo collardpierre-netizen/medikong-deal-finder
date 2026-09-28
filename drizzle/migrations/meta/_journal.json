@@ -582,6 +582,13 @@
       "when": 1790622930798,
       "tag": "0082_wholesaler_import_protection",
       "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1790625303102,
+      "tag": "0083_disable_legacy_market_price_import",
+      "breakpoints": true
     }
   ]
 }

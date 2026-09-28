@@ -569,8 +569,8 @@ export default function AdminVeillePrix() {
         }}>
           <FileSpreadsheet size={14} /> Template
         </Button>
-        <Button size="sm" className="gap-1.5" onClick={() => setShowImportDialog(true)}>
-          <Upload size={14} /> Importer XLSX
+        <Button size="sm" className="gap-1.5" onClick={() => { window.location.href = "/admin/scan/imports"; }}>
+          <Upload size={14} /> Importer XLSX (page contrôlée)
         </Button>
         <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setShowSourceDialog(true)}>
           <Plus size={14} /> Nouvelle source

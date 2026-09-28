@@ -227,7 +227,7 @@ export default function ScanGate({ children }: { children: ReactNode }) {
     window.addEventListener("online", check);
     return () => { document.removeEventListener("visibilitychange", check); window.removeEventListener("online", check); };
   }, [qc]);
-  useEffect(() => { if (user) setExpired(false); else if (hadUser.current) setExpired(true); }, [user]);
+  useEffect(() => { if (user) setExpired(false); else if (hadUser.current && !sessionStorage.getItem("scan-manual-logout")) setExpired(true); sessionStorage.removeItem("scan-manual-logout"); }, [user]);
   const { data, isLoading } = useQuery({
     queryKey: ["scan-access", user?.id],
     enabled: !!user,
@@ -249,7 +249,7 @@ export default function ScanGate({ children }: { children: ReactNode }) {
           <p className="text-sm text-muted-foreground">MediKong Scan est en phase pilote, sur invitation.</p>
           <p className="text-sm text-muted-foreground">Contact : <a className="underline" href="mailto:contact@medikong.pro">contact@medikong.pro</a></p>
         </div>
-        <Button variant="outline" className="scan-tap" onClick={() => signOut()}>Se déconnecter</Button>
+        <Button variant="outline" className="scan-tap" onClick={() => { sessionStorage.setItem("scan-manual-logout", "1"); signOut(); }}>Se déconnecter</Button>
       </Center>
     );
   }

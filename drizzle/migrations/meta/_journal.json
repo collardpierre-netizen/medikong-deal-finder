@@ -631,6 +631,13 @@
       "when": 1790703109758,
       "tag": "0089_explicit_zero_commission",
       "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "7",
+      "when": 1790707084175,
+      "tag": "0090_fix_admin_set_vendor_compliance_audit_columns",
+      "breakpoints": true
     }
   ]
 }

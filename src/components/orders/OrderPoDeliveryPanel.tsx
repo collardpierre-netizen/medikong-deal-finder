@@ -93,15 +93,11 @@ export default function OrderPoDeliveryPanel({
       .eq("id", orderId);
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success("N° de PO et site de livraison enregistrés");
-    qc.invalidateQueries({ queryKey: ["admin-order"] });
-  };
-
-  return (
-    <div className="bg-card border rounded-lg p-4 space-y-3">
-      <div className="text-sm font-semibold">N° de PO et site de livraison (repris sur le bon de commande fournisseur)</div>
-      <div>
-        <label className="text-xs text-muted-foreground">N° de PO client (plusieurs possibles, séparés par des virgules)</label>
+    toast.success("Ref PO client et site de livraison enregistrés");
+...
+      <div className="text-sm font-semibold">Ref PO client et site de livraison (repris sur le bon de commande fournisseur)</div>
+...
+        <label className="text-xs text-muted-foreground">Ref PO client (plusieurs possibles, séparées par des virgules)</label>
         <Input value={po} onChange={(e) => setPo(e.target.value)} placeholder="PO-12345, PO-12346" />
       </div>
       {(addresses?.length ?? 0) > 0 && (

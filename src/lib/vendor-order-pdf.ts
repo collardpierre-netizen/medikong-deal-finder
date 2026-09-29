@@ -119,7 +119,7 @@ export function generateVendorOrderPdf(input: VendorOrderPdfInput) {
     doc.setTextColor(...NAVY);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9.5);
-    doc.text(`N° de PO : ${input.poNumbers}`, M, y);
+    doc.text(`Ref PO client : ${input.poNumbers}`, M, y);
     doc.setFont("helvetica", "normal");
     y += 7;
   }

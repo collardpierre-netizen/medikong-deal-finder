@@ -2,6 +2,7 @@
 // le message est historisé dans order_messages et notifié par email.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { AUDIT_NOTIFICATION_EMAIL } from "../_shared/audit-config.ts";
+import { sendTemplateEmail } from "../_shared/transactional-email-templates/send-email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -90,46 +91,51 @@ Deno.serve(async (req) => {
 
     // Notification email (best-effort)
     let emailSent = false;
+    let emailReason: string | undefined;
+    const orderNumber = (order as any).order_number;
     try {
       if (isAdmin) {
         if (customer?.email) {
-          const res = await supabase.functions.invoke("send-app-email", {
-            body: {
-              templateName: "order-message-customer",
-              recipientEmail: customer.email,
-              idempotencyKey: `order-message-${inserted.id}`,
-              templateData: {
-                orderNumber: (order as any).order_number,
-                senderName,
-                message,
-                ctaUrl: `${SITE_URL}/commande/${orderId}`,
-              },
-            },
-          });
-          emailSent = !res.error;
-        }
-      } else {
-        const res = await supabase.functions.invoke("send-app-email", {
-          body: {
-            templateName: "order-message-admin",
-            recipientEmail: AUDIT_NOTIFICATION_EMAIL,
+          const r = await sendTemplateEmail("order-message-customer", customer.email, {
             idempotencyKey: `order-message-${inserted.id}`,
-            templateData: {
-              orderNumber: (order as any).order_number,
-              customerName: customer?.company_name ?? "Client",
-              customerEmail: customer?.email ?? "",
-              message,
-              ctaUrl: `${SITE_URL}/admin/commandes/${orderId}`,
-            },
+            templateData: { orderNumber, senderName, message, ctaUrl: `${SITE_URL}/commande/${orderId}` },
+          });
+          emailSent = r.sent; emailReason = r.reason;
+        } else emailReason = "no_customer_email";
+      } else {
+        const r = await sendTemplateEmail("order-message-admin", AUDIT_NOTIFICATION_EMAIL, {
+          idempotencyKey: `order-message-${inserted.id}`,
+          templateData: {
+            orderNumber,
+            customerName: customer?.company_name ?? "Client",
+            customerEmail: customer?.email ?? "",
+            message,
+            ctaUrl: `${SITE_URL}/admin/commandes/${orderId}`,
           },
         });
-        emailSent = !res.error;
+        emailSent = r.sent; emailReason = r.reason;
       }
     } catch (e) {
-      console.error("[send-order-message] email failed", (e as Error)?.message ?? e);
+      emailReason = (e as Error)?.message ?? "send_failed";
+      console.error("[send-order-message] email failed", emailReason);
     }
 
-    return json({ ok: true, message_id: inserted.id, email_sent: emailSent });
+    // Notification admin in-app quand le client répond
+    if (!isAdmin) {
+      const { error: nErr } = await supabase.from("admin_notifications").insert({
+        type: "order_message",
+        severity: "info",
+        title: `Nouveau message client — ${orderNumber}`,
+        body: `${customer?.company_name ?? "Client"} : ${message.slice(0, 200)}`,
+        cta_url: `/admin/commandes/${orderId}`,
+        source_type: "order",
+        source_id: orderId,
+        payload: { order_message_id: inserted.id },
+      });
+      if (nErr) console.error("[send-order-message] notif failed", nErr.message);
+    }
+
+    return json({ ok: true, message_id: inserted.id, email_sent: emailSent, email_reason: emailReason });
   } catch (e) {
     console.error("[send-order-message]", (e as Error)?.message ?? e);
     return json({ error: "internal_error" }, 500);

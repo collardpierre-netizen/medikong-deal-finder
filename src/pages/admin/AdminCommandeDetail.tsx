@@ -17,6 +17,7 @@ import OrderProductsSummary from "@/components/orders/OrderProductsSummary";
 import DeliveryNotesPanel from "@/components/orders/DeliveryNotesPanel";
 import OrderBankTransfersPanel from "@/components/admin/OrderBankTransfersPanel";
 import OrderSelfBillingOverridePanel from "@/components/orders/OrderSelfBillingOverridePanel";
+import OrderPoDeliveryPanel from "@/components/orders/OrderPoDeliveryPanel";
 
 import StripePaymentStatusBadge from "@/components/orders/StripePaymentStatusBadge";
 import OrderSourceBadge from "@/components/orders/OrderSourceBadge";
@@ -620,6 +621,14 @@ const AdminCommandeDetail = () => {
             orderNumber={(order as any).order_number ?? null}
             value={((order as any).self_billing_override ?? null) as boolean | null}
           />
+
+          <OrderPoDeliveryPanel
+            orderId={order.id}
+            customerId={(order as any).customer_id ?? null}
+            poNumbers={(order as any).po_numbers ?? null}
+            deliverySite={(order as any).delivery_site ?? null}
+          />
+
 
 
 

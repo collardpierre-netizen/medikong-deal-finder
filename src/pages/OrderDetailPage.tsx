@@ -21,6 +21,18 @@ export default function OrderDetailPage() {
   const items: any[] = (order as any)?.items || [];
   const itemVendorIds = items.map((it: any) => it.vendor_id).filter(Boolean) as string[];
   const { getLabel: getVendorLabel } = useVendorLabels(itemVendorIds);
+  const poNumbers: string = ((order as any)?.po_numbers || "").trim();
+  const ds: any = (order as any)?.delivery_site || null;
+  const siteLines: string[] = ds
+    ? [
+        ds.name,
+        [ds.address_l1, ds.address_l2].filter(Boolean).join(", "),
+        [ds.postal_code, ds.city, ds.country_code].filter(Boolean).join(" "),
+        [ds.contact_name, ds.contact_phone].filter(Boolean).join(" · ") && `Contact : ${[ds.contact_name, ds.contact_phone].filter(Boolean).join(" · ")}`,
+        ds.delivery_hours && `Horaires : ${ds.delivery_hours}`,
+        ds.delivery_instructions && `Modalités : ${ds.delivery_instructions}`,
+      ].filter((x: any) => typeof x === "string" && x.trim())
+    : [];
 
   // Self-billing invoices for this order (RLS filters commission out for buyers)
   const { data: invoices = [] } = useQuery({
@@ -122,11 +134,31 @@ export default function OrderDetailPage() {
       }
     }
     doc.setFontSize(14);
-    doc.text(`Commande #${orderNumber}`, logo ? 60 : 14, headerBottom);
+    doc.text(`Bon de commande #${orderNumber}`, logo ? 60 : 14, headerBottom);
     doc.setFontSize(10);
     doc.text(`Date : ${formatOrderDateTime((order as any)?.created_at) || "—"}`, logo ? 60 : 14, headerBottom + 7);
+    doc.text(`Lignes : ${items.length}`, doc.internal.pageSize.getWidth() - 14, headerBottom + 7, { align: "right" });
+    let y = headerBottom + 13;
+    if (poNumbers) {
+      doc.setFont("helvetica", "bold");
+      doc.text(`Ref PO client : ${poNumbers}`, 14, y);
+      doc.setFont("helvetica", "normal");
+      y += 6;
+    }
+    if (siteLines.length) {
+      const boxH = 7 + siteLines.length * 5;
+      doc.setDrawColor(28, 88, 217);
+      doc.rect(14, y, 130, boxH);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text("SITE DE LIVRAISON", 17, y + 5);
+      doc.setFont("helvetica", "normal");
+      siteLines.forEach((l, i) => doc.text(l, 17, y + 10 + i * 5, { maxWidth: 124 }));
+      doc.setFontSize(10);
+      y += boxH + 5;
+    }
     autoTable(doc, {
-      startY: headerBottom + 13,
+      startY: y,
       head: [["Produit", "EAN", "CNK", "SKU", "Vendeur", "Qté", "Prix HTVA", "Montant HTVA"]],
       body: rows.map(r => [r.name, r.ean, r.cnk, r.sku, r.vendor, r.qty, `${r.unit.toFixed(2)} EUR`, `${r.total.toFixed(2)} EUR`]),
       styles: { fontSize: 8 },
@@ -165,7 +197,7 @@ export default function OrderDetailPage() {
               <FileSpreadsheet size={14} /> Export CSV
             </button>
             <button onClick={handleExportPDF} disabled={!items.length} className="border border-mk-line text-sm px-3 py-2 rounded-md text-mk-sec flex items-center gap-1.5 disabled:opacity-50">
-              <FileText size={14} /> Export PDF
+              <FileText size={14} /> Bon de commande PDF
             </button>
             {invoices.length === 0 ? (
               <button disabled className="border border-mk-line text-sm px-4 py-2 rounded-md text-mk-sec/60 flex items-center gap-1.5 cursor-not-allowed" title="Facture non encore générée">
@@ -224,6 +256,23 @@ export default function OrderDetailPage() {
           </div>
         )}
 
+
+        {(poNumbers || siteLines.length > 0) && (
+          <div className="mb-6 grid gap-3 md:grid-cols-2">
+            {poNumbers && (
+              <div className="rounded-lg border border-mk-line p-4">
+                <div className="text-[11px] uppercase text-mk-sec font-semibold mb-1">Ref PO client</div>
+                <div className="text-sm text-mk-navy font-mono">{poNumbers}</div>
+              </div>
+            )}
+            {siteLines.length > 0 && (
+              <div className="rounded-lg border border-mk-line p-4">
+                <div className="text-[11px] uppercase text-mk-sec font-semibold mb-1">Site de livraison</div>
+                {siteLines.map((l, i) => <div key={i} className="text-sm text-mk-navy">{l}</div>)}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Timeline dynamique */}
         {currentStep >= 0 ? (

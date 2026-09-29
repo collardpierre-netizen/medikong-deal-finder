@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Plus, Trash2, Save, FileText, FolderOpen, CalendarClock, Copy, Pencil, ExternalLink } from "lucide-react";
 
 import AdminTopBar from "@/components/admin/AdminTopBar";
+import OrderPoDeliveryPanel from "@/components/orders/OrderPoDeliveryPanel";
 import { fmtEur } from "@/lib/format-currency";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -123,6 +124,19 @@ const AdminCommandeManuelle = () => {
   const [isForecast, setIsForecast] = useState<boolean>(false);
   const [duplicatedFrom, setDuplicatedFrom] = useState<string | null>(null);
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+  const { data: editingPoDelivery } = useQuery({
+    queryKey: ["admin-manual-order-po-delivery", editingOrderId],
+    enabled: !!editingOrderId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("po_numbers, delivery_site")
+        .eq("id", editingOrderId!)
+        .single();
+      if (error) throw error;
+      return data as any;
+    },
+  });
   const [editingOrderNumber, setEditingOrderNumber] = useState<string | null>(null);
   const [shippingAddressId, setShippingAddressId] = useState<string>("");
   const [fulfillmentMode, setFulfillmentMode] = useState<"pickup" | "delivery">("delivery");
@@ -1313,6 +1327,15 @@ const AdminCommandeManuelle = () => {
             </label>
           </div>
 
+
+          {editingOrderId && (
+            <OrderPoDeliveryPanel
+              orderId={editingOrderId}
+              customerId={customerId || null}
+              poNumbers={editingPoDelivery?.po_numbers ?? null}
+              deliverySite={editingPoDelivery?.delivery_site ?? null}
+            />
+          )}
 
           <div className="bg-white rounded-lg border p-4 space-y-3" style={{ borderColor: "#E2E8F0" }}>
             <h3 className="font-semibold text-sm">Notes admin</h3>

@@ -1314,6 +1314,15 @@ const AdminCommandeManuelle = () => {
           </div>
 
 
+          {editingOrderId && (
+            <OrderPoDeliveryPanel
+              orderId={editingOrderId}
+              customerId={customerId || null}
+              poNumbers={null}
+              deliverySite={null}
+            />
+          )}
+
           <div className="bg-white rounded-lg border p-4 space-y-3" style={{ borderColor: "#E2E8F0" }}>
             <h3 className="font-semibold text-sm">Notes admin</h3>
             <Textarea value={adminNotes} onChange={(e) => setAdminNotes(e.target.value)} rows={4} placeholder="Contexte, référence interne…" />

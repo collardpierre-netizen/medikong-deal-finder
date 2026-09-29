@@ -93,6 +93,10 @@ export default function OrderPoDeliveryPanel({
       .eq("id", orderId);
     setSaving(false);
     if (error) return toast.error(error.message);
+    // Rafraîchir les caches pour que la commande rouverte relise les valeurs en base
+    await qc.invalidateQueries({ queryKey: ["admin-order", orderId] });
+    await qc.invalidateQueries({ queryKey: ["admin-manual-order-po-delivery", orderId] });
+    await qc.invalidateQueries({ queryKey: ["orders"] });
     toast.success("Ref PO client et site de livraison enregistrés");
   };
 

@@ -4539,6 +4539,8 @@ export type Database = {
           country_code: string
           created_at: string
           customer_id: string
+          delivery_hours: string | null
+          delivery_instructions: string | null
           id: string
           is_default: boolean
           label: string
@@ -4556,6 +4558,8 @@ export type Database = {
           country_code?: string
           created_at?: string
           customer_id: string
+          delivery_hours?: string | null
+          delivery_instructions?: string | null
           id?: string
           is_default?: boolean
           label: string
@@ -4573,6 +4577,8 @@ export type Database = {
           country_code?: string
           created_at?: string
           customer_id?: string
+          delivery_hours?: string | null
+          delivery_instructions?: string | null
           id?: string
           is_default?: boolean
           label?: string
@@ -13934,6 +13940,7 @@ export type Database = {
           deleted_reason: string | null
           delivery_confirmation_completed_at: string | null
           delivery_confirmation_requested_at: string | null
+          delivery_site: Json | null
           draft_fingerprint: string | null
           draft_payload: Json | null
           email_cagnotte_earned_sent_at: string | null
@@ -13951,6 +13958,7 @@ export type Database = {
           payment_due_date: string | null
           payment_method: Database["public"]["Enums"]["payment_method_enum"]
           payment_status: Database["public"]["Enums"]["payment_status_enum"]
+          po_numbers: string | null
           public_access_expires_at: string | null
           public_access_pin: string | null
           public_token: string | null
@@ -13994,6 +14002,7 @@ export type Database = {
           deleted_reason?: string | null
           delivery_confirmation_completed_at?: string | null
           delivery_confirmation_requested_at?: string | null
+          delivery_site?: Json | null
           draft_fingerprint?: string | null
           draft_payload?: Json | null
           email_cagnotte_earned_sent_at?: string | null
@@ -14011,6 +14020,7 @@ export type Database = {
           payment_due_date?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method_enum"]
           payment_status?: Database["public"]["Enums"]["payment_status_enum"]
+          po_numbers?: string | null
           public_access_expires_at?: string | null
           public_access_pin?: string | null
           public_token?: string | null
@@ -14054,6 +14064,7 @@ export type Database = {
           deleted_reason?: string | null
           delivery_confirmation_completed_at?: string | null
           delivery_confirmation_requested_at?: string | null
+          delivery_site?: Json | null
           draft_fingerprint?: string | null
           draft_payload?: Json | null
           email_cagnotte_earned_sent_at?: string | null
@@ -14071,6 +14082,7 @@ export type Database = {
           payment_due_date?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method_enum"]
           payment_status?: Database["public"]["Enums"]["payment_status_enum"]
+          po_numbers?: string | null
           public_access_expires_at?: string | null
           public_access_pin?: string | null
           public_token?: string | null
@@ -35000,6 +35012,7 @@ export type Database = {
           deleted_reason: string | null
           delivery_confirmation_completed_at: string | null
           delivery_confirmation_requested_at: string | null
+          delivery_site: Json | null
           draft_fingerprint: string | null
           draft_payload: Json | null
           email_cagnotte_earned_sent_at: string | null
@@ -35021,6 +35034,7 @@ export type Database = {
           payment_status:
             | Database["public"]["Enums"]["payment_status_enum"]
             | null
+          po_numbers: string | null
           public_token: string | null
           shipped_at: string | null
           shipping_address: Json | null
@@ -35056,6 +35070,7 @@ export type Database = {
           deleted_reason?: string | null
           delivery_confirmation_completed_at?: string | null
           delivery_confirmation_requested_at?: string | null
+          delivery_site?: Json | null
           draft_fingerprint?: string | null
           draft_payload?: Json | null
           email_cagnotte_earned_sent_at?: string | null
@@ -35077,6 +35092,7 @@ export type Database = {
           payment_status?:
             | Database["public"]["Enums"]["payment_status_enum"]
             | null
+          po_numbers?: string | null
           public_token?: string | null
           shipped_at?: string | null
           shipping_address?: Json | null
@@ -35112,6 +35128,7 @@ export type Database = {
           deleted_reason?: string | null
           delivery_confirmation_completed_at?: string | null
           delivery_confirmation_requested_at?: string | null
+          delivery_site?: Json | null
           draft_fingerprint?: string | null
           draft_payload?: Json | null
           email_cagnotte_earned_sent_at?: string | null
@@ -35133,6 +35150,7 @@ export type Database = {
           payment_status?:
             | Database["public"]["Enums"]["payment_status_enum"]
             | null
+          po_numbers?: string | null
           public_token?: string | null
           shipped_at?: string | null
           shipping_address?: Json | null
@@ -35991,6 +36009,7 @@ export type Database = {
           deleted_reason: string | null
           delivery_confirmation_completed_at: string | null
           delivery_confirmation_requested_at: string | null
+          delivery_site: Json | null
           draft_fingerprint: string | null
           draft_payload: Json | null
           email_cagnotte_earned_sent_at: string | null
@@ -36008,6 +36027,7 @@ export type Database = {
           payment_due_date: string | null
           payment_method: Database["public"]["Enums"]["payment_method_enum"]
           payment_status: Database["public"]["Enums"]["payment_status_enum"]
+          po_numbers: string | null
           public_access_expires_at: string | null
           public_access_pin: string | null
           public_token: string | null

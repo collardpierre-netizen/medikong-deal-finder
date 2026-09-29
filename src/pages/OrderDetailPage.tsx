@@ -26,9 +26,9 @@ export default function OrderDetailPage() {
   const siteLines: string[] = ds
     ? [
         ds.name,
-        [ds.address_line1 ?? ds.address, ds.address_line2].filter(Boolean).join(", "),
-        [ds.postal_code, ds.city, ds.country].filter(Boolean).join(" "),
-        [ds.contact_name, ds.contact_phone ?? ds.phone].filter(Boolean).join(" · ") && `Contact : ${[ds.contact_name, ds.contact_phone ?? ds.phone].filter(Boolean).join(" · ")}`,
+        [ds.address_l1, ds.address_l2].filter(Boolean).join(", "),
+        [ds.postal_code, ds.city, ds.country_code].filter(Boolean).join(" "),
+        [ds.contact_name, ds.contact_phone].filter(Boolean).join(" · ") && `Contact : ${[ds.contact_name, ds.contact_phone].filter(Boolean).join(" · ")}`,
         ds.delivery_hours && `Horaires : ${ds.delivery_hours}`,
         ds.delivery_instructions && `Modalités : ${ds.delivery_instructions}`,
       ].filter((x: any) => typeof x === "string" && x.trim())
@@ -197,7 +197,7 @@ export default function OrderDetailPage() {
               <FileSpreadsheet size={14} /> Export CSV
             </button>
             <button onClick={handleExportPDF} disabled={!items.length} className="border border-mk-line text-sm px-3 py-2 rounded-md text-mk-sec flex items-center gap-1.5 disabled:opacity-50">
-              <FileText size={14} /> Export PDF
+              <FileText size={14} /> Bon de commande PDF
             </button>
             {invoices.length === 0 ? (
               <button disabled className="border border-mk-line text-sm px-4 py-2 rounded-md text-mk-sec/60 flex items-center gap-1.5 cursor-not-allowed" title="Facture non encore générée">
@@ -256,6 +256,23 @@ export default function OrderDetailPage() {
           </div>
         )}
 
+
+        {(poNumbers || siteLines.length > 0) && (
+          <div className="mb-6 grid gap-3 md:grid-cols-2">
+            {poNumbers && (
+              <div className="rounded-lg border border-mk-line p-4">
+                <div className="text-[11px] uppercase text-mk-sec font-semibold mb-1">Ref PO client</div>
+                <div className="text-sm text-mk-navy font-mono">{poNumbers}</div>
+              </div>
+            )}
+            {siteLines.length > 0 && (
+              <div className="rounded-lg border border-mk-line p-4">
+                <div className="text-[11px] uppercase text-mk-sec font-semibold mb-1">Site de livraison</div>
+                {siteLines.map((l, i) => <div key={i} className="text-sm text-mk-navy">{l}</div>)}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Timeline dynamique */}
         {currentStep >= 0 ? (

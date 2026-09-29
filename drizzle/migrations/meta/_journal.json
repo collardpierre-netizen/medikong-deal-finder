@@ -617,6 +617,13 @@
       "when": 1790673831812,
       "tag": "0087_order_po_numbers_delivery_site",
       "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1790683686959,
+      "tag": "0088_order_lines_position",
+      "breakpoints": true
     }
   ]
 }

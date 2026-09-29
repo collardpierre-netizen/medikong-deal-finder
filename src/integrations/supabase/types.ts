@@ -13157,6 +13157,7 @@ export type Database = {
           id: string
           line_cost: number | null
           line_margin: number | null
+          line_position: number | null
           line_total_excl_vat: number
           line_total_incl_vat: number
           manual_label: string | null
@@ -13203,6 +13204,7 @@ export type Database = {
           id?: string
           line_cost?: number | null
           line_margin?: number | null
+          line_position?: number | null
           line_total_excl_vat: number
           line_total_incl_vat: number
           manual_label?: string | null
@@ -13249,6 +13251,7 @@ export type Database = {
           id?: string
           line_cost?: number | null
           line_margin?: number | null
+          line_position?: number | null
           line_total_excl_vat?: number
           line_total_incl_vat?: number
           manual_label?: string | null
@@ -40367,6 +40370,7 @@ export type Database = {
           id: string
           line_cost: number | null
           line_margin: number | null
+          line_position: number | null
           line_total_excl_vat: number
           line_total_incl_vat: number
           manual_label: string | null

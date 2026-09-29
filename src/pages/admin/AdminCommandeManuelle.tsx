@@ -124,6 +124,19 @@ const AdminCommandeManuelle = () => {
   const [isForecast, setIsForecast] = useState<boolean>(false);
   const [duplicatedFrom, setDuplicatedFrom] = useState<string | null>(null);
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+  const { data: editingPoDelivery } = useQuery({
+    queryKey: ["admin-manual-order-po-delivery", editingOrderId],
+    enabled: !!editingOrderId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("po_numbers, delivery_site")
+        .eq("id", editingOrderId!)
+        .single();
+      if (error) throw error;
+      return data as any;
+    },
+  });
   const [editingOrderNumber, setEditingOrderNumber] = useState<string | null>(null);
   const [shippingAddressId, setShippingAddressId] = useState<string>("");
   const [fulfillmentMode, setFulfillmentMode] = useState<"pickup" | "delivery">("delivery");
@@ -1319,8 +1332,8 @@ const AdminCommandeManuelle = () => {
             <OrderPoDeliveryPanel
               orderId={editingOrderId}
               customerId={customerId || null}
-              poNumbers={null}
-              deliverySite={null}
+              poNumbers={editingPoDelivery?.po_numbers ?? null}
+              deliverySite={editingPoDelivery?.delivery_site ?? null}
             />
           )}
 

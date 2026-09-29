@@ -1337,11 +1337,26 @@ const AdminCommandes = () => {
                                         <div className="px-3 py-2 text-white text-[11px] font-semibold uppercase tracking-wide" style={{ backgroundColor: "#1C58D9" }}>
                                           Synthèse produits · {o.id}
                                         </div>
-                                        <div className="grid grid-cols-3 gap-2 p-3 border-b" style={{ borderColor: "#E2E8F0" }}>
+                                        <div className="grid grid-cols-4 gap-2 p-3 border-b" style={{ borderColor: "#E2E8F0" }}>
+                                          <MiniKpi label="Lignes" value={String((o.lines || []).length)} color="#1E252F" />
                                           <MiniKpi label="Uniques" value={String(rows.length)} color="#1C58D9" />
                                           <MiniKpi label="Qté" value={String(totalQty)} color="#15803D" />
                                           <MiniKpi label="HTVA" value={`${fmtEur(totalHt)} €`} color="#B45309" />
                                         </div>
+                                        {(() => {
+                                          const per = new Map<string, number>();
+                                          for (const l of (o.lines || []) as any[]) {
+                                            const nm = l.vendors?.company_name || (l.vendor_id ? vendorLabelById.get(l.vendor_id) : null) || l.qogita_seller_fid || "—";
+                                            per.set(nm, (per.get(nm) || 0) + 1);
+                                          }
+                                          const items = Array.from(per.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8);
+                                          if (items.length === 0) return null;
+                                          return (
+                                            <div className="px-3 py-1.5 border-b text-[10px]" style={{ borderColor: "#F1F5F9", color: "#475569" }}>
+                                              Lignes par fournisseur : {items.map(([v, c]) => `${v} ${c}`).join(" · ")}
+                                            </div>
+                                          );
+                                        })()}
                                         {top.length === 0 ? (
                                           <div className="p-4 text-center text-[11px] text-slate-500">Aucune ligne</div>
                                         ) : (

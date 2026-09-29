@@ -84,6 +84,11 @@ export function generateVendorOrderPdf(input: VendorOrderPdfInput) {
   doc.setFontSize(9);
   doc.text(`${t("date")} : ${dateLoc(input.orderDate)}`, M, y);
   if (input.statusLabel) doc.text(`${t("status")} : ${input.statusLabel}`, pageW / 2, y);
+  // Récap du nombre de lignes, en haut à droite du document.
+  doc.setTextColor(...NAVY);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.text(`${t("lineCount")} : ${input.lines.length}`, pageW - M, y, { align: "right" });
   y += 8;
 
   doc.setTextColor(...NAVY);

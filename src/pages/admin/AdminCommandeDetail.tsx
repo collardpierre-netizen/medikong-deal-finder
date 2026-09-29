@@ -525,6 +525,27 @@ const AdminCommandeDetail = () => {
                 )}
               </div>
             </div>
+            {(() => {
+              const n = (lines as any[]).length;
+              const totalQty = (lines as any[]).reduce((s: number, l: any) => s + (Number(l.quantity) || 0), 0);
+              const perVendor = new Map<string, number>();
+              for (const l of lines as any[]) {
+                const name = l.vendors?.company_name || l.vendors?.name || l.qogita_seller_fid || "—";
+                perVendor.set(name, (perVendor.get(name) || 0) + 1);
+              }
+              const parts = Array.from(perVendor.entries()).sort((a, b) => b[1] - a[1]).map(([v, c]) => `${v} · ${c}`);
+              return (
+                <div className="mb-3 p-3 rounded border bg-slate-50" style={{ borderColor: "#E2E8F0" }}>
+                  <div className="text-[11px] uppercase text-slate-400 font-semibold mb-0.5">Récap lignes</div>
+                  <div className="text-sm font-medium">
+                    {n} ligne{n > 1 ? "s" : ""} · {totalQty} unité{totalQty > 1 ? "s" : ""}
+                  </div>
+                  {parts.length > 0 && (
+                    <div className="mt-1 text-xs text-slate-500">Répartition : {parts.join(" · ")}</div>
+                  )}
+                </div>
+              );
+            })()}
             {(order as any).fulfillment_mode && (
               <div className="mb-3 p-3 rounded border bg-slate-50" style={{ borderColor: "#E2E8F0" }}>
                 <div className="text-[11px] uppercase text-slate-400 font-semibold mb-1">Mode logistique</div>

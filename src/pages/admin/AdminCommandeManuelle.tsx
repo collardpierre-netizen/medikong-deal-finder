@@ -1440,6 +1440,26 @@ const AdminCommandeManuelle = () => {
                     onDragEnd={() => { setDragIdx(null); setDragOverIdx(null); }}
                     className="cursor-grab select-none px-1 py-1"
                   >⋮⋮</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={lines.length}
+                    defaultValue={idx + 1}
+                    key={`pos-${l.id}-${idx}`}
+                    title="Position de la ligne"
+                    aria-label="Position de la ligne"
+                    className="w-10 mt-0.5 text-center text-xs border border-border rounded bg-background text-foreground"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const v = parseInt((e.target as HTMLInputElement).value, 10);
+                        if (!isNaN(v) && v >= 1 && v <= lines.length) moveLine(idx, v - 1);
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const v = parseInt(e.target.value, 10);
+                      if (!isNaN(v) && v >= 1 && v <= lines.length && v - 1 !== idx) moveLine(idx, v - 1);
+                    }}
+                  />
                   <button type="button" aria-label="Descendre la ligne" disabled={idx === lines.length - 1}
                     className="px-1 leading-none disabled:opacity-30 hover:text-foreground"
                     onClick={() => moveLine(idx, idx + 1)}>▼</button>

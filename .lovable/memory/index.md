@@ -1,0 +1,1 @@
+- [Scan connexion](mem://features/scan-connexion) — Code 8 chiffres, mail unique code+lien, contact pcoll@medikong.pro, message neutre

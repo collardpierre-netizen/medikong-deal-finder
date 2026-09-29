@@ -65,6 +65,7 @@ const FR: Dict = {
   vendorOrderFooter:
     "MediKong — Bon de commande exprimé en euros, prix HTVA sauf mention contraire.",
   vendorOrderFile: "bon-de-commande",
+  lineCount: "Lignes",
   // Bon de livraison
   dnTitle: "MediKong — Bon de livraison",
   dnDocFinal: "Bon de livraison final",
@@ -146,6 +147,7 @@ const NL: Dict = {
   vendorOrderFooter:
     "MediKong — Inkooporder in euro, prijzen excl. btw tenzij anders vermeld.",
   vendorOrderFile: "inkooporder",
+  lineCount: "Lijnen",
   dnTitle: "MediKong — Leveringsbon",
   dnDocFinal: "Definitieve leveringsbon",
   dnDocDraft: "Voorlopige leveringsbon (ontwerp) — zonder definitieve waarde",
@@ -225,6 +227,7 @@ const EN: Dict = {
   vendorOrderFooter:
     "MediKong — Purchase order in euros, prices excl. VAT unless stated otherwise.",
   vendorOrderFile: "purchase-order",
+  lineCount: "Lines",
   dnTitle: "MediKong — Delivery note",
   dnDocFinal: "Final delivery note",
   dnDocDraft: "Provisional delivery note (draft) — not final",
@@ -303,6 +306,7 @@ const DE: Dict = {
   vendorOrderFooter:
     "MediKong — Bestellung in Euro, Preise netto, sofern nicht anders angegeben.",
   vendorOrderFile: "bestellung",
+  lineCount: "Positionen",
   dnTitle: "MediKong — Lieferschein",
   dnDocFinal: "Endgültiger Lieferschein",
   dnDocDraft: "Vorläufiger Lieferschein (Entwurf) — ohne endgültige Gültigkeit",

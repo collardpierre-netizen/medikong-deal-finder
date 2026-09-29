@@ -86,7 +86,7 @@ export default function VendorOrderDetail() {
       const { data: order, error: oErr } = await (supabase as any)
         .from("vendor_orders_v")
         .select(
-          "id, order_number, status, created_at, shipping_address, billing_address, customer_id, hidden_from_list, deleted_at, payment_method, payment_status, stripe_payment_intent_id, payment_due_date, tracking_number, tracking_url, tracking_carrier, shipped_at, notes, source, fulfillment_mode",
+          "id, order_number, status, created_at, shipping_address, billing_address, customer_id, hidden_from_list, deleted_at, payment_method, payment_status, stripe_payment_intent_id, payment_due_date, tracking_number, tracking_url, tracking_carrier, shipped_at, notes, source, fulfillment_mode, po_numbers, delivery_site",
         )
         .eq("id", id!)
         .maybeSingle();
@@ -131,6 +131,8 @@ export default function VendorOrderDetail() {
         order_tracking_carrier: (order as any).tracking_carrier ?? null,
         shipped_at: (order as any).shipped_at ?? null,
         notes: (order as any).notes ?? null,
+        po_numbers: (order as any).po_numbers ?? null,
+        delivery_site: (order as any).delivery_site ?? null,
         invoices: (invoicesRes.data as any) || [],
         lines: lines.map((l: any) => {
           const p: any = productMap.get(l.product_id);
@@ -213,6 +215,8 @@ export default function VendorOrderDetail() {
                   customerEmail: sa?.email ?? null,
                   customerVatNumber: sa?.vat_number ?? null,
                   notes: notesTranslated,
+                  poNumbers: (order as any).po_numbers ?? null,
+                  deliverySite: (order as any).delivery_site ?? null,
                   lines: order.lines.map((l: any, i: number) => ({
                     label: lineLabels[i] || l.manual_label || l.product_name || null,
                     vendorReference: l.vendor_reference ?? null,

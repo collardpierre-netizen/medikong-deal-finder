@@ -12,6 +12,19 @@ export type VendorOrderPdfInput = {
   customerEmail?: string | null;
   customerVatNumber?: string | null;
   notes?: string | null;
+  poNumbers?: string | null;
+  deliverySite?: {
+    name?: string | null;
+    address_l1?: string | null;
+    address_l2?: string | null;
+    postal_code?: string | null;
+    city?: string | null;
+    country_code?: string | null;
+    contact_name?: string | null;
+    contact_phone?: string | null;
+    delivery_hours?: string | null;
+    delivery_instructions?: string | null;
+  } | null;
   lines: {
     label: string | null;
     vendorReference?: string | null;
@@ -96,6 +109,45 @@ export function generateVendorOrderPdf(input: VendorOrderPdfInput) {
     if (rightLines[i]) doc.text(rightLines[i], pageW / 2, y + i * 4.6);
   }
   y += rows * 4.6 + 6;
+
+  if (input.poNumbers) {
+    doc.setTextColor(...NAVY);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.text(`N° de PO : ${input.poNumbers}`, M, y);
+    doc.setFont("helvetica", "normal");
+    y += 7;
+  }
+
+  const ds = input.deliverySite;
+  if (ds && Object.values(ds).some(Boolean)) {
+    const rowsDs = [
+      ds.name,
+      [ds.address_l1, ds.address_l2].filter(Boolean).join(", "),
+      [ds.postal_code, ds.city, ds.country_code].filter(Boolean).join(" "),
+      ds.contact_name || ds.contact_phone
+        ? `Contact : ${[ds.contact_name, ds.contact_phone].filter(Boolean).join(" · ")}`
+        : null,
+      ds.delivery_hours ? `Horaires : ${ds.delivery_hours}` : null,
+    ].filter((s) => s && String(s).trim()) as string[];
+    const instr = ds.delivery_instructions
+      ? (doc.splitTextToSize(`Modalités : ${ds.delivery_instructions}`, pageW - 2 * M - 6) as string[])
+      : [];
+    const h = 7 + (rowsDs.length + instr.length) * 4.4 + 3;
+    doc.setDrawColor(...BLUE);
+    doc.rect(M, y - 4, pageW - 2 * M, h);
+    doc.setTextColor(...NAVY);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text("SITE DE LIVRAISON", M + 3, y + 1);
+    doc.setFont("helvetica", "normal");
+    let yy = y + 6;
+    [...rowsDs, ...instr].forEach((l) => {
+      doc.text(l, M + 3, yy);
+      yy += 4.4;
+    });
+    y += h + 4;
+  }
 
   if (input.notes) {
     doc.setTextColor(...MUTED);

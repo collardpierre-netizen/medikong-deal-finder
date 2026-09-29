@@ -47,8 +47,26 @@ export default function OrderPoDeliveryPanel({
   const [site, setSite] = useState<DeliverySite>(deliverySite ?? {});
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => setPo(poNumbers ?? ""), [poNumbers]);
-  useEffect(() => setSite(deliverySite ?? {}), [deliverySite]);
+  // Relire systématiquement en base à chaque ouverture (ne pas dépendre du cache de la page parente)
+  const { data: fresh } = useQuery({
+    queryKey: ["order-po-delivery", orderId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("po_numbers, delivery_site")
+        .eq("id", orderId)
+        .single();
+      if (error) throw error;
+      return data as { po_numbers: string | null; delivery_site: DeliverySite | null };
+    },
+  });
+
+  useEffect(() => {
+    if (fresh) {
+      setPo(fresh.po_numbers ?? "");
+      setSite(fresh.delivery_site ?? {});
+    }
+  }, [fresh]);
 
   const { data: addresses } = useQuery({
     queryKey: ["customer-shipping-addresses", customerId],

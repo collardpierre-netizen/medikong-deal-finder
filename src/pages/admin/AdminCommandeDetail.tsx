@@ -114,7 +114,9 @@ const AdminCommandeDetail = () => {
       const { data, error } = await (isUuid ? query.eq("id", id!) : query.eq("order_number", id!)).maybeSingle();
       if (error) throw error;
 
-      const persisted = (data as any)?.order_lines || [];
+      const persisted = [...((data as any)?.order_lines || [])].sort(
+        (a: any, b: any) => (Number(a.line_position) || 0) - (Number(b.line_position) || 0),
+      );
       const draftPayload = (data as any)?.draft_payload as any;
       const draftLines = Array.isArray(draftPayload?.lines) ? draftPayload.lines : [];
 

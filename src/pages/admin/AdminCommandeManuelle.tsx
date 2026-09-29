@@ -114,6 +114,8 @@ const AdminCommandeManuelle = () => {
   const [customerNotes, setCustomerNotes] = useState("");
   const [anonymizeVendors, setAnonymizeVendors] = useState(false);
   const [lines, setLines] = useState<ManualLine[]>([]);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
   const [draftId, _setDraftId] = useState<string | null>(null);
   const draftIdRef = useRef<string | null>(null);
   const setDraftId = (id: string | null) => { draftIdRef.current = id; _setDraftId(id); };
@@ -419,6 +421,15 @@ const AdminCommandeManuelle = () => {
     }));
   }
 
+  function moveLine(from: number, to: number) {
+    setLines((prev) => {
+      if (to < 0 || to >= prev.length || from === to) return prev;
+      const next = [...prev];
+      const [item] = next.splice(from, 1);
+      next.splice(to, 0, item);
+      return next;
+    });
+  }
   function removeLine(id: string) {
     setLines((prev) => prev.filter((l) => l.id !== id));
   }
@@ -1412,15 +1423,38 @@ const AdminCommandeManuelle = () => {
             )}
 
             {lines.map((l, idx) => (
-              <LineRow
+              <div
                 key={l.id}
-                line={l}
-                index={idx}
-                vendors={vendors as any}
-                onPatch={(p) => patchLine(l.id, p)}
-                onRemove={() => removeLine(l.id)}
-                searchOffers={searchOffers}
-              />
+                className={`flex gap-1 items-start ${dragOverIdx === idx && dragIdx !== idx ? "border-t-2 border-primary" : ""}`}
+                onDragOver={(e) => { if (dragIdx !== null) { e.preventDefault(); setDragOverIdx(idx); } }}
+                onDrop={(e) => { e.preventDefault(); if (dragIdx !== null) moveLine(dragIdx, idx); setDragIdx(null); setDragOverIdx(null); }}
+              >
+                <div className="flex flex-col items-center pt-2 text-muted-foreground">
+                  <button type="button" aria-label="Monter la ligne" disabled={idx === 0}
+                    className="px-1 leading-none disabled:opacity-30 hover:text-foreground"
+                    onClick={() => moveLine(idx, idx - 1)}>▲</button>
+                  <span
+                    draggable
+                    title="Glisser pour déplacer"
+                    onDragStart={() => setDragIdx(idx)}
+                    onDragEnd={() => { setDragIdx(null); setDragOverIdx(null); }}
+                    className="cursor-grab select-none px-1 py-1"
+                  >⋮⋮</span>
+                  <button type="button" aria-label="Descendre la ligne" disabled={idx === lines.length - 1}
+                    className="px-1 leading-none disabled:opacity-30 hover:text-foreground"
+                    onClick={() => moveLine(idx, idx + 1)}>▼</button>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <LineRow
+                    line={l}
+                    index={idx}
+                    vendors={vendors as any}
+                    onPatch={(p) => patchLine(l.id, p)}
+                    onRemove={() => removeLine(l.id)}
+                    searchOffers={searchOffers}
+                  />
+                </div>
+              </div>
             ))}
           </div>
 

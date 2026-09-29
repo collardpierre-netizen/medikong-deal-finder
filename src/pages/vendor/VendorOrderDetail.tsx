@@ -144,7 +144,7 @@ export default function VendorOrderDetail() {
             product_cnk: p?.cnk_code ?? null,
           };
         }),
-      };
+      }) as OrderWithLines;
     },
   });
 

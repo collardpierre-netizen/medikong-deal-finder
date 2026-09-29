@@ -112,7 +112,7 @@ export default function VendorOrderDetail() {
         .in("id", productIds);
       const productMap = new Map((products || []).map((p: any) => [p.id, p]));
 
-      return {
+      return ({
         order_id: order.id,
         order_number: order.order_number,
         order_status: order.status,

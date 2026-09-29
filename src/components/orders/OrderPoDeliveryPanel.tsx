@@ -94,9 +94,12 @@ export default function OrderPoDeliveryPanel({
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Ref PO client et site de livraison enregistrés");
-...
+  };
+
+  return (
+    <div className="border rounded-xl p-4 space-y-3 bg-card">
       <div className="text-sm font-semibold">Ref PO client et site de livraison (repris sur le bon de commande fournisseur)</div>
-...
+      <div>
         <label className="text-xs text-muted-foreground">Ref PO client (plusieurs possibles, séparées par des virgules)</label>
         <Input value={po} onChange={(e) => setPo(e.target.value)} placeholder="PO-12345, PO-12346" />
       </div>

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Plus, Trash2, Save, FileText, FolderOpen, CalendarClock, Copy, Pencil, ExternalLink } from "lucide-react";
 
 import AdminTopBar from "@/components/admin/AdminTopBar";
+import OrderPoDeliveryPanel from "@/components/orders/OrderPoDeliveryPanel";
 import { fmtEur } from "@/lib/format-currency";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

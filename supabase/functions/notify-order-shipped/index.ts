@@ -120,6 +120,31 @@ Deno.serve(async (req) => {
     return json({ error: 'email_invoke_failed', detail }, 502)
   }
 
+  // Copie de contrôle vers l'admin (demande Pierre, 30/09/2026) : second envoi
+  // identique avec sa propre clé d'idempotence — jamais de doublon.
+  const CC_EMAIL = 'collardpierre@gmail.com'
+  const ccKey = `${idempotencyKey}-cc`
+  const { data: ccLogs } = await admin
+    .from('email_send_log')
+    .select('id, status')
+    .eq('message_id', ccKey)
+  const ccAlreadySent = (ccLogs ?? []).some((r: any) =>
+    ['sent', 'pending'].includes(String(r.status))
+  )
+  let ccResult: any = { skipped: ccAlreadySent }
+  if (!ccAlreadySent) {
+    const { data: ccData, error: ccErr } = await admin.functions.invoke('send-app-email', {
+      headers: { Authorization: `Bearer ${serviceKey}` },
+      body: {
+        templateName: 'order-shipped',
+        recipientEmail: CC_EMAIL,
+        idempotencyKey: ccKey,
+        templateData,
+      },
+    })
+    ccResult = ccErr ? { error: ccErr?.message || String(ccErr) } : ccData
+  }
+
   // Post-check : relire les logs pour confirmer un seul envoi actif
   const { data: postLogs } = await admin
     .from('email_send_log')

@@ -15,6 +15,7 @@ import { template as vendorApproved } from './vendor-approved.tsx'
 import { template as vendorRejected } from './vendor-rejected.tsx'
 import { template as buyerRegistration } from './buyer-registration.tsx'
 import { template as buyerVerified } from './buyer-verified.tsx'
+import { template as buyerAccountCreated } from './buyer-account-created.tsx'
 import { template as vendorContractSigned } from './vendor-contract-signed.tsx'
 import { template as adminContractNotification } from './admin-contract-notification.tsx'
 import { template as vendorContractSubmitted } from './vendor-contract-submitted.tsx'
@@ -77,6 +78,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'vendor-rejected': vendorRejected,
   'buyer-registration': buyerRegistration,
   'buyer-verified': buyerVerified,
+  'buyer-account-created': buyerAccountCreated,
   'vendor-contract-signed': vendorContractSigned,
   'admin-contract-notification': adminContractNotification,
   'vendor-contract-submitted': vendorContractSubmitted,

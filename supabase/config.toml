@@ -131,3 +131,6 @@ verify_jwt = false
 
 [functions.bulk-create-buyers]
 verify_jwt = false
+
+[functions.notify-buyer-registration]
+verify_jwt = false

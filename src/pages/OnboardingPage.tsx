@@ -942,21 +942,8 @@ export default function OnboardingPage() {
             return;
           }
 
-          // Notify admins of new buyer registration
-          supabase.functions.invoke("send-app-email", {
-            body: {
-              templateName: "buyer-registration",
-              recipientEmail: "admin@medikong.pro",
-              idempotencyKey: `buyer-reg-${userId}`,
-              templateData: {
-                companyName: companyName || `${firstName} ${lastName}`,
-                email,
-                phone: phone || undefined,
-                country: country || "Belgique",
-                vatNumber: vatNumber || undefined,
-              },
-            },
-          }).catch(() => {});
+          // Confirmation client + alerte admins (côté serveur)
+          supabase.functions.invoke("notify-buyer-registration", { body: {} }).catch(() => {});
         }
       }
 
@@ -1274,6 +1261,7 @@ export default function OnboardingPage() {
               <TfInput value={city} onChange={setCity} placeholder="Ville" />
             </div>
             <div>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: S.text, marginBottom: 6 }}>Identifiant Peppol <span style={{ fontWeight: 400, color: S.sec }}>(optionnel)</span></label>
               <TfInput value={peppolIdInput} onChange={setPeppolIdInput} placeholder="Identifiant Peppol (optionnel) — 0208:0123456789" />
               <p style={{ fontSize: 11, color: S.sec, marginTop: 6 }}>
                 Optionnel. Si votre comptabilité reçoit ses factures via le réseau Peppol, indiquez votre identifiant :
@@ -1286,7 +1274,10 @@ export default function OnboardingPage() {
               )}
             </div>
             {(buyerProfile === "health_pro" || buyerProfile === "pharmacist" || buyerProfile === "care_facility") && (
-              <TfInput value={professionalId} onChange={setProfessionalId} placeholder={proIdPlaceholder} />
+              <div>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: S.text, marginBottom: 6 }}>{buyerProfile === "pharmacist" ? "Numéro APB" : "Numéro professionnel (INAMI / agrément)"}</label>
+                <TfInput value={professionalId} onChange={setProfessionalId} placeholder={proIdPlaceholder} />
+              </div>
             )}
             {buyerProfile === "purchasing_group" && (
               <TfSelect value={groupMemberCount} onChange={setGroupMemberCount} options={memberCounts} placeholder="Nombre de membres" />

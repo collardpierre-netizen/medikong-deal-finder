@@ -160,5 +160,6 @@ Deno.serve(async (req) => {
     alreadySentBefore: alreadySent,
     logsAfter: postLogs ?? [],
     sendData,
+    cc: { recipient: CC_EMAIL, result: ccResult },
   })
 })

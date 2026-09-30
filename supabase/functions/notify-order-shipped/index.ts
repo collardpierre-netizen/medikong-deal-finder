@@ -100,6 +100,7 @@ Deno.serve(async (req) => {
   }
 
   const { data: sendData, error: sendErr } = await admin.functions.invoke('send-app-email', {
+    headers: { Authorization: `Bearer ${serviceKey}` },
     body: {
       templateName: 'order-shipped',
       recipientEmail,

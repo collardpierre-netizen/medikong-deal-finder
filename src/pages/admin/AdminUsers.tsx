@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import UserCreateDialog from "@/components/admin/UserCreateDialog";
+import BulkBuyerImportDialog from "@/components/admin/BulkBuyerImportDialog";
 import EditBuyerProfileDialog from "@/components/admin/EditBuyerProfileDialog";
 import { logAdminAudit } from "@/lib/admin-audit";
 import UserAuditTimeline from "@/components/admin/UserAuditTimeline";
@@ -63,6 +64,15 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [showBulk, setShowBulk] = useState(false);
+  const handleResendInvite = async (customerId: string) => {
+    const { data, error } = await supabase.functions.invoke("bulk-create-buyers", { body: { mode: "resend", customer_id: customerId } });
+    if (error || !(data as any)?.success) {
+      toast.error("Invitation non envoyée", { description: (data as any)?.error || error?.message });
+    } else {
+      toast.success("Invitation renvoyée");
+    }
+  };
   const [typeFilter, setTypeFilter] = useState<"all" | "vendor" | "buyer" | "pending">("all");
   const [profileFilter, setProfileFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive" | "pending">("all");
@@ -395,9 +405,14 @@ export default function AdminUsers() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-foreground">Gestion des Utilisateurs</h1>
-        <Button onClick={() => setShowCreate(true)} className="gap-1.5">
-          <Plus size={16} /> Créer un utilisateur
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowBulk(true)} className="gap-1.5">
+            <Plus size={16} /> Créer des comptes en masse
+          </Button>
+          <Button onClick={() => setShowCreate(true)} className="gap-1.5">
+            <Plus size={16} /> Créer un utilisateur
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -619,6 +634,11 @@ export default function AdminUsers() {
                     </Button>
                   </div>
                 ) : null}
+                {buyerDetail?.id && (
+                  <Button onClick={() => handleResendInvite(buyerDetail.id)} variant="outline" size="sm" className="w-full gap-1.5">
+                    <Mail size={15} /> Renvoyer l'invitation (choix du mot de passe)
+                  </Button>
+                )}
               </div>
             )}
 
@@ -833,6 +853,7 @@ export default function AdminUsers() {
       )}
 
       <UserCreateDialog open={showCreate} onOpenChange={setShowCreate} onCreated={loadUsers} />
+      <BulkBuyerImportDialog open={showBulk} onOpenChange={setShowBulk} onDone={loadUsers} />
 
       {editProfileOpen && buyerDetail && (
         <EditBuyerProfileDialog

@@ -395,9 +395,14 @@ export default function AdminUsers() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-foreground">Gestion des Utilisateurs</h1>
-        <Button onClick={() => setShowCreate(true)} className="gap-1.5">
-          <Plus size={16} /> Créer un utilisateur
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowBulk(true)} className="gap-1.5">
+            <Plus size={16} /> Créer des comptes en masse
+          </Button>
+          <Button onClick={() => setShowCreate(true)} className="gap-1.5">
+            <Plus size={16} /> Créer un utilisateur
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -619,6 +624,11 @@ export default function AdminUsers() {
                     </Button>
                   </div>
                 ) : null}
+                {buyerDetail?.id && (
+                  <Button onClick={() => handleResendInvite(buyerDetail.id)} variant="outline" size="sm" className="w-full gap-1.5">
+                    <Mail size={15} /> Renvoyer l'invitation (choix du mot de passe)
+                  </Button>
+                )}
               </div>
             )}
 
@@ -833,6 +843,7 @@ export default function AdminUsers() {
       )}
 
       <UserCreateDialog open={showCreate} onOpenChange={setShowCreate} onCreated={loadUsers} />
+      <BulkBuyerImportDialog open={showBulk} onOpenChange={setShowBulk} onDone={loadUsers} />
 
       {editProfileOpen && buyerDetail && (
         <EditBuyerProfileDialog

@@ -172,6 +172,7 @@ const sections: NavSection[] = [
     labelKey: "operations",
     items: [
       { labelKey: "users", path: "/admin/users", icon: Users },
+      { label: "Comptes en attente", path: "/admin/comptes-en-attente", icon: ShieldCheck },
       { label: "Invitations en attente", path: "/admin/account-invitations", icon: Mail },
       { label: "Alignement Owner vendeurs", path: "/admin/vendor-owner-alignment", icon: ShieldCheck },
       { labelKey: "profils", path: "/admin/profils", icon: Shield },

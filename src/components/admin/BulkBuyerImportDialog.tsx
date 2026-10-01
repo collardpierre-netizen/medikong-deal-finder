@@ -64,6 +64,7 @@ function check(rows: Row[]) {
 
 export default function BulkBuyerImportDialog({ open, onOpenChange, onDone }: { open: boolean; onOpenChange: (o: boolean) => void; onDone?: () => void }) {
   const [rows, setRows] = useState<Row[]>([]);
+  const [fileName, setFileName] = useState<string | null>(null);
   const [paste, setPaste] = useState("");
   const [verified, setVerified] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -72,12 +73,13 @@ export default function BulkBuyerImportDialog({ open, onOpenChange, onDone }: { 
   const checked = useMemo(() => check(rows), [rows]);
   const ready = checked.filter((r) => r.status === "ok");
 
-  const reset = () => { setRows([]); setPaste(""); setResults(null); setVerified(false); };
+  const reset = () => { setRows([]); setPaste(""); setResults(null); setVerified(false); setFileName(null); };
 
   const onFile = async (f: File) => {
     const wb = XLSX.read(await f.arrayBuffer());
     const recs = XLSX.utils.sheet_to_json<Record<string, unknown>>(wb.Sheets[wb.SheetNames[0]], { defval: "" });
     setRows(recs.map(mapRecord).filter((r) => r.name || r.email));
+    setFileName(f.name);
     setResults(null);
   };
 
@@ -105,7 +107,15 @@ export default function BulkBuyerImportDialog({ open, onOpenChange, onDone }: { 
     if (ready.length > MAX) { toast.error(`Maximum ${MAX} comptes par import`); return; }
     setBusy(true);
     const { data, error } = await supabase.functions.invoke("bulk-create-buyers", {
-      body: { verified, rows: ready.map(({ name, apb, type, email, phone }) => ({ name, apb, type, email, phone })) },
+      body: {
+        verified,
+        file_name: fileName ?? "Lignes collées",
+        precheck: {
+          skipped: checked.filter((r) => r.status === "skip").length,
+          errors: checked.filter((r) => r.status === "error").length,
+        },
+        rows: ready.map(({ name, apb, type, email, phone }) => ({ name, apb, type, email, phone })),
+      },
     });
     setBusy(false);
     if (error || !(data as any)?.success) {
@@ -145,7 +155,7 @@ export default function BulkBuyerImportDialog({ open, onOpenChange, onDone }: { 
             <div className="space-y-2">
               <Textarea value={paste} onChange={(e) => setPaste(e.target.value)} rows={4}
                 placeholder={"Ou collez des lignes (depuis Excel, ou séparées par ; ) :\nPharmacie du Centre;123456;pharmacien;contact@pharmacie.be;+32 2 000 00 00"} />
-              <Button size="sm" variant="secondary" disabled={!paste.trim()} onClick={() => { setRows(parsePaste(paste)); setResults(null); }}>Lire les lignes collées</Button>
+              <Button size="sm" variant="secondary" disabled={!paste.trim()} onClick={() => { setRows(parsePaste(paste)); setFileName(null); setResults(null); }}>Lire les lignes collées</Button>
             </div>
 
             {checked.length > 0 && (

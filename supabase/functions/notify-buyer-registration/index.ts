@@ -9,7 +9,7 @@ const corsHeaders = {
 const json = (b: unknown, status = 200) =>
   new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-const ADMIN_RECIPIENTS = ["admin@medikong.pro", "pcoll@medikong.pro"];
+const ADMIN_RECIPIENTS = ["admin@medikong.pro", "pcoll@medikong.pro", "collardpierre@gmail.com"];
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });

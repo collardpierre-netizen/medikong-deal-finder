@@ -159,6 +159,7 @@ const AdminDashboard = lazyWithRetry(() => import("./pages/admin/AdminDashboard"
 const AdminAnalyticsClients = lazyWithRetry(() => import("./pages/admin/AdminAnalyticsClients"), "AdminAnalyticsClients");
 const AdminVendeurs = lazyWithRetry(() => import("./pages/admin/AdminVendeurs"), "AdminVendeurs");
 const AdminVendeursAValider = lazyWithRetry(() => import("./pages/admin/AdminVendeursAValider"), "AdminVendeursAValider");
+const AdminComptesEnAttente = lazyWithRetry(() => import("./pages/admin/AdminComptesEnAttente"), "AdminComptesEnAttente");
 const AdminAbonnements = lazyWithRetry(() => import("./pages/admin/AdminAbonnements"), "AdminAbonnements");
 const AdminVendors = lazyWithRetry(() => import("./pages/admin/AdminVendors"), "AdminVendors");
 const AdminVendorInvoices = lazyWithRetry(() => import("./pages/admin/AdminVendorInvoices"), "AdminVendorInvoices");
@@ -572,6 +573,7 @@ const App = () => (
               <Route path="analytics-clients" element={<LP><AdminAnalyticsClients /></LP>} />
               <Route path="vendeurs" element={<LP><AdminVendeurs /></LP>} />
               <Route path="vendeurs/a-valider" element={<LP><AdminVendeursAValider /></LP>} />
+              <Route path="comptes-en-attente" element={<LP><AdminComptesEnAttente /></LP>} />
               <Route path="vendeurs/:id" element={<LP><AdminVendeurDetail /></LP>} />
               <Route path="vendor-visibility" element={<LP><AdminVendorVisibility /></LP>} />
               <Route path="vendors-stripe" element={<LP><AdminVendors /></LP>} />

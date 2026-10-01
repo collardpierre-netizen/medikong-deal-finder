@@ -157,11 +157,19 @@ Deno.serve(async (req) => {
       });
     }
 
+    const pre = (body.precheck && typeof body.precheck === "object") ? body.precheck : {};
+    const preSkipped = Math.max(0, Number((pre as any).skipped) || 0);
+    const preErrors = Math.max(0, Number((pre as any).errors) || 0);
     await admin.from("admin_audit_log").insert({
       admin_id: caller.id, admin_email: caller.email, action: "bulk_create_buyers",
       target_type: "customer", metadata: {
-        verified, total: rows.length,
+        verified,
+        file_name: String(body.file_name ?? "").slice(0, 200) || null,
+        total: rows.length + preSkipped + preErrors,
         created: results.filter((r) => r.status === "created").length,
+        skipped: results.filter((r) => r.status === "skipped").length + preSkipped,
+        errors: results.filter((r) => r.status === "error").length + preErrors,
+        emails_sent: results.filter((r) => r.status === "created" && r.email_sent).length,
       },
     }).then(() => {}, () => {});
 

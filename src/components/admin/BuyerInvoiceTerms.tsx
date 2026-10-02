@@ -79,12 +79,11 @@ export function BulkInvoiceTermsDialog({
         })),
       );
       if (iErr) throw iErr;
-      await logAdminAudit({
-        action: "bulk_invoice_terms",
-        target_type: "vendor",
-        target_id: vendorId,
+      await logAdminAudit("bulk_invoice_terms", {
+        targetType: "vendor",
+        targetId: vendorId,
         metadata: { vendor: vendorLabel, customers: ids.length, net_days: netDays, issuer, credit_limit_cents: limitCents },
-      } as any).catch(() => {});
+      });
       toast.success(`Conditions appliquées à ${ids.length} acheteur${ids.length > 1 ? "s" : ""}`);
       onDone?.();
       onOpenChange(false);

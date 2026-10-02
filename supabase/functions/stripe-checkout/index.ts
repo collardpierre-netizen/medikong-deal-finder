@@ -148,10 +148,23 @@ export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Res
       }
 
       // Get order lines — need per-line ids so we can persist PI ids per ligne
-      const { data: lines } = await supabase
+      const { data: allLines } = await supabase
         .from("order_lines")
-        .select("id, vendor_id, line_total_excl_vat, line_total_incl_vat, stripe_payment_intent_id")
+        .select("id, vendor_id, line_total_excl_vat, line_total_incl_vat, stripe_payment_intent_id, fulfillment_type")
         .eq("order_id", order_id);
+
+      // Produits des fournisseurs « sur facture » : exclus du paiement immédiat,
+      // l'acheteur ne paie que le solde.
+      const { data: invoiceSubs } = await supabase
+        .from("sub_orders")
+        .select("vendor_id")
+        .eq("order_id", order_id)
+        .eq("payment_method", "invoice");
+      const invoiceVendorIds = new Set((invoiceSubs || []).map((s: any) => s.vendor_id));
+      const lines = (allLines || []).filter(
+        (l: any) => !(l.fulfillment_type === "vendor_direct" && invoiceVendorIds.has(l.vendor_id)),
+      );
+
 
 
       if (!lines || lines.length === 0) {

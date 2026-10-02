@@ -526,9 +526,9 @@ export default function AdminUsers() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Chargement…</td></tr>
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">Chargement…</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Aucun utilisateur trouvé</td></tr>
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">Aucun utilisateur trouvé</td></tr>
               ) : filtered.map(u => (
                 <tr key={u.id}
                   onClick={() => openDetail(u)}

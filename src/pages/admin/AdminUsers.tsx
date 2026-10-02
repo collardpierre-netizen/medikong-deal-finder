@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import UserCreateDialog from "@/components/admin/UserCreateDialog";
 import BulkBuyerImportDialog from "@/components/admin/BulkBuyerImportDialog";
+import { BulkInvoiceTermsDialog, BuyerInvoiceRulesCard } from "@/components/admin/BuyerInvoiceTerms";
 import EditBuyerProfileDialog from "@/components/admin/EditBuyerProfileDialog";
 import { logAdminAudit } from "@/lib/admin-audit";
 import UserAuditTimeline from "@/components/admin/UserAuditTimeline";
@@ -65,6 +66,9 @@ export default function AdminUsers() {
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [termsRefresh, setTermsRefresh] = useState(0);
+  const [selectedBuyerIds, setSelectedBuyerIds] = useState<Set<string>>(new Set());
   const handleResendInvite = async (customerId: string) => {
     const { data, error } = await supabase.functions.invoke("bulk-create-buyers", { body: { mode: "resend", customer_id: customerId } });
     if (error || !(data as any)?.success) {
@@ -406,6 +410,9 @@ export default function AdminUsers() {
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-foreground">Gestion des Utilisateurs</h1>
         <div className="flex gap-2">
+          <Button variant="outline" disabled={selectedBuyerIds.size === 0} onClick={() => setShowTerms(true)} className="gap-1.5">
+            <FileText size={16} /> Conditions de paiement{selectedBuyerIds.size ? ` (${selectedBuyerIds.size})` : ""}
+          </Button>
           <Button variant="outline" onClick={() => setShowBulk(true)} className="gap-1.5">
             <Plus size={16} /> Créer des comptes en masse
           </Button>
@@ -493,6 +500,21 @@ export default function AdminUsers() {
           <table className="w-full text-[13px]">
             <thead>
               <tr className="border-b border-border text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+                <th className="px-3 py-3 w-8">
+                  <input
+                    type="checkbox"
+                    aria-label="Sélectionner tous les acheteurs affichés"
+                    checked={filtered.some(u => u.type === "buyer") && filtered.filter(u => u.type === "buyer").every(u => selectedBuyerIds.has(u.id))}
+                    onChange={(e) => {
+                      const buyers = filtered.filter(u => u.type === "buyer");
+                      setSelectedBuyerIds(prev => {
+                        const n = new Set(prev);
+                        buyers.forEach(b => e.target.checked ? n.add(b.id) : n.delete(b.id));
+                        return n;
+                      });
+                    }}
+                  />
+                </th>
                 <th className="text-left px-4 py-3">Entreprise</th>
                 <th className="text-left px-4 py-3">Email</th>
                 <th className="text-left px-4 py-3">Type</th>
@@ -504,13 +526,27 @@ export default function AdminUsers() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Chargement…</td></tr>
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">Chargement…</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Aucun utilisateur trouvé</td></tr>
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">Aucun utilisateur trouvé</td></tr>
               ) : filtered.map(u => (
                 <tr key={u.id}
                   onClick={() => openDetail(u)}
                   className={`border-b border-border/50 hover:bg-accent/30 transition-colors cursor-pointer ${selectedUser?.id === u.id ? "bg-accent/40" : ""}`}>
+                  <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                    {u.type === "buyer" && (
+                      <input
+                        type="checkbox"
+                        aria-label={`Sélectionner ${u.company}`}
+                        checked={selectedBuyerIds.has(u.id)}
+                        onChange={(e) => setSelectedBuyerIds(prev => {
+                          const n = new Set(prev);
+                          e.target.checked ? n.add(u.id) : n.delete(u.id);
+                          return n;
+                        })}
+                      />
+                    )}
+                  </td>
                   <td className="px-4 py-3 font-semibold text-foreground">{u.company}</td>
                   <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
                   <td className="px-4 py-3">
@@ -718,6 +754,8 @@ export default function AdminUsers() {
                     </div>
                     <DetailField icon={CheckCircle} label="Professionnel" value={buyerDetail.is_professional ? "Oui" : "Non"} />
                     <DetailField icon={CheckCircle} label="Vérifié" value={buyerDetail.is_verified ? "✅ Oui" : "❌ Non"} />
+                    <div className="border-t border-border my-3" />
+                    <BuyerInvoiceRulesCard customerId={buyerDetail.id} refreshKey={termsRefresh} />
 
                     {/* Actions */}
                     <div className="border-t border-border my-4" />
@@ -854,6 +892,12 @@ export default function AdminUsers() {
 
       <UserCreateDialog open={showCreate} onOpenChange={setShowCreate} onCreated={loadUsers} />
       <BulkBuyerImportDialog open={showBulk} onOpenChange={setShowBulk} onDone={loadUsers} />
+      <BulkInvoiceTermsDialog
+        open={showTerms}
+        onOpenChange={setShowTerms}
+        customers={users.filter(u => u.type === "buyer" && selectedBuyerIds.has(u.id)).map(u => ({ id: u.id, company: u.company }))}
+        onDone={() => { setTermsRefresh(k => k + 1); setSelectedBuyerIds(new Set()); }}
+      />
 
       {editProfileOpen && buyerDetail && (
         <EditBuyerProfileDialog

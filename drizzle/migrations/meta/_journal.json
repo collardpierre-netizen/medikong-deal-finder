@@ -638,6 +638,13 @@
       "when": 1790707084175,
       "tag": "0090_fix_admin_set_vendor_compliance_audit_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "7",
+      "when": 1790929911326,
+      "tag": "0091_invoice_rules_issuer_credit_limit_split",
+      "breakpoints": true
     }
   ]
 }

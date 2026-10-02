@@ -87,6 +87,8 @@ export default function CheckoutPage() {
   // le virement bancaire SEPA — index 2 de `paymentMethods`.
   const [searchParams] = useSearchParams();
   const [payment, setPayment] = useState(searchParams.get("paiement") === "sepa" ? 2 : 0);
+  // Panier entièrement couvert par la facture : on sélectionne « sur facture »
+  // (carte / virement désactivés). Défini plus bas via un effet.
   const [submitting, setSubmitting] = useState(false);
   const [prefillSource, setPrefillSource] = useState<"saved_address" | "customer_profile" | null>(null);
   const [saveAsDefault, setSaveAsDefault] = useState(false);
@@ -180,31 +182,41 @@ export default function CheckoutPage() {
       const { data: cust } = await supabase.from("customers").select("id").eq("auth_user_id", user!.id).maybeSingle();
       if (!cust) return [];
       const subtotalsByVendor = new Map<string, number>();
+      const ttcByVendor = new Map<string, number>();
       for (const it of items as any[]) {
         const k = it.vendor_id; if (!k) continue;
         subtotalsByVendor.set(k, (subtotalsByVendor.get(k) || 0) + (it.price_excl_vat || 0) * it.quantity);
+        ttcByVendor.set(k, (ttcByVendor.get(k) || 0) + (it.price_incl_vat || (it.price_excl_vat || 0) * 1.21) * it.quantity);
       }
-      const results: Array<{ vendor_id: string; eligible: boolean; net_days: number | null }> = [];
+      const results: Array<{ vendor_id: string; eligible: boolean; net_days: number | null; ttc: number }> = [];
       for (const vid of vendorIdsInCart) {
         const cents = Math.round((subtotalsByVendor.get(vid) || 0) * 100);
+        const ttc = ttcByVendor.get(vid) || 0;
         const { data } = await supabase.rpc("resolve_invoice_payment_eligibility", {
-          _vendor_id: vid, _customer_id: cust.id, _amount_cents: cents,
+          _vendor_id: vid, _customer_id: cust.id, _amount_cents: cents, _amount_incl_cents: Math.round(ttc * 100),
         });
         const row = Array.isArray(data) ? data[0] : data;
-        results.push({ vendor_id: vid, eligible: !!row?.eligible, net_days: row?.net_days ?? null });
+        results.push({ vendor_id: vid, eligible: !!row?.eligible, net_days: row?.net_days ?? null, ttc });
       }
       return results;
     },
     staleTime: 60_000,
   });
   const invoiceEligibleCount = invoiceEligibility.filter((e) => e.eligible).length;
-  const invoiceAvailable = invoiceEligibleCount > 0;
+  // Indicatif (le montant exact est recalculé par le serveur à la commande)
+  const invoiceDeferredTtc = invoiceEligibility.filter((e) => e.eligible).reduce((s, e) => s + e.ttc, 0);
+  const invoiceCoversAll = vendorIdsInCart.length > 0 && invoiceEligibleCount === vendorIdsInCart.length;
+  const invoiceAvailable = invoiceCoversAll;
 
   const paymentMethods = [
-    { label: "Carte bancaire", enabled: true },
+    { label: invoiceEligibleCount > 0 ? "Carte bancaire (solde)" : "Carte bancaire", enabled: !invoiceCoversAll },
     { label: `Paiement sur facture${invoiceEligibleCount ? ` (${invoiceEligibleCount} vendeur${invoiceEligibleCount > 1 ? "s" : ""} éligible${invoiceEligibleCount > 1 ? "s" : ""})` : ""}`, enabled: invoiceAvailable },
-    { label: "Virement bancaire (SEPA)", enabled: true },
+    { label: invoiceEligibleCount > 0 ? "Virement bancaire (SEPA) (solde)" : "Virement bancaire (SEPA)", enabled: !invoiceCoversAll },
   ];
+  useEffect(() => {
+    if (invoiceCoversAll && payment !== 1) setPayment(1);
+    if (!invoiceCoversAll && payment === 1) setPayment(0);
+  }, [invoiceCoversAll, payment]);
 
   const getItemPrice = (item: typeof items[0]) => item.price_excl_vat || item.product?.price || 0;
   const getItemPriceTTC = (item: typeof items[0]) => {
@@ -745,6 +757,17 @@ export default function CheckoutPage() {
                       ))}
 
                     </div>
+                    {invoiceEligibleCount > 0 && (
+                      <div className="border border-mk-line rounded-lg p-4 mb-6 bg-blue-50 text-sm text-mk-navy">
+                        <p className="font-bold">Une partie de votre commande est sur facture</p>
+                        <p className="mt-1">
+                          Environ {invoiceDeferredTtc.toFixed(2)} € TTC sur facture
+                          {(() => { const d = invoiceEligibility.filter((e) => e.eligible).map((e) => e.net_days || 30); return d.length ? ` (échéance ${Math.max(...d)} jours)` : ""; })()}
+                          {invoiceCoversAll ? " — rien à payer maintenant." : ` — solde d'environ ${Math.max(0, total - invoiceDeferredTtc).toFixed(2)} € à payer par carte ou virement.`}
+                        </p>
+                        <p className="text-[11px] text-mk-sec mt-1">Montant exact calculé à la validation de la commande.</p>
+                      </div>
+                    )}
                     <div className="flex gap-3">
                       <motion.button onClick={() => setStep(1)} className="border border-mk-navy text-mk-navy font-bold text-sm px-6 py-3 rounded-md" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>Retour</motion.button>
                       <motion.button

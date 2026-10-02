@@ -213,6 +213,10 @@ export default function CheckoutPage() {
     { label: `Paiement sur facture${invoiceEligibleCount ? ` (${invoiceEligibleCount} vendeur${invoiceEligibleCount > 1 ? "s" : ""} éligible${invoiceEligibleCount > 1 ? "s" : ""})` : ""}`, enabled: invoiceAvailable },
     { label: invoiceEligibleCount > 0 ? "Virement bancaire (SEPA) (solde)" : "Virement bancaire (SEPA)", enabled: !invoiceCoversAll },
   ];
+  useEffect(() => {
+    if (invoiceCoversAll && payment !== 1) setPayment(1);
+    if (!invoiceCoversAll && payment === 1) setPayment(0);
+  }, [invoiceCoversAll, payment]);
 
   const getItemPrice = (item: typeof items[0]) => item.price_excl_vat || item.product?.price || 0;
   const getItemPriceTTC = (item: typeof items[0]) => {

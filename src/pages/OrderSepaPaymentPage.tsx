@@ -23,7 +23,7 @@ export default function OrderSepaPaymentPage() {
     queryFn: async () => {
       const { data, error: e } = await supabase
         .from("orders")
-        .select("id, order_number, status, payment_status, total_incl_vat, subtotal_excl_vat, vat_amount")
+        .select("id, order_number, status, payment_status, total_incl_vat, subtotal_excl_vat, vat_amount, invoice_deferred_incl_vat")
         .eq("id", id!)
         .maybeSingle();
       if (e) throw e;
@@ -41,7 +41,8 @@ export default function OrderSepaPaymentPage() {
     );
   }
 
-  const total = Number(order?.total_incl_vat || 0);
+  const deferred = Number((order as any)?.invoice_deferred_incl_vat || 0);
+  const total = Math.max(0, Math.round((Number(order?.total_incl_vat || 0) - deferred) * 100) / 100);
   const reference = order?.order_number || "";
 
   // Statut de paiement affiché en clair : l'acheteur doit savoir immédiatement
@@ -132,8 +133,14 @@ export default function OrderSepaPaymentPage() {
                   <span className="text-mk-sec">TVA</span>
                   <span className="text-mk-navy">{formatPrice(Number(order.vat_amount || 0))} EUR</span>
                 </div>
+                {deferred > 0 && (
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-mk-sec">Sur facture (à payer à l'échéance)</span>
+                    <span className="text-mk-navy">− {formatPrice(deferred)} EUR</span>
+                  </div>
+                )}
                 <div className="flex justify-between pt-2 border-t border-mk-line">
-                  <span className="font-bold text-mk-navy">Montant à payer (TTC)</span>
+                  <span className="font-bold text-mk-navy">{deferred > 0 ? "Solde à payer maintenant (TTC)" : "Montant à payer (TTC)"}</span>
                   <span className="font-bold text-mk-navy">{formatPrice(total)} EUR</span>
                 </div>
               </div>

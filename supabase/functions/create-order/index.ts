@@ -186,7 +186,7 @@ Deno.serve(async (req) => {
 
     // ====== PRE-CHECK INVOICE ELIGIBILITY (no order created yet) ======
     const orderPaymentMethod = mapPaymentMethod(input.paymentMethod);
-    const invoiceEligibility: Array<{ vendor_id: string; eligible: boolean; net_days?: number; reason?: string }> = [];
+    const invoiceEligibility: Array<{ vendor_id: string; eligible: boolean; net_days?: number; reason?: string; invoice_issuer?: string | null }> = [];
 
     // Build an idempotency key from user + payment method + normalized cart so
     // that a rapid re-submit of the same rejected invoice cart short-circuits
@@ -209,35 +209,52 @@ Deno.serve(async (req) => {
         console.log("create-order: idempotent short-circuit no_vendor_eligible_for_invoice", { userId, idemKey });
         return json(400, cached.payload as Record<string, unknown>);
       }
+    }
 
-      const perVendor = new Map<string, number>();
-      for (const v of validation.items) {
-        const ref = offerMap.get(v.offer_id);
-        const vId = ref?.vendor_id ?? v.vendor_id;
-        const vType = vId ? vendorTypeMap.get(vId) : null;
-        if (!vId || vType === "qogita_virtual" || vType === "qogita") continue; // flux fournisseur : toujours via carte MediKong
-
-        perVendor.set(vId, (perVendor.get(vId) || 0) + Number(v.total_excl_vat));
+    // Éligibilité « sur facture » calculée côté serveur pour TOUS les modes de
+    // paiement : les produits des fournisseurs éligibles partent sur facture,
+    // l'acheteur ne paie (carte ou virement) que le solde.
+    const perVendor = new Map<string, { ht: number; ttc: number }>();
+    let nonDeferrableTtc = 0;
+    for (const v of validation.items) {
+      const ref = offerMap.get(v.offer_id);
+      const vId = ref?.vendor_id ?? v.vendor_id;
+      const vType = vId ? vendorTypeMap.get(vId) : null;
+      if (!vId || vType === "qogita_virtual" || vType === "qogita") { // flux fournisseur : toujours payé
+        nonDeferrableTtc += Number(v.total_incl_vat);
+        continue;
       }
-      let eligibleAny = false;
-      for (const [vid, subTotal] of perVendor) {
-        const { data: elig } = await supabase.rpc("resolve_invoice_payment_eligibility", {
-          _vendor_id: vid, _customer_id: customer.id, _amount_cents: Math.round(subTotal * 100),
-        });
-        const row = Array.isArray(elig) ? elig[0] : elig;
-        if (row?.eligible) {
-          eligibleAny = true;
-          invoiceEligibility.push({ vendor_id: vid, eligible: true, net_days: row.net_days });
-        } else {
-          invoiceEligibility.push({ vendor_id: vid, eligible: false, reason: row?.reason || "ineligible" });
-        }
+      const agg = perVendor.get(vId) || { ht: 0, ttc: 0 };
+      agg.ht += Number(v.total_excl_vat);
+      agg.ttc += Number(v.total_incl_vat);
+      perVendor.set(vId, agg);
+    }
+    let eligibleAny = false;
+    let balanceTtc = nonDeferrableTtc;
+    for (const [vid, agg] of perVendor) {
+      const { data: elig } = await supabase.rpc("resolve_invoice_payment_eligibility", {
+        _vendor_id: vid, _customer_id: customer.id,
+        _amount_cents: Math.round(agg.ht * 100), _amount_incl_cents: Math.round(agg.ttc * 100),
+      });
+      const row = Array.isArray(elig) ? elig[0] : elig;
+      if (row?.eligible) {
+        eligibleAny = true;
+        invoiceEligibility.push({ vendor_id: vid, eligible: true, net_days: row.net_days, invoice_issuer: row.invoice_issuer ?? "vendor" });
+      } else {
+        balanceTtc += agg.ttc;
+        invoiceEligibility.push({ vendor_id: vid, eligible: false, reason: row?.reason || "ineligible" });
       }
+    }
+    if (orderPaymentMethod === "invoice") {
       if (!eligibleAny) {
-        // No persistence: fail fast with a clear error the front can render as
-        // "Paiement sur facture non disponible — utilisez la carte bancaire".
         const payload = { error: "no_vendor_eligible_for_invoice", eligibility: invoiceEligibility, idempotency_key: idemKey };
         ineligibleCache.set(idemKey, { until: now + INELIGIBLE_TTL_MS, payload });
         return json(400, payload);
+      }
+      // Corrige l'ancien défaut : « sur facture » ne peut plus confirmer une
+      // commande dont une partie n'est pas couverte par une facture.
+      if (balanceTtc > 0.005) {
+        return json(400, { error: "invoice_balance_requires_payment", balance_incl_vat: Math.round(balanceTtc * 100) / 100, eligibility: invoiceEligibility });
       }
     }
 

@@ -180,30 +180,36 @@ export default function CheckoutPage() {
       const { data: cust } = await supabase.from("customers").select("id").eq("auth_user_id", user!.id).maybeSingle();
       if (!cust) return [];
       const subtotalsByVendor = new Map<string, number>();
+      const ttcByVendor = new Map<string, number>();
       for (const it of items as any[]) {
         const k = it.vendor_id; if (!k) continue;
         subtotalsByVendor.set(k, (subtotalsByVendor.get(k) || 0) + (it.price_excl_vat || 0) * it.quantity);
+        ttcByVendor.set(k, (ttcByVendor.get(k) || 0) + (it.price_incl_vat || (it.price_excl_vat || 0) * 1.21) * it.quantity);
       }
-      const results: Array<{ vendor_id: string; eligible: boolean; net_days: number | null }> = [];
+      const results: Array<{ vendor_id: string; eligible: boolean; net_days: number | null; ttc: number }> = [];
       for (const vid of vendorIdsInCart) {
         const cents = Math.round((subtotalsByVendor.get(vid) || 0) * 100);
+        const ttc = ttcByVendor.get(vid) || 0;
         const { data } = await supabase.rpc("resolve_invoice_payment_eligibility", {
-          _vendor_id: vid, _customer_id: cust.id, _amount_cents: cents,
+          _vendor_id: vid, _customer_id: cust.id, _amount_cents: cents, _amount_incl_cents: Math.round(ttc * 100),
         });
         const row = Array.isArray(data) ? data[0] : data;
-        results.push({ vendor_id: vid, eligible: !!row?.eligible, net_days: row?.net_days ?? null });
+        results.push({ vendor_id: vid, eligible: !!row?.eligible, net_days: row?.net_days ?? null, ttc });
       }
       return results;
     },
     staleTime: 60_000,
   });
   const invoiceEligibleCount = invoiceEligibility.filter((e) => e.eligible).length;
-  const invoiceAvailable = invoiceEligibleCount > 0;
+  // Indicatif (le montant exact est recalculé par le serveur à la commande)
+  const invoiceDeferredTtc = invoiceEligibility.filter((e) => e.eligible).reduce((s, e) => s + e.ttc, 0);
+  const invoiceCoversAll = vendorIdsInCart.length > 0 && invoiceEligibleCount === vendorIdsInCart.length;
+  const invoiceAvailable = invoiceCoversAll;
 
   const paymentMethods = [
-    { label: "Carte bancaire", enabled: true },
+    { label: invoiceEligibleCount > 0 ? "Carte bancaire (solde)" : "Carte bancaire", enabled: !invoiceCoversAll },
     { label: `Paiement sur facture${invoiceEligibleCount ? ` (${invoiceEligibleCount} vendeur${invoiceEligibleCount > 1 ? "s" : ""} éligible${invoiceEligibleCount > 1 ? "s" : ""})` : ""}`, enabled: invoiceAvailable },
-    { label: "Virement bancaire (SEPA)", enabled: true },
+    { label: invoiceEligibleCount > 0 ? "Virement bancaire (SEPA) (solde)" : "Virement bancaire (SEPA)", enabled: !invoiceCoversAll },
   ];
 
   const getItemPrice = (item: typeof items[0]) => item.price_excl_vat || item.product?.price || 0;

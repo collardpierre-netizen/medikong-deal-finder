@@ -87,6 +87,8 @@ export default function CheckoutPage() {
   // le virement bancaire SEPA — index 2 de `paymentMethods`.
   const [searchParams] = useSearchParams();
   const [payment, setPayment] = useState(searchParams.get("paiement") === "sepa" ? 2 : 0);
+  // Panier entièrement couvert par la facture : on sélectionne « sur facture »
+  // (carte / virement désactivés). Défini plus bas via un effet.
   const [submitting, setSubmitting] = useState(false);
   const [prefillSource, setPrefillSource] = useState<"saved_address" | "customer_profile" | null>(null);
   const [saveAsDefault, setSaveAsDefault] = useState(false);
@@ -751,6 +753,17 @@ export default function CheckoutPage() {
                       ))}
 
                     </div>
+                    {invoiceEligibleCount > 0 && (
+                      <div className="border border-mk-line rounded-lg p-4 mb-6 bg-blue-50 text-sm text-mk-navy">
+                        <p className="font-bold">Une partie de votre commande est sur facture</p>
+                        <p className="mt-1">
+                          Environ {invoiceDeferredTtc.toFixed(2)} € TTC sur facture
+                          {(() => { const d = invoiceEligibility.filter((e) => e.eligible).map((e) => e.net_days || 30); return d.length ? ` (échéance ${Math.max(...d)} jours)` : ""; })()}
+                          {invoiceCoversAll ? " — rien à payer maintenant." : ` — solde d'environ ${Math.max(0, total - invoiceDeferredTtc).toFixed(2)} € à payer par carte ou virement.`}
+                        </p>
+                        <p className="text-[11px] text-mk-sec mt-1">Montant exact calculé à la validation de la commande.</p>
+                      </div>
+                    )}
                     <div className="flex gap-3">
                       <motion.button onClick={() => setStep(1)} className="border border-mk-navy text-mk-navy font-bold text-sm px-6 py-3 rounded-md" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>Retour</motion.button>
                       <motion.button

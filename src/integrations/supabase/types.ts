@@ -13954,6 +13954,7 @@ export type Database = {
           fulfillment_mode: string | null
           hidden_from_list: boolean
           id: string
+          invoice_deferred_incl_vat: number
           is_forecast: boolean
           is_test: boolean
           notes: string | null
@@ -14016,6 +14017,7 @@ export type Database = {
           fulfillment_mode?: string | null
           hidden_from_list?: boolean
           id?: string
+          invoice_deferred_incl_vat?: number
           is_forecast?: boolean
           is_test?: boolean
           notes?: string | null
@@ -14078,6 +14080,7 @@ export type Database = {
           fulfillment_mode?: string | null
           hidden_from_list?: boolean
           id?: string
+          invoice_deferred_incl_vat?: number
           is_forecast?: boolean
           is_test?: boolean
           notes?: string | null
@@ -23437,6 +23440,7 @@ export type Database = {
           estimated_delivery_date: string | null
           fulfillment_type: Database["public"]["Enums"]["fulfillment_type"]
           id: string
+          invoice_issuer: string | null
           invoice_last_reminder_at: string | null
           invoice_net_days: number | null
           invoice_paid_at: string | null
@@ -23479,6 +23483,7 @@ export type Database = {
           estimated_delivery_date?: string | null
           fulfillment_type: Database["public"]["Enums"]["fulfillment_type"]
           id?: string
+          invoice_issuer?: string | null
           invoice_last_reminder_at?: string | null
           invoice_net_days?: number | null
           invoice_paid_at?: string | null
@@ -23521,6 +23526,7 @@ export type Database = {
           estimated_delivery_date?: string | null
           fulfillment_type?: Database["public"]["Enums"]["fulfillment_type"]
           id?: string
+          invoice_issuer?: string | null
           invoice_last_reminder_at?: string | null
           invoice_net_days?: number | null
           invoice_paid_at?: string | null
@@ -26429,10 +26435,12 @@ export type Database = {
         Row: {
           country_code: string | null
           created_at: string
+          credit_limit_cents: number | null
           customer_id: string | null
           customer_type: Database["public"]["Enums"]["customer_type"] | null
           enabled: boolean
           id: string
+          invoice_issuer: string
           label: string | null
           min_amount_cents: number
           net_days: number
@@ -26443,10 +26451,12 @@ export type Database = {
         Insert: {
           country_code?: string | null
           created_at?: string
+          credit_limit_cents?: number | null
           customer_id?: string | null
           customer_type?: Database["public"]["Enums"]["customer_type"] | null
           enabled?: boolean
           id?: string
+          invoice_issuer?: string
           label?: string | null
           min_amount_cents?: number
           net_days?: number
@@ -26457,10 +26467,12 @@ export type Database = {
         Update: {
           country_code?: string | null
           created_at?: string
+          credit_limit_cents?: number | null
           customer_id?: string | null
           customer_type?: Database["public"]["Enums"]["customer_type"] | null
           enabled?: boolean
           id?: string
+          invoice_issuer?: string
           label?: string | null
           min_amount_cents?: number
           net_days?: number
@@ -36023,6 +36035,7 @@ export type Database = {
           fulfillment_mode: string | null
           hidden_from_list: boolean
           id: string
+          invoice_deferred_incl_vat: number
           is_forecast: boolean
           is_test: boolean
           notes: string | null
@@ -39153,11 +39166,13 @@ export type Database = {
       resolve_invoice_payment_eligibility: {
         Args: {
           _amount_cents: number
+          _amount_incl_cents?: number
           _customer_id: string
           _vendor_id: string
         }
         Returns: {
           eligible: boolean
+          invoice_issuer: string
           net_days: number
           reason: string
           rule_id: string

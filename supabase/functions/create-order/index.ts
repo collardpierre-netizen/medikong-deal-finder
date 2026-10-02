@@ -359,24 +359,29 @@ Deno.serve(async (req) => {
     }
 
     // ====== INVOICE — persist sub_orders & finalize order (eligibility already resolved) ======
+    const eligibleEntries = invoiceEligibility.filter((e) => e.eligible);
+    let deferredTtc = 0;
+    for (const e of eligibleEntries) {
+      const dueDate = new Date();
+      dueDate.setUTCDate(dueDate.getUTCDate() + (e.net_days || 30));
+      const vendorLines = orderLines.filter((l) => l.vendor_id === e.vendor_id && l.fulfillment_type === "vendor_direct");
+      const vendorTotalIncVat = vendorLines.reduce((s, l) => s + Number(l.line_total_incl_vat), 0);
+      deferredTtc += vendorTotalIncVat;
+      await supabase.from("sub_orders").insert({
+        order_id: order.id,
+        vendor_id: e.vendor_id,
+        fulfillment_type: "vendor_direct",
+        subtotal_incl_vat: vendorTotalIncVat,
+        payment_method: "invoice",
+        payment_status: "pending",
+        invoice_net_days: e.net_days,
+        invoice_issuer: e.invoice_issuer ?? "vendor",
+        payment_due_date: dueDate.toISOString().slice(0, 10),
+      });
+    }
+    deferredTtc = Math.round(deferredTtc * 100) / 100;
+
     if (orderPaymentMethod === "invoice") {
-      const eligibleEntries = invoiceEligibility.filter((e) => e.eligible);
-      for (const e of eligibleEntries) {
-        const dueDate = new Date();
-        dueDate.setUTCDate(dueDate.getUTCDate() + (e.net_days || 30));
-        const vendorLines = orderLines.filter((l) => l.vendor_id === e.vendor_id);
-        const vendorTotalIncVat = vendorLines.reduce((s, l) => s + Number(l.line_total_incl_vat), 0);
-        await supabase.from("sub_orders").insert({
-          order_id: order.id,
-          vendor_id: e.vendor_id,
-          fulfillment_type: "vendor_direct",
-          subtotal_incl_vat: vendorTotalIncVat,
-          payment_method: "invoice",
-          payment_status: "pending",
-          invoice_net_days: e.net_days,
-          payment_due_date: dueDate.toISOString().slice(0, 10),
-        });
-      }
       // Order-level due date = furthest due (worst case for cashflow tracking)
       const dueDays = eligibleEntries.map((e) => e.net_days || 30);
       const maxDays = Math.max(...dueDays);
@@ -385,13 +390,17 @@ Deno.serve(async (req) => {
         payment_method: "invoice",
         payment_status: "pending",
         payment_due_date: orderDue.toISOString().slice(0, 10),
+        invoice_deferred_incl_vat: deferredTtc,
         status: "confirmed",
       }).eq("id", order.id);
-      return json(200, { id: order.id, order_number: order.order_number, payment_method: "invoice", eligibility: invoiceEligibility });
+      return json(200, { id: order.id, order_number: order.order_number, payment_method: "invoice", eligibility: invoiceEligibility, invoice_deferred_incl_vat: deferredTtc, balance_incl_vat: 0 });
     }
 
-
-    return json(200, { id: order.id, order_number: order.order_number });
+    if (deferredTtc > 0) {
+      await supabase.from("orders").update({ invoice_deferred_incl_vat: deferredTtc }).eq("id", order.id);
+    }
+    const balance = Math.max(0, Math.round((total - deferredTtc) * 100) / 100);
+    return json(200, { id: order.id, order_number: order.order_number, invoice_deferred_incl_vat: deferredTtc, balance_incl_vat: balance, eligibility: invoiceEligibility });
   } catch (e) {
     console.error("create-order error:", e);
     return json(500, { error: e instanceof Error ? e.message : String(e) });
